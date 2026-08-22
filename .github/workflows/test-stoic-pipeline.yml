@@ -51,7 +51,7 @@ jobs:
         env:
           TEST_TOPIC: ${{ github.event.inputs.topic }}
           CONTENT_DEPTH: ${{ github.event.inputs.content_depth || 'short_form' }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'true' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
           XAI_API_KEY_2: ${{ secrets.XAI_API_KEY_2 }}

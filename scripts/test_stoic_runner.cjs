@@ -64,7 +64,7 @@ function logInfo(msg) {
 
 // Parse Command Line Flags & Environment Variables
 const args = process.argv.slice(2);
-const isDryRun = args.includes('--dry-run') || process.env.DRY_RUN === 'true';
+const isDryRun = args.includes('--dry-run') || String(process.env.DRY_RUN).toLowerCase() === 'true';
 const inputTopic = process.env.TEST_TOPIC ? process.env.TEST_TOPIC.trim() : '';
 const contentDepth = process.env.CONTENT_DEPTH || 'short_form'; // 'short_form' or 'deep_dive'
 
@@ -263,9 +263,9 @@ Return ONLY the title in plain text without quotes or markdown.`;
     }
   }
 
-  // 3. Try Groq (Llama 3.3 70B)
+  // 3. Try Groq (Fast Inference Models)
   if (GROQ_API_KEY) {
-    const groqModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
+    const groqModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768'];
     for (const model of groqModels) {
       try {
         logInfo(`[Topic Discovery] Requesting topic from Groq (${model})...`);
@@ -273,11 +273,11 @@ Return ONLY the title in plain text without quotes or markdown.`;
           const postData = JSON.stringify({
             model: model,
             messages: [
-              { role: 'system', content: 'You are a YouTube Shorts strategist.' },
-              { role: 'user', content: `Generate 1 unique title for "The Stoic Architect" on Theme: "${resolvedArchetype.theme}" (Angle: "${resolvedArchetype.angle}"). Avoid recent titles: [${recentExclusions || 'None'}]. Return ONLY the title.` }
+              { role: 'system', content: 'You are a YouTube Shorts strategist. Generate titles strictly under 65 characters.' },
+              { role: 'user', content: `Generate 1 concise, punchy title under 65 characters for "The Stoic Architect" on Theme: "${resolvedArchetype.theme}" (Angle: "${resolvedArchetype.angle}"). Avoid recent titles: [${recentExclusions || 'None'}]. Return ONLY the title text.` }
             ],
             temperature: 0.9,
-            max_tokens: 60
+            max_tokens: 50
           });
           const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
@@ -299,7 +299,7 @@ Return ONLY the title in plain text without quotes or markdown.`;
                   resolve({ success: false, error: 'JSON parse error: ' + e.message });
                 }
               } else {
-                resolve({ success: false, error: `HTTP ${resp.statusCode}: ${data.slice(0, 120)}` });
+                resolve({ success: false, error: `HTTP ${resp.statusCode}` });
               }
             });
           });
@@ -310,22 +310,23 @@ Return ONLY the title in plain text without quotes or markdown.`;
         });
 
         if (res.success && res.text && res.text.length > 5) {
-          const cleanTopic = res.text.replace(/^["']|["']$/g, '').trim();
+          let cleanTopic = res.text.replace(/^["']|["']$/g, '').trim();
+          if (cleanTopic.length > 70) cleanTopic = cleanTopic.slice(0, 68).trim();
           if (!isTopicSimilarToHistory(cleanTopic, resolvedArchetype.theme, recentContentHistory)) {
             logSuccess(`[Topic Discovery] Generated via Groq (${model}): "${cleanTopic}"`);
             return cleanTopic;
           }
         } else {
-          logWarning(`[Topic Discovery] Groq (${model}) failed: ${res.error || 'Empty response'}`);
+          logInfo(`[Topic Discovery] Groq (${model}) unavailable: ${res.error || 'Empty response'}`);
         }
       } catch (err) {
-        logWarning(`[Topic Discovery] Groq exception: ${err.message}`);
+        logInfo(`[Topic Discovery] Groq (${model}) notice: ${err.message}`);
       }
     }
   }
 
-  // 4. Dynamic randomized archetype title fallback
-  const generatedFallback = `${resolvedArchetype.theme}: ${resolvedArchetype.angle}`;
+  // 4. Dynamic randomized archetype title fallback (clean and under 70 characters)
+  const generatedFallback = `${resolvedArchetype.theme} | ${resolvedArchetype.historicalFigure}`;
   logInfo(`[Topic Discovery] Selected curated archetype title: "${generatedFallback}"`);
   return generatedFallback;
 }
@@ -411,46 +412,52 @@ async function testGrokKeys() {
 // STEP 2: TEST GROQ & CLOUDFLARE INFERENCE BACKUP
 // ----------------------------------------------------
 async function testBackupEngines() {
-  logStep(2, 'Testing Groq (Llama 3.3 70B & 3.1 8B) & Cloudflare AI Backup');
+  logStep(2, 'Testing Groq & Cloudflare AI Backup Engines');
   const startTime = Date.now();
   let groqWorkingModel = null;
 
-  const groqCandidateModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
-  for (const model of groqCandidateModels) {
-    try {
-      const res = await new Promise((resolve) => {
-        const postData = JSON.stringify({
-          model: model,
-          messages: [{ role: 'user', content: 'Say OK' }],
-          max_tokens: 10
-        });
-
-        const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${GROQ_API_KEY}`,
-            'Content-Length': Buffer.byteLength(postData)
-          },
-          timeout: 8000
-        }, (resp) => {
-          let d = '';
-          resp.on('data', c => d += c);
-          resp.on('end', () => {
-            resolve({ statusCode: resp.statusCode, body: d, duration: Date.now() - startTime, model });
+  if (GROQ_API_KEY) {
+    const groqCandidateModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768'];
+    for (const model of groqCandidateModels) {
+      try {
+        const res = await new Promise((resolve) => {
+          const postData = JSON.stringify({
+            model: model,
+            messages: [{ role: 'user', content: 'Say OK' }],
+            max_tokens: 10
           });
-        });
-        req.on('error', e => resolve({ statusCode: 500, error: e.message }));
-        req.write(postData);
-        req.end();
-      });
 
-      if (res.statusCode === 200) {
-        logSuccess(`Groq High-Speed Engine ('${model}') is ONLINE & READY! Latency: ${res.duration}ms`);
-        groqWorkingModel = model;
-        break;
-      }
-    } catch {}
+          const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${GROQ_API_KEY}`,
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 8000
+          }, (resp) => {
+            let d = '';
+            resp.on('data', c => d += c);
+            resp.on('end', () => {
+              resolve({ statusCode: resp.statusCode, body: d, duration: Date.now() - startTime, model });
+            });
+          });
+          req.on('error', e => resolve({ statusCode: 500, error: e.message }));
+          req.write(postData);
+          req.end();
+        });
+
+        if (res.statusCode === 200) {
+          logSuccess(`Groq High-Speed Engine ('${model}') is ONLINE & READY! Latency: ${res.duration}ms`);
+          groqWorkingModel = model;
+          break;
+        }
+      } catch {}
+    }
+  }
+
+  if (!groqWorkingModel) {
+    logInfo('Groq LPU offline or models unavailable. System will use deterministic dynamic archetypes.');
   }
 
   return { groqWorkingModel };
@@ -694,6 +701,22 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
     };
   }
 
+  // Enforce strict YouTube title length and Shorts indexing compliance
+  if (scriptData.title) {
+    let cleanTitle = scriptData.title.replace(/[<>]/g, '').trim();
+    if (cleanTitle.length > 80) {
+      const parts = cleanTitle.split(/[:|–—]/);
+      if (parts[0] && parts[0].trim().length <= 72 && parts[0].trim().length >= 15) {
+        cleanTitle = `${parts[0].trim()} #Shorts`;
+      } else {
+        cleanTitle = `${cleanTitle.slice(0, 70).trim()} #Shorts`;
+      }
+    } else if (!cleanTitle.includes('#Shorts') && cleanTitle.length <= 72) {
+      cleanTitle = `${cleanTitle} #Shorts`;
+    }
+    scriptData.title = cleanTitle;
+  }
+
   console.log(`\n  ${colors.bright}Generated Complete Storyboard Breakdown:${colors.reset}`);
   console.log(`  Title: ${colors.green}${scriptData.title}${colors.reset}`);
   console.log(`  Slide Count: ${colors.yellow}${scriptData.slides.length} slides${colors.reset}`);
@@ -748,10 +771,11 @@ async function generateMediaAssets(storyboard) {
     });
   }
 
+  let cloudflareAuthFailed = false;
+
   // Cloudflare Image API Helper (Multi-model: FLUX.1-schnell -> SDXL Lightning -> SDXL Base)
   async function generateCloudflareImage(prompt) {
-    if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_API_TOKEN) {
-      logInfo('[Cloudflare Image] Skipped: CLOUDFLARE_ACCOUNT_ID or CLOUDFLARE_API_TOKEN is not configured in environment.');
+    if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_API_TOKEN || cloudflareAuthFailed) {
       return null;
     }
 
@@ -762,6 +786,7 @@ async function generateMediaAssets(storyboard) {
     ];
 
     for (const model of candidateModels) {
+      if (cloudflareAuthFailed) break;
       try {
         const randomSeed = Math.floor(Math.random() * 99999999);
         logInfo(`[Cloudflare Image] Attempting model ${model} (seed: ${randomSeed})...`);
@@ -809,19 +834,22 @@ async function generateMediaAssets(storyboard) {
                     model
                   });
                 }
+              } else if (resp.statusCode === 401) {
+                cloudflareAuthFailed = true;
+                logWarning(`[Cloudflare Engine] API token returned HTTP 401 (Authentication error). Cloudflare token may lack 'Workers AI: Read' permissions. Seamlessly using Pollinations & Edge TTS engines.`);
+                return resolve(null);
               } else {
-                const errSnippet = buffer.toString('utf8').slice(0, 150).replace(/\n/g, ' ');
-                logWarning(`[Cloudflare Image] Model ${model} returned HTTP ${resp.statusCode}: ${errSnippet}`);
+                const errSnippet = buffer.toString('utf8').slice(0, 120).replace(/\n/g, ' ');
+                logInfo(`[Cloudflare Image] Model ${model} returned HTTP ${resp.statusCode}: ${errSnippet}`);
               }
               resolve(null);
             });
           });
           req.on('error', (e) => {
-            logWarning(`[Cloudflare Image] Model ${model} request error: ${e.message}`);
+            logInfo(`[Cloudflare Image] Model ${model} network error: ${e.message}`);
             resolve(null);
           });
           req.on('timeout', () => {
-            logWarning(`[Cloudflare Image] Model ${model} timed out after 18s`);
             req.destroy();
             resolve(null);
           });
@@ -831,7 +859,7 @@ async function generateMediaAssets(storyboard) {
 
         if (res) return res;
       } catch (err) {
-        logWarning(`[Cloudflare Image] Exception on ${model}: ${err.message}`);
+        logInfo(`[Cloudflare Image] Notice on ${model}: ${err.message}`);
       }
     }
     return null;
@@ -839,8 +867,7 @@ async function generateMediaAssets(storyboard) {
 
   // 1. Primary: Cloudflare TTS API Helper (Aura-2 / Aura-1 with masculine deep voices)
   async function generateCloudflareTTS(text) {
-    if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_API_TOKEN) {
-      logInfo('[Cloudflare TTS] Skipped: CLOUDFLARE_ACCOUNT_ID or CLOUDFLARE_API_TOKEN is not configured in environment.');
+    if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_API_TOKEN || cloudflareAuthFailed) {
       return null;
     }
 
@@ -853,6 +880,7 @@ async function generateMediaAssets(storyboard) {
     ];
     
     for (const item of candidateModels) {
+      if (cloudflareAuthFailed) break;
       try {
         const res = await new Promise((resolve) => {
           const postData = JSON.stringify({ text, speaker: item.speaker });
@@ -895,19 +923,22 @@ async function generateMediaAssets(storyboard) {
                     provider: `Cloudflare Deepgram Aura-2 (${item.speaker})`
                   });
                 }
+              } else if (resp.statusCode === 401) {
+                cloudflareAuthFailed = true;
+                logWarning(`[Cloudflare Engine] API token returned HTTP 401 (Authentication error). Cloudflare token may lack 'Workers AI: Read' permissions. Seamlessly using Edge TTS & Pollinations engines.`);
+                return resolve(null);
               } else {
-                const errSnippet = buffer.toString('utf8').slice(0, 150).replace(/\n/g, ' ');
-                logWarning(`[Cloudflare TTS] ${item.model} (${item.speaker}) returned HTTP ${resp.statusCode}: ${errSnippet}`);
+                const errSnippet = buffer.toString('utf8').slice(0, 120).replace(/\n/g, ' ');
+                logInfo(`[Cloudflare TTS] ${item.model} (${item.speaker}) returned HTTP ${resp.statusCode}: ${errSnippet}`);
               }
               resolve(null);
             });
           });
           req.on('error', (e) => {
-            logWarning(`[Cloudflare TTS] ${item.model} request error: ${e.message}`);
+            logInfo(`[Cloudflare TTS] ${item.model} network error: ${e.message}`);
             resolve(null);
           });
           req.on('timeout', () => {
-            logWarning(`[Cloudflare TTS] ${item.model} timed out after 14s`);
             req.destroy();
             resolve(null);
           });
@@ -917,7 +948,7 @@ async function generateMediaAssets(storyboard) {
 
         if (res) return res;
       } catch (err) {
-        logWarning(`[Cloudflare TTS] Exception on ${item.model}: ${err.message}`);
+        logInfo(`[Cloudflare TTS] Notice on ${item.model}: ${err.message}`);
       }
     }
     return null;
@@ -1424,11 +1455,21 @@ async function handleYouTubePublish(storyboard, renderResult) {
     logInfo('Initiating YouTube Data API v3 Resumable Upload to @thestoicarchitect-n4b...');
     try {
       const fileSize = fs.statSync(renderResult.videoFilePath).size;
+      
+      let uploadTitle = (storyboard.title || 'The Stoic Mindset').replace(/[<>]/g, '').trim();
+      if (uploadTitle.length > 85) uploadTitle = uploadTitle.slice(0, 80).trim() + ' #Shorts';
+      if (!uploadTitle.includes('#Shorts') && uploadTitle.length <= 75) uploadTitle += ' #Shorts';
+
+      const cleanTags = (storyboard.tags || ['Shorts', 'Stoicism', 'Discipline', 'Motivation', 'MarcusAurelius', 'Mindset'])
+        .map(t => String(t).replace(/^#/, '').replace(/[^a-zA-Z0-9 ]/g, '').trim())
+        .filter(t => t.length > 0 && t.length < 50)
+        .slice(0, 15);
+
       const metadata = JSON.stringify({
         snippet: {
-          title: storyboard.title,
-          description: storyboard.description + (storyboard.description.includes('#Shorts') ? '' : '\n\n#Shorts #Stoicism #MarcusAurelius #SelfDiscipline #Motivation #Discipline #Mindset #Wisdom #PersonalGrowth #DailyStoic #MentalFortress'),
-          tags: storyboard.tags || ['#Shorts', '#Stoicism', '#Discipline', '#Motivation', '#MarcusAurelius', '#Mindset'],
+          title: uploadTitle,
+          description: (storyboard.description || uploadTitle) + (storyboard.description && storyboard.description.includes('#Shorts') ? '' : '\n\n#Shorts #Stoicism #MarcusAurelius #SelfDiscipline #Motivation #Discipline #Mindset #Wisdom #PersonalGrowth #DailyStoic #MentalFortress'),
+          tags: cleanTags,
           categoryId: '27' // Education
         },
         status: {
@@ -1438,7 +1479,7 @@ async function handleYouTubePublish(storyboard, renderResult) {
       });
 
       // 1. Initial Resumable Session Request
-      const uploadUrl = await new Promise((resolve) => {
+      const sessionResult = await new Promise((resolve) => {
         const req = https.request('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status', {
           method: 'POST',
           headers: {
@@ -1448,19 +1489,27 @@ async function handleYouTubePublish(storyboard, renderResult) {
             'X-Upload-Content-Type': 'video/mp4'
           }
         }, (res) => {
-          resolve(res.headers.location || null);
+          let body = '';
+          res.on('data', c => body += c);
+          res.on('end', () => {
+            if (res.statusCode >= 200 && res.statusCode < 300 && res.headers.location) {
+              resolve({ success: true, uploadUrl: res.headers.location });
+            } else {
+              resolve({ success: false, statusCode: res.statusCode, error: body });
+            }
+          });
         });
-        req.on('error', () => resolve(null));
+        req.on('error', (e) => resolve({ success: false, error: e.message }));
         req.write(metadata);
         req.end();
       });
 
-      if (uploadUrl) {
+      if (sessionResult.success && sessionResult.uploadUrl) {
         logSuccess(`YouTube Resumable Upload Session initialized.`);
         // 2. Stream Video Binary
         const uploadResult = await new Promise((resolve) => {
           const videoStream = fs.createReadStream(renderResult.videoFilePath);
-          const req = https.request(uploadUrl, {
+          const req = https.request(sessionResult.uploadUrl, {
             method: 'PUT',
             headers: {
               'Content-Length': fileSize,
@@ -1470,29 +1519,44 @@ async function handleYouTubePublish(storyboard, renderResult) {
             let data = '';
             res.on('data', c => data += c);
             res.on('end', () => {
-              try {
-                const j = JSON.parse(data);
-                resolve(j);
-              } catch {
-                resolve(null);
+              if (res.statusCode >= 200 && res.statusCode < 300) {
+                try {
+                  const j = JSON.parse(data);
+                  resolve({ success: true, data: j });
+                } catch {
+                  resolve({ success: false, error: 'JSON parse error on upload response' });
+                }
+              } else {
+                resolve({ success: false, statusCode: res.statusCode, error: data });
               }
             });
           });
-          req.on('error', () => resolve(null));
+          req.on('error', (e) => resolve({ success: false, error: e.message }));
           videoStream.pipe(req);
         });
 
-        if (uploadResult && uploadResult.id) {
-          const videoUrl = `https://www.youtube.com/shorts/${uploadResult.id}`;
+        if (uploadResult.success && uploadResult.data && uploadResult.data.id) {
+          const videoId = uploadResult.data.id;
+          const videoUrl = `https://www.youtube.com/shorts/${videoId}`;
           logSuccess(`LIVE VIDEO PUBLISHED TO YOUTUBE!`);
           console.log(`  ${colors.bright}${colors.green}Video URL: ${videoUrl}${colors.reset}`);
-          console.log(`  ${colors.bright}${colors.cyan}Studio Link: https://studio.youtube.com/video/${uploadResult.id}/edit${colors.reset}`);
-          return { status: 'PUBLISHED_LIVE', videoId: uploadResult.id, videoUrl };
+          console.log(`  ${colors.bright}${colors.cyan}Studio Link: https://studio.youtube.com/video/${videoId}/edit${colors.reset}`);
+          return { status: 'PUBLISHED_LIVE', videoId, videoUrl };
+        } else {
+          logError(`YouTube video binary streaming failed: ${uploadResult.error || `HTTP ${uploadResult.statusCode}`}`);
+          return { status: 'UPLOAD_FAILED', error: uploadResult.error || `HTTP ${uploadResult.statusCode}` };
         }
+      } else {
+        logError(`YouTube session initiation failed (HTTP ${sessionResult.statusCode}): ${sessionResult.error}`);
+        return { status: 'SESSION_INIT_FAILED', error: `HTTP ${sessionResult.statusCode}: ${sessionResult.error}` };
       }
     } catch (err) {
-      logWarning(`Live upload note: ${err.message}. Campaign safely recorded in Vault.`);
+      logError(`Live upload exception: ${err.message}`);
+      return { status: 'UPLOAD_FAILED', error: err.message };
     }
+  } else if (!accessToken) {
+    logWarning('YouTube OAuth token unavailable. Video saved to local Vault.');
+    return { status: 'NO_OAUTH_TOKEN' };
   }
 
   return { status: 'VAULT_STORED' };
@@ -1660,11 +1724,21 @@ async function runDiagnostics() {
 
   fs.writeFileSync(path.join(testOutputDir, 'stoic_test_report.json'), JSON.stringify(testReport, null, 2));
 
-  console.log(`\n${colors.bright}${colors.green}══════════════════════════════════════════════════════════════════════${colors.reset}`);
-  console.log(`${colors.bright}${colors.green}✔ ALL PIPELINE STEPS COMPLETED & SYNCHRONIZED SUCCESSFULLY${colors.reset}`);
+  console.log(`\n${colors.bright}${colors.cyan}══════════════════════════════════════════════════════════════════════${colors.reset}`);
+  if (publishResult.status === 'PUBLISHED_LIVE') {
+    console.log(`${colors.bright}${colors.green}✔ PIPELINE COMPLETED & VIDEO PUBLISHED LIVE TO YOUTUBE!${colors.reset}`);
+    console.log(`  ${colors.bright}Live URL: ${colors.green}${publishResult.videoUrl}${colors.reset}`);
+    console.log(`  ${colors.bright}YouTube Studio: ${colors.cyan}https://studio.youtube.com/video/${publishResult.videoId}/edit${colors.reset}`);
+  } else if (isDryRun) {
+    console.log(`${colors.bright}${colors.cyan}✔ PIPELINE DRY RUN COMPLETED SUCCESSFULLY (Video verified & saved)${colors.reset}`);
+    console.log(`  Local Render: ${renderResult.videoFilePath || 'test_artifacts/stoic_pipeline_short.mp4'}`);
+  } else {
+    console.log(`${colors.bright}${colors.yellow}⚠ PIPELINE COMPLETED LOCALLY (YouTube Upload Status: ${publishResult.status})${colors.reset}`);
+    if (publishResult.error) console.log(`  Detail: ${publishResult.error}`);
+  }
   console.log(`  Report: test_artifacts/stoic_test_report.json`);
-  console.log(`  In-App Player Ready: Open Web UI -> Vertical Video Player -> Play Stoic Short`);
-  console.log(`${colors.bright}${colors.green}══════════════════════════════════════════════════════════════════════${colors.reset}\n`);
+  console.log(`  In-App Player: Saved to Vault and Blueprint Manifest`);
+  console.log(`${colors.bright}${colors.cyan}══════════════════════════════════════════════════════════════════════${colors.reset}\n`);
 }
 
 runDiagnostics().catch(err => {
