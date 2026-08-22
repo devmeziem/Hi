@@ -1,0 +1,6 @@
+{
+  "name": "Voxam AI YouTube Factory",
+  "description": "Automated YouTube Factory powered by Gemini, Cloudflare Workers AI TTS & Flux.1 Schnell",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

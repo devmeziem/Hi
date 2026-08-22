@@ -1,0 +1,44 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Approved users collection
+    match /approved_users/{userId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Saved Campaigns collection
+    match /saved_campaigns/{campaignId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Video Vault & Schedules
+    match /video_vault/{videoId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Worker Activity Logs
+    match /worker_logs/{logId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Integration & Channel Keys
+    match /integration_keys/{keyId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // System Config & Channels
+    match /system_config/{configId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Custom AI fallback settings
+    match /custom_fallbacks/{fallbackId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Factory Jobs & Queues rules
+    match /factory_jobs/{jobId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

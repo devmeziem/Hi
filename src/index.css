@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #060a12;
+  color: #f1f5f9;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0c1222;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Dynamic Ken Burns Camera Motions for 9:16 Video Player */
+@keyframes kenburns-pan-zoom-in {
+  0% {
+    transform: scale(1.0) translate(0, 0);
+  }
+  50% {
+    transform: scale(1.15) translate(-2.5%, -1.5%);
+  }
+  100% {
+    transform: scale(1.24) translate(-4%, -3%);
+  }
+}
+
+@keyframes kenburns-pan-left {
+  0% {
+    transform: scale(1.18) translate(3%, 0);
+  }
+  100% {
+    transform: scale(1.05) translate(-4%, 0);
+  }
+}
+
+@keyframes kenburns-pan-right-zoom {
+  0% {
+    transform: scale(1.02) translate(-3%, 2%);
+  }
+  100% {
+    transform: scale(1.20) translate(3.5%, -2%);
+  }
+}
+
+@keyframes kenburns-zoom-top {
+  0% {
+    transform: scale(1.0) translate(0, 0);
+  }
+  100% {
+    transform: scale(1.22) translate(0, -3.5%);
+  }
+}
+
+@keyframes kenburns-dramatic-focus {
+  0% {
+    transform: scale(1.25) translate(2%, 2%);
+  }
+  100% {
+    transform: scale(1.08) translate(-1%, -1%);
+  }
+}
+
+.animate-motion-zoom-pan {
+  animation: kenburns-pan-zoom-in 8s ease-in-out infinite alternate;
+}
+
+.animate-motion-pan-left {
+  animation: kenburns-pan-left 8s ease-in-out infinite alternate;
+}
+
+.animate-motion-pan-right {
+  animation: kenburns-pan-right-zoom 8s ease-in-out infinite alternate;
+}
+
+.animate-motion-zoom-top {
+  animation: kenburns-zoom-top 8s ease-in-out infinite alternate;
+}
+
+.animate-motion-dramatic {
+  animation: kenburns-dramatic-focus 8s ease-in-out infinite alternate;
+}

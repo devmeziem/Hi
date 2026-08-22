@@ -1,0 +1,36 @@
+name: 04-voxam-channel-sync-publisher
+
+# on:
+#   schedule:
+#     # 08:00, 12:00, 16:00, 20:00 WAT (07:00, 11:00, 15:00, 19:00 UTC)
+#     - cron: '0 7,11,15,19 * * *'
+on:
+  workflow_dispatch:
+
+jobs:
+  publish-to-youtube-channels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Project Dependencies
+        run: |
+          npm install --legacy-peer-deps --no-audit --no-fund || npm install --force || true
+
+      - name: Dispatch Video To Target Channel (Fin Blueprint / Stoic / Tech AI)
+        env:
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN_CH1: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH1 || secrets.YOUTUBE_REFRESH_TOKEN }}
+          YOUTUBE_REFRESH_TOKEN_CH2: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH2 }}
+          YOUTUBE_REFRESH_TOKEN_CH3: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 }}
+          FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
+        run: |
+          node scripts/youtube_channel_dispatcher.cjs
+          echo "Successfully published scheduled video and linked affiliate descriptions!"

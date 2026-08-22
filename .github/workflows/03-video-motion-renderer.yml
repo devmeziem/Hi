@@ -1,0 +1,38 @@
+name: 03-voxam-video-motion-renderer
+
+# on:
+#   schedule:
+#     # Runs at 15 and 45 past every hour
+#     - cron: '15,45 * * * *'
+on:
+  workflow_dispatch:
+
+jobs:
+  render-video-with-ffmpeg:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install FFmpeg & ImageMagick
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg imagemagick
+
+      - name: Install Project Dependencies
+        run: |
+          npm install --legacy-peer-deps --no-audit --no-fund || npm install --force || true
+
+      - name: Assemble Vertical MP4 + Ken Burns + Synchronized Subtitles
+        env:
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
+          FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
+        run: |
+          node scripts/video_motion_compiler.cjs
+          echo "Render complete! MP4 saved to Cloudinary. Job status: READY_FOR_PUBLISH"
