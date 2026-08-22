@@ -17,6 +17,8 @@ const {
 } = require('./stoic_diversity_engine.cjs');
 
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim();
+const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || '').trim();
+const DEEPSEEK_API_KEY = (process.env.DEEPSEEK_API_KEY || '').trim();
 const XAI_API_KEYS = Array.from(new Set([
   process.env.XAI_API_KEY,
   process.env.GROK_API_KEY,
@@ -187,6 +189,122 @@ const NICHES = [
 ];
 
 /**
+ * Call OpenAI API (Tier 1 Support)
+ */
+async function callOpenAI(prompt, systemPrompt) {
+  if (!OPENAI_API_KEY) return null;
+  const candidateModels = ['gpt-4o-mini', 'gpt-4o', 'o3-mini', 'gpt-3.5-turbo'];
+
+  for (const model of candidateModels) {
+    try {
+      const result = await new Promise((resolve) => {
+        const postData = JSON.stringify({
+          model: model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.75,
+          max_tokens: 1500,
+          response_format: { type: 'json_object' }
+        });
+
+        const req = https.request('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENAI_API_KEY}`,
+            'Content-Length': Buffer.byteLength(postData)
+          },
+          timeout: 14000
+        }, (res) => {
+          let data = '';
+          res.on('data', chunk => { data += chunk; });
+          res.on('end', () => {
+            if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+              try {
+                const json = JSON.parse(data);
+                const content = json.choices?.[0]?.message?.content;
+                if (content && content.trim().length > 10) {
+                  console.log(`  ✔ [OpenAI] Succeeded using model: ${model}`);
+                  resolve(content.trim());
+                  return;
+                }
+              } catch {}
+            }
+            resolve(null);
+          });
+        });
+
+        req.on('error', () => resolve(null));
+        req.on('timeout', () => { req.destroy(); resolve(null); });
+        req.write(postData);
+        req.end();
+      });
+
+      if (result) return result;
+    } catch {}
+  }
+  return null;
+}
+
+/**
+ * Call DeepSeek API (Tier 1 Support)
+ */
+async function callDeepSeek(prompt, systemPrompt) {
+  if (!DEEPSEEK_API_KEY) return null;
+  try {
+    const result = await new Promise((resolve) => {
+      const postData = JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 1500,
+        response_format: { type: 'json_object' }
+      });
+
+      const req = https.request('https://api.deepseek.com/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+          'Content-Length': Buffer.byteLength(postData)
+        },
+        timeout: 14000
+      }, (res) => {
+        let data = '';
+        res.on('data', chunk => { data += chunk; });
+        res.on('end', () => {
+          if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+            try {
+              const json = JSON.parse(data);
+              const content = json.choices?.[0]?.message?.content;
+              if (content && content.trim().length > 10) {
+                console.log(`  ✔ [DeepSeek] Succeeded using model: deepseek-chat`);
+                resolve(content.trim());
+                return;
+              }
+            } catch {}
+          }
+          resolve(null);
+        });
+      });
+
+      req.on('error', () => resolve(null));
+      req.on('timeout', () => { req.destroy(); resolve(null); });
+      req.write(postData);
+      req.end();
+    });
+
+    if (result) return result;
+  } catch {}
+  return null;
+}
+
+/**
  * Call Google Gemini API (Primary Google AI Model with Multi-Model Fallback)
  */
 async function callGemini(prompt, systemPrompt) {
@@ -329,11 +447,13 @@ async function callCloudflareAI(prompt, systemPrompt) {
     return null;
   }
 
+  // Low-Neuron Consumption Models for maximum free-tier longevity
   const candidateModels = [
-    '@cf/meta/llama-3.3-70b-instruct',
-    '@cf/meta/llama-3.1-8b-instruct',
-    '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
-    '@cf/mistral/mistral-7b-instruct-v0.1'
+    '@cf/meta/llama-3.2-3b-instruct',  // Low neuron consumption, high coherence
+    '@cf/meta/llama-3.2-1b-instruct',  // Ultra-low neuron consumption, super fast
+    '@cf/meta/llama-3.1-8b-instruct',  // Standard low-neuron workhorse
+    '@cf/qwen/qwen1.5-1.8b-chat',      // Ultra-lightweight fallback
+    '@cf/meta/llama-3.3-70b-instruct'  // Heavy fallback only if needed
   ];
 
   for (const model of candidateModels) {
@@ -343,7 +463,8 @@ async function callCloudflareAI(prompt, systemPrompt) {
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: prompt }
-          ]
+          ],
+          max_tokens: 1800
         });
 
         const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${model}`, {
@@ -363,7 +484,7 @@ async function callCloudflareAI(prompt, systemPrompt) {
                 const json = JSON.parse(data);
                 const content = json.result?.response || json.response;
                 if (content && content.trim().length > 0) {
-                  console.log(`  ✔ [Cloudflare LLM] Generated content via ${model}`);
+                  console.log(`  ✔ [Cloudflare Low-Neuron LLM] Generated via ${model}`);
                   resolve(content.trim());
                   return;
                 }
@@ -399,15 +520,59 @@ async function callCloudflareAI(prompt, systemPrompt) {
 }
 
 /**
- * Call Groq with Multi-Model Fallback for Deprecation Resilience
+ * Dynamically discover active Groq models or use verified active list
+ */
+async function getActiveGroqModels() {
+  const verifiedFallbacks = [
+    'llama-3.1-8b-instant',           // Always active, 100% reliable
+    'llama-3.3-70b-specdec',          // Active Groq 70B Speculative Decoding
+    'qwen-2.5-32b',                   // Active high-IQ model
+    'deepseek-r1-distill-llama-70b',  // Active reasoning model
+    'gemma2-9b-it',                   // Active Google Gemma on Groq
+    'llama-3.3-70b-versatile'         // Legacy fallback
+  ];
+
+  if (!GROQ_API_KEY) return verifiedFallbacks;
+
+  try {
+    const list = await new Promise((resolve) => {
+      const req = https.get('https://api.groq.com/openai/v1/models', {
+        headers: { 'Authorization': `Bearer ${GROQ_API_KEY}` },
+        timeout: 4000
+      }, (res) => {
+        let d = '';
+        res.on('data', c => d += c);
+        res.on('end', () => {
+          if (res.statusCode === 200) {
+            try {
+              const j = JSON.parse(d);
+              if (Array.isArray(j.data)) {
+                const textModels = j.data
+                  .map(m => m.id)
+                  .filter(id => !id.includes('whisper') && !id.includes('guard') && !id.includes('vision'));
+                if (textModels.length > 0) return resolve(textModels);
+              }
+            } catch {}
+          }
+          resolve(null);
+        });
+      });
+      req.on('error', () => resolve(null));
+      req.on('timeout', () => { req.destroy(); resolve(null); });
+    });
+
+    if (list && list.length > 0) return list;
+  } catch {}
+
+  return verifiedFallbacks;
+}
+
+/**
+ * Call Groq with Dynamic Auto-Discovery for Deprecation Resilience
  */
 async function callGroq(prompt, systemPrompt) {
-  const candidateModels = [
-    'llama-3.3-70b-versatile',
-    'deepseek-r1-distill-llama-70b',
-    'llama-3.1-8b-instant',
-    'llama3-70b-8192'
-  ];
+  if (!GROQ_API_KEY) return null;
+  const candidateModels = await getActiveGroqModels();
 
   for (const model of candidateModels) {
     try {
@@ -419,7 +584,8 @@ async function callGroq(prompt, systemPrompt) {
             { role: 'user', content: prompt }
           ],
           temperature: 0.7,
-          max_tokens: 800
+          max_tokens: 1800,
+          response_format: { type: 'json_object' }
         });
 
         const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
@@ -429,7 +595,7 @@ async function callGroq(prompt, systemPrompt) {
             'Authorization': `Bearer ${GROQ_API_KEY}`,
             'Content-Length': Buffer.byteLength(postData)
           },
-          timeout: 10000
+          timeout: 12000
         }, (res) => {
           let data = '';
           res.on('data', chunk => { data += chunk; });
@@ -455,7 +621,7 @@ async function callGroq(prompt, systemPrompt) {
       });
 
       if (result) {
-        console.log(`  -> [Groq Succeeded using model: ${model}]`);
+        console.log(`  -> [Groq Succeeded using active model: ${model}]`);
         return result;
       }
     } catch {
@@ -547,43 +713,53 @@ Respond strictly in raw JSON format:
         userPrompt = `Create a professional YouTube Short script for topic: "${slot.topic}". Focus details: ${JSON.stringify(slot)}. Channel: "${channelName}". Do not duplicate recent topics: ${Array.from(generatedTopicHistory).slice(-6).join(', ')}`;
       }
 
-      // 1. Primary attempt with Gemini 2.5 Flash - FIRST
+      // 1. Attempt with OpenAI
       let aiResponse = null;
-      try {
-        aiResponse = await callGemini(userPrompt, systemPrompt);
-        if (aiResponse) usedAiModel = 'Gemini 2.5 Flash';
-      } catch (err) {
-        console.warn("Gemini generation notice, checking Grok backup...");
+      if (OPENAI_API_KEY) {
+        try {
+          aiResponse = await callOpenAI(userPrompt, systemPrompt);
+          if (aiResponse) usedAiModel = 'OpenAI (GPT-4o)';
+        } catch {}
       }
 
-      // 2. Initial attempt with Grok (xAI) - BACKUP 1
+      // 2. Primary attempt with Gemini 2.0/1.5 Flash
+      if (!aiResponse && GEMINI_API_KEY) {
+        try {
+          aiResponse = await callGemini(userPrompt, systemPrompt);
+          if (aiResponse) usedAiModel = 'Google Gemini';
+        } catch {}
+      }
+
+      // 3. Attempt with Grok (xAI)
       if (!aiResponse) {
         try {
           aiResponse = await callGrok(userPrompt, systemPrompt);
           if (aiResponse) usedAiModel = 'Grok 2 (xAI)';
-        } catch (err) {
-          console.warn("Grok generation notice, checking Cloudflare AI backup...");
-        }
+        } catch {}
       }
 
-      // 3. Backup attempt with Cloudflare Workers AI - BACKUP 2
+      // 4. Attempt with DeepSeek
+      if (!aiResponse && DEEPSEEK_API_KEY) {
+        try {
+          aiResponse = await callDeepSeek(userPrompt, systemPrompt);
+          if (aiResponse) usedAiModel = 'DeepSeek (Chat)';
+        } catch {}
+      }
+
+      // 5. Backup attempt with Cloudflare Workers AI
       if (!aiResponse) {
         try {
           aiResponse = await callCloudflareAI(userPrompt, systemPrompt);
           if (aiResponse) usedAiModel = 'Cloudflare Workers AI (Llama 3.3)';
-        } catch (e) {
-          console.warn("Cloudflare AI LLM backup notice, checking Groq fallback...");
-        }
+        } catch {}
       }
 
-      // 4. Secondary fallback attempt with Groq (Llama 3.3)
+      // 6. Secondary fallback attempt with Groq
       if (!aiResponse) {
         try {
           aiResponse = await callGroq(userPrompt, systemPrompt);
-          if (aiResponse) usedAiModel = 'Groq (Llama 3.3 70B)';
-        } catch (e) {
-          // Fall through to deterministic
-        }
+          if (aiResponse) usedAiModel = 'Groq (High-Speed LPU)';
+        } catch {}
       }
 
       // Parse AI output if available

@@ -256,12 +256,15 @@ async function generateLastResortFeminineTTS(text) {
 }
 
 async function synthesizeVoiceWithHierarchy(text) {
-  const cf = await generateCloudflareAiTTS(text);
-  if (cf) return cf;
-
+  // 1. Primary: Microsoft Edge TTS Studio Voice (Natural, authoritative baritone, no skipped words)
   const edge = await generateEdgeBassTTS(text);
   if (edge) return edge;
 
+  // 2. Fallback: Cloudflare Deepgram
+  const cf = await generateCloudflareAiTTS(text);
+  if (cf) return cf;
+
+  // 3. Last Resort Fallback
   const fem = await generateLastResortFeminineTTS(text);
   if (fem) return fem;
 

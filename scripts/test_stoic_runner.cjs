@@ -70,16 +70,20 @@ const contentDepth = process.env.CONTENT_DEPTH || 'short_form'; // 'short_form' 
 
 // API Credentials
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim();
+const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || '').trim();
+const DEEPSEEK_API_KEY = (process.env.DEEPSEEK_API_KEY || '').trim();
 const XAI_API_KEYS = Array.from(new Set([
   process.env.XAI_API_KEY,
   process.env.GROK_API_KEY,
+  process.env.XAI_API_KEY_1,
+  process.env.GROK_API_KEY_1,
   process.env.XAI_API_KEY_2,
   process.env.GROK_API_KEY_2
 ].filter(Boolean))).map(k => k.trim());
 
 const CLOUDFLARE_ACCOUNT_ID = (process.env.CLOUDFLARE_ACCOUNT_ID || '').trim().replace(/^https?:\/\/[^\/]+\//, '').replace(/\/$/, '');
 const CLOUDFLARE_API_TOKEN = (process.env.CLOUDFLARE_API_TOKEN || '').trim();
-const GROQ_API_KEY = (process.env.GROQ_API_KEY || '').trim();
+const GROQ_API_KEY = (process.env.GROQ_API_KEY || process.env.GROQ_KEY || '').trim();
 const YOUTUBE_REFRESH_TOKEN = (process.env.YOUTUBE_REFRESH_TOKEN_CH2 || process.env.YOUTUBE_REFRESH_TOKEN || '').trim();
 const YOUTUBE_CLIENT_ID = (process.env.YOUTUBE_CLIENT_ID || '').trim();
 const YOUTUBE_CLIENT_SECRET = (process.env.YOUTUBE_CLIENT_SECRET || '').trim();
@@ -89,11 +93,13 @@ const CLOUDINARY_UPLOAD_PRESET = (process.env.CLOUDINARY_UPLOAD_PRESET || '').tr
 console.log(`\n${colors.bright}${colors.cyan}══════════════════════════════════════════════════════════════════════${colors.reset}`);
 console.log(`${colors.bright}${colors.bgBlue} VOXAM RUNNER ENVIRONMENT & CREDENTIAL STATUS ${colors.reset}`);
 console.log(`${colors.cyan}══════════════════════════════════════════════════════════════════════${colors.reset}`);
-console.log(`  Cloudflare Account ID : ${CLOUDFLARE_ACCOUNT_ID ? colors.green + '✔ PRESENT (' + CLOUDFLARE_ACCOUNT_ID.slice(0, 6) + '...)' + colors.reset : colors.yellow + '✖ MISSING (Cloudflare AI disabled)' + colors.reset}`);
-console.log(`  Cloudflare API Token  : ${CLOUDFLARE_API_TOKEN ? colors.green + '✔ PRESENT (' + CLOUDFLARE_API_TOKEN.slice(0, 6) + '...)' + colors.reset : colors.yellow + '✖ MISSING (Cloudflare AI disabled)' + colors.reset}`);
-console.log(`  xAI Grok API Keys     : ${XAI_API_KEYS.length > 0 ? colors.green + `✔ PRESENT (${XAI_API_KEYS.length} key(s))` + colors.reset : colors.yellow + '✖ MISSING' + colors.reset}`);
+console.log(`  OpenAI API Key        : ${OPENAI_API_KEY ? colors.green + '✔ PRESENT (' + OPENAI_API_KEY.slice(0, 7) + '...)' + colors.reset : colors.yellow + '✖ MISSING (Optional)' + colors.reset}`);
 console.log(`  Google Gemini API Key : ${GEMINI_API_KEY ? colors.green + '✔ PRESENT' + colors.reset : colors.yellow + '✖ MISSING' + colors.reset}`);
-console.log(`  Groq LPU API Key      : ${GROQ_API_KEY ? colors.green + '✔ PRESENT' + colors.reset : colors.yellow + '✖ MISSING' + colors.reset}`);
+console.log(`  xAI Grok API Keys     : ${XAI_API_KEYS.length > 0 ? colors.green + `✔ PRESENT (${XAI_API_KEYS.length} key(s))` + colors.reset : colors.yellow + '✖ MISSING' + colors.reset}`);
+console.log(`  Groq LPU API Key      : ${GROQ_API_KEY ? colors.green + '✔ PRESENT (' + GROQ_API_KEY.slice(0, 7) + '...)' + colors.reset : colors.yellow + '✖ MISSING' + colors.reset}`);
+console.log(`  DeepSeek API Key      : ${DEEPSEEK_API_KEY ? colors.green + '✔ PRESENT' + colors.reset : colors.yellow + '✖ MISSING (Optional)' + colors.reset}`);
+console.log(`  Cloudflare AI Account : ${CLOUDFLARE_ACCOUNT_ID ? colors.green + '✔ PRESENT (' + CLOUDFLARE_ACCOUNT_ID.slice(0, 6) + '...)' + colors.reset : colors.yellow + '✖ MISSING (Using Pollinations & Edge)' + colors.reset}`);
+console.log(`  Cloudflare API Token  : ${CLOUDFLARE_API_TOKEN ? colors.green + '✔ PRESENT (' + CLOUDFLARE_API_TOKEN.slice(0, 6) + '...)' + colors.reset : colors.yellow + '✖ MISSING' + colors.reset}`);
 console.log(`  Cloudinary Storage    : ${CLOUDINARY_CLOUD_NAME && CLOUDINARY_UPLOAD_PRESET ? colors.green + '✔ CONFIGURED (' + CLOUDINARY_CLOUD_NAME + ')' + colors.reset : colors.yellow + '✖ MISSING' + colors.reset}`);
 console.log(`  YouTube OAuth Token   : ${YOUTUBE_REFRESH_TOKEN ? colors.green + '✔ PRESENT' + colors.reset : colors.yellow + '✖ MISSING (Dry run will apply)' + colors.reset}`);
 console.log(`${colors.cyan}══════════════════════════════════════════════════════════════════════\n${colors.reset}`);
@@ -417,8 +423,46 @@ async function testBackupEngines() {
   let groqWorkingModel = null;
 
   if (GROQ_API_KEY) {
-    const groqCandidateModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768'];
-    for (const model of groqCandidateModels) {
+    // Dynamically query Groq models or try active fallbacks
+    let candidateModels = [
+      'llama-3.1-8b-instant',
+      'llama-3.3-70b-specdec',
+      'qwen-2.5-32b',
+      'deepseek-r1-distill-llama-70b',
+      'gemma2-9b-it',
+      'llama-3.3-70b-versatile'
+    ];
+
+    try {
+      const activeList = await new Promise((resolve) => {
+        const req = https.get('https://api.groq.com/openai/v1/models', {
+          headers: { 'Authorization': `Bearer ${GROQ_API_KEY}` },
+          timeout: 4000
+        }, (res) => {
+          let d = '';
+          res.on('data', c => d += c);
+          res.on('end', () => {
+            if (res.statusCode === 200) {
+              try {
+                const j = JSON.parse(d);
+                if (Array.isArray(j.data)) {
+                  const textModels = j.data
+                    .map(m => m.id)
+                    .filter(id => !id.includes('whisper') && !id.includes('guard') && !id.includes('vision'));
+                  if (textModels.length > 0) return resolve(textModels);
+                }
+              } catch {}
+            }
+            resolve(null);
+          });
+        });
+        req.on('error', () => resolve(null));
+        req.on('timeout', () => { req.destroy(); resolve(null); });
+      });
+      if (activeList && activeList.length > 0) candidateModels = activeList;
+    } catch {}
+
+    for (const model of candidateModels) {
       try {
         const res = await new Promise((resolve) => {
           const postData = JSON.stringify({
@@ -457,7 +501,7 @@ async function testBackupEngines() {
   }
 
   if (!groqWorkingModel) {
-    logInfo('Groq LPU offline or models unavailable. System will use deterministic dynamic archetypes.');
+    logInfo('Groq LPU offline or models unavailable. System will use Cloudflare Low-Neuron AI or deterministic dynamic archetypes.');
   }
 
   return { groqWorkingModel };
@@ -478,8 +522,70 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
 
   let scriptData = null;
 
-  // 1. Try Gemini (Cascade gemini-2.0-flash -> gemini-1.5-flash -> gemini-2.5-flash)
-  if (GEMINI_API_KEY) {
+  // 1. Try OpenAI First if available (gpt-4o-mini, gpt-4o, o3-mini)
+  if (OPENAI_API_KEY) {
+    const openaiCandidateModels = ['gpt-4o-mini', 'gpt-4o', 'o3-mini', 'gpt-3.5-turbo'];
+    for (const model of openaiCandidateModels) {
+      try {
+        logInfo(`[Storyboard Engine] Requesting full 6-slide package from OpenAI (${model})...`);
+        const raw = await new Promise((resolve) => {
+          const postData = JSON.stringify({
+            model: model,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: `${userPrompt} Topic title: "${topic}". Return strictly valid JSON.` }
+            ],
+            response_format: { type: 'json_object' },
+            temperature: 0.75,
+            max_tokens: 2000
+          });
+
+          const req = https.request('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${OPENAI_API_KEY}`,
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 15000
+          }, (res) => {
+            let data = '';
+            res.on('data', c => { data += c; });
+            res.on('end', () => {
+              if (res.statusCode === 200) {
+                try {
+                  const j = JSON.parse(data);
+                  resolve({ success: true, content: j.choices?.[0]?.message?.content });
+                } catch (e) {
+                  resolve({ success: false, error: 'JSON parse error: ' + e.message });
+                }
+              } else {
+                resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 150)}` });
+              }
+            });
+          });
+          req.on('error', (err) => resolve({ success: false, error: err.message }));
+          req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Request timeout (15s)' }); });
+          req.write(postData);
+          req.end();
+        });
+
+        if (raw.success && raw.content) {
+          const cleaned = raw.content.replace(/```json/gi, '').replace(/```/g, '').trim();
+          scriptData = JSON.parse(cleaned);
+          if (scriptData && Array.isArray(scriptData.slides) && scriptData.slides.length >= 4) {
+            logSuccess(`[Storyboard Engine] OpenAI (${model}) generated complete ${scriptData.slides.length}-slide storyboard!`);
+            break;
+          }
+        }
+      } catch (e) {
+        logWarning(`[Storyboard Engine] OpenAI (${model}) exception: ${e.message}`);
+      }
+    }
+  }
+
+  // 2. Try Gemini (Cascade gemini-2.0-flash -> gemini-1.5-flash -> gemini-2.5-flash)
+  if (!scriptData && GEMINI_API_KEY) {
     const candidateGeminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash'];
     for (const model of candidateGeminiModels) {
       try {
@@ -546,7 +652,7 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
     }
   }
 
-  // 2. Try Grok Next
+  // 3. Try Grok Next
   if (!scriptData && activeGrok && activeGrok.key) {
     try {
       logInfo(`[Storyboard Engine] Requesting full 6-slide package from xAI Grok (${activeGrok.model})...`);
@@ -603,6 +709,60 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
     } catch (e) {
       logWarning(`[Storyboard Engine] Grok exception: ${e.message}`);
     }
+  }
+
+  // 4. Try DeepSeek if available
+  if (!scriptData && DEEPSEEK_API_KEY) {
+    try {
+      logInfo(`[Storyboard Engine] Requesting full 6-slide package from DeepSeek (deepseek-chat)...`);
+      const raw = await new Promise((resolve) => {
+        const postData = JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: `${userPrompt} Topic title: "${topic}". Output strictly valid JSON.` }
+          ],
+          response_format: { type: 'json_object' },
+          temperature: 0.7,
+          max_tokens: 1800
+        });
+        const req = https.request('https://api.deepseek.com/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+            'Content-Length': Buffer.byteLength(postData)
+          },
+          timeout: 15000
+        }, (res) => {
+          let data = '';
+          res.on('data', c => { data += c; });
+          res.on('end', () => {
+            if (res.statusCode === 200) {
+              try {
+                const j = JSON.parse(data);
+                resolve({ success: true, content: j.choices?.[0]?.message?.content });
+              } catch (e) {
+                resolve({ success: false, error: 'JSON parse error: ' + e.message });
+              }
+            } else {
+              resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 150)}` });
+            }
+          });
+        });
+        req.on('error', (err) => resolve({ success: false, error: err.message }));
+        req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Request timeout' }); });
+        req.write(postData);
+        req.end();
+      });
+
+      if (raw.success && raw.content) {
+        scriptData = JSON.parse(raw.content);
+        if (scriptData && Array.isArray(scriptData.slides)) {
+          logSuccess(`[Storyboard Engine] DeepSeek (deepseek-chat) generated ${scriptData.slides.length}-slide package!`);
+        }
+      }
+    } catch {}
   }
 
   // 3. Try Groq (Llama 3.3 70B Versatile)
@@ -954,15 +1114,15 @@ async function generateMediaAssets(storyboard) {
     return null;
   }
 
-  // 2. Second Fallback: Microsoft Edge TTS Deep Resonant Bass (en-US-ChristopherNeural / en-US-GuyNeural / en-US-EricNeural)
+  // 1. Primary Engine: Microsoft Edge TTS Studio-Grade Deep Stoic Voice (Christopher / Guy / Eric / Ryan)
   async function generateEdgeBassTTS(text) {
     try {
       const { EdgeTTS } = require('node-edge-tts');
       const masculineVoices = [
-        'en-US-ChristopherNeural', // Deep resonant authoritative masculine
+        'en-US-ChristopherNeural', // Deep resonant authoritative masculine (Stoic master)
         'en-US-GuyNeural',         // Warm masculine baritone
-        'en-US-EricNeural',        // Rich baritone
-        'en-GB-RyanNeural'         // Deep British baritone
+        'en-US-EricNeural',        // Rich steady masculine
+        'en-GB-RyanNeural'         // Thoughtful British baritone
       ];
 
       for (const voice of masculineVoices) {
@@ -972,8 +1132,8 @@ async function generateMediaAssets(storyboard) {
             voice: voice,
             lang: 'en-US',
             outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
-            pitch: '-8Hz',
-            rate: '-4%'
+            pitch: '-3Hz',
+            rate: '-3%'
           });
 
           await tts.ttsPromise(text, tempAudio);
@@ -982,12 +1142,12 @@ async function generateMediaAssets(storyboard) {
             const audioBuf = fs.readFileSync(tempAudio);
             try { fs.unlinkSync(tempAudio); } catch {}
             if (audioBuf.length > 1000) {
-              logSuccess(`[Edge TTS] Synthesized authoritative bass voice (${voice}) (${audioBuf.length.toLocaleString()} bytes)`);
+              logSuccess(`[Edge TTS] Synthesized natural authoritative voice (${voice}) (${audioBuf.length.toLocaleString()} bytes)`);
               return {
                 audioUrl: `data:audio/mpeg;base64,${audioBuf.toString('base64')}`,
                 audioBuffer: audioBuf,
                 byteLength: audioBuf.byteLength,
-                provider: `Microsoft Edge TTS Deep Bass (${voice})`
+                provider: `Microsoft Edge Studio Voice (${voice})`
               };
             }
           }
@@ -1001,7 +1161,7 @@ async function generateMediaAssets(storyboard) {
     return null;
   }
 
-  // 3. Third Fallback: DSP Bass-Boosted Translation TTS
+  // 2. Second Fallback: DSP Bass-Boosted Google Speech Voice
   async function generateDspBassTTS(text) {
     try {
       const formatted = text
@@ -1042,7 +1202,81 @@ async function generateMediaAssets(storyboard) {
     return null;
   }
 
-  // 4. Last Resort Fallback: Feminine Voice (JennyNeural) only if all masculine bass options fail
+  // 3. Third Fallback: Cloudflare Deepgram Aura-2
+  async function generateCloudflareTTS(text) {
+    if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_API_TOKEN || cloudflareAuthFailed) {
+      return null;
+    }
+
+    const candidateModels = [
+      { model: '@cf/deepgram/aura-2-en', speaker: 'zeus' },
+      { model: '@cf/deepgram/aura-2-en', speaker: 'orpheus' },
+      { model: '@cf/deepgram/aura-2-en', speaker: 'helios' }
+    ];
+    
+    for (const item of candidateModels) {
+      if (cloudflareAuthFailed) break;
+      try {
+        const res = await new Promise((resolve) => {
+          const postData = JSON.stringify({ text, speaker: item.speaker });
+          const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${item.model}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 14000
+          }, (resp) => {
+            const chunks = [];
+            resp.on('data', c => chunks.push(c));
+            resp.on('end', () => {
+              const buffer = Buffer.concat(chunks);
+              if (resp.statusCode === 200) {
+                try {
+                  const json = JSON.parse(buffer.toString('utf8'));
+                  if (json.result?.audio) {
+                    const audioBuf = Buffer.from(json.result.audio, 'base64');
+                    logSuccess(`[Cloudflare TTS] Generated via ${item.model} (${item.speaker})`);
+                    return resolve({
+                      audioUrl: `data:audio/mpeg;base64,${json.result.audio}`,
+                      audioBuffer: audioBuf,
+                      byteLength: audioBuf.byteLength,
+                      provider: `Cloudflare Deepgram Aura-2 (${item.speaker})`
+                    });
+                  }
+                } catch {}
+
+                if (buffer.length > 500) {
+                  logSuccess(`[Cloudflare TTS] Generated via ${item.model} (${item.speaker})`);
+                  return resolve({
+                    audioUrl: `data:audio/mpeg;base64,${buffer.toString('base64')}`,
+                    audioBuffer: buffer,
+                    byteLength: buffer.byteLength,
+                    provider: `Cloudflare Deepgram Aura-2 (${item.speaker})`
+                  });
+                }
+              } else if (resp.statusCode === 401) {
+                cloudflareAuthFailed = true;
+                logWarning(`[Cloudflare Engine] API token returned HTTP 401. Using Edge TTS.`);
+                return resolve(null);
+              }
+              resolve(null);
+            });
+          });
+          req.on('error', () => resolve(null));
+          req.on('timeout', () => { req.destroy(); resolve(null); });
+          req.write(postData);
+          req.end();
+        });
+
+        if (res) return res;
+      } catch {}
+    }
+    return null;
+  }
+
+  // 4. Last Resort Fallback: Feminine Voice (JennyNeural)
   async function generateLastResortFeminineTTS(text) {
     try {
       const { EdgeTTS } = require('node-edge-tts');
@@ -1072,18 +1306,18 @@ async function generateMediaAssets(storyboard) {
     return null;
   }
 
-  // Multi-tier Voiceover Orchestrator (Cloudflare -> Edge Bass -> DSP Bass -> Feminine Last)
+  // Multi-tier Voiceover Orchestrator: Edge Studio Voice (Primary) -> DSP Bass -> Cloudflare -> Feminine
   async function synthesizeVoiceWithHierarchy(text) {
-    logInfo('Voiceover Tier 1: Attempting Cloudflare Deepgram Aura-2 (Zeus / Orpheus)...');
-    let res = await generateCloudflareTTS(text);
+    logInfo('Voiceover Tier 1: Attempting Microsoft Edge Deep Stoic Voice (Christopher / Guy / Eric)...');
+    let res = await generateEdgeBassTTS(text);
     if (res) return res;
 
-    logInfo('Voiceover Tier 2: Attempting Microsoft Edge Deep Bass (Christopher / Guy)...');
-    res = await generateEdgeBassTTS(text);
-    if (res) return res;
-
-    logInfo('Voiceover Tier 3: Attempting FFmpeg DSP Masculine Bass Filter...');
+    logInfo('Voiceover Tier 2: Attempting FFmpeg DSP Masculine Bass Filter...');
     res = await generateDspBassTTS(text);
+    if (res) return res;
+
+    logInfo('Voiceover Tier 3: Attempting Cloudflare Deepgram Aura-2...');
+    res = await generateCloudflareTTS(text);
     if (res) return res;
 
     logInfo('Voiceover Tier 4: Attempting Feminine Neural Fallback...');
