@@ -33,4 +33,9 @@ jobs:
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
         run: |
           node scripts/asset_generator_queue.cjs
-          echo "Assets uploaded to Cloudinary. Job updated to READY_FOR_RENDER"
+          echo "Assets synthesized and uploaded to Cloudinary."
+
+      - name: Runner Cleanup
+        if: always()
+        run: |
+          rm -rf /tmp/voxam_* /tmp/voice_* /tmp/slide_* *.mp3 *.jpg *.png 2>/dev/null || true

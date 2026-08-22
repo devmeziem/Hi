@@ -35,4 +35,9 @@ jobs:
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
         run: |
           node scripts/video_motion_compiler.cjs
-          echo "Render complete! MP4 saved to Cloudinary. Job status: READY_FOR_PUBLISH"
+          echo "Render complete! MP4 saved to Cloudinary."
+
+      - name: Runner Cleanup & Purge Temp Video Files
+        if: always()
+        run: |
+          rm -rf rendered_videos/*.mp4 rendered_videos/*.jpg /tmp/voxam_* /tmp/*.mp4 /tmp/*.mp3 2>/dev/null || true

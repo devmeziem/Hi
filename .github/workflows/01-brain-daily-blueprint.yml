@@ -31,4 +31,9 @@ jobs:
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
         run: |
           node scripts/brain_daily_generator.cjs
-          echo "Daily Blueprint complete. 12 Jobs queued in Firestore with status QUEUED_FOR_ASSETS"
+          echo "Daily Blueprint generation complete. Clean runner state verified."
+
+      - name: Runner Cleanup
+        if: always()
+        run: |
+          rm -rf /tmp/voxam_* /tmp/*.tmp 2>/dev/null || true

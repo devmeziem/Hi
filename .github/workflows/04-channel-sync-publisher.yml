@@ -34,3 +34,8 @@ jobs:
         run: |
           node scripts/youtube_channel_dispatcher.cjs
           echo "Successfully published scheduled video and linked affiliate descriptions!"
+
+      - name: Runner Cleanup
+        if: always()
+        run: |
+          rm -rf /tmp/voxam_* /tmp/*.mp4 /tmp/*.json 2>/dev/null || true

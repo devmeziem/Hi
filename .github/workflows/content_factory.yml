@@ -38,3 +38,8 @@ jobs:
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
         run: node scripts/run_factory.cjs
+
+      - name: Runner Cleanup
+        if: always()
+        run: |
+          rm -rf /tmp/voxam_* /tmp/voice_* /tmp/slide_* *.mp4 *.mp3 *.jpg *.png 2>/dev/null || true

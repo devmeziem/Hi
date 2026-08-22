@@ -9,6 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const XAI_API_KEYS = Array.from(new Set([
   process.env.XAI_API_KEY,
   process.env.GROK_API_KEY,
@@ -19,6 +20,32 @@ const XAI_API_KEYS = Array.from(new Set([
 const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || '';
 const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || '';
 const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
+
+// Track generated topics for strict deduplication
+const generatedTopicHistory = new Set();
+
+function isDuplicateTopic(newTopic) {
+  if (!newTopic) return true;
+  const normalizedNew = newTopic.toLowerCase().replace(/[^a-z0-9]/g, ' ').trim();
+  const wordsNew = new Set(normalizedNew.split(/\s+/).filter(w => w.length > 3));
+
+  for (const prev of generatedTopicHistory) {
+    const normalizedPrev = prev.toLowerCase().replace(/[^a-z0-9]/g, ' ').trim();
+    if (normalizedNew === normalizedPrev) return true;
+    
+    // Check word overlap (> 65% overlap = duplicate)
+    const wordsPrev = normalizedPrev.split(/\s+/).filter(w => w.length > 3);
+    if (wordsNew.size > 0 && wordsPrev.length > 0) {
+      let matches = 0;
+      for (const w of wordsPrev) {
+        if (wordsNew.has(w)) matches++;
+      }
+      const overlap = matches / Math.max(wordsNew.size, wordsPrev.length);
+      if (overlap > 0.65) return true;
+    }
+  }
+  return false;
+}
 
 const NICHES = [
   {
@@ -151,6 +178,54 @@ const NICHES = [
     ]
   }
 ];
+
+/**
+ * Call Gemini 2.5 Flash API (Primary Google AI Model)
+ */
+async function callGemini(prompt, systemPrompt) {
+  if (!GEMINI_API_KEY) return null;
+  return new Promise((resolve) => {
+    const postData = JSON.stringify({
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.8,
+        maxOutputTokens: 1200,
+        responseMimeType: 'application/json'
+      }
+    });
+
+    const req = https.request(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(postData)
+      },
+      timeout: 12000
+    }, (res) => {
+      let data = '';
+      res.on('data', chunk => { data += chunk; });
+      res.on('end', () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          try {
+            const json = JSON.parse(data);
+            const content = json.candidates?.[0]?.content?.parts?.[0]?.text;
+            resolve(content || null);
+          } catch (e) {
+            resolve(null);
+          }
+        } else {
+          resolve(null);
+        }
+      });
+    });
+
+    req.on('error', () => resolve(null));
+    req.on('timeout', () => { req.destroy(); resolve(null); });
+    req.write(postData);
+    req.end();
+  });
+}
 
 /**
  * Call xAI Grok API (Primary - FIRST for Analysis & Creation) with Multi-Token Failover
@@ -374,17 +449,28 @@ Respond strictly in raw JSON format:
   ]
 }`;
 
-      // 1. Initial attempt with Grok (xAI) - FIRST
+      // 1. Primary attempt with Gemini 2.5 Flash - FIRST
       let aiResponse = null;
       try {
-        const userPrompt = `Create a professional YouTube Short script for topic: "${slot.topic}". Focus details: ${JSON.stringify(slot)}. Channel: "${channelName}".`;
-        aiResponse = await callGrok(userPrompt, systemPrompt);
-        if (aiResponse) usedAiModel = 'Grok 2 (xAI)';
+        const userPrompt = `Create a professional YouTube Short script for topic: "${slot.topic}". Focus details: ${JSON.stringify(slot)}. Channel: "${channelName}". Do not duplicate recent topics: ${Array.from(generatedTopicHistory).slice(-6).join(', ')}`;
+        aiResponse = await callGemini(userPrompt, systemPrompt);
+        if (aiResponse) usedAiModel = 'Gemini 2.5 Flash';
       } catch (err) {
-        console.warn("Grok generation notice, checking Cloudflare AI backup...");
+        console.warn("Gemini generation notice, checking Grok backup...");
       }
 
-      // 2. Backup attempt with Cloudflare Workers AI - BACKUP
+      // 2. Initial attempt with Grok (xAI) - BACKUP 1
+      if (!aiResponse) {
+        try {
+          const userPrompt = `Create a professional YouTube Short script for topic: "${slot.topic}". Focus details: ${JSON.stringify(slot)}. Channel: "${channelName}".`;
+          aiResponse = await callGrok(userPrompt, systemPrompt);
+          if (aiResponse) usedAiModel = 'Grok 2 (xAI)';
+        } catch (err) {
+          console.warn("Grok generation notice, checking Cloudflare AI backup...");
+        }
+      }
+
+      // 3. Backup attempt with Cloudflare Workers AI - BACKUP 2
       if (!aiResponse) {
         try {
           const userPrompt = `Create a professional YouTube Short script for topic: "${slot.topic}". Focus details: ${JSON.stringify(slot)}. Channel: "${channelName}".`;
@@ -395,7 +481,7 @@ Respond strictly in raw JSON format:
         }
       }
 
-      // 3. Secondary fallback attempt with Groq (Llama 3.3)
+      // 4. Secondary fallback attempt with Groq (Llama 3.3)
       if (!aiResponse) {
         try {
           const userPrompt = `Create a professional YouTube Short script for topic: "${slot.topic}". Focus details: ${JSON.stringify(slot)}. Channel: "${channelName}".`;
@@ -411,7 +497,9 @@ Respond strictly in raw JSON format:
         try {
           const clean = aiResponse.replace(/```json/gi, '').replace(/```/g, '').trim();
           const parsed = JSON.parse(clean);
-          title = parsed.title || title;
+          if (parsed.title && !isDuplicateTopic(parsed.title)) {
+            title = parsed.title;
+          }
           scriptText = parsed.script || parsed.scriptText || scriptText;
           visualPrompt = parsed.visualPrompt || visualPrompt;
         } catch (e) {
@@ -438,6 +526,9 @@ Respond strictly in raw JSON format:
           scriptText = `Hello, welcome to ${channelName}! Today we'll be discussing on ${slot.topic}. ${slot.hook}. Check out the full breakdown and let me know your thoughts in the comments!`;
         }
       }
+
+      // Record topic for deduplication
+      generatedTopicHistory.add(title);
 
       const jobData = {
         id: jobId,
