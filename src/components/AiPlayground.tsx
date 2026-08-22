@@ -140,9 +140,9 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
 
   // Diagnostics State
   const [diagnostics, setDiagnostics] = useState<DiagnosticResult[]>([
-    { service: 'xAI Grok (Active 2026 Engine)', status: 'idle', message: 'xai-BzO2... (Grok 4.3 / 4.6 / 4.1-Fast / Grok-2 Failover)' },
-    { service: 'Cloudinary Unsigned Preset', status: 'idle', message: "voxawell / phwka7ak" },
-    { service: 'Groq (OpenAI GPT-OSS 120B)', status: 'idle', message: 'gsk_k391... (GPT-OSS 120B / Llama 4 Scout / DeepSeek R1)' },
+    { service: 'xAI Grok (Active Engine)', status: 'idle', message: 'Grok 4.3 / 4.6 / Grok-2 Failover' },
+    { service: 'Cloudinary Unsigned Preset', status: 'idle', message: "Cloudinary CDN Storage" },
+    { service: 'Groq (OpenAI GPT-OSS / Llama)', status: 'idle', message: 'GPT-OSS 120B / Llama 3.3 70B' },
     { service: 'Cloudflare Deepgram Aura-2 (Wise Bass)', status: 'idle', message: 'Zeus / Orpheus / Edge Neural Audio Engine' },
     { service: 'Cloudflare Workers AI (FLUX.1-schnell)', status: 'idle', message: '@cf/black-forest-labs/flux-1-schnell 8K' },
     { service: 'Pollinations AI Engine', status: 'idle', message: 'Free Multimodal Image & Text' }
@@ -197,7 +197,8 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
 
       if (selectedChatModel === 'xai_grok') {
         modelLabel = 'xAI Grok (Grok 4.3 / 4.6)';
-        const apiKey = keys.xaiApiKey || 'xai-BzO21GFhUWg7Dqdfs5Yt6yNOjXl5Xx6cGDEfIIWtVIt4hEMqdkkSxL8EOvcuLtAF09YlCtEk7XY65zV4';
+        const apiKey = keys.xaiApiKey;
+        if (!apiKey) throw new Error('xAI API Key is required. Please add it in Integration Keys.');
         reply = await chatWithXaiGrok({
           apiKey,
           prompt: userText,
@@ -205,7 +206,8 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
         });
       } else if (selectedChatModel === 'groq_llama') {
         modelLabel = 'Groq (OpenAI GPT-OSS 120B / Llama 4 Scout)';
-        const apiKey = keys.groqApiKey || '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';
+        const apiKey = keys.groqApiKey;
+        if (!apiKey) throw new Error('Groq API Key is required. Please add it in Integration Keys.');
         reply = await chatWithGroq({
           apiKey,
           prompt: userText,
@@ -273,8 +275,9 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
           throw new Error(data.error || 'Cloudflare Flux failed');
         }
       } else if (selectedImageEngine === 'cloudflare_sdxl') {
-        const accountId = keys.cloudflareAccountId || '19db0749de1d68290aa88f04f2b3f14d';
-        const apiToken = keys.cloudflareApiToken || 'cfut_GwCYVRlxWQUto1DT1gPoDe55ZwNpcqGD7CrJyPHe58764d79';
+        const accountId = keys.cloudflareAccountId;
+        const apiToken = keys.cloudflareApiToken;
+        if (!accountId || !apiToken) throw new Error('Cloudflare Account ID & API Token required.');
         const base64Url = await generateCloudflareImage({
           accountId,
           apiToken,
@@ -305,8 +308,9 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
     setIsUploadingToCloudinary(true);
 
     try {
-      const cloudName = keys.cloudinaryCloudName || 'voxawell';
-      const uploadPreset = keys.cloudinaryUploadPreset || 'phwka7ak';
+      const cloudName = keys.cloudinaryCloudName;
+      const uploadPreset = keys.cloudinaryUploadPreset;
+      if (!cloudName || !uploadPreset) throw new Error('Cloudinary Cloud Name & Upload Preset required.');
 
       // Fetch blob from generated URL
       const response = await fetch(generatedImageUrl);
@@ -333,13 +337,14 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
     };
 
     // 1. Test xAI Grok
-    updateItem(0, { status: 'testing', message: 'Pinging xAI Grok API (Active 2026 Models)...' });
+    updateItem(0, { status: 'testing', message: 'Pinging xAI Grok API...' });
     try {
       const t0 = performance.now();
-      const apiKey = keys.xaiApiKey || 'xai-BzO21GFhUWg7Dqdfs5Yt6yNOjXl5Xx6cGDEfIIWtVIt4hEMqdkkSxL8EOvcuLtAF09YlCtEk7XY65zV4';
+      const apiKey = keys.xaiApiKey;
+      if (!apiKey) throw new Error('No xAI API Key configured');
       const testRes = await chatWithXaiGrok({
         apiKey,
-        prompt: 'Say "Grok 4 is online" in 3 words.',
+        prompt: 'Say "Grok is online" in 3 words.',
         model: 'grok-4.3'
       });
       const t1 = Math.round(performance.now() - t0);
@@ -350,13 +355,16 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
         details: testRes.slice(0, 80)
       });
     } catch (e: any) {
-      updateItem(0, { status: 'error', message: `Notice: ${e.message || 'Key expired or network timeout'}` });
+      updateItem(0, { status: 'error', message: `Notice: ${e.message || 'Key expired or unconfigured'}` });
     }
 
     // 2. Test Cloudinary Preset
-    updateItem(1, { status: 'testing', message: `Testing preset "${keys.cloudinaryUploadPreset || 'phwka7ak'}" on "${keys.cloudinaryCloudName || 'voxawell'}"...` });
+    updateItem(1, { status: 'testing', message: `Testing preset "${keys.cloudinaryUploadPreset || '...'}" on "${keys.cloudinaryCloudName || '...'}"...` });
     try {
       const t0 = performance.now();
+      if (!keys.cloudinaryCloudName || !keys.cloudinaryUploadPreset) {
+        throw new Error('Cloudinary Cloud Name & Preset not configured');
+      }
       // Generate a mini 1x1 test blob
       const canvas = document.createElement('canvas');
       canvas.width = 10;
@@ -370,8 +378,8 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
       if (testBlob) {
         const cloudUrl = await uploadToCloudinaryUnsigned(
           testBlob,
-          keys.cloudinaryCloudName || 'voxawell',
-          keys.cloudinaryUploadPreset || 'phwka7ak'
+          keys.cloudinaryCloudName,
+          keys.cloudinaryUploadPreset
         );
         const t1 = Math.round(performance.now() - t0);
         updateItem(1, {
@@ -388,10 +396,11 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
     }
 
     // 3. Test Groq Flagship Open-Weight Engine
-    updateItem(2, { status: 'testing', message: 'Testing Groq (OpenAI GPT-OSS 120B / Llama 4 Scout / DeepSeek R1)...' });
+    updateItem(2, { status: 'testing', message: 'Testing Groq...' });
     try {
       const t0 = performance.now();
-      const apiKey = keys.groqApiKey || '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';
+      const apiKey = keys.groqApiKey;
+      if (!apiKey) throw new Error('No Groq API Key configured');
       const groqRes = await chatWithGroq({
         apiKey,
         prompt: 'Say "Groq active" in 2 words.',

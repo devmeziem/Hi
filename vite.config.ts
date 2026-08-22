@@ -50,8 +50,8 @@ function apiProxyPlugin(): Plugin {
               const speaker = data.speaker || 'zeus';
               const voiceEngine = data.voiceEngine;
 
-              const accountId = data.accountId || process.env.CLOUDFLARE_ACCOUNT_ID || '19db0749de1d68290aa88f04f2b3f14d';
-              const apiToken = data.apiToken || process.env.CLOUDFLARE_API_TOKEN || 'cfut_GwCYVRlxWQUto1DT1gPoDe55ZwNpcqGD7CrJyPHe58764d79';
+              const accountId = data.accountId || process.env.CLOUDFLARE_ACCOUNT_ID || '';
+              const apiToken = data.apiToken || process.env.CLOUDFLARE_API_TOKEN || '';
 
               // Helper for node-edge-tts
               const tryEdgeTTS = async (edgeVoice: string) => {
@@ -156,8 +156,8 @@ function apiProxyPlugin(): Plugin {
             try {
               const data = JSON.parse(body || '{}');
               const prompt = data.prompt || 'Cinematic vertical workspace 8k';
-              const accountId = data.accountId || process.env.CLOUDFLARE_ACCOUNT_ID || '19db0749de1d68290aa88f04f2b3f14d';
-              const apiToken = data.apiToken || process.env.CLOUDFLARE_API_TOKEN || 'cfut_GwCYVRlxWQUto1DT1gPoDe55ZwNpcqGD7CrJyPHe58764d79';
+              const accountId = data.accountId || process.env.CLOUDFLARE_ACCOUNT_ID || '';
+              const apiToken = data.apiToken || process.env.CLOUDFLARE_API_TOKEN || '';
 
               let imageUrl: string | null = null;
               let provider = 'Cloudflare Workers AI (@cf/black-forest-labs/flux-1-schnell)';
@@ -244,7 +244,7 @@ Respond STRICTLY with raw JSON:
 
               // Try Groq first for ultra-fast generation
               try {
-                const apiKey = process.env.GROQ_API_KEY || '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';
+                const apiKey = process.env.GROQ_API_KEY || '';
                 const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                   method: 'POST',
                   headers: {
@@ -320,7 +320,7 @@ Respond STRICTLY with raw JSON:
           req.on('end', async () => {
             try {
               const data = JSON.parse(body || '{}');
-              const apiKey = data.apiKey || process.env.XAI_API_KEY || 'xai-BzO21GFhUWg7Dqdfs5Yt6yNOjXl5Xx6cGDEfIIWtVIt4hEMqdkkSxL8EOvcuLtAF09YlCtEk7XY65zV4';
+              const apiKey = data.apiKey || process.env.XAI_API_KEY || '';
 
               const response = await fetch('https://api.x.ai/v1/chat/completions', {
                 method: 'POST',
@@ -356,8 +356,8 @@ Respond STRICTLY with raw JSON:
           req.on('end', async () => {
             try {
               const data = JSON.parse(body || '{}');
-              const accountId = data.accountId || process.env.CLOUDFLARE_ACCOUNT_ID || '19db0749de1d68290aa88f04f2b3f14d';
-              const apiToken = data.apiToken || process.env.CLOUDFLARE_API_TOKEN || 'cfut_GwCYVRlxWQUto1DT1gPoDe55ZwNpcqGD7CrJyPHe58764d79';
+              const accountId = data.accountId || process.env.CLOUDFLARE_ACCOUNT_ID || '';
+              const apiToken = data.apiToken || process.env.CLOUDFLARE_API_TOKEN || '';
               const model = data.model || '@cf/bytedance/stable-diffusion-xl-lightning';
 
               const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`, {
@@ -416,7 +416,7 @@ Respond STRICTLY with raw JSON:
           req.on('end', async () => {
             try {
               const data = JSON.parse(body || '{}');
-              const apiKey = data.apiKey || process.env.GROQ_API_KEY || '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';
+              const apiKey = data.apiKey || process.env.GROQ_API_KEY || '';
 
               const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
