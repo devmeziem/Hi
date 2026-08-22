@@ -15,6 +15,14 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const { execSync, spawnSync } = require('child_process');
+const {
+  STOIC_ARCHETYPES,
+  fetchRecentHistoryFromFirestore,
+  saveContentHistoryToFirestore,
+  selectDailyDiverseSlots,
+  buildStoicPromptForSlot,
+  isTopicSimilarToHistory
+} = require('./stoic_diversity_engine.cjs');
 
 // ANSI Color helper for terminal logs
 const colors = {
@@ -61,20 +69,34 @@ const inputTopic = process.env.TEST_TOPIC ? process.env.TEST_TOPIC.trim() : '';
 const contentDepth = process.env.CONTENT_DEPTH || 'short_form'; // 'short_form' or 'deep_dive'
 
 // API Credentials
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim();
 const XAI_API_KEYS = Array.from(new Set([
   process.env.XAI_API_KEY,
   process.env.GROK_API_KEY,
   process.env.XAI_API_KEY_2,
   process.env.GROK_API_KEY_2
-].filter(Boolean)));
+].filter(Boolean))).map(k => k.trim());
 
-const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || '';
-const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || '';
-const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
-const YOUTUBE_REFRESH_TOKEN = process.env.YOUTUBE_REFRESH_TOKEN_CH2 || process.env.YOUTUBE_REFRESH_TOKEN || '';
-const YOUTUBE_CLIENT_ID = process.env.YOUTUBE_CLIENT_ID || '';
-const YOUTUBE_CLIENT_SECRET = process.env.YOUTUBE_CLIENT_SECRET || '';
+const CLOUDFLARE_ACCOUNT_ID = (process.env.CLOUDFLARE_ACCOUNT_ID || '').trim().replace(/^https?:\/\/[^\/]+\//, '').replace(/\/$/, '');
+const CLOUDFLARE_API_TOKEN = (process.env.CLOUDFLARE_API_TOKEN || '').trim();
+const GROQ_API_KEY = (process.env.GROQ_API_KEY || '').trim();
+const YOUTUBE_REFRESH_TOKEN = (process.env.YOUTUBE_REFRESH_TOKEN_CH2 || process.env.YOUTUBE_REFRESH_TOKEN || '').trim();
+const YOUTUBE_CLIENT_ID = (process.env.YOUTUBE_CLIENT_ID || '').trim();
+const YOUTUBE_CLIENT_SECRET = (process.env.YOUTUBE_CLIENT_SECRET || '').trim();
+const CLOUDINARY_CLOUD_NAME = (process.env.CLOUDINARY_CLOUD_NAME || '').trim();
+const CLOUDINARY_UPLOAD_PRESET = (process.env.CLOUDINARY_UPLOAD_PRESET || '').trim();
+
+console.log(`\n${colors.bright}${colors.cyan}══════════════════════════════════════════════════════════════════════${colors.reset}`);
+console.log(`${colors.bright}${colors.bgBlue} VOXAM RUNNER ENVIRONMENT & CREDENTIAL STATUS ${colors.reset}`);
+console.log(`${colors.cyan}══════════════════════════════════════════════════════════════════════${colors.reset}`);
+console.log(`  Cloudflare Account ID : ${CLOUDFLARE_ACCOUNT_ID ? colors.green + '✔ PRESENT (' + CLOUDFLARE_ACCOUNT_ID.slice(0, 6) + '...)' + colors.reset : colors.yellow + '✖ MISSING (Cloudflare AI disabled)' + colors.reset}`);
+console.log(`  Cloudflare API Token  : ${CLOUDFLARE_API_TOKEN ? colors.green + '✔ PRESENT (' + CLOUDFLARE_API_TOKEN.slice(0, 6) + '...)' + colors.reset : colors.yellow + '✖ MISSING (Cloudflare AI disabled)' + colors.reset}`);
+console.log(`  xAI Grok API Keys     : ${XAI_API_KEYS.length > 0 ? colors.green + `✔ PRESENT (${XAI_API_KEYS.length} key(s))` + colors.reset : colors.yellow + '✖ MISSING' + colors.reset}`);
+console.log(`  Google Gemini API Key : ${GEMINI_API_KEY ? colors.green + '✔ PRESENT' + colors.reset : colors.yellow + '✖ MISSING' + colors.reset}`);
+console.log(`  Groq LPU API Key      : ${GROQ_API_KEY ? colors.green + '✔ PRESENT' + colors.reset : colors.yellow + '✖ MISSING' + colors.reset}`);
+console.log(`  Cloudinary Storage    : ${CLOUDINARY_CLOUD_NAME && CLOUDINARY_UPLOAD_PRESET ? colors.green + '✔ CONFIGURED (' + CLOUDINARY_CLOUD_NAME + ')' + colors.reset : colors.yellow + '✖ MISSING' + colors.reset}`);
+console.log(`  YouTube OAuth Token   : ${YOUTUBE_REFRESH_TOKEN ? colors.green + '✔ PRESENT' + colors.reset : colors.yellow + '✖ MISSING (Dry run will apply)' + colors.reset}`);
+console.log(`${colors.cyan}══════════════════════════════════════════════════════════════════════\n${colors.reset}`);
 
 // Royalty Free Ambient Audio Presets
 const BACKGROUND_AUDIO_TRACKS = [
@@ -97,76 +119,105 @@ async function sleep(ms) {
 // ----------------------------------------------------
 // DYNAMIC TOPIC DISCOVERY ENGINE (Auto-generate fresh Stoic topics)
 // ----------------------------------------------------
-const STOIC_THEME_POOL = [
-  '5 Brutal Stoic Rules to Eliminate Modern Distraction Forever',
-  'Marcus Aurelius on Conquering Anxiety and Inner Chaos',
-  'How to Build Unshakable Mental Fortitude When Life Gets Hard',
-  'The Stoic Secret to Mastering Your Emotions in Conflict',
-  'Seneca on Time: Why You Are Wasting Your Most Precious Asset',
-  'Epictetus on True Freedom: The Dichotomy of Control Explained',
-  '5 Daily Habits of Roman Emperors for Extreme Self-Discipline',
-  'The Stoic Mindset: Transforming Obstacles into Unstoppable Fuel',
-  'Why Seeking Validation Destroys Your Inner Peace',
-  'Mastering Amor Fati: How to Love Whatever Fate Throws at You'
-];
+let resolvedArchetype = null;
+let recentContentHistory = [];
 
 async function resolveTopic(activeGrok, backupEngines) {
+  // Query Firestore history first
+  logInfo('[History & Cooldown] Querying Firestore for recent Stoic channel content...');
+  recentContentHistory = await fetchRecentHistoryFromFirestore('motivation_stoicism', 30);
+  logInfo(`[History & Cooldown] Retrieved ${recentContentHistory.length} historical records.`);
+
+  // Pick the least recently used distinct archetype
+  const diverseSlots = selectDailyDiverseSlots(recentContentHistory, 1);
+  resolvedArchetype = diverseSlots[0] || STOIC_ARCHETYPES[0];
+  logInfo(`[Diversity Engine] Selected Slot Archetype -> Theme: "${resolvedArchetype.theme}" | Angle: "${resolvedArchetype.angle}"`);
+
   if (inputTopic && inputTopic.length > 3) {
     logInfo(`Using User-Provided Topic: "${inputTopic}"`);
     return inputTopic;
   }
 
-  logInfo('No manual topic provided. Auto-generating fresh, high-retention Stoic theme via AI Brain...');
+  logInfo('No manual topic provided. Discovering a fresh, viral Stoic topic via AI Brain...');
+  const recentExclusions = recentContentHistory.slice(0, 10).map(h => `"${h.topic}"`).join(', ');
 
-  // 1. Try Gemini
+  // 1. Try Gemini (gemini-2.0-flash, gemini-1.5-flash, gemini-2.5-flash)
   if (GEMINI_API_KEY) {
-    try {
-      const prompt = 'Suggest 1 viral, high-retention, profound YouTube Shorts title for channel "The Stoic Architect" focusing on Stoicism, Marcus Aurelius, or mental discipline. Return ONLY the title in plain text without quotes.';
-      const res = await new Promise((resolve) => {
-        const postData = JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.9, maxOutputTokens: 50 }
-        });
-        const req = https.request(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(postData)
-          },
-          timeout: 8000
-        }, (resp) => {
-          let data = '';
-          resp.on('data', c => data += c);
-          resp.on('end', () => {
-            try {
-              const j = JSON.parse(data);
-              const text = j.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-              resolve(text || null);
-            } catch { resolve(null); }
+    const geminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash'];
+    for (const model of geminiModels) {
+      try {
+        logInfo(`[Topic Discovery] Requesting topic from Google Gemini (${model})...`);
+        const prompt = `Suggest 1 viral, high-retention YouTube Shorts title for "The Stoic Architect" (@thestoicarchitect-n4b).
+THEME: "${resolvedArchetype.theme}"
+ANGLE: "${resolvedArchetype.angle}"
+HISTORICAL ANCHOR: "${resolvedArchetype.historicalFigure}"
+DO NOT USE OR DUPLICATE RECENT TITLES: [${recentExclusions || 'None'}]
+Return ONLY the title in plain text without quotes or markdown.`;
+        const res = await new Promise((resolve) => {
+          const postData = JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.95, maxOutputTokens: 60 }
           });
+          const req = https.request(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 8000
+          }, (resp) => {
+            let data = '';
+            resp.on('data', c => data += c);
+            resp.on('end', () => {
+              if (resp.statusCode === 200) {
+                try {
+                  const j = JSON.parse(data);
+                  const text = j.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+                  resolve({ success: true, text });
+                } catch (e) {
+                  resolve({ success: false, error: 'JSON parse error: ' + e.message });
+                }
+              } else {
+                resolve({ success: false, error: `HTTP ${resp.statusCode}: ${data.slice(0, 120)}` });
+              }
+            });
+          });
+          req.on('error', (err) => resolve({ success: false, error: err.message }));
+          req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Request timeout (8s)' }); });
+          req.write(postData);
+          req.end();
         });
-        req.on('error', () => resolve(null));
-        req.write(postData);
-        req.end();
-      });
-      if (res && res.length > 5) {
-        logSuccess(`Gemini 2.5 Flash generated fresh topic: "${res}"`);
-        return res.replace(/^["']|["']$/g, '');
+
+        if (res.success && res.text && res.text.length > 5) {
+          const cleanTopic = res.text.replace(/^["']|["']$/g, '').trim();
+          if (!isTopicSimilarToHistory(cleanTopic, resolvedArchetype.theme, recentContentHistory)) {
+            logSuccess(`[Topic Discovery] Generated via Gemini (${model}): "${cleanTopic}"`);
+            return cleanTopic;
+          }
+        } else {
+          logWarning(`[Topic Discovery] Gemini (${model}) failed: ${res.error || 'Empty response'}`);
+        }
+      } catch (err) {
+        logWarning(`[Topic Discovery] Gemini (${model}) exception: ${err.message}`);
       }
-    } catch {}
+    }
+  } else {
+    logInfo('[Topic Discovery] Gemini API key not present, skipping Gemini...');
   }
 
-  // 2. Try Grok
+  // 2. Try Grok (xAI)
   if (activeGrok && activeGrok.key) {
     try {
+      logInfo(`[Topic Discovery] Requesting topic from xAI Grok (${activeGrok.model || 'grok-2-latest'})...`);
       const res = await new Promise((resolve) => {
         const postData = JSON.stringify({
           model: activeGrok.model || 'grok-2-latest',
           messages: [
-            { role: 'system', content: 'You are a viral YouTube Shorts strategist.' },
-            { role: 'user', content: 'Generate 1 high-retention, profound title for "The Stoic Architect" on daily discipline or Marcus Aurelius wisdom. Return ONLY the title.' }
+            { role: 'system', content: 'You are a viral YouTube Shorts strategist for Stoicism and high-performance psychology.' },
+            { role: 'user', content: `Generate 1 fresh, high-retention title for "The Stoic Architect" on Theme: "${resolvedArchetype.theme}" (Angle: "${resolvedArchetype.angle}"). Avoid recent titles: [${recentExclusions || 'None'}]. Return ONLY the single title in plain text.` }
           ],
-          max_tokens: 50
+          temperature: 0.9,
+          max_tokens: 60
         });
         const req = https.request('https://api.x.ai/v1/chat/completions', {
           method: 'POST',
@@ -180,68 +231,103 @@ async function resolveTopic(activeGrok, backupEngines) {
           let data = '';
           resp.on('data', c => data += c);
           resp.on('end', () => {
-            try {
-              const j = JSON.parse(data);
-              resolve(j.choices?.[0]?.message?.content?.trim() || null);
-            } catch { resolve(null); }
+            if (resp.statusCode === 200) {
+              try {
+                const j = JSON.parse(data);
+                resolve({ success: true, text: j.choices?.[0]?.message?.content?.trim() });
+              } catch (e) {
+                resolve({ success: false, error: 'JSON parse error: ' + e.message });
+              }
+            } else {
+              resolve({ success: false, error: `HTTP ${resp.statusCode}: ${data.slice(0, 120)}` });
+            }
           });
         });
-        req.on('error', () => resolve(null));
+        req.on('error', (err) => resolve({ success: false, error: err.message }));
+        req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Request timeout (8s)' }); });
         req.write(postData);
         req.end();
       });
-      if (res && res.length > 5) {
-        logSuccess(`Grok (${activeGrok.model}) generated fresh topic: "${res}"`);
-        return res.replace(/^["']|["']$/g, '');
+
+      if (res.success && res.text && res.text.length > 5) {
+        const cleanTopic = res.text.replace(/^["']|["']$/g, '').trim();
+        if (!isTopicSimilarToHistory(cleanTopic, resolvedArchetype.theme, recentContentHistory)) {
+          logSuccess(`[Topic Discovery] Generated via Grok (${activeGrok.model}): "${cleanTopic}"`);
+          return cleanTopic;
+        }
+      } else {
+        logWarning(`[Topic Discovery] Grok failed: ${res.error || 'Empty response'}`);
       }
-    } catch {}
+    } catch (err) {
+      logWarning(`[Topic Discovery] Grok exception: ${err.message}`);
+    }
   }
 
-  // 3. Try Groq
-  if (backupEngines && backupEngines.groqWorkingModel) {
-    try {
-      const res = await new Promise((resolve) => {
-        const postData = JSON.stringify({
-          model: backupEngines.groqWorkingModel,
-          messages: [
-            { role: 'system', content: 'You are a YouTube Shorts strategist.' },
-            { role: 'user', content: 'Generate 1 title for "The Stoic Architect" on Stoicism, Marcus Aurelius or mental fortitude. Return ONLY the title.' }
-          ],
-          max_tokens: 50
-        });
-        const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${GROQ_API_KEY}`,
-            'Content-Length': Buffer.byteLength(postData)
-          },
-          timeout: 8000
-        }, (resp) => {
-          let data = '';
-          resp.on('data', c => data += c);
-          resp.on('end', () => {
-            try {
-              const j = JSON.parse(data);
-              resolve(j.choices?.[0]?.message?.content?.trim() || null);
-            } catch { resolve(null); }
+  // 3. Try Groq (Llama 3.3 70B)
+  if (GROQ_API_KEY) {
+    const groqModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
+    for (const model of groqModels) {
+      try {
+        logInfo(`[Topic Discovery] Requesting topic from Groq (${model})...`);
+        const res = await new Promise((resolve) => {
+          const postData = JSON.stringify({
+            model: model,
+            messages: [
+              { role: 'system', content: 'You are a YouTube Shorts strategist.' },
+              { role: 'user', content: `Generate 1 unique title for "The Stoic Architect" on Theme: "${resolvedArchetype.theme}" (Angle: "${resolvedArchetype.angle}"). Avoid recent titles: [${recentExclusions || 'None'}]. Return ONLY the title.` }
+            ],
+            temperature: 0.9,
+            max_tokens: 60
           });
+          const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${GROQ_API_KEY}`,
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 8000
+          }, (resp) => {
+            let data = '';
+            resp.on('data', c => data += c);
+            resp.on('end', () => {
+              if (resp.statusCode === 200) {
+                try {
+                  const j = JSON.parse(data);
+                  resolve({ success: true, text: j.choices?.[0]?.message?.content?.trim() });
+                } catch (e) {
+                  resolve({ success: false, error: 'JSON parse error: ' + e.message });
+                }
+              } else {
+                resolve({ success: false, error: `HTTP ${resp.statusCode}: ${data.slice(0, 120)}` });
+              }
+            });
+          });
+          req.on('error', (err) => resolve({ success: false, error: err.message }));
+          req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Request timeout' }); });
+          req.write(postData);
+          req.end();
         });
-        req.on('error', () => resolve(null));
-        req.write(postData);
-        req.end();
-      });
-      if (res && res.length > 5) {
-        logSuccess(`Groq generated fresh topic: "${res}"`);
-        return res.replace(/^["']|["']$/g, '');
+
+        if (res.success && res.text && res.text.length > 5) {
+          const cleanTopic = res.text.replace(/^["']|["']$/g, '').trim();
+          if (!isTopicSimilarToHistory(cleanTopic, resolvedArchetype.theme, recentContentHistory)) {
+            logSuccess(`[Topic Discovery] Generated via Groq (${model}): "${cleanTopic}"`);
+            return cleanTopic;
+          }
+        } else {
+          logWarning(`[Topic Discovery] Groq (${model}) failed: ${res.error || 'Empty response'}`);
+        }
+      } catch (err) {
+        logWarning(`[Topic Discovery] Groq exception: ${err.message}`);
       }
-    } catch {}
+    }
   }
 
-  // 4. Dynamic pool rotation fallback
-  const randomPick = STOIC_THEME_POOL[Math.floor(Math.random() * STOIC_THEME_POOL.length)];
-  logInfo(`Selected rotating curated Stoic theme: "${randomPick}"`);
-  return randomPick;
+  // 4. Dynamic randomized archetype title fallback
+  const generatedFallback = `${resolvedArchetype.theme}: ${resolvedArchetype.angle}`;
+  logInfo(`[Topic Discovery] Selected curated archetype title: "${generatedFallback}"`);
+  return generatedFallback;
 }
 
 // ----------------------------------------------------
@@ -378,104 +464,91 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
   logInfo(`Channel: The Stoic Architect (@thestoicarchitect-n4b)`);
   logInfo(`Depth Mode: ${contentDepth === 'deep_dive' ? '3-5 min Deep Narrative' : '60s High-Retention Short'}`);
 
-  const systemPrompt = `You are the lead philosopher and master scriptwriter for YouTube channel "The Stoic Architect".
-TOPIC DOMAIN: Stoic Philosophy, Unshakable Self-Discipline, Ancient Wisdom (Marcus Aurelius, Seneca, Epictetus), Character & Honor, Mental Resilience, and Conquering Procrastination.
+  const activeArch = resolvedArchetype || STOIC_ARCHETYPES[0];
+  logInfo(`[Archetype] Theme: "${activeArch.theme}" | Angle: "${activeArch.angle}" | Historical Figure: "${activeArch.historicalFigure}"`);
 
-CRITICAL CONTENT RULES:
-1. COMPLETE, COHERENT SENTENCES: Every single slide MUST be a 100% complete, grammatically sound, philosophically profound sentence. Never truncate thoughts or leave clauses dangling.
-2. DELIVER ON THE TITLE: If the title promises "5 Ways" or "5 Rules", you MUST deliver all 5 rules sequentially across the slides. Do not stop after 1 or summarize vaguely. Every rule must give clear, actionable, and deep Stoic wisdom.
-3. NO PROMOTIONS OR AFFILIATE LINKS: Absolutely NO mentioning of downloads, paid planners, digital products, bio links, or sales pitches. This is pure philosophical motivation.
-4. OUTRO: End Slide 6 with a memorable philosophical takeaway and a clean invitation: "Follow @TheStoicArchitect for daily Stoic wisdom."
-5. DESCRIPTION & HASHTAGS: The description must be an engaging, well-written paragraph summarizing the core philosophy of the video with high-impact hashtags: #Shorts #Stoicism #MarcusAurelius #SelfDiscipline #Motivation #Discipline #Mindset #Wisdom #PersonalGrowth #DailyStoic #MentalFortress #Philosophy
-
-6-SLIDE NARRATIVE STRUCTURE:
-- Slide 1 (Hook): A powerful opening statement introducing the 5 rules to build unshakable discipline.
-- Slide 2 (Rule 1): First Stoic rule explained clearly in a complete, deep sentence.
-- Slide 3 (Rule 2): Second Stoic rule explained with historical depth (Marcus Aurelius or Epictetus) in a complete sentence.
-- Slide 4 (Rule 3): Third Stoic rule tackling modern distractions or dopamine traps in a complete sentence.
-- Slide 5 (Rules 4 & 5): Fourth and fifth Stoic rules covering daily execution and mental mastery in full, clear sentences.
-- Slide 6 (Conclusion & Outro): A timeless Stoic truth + "Follow @TheStoicArchitect for daily Stoic wisdom and mental strength."
-
-Output raw JSON strictly without markdown:
-{
-  "title": "Title here",
-  "description": "Engaging description summarizing the 5 rules, ending with hashtags #Shorts #Stoicism #MarcusAurelius #Discipline #Motivation #Mindset #Wisdom #SelfImprovement",
-  "tags": ["#Shorts", "#Stoicism", "#Motivation", "#Discipline", "#MarcusAurelius", "#Mindset", "#SelfMastery"],
-  "slides": [
-    { "text": "Slide 1 narration...", "visual": "Photorealistic 9:16 vertical 8k cinematic lighting prompt..." },
-    { "text": "Slide 2 narration...", "visual": "Photorealistic 9:16 vertical 8k cinematic lighting prompt..." },
-    { "text": "Slide 3 narration...", "visual": "Photorealistic 9:16 vertical 8k cinematic lighting prompt..." },
-    { "text": "Slide 4 narration...", "visual": "Photorealistic 9:16 vertical 8k cinematic lighting prompt..." },
-    { "text": "Slide 5 narration...", "visual": "Photorealistic 9:16 vertical 8k cinematic lighting prompt..." },
-    { "text": "Slide 6 narration...", "visual": "Photorealistic 9:16 vertical 8k cinematic lighting prompt..." }
-  ]
-}`;
+  const { systemPrompt, userPrompt } = buildStoicPromptForSlot(activeArch, recentContentHistory, 0);
 
   let scriptData = null;
 
-  // 1. Try Gemini First (Fast, reliable, and high quality)
+  // 1. Try Gemini (Cascade gemini-2.0-flash -> gemini-1.5-flash -> gemini-2.5-flash)
   if (GEMINI_API_KEY) {
-    try {
-      logInfo(`Invoking Gemini 2.5 Flash on Google Generative AI API...`);
-      const raw = await new Promise((resolve) => {
-        const postData = JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: `${systemPrompt}\n\nTask: Generate the complete 6-slide script and visual prompts for: "${topic}". Return strictly raw JSON.` }
-              ]
+    const candidateGeminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash'];
+    for (const model of candidateGeminiModels) {
+      try {
+        logInfo(`[Storyboard Engine] Requesting full 6-slide package from Google Gemini (${model})...`);
+        const raw = await new Promise((resolve) => {
+          const postData = JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  { text: `${systemPrompt}\n\nTask: ${userPrompt} Topic title: "${topic}". Return strictly raw JSON.` }
+                ]
+              }
+            ],
+            generationConfig: {
+              temperature: 0.75,
+              maxOutputTokens: 2000,
+              responseMimeType: "application/json"
             }
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 2000,
-            responseMimeType: "application/json"
-          }
-        });
-
-        const req = https.request(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(postData)
-          },
-          timeout: 15000
-        }, (res) => {
-          let data = '';
-          res.on('data', c => { data += c; });
-          res.on('end', () => {
-            try {
-              const j = JSON.parse(data);
-              const content = j.candidates?.[0]?.content?.parts?.[0]?.text;
-              resolve(content || null);
-            } catch (e) { resolve(null); }
           });
-        });
-        req.on('error', () => resolve(null));
-        req.write(postData);
-        req.end();
-      });
 
-      if (raw) {
-        const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();
-        scriptData = JSON.parse(cleaned);
-        logSuccess(`Gemini 2.5 Flash generated full 6-slide motivational storyboard!`);
+          const req = https.request(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 15000
+          }, (res) => {
+            let data = '';
+            res.on('data', c => { data += c; });
+            res.on('end', () => {
+              if (res.statusCode === 200) {
+                try {
+                  const j = JSON.parse(data);
+                  const content = j.candidates?.[0]?.content?.parts?.[0]?.text;
+                  resolve({ success: true, content });
+                } catch (e) {
+                  resolve({ success: false, error: 'JSON parse error: ' + e.message });
+                }
+              } else {
+                resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 150)}` });
+              }
+            });
+          });
+          req.on('error', (err) => resolve({ success: false, error: err.message }));
+          req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Request timeout (15s)' }); });
+          req.write(postData);
+          req.end();
+        });
+
+        if (raw.success && raw.content) {
+          const cleaned = raw.content.replace(/```json/gi, '').replace(/```/g, '').trim();
+          scriptData = JSON.parse(cleaned);
+          if (scriptData && Array.isArray(scriptData.slides) && scriptData.slides.length >= 4) {
+            logSuccess(`[Storyboard Engine] Google Gemini (${model}) generated full ${scriptData.slides.length}-slide storyboard!`);
+            break;
+          }
+        } else {
+          logWarning(`[Storyboard Engine] Gemini (${model}) failed: ${raw.error || 'Empty payload'}`);
+        }
+      } catch (e) {
+        logWarning(`[Storyboard Engine] Gemini (${model}) exception: ${e.message}`);
       }
-    } catch (e) {
-      logWarning(`Gemini generation exception: ${e.message}`);
     }
   }
 
   // 2. Try Grok Next
   if (!scriptData && activeGrok && activeGrok.key) {
     try {
-      logInfo(`Invoking Grok (${activeGrok.model}) on xAI API...`);
+      logInfo(`[Storyboard Engine] Requesting full 6-slide package from xAI Grok (${activeGrok.model})...`);
       const raw = await new Promise((resolve) => {
         const postData = JSON.stringify({
           model: activeGrok.model || 'grok-2-latest',
           messages: [
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: `Generate the complete 6-slide script and visual prompts for: "${topic}". Ensure all 5 rules are fully and clearly stated in complete sentences.` }
+            { role: 'user', content: `${userPrompt} Topic title: "${topic}". Ensure complete sentences on every slide. Output strictly raw JSON.` }
           ],
           temperature: 0.7,
           max_tokens: 1800
@@ -493,37 +566,48 @@ Output raw JSON strictly without markdown:
           let data = '';
           res.on('data', c => { data += c; });
           res.on('end', () => {
-            try {
-              const j = JSON.parse(data);
-              resolve(j.choices?.[0]?.message?.content);
-            } catch (e) { resolve(null); }
+            if (res.statusCode === 200) {
+              try {
+                const j = JSON.parse(data);
+                resolve({ success: true, content: j.choices?.[0]?.message?.content });
+              } catch (e) {
+                resolve({ success: false, error: 'JSON parse error: ' + e.message });
+              }
+            } else {
+              resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 150)}` });
+            }
           });
         });
-        req.on('error', () => resolve(null));
+        req.on('error', (err) => resolve({ success: false, error: err.message }));
+        req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Request timeout (15s)' }); });
         req.write(postData);
         req.end();
       });
 
-      if (raw) {
-        const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();
+      if (raw.success && raw.content) {
+        const cleaned = raw.content.replace(/```json/gi, '').replace(/```/g, '').trim();
         scriptData = JSON.parse(cleaned);
-        logSuccess(`Grok (${activeGrok.model}) generated full 6-slide motivational package!`);
+        if (scriptData && Array.isArray(scriptData.slides)) {
+          logSuccess(`[Storyboard Engine] Grok (${activeGrok.model}) generated full ${scriptData.slides.length}-slide package!`);
+        }
+      } else {
+        logWarning(`[Storyboard Engine] Grok failed: ${raw.error || 'Empty payload'}`);
       }
     } catch (e) {
-      logWarning(`Grok generation exception: ${e.message}`);
+      logWarning(`[Storyboard Engine] Grok exception: ${e.message}`);
     }
   }
 
   // 3. Try Groq (Llama 3.3 70B Versatile)
   if (!scriptData && backupEngines && backupEngines.groqWorkingModel) {
     try {
-      logInfo(`Invoking Groq Engine ('${backupEngines.groqWorkingModel}') for Storyboard Generation...`);
+      logInfo(`[Storyboard Engine] Requesting full 6-slide package from Groq (${backupEngines.groqWorkingModel})...`);
       const raw = await new Promise((resolve) => {
         const postData = JSON.stringify({
           model: backupEngines.groqWorkingModel,
           messages: [
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: `Generate the complete 6-slide script and visual prompts for: "${topic}". Ensure all 5 rules are fully and clearly stated in complete sentences.` }
+            { role: 'user', content: `${userPrompt} Topic title: "${topic}". Ensure complete sentences on every slide.` }
           ],
           temperature: 0.7,
           max_tokens: 1800,
@@ -542,58 +626,69 @@ Output raw JSON strictly without markdown:
           let data = '';
           res.on('data', c => { data += c; });
           res.on('end', () => {
-            try {
-              const j = JSON.parse(data);
-              resolve(j.choices?.[0]?.message?.content);
-            } catch { resolve(null); }
+            if (res.statusCode === 200) {
+              try {
+                const j = JSON.parse(data);
+                resolve({ success: true, content: j.choices?.[0]?.message?.content });
+              } catch (e) {
+                resolve({ success: false, error: 'JSON parse error: ' + e.message });
+              }
+            } else {
+              resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 150)}` });
+            }
           });
         });
-        req.on('error', () => resolve(null));
+        req.on('error', (err) => resolve({ success: false, error: err.message }));
+        req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Request timeout' }); });
         req.write(postData);
         req.end();
       });
 
-      if (raw) {
-        scriptData = JSON.parse(raw);
-        logSuccess(`Groq (${backupEngines.groqWorkingModel}) generated complete 6-slide motivational package!`);
+      if (raw.success && raw.content) {
+        scriptData = JSON.parse(raw.content);
+        if (scriptData && Array.isArray(scriptData.slides)) {
+          logSuccess(`[Storyboard Engine] Groq (${backupEngines.groqWorkingModel}) generated complete ${scriptData.slides.length}-slide package!`);
+        }
+      } else {
+        logWarning(`[Storyboard Engine] Groq failed: ${raw.error || 'Empty payload'}`);
       }
     } catch (e) {
-      logWarning(`Groq generation failed: ${e.message}`);
+      logWarning(`[Storyboard Engine] Groq exception: ${e.message}`);
     }
   }
 
-  // Dynamic Topic-Aware Storyboard Fallback (Generates unique slides based on topic)
+  // Dynamic Topic-Aware Storyboard Fallback with Distinct Visual Themes per Slide from Archetype
   if (!scriptData || !Array.isArray(scriptData.slides)) {
-    logInfo(`Synthesizing Dynamic Topic-Aware Motivational Storyboard for: "${topic}"...`);
+    logInfo(`[Storyboard Engine] Synthesizing Dynamic Storyboard matching archetype "${activeArch.theme}" for: "${topic}"...`);
     const cleanTopic = topic.trim();
     scriptData = {
-      title: `${cleanTopic} | Stoic Masterclass`,
-      description: `Exploring the deep philosophy of "${cleanTopic}". By applying timeless Stoic principles from Marcus Aurelius, Seneca, and Epictetus, you can overcome modern chaos, eliminate cheap distractions, and cultivate unshakeable mental fortitude.\n\nSubscribe to @TheStoicArchitect for daily Stoic wisdom and mental strength.\n\n#Shorts #Stoicism #MarcusAurelius #SelfDiscipline #Motivation #Discipline #Mindset #Wisdom #PersonalGrowth #DailyStoic #MentalFortress #Philosophy`,
+      title: `${cleanTopic} | The Stoic Architect`,
+      description: `Exploring the deep philosophy of "${cleanTopic}". By applying timeless Stoic principles on ${activeArch.theme} from ${activeArch.historicalFigure}, you can overcome modern chaos, eliminate cheap distractions, and cultivate unshakeable mental fortitude.\n\n${activeArch.outroPattern}\n\n#Shorts #Stoicism #MarcusAurelius #SelfDiscipline #Motivation #Discipline #Mindset #Wisdom #PersonalGrowth #DailyStoic #MentalFortress #Philosophy`,
       tags: ['#Shorts', '#Stoicism', '#Discipline', '#Motivation', '#MarcusAurelius', '#Mindset', '#SelfMastery', '#DailyStoic', '#Wisdom'],
       slides: [
         {
-          text: `Here is the essential Stoic wisdom on mastering ${cleanTopic}.`,
-          visual: `Dramatic classical marble statue of a Stoic philosopher in deep meditation with cinematic golden chiaroscuro lighting, 8k 9:16 vertical photorealistic studio shot`
+          text: activeArch.hookPatterns[0],
+          visual: `${activeArch.visualStyle}, establishing cinematic scene with soft atmospheric lighting, photorealistic 8k 9:16 vertical`
         },
         {
-          text: `First principle: conquer the initial moments of your day in stillness, refusing to let external noise dictate your inner peace.`,
-          visual: `A serene minimalist room with morning sunrise beams through a large window, a journal and fountain pen on an oak table, 8k 9:16 vertical cinematic lighting`
+          text: `Ancient Stoic anchor from ${activeArch.historicalFigure}: ${activeArch.philosophicalPrinciple}`,
+          visual: `Classical Roman colonnade with dramatic sunlight through tall marble columns, 8k vertical 9:16`
         },
         {
-          text: `Second principle: strictly separate what is under your absolute control from what is not, detaching completely from external chaos.`,
-          visual: `Classical Roman philosopher standing calm and motionless amidst a swirling mountain storm, atmospheric 8k 9:16 vertical photorealistic render`
+          text: `Historical truth: ${activeArch.storyExample}`,
+          visual: `Deep historical composition depicting ancient Roman philosopher in reflection, 8k vertical 9:16`
         },
         {
-          text: `Third principle: lean into voluntary discomfort and focused effort so that unexpected obstacles will never catch you unprepared.`,
-          visual: `An athlete running through a misty mountain forest at dawn with intense determination and breath visible in the air, 8k 9:16 vertical cinematic shot`
+          text: `First actionable protocol: master the dichotomy of control and stop offering your attention to external noise.`,
+          visual: `High-contrast scene of disciplined individual working in calm focus sanctuary, 8k vertical 9:16`
         },
         {
-          text: `Fourth principle: fulfill your daily commitments with quiet excellence, letting your deliberate actions speak far louder than words.`,
-          visual: `A craftsman meticulously carving a stone monument with focused precision and subtle sparks in the workshop, 8k 9:16 vertical cinematic chiaroscuro`
+          text: `Second actionable protocol: embrace voluntary discomfort to forge unbreakable mental armor against adversity.`,
+          visual: `Solitary stoic warrior in dark armor standing calm and immovable on a rugged coastal cliff against violent crashing storm waves and lightning, 8k 9:16 vertical`
         },
         {
-          text: `True sovereignty is having absolute mastery over your mind. Follow The Stoic Architect for daily wisdom.`,
-          visual: `Triumphant silhouette of a disciplined philosopher standing on a mountain summit overlooking a vast golden horizon, 8k 9:16 vertical luxury lighting`
+          text: activeArch.outroPattern,
+          visual: `Heroic silhouette of a philosopher standing atop a majestic mountain summit overlooking a vast golden sunset horizon with god rays, 8k 9:16 vertical masterpiece`
         }
       ]
     };
@@ -653,57 +748,108 @@ async function generateMediaAssets(storyboard) {
     });
   }
 
-  // Cloudflare Image API Helper (Using @cf/black-forest-labs/flux-1-schnell for superior 72+ img/day neuron efficiency)
+  // Cloudflare Image API Helper (Multi-model: FLUX.1-schnell -> SDXL Lightning -> SDXL Base)
   async function generateCloudflareImage(prompt) {
-    if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_API_TOKEN) return null;
-    return new Promise((resolve) => {
-      const postData = JSON.stringify({
-        prompt: `${prompt}, 8k vertical 9:16 cinematic luxury studio lighting, photorealistic, hyper-detailed, sharp focus, masterpiece`,
-        num_steps: 4
-      });
-      const model = '@cf/black-forest-labs/flux-1-schnell';
+    if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_API_TOKEN) {
+      logInfo('[Cloudflare Image] Skipped: CLOUDFLARE_ACCOUNT_ID or CLOUDFLARE_API_TOKEN is not configured in environment.');
+      return null;
+    }
 
-      const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${model}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(postData)
-        },
-        timeout: 15000
-      }, (res) => {
-        const chunks = [];
-        res.on('data', c => chunks.push(c));
-        res.on('end', () => {
-          if (res.statusCode === 200) {
-            const buffer = Buffer.concat(chunks);
-            resolve({
-              imageUrl: `data:image/jpeg;base64,${buffer.toString('base64')}`,
-              imageBuffer: buffer
-            });
-          } else {
-            if (res.statusCode === 429) {
-              logInfo(`Cloudflare AI daily neuron quota reached (HTTP 429). Switching instantly to Flux 9:16 vertical engine.`);
-            }
-            resolve(null);
-          }
+    const candidateModels = [
+      '@cf/black-forest-labs/flux-1-schnell',
+      '@cf/bytedance/stable-diffusion-xl-lightning',
+      '@cf/stabilityai/stable-diffusion-xl-base-1.0'
+    ];
+
+    for (const model of candidateModels) {
+      try {
+        const randomSeed = Math.floor(Math.random() * 99999999);
+        logInfo(`[Cloudflare Image] Attempting model ${model} (seed: ${randomSeed})...`);
+        const postData = JSON.stringify({
+          prompt: `${prompt}, 8k vertical 9:16 cinematic luxury studio lighting, photorealistic, hyper-detailed, sharp focus, masterpiece`,
+          num_steps: model.includes('lightning') ? 4 : model.includes('flux') ? 4 : 20,
+          seed: randomSeed
         });
-      });
-      req.on('error', () => resolve(null));
-      req.on('timeout', () => { req.destroy(); resolve(null); });
-      req.write(postData);
-      req.end();
-    });
+
+        const res = await new Promise((resolve) => {
+          const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${model}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 18000
+          }, (resp) => {
+            const chunks = [];
+            resp.on('data', c => chunks.push(c));
+            resp.on('end', () => {
+              const buffer = Buffer.concat(chunks);
+              if (resp.statusCode === 200) {
+                // Check if Cloudflare wrapped base64 in JSON { result: { image: "..." } }
+                try {
+                  const json = JSON.parse(buffer.toString('utf8'));
+                  if (json.result?.image) {
+                    const imgBuf = Buffer.from(json.result.image, 'base64');
+                    logSuccess(`[Cloudflare Image] Generated via ${model} (${imgBuf.length.toLocaleString()} bytes base64 decoded, seed: ${randomSeed})`);
+                    return resolve({
+                      imageUrl: `data:image/jpeg;base64,${json.result.image}`,
+                      imageBuffer: imgBuf,
+                      model
+                    });
+                  }
+                } catch {}
+
+                // Raw binary image response
+                if (buffer.length > 1000) {
+                  logSuccess(`[Cloudflare Image] Generated via ${model} (${buffer.length.toLocaleString()} bytes binary, seed: ${randomSeed})`);
+                  return resolve({
+                    imageUrl: `data:image/jpeg;base64,${buffer.toString('base64')}`,
+                    imageBuffer: buffer,
+                    model
+                  });
+                }
+              } else {
+                const errSnippet = buffer.toString('utf8').slice(0, 150).replace(/\n/g, ' ');
+                logWarning(`[Cloudflare Image] Model ${model} returned HTTP ${resp.statusCode}: ${errSnippet}`);
+              }
+              resolve(null);
+            });
+          });
+          req.on('error', (e) => {
+            logWarning(`[Cloudflare Image] Model ${model} request error: ${e.message}`);
+            resolve(null);
+          });
+          req.on('timeout', () => {
+            logWarning(`[Cloudflare Image] Model ${model} timed out after 18s`);
+            req.destroy();
+            resolve(null);
+          });
+          req.write(postData);
+          req.end();
+        });
+
+        if (res) return res;
+      } catch (err) {
+        logWarning(`[Cloudflare Image] Exception on ${model}: ${err.message}`);
+      }
+    }
+    return null;
   }
 
   // 1. Primary: Cloudflare TTS API Helper (Aura-2 / Aura-1 with masculine deep voices)
   async function generateCloudflareTTS(text) {
-    if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_API_TOKEN) return null;
+    if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_API_TOKEN) {
+      logInfo('[Cloudflare TTS] Skipped: CLOUDFLARE_ACCOUNT_ID or CLOUDFLARE_API_TOKEN is not configured in environment.');
+      return null;
+    }
+
     const candidateModels = [
-      { model: '@cf/deepgram/aura-2-en', speaker: 'aura-helios-en' },
-      { model: '@cf/deepgram/aura-2-en', speaker: 'aura-zeus-en' },
-      { model: '@cf/deepgram/aura-2-en', speaker: 'aura-orpheus-en' },
-      { model: '@cf/deepgram/aura-1', speaker: 'aura-helios-en' }
+      { model: '@cf/deepgram/aura-2-en', speaker: 'zeus' },
+      { model: '@cf/deepgram/aura-2-en', speaker: 'orpheus' },
+      { model: '@cf/deepgram/aura-2-en', speaker: 'helios' },
+      { model: '@cf/deepgram/aura-2-en', speaker: 'arcas' },
+      { model: '@cf/deepgram/aura-1', speaker: 'helios' }
     ];
     
     for (const item of candidateModels) {
@@ -717,34 +863,62 @@ async function generateMediaAssets(storyboard) {
               'Content-Type': 'application/json',
               'Content-Length': Buffer.byteLength(postData)
             },
-            timeout: 12000
+            timeout: 14000
           }, (resp) => {
             const chunks = [];
             resp.on('data', c => chunks.push(c));
             resp.on('end', () => {
+              const buffer = Buffer.concat(chunks);
               if (resp.statusCode === 200) {
-                const buffer = Buffer.concat(chunks);
+                // Check if Cloudflare wrapped base64 in JSON { result: { audio: "..." } }
+                try {
+                  const json = JSON.parse(buffer.toString('utf8'));
+                  if (json.result?.audio) {
+                    const audioBuf = Buffer.from(json.result.audio, 'base64');
+                    logSuccess(`[Cloudflare TTS] Generated via ${item.model} (${item.speaker}) (${audioBuf.length.toLocaleString()} bytes base64 decoded)`);
+                    return resolve({
+                      audioUrl: `data:audio/mpeg;base64,${json.result.audio}`,
+                      audioBuffer: audioBuf,
+                      byteLength: audioBuf.byteLength,
+                      provider: `Cloudflare Deepgram Aura-2 (${item.speaker})`
+                    });
+                  }
+                } catch {}
+
+                // Raw audio binary
                 if (buffer.length > 500) {
-                  resolve({
+                  logSuccess(`[Cloudflare TTS] Generated via ${item.model} (${item.speaker}) (${buffer.length.toLocaleString()} bytes binary)`);
+                  return resolve({
                     audioUrl: `data:audio/mpeg;base64,${buffer.toString('base64')}`,
                     audioBuffer: buffer,
                     byteLength: buffer.byteLength,
                     provider: `Cloudflare Deepgram Aura-2 (${item.speaker})`
                   });
-                  return;
                 }
+              } else {
+                const errSnippet = buffer.toString('utf8').slice(0, 150).replace(/\n/g, ' ');
+                logWarning(`[Cloudflare TTS] ${item.model} (${item.speaker}) returned HTTP ${resp.statusCode}: ${errSnippet}`);
               }
               resolve(null);
             });
           });
-          req.on('error', () => resolve(null));
-          req.on('timeout', () => { req.destroy(); resolve(null); });
+          req.on('error', (e) => {
+            logWarning(`[Cloudflare TTS] ${item.model} request error: ${e.message}`);
+            resolve(null);
+          });
+          req.on('timeout', () => {
+            logWarning(`[Cloudflare TTS] ${item.model} timed out after 14s`);
+            req.destroy();
+            resolve(null);
+          });
           req.write(postData);
           req.end();
         });
 
         if (res) return res;
-      } catch {}
+      } catch (err) {
+        logWarning(`[Cloudflare TTS] Exception on ${item.model}: ${err.message}`);
+      }
     }
     return null;
   }
@@ -777,6 +951,7 @@ async function generateMediaAssets(storyboard) {
             const audioBuf = fs.readFileSync(tempAudio);
             try { fs.unlinkSync(tempAudio); } catch {}
             if (audioBuf.length > 1000) {
+              logSuccess(`[Edge TTS] Synthesized authoritative bass voice (${voice}) (${audioBuf.length.toLocaleString()} bytes)`);
               return {
                 audioUrl: `data:audio/mpeg;base64,${audioBuf.toString('base64')}`,
                 audioBuffer: audioBuf,
@@ -821,6 +996,7 @@ async function generateMediaAssets(storyboard) {
         if (fs.existsSync(tempDeep)) {
           const deepBuf = fs.readFileSync(tempDeep);
           try { fs.unlinkSync(tempRaw); fs.unlinkSync(tempDeep); } catch {}
+          logSuccess(`[DSP Voice] Synthesized DSP Bass-Filtered Voice (${deepBuf.length.toLocaleString()} bytes)`);
           return {
             audioUrl: `data:audio/mpeg;base64,${deepBuf.toString('base64')}`,
             audioBuffer: deepBuf,
@@ -852,6 +1028,7 @@ async function generateMediaAssets(storyboard) {
         const audioBuf = fs.readFileSync(tempAudio);
         try { fs.unlinkSync(tempAudio); } catch {}
         if (audioBuf.length > 1000) {
+          logSuccess(`[Feminine Voice] Synthesized Jenny Neural Fallback (${audioBuf.length.toLocaleString()} bytes)`);
           return {
             audioUrl: `data:audio/mpeg;base64,${audioBuf.toString('base64')}`,
             audioBuffer: audioBuf,
@@ -866,19 +1043,19 @@ async function generateMediaAssets(storyboard) {
 
   // Multi-tier Voiceover Orchestrator (Cloudflare -> Edge Bass -> DSP Bass -> Feminine Last)
   async function synthesizeVoiceWithHierarchy(text) {
-    // Tier 1: Cloudflare Aura-2
+    logInfo('Voiceover Tier 1: Attempting Cloudflare Deepgram Aura-2 (Zeus / Orpheus)...');
     let res = await generateCloudflareTTS(text);
     if (res) return res;
 
-    // Tier 2: Edge TTS Deep Bass (Christopher / Guy / Eric)
+    logInfo('Voiceover Tier 2: Attempting Microsoft Edge Deep Bass (Christopher / Guy)...');
     res = await generateEdgeBassTTS(text);
     if (res) return res;
 
-    // Tier 3: DSP Masculine Bass Filter
+    logInfo('Voiceover Tier 3: Attempting FFmpeg DSP Masculine Bass Filter...');
     res = await generateDspBassTTS(text);
     if (res) return res;
 
-    // Tier 4: Feminine Last Resort
+    logInfo('Voiceover Tier 4: Attempting Feminine Neural Fallback...');
     res = await generateLastResortFeminineTTS(text);
     if (res) return res;
 
@@ -890,7 +1067,8 @@ async function generateMediaAssets(storyboard) {
   for (let i = 0; i < storyboard.slides.length; i++) {
     const slide = storyboard.slides[i];
     const slideNum = i + 1;
-    logInfo(`[Slide ${slideNum}/${storyboard.slides.length}] Synthesizing Visual Frame & Spoken Voiceover...`);
+    logInfo(`\n[Slide ${slideNum}/${storyboard.slides.length}] Synthesizing Visual Frame & Spoken Voiceover...`);
+    logInfo(`  -> Visual Prompt: "${slide.visual}"`);
 
     // 1. Generate Image (Cloudflare AI -> Pollinations Flux)
     let imageUrl = null;
@@ -901,16 +1079,24 @@ async function generateMediaAssets(storyboard) {
       if (cfImg) {
         imageUrl = cfImg.imageUrl;
         imageBuffer = cfImg.imageBuffer;
-        imageProvider = 'Cloudflare Workers AI (@cf/bytedance/stable-diffusion-xl-lightning)';
+        imageProvider = `Cloudflare Workers AI (${cfImg.model || '@cf/black-forest-labs/flux-1-schnell'})`;
       }
-    } catch {}
-
-    if (!imageUrl) {
-      imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(slide.visual + ' 8k vertical 9:16 cinematic luxury lighting')}?width=1080&height=1920&nologo=true&model=flux`;
-      imageBuffer = await downloadBuffer(imageUrl, 15000);
+    } catch (err) {
+      logWarning(`[Slide ${slideNum}] Cloudflare image error: ${err.message}`);
     }
 
-    logSuccess(`[Slide ${slideNum}/${storyboard.slides.length}] Image Generated (${imageProvider})`);
+    if (!imageUrl) {
+      const slideSeed = Math.floor(Math.random() * 99999999);
+      logInfo(`[Slide ${slideNum}] Primary AI unavailable. Generating via Pollinations Flux 9:16 Engine (seed: ${slideSeed})...`);
+      imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(slide.visual + ' 8k vertical 9:16 cinematic luxury lighting')}?width=1080&height=1920&nologo=true&model=flux&seed=${slideSeed}&n=${Date.now() + i}`;
+      imageBuffer = await downloadBuffer(imageUrl, 15000);
+      if (imageBuffer) {
+        imageProvider = `Pollinations Flux (seed: ${slideSeed})`;
+        logSuccess(`[Slide ${slideNum}] Image synthesized via Pollinations Flux (${imageBuffer.length.toLocaleString()} bytes, seed: ${slideSeed})`);
+      } else {
+        logWarning(`[Slide ${slideNum}] Pollinations binary download failed, URL retained.`);
+      }
+    }
 
     // 2. Generate Spoken Voiceover with Multi-Tier Hierarchy (Cloudflare Aura-2 -> Edge Bass -> DSP Bass -> Feminine Last)
     let ttsResult = null;
@@ -925,7 +1111,7 @@ async function generateMediaAssets(storyboard) {
     }
 
     const audioUrl = ttsResult?.audioUrl || 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=meditation-piano-ambient-110855.mp3';
-    logSuccess(`[Slide ${slideNum}/${storyboard.slides.length}] Voice Synthesized (${ttsProvider})`);
+    logSuccess(`[Slide ${slideNum}/${storyboard.slides.length}] Slide ${slideNum} Ready: ${imageProvider} + ${ttsProvider}`);
 
     enrichedSlides.push({
       slideIndex: i,
@@ -935,8 +1121,10 @@ async function generateMediaAssets(storyboard) {
       imagePrompt: slide.visual,
       imageUrl: imageUrl,
       imageBuffer: imageBuffer,
+      imageProvider: imageProvider,
       audioUrl: audioUrl,
       audioBuffer: ttsResult?.audioBuffer || null,
+      audioProvider: ttsProvider,
       durationSeconds: 6.5,
       effect: i % 2 === 0 ? 'ken-burns-zoom-in' : 'ken-burns-pan-down'
     });
@@ -1409,6 +1597,21 @@ async function syncToManifestAndDatabase(storyboard, enrichedSlides, publishResu
       req.end();
     });
     logSuccess(`Synced campaign to Firestore database ('saved_campaigns' collection)!`);
+
+    // 3. Save to Firestore Content History for Cooldown and Diversity tracking
+    const activeArch = resolvedArchetype || STOIC_ARCHETYPES[0];
+    await saveContentHistoryToFirestore({
+      channelId: 'motivation_stoicism',
+      topic: storyboard.title,
+      theme: activeArch.theme,
+      angle: activeArch.angle,
+      hookPattern: storyboard.slides?.[0]?.text || activeArch.hookPatterns[0],
+      visualStyle: activeArch.visualStyle,
+      narrativeStructure: activeArch.narrativeStructure,
+      storyExample: activeArch.storyExample,
+      ending: storyboard.slides?.[storyboard.slides.length - 1]?.text || activeArch.outroPattern
+    });
+    logSuccess(`[History System] Recorded generation metadata to Firestore 'content_history' for cooldown enforcement.`);
   } catch (e) {
     logInfo(`Firestore sync notice: ${e.message}`);
   }
