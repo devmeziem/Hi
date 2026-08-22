@@ -19,39 +19,53 @@ const CLOUDINARY_UPLOAD_PRESET = process.env.CLOUDINARY_UPLOAD_PRESET || '';
 async function generateCloudflareAiImage(prompt) {
   if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_API_TOKEN) return null;
 
-  return new Promise((resolve) => {
-    const postData = JSON.stringify({
-      prompt: `${prompt}, 8k vertical 9:16 cinematic luxury studio lighting, photorealistic, sharp focus`,
-      num_steps: 4
-    });
-    const model = '@cf/bytedance/stable-diffusion-xl-lightning';
+  const candidateModels = [
+    '@cf/black-forest-labs/flux-1-schnell',
+    '@cf/bytedance/stable-diffusion-xl-lightning',
+    '@cf/stabilityai/stable-diffusion-xl-base-1.0'
+  ];
 
-    const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${model}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postData)
-      },
-      timeout: 15000
-    }, (res) => {
-      const chunks = [];
-      res.on('data', chunk => chunks.push(chunk));
-      res.on('end', () => {
-        if (res.statusCode === 200) {
-          const buffer = Buffer.concat(chunks);
-          resolve(`data:image/jpeg;base64,${buffer.toString('base64')}`);
-        } else {
-          resolve(null);
-        }
+  for (const model of candidateModels) {
+    try {
+      const res = await new Promise((resolve) => {
+        const postData = JSON.stringify({
+          prompt: `${prompt}, 8k vertical 9:16 cinematic luxury studio lighting, photorealistic, sharp focus`,
+          num_steps: model.includes('lightning') ? 4 : model.includes('flux') ? 8 : 20
+        });
+
+        const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${model}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(postData)
+          },
+          timeout: 18000
+        }, (res) => {
+          const chunks = [];
+          res.on('data', chunk => chunks.push(chunk));
+          res.on('end', () => {
+            if (res.statusCode === 200) {
+              const buffer = Buffer.concat(chunks);
+              if (buffer.length > 500) {
+                resolve(`data:image/jpeg;base64,${buffer.toString('base64')}`);
+                return;
+              }
+            }
+            resolve(null);
+          });
+        });
+
+        req.on('error', () => resolve(null));
+        req.on('timeout', () => { req.destroy(); resolve(null); });
+        req.write(postData);
+        req.end();
       });
-    });
 
-    req.on('error', () => resolve(null));
-    req.on('timeout', () => { req.destroy(); resolve(null); });
-    req.write(postData);
-    req.end();
-  });
+      if (res) return res;
+    } catch {}
+  }
+  return null;
 }
 
 /**
@@ -60,39 +74,129 @@ async function generateCloudflareAiImage(prompt) {
 async function generateCloudflareAiTTS(text) {
   if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_API_TOKEN) return null;
 
-  return new Promise((resolve) => {
-    const postData = JSON.stringify({ text });
-    const model = '@cf/deepgram/aura-2-en';
+  const candidateModels = [
+    { model: '@cf/deepgram/aura-2-en', speaker: 'aura-helios-en' },
+    { model: '@cf/deepgram/aura-2-en', speaker: 'aura-zeus-en' },
+    { model: '@cf/deepgram/aura-2-en', speaker: 'aura-orpheus-en' }
+  ];
 
-    const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${model}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postData)
-      },
-      timeout: 15000
-    }, (res) => {
-      const chunks = [];
-      res.on('data', chunk => chunks.push(chunk));
-      res.on('end', () => {
-        if (res.statusCode === 200) {
-          const buffer = Buffer.concat(chunks);
-          resolve({
-            audioUrl: `data:audio/mpeg;base64,${buffer.toString('base64')}`,
-            byteLength: buffer.byteLength
+  for (const item of candidateModels) {
+    try {
+      const res = await new Promise((resolve) => {
+        const postData = JSON.stringify({ text, speaker: item.speaker });
+        const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${item.model}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(postData)
+          },
+          timeout: 12000
+        }, (res) => {
+          const chunks = [];
+          res.on('data', chunk => chunks.push(chunk));
+          res.on('end', () => {
+            if (res.statusCode === 200) {
+              const buffer = Buffer.concat(chunks);
+              if (buffer.length > 500) {
+                resolve({
+                  audioUrl: `data:audio/mpeg;base64,${buffer.toString('base64')}`,
+                  byteLength: buffer.byteLength,
+                  engine: `Cloudflare Workers AI (@cf/deepgram/aura-2-en - ${item.speaker})`
+                });
+                return;
+              }
+            }
+            resolve(null);
           });
-        } else {
-          resolve(null);
-        }
-      });
-    });
+        });
 
-    req.on('error', () => resolve(null));
-    req.on('timeout', () => { req.destroy(); resolve(null); });
-    req.write(postData);
-    req.end();
-  });
+        req.on('error', () => resolve(null));
+        req.on('timeout', () => { req.destroy(); resolve(null); });
+        req.write(postData);
+        req.end();
+      });
+
+      if (res) return res;
+    } catch {}
+  }
+  return null;
+}
+
+/**
+ * Microsoft Edge TTS Deep Resonant Bass Fallback (Second Fallback)
+ */
+async function generateEdgeBassTTS(text) {
+  try {
+    const { EdgeTTS } = require('node-edge-tts');
+    const voices = ['en-US-ChristopherNeural', 'en-US-GuyNeural', 'en-US-EricNeural'];
+    for (const voice of voices) {
+      try {
+        const tempAudio = path.join(process.cwd(), `queue_bass_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.mp3`);
+        const tts = new EdgeTTS({
+          voice: voice,
+          lang: 'en-US',
+          outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
+          pitch: '-8Hz',
+          rate: '-4%'
+        });
+        await tts.ttsPromise(text, tempAudio);
+        if (fs.existsSync(tempAudio)) {
+          const buffer = fs.readFileSync(tempAudio);
+          try { fs.unlinkSync(tempAudio); } catch {}
+          if (buffer.length > 1000) {
+            return {
+              audioUrl: `data:audio/mpeg;base64,${buffer.toString('base64')}`,
+              byteLength: buffer.byteLength,
+              engine: `Microsoft Edge TTS Deep Bass (${voice})`
+            };
+          }
+        }
+      } catch {}
+    }
+  } catch {}
+  return null;
+}
+
+/**
+ * Feminine Voice Fallback (Last Resort)
+ */
+async function generateLastResortFeminineTTS(text) {
+  try {
+    const { EdgeTTS } = require('node-edge-tts');
+    const tempAudio = path.join(process.cwd(), `queue_fem_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.mp3`);
+    const tts = new EdgeTTS({
+      voice: 'en-US-JennyNeural',
+      lang: 'en-US',
+      outputFormat: 'audio-24khz-96kbitrate-mono-mp3'
+    });
+    await tts.ttsPromise(text, tempAudio);
+    if (fs.existsSync(tempAudio)) {
+      const buffer = fs.readFileSync(tempAudio);
+      try { fs.unlinkSync(tempAudio); } catch {}
+      if (buffer.length > 1000) {
+        return {
+          audioUrl: `data:audio/mpeg;base64,${buffer.toString('base64')}`,
+          byteLength: buffer.byteLength,
+          engine: 'Microsoft Edge Jenny (Last Resort Fallback)'
+        };
+      }
+    }
+  } catch {}
+  return null;
+}
+
+async function synthesizeVoiceWithHierarchy(text) {
+  const cf = await generateCloudflareAiTTS(text);
+  if (cf) return cf;
+
+  const edge = await generateEdgeBassTTS(text);
+  if (edge) return edge;
+
+  const fem = await generateLastResortFeminineTTS(text);
+  if (fem) return fem;
+
+  return null;
 }
 
 async function processAssetQueue() {
@@ -156,23 +260,23 @@ async function processAssetQueue() {
     job.generatedImageUrl = generatedImage;
     job.imageProvider = imageProvider;
 
-    // 3. Voice Synthesis: Cloudflare Workers AI Deepgram Aura-2 (FIRST for TTS)
-    console.log(`  -> Synthesizing Voice Audio with Cloudflare Deepgram Aura-2 Voice Model...`);
+    // 3. Voice Synthesis: Cloudflare Aura-2 -> Edge Bass -> Feminine Last
+    console.log(`  -> Synthesizing Voice Audio with Multi-Tier Voiceover Engine...`);
     try {
-      const ttsData = await generateCloudflareAiTTS(job.scriptText || job.title);
+      const ttsData = await synthesizeVoiceWithHierarchy(job.scriptText || job.title);
       if (ttsData && ttsData.audioUrl) {
         job.audioUrl = ttsData.audioUrl;
         job.audioByteLength = ttsData.byteLength;
         job.audioStatus = 'SYNTHESIZED';
-        job.audioEngine = 'Cloudflare Workers AI (@cf/deepgram/aura-2-en)';
-        console.log(`  -> [SUCCESS] Cloudflare Deepgram Aura-2 audio synthesized (${ttsData.byteLength} bytes).`);
+        job.audioEngine = ttsData.engine || 'Multi-Tier Voice Engine';
+        console.log(`  -> [SUCCESS] Voiceover synthesized (${ttsData.byteLength} bytes, ${job.audioEngine}).`);
       } else {
         job.audioStatus = 'QUEUED_FOR_RENDER';
-        job.audioEngine = 'Cloudflare-Deepgram-Aura-2-Fallback';
+        job.audioEngine = 'Edge-Bass-Fallback';
       }
     } catch (e) {
-      job.audioStatus = 'SYNTHESIZED';
-      job.audioEngine = 'Cloudflare-Deepgram-Aura-2';
+      job.audioStatus = 'QUEUED_FOR_RENDER';
+      job.audioEngine = 'Edge-Bass-Fallback';
     }
     
     job.stage = 'READY_FOR_RENDER';

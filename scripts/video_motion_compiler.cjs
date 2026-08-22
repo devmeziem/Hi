@@ -114,15 +114,32 @@ async function compileVideoMotion() {
             const slImgUrl = sl.imageUrl || posterUrl;
             await downloadFile(slImgUrl, slImg);
 
-            // Fetch TTS audio if URL or synthesize tone
+            // Fetch TTS audio if URL or synthesize deep masculine voice
             if (sl.audioUrl && (sl.audioUrl.startsWith('http') || sl.audioUrl.startsWith('data:audio'))) {
               await downloadFile(sl.audioUrl, slAud);
             } else {
-              const textClean = encodeURIComponent((sl.text || sl.scriptText || 'Inspiring daily wisdom').slice(0, 150));
+              const textRaw = sl.text || sl.scriptText || 'Inspiring daily wisdom';
+              let synthDone = false;
               try {
-                await downloadFile(`https://translate.google.com/translate_tts?ie=UTF-8&q=${textClean}&tl=en-US&client=tw-ob`, slAud);
-              } catch {
-                execSync(`ffmpeg -y -f lavfi -i "sine=frequency=0:duration=5" -c:a libmp3lame "${slAud}"`, { stdio: 'pipe' });
+                const { EdgeTTS } = require('node-edge-tts');
+                const tts = new EdgeTTS({
+                  voice: 'en-US-ChristopherNeural',
+                  lang: 'en-US',
+                  outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
+                  pitch: '-8Hz',
+                  rate: '-4%'
+                });
+                await tts.ttsPromise(textRaw, slAud);
+                if (fs.existsSync(slAud) && fs.statSync(slAud).size > 1000) synthDone = true;
+              } catch {}
+
+              if (!synthDone) {
+                const textClean = encodeURIComponent(textRaw.slice(0, 150));
+                try {
+                  await downloadFile(`https://translate.google.com/translate_tts?ie=UTF-8&q=${textClean}&tl=en-US&client=tw-ob`, slAud);
+                } catch {
+                  execSync(`ffmpeg -y -f lavfi -i "sine=frequency=0:duration=5" -c:a libmp3lame "${slAud}"`, { stdio: 'pipe' });
+                }
               }
             }
 

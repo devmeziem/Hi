@@ -158,18 +158,22 @@ export async function chatWithXaiGrok(params: {
 }
 
 /**
- * Chat with Cloudflare Workers AI (BACKUP for Analysis & Creation)
+ * Chat with Cloudflare Workers AI (Llama 3.3 / Llama 3.1)
  */
 export async function chatWithCloudflareLLM(params: {
+  accountId?: string;
+  apiToken?: string;
   prompt: string;
   model?: string;
 }): Promise<string> {
-  const { prompt, model = '@cf/meta/llama-3.3-70b-instruct' } = params;
+  const { accountId, apiToken, prompt, model = '@cf/meta/llama-3.3-70b-instruct' } = params;
 
   const res = await fetch('/api/cloudflare-ai', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
+      accountId,
+      apiToken,
       model,
       inputs: {
         messages: [{ role: 'user', content: prompt }]
@@ -186,7 +190,8 @@ export async function chatWithCloudflareLLM(params: {
   }
 
   if (!res.ok) {
-    throw new Error(data.error || `Cloudflare AI LLM failed with status ${res.status}`);
+    const errMsg = data.error || (data.errors && data.errors[0]?.message) || `Cloudflare AI LLM failed with status ${res.status}`;
+    throw new Error(errMsg);
   }
 
   return data.result?.response || data.response || 'No response from Cloudflare AI.';
@@ -326,12 +331,18 @@ export async function generateCloudflareImage(params: {
 /**
  * 3. TTS VOICE GENERATION (Cloudflare Workers AI Deepgram Aura-2 FIRST with Deep Bass Wise Voice)
  */
-export async function generateAutomatedTTS(text: string, speaker = 'zeus', voiceEngine?: string): Promise<{ audioUrl: string | null; provider: string; byteLength?: number }> {
+export async function generateAutomatedTTS(
+  text: string,
+  speaker = 'zeus',
+  voiceEngine?: string,
+  accountId?: string,
+  apiToken?: string
+): Promise<{ audioUrl: string | null; provider: string; byteLength?: number }> {
   try {
     const res = await fetch('/api/generate-tts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, speaker, voiceEngine })
+      body: JSON.stringify({ text, speaker, voiceEngine, accountId, apiToken })
     });
 
     if (res.ok) {

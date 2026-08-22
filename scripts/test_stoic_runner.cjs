@@ -696,53 +696,108 @@ async function generateMediaAssets(storyboard) {
     });
   }
 
-  // Cloudflare TTS API Helper (Aura-1 / Aura-2)
+  // 1. Primary: Cloudflare TTS API Helper (Aura-2 / Aura-1 with masculine deep voices)
   async function generateCloudflareTTS(text) {
     if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_API_TOKEN) return null;
-    const candidateModels = ['@cf/deepgram/aura-2-en', '@cf/deepgram/aura-1'];
+    const candidateModels = [
+      { model: '@cf/deepgram/aura-2-en', speaker: 'aura-helios-en' },
+      { model: '@cf/deepgram/aura-2-en', speaker: 'aura-zeus-en' },
+      { model: '@cf/deepgram/aura-2-en', speaker: 'aura-orpheus-en' },
+      { model: '@cf/deepgram/aura-1', speaker: 'aura-helios-en' }
+    ];
     
-    for (const model of candidateModels) {
-      const res = await new Promise((resolve) => {
-        const postData = JSON.stringify({ text, speaker: 'aura-helios-en' });
-        const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${model}`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(postData)
-          },
-          timeout: 12000
-        }, (resp) => {
-          const chunks = [];
-          resp.on('data', c => chunks.push(c));
-          resp.on('end', () => {
-            if (resp.statusCode === 200) {
-              const buffer = Buffer.concat(chunks);
-              resolve({
-                audioUrl: `data:audio/mpeg;base64,${buffer.toString('base64')}`,
-                audioBuffer: buffer,
-                byteLength: buffer.byteLength
-              });
-            } else {
+    for (const item of candidateModels) {
+      try {
+        const res = await new Promise((resolve) => {
+          const postData = JSON.stringify({ text, speaker: item.speaker });
+          const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${item.model}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 12000
+          }, (resp) => {
+            const chunks = [];
+            resp.on('data', c => chunks.push(c));
+            resp.on('end', () => {
+              if (resp.statusCode === 200) {
+                const buffer = Buffer.concat(chunks);
+                if (buffer.length > 500) {
+                  resolve({
+                    audioUrl: `data:audio/mpeg;base64,${buffer.toString('base64')}`,
+                    audioBuffer: buffer,
+                    byteLength: buffer.byteLength,
+                    provider: `Cloudflare Deepgram Aura-2 (${item.speaker})`
+                  });
+                  return;
+                }
+              }
               resolve(null);
-            }
+            });
           });
+          req.on('error', () => resolve(null));
+          req.on('timeout', () => { req.destroy(); resolve(null); });
+          req.write(postData);
+          req.end();
         });
-        req.on('error', () => resolve(null));
-        req.on('timeout', () => { req.destroy(); resolve(null); });
-        req.write(postData);
-        req.end();
-      });
 
-      if (res) return res;
+        if (res) return res;
+      } catch {}
     }
     return null;
   }
 
-  // Deep Masculine Stoic Voice Synthesis (0.90 pacing, lowered pitch, resonant bass warmth)
-  async function generateFallbackTTS(text) {
+  // 2. Second Fallback: Microsoft Edge TTS Deep Resonant Bass (en-US-ChristopherNeural / en-US-GuyNeural / en-US-EricNeural)
+  async function generateEdgeBassTTS(text) {
     try {
-      // Natural breath pauses after periods, colons, and numbered rules
+      const { EdgeTTS } = require('node-edge-tts');
+      const masculineVoices = [
+        'en-US-ChristopherNeural', // Deep resonant authoritative masculine
+        'en-US-GuyNeural',         // Warm masculine baritone
+        'en-US-EricNeural',        // Rich baritone
+        'en-GB-RyanNeural'         // Deep British baritone
+      ];
+
+      for (const voice of masculineVoices) {
+        try {
+          const tempAudio = path.join(process.cwd(), `edge_bass_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.mp3`);
+          const tts = new EdgeTTS({
+            voice: voice,
+            lang: 'en-US',
+            outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
+            pitch: '-8Hz',
+            rate: '-4%'
+          });
+
+          await tts.ttsPromise(text, tempAudio);
+
+          if (fs.existsSync(tempAudio)) {
+            const audioBuf = fs.readFileSync(tempAudio);
+            try { fs.unlinkSync(tempAudio); } catch {}
+            if (audioBuf.length > 1000) {
+              return {
+                audioUrl: `data:audio/mpeg;base64,${audioBuf.toString('base64')}`,
+                audioBuffer: audioBuf,
+                byteLength: audioBuf.byteLength,
+                provider: `Microsoft Edge TTS Deep Bass (${voice})`
+              };
+            }
+          }
+        } catch (e) {
+          // try next masculine voice
+        }
+      }
+    } catch (err) {
+      logWarning(`Edge TTS error: ${err.message}`);
+    }
+    return null;
+  }
+
+  // 3. Third Fallback: DSP Bass-Boosted Translation TTS
+  async function generateDspBassTTS(text) {
+    try {
       const formatted = text
         .replace(/Rule\s*(\d+):/gi, 'Rule $1. ... ')
         .replace(/(\d+)\.\s+/g, '$1. ... ')
@@ -754,7 +809,6 @@ async function generateMediaAssets(storyboard) {
       const rawBuf = await downloadBuffer(url, 12000);
       
       if (rawBuf && rawBuf.byteLength > 800) {
-        // Apply Deep Masculine Audio Mastering via FFmpeg DSP filters
         const tempRaw = path.join(process.cwd(), `raw_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.mp3`);
         const tempDeep = path.join(process.cwd(), `deep_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.mp3`);
         
@@ -770,13 +824,64 @@ async function generateMediaAssets(storyboard) {
           return {
             audioUrl: `data:audio/mpeg;base64,${deepBuf.toString('base64')}`,
             audioBuffer: deepBuf,
-            byteLength: deepBuf.byteLength
+            byteLength: deepBuf.byteLength,
+            provider: `DSP Masculine Bass Filtered Voice`
           };
         }
       }
     } catch (err) {
-      logWarning(`Deep voice DSP fallback notice: ${err.message}`);
+      logWarning(`DSP voice fallback notice: ${err.message}`);
     }
+    return null;
+  }
+
+  // 4. Last Resort Fallback: Feminine Voice (JennyNeural) only if all masculine bass options fail
+  async function generateLastResortFeminineTTS(text) {
+    try {
+      const { EdgeTTS } = require('node-edge-tts');
+      const tempAudio = path.join(process.cwd(), `edge_fem_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.mp3`);
+      const tts = new EdgeTTS({
+        voice: 'en-US-JennyNeural',
+        lang: 'en-US',
+        outputFormat: 'audio-24khz-96kbitrate-mono-mp3'
+      });
+
+      await tts.ttsPromise(text, tempAudio);
+
+      if (fs.existsSync(tempAudio)) {
+        const audioBuf = fs.readFileSync(tempAudio);
+        try { fs.unlinkSync(tempAudio); } catch {}
+        if (audioBuf.length > 1000) {
+          return {
+            audioUrl: `data:audio/mpeg;base64,${audioBuf.toString('base64')}`,
+            audioBuffer: audioBuf,
+            byteLength: audioBuf.byteLength,
+            provider: `Microsoft Edge Jenny (Last Resort Fallback)`
+          };
+        }
+      }
+    } catch {}
+    return null;
+  }
+
+  // Multi-tier Voiceover Orchestrator (Cloudflare -> Edge Bass -> DSP Bass -> Feminine Last)
+  async function synthesizeVoiceWithHierarchy(text) {
+    // Tier 1: Cloudflare Aura-2
+    let res = await generateCloudflareTTS(text);
+    if (res) return res;
+
+    // Tier 2: Edge TTS Deep Bass (Christopher / Guy / Eric)
+    res = await generateEdgeBassTTS(text);
+    if (res) return res;
+
+    // Tier 3: DSP Masculine Bass Filter
+    res = await generateDspBassTTS(text);
+    if (res) return res;
+
+    // Tier 4: Feminine Last Resort
+    res = await generateLastResortFeminineTTS(text);
+    if (res) return res;
+
     return null;
   }
 
@@ -807,23 +912,16 @@ async function generateMediaAssets(storyboard) {
 
     logSuccess(`[Slide ${slideNum}/${storyboard.slides.length}] Image Generated (${imageProvider})`);
 
-    // 2. Generate Spoken Voiceover
+    // 2. Generate Spoken Voiceover with Multi-Tier Hierarchy (Cloudflare Aura-2 -> Edge Bass -> DSP Bass -> Feminine Last)
     let ttsResult = null;
     let ttsProvider = 'Neural Speech Engine';
     try {
-      ttsResult = await generateCloudflareTTS(slide.text);
+      ttsResult = await synthesizeVoiceWithHierarchy(slide.text);
       if (ttsResult) {
-        ttsProvider = `Cloudflare Deepgram Aura-2 (${ttsResult.byteLength.toLocaleString()} bytes MP3)`;
+        ttsProvider = ttsResult.provider || `Synthesized Voice (${ttsResult.byteLength.toLocaleString()} bytes MP3)`;
       }
-    } catch {}
-
-    if (!ttsResult) {
-      try {
-        ttsResult = await generateFallbackTTS(slide.text);
-        if (ttsResult) {
-          ttsProvider = `Neural Spoken Voiceover (${ttsResult.byteLength.toLocaleString()} bytes MP3)`;
-        }
-      } catch {}
+    } catch (err) {
+      logWarning(`Voice synthesis error on slide ${slideNum}: ${err.message}`);
     }
 
     const audioUrl = ttsResult?.audioUrl || 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=meditation-piano-ambient-110855.mp3';
@@ -1215,10 +1313,11 @@ async function handleYouTubePublish(storyboard, renderResult) {
 // ----------------------------------------------------
 // STEP 8: SYNC TO MANIFEST & FIRESTORE DATABASE
 // ----------------------------------------------------
-async function syncToManifestAndDatabase(storyboard, enrichedSlides, publishResult) {
+async function syncToManifestAndDatabase(storyboard, enrichedSlides, publishResult, currentTopic) {
   logStep(8, 'Synchronizing Blueprint Manifest & In-App Player Database');
 
   const campaignId = `camp-stoic-${Date.now()}`;
+  const topicName = currentTopic || storyboard.title || 'Stoic Masterclass';
   const newCampaign = {
     id: campaignId,
     jobId: `job-stoic-${Date.now()}`,
@@ -1234,7 +1333,7 @@ async function syncToManifestAndDatabase(storyboard, enrichedSlides, publishResu
     comments: 0,
     payload: {
       channelId: 'motivation_stoicism',
-      topic: selectedTopic,
+      topic: topicName,
       youtube: {
         title: storyboard.title,
         description: storyboard.description,
@@ -1336,7 +1435,7 @@ async function runDiagnostics() {
   await testAudioTracks();
   const renderResult = await renderFfmpegVideo(storyboard, enrichedSlides);
   const publishResult = await handleYouTubePublish(storyboard, renderResult);
-  const savedCampaign = await syncToManifestAndDatabase(storyboard, enrichedSlides, publishResult);
+  const savedCampaign = await syncToManifestAndDatabase(storyboard, enrichedSlides, publishResult, currentTopic);
 
   // Save diagnostic output artifact
   const testOutputDir = path.join(process.cwd(), 'test_artifacts');

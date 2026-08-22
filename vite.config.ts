@@ -356,50 +356,113 @@ Respond STRICTLY with raw JSON:
           req.on('end', async () => {
             try {
               const data = JSON.parse(body || '{}');
-              const accountId = data.accountId || process.env.CLOUDFLARE_ACCOUNT_ID || '';
-              const apiToken = data.apiToken || process.env.CLOUDFLARE_API_TOKEN || '';
-              const model = data.model || '@cf/bytedance/stable-diffusion-xl-lightning';
+              const accountId = (data.accountId || process.env.CLOUDFLARE_ACCOUNT_ID || '').trim().replace(/^https?:\/\/[^\/]+\//, '').replace(/\/$/, '');
+              const apiToken = (data.apiToken || process.env.CLOUDFLARE_API_TOKEN || '').trim();
+              let requestedModel = (data.model || '@cf/black-forest-labs/flux-1-schnell').trim().replace(/^\//, '');
 
-              const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`, {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${apiToken}`,
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data.inputs || { prompt: data.prompt || 'Cyberpunk neon city 8k' })
-              });
-
-              const contentType = response.headers.get('content-type') || '';
-              if (contentType.includes('image/')) {
-                const arrayBuffer = await response.arrayBuffer();
-                const base64 = Buffer.from(arrayBuffer).toString('base64');
+              if (!accountId || !apiToken) {
                 res.setHeader('Content-Type', 'application/json');
-                res.statusCode = 200;
+                res.statusCode = 400;
                 res.end(JSON.stringify({
-                  image: `data:${contentType};base64,${base64}`,
-                  contentType
+                  error: 'Cloudflare Account ID and API Token are missing. Please configure them in Integration Keys or .env'
                 }));
                 return;
               }
 
-              if (contentType.includes('audio/') || contentType.includes('octet-stream')) {
-                const arrayBuffer = await response.arrayBuffer();
-                const base64 = Buffer.from(arrayBuffer).toString('base64');
-                const mime = contentType.includes('audio/') ? contentType : 'audio/mpeg';
-                res.setHeader('Content-Type', 'application/json');
-                res.statusCode = 200;
-                res.end(JSON.stringify({
-                  audio: `data:${mime};base64,${base64}`,
-                  contentType: mime,
-                  byteLength: arrayBuffer.byteLength
-                }));
-                return;
+              const candidateModels = [
+                requestedModel,
+                // LLM fallbacks if route not found
+                ...(requestedModel.includes('llama') ? ['@cf/meta/llama-3.1-8b-instruct', '@cf/meta/llama-3-8b-instruct'] : []),
+                // Image fallbacks if route not found
+                ...(requestedModel.includes('flux') ? ['@cf/bytedance/stable-diffusion-xl-lightning', '@cf/stabilityai/stable-diffusion-xl-base-1.0'] : [])
+              ];
+
+              let lastResponse: Response | null = null;
+              let lastText = '';
+
+              for (const model of candidateModels) {
+                try {
+                  const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`, {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${apiToken}`,
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data.inputs || { prompt: data.prompt || 'Cyberpunk neon city 8k' })
+                  });
+
+                  lastResponse = response;
+                  const contentType = response.headers.get('content-type') || '';
+
+                  if (contentType.includes('image/')) {
+                    const arrayBuffer = await response.arrayBuffer();
+                    const base64 = Buffer.from(arrayBuffer).toString('base64');
+                    res.setHeader('Content-Type', 'application/json');
+                    res.statusCode = 200;
+                    res.end(JSON.stringify({
+                      image: `data:${contentType};base64,${base64}`,
+                      result: { image: base64 },
+                      contentType,
+                      model
+                    }));
+                    return;
+                  }
+
+                  if (contentType.includes('audio/') || contentType.includes('octet-stream')) {
+                    const arrayBuffer = await response.arrayBuffer();
+                    const base64 = Buffer.from(arrayBuffer).toString('base64');
+                    const mime = contentType.includes('audio/') ? contentType : 'audio/mpeg';
+                    res.setHeader('Content-Type', 'application/json');
+                    res.statusCode = 200;
+                    res.end(JSON.stringify({
+                      audio: `data:${mime};base64,${base64}`,
+                      result: { audio: base64 },
+                      contentType: mime,
+                      byteLength: arrayBuffer.byteLength,
+                      model
+                    }));
+                    return;
+                  }
+
+                  lastText = await response.text();
+                  try {
+                    const json = JSON.parse(lastText);
+                    // If successful JSON response from Cloudflare
+                    if (json.success !== false && (json.result || json.response)) {
+                      // Normalize image if in json.result.image
+                      if (json.result?.image) {
+                        json.image = `data:image/jpeg;base64,${json.result.image}`;
+                      }
+                      if (json.result?.audio) {
+                        json.audio = `data:audio/mpeg;base64,${json.result.audio}`;
+                      }
+                      res.setHeader('Content-Type', 'application/json');
+                      res.statusCode = response.status || 200;
+                      res.end(JSON.stringify({ ...json, model }));
+                      return;
+                    }
+
+                    // If route error, try next candidate model
+                    if (json.errors?.some((e: any) => e.message?.includes('No route') || e.code === 7003)) {
+                      continue;
+                    }
+                  } catch {
+                    // Raw text response
+                    if (response.ok) {
+                      res.setHeader('Content-Type', 'application/json');
+                      res.statusCode = 200;
+                      res.end(JSON.stringify({ response: lastText, model }));
+                      return;
+                    }
+                  }
+                } catch {
+                  continue;
+                }
               }
 
-              const text = await response.text();
               res.setHeader('Content-Type', 'application/json');
-              res.statusCode = response.status;
-              res.end(text);
+              res.statusCode = lastResponse?.status || 500;
+              res.end(lastText || JSON.stringify({ error: 'Cloudflare AI Model failed to respond' }));
             } catch (err: any) {
               res.setHeader('Content-Type', 'application/json');
               res.statusCode = 500;

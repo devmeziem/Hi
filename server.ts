@@ -164,44 +164,60 @@ function extractFirstJson(str: string): any {
 }
 
 /**
- * Server-Side Cloudflare Workers AI LLM Caller (Llama 3.1 8B Instruct - Fast & Active)
+ * Server-Side Cloudflare Workers AI LLM Caller (Llama 3.3 / Llama 3.1 Instruct)
  */
-async function serverCallCloudflareLLM(prompt: string, systemPrompt?: string): Promise<string | null> {
-  return new Promise((resolve) => {
-    const fullPrompt = `${systemPrompt || 'You are an expert YouTube Shorts creator.'}\n\nTask: ${prompt}\n\nStrict Raw JSON Response:`;
-    const postData = JSON.stringify({
-      prompt: fullPrompt,
-      max_tokens: 1200
-    });
-    const model = '@cf/meta/llama-3.1-8b-instruct';
+async function serverCallCloudflareLLM(prompt: string, systemPrompt?: string, customAccountId?: string, customApiToken?: string): Promise<string | null> {
+  const accountId = customAccountId || CLOUDFLARE_ACCOUNT_ID;
+  const apiToken = customApiToken || CLOUDFLARE_API_TOKEN;
+  if (!accountId || !apiToken) return null;
 
-    const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${model}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postData)
-      },
-      timeout: 18000
-    }, (res) => {
-      let data = '';
-      res.on('data', chunk => { data += chunk; });
-      res.on('end', () => {
-        try {
-          const json = JSON.parse(data);
-          const result = json.result?.response || json.response;
-          resolve(result || null);
-        } catch {
-          resolve(null);
-        }
+  const candidateModels = [
+    '@cf/meta/llama-3.3-70b-instruct',
+    '@cf/meta/llama-3.1-8b-instruct',
+    '@cf/meta/llama-3-8b-instruct'
+  ];
+
+  for (const model of candidateModels) {
+    try {
+      const fullPrompt = `${systemPrompt || 'You are an expert YouTube Shorts creator.'}\n\nTask: ${prompt}\n\nStrict Raw JSON Response:`;
+      const postData = JSON.stringify({
+        prompt: fullPrompt,
+        max_tokens: 1200
       });
-    });
 
-    req.on('error', () => resolve(null));
-    req.on('timeout', () => { req.destroy(); resolve(null); });
-    req.write(postData);
-    req.end();
-  });
+      const res = await new Promise<string | null>((resolve) => {
+        const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiToken}`,
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(postData)
+          },
+          timeout: 18000
+        }, (res) => {
+          let data = '';
+          res.on('data', chunk => { data += chunk; });
+          res.on('end', () => {
+            try {
+              const json = JSON.parse(data);
+              const result = json.result?.response || json.response;
+              resolve(result || null);
+            } catch {
+              resolve(null);
+            }
+          });
+        });
+
+        req.on('error', () => resolve(null));
+        req.on('timeout', () => { req.destroy(); resolve(null); });
+        req.write(postData);
+        req.end();
+      });
+
+      if (res) return res;
+    } catch {}
+  }
+  return null;
 }
 
 /**
@@ -277,51 +293,66 @@ async function serverCallGroq(prompt: string, systemPrompt?: string): Promise<st
 }
 
 /**
- * Server-Side Cloudflare Workers AI Image Generation (@cf/black-forest-labs/flux-1-schnell FIRST)
+ * Server-Side Cloudflare Workers AI Image Generation (@cf/black-forest-labs/flux-1-schnell FIRST, then SDXL-Lightning)
  */
-async function serverGenerateCloudflareImage(prompt: string): Promise<string | null> {
-  return new Promise((resolve) => {
-    const postData = JSON.stringify({
-      prompt: `${prompt}, 8k vertical 9:16 cinematic luxury studio lighting, photorealistic, sharp focus`
-    });
-    // Cloudflare FLUX.1-schnell is active, sharp, high-contrast
-    const model = '@cf/black-forest-labs/flux-1-schnell';
+async function serverGenerateCloudflareImage(prompt: string, customAccountId?: string, customApiToken?: string): Promise<string | null> {
+  const accountId = customAccountId || CLOUDFLARE_ACCOUNT_ID;
+  const apiToken = customApiToken || CLOUDFLARE_API_TOKEN;
+  if (!accountId || !apiToken) return null;
 
-    const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${model}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postData)
-      },
-      timeout: 25000
-    }, (res) => {
-      const chunks: Buffer[] = [];
-      res.on('data', chunk => chunks.push(chunk));
-      res.on('end', () => {
-        if (res.statusCode === 200) {
-          const buffer = Buffer.concat(chunks);
-          try {
-            const json = JSON.parse(buffer.toString('utf8'));
-            if (json.result?.image) {
-              resolve(`data:image/jpeg;base64,${json.result.image}`);
-              return;
-            }
-          } catch {
-            // Raw binary image fallback
-            resolve(`data:image/jpeg;base64,${buffer.toString('base64')}`);
-            return;
-          }
-        }
-        resolve(null);
+  const candidateModels = [
+    '@cf/black-forest-labs/flux-1-schnell',
+    '@cf/bytedance/stable-diffusion-xl-lightning',
+    '@cf/stabilityai/stable-diffusion-xl-base-1.0'
+  ];
+
+  for (const model of candidateModels) {
+    try {
+      const postData = JSON.stringify({
+        prompt: `${prompt}, 8k vertical 9:16 cinematic luxury studio lighting, photorealistic, sharp focus`
       });
-    });
 
-    req.on('error', () => resolve(null));
-    req.on('timeout', () => { req.destroy(); resolve(null); });
-    req.write(postData);
-    req.end();
-  });
+      const res = await new Promise<string | null>((resolve) => {
+        const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiToken}`,
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(postData)
+          },
+          timeout: 25000
+        }, (res) => {
+          const chunks: Buffer[] = [];
+          res.on('data', chunk => chunks.push(chunk));
+          res.on('end', () => {
+            if (res.statusCode === 200) {
+              const buffer = Buffer.concat(chunks);
+              try {
+                const json = JSON.parse(buffer.toString('utf8'));
+                if (json.result?.image) {
+                  resolve(`data:image/jpeg;base64,${json.result.image}`);
+                  return;
+                }
+              } catch {
+                // Raw binary image fallback
+                resolve(`data:image/jpeg;base64,${buffer.toString('base64')}`);
+                return;
+              }
+            }
+            resolve(null);
+          });
+        });
+
+        req.on('error', () => resolve(null));
+        req.on('timeout', () => { req.destroy(); resolve(null); });
+        req.write(postData);
+        req.end();
+      });
+
+      if (res) return res;
+    } catch {}
+  }
+  return null;
 }
 
 /**
@@ -359,7 +390,7 @@ async function serverGenerateEdgeTTS(text: string, voice = 'en-US-ChristopherNeu
  * FIRST: Deepgram Aura-2 English with deep masculine speaker 'zeus' or 'orpheus'
  * FALLBACK: Microsoft Edge Neural TTS (en-US-ChristopherNeural / GuyNeural)
  */
-async function serverGenerateCloudflareTTS(text: string, requestedSpeaker = 'zeus', voiceEngine?: string): Promise<{ audio: string; byteLength: number; provider: string } | null> {
+async function serverGenerateCloudflareTTS(text: string, requestedSpeaker = 'zeus', voiceEngine?: string, customAccountId?: string, customApiToken?: string): Promise<{ audio: string; byteLength: number; provider: string } | null> {
   // If user explicitly asks for Edge TTS
   if (voiceEngine === 'edge' || voiceEngine === 'christopher' || voiceEngine === 'guy') {
     const edgeVoice = voiceEngine === 'guy' ? 'en-US-GuyNeural' : 'en-US-ChristopherNeural';
@@ -367,51 +398,56 @@ async function serverGenerateCloudflareTTS(text: string, requestedSpeaker = 'zeu
     if (edgeRes) return { ...edgeRes, provider: `Microsoft Edge Neural (${edgeVoice})` };
   }
 
-  // 1. Try Cloudflare Workers AI Deepgram Aura-2 (speaker: 'zeus' or 'orpheus' - deep wise male)
-  const validSpeaker = ['zeus', 'orpheus', 'arcas', 'aries', 'apollo', 'hyperion', 'jupiter', 'saturn', 'neptune', 'asteria', 'hera', 'athena'].includes(requestedSpeaker)
-    ? requestedSpeaker
-    : 'zeus';
+  const accountId = customAccountId || CLOUDFLARE_ACCOUNT_ID;
+  const apiToken = customApiToken || CLOUDFLARE_API_TOKEN;
 
-  const cfResult = await new Promise<{ audio: string; byteLength: number } | null>((resolve) => {
-    const postData = JSON.stringify({
-      text,
-      speaker: validSpeaker
-    });
-    const model = '@cf/deepgram/aura-2-en';
+  if (accountId && apiToken) {
+    // 1. Try Cloudflare Workers AI Deepgram Aura-2
+    const validSpeaker = ['zeus', 'orpheus', 'arcas', 'aries', 'apollo', 'hyperion', 'jupiter', 'saturn', 'neptune', 'asteria', 'hera', 'athena'].includes(requestedSpeaker)
+      ? requestedSpeaker
+      : 'zeus';
 
-    const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${model}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postData)
-      },
-      timeout: 15000
-    }, (res) => {
-      const chunks: Buffer[] = [];
-      res.on('data', chunk => chunks.push(chunk));
-      res.on('end', () => {
-        if (res.statusCode === 200) {
-          const buffer = Buffer.concat(chunks);
-          const base64 = buffer.toString('base64');
-          resolve({
-            audio: `data:audio/mpeg;base64,${base64}`,
-            byteLength: buffer.byteLength
-          });
-        } else {
-          resolve(null);
-        }
+    const cfResult = await new Promise<{ audio: string; byteLength: number } | null>((resolve) => {
+      const postData = JSON.stringify({
+        text,
+        speaker: validSpeaker
       });
+      const model = '@cf/deepgram/aura-2-en';
+
+      const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiToken}`,
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(postData)
+        },
+        timeout: 15000
+      }, (res) => {
+        const chunks: Buffer[] = [];
+        res.on('data', chunk => chunks.push(chunk));
+        res.on('end', () => {
+          if (res.statusCode === 200) {
+            const buffer = Buffer.concat(chunks);
+            const base64 = buffer.toString('base64');
+            resolve({
+              audio: `data:audio/mpeg;base64,${base64}`,
+              byteLength: buffer.byteLength
+            });
+          } else {
+            resolve(null);
+          }
+        });
+      });
+
+      req.on('error', () => resolve(null));
+      req.on('timeout', () => { req.destroy(); resolve(null); });
+      req.write(postData);
+      req.end();
     });
 
-    req.on('error', () => resolve(null));
-    req.on('timeout', () => { req.destroy(); resolve(null); });
-    req.write(postData);
-    req.end();
-  });
-
-  if (cfResult) {
-    return { ...cfResult, provider: `Cloudflare Deepgram Aura-2 (${validSpeaker.toUpperCase()} Bass Wise)` };
+    if (cfResult) {
+      return { ...cfResult, provider: `Cloudflare Deepgram Aura-2 (${validSpeaker.toUpperCase()} Bass Wise)` };
+    }
   }
 
   // 2. Automatic Fallback to Microsoft Edge Neural TTS (Deep masculine authority)
@@ -660,11 +696,11 @@ Respond STRICTLY with valid raw JSON without markdown:
     req.on('data', chunk => { body += chunk; });
     req.on('end', async () => {
       try {
-        const { prompt = 'Cinematic vertical workspace 8k' } = JSON.parse(body || '{}');
+        const { prompt = 'Cinematic vertical workspace 8k', accountId, apiToken } = JSON.parse(body || '{}');
 
         // 1. Cloudflare Workers AI Flux-1-Schnell (FIRST)
         console.log(`[API Server]: Generating Image via Cloudflare Workers AI FLUX.1-schnell (FIRST)...`);
-        let imageUrl = await serverGenerateCloudflareImage(prompt);
+        let imageUrl = await serverGenerateCloudflareImage(prompt, accountId, apiToken);
         let provider = 'Cloudflare Workers AI (@cf/black-forest-labs/flux-1-schnell)';
 
         // 2. Pollinations AI (FALLBACK)
@@ -690,10 +726,10 @@ Respond STRICTLY with valid raw JSON without markdown:
     req.on('data', chunk => { body += chunk; });
     req.on('end', async () => {
       try {
-        const { text = 'Welcome to the automated 15k Naira Micro-SaaS blueprint.', speaker = 'zeus', voiceEngine } = JSON.parse(body || '{}');
+        const { text = 'Welcome to the automated 15k Naira Micro-SaaS blueprint.', speaker = 'zeus', voiceEngine, accountId, apiToken } = JSON.parse(body || '{}');
 
         console.log(`[API Server]: Generating Voice via Cloudflare Workers AI Deepgram Aura-2 (${speaker})...`);
-        const ttsResult = await serverGenerateCloudflareTTS(text, speaker, voiceEngine);
+        const ttsResult = await serverGenerateCloudflareTTS(text, speaker, voiceEngine, accountId, apiToken);
 
         if (ttsResult) {
           res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -781,79 +817,103 @@ Respond STRICTLY with valid raw JSON without markdown:
     req.on('end', async () => {
       try {
         const data = JSON.parse(body || '{}');
-        const accountId = data.accountId || CLOUDFLARE_ACCOUNT_ID;
-        const apiToken = data.apiToken || CLOUDFLARE_API_TOKEN;
-        const model = data.model || '@cf/black-forest-labs/flux-1-schnell';
+        const accountId = (data.accountId || CLOUDFLARE_ACCOUNT_ID || '').trim().replace(/^https?:\/\/[^\/]+\//, '').replace(/\/$/, '');
+        const apiToken = (data.apiToken || CLOUDFLARE_API_TOKEN || '').trim();
+        let requestedModel = (data.model || '@cf/black-forest-labs/flux-1-schnell').trim().replace(/^\//, '');
 
-        const postInputs = data.inputs || { prompt: data.prompt || 'Cyberpunk neon city 8k' };
-
-        const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${apiToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(postInputs)
-        });
-
-        const contentType = response.headers.get('content-type') || '';
-        if (contentType.includes('image/')) {
-          const arrayBuffer = await response.arrayBuffer();
-          const base64 = Buffer.from(arrayBuffer).toString('base64');
-          res.writeHead(200, { 'Content-Type': 'application/json' });
+        if (!accountId || !apiToken) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({
-            image: `data:${contentType};base64,${base64}`,
-            contentType
+            error: 'Cloudflare Account ID and API Token are missing. Please configure them in Integration Keys or .env'
           }));
           return;
         }
 
-        if (contentType.includes('audio/') || contentType.includes('octet-stream')) {
-          const arrayBuffer = await response.arrayBuffer();
-          const base64 = Buffer.from(arrayBuffer).toString('base64');
-          const mime = contentType.includes('audio/') ? contentType : 'audio/mpeg';
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({
-            audio: `data:${mime};base64,${base64}`,
-            contentType: mime,
-            byteLength: arrayBuffer.byteLength
-          }));
-          return;
+        const candidateModels = [
+          requestedModel,
+          // LLM fallbacks if route not found
+          ...(requestedModel.includes('llama') ? ['@cf/meta/llama-3.1-8b-instruct', '@cf/meta/llama-3-8b-instruct'] : []),
+          // Image fallbacks if route not found
+          ...(requestedModel.includes('flux') ? ['@cf/bytedance/stable-diffusion-xl-lightning', '@cf/stabilityai/stable-diffusion-xl-base-1.0'] : [])
+        ];
+
+        let lastResponse: Response | null = null;
+        let lastText = '';
+
+        for (const model of candidateModels) {
+          try {
+            const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${apiToken}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(data.inputs || { prompt: data.prompt || 'Cyberpunk neon city 8k' })
+            });
+
+            lastResponse = response;
+            const contentType = response.headers.get('content-type') || '';
+
+            if (contentType.includes('image/')) {
+              const arrayBuffer = await response.arrayBuffer();
+              const base64 = Buffer.from(arrayBuffer).toString('base64');
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({
+                image: `data:${contentType};base64,${base64}`,
+                result: { image: base64 },
+                contentType,
+                model
+              }));
+              return;
+            }
+
+            if (contentType.includes('audio/') || contentType.includes('octet-stream')) {
+              const arrayBuffer = await response.arrayBuffer();
+              const base64 = Buffer.from(arrayBuffer).toString('base64');
+              const mime = contentType.includes('audio/') ? contentType : 'audio/mpeg';
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({
+                audio: `data:${mime};base64,${base64}`,
+                result: { audio: base64 },
+                contentType: mime,
+                byteLength: arrayBuffer.byteLength,
+                model
+              }));
+              return;
+            }
+
+            lastText = await response.text();
+            try {
+              const json = JSON.parse(lastText);
+              if (json.success !== false && (json.result || json.response)) {
+                if (json.result?.image) {
+                  json.image = `data:image/jpeg;base64,${json.result.image}`;
+                }
+                if (json.result?.audio) {
+                  json.audio = `data:audio/mpeg;base64,${json.result.audio}`;
+                }
+                res.writeHead(response.status || 200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ ...json, model }));
+                return;
+              }
+
+              if (json.errors?.some((e: any) => e.message?.includes('No route') || e.code === 7003)) {
+                continue;
+              }
+            } catch {
+              if (response.ok) {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ response: lastText, model }));
+                return;
+              }
+            }
+          } catch {
+            continue;
+          }
         }
 
-        const text = await response.text();
-        let parsedJson: any = null;
-        try {
-          parsedJson = JSON.parse(text);
-        } catch {
-          res.writeHead(response.status, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ response: text }));
-          return;
-        }
-
-        // If Cloudflare wrapped image in result.image base64
-        if (parsedJson?.result?.image) {
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({
-            image: `data:image/jpeg;base64,${parsedJson.result.image}`,
-            contentType: 'image/jpeg'
-          }));
-          return;
-        }
-
-        // If Cloudflare wrapped audio in result.audio base64
-        if (parsedJson?.result?.audio) {
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({
-            audio: `data:audio/mpeg;base64,${parsedJson.result.audio}`,
-            contentType: 'audio/mpeg',
-            byteLength: parsedJson.result.audio.length
-          }));
-          return;
-        }
-
-        res.writeHead(response.status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(parsedJson));
+        res.writeHead(lastResponse?.status || 500, { 'Content-Type': 'application/json' });
+        res.end(lastText || JSON.stringify({ error: 'Cloudflare AI Model failed to respond' }));
       } catch (err: any) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: err.message || 'Cloudflare AI Request Failed' }));

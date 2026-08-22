@@ -34,6 +34,7 @@ import { IntegrationKeys, NicheType } from '../types';
 import {
   chatWithXaiGrok,
   chatWithGroq,
+  chatWithCloudflareLLM,
   generateCloudflareImage,
   generateCloudflareTTS,
   getPollinationsImageUrl,
@@ -103,7 +104,7 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
   const [ytPublishError, setYtPublishError] = useState<string>('');
 
   // Chat State
-  const [selectedChatModel, setSelectedChatModel] = useState<'xai_grok' | 'groq_llama' | 'gemini' | 'pollinations'>('xai_grok');
+  const [selectedChatModel, setSelectedChatModel] = useState<'xai_grok' | 'groq_llama' | 'cloudflare_llama' | 'gemini' | 'pollinations'>('xai_grok');
   const [chatPrompt, setChatPrompt] = useState<string>('');
   const [isChatLoading, setIsChatLoading] = useState<boolean>(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
@@ -111,7 +112,7 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
       id: 'welcome',
       sender: 'assistant',
       model: 'xAI Grok & AI Lab',
-      text: "👋 Welcome to the Voxam AI Test Lab! You can test Cloudflare Workers AI TTS (Deepgram Aura-2), chat with xAI Grok-2, synthesize 1080x1920 visuals with Cloudflare AI & Pollinations Flux, and verify your Cloudinary 'voxawell' setup.",
+      text: "👋 Welcome to the Voxam AI Test Lab! You can test Cloudflare Workers AI TTS (Deepgram Aura-2), chat with Meta Llama 3.3 or xAI Grok, synthesize 1080x1920 visuals with Cloudflare FLUX.1-schnell, and verify your Cloudinary 'voxawell' setup.",
       timestamp: new Date().toLocaleTimeString()
     }
   ]);
@@ -145,6 +146,7 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
     { service: 'Groq (OpenAI GPT-OSS / Llama)', status: 'idle', message: 'GPT-OSS 120B / Llama 3.3 70B' },
     { service: 'Cloudflare Deepgram Aura-2 (Wise Bass)', status: 'idle', message: 'Zeus / Orpheus / Edge Neural Audio Engine' },
     { service: 'Cloudflare Workers AI (FLUX.1-schnell)', status: 'idle', message: '@cf/black-forest-labs/flux-1-schnell 8K' },
+    { service: 'Cloudflare Workers AI LLM (Llama 3.3)', status: 'idle', message: '@cf/meta/llama-3.3-70b-instruct' },
     { service: 'Pollinations AI Engine', status: 'idle', message: 'Free Multimodal Image & Text' }
   ]);
   const [isTestingAll, setIsTestingAll] = useState<boolean>(false);
@@ -203,6 +205,17 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
           apiKey,
           prompt: userText,
           model: 'grok-4.3'
+        });
+      } else if (selectedChatModel === 'cloudflare_llama') {
+        modelLabel = 'Cloudflare Workers AI (Llama 3.3 70B)';
+        const accountId = keys.cloudflareAccountId;
+        const apiToken = keys.cloudflareApiToken;
+        if (!accountId || !apiToken) throw new Error('Cloudflare Account ID & API Token are required in Integration Keys.');
+        reply = await chatWithCloudflareLLM({
+          accountId,
+          apiToken,
+          prompt: userText,
+          model: '@cf/meta/llama-3.3-70b-instruct'
         });
       } else if (selectedChatModel === 'groq_llama') {
         modelLabel = 'Groq (OpenAI GPT-OSS 120B / Llama 4 Scout)';
@@ -266,7 +279,11 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
         const res = await fetch('/api/generate-image', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: imagePrompt })
+          body: JSON.stringify({
+            prompt: imagePrompt,
+            accountId: keys.cloudflareAccountId,
+            apiToken: keys.cloudflareApiToken
+          })
         });
         const data = await res.json();
         if (data.imageUrl) {
@@ -418,76 +435,122 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
     }
 
     // 4. Test Cloudflare Deepgram Aura-2 TTS (Wise Bass Zeus)
-    updateItem(3, { status: 'testing', message: 'Testing Cloudflare Deepgram Aura-2 TTS (Zeus Bass)...' });
+    updateItem(3, { status: 'testing', message: 'Directly testing Cloudflare Deepgram Aura-2 TTS (Zeus Bass)...' });
     try {
       const t0 = performance.now();
-      const res = await fetch('/api/generate-tts', {
+      const accountId = keys.cloudflareAccountId;
+      const apiToken = keys.cloudflareApiToken;
+      if (!accountId || !apiToken) {
+        throw new Error('Cloudflare Account ID & API Token not configured in Integration Keys.');
+      }
+      const res = await fetch('/api/cloudflare-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          text: 'Voxam AI engine operational. Deep bass authority voice active.',
-          speaker: 'zeus'
+          accountId,
+          apiToken,
+          model: '@cf/deepgram/aura-2-en',
+          inputs: {
+            text: 'Voxam Deepgram Aura-2 audio synthesis verified. Deep bass authority voice active.',
+            speaker: 'zeus'
+          }
         })
       });
       const data = await res.json();
       const t1 = Math.round(performance.now() - t0);
-      if (data.audioUrl) {
+      if (res.ok && data.audio) {
         updateItem(3, {
           status: 'success',
           message: `Verified Active (${t1}ms)`,
           latencyMs: t1,
-          details: `${data.provider || 'Deepgram Aura-2 (Zeus)'} generated ${Math.round((data.byteLength || 0)/1024)} KB audio`
+          details: `Cloudflare Deepgram Aura-2 (Zeus Bass) returned ${Math.round((data.byteLength || 0)/1024)} KB audio`
         });
       } else {
-        updateItem(3, { status: 'error', message: data.error || 'TTS Synthesis failed' });
+        throw new Error(data.error || (data.errors && data.errors[0]?.message) || `HTTP ${res.status}`);
       }
     } catch (e: any) {
-      updateItem(3, { status: 'error', message: `Failed: ${e.message}` });
+      updateItem(3, { status: 'error', message: `Cloudflare TTS Notice: ${e.message}` });
     }
 
     // 5. Test Cloudflare Workers AI FLUX.1-schnell
-    updateItem(4, { status: 'testing', message: 'Testing Cloudflare Workers AI FLUX.1-schnell...' });
+    updateItem(4, { status: 'testing', message: 'Directly testing Cloudflare FLUX.1-schnell...' });
     try {
       const t0 = performance.now();
-      const res = await fetch('/api/generate-image', {
+      const accountId = keys.cloudflareAccountId;
+      const apiToken = keys.cloudflareApiToken;
+      if (!accountId || !apiToken) {
+        throw new Error('Cloudflare Account ID & API Token not configured in Integration Keys.');
+      }
+      const res = await fetch('/api/cloudflare-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: 'minimalist glowing emerald cube luxury lighting 8k vertical'
+          accountId,
+          apiToken,
+          model: '@cf/black-forest-labs/flux-1-schnell',
+          inputs: {
+            prompt: 'minimalist glowing emerald cube luxury lighting 8k vertical 9:16'
+          }
         })
       });
       const data = await res.json();
       const t1 = Math.round(performance.now() - t0);
-      if (data.imageUrl) {
+      const imgUrl = data.image || (data.result?.image ? `data:image/jpeg;base64,${data.result.image}` : null);
+      if (res.ok && imgUrl) {
         updateItem(4, {
           status: 'success',
           message: `Verified Active (${t1}ms)`,
           latencyMs: t1,
-          details: `${data.provider || 'FLUX.1-schnell'} online`
+          details: `Cloudflare ${data.model || 'FLUX.1-schnell'} generated 8K vertical visual`
         });
       } else {
-        updateItem(4, { status: 'error', message: data.error || 'Failed to synthesize image' });
+        throw new Error(data.error || (data.errors && data.errors[0]?.message) || `HTTP ${res.status}`);
       }
     } catch (e: any) {
-      updateItem(4, { status: 'error', message: `Failed: ${e.message}` });
+      updateItem(4, { status: 'error', message: `Cloudflare Flux Notice: ${e.message}` });
     }
 
-    // 6. Test Pollinations AI
-    updateItem(5, { status: 'testing', message: 'Testing Pollinations AI Image endpoint...' });
+    // 6. Test Cloudflare Workers AI LLM (Llama 3.3 70B)
+    updateItem(5, { status: 'testing', message: 'Testing Cloudflare Workers AI Llama 3.3 70B...' });
+    try {
+      const t0 = performance.now();
+      const accountId = keys.cloudflareAccountId;
+      const apiToken = keys.cloudflareApiToken;
+      if (!accountId || !apiToken) {
+        throw new Error('Cloudflare Account ID & API Token not configured in Integration Keys.');
+      }
+      const cfRes = await chatWithCloudflareLLM({
+        accountId,
+        apiToken,
+        prompt: 'Say "Cloudflare Workers AI active" in 4 words.'
+      });
+      const t1 = Math.round(performance.now() - t0);
+      updateItem(5, {
+        status: 'success',
+        message: `Verified Active (${t1}ms)`,
+        latencyMs: t1,
+        details: cfRes.slice(0, 80)
+      });
+    } catch (e: any) {
+      updateItem(5, { status: 'error', message: `Cloudflare LLM Notice: ${e.message}` });
+    }
+
+    // 7. Test Pollinations AI
+    updateItem(6, { status: 'testing', message: 'Testing Pollinations AI Image endpoint...' });
     try {
       const t0 = performance.now();
       const pingUrl = getPollinationsImageUrl('voxam logo ping', { width: 100, height: 100 });
       const imgTest = new Image();
       imgTest.src = pingUrl;
       const t1 = Math.round(performance.now() - t0);
-      updateItem(5, {
+      updateItem(6, {
         status: 'success',
         message: `Verified Active (${t1}ms)`,
         latencyMs: t1,
         details: 'Free high-speed Flux & Turbo rendering online'
       });
     } catch (e: any) {
-      updateItem(5, { status: 'error', message: `Failed: ${e.message}` });
+      updateItem(6, { status: 'error', message: `Failed: ${e.message}` });
     }
 
     setIsTestingAll(false);
@@ -505,7 +568,9 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
         body: JSON.stringify({
           text: ttsText.trim(),
           speaker: ttsSpeaker,
-          voiceEngine: ttsVoiceEngine
+          voiceEngine: ttsVoiceEngine,
+          accountId: keys.cloudflareAccountId,
+          apiToken: keys.cloudflareApiToken
         })
       });
 
@@ -1515,6 +1580,14 @@ Format your response strictly as a JSON array of 3 strings, with no markdown cod
                     badge: 'xAI Key Added',
                     color: 'text-sky-400',
                     border: 'border-sky-500/40'
+                  },
+                  {
+                    id: 'cloudflare_llama',
+                    name: 'Cloudflare Workers AI',
+                    desc: 'Meta Llama 3.3 70B Instruct',
+                    badge: keys.cloudflareAccountId && keys.cloudflareApiToken ? 'Active' : 'CF Token',
+                    color: 'text-amber-400',
+                    border: 'border-amber-500/40'
                   },
                   {
                     id: 'groq_llama',
