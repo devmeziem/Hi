@@ -114,31 +114,107 @@ jobs:
           node scripts/video_motion_compiler.cjs
           echo "Render complete! MP4 saved to Cloudinary. Job status: READY_FOR_PUBLISH"`;
 
-  const workflow4Yaml = `name: 04-voxam-channel-sync-publisher
+  const workflowTestFinYaml = `name: Test Fin Blueprint Pipeline
 on:
-  schedule:
-    # 08:00, 12:00, 16:00, 20:00 WAT (07:00, 11:00, 15:00, 19:00 UTC)
-    - cron: '0 7,11,15,19 * * *'
   workflow_dispatch:
+    inputs:
+      topic:
+        description: 'Video Topic / Theme'
+        required: false
+        default: ''
+        type: string
+      dry_run:
+        description: 'Dry Run Mode (No live YouTube upload)'
+        required: true
+        default: true
+        type: boolean
 
 jobs:
-  publish-to-youtube-channels:
+  test_fin_pipeline:
+    name: Run Fin Blueprint Pipeline Diagnostic
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Dispatch Video To Target Channel (Fin Blueprint / Stoic / Tech AI)
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --legacy-peer-deps || true
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Execute Fin Blueprint Test Runner
         env:
-          YOUTUBE_CLIENT_ID: \${{ secrets.YOUTUBE_CLIENT_ID }}
-          YOUTUBE_CLIENT_SECRET: \${{ secrets.YOUTUBE_CLIENT_SECRET }}
-          YOUTUBE_REFRESH_TOKEN_CH1: \${{ secrets.YOUTUBE_REFRESH_TOKEN_CH1 }}
-          YOUTUBE_REFRESH_TOKEN_CH2: \${{ secrets.YOUTUBE_REFRESH_TOKEN_CH2 }}
-          YOUTUBE_REFRESH_TOKEN_CH3: \${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 }}
+          TEST_TOPIC: \${{ github.event.inputs.topic }}
+          DRY_RUN: \${{ github.event.inputs.dry_run }}
+          GROQ_API_KEY: \${{ secrets.GROQ_API_KEY }}
           FIREBASE_CONFIG_JSON: \${{ secrets.FIREBASE_CONFIG_JSON }}
-        run: |
-          node scripts/youtube_channel_dispatcher.cjs
-          echo "Successfully published scheduled video and linked affiliate descriptions!"`;
+        run: node scripts/test_fin_runner.cjs`;
+
+  const workflowTestStoicYaml = `name: Test Stoic & Motivation Pipeline
+on:
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: 'Video Topic / Theme'
+        required: false
+        default: ''
+        type: string
+      dry_run:
+        description: 'Dry Run Mode (No live YouTube upload)'
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  test_pipeline:
+    name: Run Stoic Pipeline Diagnostic
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --legacy-peer-deps || true
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Execute Stoic Test Runner
+        env:
+          TEST_TOPIC: \${{ github.event.inputs.topic }}
+          DRY_RUN: \${{ github.event.inputs.dry_run }}
+          GROQ_API_KEY: \${{ secrets.GROQ_API_KEY }}
+          FIREBASE_CONFIG_JSON: \${{ secrets.FIREBASE_CONFIG_JSON }}
+        run: node scripts/test_stoic_runner.cjs`;
+
+  const workflowTestTechYaml = `name: Test Tech AI Pipeline
+on:
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: 'Video Topic / Theme'
+        required: false
+        default: ''
+        type: string
+      dry_run:
+        description: 'Dry Run Mode (No live YouTube upload)'
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  test_tech_pipeline:
+    name: Run Tech AI Pipeline Diagnostic
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --legacy-peer-deps || true
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Execute Tech AI Test Runner
+        env:
+          TEST_TOPIC: \${{ github.event.inputs.topic }}
+          DRY_RUN: \${{ github.event.inputs.dry_run }}
+          GROQ_API_KEY: \${{ secrets.GROQ_API_KEY }}
+          FIREBASE_CONFIG_JSON: \${{ secrets.FIREBASE_CONFIG_JSON }}
+        run: node scripts/test_tech_runner.cjs`;
 
   return (
     <div className="space-y-8 w-full max-w-full min-w-0 overflow-x-hidden">
@@ -276,10 +352,12 @@ jobs:
           </h2>
           <div className="flex items-center gap-1.5 bg-slate-900 p-1 rounded-2xl border border-slate-800 overflow-x-auto max-w-full">
             {[
-              { id: 1, label: '01: The Brain (00:00)' },
+              { id: 1, label: '01: The Brain' },
               { id: 2, label: '02: Media Synth' },
               { id: 3, label: '03: Motion Render' },
-              { id: 4, label: '04: Channel Dispatch' }
+              { id: 4, label: 'Test: Fin Blueprint (Ch1)' },
+              { id: 5, label: 'Test: Stoic Architect (Ch2)' },
+              { id: 6, label: 'Test: Tech AI (Ch3)' }
             ].map(tab => (
               <button
                 key={tab.id}
@@ -305,13 +383,20 @@ jobs:
                 {activeWorkflowTab === 1 && '.github/workflows/01-brain-daily-blueprint.yml'}
                 {activeWorkflowTab === 2 && '.github/workflows/02-media-asset-engine.yml'}
                 {activeWorkflowTab === 3 && '.github/workflows/03-video-motion-renderer.yml'}
-                {activeWorkflowTab === 4 && '.github/workflows/04-channel-sync-publisher.yml'}
+                {activeWorkflowTab === 4 && '.github/workflows/test-fin-pipeline.yml'}
+                {activeWorkflowTab === 5 && '.github/workflows/test-stoic-pipeline.yml'}
+                {activeWorkflowTab === 6 && '.github/workflows/test-tech-pipeline.yml'}
               </span>
             </div>
 
             <button
               onClick={() => {
-                const code = activeWorkflowTab === 1 ? workflow1Yaml : activeWorkflowTab === 2 ? workflow2Yaml : activeWorkflowTab === 3 ? workflow3Yaml : workflow4Yaml;
+                const code = 
+                  activeWorkflowTab === 1 ? workflow1Yaml : 
+                  activeWorkflowTab === 2 ? workflow2Yaml : 
+                  activeWorkflowTab === 3 ? workflow3Yaml : 
+                  activeWorkflowTab === 4 ? workflowTestFinYaml : 
+                  activeWorkflowTab === 5 ? workflowTestStoicYaml : workflowTestTechYaml;
                 copyToClipboard(code, `wf-${activeWorkflowTab}`);
               }}
               className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-mono text-slate-200 rounded-xl transition-colors flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
@@ -333,7 +418,9 @@ jobs:
                 {activeWorkflowTab === 1 && workflow1Yaml}
                 {activeWorkflowTab === 2 && workflow2Yaml}
                 {activeWorkflowTab === 3 && workflow3Yaml}
-                {activeWorkflowTab === 4 && workflow4Yaml}
+                {activeWorkflowTab === 4 && workflowTestFinYaml}
+                {activeWorkflowTab === 5 && workflowTestStoicYaml}
+                {activeWorkflowTab === 6 && workflowTestTechYaml}
               </code>
             </pre>
           </div>

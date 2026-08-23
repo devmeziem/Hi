@@ -154,9 +154,10 @@ async function resolveTopic(activeGrok, backupEngines) {
       try {
         logInfo(`[Topic Discovery] Requesting topic from Google Gemini (${model})...`);
         const prompt = `Suggest 1 viral, high-retention YouTube Shorts title for "The Stoic Architect" (@thestoicarchitect-n4b).
+CHANNEL FOCUS: MODERN STOICISM + MOTIVATION + MENTAL STRENGTH (real modern struggles: discipline, self-control, rejection, failure, overthinking, disrespect).
 THEME: "${resolvedArchetype.theme}"
 ANGLE: "${resolvedArchetype.angle}"
-HISTORICAL ANCHOR: "${resolvedArchetype.historicalFigure}"
+DO NOT USE BIOGRAPHIES OR QUOTES LISTS.
 DO NOT USE OR DUPLICATE RECENT TITLES: [${recentExclusions || 'None'}]
 Return ONLY the title in plain text without quotes or markdown.`;
         const res = await new Promise((resolve) => {
@@ -271,7 +272,7 @@ Return ONLY the title in plain text without quotes or markdown.`;
 
   // 3. Try Groq (Fast Inference Models)
   if (GROQ_API_KEY) {
-    const groqModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768'];
+    const groqModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'deepseek-r1-distill-llama-70b', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
     for (const model of groqModels) {
       try {
         logInfo(`[Topic Discovery] Requesting topic from Groq (${model})...`);
@@ -332,7 +333,7 @@ Return ONLY the title in plain text without quotes or markdown.`;
   }
 
   // 4. Dynamic randomized archetype title fallback (clean and under 70 characters)
-  const generatedFallback = `${resolvedArchetype.theme} | ${resolvedArchetype.historicalFigure}`;
+  const generatedFallback = `${resolvedArchetype.theme} - The Stoic Rule for Mental Strength`;
   logInfo(`[Topic Discovery] Selected curated archetype title: "${generatedFallback}"`);
   return generatedFallback;
 }
@@ -425,12 +426,11 @@ async function testBackupEngines() {
   if (GROQ_API_KEY) {
     // Dynamically query Groq models or try active fallbacks
     let candidateModels = [
+      'llama-3.3-70b-versatile',
       'llama-3.1-8b-instant',
-      'llama-3.3-70b-specdec',
-      'qwen-2.5-32b',
       'deepseek-r1-distill-llama-70b',
-      'gemma2-9b-it',
-      'llama-3.3-70b-versatile'
+      'mixtral-8x7b-32768',
+      'gemma2-9b-it'
     ];
 
     try {
@@ -522,32 +522,93 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
 
   let scriptData = null;
 
-  // 1. Try OpenAI First if available (gpt-4o-mini, gpt-4o, o3-mini)
-  if (OPENAI_API_KEY) {
-    const openaiCandidateModels = ['gpt-4o-mini', 'gpt-4o', 'o3-mini', 'gpt-3.5-turbo'];
-    for (const model of openaiCandidateModels) {
+  // 1. PRIMARY: Groq LPU (Least Costly / Highest Speed / 0 Cold-start)
+  if (backupEngines && backupEngines.groqWorkingModel) {
+    try {
+      logInfo(`[Storyboard Engine] 1. Requesting storyboard from Groq LPU (${backupEngines.groqWorkingModel})...`);
+      const raw = await new Promise((resolve) => {
+        const postData = JSON.stringify({
+          model: backupEngines.groqWorkingModel,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: `${userPrompt} Topic title: "${topic}". Ensure complete sentences on every slide. Return strictly valid JSON.` }
+          ],
+          temperature: 0.7,
+          max_tokens: 1800,
+          response_format: { type: 'json_object' }
+        });
+
+        const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${GROQ_API_KEY}`,
+            'Content-Length': Buffer.byteLength(postData)
+          },
+          timeout: 12000
+        }, (res) => {
+          let data = '';
+          res.on('data', c => { data += c; });
+          res.on('end', () => {
+            if (res.statusCode === 200) {
+              try {
+                const j = JSON.parse(data);
+                resolve({ success: true, content: j.choices?.[0]?.message?.content });
+              } catch (e) {
+                resolve({ success: false, error: 'JSON parse error: ' + e.message });
+              }
+            } else {
+              resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 150)}` });
+            }
+          });
+        });
+        req.on('error', (err) => resolve({ success: false, error: err.message }));
+        req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Request timeout' }); });
+        req.write(postData);
+        req.end();
+      });
+
+      if (raw.success && raw.content) {
+        scriptData = JSON.parse(raw.content);
+        if (scriptData && Array.isArray(scriptData.slides) && scriptData.slides.length >= 3) {
+          logSuccess(`[Storyboard Engine] Groq (${backupEngines.groqWorkingModel}) generated complete ${scriptData.slides.length}-slide package!`);
+        }
+      } else {
+        logWarning(`[Storyboard Engine] Groq failed: ${raw.error || 'Empty payload'}`);
+      }
+    } catch (e) {
+      logWarning(`[Storyboard Engine] Groq exception: ${e.message}`);
+    }
+  }
+
+  // 2. SECONDARY: Cloudflare Low-Neuron AI (Ultra-low neuron consumption)
+  if (!scriptData && CLOUDFLARE_ACCOUNT_ID && CLOUDFLARE_API_TOKEN && !cloudflareAuthFailed) {
+    const cfLowNeuronModels = [
+      '@cf/meta/llama-3.2-3b-instruct',  // Ultra-low neuron consumption, great reasoning
+      '@cf/meta/llama-3.2-1b-instruct',  // Minimum neuron footprint
+      '@cf/meta/llama-3.1-8b-instruct'   // Standard low-cost workhorse
+    ];
+
+    for (const model of cfLowNeuronModels) {
       try {
-        logInfo(`[Storyboard Engine] Requesting full 6-slide package from OpenAI (${model})...`);
+        logInfo(`[Storyboard Engine] 2. Requesting storyboard from Cloudflare Low-Neuron AI (${model})...`);
         const raw = await new Promise((resolve) => {
           const postData = JSON.stringify({
-            model: model,
             messages: [
               { role: 'system', content: systemPrompt },
-              { role: 'user', content: `${userPrompt} Topic title: "${topic}". Return strictly valid JSON.` }
+              { role: 'user', content: `${userPrompt} Topic title: "${topic}". Complete all sentences. Return strictly valid JSON.` }
             ],
-            response_format: { type: 'json_object' },
-            temperature: 0.75,
-            max_tokens: 2000
+            max_tokens: 1800
           });
 
-          const req = https.request('https://api.openai.com/v1/chat/completions', {
+          const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${model}`, {
             method: 'POST',
             headers: {
+              'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${OPENAI_API_KEY}`,
               'Content-Length': Buffer.byteLength(postData)
             },
-            timeout: 15000
+            timeout: 14000
           }, (res) => {
             let data = '';
             res.on('data', c => { data += c; });
@@ -555,7 +616,8 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
               if (res.statusCode === 200) {
                 try {
                   const j = JSON.parse(data);
-                  resolve({ success: true, content: j.choices?.[0]?.message?.content });
+                  const content = j.result?.response || j.response;
+                  resolve({ success: true, content });
                 } catch (e) {
                   resolve({ success: false, error: 'JSON parse error: ' + e.message });
                 }
@@ -565,7 +627,7 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
             });
           });
           req.on('error', (err) => resolve({ success: false, error: err.message }));
-          req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Request timeout (15s)' }); });
+          req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Request timeout' }); });
           req.write(postData);
           req.end();
         });
@@ -573,23 +635,77 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
         if (raw.success && raw.content) {
           const cleaned = raw.content.replace(/```json/gi, '').replace(/```/g, '').trim();
           scriptData = JSON.parse(cleaned);
-          if (scriptData && Array.isArray(scriptData.slides) && scriptData.slides.length >= 4) {
-            logSuccess(`[Storyboard Engine] OpenAI (${model}) generated complete ${scriptData.slides.length}-slide storyboard!`);
+          if (scriptData && Array.isArray(scriptData.slides) && scriptData.slides.length >= 3) {
+            logSuccess(`[Storyboard Engine] Cloudflare Low-Neuron (${model}) generated full ${scriptData.slides.length}-slide package!`);
             break;
           }
         }
       } catch (e) {
-        logWarning(`[Storyboard Engine] OpenAI (${model}) exception: ${e.message}`);
+        logWarning(`[Storyboard Engine] Cloudflare (${model}) notice: ${e.message}`);
       }
     }
   }
 
-  // 2. Try Gemini (Cascade gemini-2.0-flash -> gemini-1.5-flash -> gemini-2.5-flash)
+  // 3. TERTIARY: Pollinations.ai Text API (100% Free, NO API Key Required)
+  if (!scriptData) {
+    const pollModels = ['openai', 'mistral', 'qwen-coder', 'llama'];
+    for (const pModel of pollModels) {
+      try {
+        logInfo(`[Storyboard Engine] 3. Requesting storyboard from Pollinations.ai Free Text API (${pModel})...`);
+        const raw = await new Promise((resolve) => {
+          const postData = JSON.stringify({
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: `${userPrompt} Topic title: "${topic}". Return strictly valid JSON object.` }
+            ],
+            model: pModel,
+            jsonMode: true
+          });
+
+          const req = https.request('https://text.pollinations.ai/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 16000
+          }, (res) => {
+            let data = '';
+            res.on('data', c => { data += c; });
+            res.on('end', () => {
+              if (res.statusCode >= 200 && res.statusCode < 300 && data.trim().length > 10) {
+                resolve({ success: true, content: data.trim() });
+              } else {
+                resolve({ success: false, error: `HTTP ${res.statusCode}` });
+              }
+            });
+          });
+          req.on('error', (err) => resolve({ success: false, error: err.message }));
+          req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Request timeout' }); });
+          req.write(postData);
+          req.end();
+        });
+
+        if (raw.success && raw.content) {
+          const cleaned = raw.content.replace(/```json/gi, '').replace(/```/g, '').trim();
+          scriptData = JSON.parse(cleaned);
+          if (scriptData && Array.isArray(scriptData.slides) && scriptData.slides.length >= 3) {
+            logSuccess(`[Storyboard Engine] Pollinations.ai (${pModel}) generated full ${scriptData.slides.length}-slide package!`);
+            break;
+          }
+        }
+      } catch (e) {
+        logWarning(`[Storyboard Engine] Pollinations.ai (${pModel}) notice: ${e.message}`);
+      }
+    }
+  }
+
+  // 4. QUATERNARY: Google Gemini 2.0 / 1.5 Flash (Free Tier)
   if (!scriptData && GEMINI_API_KEY) {
     const candidateGeminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash'];
     for (const model of candidateGeminiModels) {
       try {
-        logInfo(`[Storyboard Engine] Requesting full 6-slide package from Google Gemini (${model})...`);
+        logInfo(`[Storyboard Engine] 4. Requesting storyboard from Google Gemini (${model})...`);
         const raw = await new Promise((resolve) => {
           const postData = JSON.stringify({
             contents: [
@@ -639,23 +755,137 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
         if (raw.success && raw.content) {
           const cleaned = raw.content.replace(/```json/gi, '').replace(/```/g, '').trim();
           scriptData = JSON.parse(cleaned);
-          if (scriptData && Array.isArray(scriptData.slides) && scriptData.slides.length >= 4) {
+          if (scriptData && Array.isArray(scriptData.slides) && scriptData.slides.length >= 3) {
             logSuccess(`[Storyboard Engine] Google Gemini (${model}) generated full ${scriptData.slides.length}-slide storyboard!`);
             break;
           }
-        } else {
-          logWarning(`[Storyboard Engine] Gemini (${model}) failed: ${raw.error || 'Empty payload'}`);
         }
       } catch (e) {
-        logWarning(`[Storyboard Engine] Gemini (${model}) exception: ${e.message}`);
+        logWarning(`[Storyboard Engine] Gemini (${model}) notice: ${e.message}`);
       }
     }
   }
 
-  // 3. Try Grok Next
+  // 5. QUINARY: OpenAI (Least Costly: gpt-4o-mini)
+  if (!scriptData && OPENAI_API_KEY) {
+    const openaiCandidateModels = ['gpt-4o-mini', 'o3-mini', 'gpt-4o'];
+    for (const model of openaiCandidateModels) {
+      try {
+        logInfo(`[Storyboard Engine] 5. Requesting storyboard from OpenAI (${model})...`);
+        const raw = await new Promise((resolve) => {
+          const postData = JSON.stringify({
+            model: model,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: `${userPrompt} Topic title: "${topic}". Return strictly valid JSON.` }
+            ],
+            response_format: { type: 'json_object' },
+            temperature: 0.75,
+            max_tokens: 2000
+          });
+
+          const req = https.request('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${OPENAI_API_KEY}`,
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 15000
+          }, (res) => {
+            let data = '';
+            res.on('data', c => { data += c; });
+            res.on('end', () => {
+              if (res.statusCode === 200) {
+                try {
+                  const j = JSON.parse(data);
+                  resolve({ success: true, content: j.choices?.[0]?.message?.content });
+                } catch (e) {
+                  resolve({ success: false, error: 'JSON parse error: ' + e.message });
+                }
+              } else {
+                resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 150)}` });
+              }
+            });
+          });
+          req.on('error', (err) => resolve({ success: false, error: err.message }));
+          req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Request timeout (15s)' }); });
+          req.write(postData);
+          req.end();
+        });
+
+        if (raw.success && raw.content) {
+          const cleaned = raw.content.replace(/```json/gi, '').replace(/```/g, '').trim();
+          scriptData = JSON.parse(cleaned);
+          if (scriptData && Array.isArray(scriptData.slides) && scriptData.slides.length >= 3) {
+            logSuccess(`[Storyboard Engine] OpenAI (${model}) generated complete ${scriptData.slides.length}-slide storyboard!`);
+            break;
+          }
+        }
+      } catch (e) {
+        logWarning(`[Storyboard Engine] OpenAI (${model}) notice: ${e.message}`);
+      }
+    }
+  }
+
+  // 6. SENARY: DeepSeek (deepseek-chat - Ultra low cost)
+  if (!scriptData && DEEPSEEK_API_KEY) {
+    try {
+      logInfo(`[Storyboard Engine] 6. Requesting storyboard from DeepSeek (deepseek-chat)...`);
+      const raw = await new Promise((resolve) => {
+        const postData = JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: `${userPrompt} Topic title: "${topic}". Output strictly valid JSON.` }
+          ],
+          response_format: { type: 'json_object' },
+          temperature: 0.7,
+          max_tokens: 1800
+        });
+        const req = https.request('https://api.deepseek.com/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+            'Content-Length': Buffer.byteLength(postData)
+          },
+          timeout: 15000
+        }, (res) => {
+          let data = '';
+          res.on('data', c => { data += c; });
+          res.on('end', () => {
+            if (res.statusCode === 200) {
+              try {
+                const j = JSON.parse(data);
+                resolve({ success: true, content: j.choices?.[0]?.message?.content });
+              } catch (e) {
+                resolve({ success: false, error: 'JSON parse error: ' + e.message });
+              }
+            } else {
+              resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 150)}` });
+            }
+          });
+        });
+        req.on('error', (err) => resolve({ success: false, error: err.message }));
+        req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Request timeout' }); });
+        req.write(postData);
+        req.end();
+      });
+
+      if (raw.success && raw.content) {
+        scriptData = JSON.parse(raw.content);
+        if (scriptData && Array.isArray(scriptData.slides) && scriptData.slides.length >= 3) {
+          logSuccess(`[Storyboard Engine] DeepSeek (deepseek-chat) generated ${scriptData.slides.length}-slide package!`);
+        }
+      }
+    } catch {}
+  }
+
+  // 7. SEPTENARY: xAI Grok (grok-2-latest / grok-beta)
   if (!scriptData && activeGrok && activeGrok.key) {
     try {
-      logInfo(`[Storyboard Engine] Requesting full 6-slide package from xAI Grok (${activeGrok.model})...`);
+      logInfo(`[Storyboard Engine] 7. Requesting storyboard from xAI Grok (${activeGrok.model})...`);
       const raw = await new Promise((resolve) => {
         const postData = JSON.stringify({
           model: activeGrok.model || 'grok-2-latest',
@@ -703,162 +933,31 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
         if (scriptData && Array.isArray(scriptData.slides)) {
           logSuccess(`[Storyboard Engine] Grok (${activeGrok.model}) generated full ${scriptData.slides.length}-slide package!`);
         }
-      } else {
-        logWarning(`[Storyboard Engine] Grok failed: ${raw.error || 'Empty payload'}`);
-      }
-    } catch (e) {
-      logWarning(`[Storyboard Engine] Grok exception: ${e.message}`);
-    }
-  }
-
-  // 4. Try DeepSeek if available
-  if (!scriptData && DEEPSEEK_API_KEY) {
-    try {
-      logInfo(`[Storyboard Engine] Requesting full 6-slide package from DeepSeek (deepseek-chat)...`);
-      const raw = await new Promise((resolve) => {
-        const postData = JSON.stringify({
-          model: 'deepseek-chat',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: `${userPrompt} Topic title: "${topic}". Output strictly valid JSON.` }
-          ],
-          response_format: { type: 'json_object' },
-          temperature: 0.7,
-          max_tokens: 1800
-        });
-        const req = https.request('https://api.deepseek.com/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
-            'Content-Length': Buffer.byteLength(postData)
-          },
-          timeout: 15000
-        }, (res) => {
-          let data = '';
-          res.on('data', c => { data += c; });
-          res.on('end', () => {
-            if (res.statusCode === 200) {
-              try {
-                const j = JSON.parse(data);
-                resolve({ success: true, content: j.choices?.[0]?.message?.content });
-              } catch (e) {
-                resolve({ success: false, error: 'JSON parse error: ' + e.message });
-              }
-            } else {
-              resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 150)}` });
-            }
-          });
-        });
-        req.on('error', (err) => resolve({ success: false, error: err.message }));
-        req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Request timeout' }); });
-        req.write(postData);
-        req.end();
-      });
-
-      if (raw.success && raw.content) {
-        scriptData = JSON.parse(raw.content);
-        if (scriptData && Array.isArray(scriptData.slides)) {
-          logSuccess(`[Storyboard Engine] DeepSeek (deepseek-chat) generated ${scriptData.slides.length}-slide package!`);
-        }
       }
     } catch {}
   }
 
-  // 3. Try Groq (Llama 3.3 70B Versatile)
-  if (!scriptData && backupEngines && backupEngines.groqWorkingModel) {
-    try {
-      logInfo(`[Storyboard Engine] Requesting full 6-slide package from Groq (${backupEngines.groqWorkingModel})...`);
-      const raw = await new Promise((resolve) => {
-        const postData = JSON.stringify({
-          model: backupEngines.groqWorkingModel,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: `${userPrompt} Topic title: "${topic}". Ensure complete sentences on every slide.` }
-          ],
-          temperature: 0.7,
-          max_tokens: 1800,
-          response_format: { type: 'json_object' }
-        });
-
-        const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${GROQ_API_KEY}`,
-            'Content-Length': Buffer.byteLength(postData)
-          },
-          timeout: 12000
-        }, (res) => {
-          let data = '';
-          res.on('data', c => { data += c; });
-          res.on('end', () => {
-            if (res.statusCode === 200) {
-              try {
-                const j = JSON.parse(data);
-                resolve({ success: true, content: j.choices?.[0]?.message?.content });
-              } catch (e) {
-                resolve({ success: false, error: 'JSON parse error: ' + e.message });
-              }
-            } else {
-              resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 150)}` });
-            }
-          });
-        });
-        req.on('error', (err) => resolve({ success: false, error: err.message }));
-        req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Request timeout' }); });
-        req.write(postData);
-        req.end();
-      });
-
-      if (raw.success && raw.content) {
-        scriptData = JSON.parse(raw.content);
-        if (scriptData && Array.isArray(scriptData.slides)) {
-          logSuccess(`[Storyboard Engine] Groq (${backupEngines.groqWorkingModel}) generated complete ${scriptData.slides.length}-slide package!`);
-        }
-      } else {
-        logWarning(`[Storyboard Engine] Groq failed: ${raw.error || 'Empty payload'}`);
-      }
-    } catch (e) {
-      logWarning(`[Storyboard Engine] Groq exception: ${e.message}`);
-    }
+  // 8. STRICT NO-FALLBACK POLICY: If all 7 AI providers fail, FAIL WITH EXPLICIT ERROR
+  if (!scriptData || !Array.isArray(scriptData.slides) || scriptData.slides.length < 3) {
+    logError('\n[FATAL ERROR] All AI text generation engines (Groq -> Cloudflare Low-Neuron -> Pollinations.ai -> Gemini -> OpenAI -> DeepSeek -> Grok) failed to return a valid storyboard.');
+    logError('Pipeline is terminating immediately to prevent posting static/repetitive fallback scripts to your channel.');
+    process.exit(1);
   }
 
-  // Dynamic Topic-Aware Storyboard Fallback with Distinct Visual Themes per Slide from Archetype
-  if (!scriptData || !Array.isArray(scriptData.slides)) {
-    logInfo(`[Storyboard Engine] Synthesizing Dynamic Storyboard matching archetype "${activeArch.theme}" for: "${topic}"...`);
-    const cleanTopic = topic.trim();
-    scriptData = {
-      title: `${cleanTopic} | The Stoic Architect`,
-      description: `Exploring the deep philosophy of "${cleanTopic}". By applying timeless Stoic principles on ${activeArch.theme} from ${activeArch.historicalFigure}, you can overcome modern chaos, eliminate cheap distractions, and cultivate unshakeable mental fortitude.\n\n${activeArch.outroPattern}\n\n#Shorts #Stoicism #MarcusAurelius #SelfDiscipline #Motivation #Discipline #Mindset #Wisdom #PersonalGrowth #DailyStoic #MentalFortress #Philosophy`,
-      tags: ['#Shorts', '#Stoicism', '#Discipline', '#Motivation', '#MarcusAurelius', '#Mindset', '#SelfMastery', '#DailyStoic', '#Wisdom'],
-      slides: [
-        {
-          text: activeArch.hookPatterns[0],
-          visual: `${activeArch.visualStyle}, establishing cinematic scene with soft atmospheric lighting, photorealistic 8k 9:16 vertical`
-        },
-        {
-          text: `Ancient Stoic anchor from ${activeArch.historicalFigure}: ${activeArch.philosophicalPrinciple}`,
-          visual: `Classical Roman colonnade with dramatic sunlight through tall marble columns, 8k vertical 9:16`
-        },
-        {
-          text: `Historical truth: ${activeArch.storyExample}`,
-          visual: `Deep historical composition depicting ancient Roman philosopher in reflection, 8k vertical 9:16`
-        },
-        {
-          text: `First actionable protocol: master the dichotomy of control and stop offering your attention to external noise.`,
-          visual: `High-contrast scene of disciplined individual working in calm focus sanctuary, 8k vertical 9:16`
-        },
-        {
-          text: `Second actionable protocol: embrace voluntary discomfort to forge unbreakable mental armor against adversity.`,
-          visual: `Solitary stoic warrior in dark armor standing calm and immovable on a rugged coastal cliff against violent crashing storm waves and lightning, 8k 9:16 vertical`
-        },
-        {
-          text: activeArch.outroPattern,
-          visual: `Heroic silhouette of a philosopher standing atop a majestic mountain summit overlooking a vast golden sunset horizon with god rays, 8k 9:16 vertical masterpiece`
+  // Sanitize sentence completeness for all slides (no cutoffs or unfinished sentences)
+  if (scriptData && Array.isArray(scriptData.slides)) {
+    scriptData.slides.forEach((slide) => {
+      if (slide.text) {
+        let text = slide.text.trim();
+        // Remove trailing commas, colons, semicolons, or dashes
+        text = text.replace(/[,;:\-–—\s]+$/, '');
+        // Ensure ends with terminal punctuation (. ! ?)
+        if (!/[.!?]$/.test(text)) {
+          text += '.';
         }
-      ]
-    };
+        slide.text = text;
+      }
+    });
   }
 
   // Enforce strict YouTube title length and Shorts indexing compliance
@@ -1702,13 +1801,14 @@ async function handleYouTubePublish(storyboard, renderResult) {
       const metadata = JSON.stringify({
         snippet: {
           title: uploadTitle,
-          description: (storyboard.description || uploadTitle) + (storyboard.description && storyboard.description.includes('#Shorts') ? '' : '\n\n#Shorts #Stoicism #MarcusAurelius #SelfDiscipline #Motivation #Discipline #Mindset #Wisdom #PersonalGrowth #DailyStoic #MentalFortress'),
+          description: (storyboard.description || uploadTitle).trim(),
           tags: cleanTags,
           categoryId: '27' // Education
         },
         status: {
           privacyStatus: 'public',
-          selfDeclaredMadeForKids: false
+          selfDeclaredMadeForKids: false,
+          containsSyntheticMedia: true // Active YouTube Synthetic / AI Generated metadata flag
         }
       });
 
@@ -1864,37 +1964,53 @@ async function syncToManifestAndDatabase(storyboard, enrichedSlides, publishResu
 
   // 2. Sync to Firestore Database via REST API
   try {
-    const firestoreUrl = `https://firestore.googleapis.com/v1/projects/gen-lang-client-0135161700/databases/ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e/documents/saved_campaigns/${campaignId}?key=AIzaSyDajoMYBcuzePAnf8B4dNNNeuxmlU2IfhI`;
-    
-    // Convert to Firestore Document format
-    const docFields = {
-      id: { stringValue: campaignId },
-      title: { stringValue: storyboard.title },
-      niche: { stringValue: 'motivation_stoicism' },
-      createdAt: { stringValue: new Date().toISOString() },
-      status: { stringValue: 'completed' },
-      isPosted: { booleanValue: publishResult.status === 'PUBLISHED_LIVE' },
-      views: { integerValue: '0' },
-      likes: { integerValue: '0' }
-    };
+    let parsedFb = null;
+    try {
+      if (process.env.FIREBASE_CONFIG_JSON) parsedFb = JSON.parse(process.env.FIREBASE_CONFIG_JSON);
+    } catch {}
 
-    const reqData = JSON.stringify({ fields: docFields });
-    await new Promise((resolve) => {
-      const req = https.request(firestoreUrl, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(reqData)
-        },
-        timeout: 8000
-      }, (res) => {
-        resolve();
+    const firestoreApiKey = process.env.FIRESTORE_API_KEY || process.env.VITE_FIREBASE_API_KEY || parsedFb?.apiKey || '';
+    const firestoreProjectId = process.env.FIRESTORE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || parsedFb?.projectId || '';
+    const firestoreDbId = process.env.FIRESTORE_DATABASE_ID || process.env.VITE_FIRESTORE_DATABASE_ID || parsedFb?.databaseId || 'ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e';
+
+    if (firestoreApiKey && firestoreProjectId) {
+      const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${firestoreProjectId}/databases/${firestoreDbId}/documents/saved_campaigns/${campaignId}?key=${firestoreApiKey}`;
+      
+      // Convert to Firestore Document format
+      const docFields = {
+        id: { stringValue: campaignId },
+        title: { stringValue: storyboard.title },
+        niche: { stringValue: 'motivation_stoicism' },
+        createdAt: { stringValue: new Date().toISOString() },
+        status: { stringValue: 'completed' },
+        isPosted: { booleanValue: publishResult.status === 'PUBLISHED_LIVE' },
+        views: { integerValue: '0' },
+        likes: { integerValue: '0' }
+      };
+
+      const reqData = JSON.stringify({ fields: docFields });
+      await new Promise((resolve) => {
+        const req = https.request(firestoreUrl, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(reqData)
+          },
+          timeout: 8000
+        }, (res) => {
+          resolve();
+        });
+        req.on('error', () => resolve());
+        req.write(reqData);
+        req.end();
       });
-      req.on('error', () => resolve());
-      req.write(reqData);
-      req.end();
-    });
-    logSuccess(`Synced campaign to Firestore database ('saved_campaigns' collection)!`);
+      logSuccess(`Synced campaign to Firestore database ('saved_campaigns' collection)!`);
+    } else {
+      logInfo(`Remote Firestore sync skipped (no FIRESTORE_API_KEY provided). Local manifest preserved.`);
+    }
+  } catch (err) {
+    logInfo(`Firestore sync note: ${err.message}`);
+  }
 
     // 3. Save to Firestore Content History for Cooldown and Diversity tracking
     const activeArch = resolvedArchetype || STOIC_ARCHETYPES[0];

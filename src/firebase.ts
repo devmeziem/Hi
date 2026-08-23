@@ -1,17 +1,24 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, Firestore } from 'firebase/firestore';
-import { getAuth, Auth } from 'firebase/auth';
-
-const firebaseConfig = {
-  projectId: "gen-lang-client-0135161700",
-  appId: "1:166707266012:web:a00cf6debee848db97c40c",
-  storageBucket: "gen-lang-client-0135161700.firebasestorage.app",
-  apiKey: "AIzaSyDajoMYBcuzePAnf8B4dNNNeuxmlU2IfhI",
-  authDomain: "gen-lang-client-0135161700.firebaseapp.com",
-  messagingSenderId: "166707266012",
-};
+import { getFirestore, Firestore, doc, getDocFromServer } from 'firebase/firestore';
+import { getAuth, Auth, GoogleAuthProvider } from 'firebase/auth';
+import firebaseConfig from '../firebase-applet-config.json';
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-export const db: Firestore = getFirestore(app, "ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e");
+export const db: Firestore = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth: Auth = getAuth(app);
-export const isFirebaseEnabled = true;
+export const googleProvider = new GoogleAuthProvider();
+export const isFirebaseEnabled = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId);
+
+// Test Firestore connection per Firebase skill guidelines
+async function testConnection() {
+  if (!isFirebaseEnabled || !db) return;
+  try {
+    await getDocFromServer(doc(db, 'test', 'connection'));
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('the client is offline')) {
+      console.warn("Please check your Firebase configuration.");
+    }
+  }
+}
+testConnection();
+

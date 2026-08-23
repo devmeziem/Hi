@@ -221,17 +221,15 @@ async function serverCallCloudflareLLM(prompt: string, systemPrompt?: string, cu
 }
 
 /**
- * Server-Side Groq Caller (with Multi-Model Fallback for Deprecation Resilience)
+ * Server-Side Groq Caller (with Verified Active Groq Models)
  */
 async function serverCallGroq(prompt: string, systemPrompt?: string): Promise<string | null> {
   const candidateModels = [
-    'openai/gpt-oss-120b',
-    'meta-llama/llama-4-scout-17b-16e-instruct',
-    'deepseek-r1-distill-llama-70b',
-    'llama-3.1-8b-instant',
-    'openai/gpt-oss-20b',
     'llama-3.3-70b-versatile',
-    'llama3-70b-8192'
+    'llama-3.1-8b-instant',
+    'deepseek-r1-distill-llama-70b',
+    'mixtral-8x7b-32768',
+    'gemma2-9b-it'
   ];
 
   for (const model of candidateModels) {

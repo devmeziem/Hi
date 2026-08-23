@@ -13,10 +13,10 @@ export const NicheConfig: React.FC = () => {
     },
     {
       id: 'motivation_stoicism',
-      title: 'Channel 2: The Stoic Architect (@thestoicarchitect-n4b)',
+      title: 'Channel 2: Modern Stoicism & Mental Strength',
       schedule: '4 slots/day: 06:00, 11:00, 16:00, 20:00 (UTC)',
-      topics: ['Inner Fortress & Focus', 'Time & Anxiety (Seneca)', 'Self-Mastery (Epictetus)', 'Direct Action (Aurelius)'],
-      tags: ['#Stoicism', '#MarcusAurelius', '#Mindset', '#Discipline', '#Shorts']
+      topics: ['Discipline Over Motivation', 'Dealing with Disrespect & Silence', 'Emotional Control Under Pressure', 'Handling Rejection & Failure', 'Overcoming Overthinking', 'Rebuilding from Zero'],
+      tags: ['#Shorts', '#Discipline', '#Motivation', '#MentalStrength', '#SelfControl', '#Stoicism', '#Mindset']
     },
     {
       id: 'tech_ai',

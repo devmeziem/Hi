@@ -107,43 +107,31 @@ const NICHES = [
     slots: [
       {
         formatType: 'discipline_mastery',
-        topic: '5 Ways to Master Unshakable Self-Discipline',
-        quote: 'No person is free who is not master of himself.',
-        author: 'Epictetus',
-        theme: 'Overcoming Dopamine Traps & Winning the First 30 Minutes of Every Day',
-        visualDetail: 'Aesthetic minimalist morning study desk with classical Roman bust, leather notebook, and golden sunrise light, 8k 9:16 vertical photorealistic'
+        topic: 'How to Build Discipline When You Have Zero Motivation',
+        hook: 'Motivation is an emotion. Discipline is a non-negotiable contract with yourself.',
+        theme: 'Eliminating Mood-Based Action & Executing Without Waiting to Feel Ready',
+        visualDetail: 'Cinematic modern minimalist workspace at dawn, focused silhouette executing deep work in high-contrast morning light, 8k 9:16 vertical photorealistic'
       },
       {
-        formatType: 'manhood_character',
-        topic: 'What Does It Mean to Be a Real Man? True Strength, Duty & Honor',
-        quote: 'Waste no more time arguing what a good man should be. Be one.',
-        author: 'Marcus Aurelius',
-        theme: 'Emotional Maturity, Accountability, Protecting Others, and Quiet Competence Over Toxic Posturing',
-        visualDetail: 'Statuesque composed man in thoughtful reflection overlooking vast mountains at dawn, cinematic chiaroscuro studio lighting, 8k 9:16 vertical'
+        formatType: 'disrespect_immunity',
+        topic: 'The Stoic Rule for Dealing with Disrespect Calmly',
+        hook: 'When someone disrespects you, your silence is far more dangerous than anger.',
+        theme: 'Emotional Sovereignty & The 5-Second Pause Against Provocation',
+        visualDetail: 'Composed professional standing calm and unshakable in a busy city environment, sharp cinematic focus, 8k 9:16 vertical'
       },
       {
-        formatType: 'fame_and_validation',
-        topic: 'The Illusion of Fame: Marcus Aurelius vs Social Media Validation',
-        quote: 'How much peace of mind one gains by not caring what a neighbor says, does, or thinks.',
-        author: 'Marcus Aurelius',
-        theme: 'Rejecting the Social Media Clout Trap for True Inner Sovereignty and Real Worth',
-        visualDetail: 'Split conceptual scene of classical marble Roman forum transitioning into a glowing dark smartphone interface, 8k 9:16 vertical photorealistic'
+        formatType: 'silencing_overthinking',
+        topic: 'How to Silence Late-Night Overthinking and Anxiety',
+        hook: 'Overthinking is your brain inventing emergencies that will never actually happen.',
+        theme: 'Present-Moment Grounding & Breaking the Mental Spiral with Action',
+        visualDetail: 'Moody cinematic shot of hands writing clearly in a sleek notebook under focused warm desk lamp, 8k 9:16 vertical'
       },
       {
-        formatType: 'gender_equality_virtue',
-        topic: 'Why Virtue Knows No Gender: Ancient Stoicism on Equality & Mutual Respect',
-        quote: 'Women have the same reasoning capacity and inclination toward virtue as men.',
-        author: 'Musonius Rufus & Seneca',
-        theme: 'True Strength Upholds Equal Dignity, Shared Wisdom, and Mutual Respect in Modern Life',
-        visualDetail: 'Inspiring aesthetic classical Greek marble statues of female and male thinkers standing shoulder to shoulder with golden illumination, 8k 9:16 vertical'
-      },
-      {
-        formatType: 'action_over_anxiety',
-        topic: 'Seneca on Time & Overcoming Paralysis by Analysis',
-        quote: 'We suffer more often in imagination than in reality.',
-        author: 'Seneca',
-        theme: 'Killing Procrastination with Immediate Physical Action & Amor Fati',
-        visualDetail: 'Ancient classical Roman peristyle courtyard with sunlight streaming through marble columns, 8k 9:16 vertical photorealistic'
+        formatType: 'rebuilding_after_failure',
+        topic: 'How to Rebuild Your Life When Everything Falls Apart',
+        hook: 'Hitting rock bottom gives you the firmest foundation to rebuild.',
+        theme: 'Radical Acceptance & Systematic Step-by-Step Rebuilding',
+        visualDetail: 'Solitary figure standing on a rain-slicked modern terrace overlooking a twilight cityscape with steely resolve, 8k 9:16 vertical'
       }
     ]
   },
@@ -520,6 +508,57 @@ async function callCloudflareAI(prompt, systemPrompt) {
 }
 
 /**
+ * Call Pollinations.ai Text API (100% Free Tier, No API Key Required)
+ */
+async function callPollinationsText(prompt, systemPrompt) {
+  const candidateModels = ['openai', 'mistral', 'qwen-coder', 'llama'];
+  for (const model of candidateModels) {
+    try {
+      const result = await new Promise((resolve) => {
+        const postData = JSON.stringify({
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: prompt }
+          ],
+          model: model,
+          jsonMode: true
+        });
+
+        const req = https.request('https://text.pollinations.ai/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(postData)
+          },
+          timeout: 16000
+        }, (res) => {
+          let data = '';
+          res.on('data', chunk => { data += chunk; });
+          res.on('end', () => {
+            if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+              if (data && data.trim().length > 10) {
+                console.log(`  ✔ [Pollinations Text AI] Succeeded using model: ${model}`);
+                resolve(data.trim());
+                return;
+              }
+            }
+            resolve(null);
+          });
+        });
+
+        req.on('error', () => resolve(null));
+        req.on('timeout', () => { req.destroy(); resolve(null); });
+        req.write(postData);
+        req.end();
+      });
+
+      if (result) return result;
+    } catch {}
+  }
+  return null;
+}
+
+/**
  * Dynamically discover active Groq models or use verified active list
  */
 async function getActiveGroqModels() {
@@ -713,32 +752,48 @@ Respond strictly in raw JSON format:
         userPrompt = `Create a professional YouTube Short script for topic: "${slot.topic}". Focus details: ${JSON.stringify(slot)}. Channel: "${channelName}". Do not duplicate recent topics: ${Array.from(generatedTopicHistory).slice(-6).join(', ')}`;
       }
 
-      // 1. Attempt with OpenAI
+      // 1. Primary Attempt: Groq LPU (Highest speed, lowest cost)
       let aiResponse = null;
-      if (OPENAI_API_KEY) {
+      if (!aiResponse) {
         try {
-          aiResponse = await callOpenAI(userPrompt, systemPrompt);
-          if (aiResponse) usedAiModel = 'OpenAI (GPT-4o)';
+          aiResponse = await callGroq(userPrompt, systemPrompt);
+          if (aiResponse) usedAiModel = 'Groq (High-Speed LPU)';
         } catch {}
       }
 
-      // 2. Primary attempt with Gemini 2.0/1.5 Flash
+      // 2. Secondary Attempt: Cloudflare Workers AI (Low-Neuron Models)
+      if (!aiResponse) {
+        try {
+          aiResponse = await callCloudflareAI(userPrompt, systemPrompt);
+          if (aiResponse) usedAiModel = 'Cloudflare Low-Neuron AI';
+        } catch {}
+      }
+
+      // 3. Tertiary Attempt: Pollinations.ai Text API (100% Free, No Key Required)
+      if (!aiResponse) {
+        try {
+          aiResponse = await callPollinationsText(userPrompt, systemPrompt);
+          if (aiResponse) usedAiModel = 'Pollinations.ai Free Text API';
+        } catch {}
+      }
+
+      // 4. Quaternary Attempt: Google Gemini (Free Tier Flash)
       if (!aiResponse && GEMINI_API_KEY) {
         try {
           aiResponse = await callGemini(userPrompt, systemPrompt);
-          if (aiResponse) usedAiModel = 'Google Gemini';
+          if (aiResponse) usedAiModel = 'Google Gemini Flash';
         } catch {}
       }
 
-      // 3. Attempt with Grok (xAI)
-      if (!aiResponse) {
+      // 5. Quinary Attempt: OpenAI (GPT-4o-mini)
+      if (!aiResponse && OPENAI_API_KEY) {
         try {
-          aiResponse = await callGrok(userPrompt, systemPrompt);
-          if (aiResponse) usedAiModel = 'Grok 2 (xAI)';
+          aiResponse = await callOpenAI(userPrompt, systemPrompt);
+          if (aiResponse) usedAiModel = 'OpenAI (GPT-4o-mini)';
         } catch {}
       }
 
-      // 4. Attempt with DeepSeek
+      // 6. Senary Attempt: DeepSeek
       if (!aiResponse && DEEPSEEK_API_KEY) {
         try {
           aiResponse = await callDeepSeek(userPrompt, systemPrompt);
@@ -746,19 +801,11 @@ Respond strictly in raw JSON format:
         } catch {}
       }
 
-      // 5. Backup attempt with Cloudflare Workers AI
+      // 7. Septenary Attempt: Grok (xAI)
       if (!aiResponse) {
         try {
-          aiResponse = await callCloudflareAI(userPrompt, systemPrompt);
-          if (aiResponse) usedAiModel = 'Cloudflare Workers AI (Llama 3.3)';
-        } catch {}
-      }
-
-      // 6. Secondary fallback attempt with Groq
-      if (!aiResponse) {
-        try {
-          aiResponse = await callGroq(userPrompt, systemPrompt);
-          if (aiResponse) usedAiModel = 'Groq (High-Speed LPU)';
+          aiResponse = await callGrok(userPrompt, systemPrompt);
+          if (aiResponse) usedAiModel = 'Grok 2 (xAI)';
         } catch {}
       }
 
@@ -893,12 +940,17 @@ Respond strictly in raw JSON format:
       // Record topic for deduplication
       generatedTopicHistory.add(title);
 
+      const description = `${scriptText || title}\n\n#Shorts #${niche.id.replace(/[^a-zA-Z0-9]/g, '')} #Motivation #Mindset #Discipline #Success`;
+      const tags = ['#Shorts', `#${niche.id.replace(/[^a-zA-Z0-9]/g, '')}`, '#Motivation', '#Mindset', '#Discipline', '#Success'];
+
       const jobData = {
         id: jobId,
         channelId: niche.id,
         channelName: niche.channelName,
         slotNumber: slotIdx + 1,
         title,
+        description,
+        tags,
         scriptText,
         visualPrompt,
         slides: generatedSlides,

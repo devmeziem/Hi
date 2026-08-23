@@ -425,12 +425,13 @@ export const VerticalVideoPlayer: React.FC<VerticalVideoPlayerProps> = ({
                   ))}
                 </div>
 
-                {/* Subtitle / Caption Box: Small box with backdrop blur & Gold Highlight */}
+                {/* Subtitle / Caption Box: Persistent Rounded Drop-Box Pill with Synchronized Word Streaming & Wipe-to-Next-Chunk */}
                 <div
                   onClick={() => setIsPlaying(!isPlaying)}
                   className="relative z-20 flex-1 flex flex-col items-center justify-center px-4 cursor-pointer select-none"
                 >
-                  <div className="bg-black/85 backdrop-blur-xl border border-white/20 px-4 py-3 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.8)] max-w-[92%] transition-all duration-200 ring-1 ring-white/10">
+                  {/* Stable pill container that stays on screen with high contrast backdrop */}
+                  <div className="bg-black/92 backdrop-blur-2xl border border-white/25 px-5 py-3.5 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.95)] min-h-[62px] min-w-[240px] max-w-[92%] flex items-center justify-center transition-all duration-150 ring-1 ring-white/15">
                     <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 text-center">
                       {currentChunk.words.map((word, wIdx) => {
                         const isVisible = wIdx < visibleWordCount;
@@ -439,11 +440,11 @@ export const VerticalVideoPlayer: React.FC<VerticalVideoPlayerProps> = ({
 
                         return (
                           <span
-                            key={wIdx}
-                            className={`text-base sm:text-lg tracking-wide transition-all duration-150 inline-block ${
+                            key={`${activeChunkIndex}-${wIdx}`}
+                            className={`text-base sm:text-lg tracking-wide transition-all duration-100 inline-block ${
                               isCurrentWord
-                                ? 'text-[#FFD700] scale-110 font-black drop-shadow-[0_2px_10px_rgba(255,215,0,0.8)]'
-                                : 'text-white/95 font-extrabold drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]'
+                                ? 'text-[#FFD700] scale-110 font-black drop-shadow-[0_0_14px_rgba(255,215,0,0.95)]'
+                                : 'text-white font-extrabold drop-shadow-[0_2px_4px_rgba(0,0,0,1)]'
                             }`}
                           >
                             {word}
@@ -454,7 +455,7 @@ export const VerticalVideoPlayer: React.FC<VerticalVideoPlayerProps> = ({
                   </div>
 
                   {!isPlaying && (
-                    <div className="mt-4 w-12 h-12 rounded-full bg-black/80 backdrop-blur-md border border-white/30 flex items-center justify-center text-white shadow-2xl ring-2 ring-white/20">
+                    <div className="mt-4 w-12 h-12 rounded-full bg-black/85 backdrop-blur-md border border-white/30 flex items-center justify-center text-white shadow-2xl ring-2 ring-white/20">
                       <Play className="w-5 h-5 ml-0.5 text-white" />
                     </div>
                   )}

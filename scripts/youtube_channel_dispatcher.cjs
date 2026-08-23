@@ -9,14 +9,16 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-const CLIENT_ID = process.env.YOUTUBE_CLIENT_ID || '';
-const CLIENT_SECRET = process.env.YOUTUBE_CLIENT_SECRET || '';
+const DEFAULT_CLIENT_ID = process.env.YOUTUBE_CLIENT_ID || '';
+const DEFAULT_CLIENT_SECRET = process.env.YOUTUBE_CLIENT_SECRET || '';
 
 const CHANNEL_CONFIG = {
   finance_saas: {
     handle: '@bones_ceo',
     name: 'Fin Blueprint',
     isPrimary: true,
+    clientId: process.env.YOUTUBE_CLIENT_ID_CH1 || DEFAULT_CLIENT_ID,
+    clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH1 || DEFAULT_CLIENT_SECRET,
     refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH1 || process.env.YOUTUBE_REFRESH_TOKEN || '',
     affiliateCta: '💰 Launch your AI Micro-SaaS: https://selar.co/m/bones-ceo (15k Naira Blueprint)',
     pinnedComment: '📌 Get the exact Micro-SaaS order template + 15k Naira startup guide here: https://selar.co/m/bones-ceo',
@@ -26,6 +28,8 @@ const CHANNEL_CONFIG = {
     handle: '@thestoicarchitect-n4b',
     name: 'The Stoic Architect',
     isPrimary: false,
+    clientId: process.env.YOUTUBE_CLIENT_ID_CH2 || DEFAULT_CLIENT_ID,
+    clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH2 || DEFAULT_CLIENT_SECRET,
     refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH2 || process.env.YOUTUBE_REFRESH_TOKEN || '',
     affiliateCta: '🏛️ Follow @TheStoicArchitect for daily Stoic wisdom and mental strength.',
     pinnedComment: '📌 "No person is free who is not master of himself." Which of these Stoic rules resonates most with you today? Subscribe to @TheStoicArchitect for daily fortitude.',
@@ -35,6 +39,8 @@ const CHANNEL_CONFIG = {
     handle: '@bonesceo',
     name: 'Godswill Isaac',
     isPrimary: false,
+    clientId: process.env.YOUTUBE_CLIENT_ID_CH3 || DEFAULT_CLIENT_ID,
+    clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH3 || DEFAULT_CLIENT_SECRET,
     refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH3 || process.env.YOUTUBE_REFRESH_TOKEN || '',
     affiliateCta: '⚡ Access Full Stack AI Automation Repos: https://selar.co/m/voxam-tech',
     pinnedComment: '📌 Fork the autonomous multi-agent GitHub Actions repo: https://github.com/devmeziem/Voxam',
@@ -45,15 +51,17 @@ const CHANNEL_CONFIG = {
 /**
  * Exchange OAuth Refresh Token for a fresh Google API Access Token
  */
-async function getAccessToken(refreshToken) {
-  if (!CLIENT_ID || !CLIENT_SECRET || !refreshToken) {
+async function getAccessToken(refreshToken, customClientId, customClientSecret) {
+  const cId = customClientId || DEFAULT_CLIENT_ID;
+  const cSec = customClientSecret || DEFAULT_CLIENT_SECRET;
+  if (!cId || !cSec || !refreshToken) {
     return null;
   }
 
   return new Promise((resolve) => {
     const postData = new URLSearchParams({
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
+      client_id: cId,
+      client_secret: cSec,
       refresh_token: refreshToken,
       grant_type: 'refresh_token'
     }).toString();
@@ -98,16 +106,20 @@ async function getAccessToken(refreshToken) {
  */
 async function uploadToYouTube(accessToken, videoFilePath, title, description, tags) {
   return new Promise((resolve) => {
+    const cleanDescription = (description || title).trim();
+    const cleanTags = Array.from(new Set([...(tags || []), 'Shorts'])).filter(t => t.length > 0 && t.length < 50).slice(0, 15);
+
     const metadata = JSON.stringify({
       snippet: {
         title: title.slice(0, 95),
-        description: description,
-        tags: tags,
+        description: cleanDescription,
+        tags: cleanTags,
         categoryId: '27' // Education / How-to
       },
       status: {
         privacyStatus: 'public',
-        selfDeclaredMadeForKids: false
+        selfDeclaredMadeForKids: false,
+        containsSyntheticMedia: true // Active YouTube Synthetic / AI Generated metadata flag
       }
     });
 
@@ -253,9 +265,9 @@ async function dispatchScheduledVideos() {
     const refreshToken = config.refreshToken;
     let liveUploaded = false;
 
-    if (refreshToken && CLIENT_ID && CLIENT_SECRET) {
+    if (refreshToken && config.clientId && config.clientSecret) {
       console.log(`  -> Authenticating with Google OAuth 2.0 (YouTube Data API v3)...`);
-      const accessToken = await getAccessToken(refreshToken);
+      const accessToken = await getAccessToken(refreshToken, config.clientId, config.clientSecret);
 
       if (accessToken) {
         console.log(`  -> [SUCCESS] Google Access Token granted!`);

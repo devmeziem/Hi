@@ -138,6 +138,7 @@ export interface ChannelMetrics {
   videoCount: number;
   channelId?: string;
   niche?: string;
+  description?: string;
   customRefreshToken?: string;
 }
 

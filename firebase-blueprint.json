@@ -1,0 +1,88 @@
+{
+  "entities": {
+    "FactoryJob": {
+      "title": "FactoryJob",
+      "description": "Video production job for automated channel rendering",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "channelId": { "type": "string" },
+        "slotNumber": { "type": "number" },
+        "title": { "type": "string" },
+        "scriptText": { "type": "string" },
+        "visualPrompt": { "type": "string" },
+        "status": { "type": "string", "enum": ["queued", "rendering", "ready_for_review", "published", "failed"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "channelId", "title", "status"]
+    },
+    "SavedCampaign": {
+      "title": "SavedCampaign",
+      "description": "Rendered video campaign ready for distribution or already posted",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "jobId": { "type": "string" },
+        "title": { "type": "string" },
+        "niche": { "type": "string" },
+        "status": { "type": "string" },
+        "isPosted": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "title", "niche", "status"]
+    },
+    "WorkerLog": {
+      "title": "WorkerLog",
+      "description": "Automated workflow and rendering logs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "level": { "type": "string" },
+        "message": { "type": "string" },
+        "channelId": { "type": "string" }
+      },
+      "required": ["id", "timestamp", "level", "message"]
+    },
+    "ApprovedUser": {
+      "title": "ApprovedUser",
+      "description": "User email permitted to access the dashboard",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "approvedAt": { "type": "string" }
+      },
+      "required": ["email"]
+    },
+    "SystemConfig": {
+      "title": "SystemConfig",
+      "description": "Global channel configurations and active projects",
+      "type": "object",
+      "properties": {
+        "updatedAt": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/factory_jobs/{jobId}": {
+      "schema": "FactoryJob",
+      "description": "Active and completed rendering jobs"
+    },
+    "/saved_campaigns/{campaignId}": {
+      "schema": "SavedCampaign",
+      "description": "Finished video campaigns"
+    },
+    "/worker_logs/{logId}": {
+      "schema": "WorkerLog",
+      "description": "Engine and dispatcher operational logs"
+    },
+    "/approved_users/{userId}": {
+      "schema": "ApprovedUser",
+      "description": "Whitelist of verified users"
+    },
+    "/system_config/{configId}": {
+      "schema": "SystemConfig",
+      "description": "Global channel and automation project settings"
+    }
+  }
+}

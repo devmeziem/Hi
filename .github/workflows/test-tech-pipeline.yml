@@ -1,4 +1,4 @@
-name: Test Stoic & Motivation Pipeline
+name: Test Tech AI Pipeline
 
 on:
   workflow_dispatch:
@@ -17,14 +17,14 @@ on:
           - short_form
           - deep_dive
       dry_run:
-        description: 'Dry Run Mode (Uncheck for live YouTube upload)'
+        description: 'Dry Run Mode (Test generation only, no live YouTube upload)'
         required: true
-        default: false
+        default: true
         type: boolean
 
 jobs:
-  test_pipeline:
-    name: Run Stoic Pipeline Diagnostic
+  test_tech_pipeline:
+    name: Run Tech AI Pipeline Diagnostic
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -47,7 +47,7 @@ jobs:
       - name: Verify FFmpeg Installation
         run: ffmpeg -version
 
-      - name: Execute Stoic & Motivation Pipeline Diagnostic
+      - name: Execute Tech AI Pipeline Diagnostic
         env:
           TEST_TOPIC: ${{ github.event.inputs.topic }}
           CONTENT_DEPTH: ${{ github.event.inputs.content_depth || 'short_form' }}
@@ -58,8 +58,6 @@ jobs:
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
           GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
           GROK_KEY: ${{ secrets.GROK_KEY }}
-          XAI_API_KEY_2: ${{ secrets.XAI_API_KEY_2 }}
-          GROK_API_KEY_2: ${{ secrets.GROK_API_KEY_2 }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -67,13 +65,13 @@ jobs:
           CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
-          YOUTUBE_CLIENT_ID_CH2: ${{ secrets.YOUTUBE_CLIENT_ID_CH2 }}
-          YOUTUBE_CLIENT_SECRET_CH2: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH2 }}
+          YOUTUBE_CLIENT_ID_CH3: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 }}
+          YOUTUBE_CLIENT_SECRET_CH3: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
-          YOUTUBE_REFRESH_TOKEN_CH2: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH2 }}
+          YOUTUBE_REFRESH_TOKEN_CH3: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
           FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
-        run: node scripts/test_stoic_runner.cjs
+        run: node scripts/test_tech_runner.cjs
 
       - name: Cleanup Local Temporary Media & Blobs
         if: always()

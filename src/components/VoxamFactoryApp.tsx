@@ -32,7 +32,8 @@ import {
   FolderKanban,
   Check,
   X,
-  Workflow
+  Workflow,
+  Headphones
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { NicheType, SavedCampaign, FactoryJob, WorkerLog, IntegrationKeys, ChannelMetrics, ProjectConfig } from '../types';
@@ -45,6 +46,7 @@ import { NicheConfig } from './NicheConfig';
 import { AiPlayground } from './AiPlayground';
 import { PipelineAutomationTab } from './PipelineAutomationTab';
 import { VerticalVideoPlayer } from './VerticalVideoPlayer';
+import { DjSoundboardTab } from './DjSoundboardTab';
 
 interface VoxamFactoryAppProps {
   userEmail: string;
@@ -544,6 +546,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
             {[
               { id: 'dashboard', label: 'Overview Dashboard', icon: LayoutDashboard },
               { id: 'pipeline', label: '4-Stage GitHub Pipeline', icon: Workflow },
+              { id: 'dj', label: 'DJ Audio & TTS Studio', icon: Headphones },
               { id: 'playground', label: 'AI Test Lab & Grok Chat', icon: Sparkles },
               { id: 'channels', label: 'Channels (3 Accounts)', icon: Youtube },
               { id: 'studio', label: 'Content Studio', icon: Clapperboard },
@@ -724,17 +727,34 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
               </div>
             </div>
 
-            {/* 3 Channels Quick Cards */}
+            {/* 3 Channels Quick Cards with Rebranding & Profile Editing */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Channel 1 Card */}
-              <div className="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
-                <div className="flex items-center gap-3">
-                  <img src={channel1Data.thumbnail} alt={channel1Data.title} className="w-11 h-11 rounded-full object-cover border border-slate-700" />
-                  <div className="truncate">
-                    <h3 className="text-sm font-bold text-white truncate">{channel1Data.title}</h3>
-                    <p className="text-xs text-indigo-400 font-mono">{channel1Data.customUrl}</p>
+              <div className="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-3 relative group">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 truncate">
+                    <img src={channel1Data.thumbnail} alt={channel1Data.title} className="w-11 h-11 rounded-full object-cover border border-slate-700 shadow shrink-0" />
+                    <div className="truncate">
+                      <h3 className="text-sm font-bold text-white truncate">{channel1Data.title}</h3>
+                      <p className="text-xs text-indigo-400 font-mono">{channel1Data.customUrl}</p>
+                    </div>
                   </div>
+                  <button
+                    onClick={() => {
+                      setEditingChannelNum(1);
+                      setTempChannelForm({ ...channel1Data });
+                    }}
+                    title="Edit Channel Profile & Branding"
+                    className="p-1.5 bg-slate-800 hover:bg-indigo-600/30 border border-slate-700 hover:border-indigo-500/50 text-slate-300 hover:text-indigo-300 rounded-lg text-xs font-mono transition-all cursor-pointer shrink-0"
+                  >
+                    <Sliders className="w-3.5 h-3.5" />
+                  </button>
                 </div>
+                {channel1Data.description && (
+                  <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
+                    {channel1Data.description}
+                  </p>
+                )}
                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-xs font-mono">
                   <div>
                     <span className="text-slate-500 text-[10px]">Subscribers</span>
@@ -747,15 +767,32 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                 </div>
               </div>
 
-              {/* Channel 2 Card */}
-              <div className="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
-                <div className="flex items-center gap-3">
-                  <img src={channel2Data.thumbnail} alt={channel2Data.title} className="w-11 h-11 rounded-full object-cover border border-slate-700" />
-                  <div className="truncate">
-                    <h3 className="text-sm font-bold text-white truncate">{channel2Data.title}</h3>
-                    <p className="text-xs text-purple-400 font-mono">{channel2Data.customUrl}</p>
+              {/* Channel 2 Card (Modern Stoicism Rebrandable) */}
+              <div className="p-5 bg-slate-900 border border-slate-800 hover:border-purple-500/40 rounded-2xl space-y-3 relative group transition-all">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 truncate">
+                    <img src={channel2Data.thumbnail} alt={channel2Data.title} className="w-11 h-11 rounded-full object-cover border border-purple-800/60 shadow shrink-0" />
+                    <div className="truncate">
+                      <h3 className="text-sm font-bold text-white truncate">{channel2Data.title}</h3>
+                      <p className="text-xs text-purple-400 font-mono">{channel2Data.customUrl}</p>
+                    </div>
                   </div>
+                  <button
+                    onClick={() => {
+                      setEditingChannelNum(2);
+                      setTempChannelForm({ ...channel2Data });
+                    }}
+                    title="Edit Channel Profile, Name, Image & Description"
+                    className="p-1.5 bg-slate-800 hover:bg-purple-600/30 border border-slate-700 hover:border-purple-500/50 text-slate-300 hover:text-purple-300 rounded-lg text-xs font-mono transition-all cursor-pointer shrink-0"
+                  >
+                    <Sliders className="w-3.5 h-3.5" />
+                  </button>
                 </div>
+                {channel2Data.description && (
+                  <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
+                    {channel2Data.description}
+                  </p>
+                )}
                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-xs font-mono">
                   <div>
                     <span className="text-slate-500 text-[10px]">Subscribers</span>
@@ -769,14 +806,31 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
               </div>
 
               {/* Channel 3 Card */}
-              <div className="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
-                <div className="flex items-center gap-3">
-                  <img src={channel3Data.thumbnail} alt={channel3Data.title} className="w-11 h-11 rounded-full object-cover border border-slate-700" />
-                  <div className="truncate">
-                    <h3 className="text-sm font-bold text-white truncate">{channel3Data.title}</h3>
-                    <p className="text-xs text-blue-400 font-mono">{channel3Data.customUrl}</p>
+              <div className="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-3 relative group">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 truncate">
+                    <img src={channel3Data.thumbnail} alt={channel3Data.title} className="w-11 h-11 rounded-full object-cover border border-slate-700 shadow shrink-0" />
+                    <div className="truncate">
+                      <h3 className="text-sm font-bold text-white truncate">{channel3Data.title}</h3>
+                      <p className="text-xs text-blue-400 font-mono">{channel3Data.customUrl}</p>
+                    </div>
                   </div>
+                  <button
+                    onClick={() => {
+                      setEditingChannelNum(3);
+                      setTempChannelForm({ ...channel3Data });
+                    }}
+                    title="Edit Channel Profile & Branding"
+                    className="p-1.5 bg-slate-800 hover:bg-blue-600/30 border border-slate-700 hover:border-blue-500/50 text-slate-300 hover:text-blue-300 rounded-lg text-xs font-mono transition-all cursor-pointer shrink-0"
+                  >
+                    <Sliders className="w-3.5 h-3.5" />
+                  </button>
                 </div>
+                {channel3Data.description && (
+                  <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
+                    {channel3Data.description}
+                  </p>
+                )}
                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-xs font-mono">
                   <div>
                     <span className="text-slate-500 text-[10px]">Subscribers</span>
@@ -1500,6 +1554,9 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
         {/* TAB: PIPELINE AUTOMATION */}
         {activeTab === 'pipeline' && <PipelineAutomationTab />}
 
+        {/* TAB: DJ AUDIO & TTS STUDIO SOUNDBOARD */}
+        {activeTab === 'dj' && <DjSoundboardTab keys={keys} />}
+
         {/* TAB: AI PLAYGROUND & GROK CHAT */}
         {activeTab === 'playground' && (
           <AiPlayground
@@ -1743,6 +1800,177 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
           isOpen={Boolean(selectedCampaignForPlayer)}
           onClose={() => setSelectedCampaignForPlayer(null)}
         />
+      )}
+
+      {/* CHANNEL REBRANDING & PROFILE CONFIGURATION MODAL */}
+      {editingChannelNum !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-slate-900 border border-slate-700/80 rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className={`w-8 h-8 rounded-xl ${editingChannelNum === 2 ? 'bg-purple-600/30 text-purple-400 border border-purple-500/30' : editingChannelNum === 1 ? 'bg-emerald-600/30 text-emerald-400 border border-emerald-500/30' : 'bg-blue-600/30 text-blue-400 border border-blue-500/30'} flex items-center justify-center`}>
+                  <Sliders className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">
+                    Rebrand Channel {editingChannelNum} Profile
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Update channel name, handle, avatar photo, and bio description
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setEditingChannelNum(null);
+                  setTempChannelForm({});
+                }}
+                className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Channel Profile Avatar Preview & URL */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-slate-300 uppercase font-mono">
+                  Profile Avatar Image
+                </label>
+                <div className="flex items-center gap-3">
+                  <img
+                    src={tempChannelForm.thumbnail || 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=400&auto=format&fit=crop&q=80'}
+                    alt="Channel Preview"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=400&auto=format&fit=crop&q=80';
+                    }}
+                    className="w-14 h-14 rounded-2xl object-cover border border-slate-700 shadow-md shrink-0 ring-2 ring-purple-500/30"
+                  />
+                  <div className="flex-1 space-y-1">
+                    <input
+                      type="text"
+                      value={tempChannelForm.thumbnail || ''}
+                      onChange={(e) => setTempChannelForm(prev => ({ ...prev, thumbnail: e.target.value }))}
+                      placeholder="https://... avatar image URL"
+                      className="w-full bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-slate-200 text-xs font-mono focus:ring-1 focus:ring-purple-500 focus:outline-none"
+                    />
+                    <div className="flex items-center gap-1.5 pt-0.5">
+                      <span className="text-[10px] text-slate-500">Presets:</span>
+                      <button
+                        type="button"
+                        onClick={() => setTempChannelForm(prev => ({
+                          ...prev,
+                          thumbnail: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400&auto=format&fit=crop&q=80'
+                        }))}
+                        className="text-[10px] text-purple-400 hover:text-purple-300 underline cursor-pointer"
+                      >
+                        Modern Dark Marble
+                      </button>
+                      <span className="text-slate-700">•</span>
+                      <button
+                        type="button"
+                        onClick={() => setTempChannelForm(prev => ({
+                          ...prev,
+                          thumbnail: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=400&auto=format&fit=crop&q=80'
+                        }))}
+                        className="text-[10px] text-purple-400 hover:text-purple-300 underline cursor-pointer"
+                      >
+                        Moody Twilight Summit
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Channel Display Name */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-300 uppercase font-mono">
+                  Channel Name
+                </label>
+                <input
+                  type="text"
+                  value={tempChannelForm.title || ''}
+                  onChange={(e) => setTempChannelForm(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="e.g. Modern Stoic Fortitude"
+                  className="w-full bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-slate-200 text-xs font-semibold focus:ring-1 focus:ring-purple-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Custom Handle / Username */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-300 uppercase font-mono">
+                  Username / Handle (@)
+                </label>
+                <input
+                  type="text"
+                  value={tempChannelForm.customUrl || ''}
+                  onChange={(e) => setTempChannelForm(prev => ({ ...prev, customUrl: e.target.value }))}
+                  placeholder="e.g. @thestoicarchitect-n4b"
+                  className="w-full bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-slate-200 text-xs font-mono focus:ring-1 focus:ring-purple-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Channel Bio / Description */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-slate-300 uppercase font-mono">
+                    Channel Bio / Description
+                  </label>
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    {(tempChannelForm.description || '').length} chars
+                  </span>
+                </div>
+                <textarea
+                  rows={3}
+                  value={tempChannelForm.description || ''}
+                  onChange={(e) => setTempChannelForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Modern Stoicism, discipline protocols, emotional sovereignty, and daily mental strength. Master your reaction, master your life."
+                  className="w-full bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-slate-200 text-xs focus:ring-1 focus:ring-purple-500 focus:outline-none resize-none leading-relaxed"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingChannelNum(null);
+                  setTempChannelForm({});
+                }}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (editingChannelNum === null) return;
+                  let updated1 = channel1Data;
+                  let updated2 = channel2Data;
+                  let updated3 = channel3Data;
+
+                  if (editingChannelNum === 1) {
+                    updated1 = { ...channel1Data, ...tempChannelForm } as ChannelMetrics;
+                    setChannel1Data(updated1);
+                  } else if (editingChannelNum === 2) {
+                    updated2 = { ...channel2Data, ...tempChannelForm } as ChannelMetrics;
+                    setChannel2Data(updated2);
+                  } else if (editingChannelNum === 3) {
+                    updated3 = { ...channel3Data, ...tempChannelForm } as ChannelMetrics;
+                    setChannel3Data(updated3);
+                  }
+
+                  await dbAdapter.saveChannels([updated1, updated2, updated3]);
+                  setEditingChannelNum(null);
+                  setTempChannelForm({});
+                }}
+                className="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-purple-600/30 cursor-pointer"
+              >
+                Save Channel Profile
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
