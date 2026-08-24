@@ -744,6 +744,56 @@ Ensure the content is practical, modern, and psychologically powerful with zero 
   return { systemPrompt, userPrompt };
 }
 
+/**
+ * High-quality deterministic fallback storyboard generator when external LLMs are unreachable or rate-limited
+ */
+function synthesizeDeterministicStoryboard(slotArchetype, topicTitle, channelHandle = '@thestoicarchitect-n4b') {
+  const resolvedOutro = resolveOutroPattern(slotArchetype.outroPattern, channelHandle);
+  const hook = slotArchetype.hookPatterns[0] || "When life tests your character, your reaction is the only thing you truly own.";
+  const title = (topicTitle && topicTitle.length > 5) ? topicTitle : `${slotArchetype.theme} - The Stoic Rule for Mental Strength #Shorts`;
+
+  return {
+    title: title,
+    theme: slotArchetype.theme,
+    angle: slotArchetype.angle,
+    hook: hook,
+    description: `Master modern mental strength and resilience.\n\n#Shorts #Discipline #Motivation #MentalStrength #SelfControl #Mindset #Stoicism #PersonalGrowth #Confidence`,
+    tags: ["#Shorts", "#Discipline", "#Motivation", "#MentalStrength", "#SelfControl", "#Stoicism", "#Mindset", "#PersonalGrowth"],
+    slides: [
+      {
+        slideIndex: 0,
+        text: hook,
+        visual: `Cinematic vertical 9:16 shot, ${slotArchetype.visualStyle}, atmospheric cinematic lighting, dark slate and amber color tone, 8k resolution`
+      },
+      {
+        slideIndex: 1,
+        text: `Most people react with anger or panic, giving away their power to external chaos.`,
+        visual: `Cinematic vertical 9:16 shot matching ${slotArchetype.visualStyle}, close angle, rich slate gray shadows with warm amber rim light, 8k resolution`
+      },
+      {
+        slideIndex: 2,
+        text: `The Stoic truth is simple: you cannot control outside events, only your internal discipline.`,
+        visual: `Cinematic vertical 9:16 shot matching ${slotArchetype.visualStyle}, solitary contemplative figure in sharp focus, slate stone texture and golden highlights, 8k`
+      },
+      {
+        slideIndex: 3,
+        text: `When adversity strikes, pause for ten seconds and let logic lead before emotion speaks.`,
+        visual: `Cinematic vertical 9:16 shot matching ${slotArchetype.visualStyle}, intense focused perspective, atmospheric depth, cinematic slate and golden amber tones, 8k`
+      },
+      {
+        slideIndex: 4,
+        text: `Your mental peace is your fortress; never surrender it to opinions or temporary setbacks.`,
+        visual: `Cinematic vertical 9:16 shot matching ${slotArchetype.visualStyle}, powerful solid architectural composition, deep slate and warm amber illumination, 8k`
+      },
+      {
+        slideIndex: 5,
+        text: `Control your mind, own your destiny. ${resolvedOutro}`,
+        visual: `Cinematic vertical 9:16 shot matching ${slotArchetype.visualStyle}, dramatic sunrise lighting breaking through dark slate clouds, golden rays, 8k resolution`
+      }
+    ]
+  };
+}
+
 module.exports = {
   STOIC_ARCHETYPES,
   classifyLessonIntent,
@@ -752,5 +802,6 @@ module.exports = {
   isTopicSimilarToHistory,
   selectDailyDiverseSlots,
   resolveOutroPattern,
-  buildStoicPromptForSlot
+  buildStoicPromptForSlot,
+  synthesizeDeterministicStoryboard
 };

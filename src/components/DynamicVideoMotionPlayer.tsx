@@ -218,17 +218,17 @@ export const DynamicVideoMotionPlayer: React.FC<DynamicVideoMotionPlayerProps> =
           </div>
         </div>
 
-        {/* Synchronized Kinetic Subtitle Drop-Box Pill Positioned Underneath Content */}
-        <div className="absolute bottom-8 inset-x-2 z-30 flex flex-col items-center text-center pointer-events-none px-2">
-          <div className="inline-flex items-center justify-center flex-wrap gap-1.5 px-4 py-2.5 rounded-2xl bg-black/92 backdrop-blur-xl border border-white/25 shadow-[0_10px_35px_rgba(0,0,0,0.95)] ring-1 ring-white/15 min-h-[52px] min-w-[220px] max-w-[92%] transition-all duration-100">
+        {/* Synchronized Kinetic Subtitle Drop-Box Pill in Lower Bottom Safe Zone */}
+        <div className="absolute bottom-9 inset-x-2 z-30 flex flex-col items-center text-center pointer-events-none px-2">
+          <div className="inline-flex items-center justify-center flex-wrap gap-1 px-3.5 py-2 rounded-xl bg-black/92 backdrop-blur-xl border border-white/25 shadow-[0_8px_30px_rgba(0,0,0,0.95)] ring-1 ring-white/15 min-h-[44px] max-w-[88%] transition-all duration-100">
             {currentChunkWords.map((w, wIdx) => {
               const isGoldenWord = wIdx === activeWordInChunkIndex;
               return (
                 <span
                   key={wIdx}
-                  className={`text-[13px] sm:text-[15px] font-black uppercase tracking-wider transition-all duration-100 ${
+                  className={`text-[12px] sm:text-[14px] font-black uppercase tracking-wider transition-all duration-100 ${
                     isGoldenWord
-                      ? 'text-[#FFD700] scale-110 drop-shadow-[0_0_12px_rgba(255,215,0,0.95)] underline decoration-[#FFD700] decoration-2 underline-offset-2'
+                      ? 'text-[#FFD700] scale-105 drop-shadow-[0_0_12px_rgba(255,215,0,0.95)] underline decoration-[#FFD700] decoration-2 underline-offset-2'
                       : 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]'
                   }`}
                 >

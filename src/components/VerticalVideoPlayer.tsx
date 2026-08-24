@@ -214,7 +214,7 @@ export const VerticalVideoPlayer: React.FC<VerticalVideoPlayerProps> = ({
 
   const wordChunks = useMemo(() => {
     const chunks: { chunkIndex: number; words: string[]; startWordIdx: number }[] = [];
-    const chunkSize = 4;
+    const chunkSize = 3;
     for (let i = 0; i < slideWords.length; i += chunkSize) {
       chunks.push({
         chunkIndex: Math.floor(i / chunkSize),
@@ -257,8 +257,8 @@ export const VerticalVideoPlayer: React.FC<VerticalVideoPlayerProps> = ({
       if (slideWords.length > 0) {
         const wordRatio = progress / 100;
         const estimatedWordIdx = Math.min(slideWords.length - 1, Math.floor(wordRatio * slideWords.length));
-        const estimatedChunkIdx = Math.floor(estimatedWordIdx / 4);
-        const wordInChunk = (estimatedWordIdx % 4) + 1;
+        const estimatedChunkIdx = Math.floor(estimatedWordIdx / 3);
+        const wordInChunk = (estimatedWordIdx % 3) + 1;
 
         setActiveChunkIndex(estimatedChunkIdx);
         setVisibleWordCount(wordInChunk);
@@ -425,14 +425,14 @@ export const VerticalVideoPlayer: React.FC<VerticalVideoPlayerProps> = ({
                   ))}
                 </div>
 
-                {/* Subtitle / Caption Box: Persistent Rounded Drop-Box Pill with Synchronized Word Streaming & Wipe-to-Next-Chunk */}
+                {/* Subtitle / Caption Box: Persistent Rounded Drop-Box Pill with Synchronized Word Streaming in Lower Bottom */}
                 <div
                   onClick={() => setIsPlaying(!isPlaying)}
-                  className="relative z-20 flex-1 flex flex-col items-center justify-center px-4 cursor-pointer select-none"
+                  className="relative z-20 flex-1 flex flex-col justify-end items-center pb-5 px-4 cursor-pointer select-none"
                 >
-                  {/* Stable pill container that stays on screen with high contrast backdrop */}
-                  <div className="bg-black/92 backdrop-blur-2xl border border-white/25 px-5 py-3.5 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.95)] min-h-[62px] min-w-[240px] max-w-[92%] flex items-center justify-center transition-all duration-150 ring-1 ring-white/15">
-                    <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 text-center">
+                  {/* Stable compact pill container in lower bottom with high contrast backdrop */}
+                  <div className="bg-black/92 backdrop-blur-xl border border-white/25 px-4 py-2.5 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.95)] min-h-[48px] max-w-[88%] flex items-center justify-center transition-all duration-150 ring-1 ring-white/15">
+                    <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center">
                       {currentChunk.words.map((word, wIdx) => {
                         const isVisible = wIdx < visibleWordCount;
                         const isCurrentWord = (currentChunk.startWordIdx + wIdx) === currentSpokenWordIndex;
@@ -441,10 +441,10 @@ export const VerticalVideoPlayer: React.FC<VerticalVideoPlayerProps> = ({
                         return (
                           <span
                             key={`${activeChunkIndex}-${wIdx}`}
-                            className={`text-base sm:text-lg tracking-wide transition-all duration-100 inline-block ${
+                            className={`text-sm sm:text-base tracking-wide transition-all duration-100 inline-block ${
                               isCurrentWord
-                                ? 'text-[#FFD700] scale-110 font-black drop-shadow-[0_0_14px_rgba(255,215,0,0.95)]'
-                                : 'text-white font-extrabold drop-shadow-[0_2px_4px_rgba(0,0,0,1)]'
+                                ? 'text-[#FFD700] scale-105 font-black drop-shadow-[0_0_12px_rgba(255,215,0,0.95)]'
+                                : 'text-white font-black drop-shadow-[0_2px_4px_rgba(0,0,0,1)]'
                             }`}
                           >
                             {word}
@@ -455,7 +455,7 @@ export const VerticalVideoPlayer: React.FC<VerticalVideoPlayerProps> = ({
                   </div>
 
                   {!isPlaying && (
-                    <div className="mt-4 w-12 h-12 rounded-full bg-black/85 backdrop-blur-md border border-white/30 flex items-center justify-center text-white shadow-2xl ring-2 ring-white/20">
+                    <div className="absolute inset-0 m-auto w-12 h-12 rounded-full bg-black/85 backdrop-blur-md border border-white/30 flex items-center justify-center text-white shadow-2xl ring-2 ring-white/20">
                       <Play className="w-5 h-5 ml-0.5 text-white" />
                     </div>
                   )}

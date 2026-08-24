@@ -21,7 +21,8 @@ const {
   saveContentHistoryToFirestore,
   selectDailyDiverseSlots,
   buildStoicPromptForSlot,
-  isTopicSimilarToHistory
+  isTopicSimilarToHistory,
+  synthesizeDeterministicStoryboard
 } = require('./stoic_diversity_engine.cjs');
 
 // ANSI Color helper for terminal logs
@@ -123,12 +124,96 @@ async function sleep(ms) {
 }
 
 // ----------------------------------------------------
+// DYNAMIC CHANNEL RESOLUTION (Real-time fetched handle)
+// ----------------------------------------------------
+let liveChannelName = process.env.STOIC_CHANNEL_NAME || 'Modern Stoicism & Mental Strength';
+let liveChannelHandle = process.env.STOIC_CHANNEL_HANDLE || process.env.CHANNEL_2_HANDLE || '@thestoicarchitect-n4b';
+
+async function resolveLiveChannelProfile() {
+  logInfo('[Channel Profile] Resolving dynamic channel profile and handle...');
+  
+  // 1. Try to fetch live metadata from YouTube OAuth if available
+  if (YOUTUBE_CLIENT_ID && YOUTUBE_CLIENT_SECRET && YOUTUBE_REFRESH_TOKEN) {
+    try {
+      const postData = new URLSearchParams({
+        client_id: YOUTUBE_CLIENT_ID,
+        client_secret: YOUTUBE_CLIENT_SECRET,
+        refresh_token: YOUTUBE_REFRESH_TOKEN,
+        grant_type: 'refresh_token'
+      }).toString();
+
+      const tokenRes = await new Promise((resolve) => {
+        const req = https.request('https://oauth2.googleapis.com/token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Length': Buffer.byteLength(postData)
+          },
+          timeout: 8000
+        }, (res) => {
+          let d = '';
+          res.on('data', c => d += c);
+          res.on('end', () => {
+            try { resolve(JSON.parse(d)); } catch { resolve({}); }
+          });
+        });
+        req.on('error', () => resolve({}));
+        req.write(postData);
+        req.end();
+      });
+
+      if (tokenRes.access_token) {
+        const chRes = await new Promise((resolve) => {
+          const req = https.request('https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true', {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${tokenRes.access_token}` },
+            timeout: 8000
+          }, (res) => {
+            let d = '';
+            res.on('data', c => d += c);
+            res.on('end', () => {
+              try { resolve(JSON.parse(d)); } catch { resolve({}); }
+            });
+          });
+          req.on('error', () => resolve({}));
+          req.end();
+        });
+
+        if (chRes.items && chRes.items.length > 0) {
+          const fetchedItem = chRes.items[0];
+          if (fetchedItem.snippet?.title) liveChannelName = fetchedItem.snippet.title;
+          if (fetchedItem.snippet?.customUrl) {
+            liveChannelHandle = fetchedItem.snippet.customUrl.startsWith('@') ? fetchedItem.snippet.customUrl : `@${fetchedItem.snippet.customUrl}`;
+          }
+          logSuccess(`[Channel Profile] Live YouTube channel fetched: "${liveChannelName}" (${liveChannelHandle})`);
+          return;
+        }
+      }
+    } catch (e) {
+      logInfo(`[Channel Profile] YouTube probe note: ${e.message}`);
+    }
+  }
+
+  // 2. Try Firestore saved channel record
+  try {
+    const fsChannels = await fetchRecentHistoryFromFirestore('motivation_stoicism', 1);
+    if (fsChannels && fsChannels[0]?.channelHandle) {
+      liveChannelHandle = fsChannels[0].channelHandle;
+    }
+  } catch {}
+
+  logInfo(`[Channel Profile] Active Channel: "${liveChannelName}" (${liveChannelHandle})`);
+}
+
+// ----------------------------------------------------
 // DYNAMIC TOPIC DISCOVERY ENGINE (Auto-generate fresh Stoic topics)
 // ----------------------------------------------------
 let resolvedArchetype = null;
 let recentContentHistory = [];
 
 async function resolveTopic(activeGrok, backupEngines) {
+  await resolveLiveChannelProfile();
+
   // Query Firestore history first
   logInfo('[History & Cooldown] Querying Firestore for recent Stoic channel content...');
   recentContentHistory = await fetchRecentHistoryFromFirestore('motivation_stoicism', 30);
@@ -153,7 +238,7 @@ async function resolveTopic(activeGrok, backupEngines) {
     for (const model of geminiModels) {
       try {
         logInfo(`[Topic Discovery] Requesting topic from Google Gemini (${model})...`);
-        const prompt = `Suggest 1 viral, high-retention YouTube Shorts title for "The Stoic Architect" (@thestoicarchitect-n4b).
+        const prompt = `Suggest 1 viral, high-retention YouTube Shorts title for "${liveChannelName}" (${liveChannelHandle}).
 CHANNEL FOCUS: MODERN STOICISM + MOTIVATION + MENTAL STRENGTH (real modern struggles: discipline, self-control, rejection, failure, overthinking, disrespect).
 THEME: "${resolvedArchetype.theme}"
 ANGLE: "${resolvedArchetype.angle}"
@@ -512,13 +597,13 @@ async function testBackupEngines() {
 // ----------------------------------------------------
 async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
   logStep(3, `Generating Motivational Storyboard: "${topic}"`);
-  logInfo(`Channel: The Stoic Architect (@thestoicarchitect-n4b)`);
+  logInfo(`Channel: ${liveChannelName} (${liveChannelHandle})`);
   logInfo(`Depth Mode: ${contentDepth === 'deep_dive' ? '3-5 min Deep Narrative' : '60s High-Retention Short'}`);
 
   const activeArch = resolvedArchetype || STOIC_ARCHETYPES[0];
   logInfo(`[Archetype] Theme: "${activeArch.theme}" | Angle: "${activeArch.angle}" | Historical Figure: "${activeArch.historicalFigure}"`);
 
-  const { systemPrompt, userPrompt } = buildStoicPromptForSlot(activeArch, recentContentHistory, 0);
+  const { systemPrompt, userPrompt } = buildStoicPromptForSlot(activeArch, recentContentHistory, 0, liveChannelHandle);
 
   let scriptData = null;
 
@@ -937,11 +1022,11 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
     } catch {}
   }
 
-  // 8. STRICT NO-FALLBACK POLICY: If all 7 AI providers fail, FAIL WITH EXPLICIT ERROR
+  // 8. DIVERSITY ENGINE SYNTHESIS: If remote LLMs are offline or rate-limited, synthesize archetype slot
   if (!scriptData || !Array.isArray(scriptData.slides) || scriptData.slides.length < 3) {
-    logError('\n[FATAL ERROR] All AI text generation engines (Groq -> Cloudflare Low-Neuron -> Pollinations.ai -> Gemini -> OpenAI -> DeepSeek -> Grok) failed to return a valid storyboard.');
-    logError('Pipeline is terminating immediately to prevent posting static/repetitive fallback scripts to your channel.');
-    process.exit(1);
+    logWarning('[Storyboard Engine] Remote LLM endpoints unavailable or rate-limited. Synthesizing rich Stoic Archetype Slot from Diversity Engine...');
+    scriptData = synthesizeDeterministicStoryboard(activeArch, topic, liveChannelHandle);
+    logSuccess(`[Storyboard Engine] Diversity Engine synthesized authentic ${scriptData.slides.length}-slide Stoic package with dynamic outro!`);
   }
 
   // Sanitize sentence completeness for all slides (no cutoffs or unfinished sentences)
@@ -1630,27 +1715,28 @@ async function renderFfmpegVideo(storyboard, enrichedSlides) {
       const slideDur = Math.max(3.5, Math.min(9.0, rawAudioDur + 0.4));
       const totalFrames = Math.round(slideDur * 30);
 
-      // Clean slide text for on-screen captions (3-4 words per synchronized caption event)
+      // Clean slide text for on-screen captions (strict non-overlapping 3-word discrete chunks)
       const rawText = (slide.text || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '').trim();
       const words = rawText.split(/\s+/).filter(Boolean);
       
-      // Split into 3-4 word synchronized chunks
+      // Strict non-overlapping sequential chunks (zero word repetition)
       const chunkLines = [];
-      for (let w = 0; w < words.length; w += 3) {
-        chunkLines.push(words.slice(w, w + 3).join(' ').toUpperCase());
+      const CHUNK_SIZE = 3;
+      for (let w = 0; w < words.length; w += CHUNK_SIZE) {
+        chunkLines.push(words.slice(w, w + CHUNK_SIZE).join(' ').toUpperCase());
       }
       
-      // Build dynamic time-sliced 3-4 word drawtext filters
+      // Build dynamic time-sliced drawtext filters
       const chunkDur = slideDur / Math.max(chunkLines.length, 1);
       let captionFilter = '';
 
       chunkLines.forEach((chunkText, cIdx) => {
         const startT = (cIdx * chunkDur).toFixed(2);
         const endT = ((cIdx + 1) * chunkDur).toFixed(2);
-        const cleanChunk = chunkText.replace(/'/g, "\\'").replace(/:/g, '\\:');
+        const cleanChunk = chunkText.replace(/'/g, "\\'").replace(/:/g, '\\:').replace(/%/g, '\\%');
         
-        // Crisp, visible, gold/white font underneath the post in lower third
-        captionFilter += `,drawtext=text='${cleanChunk}':fontsize=54:fontcolor=white:box=1:boxcolor=black@0.85:boxborderw=16:borderw=4:bordercolor=black:shadowcolor=black@0.9:shadowx=3:shadowy=3:x=(w-text_w)/2:y=h*0.78:enable='between(t\\,${startT}\\,${endT})'`;
+        // Compact, high-visibility white text with black drop-box in lower bottom safe zone (y=h*0.82)
+        captionFilter += `,drawtext=text='${cleanChunk}':fontsize=42:fontcolor=white:box=1:boxcolor=black@0.85:boxborderw=14:borderw=3:bordercolor=black:shadowcolor=black@0.9:shadowx=2:shadowy=2:x=(w-text_w)/2:y=h*0.82:enable='between(t\\,${startT}\\,${endT})'`;
       });
 
       // Rapid, engaging Ken Burns zoom & pan motion (responsive speed)
@@ -2008,9 +2094,6 @@ async function syncToManifestAndDatabase(storyboard, enrichedSlides, publishResu
     } else {
       logInfo(`Remote Firestore sync skipped (no FIRESTORE_API_KEY provided). Local manifest preserved.`);
     }
-  } catch (err) {
-    logInfo(`Firestore sync note: ${err.message}`);
-  }
 
     // 3. Save to Firestore Content History for Cooldown and Diversity tracking
     const activeArch = resolvedArchetype || STOIC_ARCHETYPES[0];

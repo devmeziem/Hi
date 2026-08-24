@@ -156,7 +156,28 @@ async function compileVideoMotion() {
               ? `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0009,1.15)':d=${totalFrames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`
               : `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='if(lte(zoom,1.0),1.14,max(1.0,zoom-0.0009))':d=${totalFrames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
 
-            const cmd = `ffmpeg -y -loop 1 -i "${slImg}" -i "${slAud}" -c:v libx264 -preset ultrafast -crf 22 -pix_fmt yuv420p -t ${dur} -vf "${zoomFilt}" -c:a aac -b:a 192k -shortest "${slClip}"`;
+            // Build dynamic non-overlapping burned captions
+            const textRaw = sl.text || sl.scriptText || '';
+            const rawWords = textRaw.replace(/[\r\n]+/g, ' ').replace(/"/g, '').trim().split(/\s+/).filter(Boolean);
+            const chunkLines = [];
+            const CHUNK_SIZE = 3;
+            for (let w = 0; w < rawWords.length; w += CHUNK_SIZE) {
+              chunkLines.push(rawWords.slice(w, w + CHUNK_SIZE).join(' ').toUpperCase());
+            }
+
+            let captionFilt = '';
+            if (chunkLines.length > 0) {
+              const chunkDur = dur / Math.max(chunkLines.length, 1);
+              chunkLines.forEach((chunkText, cIdx) => {
+                const startT = (cIdx * chunkDur).toFixed(2);
+                const endT = ((cIdx + 1) * chunkDur).toFixed(2);
+                const cleanChunk = chunkText.replace(/'/g, "\\'").replace(/:/g, '\\:').replace(/%/g, '\\%');
+                captionFilt += `,drawtext=text='${cleanChunk}':fontsize=42:fontcolor=white:box=1:boxcolor=black@0.85:boxborderw=14:borderw=3:bordercolor=black:shadowcolor=black@0.9:shadowx=2:shadowy=2:x=(w-text_w)/2:y=h*0.82:enable='between(t\\,${startT}\\,${endT})'`;
+              });
+            }
+
+            const fullSlideFilter = `${zoomFilt}${captionFilt}`;
+            const cmd = `ffmpeg -y -loop 1 -i "${slImg}" -i "${slAud}" -c:v libx264 -preset ultrafast -crf 22 -pix_fmt yuv420p -t ${dur} -vf "${fullSlideFilter}" -c:a aac -b:a 192k -shortest "${slClip}"`;
             execSync(cmd, { stdio: 'pipe' });
             if (fs.existsSync(slClip)) slideClips.push(slClip);
           }
