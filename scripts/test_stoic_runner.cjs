@@ -1069,20 +1069,21 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
     });
   }
 
-  // Enforce strict YouTube title length and Shorts indexing compliance
+  // Enforce strict YouTube title length, special-character sanitization, and Shorts indexing compliance
   if (scriptData.title) {
-    let cleanTitle = scriptData.title.replace(/[<>]/g, '').trim();
-    if (cleanTitle.length > 80) {
-      const parts = cleanTitle.split(/[:|–—]/);
-      if (parts[0] && parts[0].trim().length <= 72 && parts[0].trim().length >= 15) {
-        cleanTitle = `${parts[0].trim()} #Shorts`;
-      } else {
-        cleanTitle = `${cleanTitle.slice(0, 70).trim()} #Shorts`;
-      }
-    } else if (!cleanTitle.includes('#Shorts') && cleanTitle.length <= 72) {
-      cleanTitle = `${cleanTitle} #Shorts`;
+    let cleanTitle = String(scriptData.title)
+      .replace(/[\r\n\t]+/g, ' ')
+      .replace(/['"\\`]/g, '')
+      .replace(/[<>|:]/g, ' - ')
+      .replace(/[{}[\]]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    // Normalize #Shorts tag
+    cleanTitle = cleanTitle.replace(/#Shorts/gi, '').replace(/#\w+/g, '').trim();
+    if (cleanTitle.length > 68) {
+      cleanTitle = cleanTitle.slice(0, 65).trim();
     }
-    scriptData.title = cleanTitle;
+    scriptData.title = `${cleanTitle} #Shorts`;
   }
 
   console.log(`\n  ${colors.bright}Generated Complete Storyboard Breakdown:${colors.reset}`);

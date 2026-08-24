@@ -704,9 +704,9 @@ STRICT SCRIPTWRITING & NARRATION RULES:
    - Angle: ${slotArchetype.angle}
    - Avoid recent titles: [${recentTitles || 'None'}]
 
-OUTPUT FORMAT: Return strictly a valid JSON object matching the schema below.`;
+OUTPUT FORMAT: Return strictly a valid JSON object matching the schema below.
 {
-  "title": "Punchy, High-CTR Modern Stoic Title (e.g. 'Why Silence Destroys Disrespect' or 'The 10-Minute Rule for Self-Control') #Shorts",
+  "title": "Punchy, High-CTR Modern Stoic Title (e.g. Why Silence Destroys Disrespect or The 10-Minute Rule for Self-Control) #Shorts",
   "theme": "${slotArchetype.theme}",
   "angle": "${slotArchetype.angle}",
   "hook": "${slotArchetype.hookPatterns[slotIndex % slotArchetype.hookPatterns.length]}",
