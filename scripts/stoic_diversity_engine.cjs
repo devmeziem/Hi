@@ -647,69 +647,64 @@ function selectDailyDiverseSlots(recentHistory, slotCount = 4) {
 }
 
 const ROTATING_VIRAL_OUTROS = [
-  "You might not see us again — follow this channel for daily mental strength.",
-  "Follow this channel if you want to grow 1% stronger every single day.",
-  "You may never see this channel again — tap follow for daily discipline and fortitude.",
-  "Don't lose this wisdom — follow this channel to build your mental armor.",
-  "Follow this channel today for daily Stoic focus and personal mastery.",
-  "You might never see this channel again — follow for daily mindset elevation.",
-  "Tap follow on this channel to master self-discipline and inner peace.",
-  "Join this channel today and become indestructible against chaos."
+  "Follow @TheStoicArchitect to build unshakeable mental armor every single day.",
+  "You may never see this channel again — follow now for daily discipline and mental clarity.",
+  "Tap follow on @TheStoicArchitect to master your mind and conquer daily chaos.",
+  "Don't lose this wisdom — follow this channel to elevate your mindset every morning.",
+  "Follow @TheStoicArchitect today for daily Stoic focus and personal mastery.",
+  "You might never see this channel again — follow for daily fortitude and resilience.",
+  "Follow @TheStoicArchitect if you are committed to becoming 1% stronger every day.",
+  "Join @TheStoicArchitect today and become indestructible against life's chaos."
 ];
 
 /**
  * Resolve dynamic channel call-to-actions with high-retention rotating viral patterns
  */
-function resolveOutroPattern(pattern, channelHandle = '') {
-  if (pattern && !pattern.includes('{{CHANNEL_HANDLE}}') && !pattern.toLowerCase().includes('follow @') && pattern.length > 10) {
-    return pattern;
-  }
+function resolveOutroPattern(pattern, channelHandle = '@thestoicarchitect-n4b') {
+  const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
   const randomIndex = Math.floor(Math.random() * ROTATING_VIRAL_OUTROS.length);
-  return ROTATING_VIRAL_OUTROS[randomIndex];
+  const baseOutro = ROTATING_VIRAL_OUTROS[randomIndex];
+  return baseOutro.replace('@TheStoicArchitect', cleanHandle);
 }
 
 /**
  * Build rich system and user prompts for multi-model AI generators that enforce
- * MODERN STOICISM + MOTIVATION + MENTAL STRENGTH (no historical biographies / quotes lists).
+ * CLEAR, CONVERSATIONAL, AND HIGHLY UNDERSTANDABLE SPOKEN SCRIPTWRITING.
  */
 function buildStoicPromptForSlot(slotArchetype, recentHistory, slotIndex = 0, channelHandle = '@thestoicarchitect-n4b') {
   const recentTitles = (recentHistory || []).slice(0, 12).map(h => `"${h.topic}"`).join(', ');
   const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
   const resolvedOutro = resolveOutroPattern(slotArchetype.outroPattern, cleanHandle);
 
-  const systemPrompt = `You are the lead content creator and YouTube Shorts director for the Modern Stoicism & Mental Strength channel (${cleanHandle}).
-CHANNEL FOCUS: MODERN STOICISM + MOTIVATION + MENTAL STRENGTH.
-TARGET AUDIENCE: Modern ambitious individuals, creators, professionals, and students dealing with daily pressure, rejection, burnout, self-doubt, disrespect, and distractions.
+  const systemPrompt = `You are a master scriptwriter and YouTube Shorts director for the Modern Stoicism & Mental Strength channel (${cleanHandle}).
+CHANNEL GOAL: Explain modern stoicism and mental resilience in simple, direct, engaging, and spoken-conversational language.
+AUDIENCE: Everyday ambitious people dealing with stress, difficult people, self-doubt, burnout, and distraction.
 
-CRITICAL CONTENT & VISUAL HARMONY DIRECTIVES:
-1. FOCUS ON REAL MODERN LIFE:
-   - Do NOT make the video mainly about Stoic philosophers, their biographies, or lists of ancient quotes.
-   - Stoic philosophy is strictly the psychological foundation (dichotomy of control, emotional sovereignty, voluntary discomfort, amor fati).
-   - The topic, hook, and slides MUST focus on real modern problems (discipline, self-control, rejection, failure, pressure, disrespect, overthinking, comparison, loneliness, difficult people).
-   - Deliver practical, empowering modern takeaways that viewers can apply immediately today.
+STRICT SCRIPTWRITING & NARRATION RULES:
+1. CRYSTAL CLEAR EXPLANATIONS (NO JARGON OR ABSTRACT POETRY):
+   - The narration must sound like a wise mentor speaking directly to the listener in plain English.
+   - Explain the core topic directly. Do not wander off topic.
+   - Use clear subject-verb sentences that flow smoothly when read aloud by text-to-speech.
+   - Avoid fragmented or confusing sentence splices. Every slide MUST be 1-2 complete, punchy spoken sentences (12-18 words per slide).
 
-2. VISUAL HARMONY & UNIFIED COLOR RANGE (MANDATORY):
-   - ALL 6 SLIDES MUST SHARE THE EXACT SAME VISUAL AESTHETIC, COLOR PALETTE, AND LIGHTING TONE.
-   - Core Visual DNA: ${slotArchetype.visualStyle}
-   - Unified Color Range: High-contrast monochromatic slate and deep obsidian charcoal, warm amber/tungsten rim accents, dramatic chiaroscuro shadows, 35mm cinematic anamorphic lens, 9:16 vertical 8k photorealistic.
-   - Do NOT jump between random unrelated styles or stock images. Each slide must feel like an organic shot in the SAME cinematic film focused entirely on ${slotArchetype.theme}.
+2. 6-SLIDE NARRATIVE COHESION (THE 6-STEP ARC):
+   - Slide 0 (Direct Hook): Immediately state the exact problem or situation in clear terms that grab attention.
+   - Slide 1 (The Trap): Explain why reacting or failing here hurts the viewer, making them feel the friction.
+   - Slide 2 (The Mental Shift): Give the simple principle (e.g., control what you can, let go of what you cannot).
+   - Slide 3 (The Action Rule): Give one concrete, practical action they can take today in their real life.
+   - Slide 4 (The Psychological Victory): Explain the empowering outcome when they master this rule.
+   - Slide 5 (Closing & Outro): A final one-line reminder + "${resolvedOutro}".
 
-3. SPECIFIC ASSIGNED THEMATIC ANGLE FOR THIS VIDEO:
+3. UNIFIED VISUAL IDENTITY (9:16 Vertical 8k Cinematic):
+   - All 6 visual prompts MUST share the same aesthetic: ${slotArchetype.visualStyle}
+   - Lighting: Warm amber rim lighting, dark moody obsidian slate background, sharp 35mm anamorphic portrait depth of field.
+
+4. TARGET THEME & ANGLE:
    - Theme: ${slotArchetype.theme}
    - Angle: ${slotArchetype.angle}
-   - Core Stoic Principle Foundation: ${slotArchetype.philosophicalPrinciple}
-   - Narrative Progression: ${slotArchetype.narrativeStructure}
-   - Modern Scenario: ${slotArchetype.modernScenario}
-   - Visual Style Aesthetic: ${slotArchetype.visualStyle}
-   - Ending Outro: ${resolvedOutro}
+   - Avoid recent titles: [${recentTitles || 'None'}]
 
-4. ANTI-DUPLICATION MANDATE:
-   - Recently covered topics to avoid duplicating: [${recentTitles || 'None'}]
-   - Do NOT produce a topic with the same underlying lesson even if worded differently.
-   - Every sentence must be punchy, clear, grammatically sound, and deliver strong emotional/mental resonance.
-   - Strictly 6 slides formatted in valid JSON.
-
-MANDATORY 6-SLIDE JSON OUTPUT SCHEMA:
+OUTPUT FORMAT: Return strictly a valid JSON object matching the schema below.`;
 {
   "title": "Punchy, High-CTR Modern Stoic Title (e.g. 'Why Silence Destroys Disrespect' or 'The 10-Minute Rule for Self-Control') #Shorts",
   "theme": "${slotArchetype.theme}",

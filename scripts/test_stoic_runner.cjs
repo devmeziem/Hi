@@ -1747,27 +1747,27 @@ async function renderFfmpegVideo(storyboard, enrichedSlides) {
       const slideDur = Math.max(3.5, Math.min(9.0, rawAudioDur + 0.4));
       const totalFrames = Math.round(slideDur * 30);
 
-      // Clean slide text for on-screen captions (strict non-overlapping 3-word discrete chunks)
+      // Clean slide text for on-screen captions (natural spoken 2-3 word discrete chunks)
       const rawText = (slide.text || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '').trim();
       const words = rawText.split(/\s+/).filter(Boolean);
       
-      // Strict non-overlapping sequential chunks (zero word repetition)
+      // Natural non-overlapping sequential chunks (preserving proper casing)
       const chunkLines = [];
       const CHUNK_SIZE = 3;
       for (let w = 0; w < words.length; w += CHUNK_SIZE) {
-        chunkLines.push(words.slice(w, w + CHUNK_SIZE).join(' ').toUpperCase());
+        chunkLines.push(words.slice(w, w + CHUNK_SIZE).join(' '));
       }
       
       // Build dynamic time-sliced drawtext filters
       const chunkDur = slideDur / Math.max(chunkLines.length, 1);
       let captionFilter = '';
 
-      // Pinned Topic Hook at Top of Video for first 4.5 seconds (Slide 1)
+      // Pinned Topic Hook at Top of Video for first 4.5 seconds (Slide 1) - Safe 1080p mobile viewport
       let topHookFilter = '';
       if (i === 0) {
         const rawTitle = (storyboard.title || storyboard.theme || 'DAILY STOIC MASTERY').replace(/#\w+/g, '').trim();
-        const cleanTopicHook = sanitizeForFfmpegDrawtext(rawTitle.slice(0, 48)).toUpperCase();
-        topHookFilter = `,drawtext=text='${cleanTopicHook}':fontsize=40:fontcolor=white:box=1:boxcolor=black@0.90:boxborderw=16:borderw=2:bordercolor=gold:shadowcolor=black@0.9:shadowx=2:shadowy=2:x=(w-text_w)/2:y=190:enable='between(t\\,0\\,4.5)'`;
+        const cleanTopicHook = sanitizeForFfmpegDrawtext(rawTitle.slice(0, 30));
+        topHookFilter = `,drawtext=text='${cleanTopicHook}':fontsize=32:fontcolor=0xFDE047:box=1:boxcolor=black@0.94:boxborderw=16:borderw=2:bordercolor=0xEAB308:shadowcolor=black@0.9:shadowx=2:shadowy=2:x=(w-text_w)/2:y=160:enable='between(t\\,0\\,4.5)'`;
       }
 
       chunkLines.forEach((chunkText, cIdx) => {
@@ -1775,8 +1775,8 @@ async function renderFfmpegVideo(storyboard, enrichedSlides) {
         const endT = ((cIdx + 1) * chunkDur).toFixed(2);
         const cleanChunk = sanitizeForFfmpegDrawtext(chunkText);
         
-        // Centered high-contrast kinetic subtitles with deep black drop-box in screen center
-        captionFilter += `,drawtext=text='${cleanChunk}':fontsize=48:fontcolor=white:box=1:boxcolor=black@0.92:boxborderw=18:borderw=3:bordercolor=black:shadowcolor=black@0.95:shadowx=3:shadowy=3:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t\\,${startT}\\,${endT})'`;
+        // Centered high-contrast kinetic subtitles with rounded pill border matching UI
+        captionFilter += `,drawtext=text='${cleanChunk}':fontsize=46:fontcolor=white:box=1:boxcolor=black@0.92:boxborderw=22:borderw=3:bordercolor=white@0.35:shadowcolor=black@0.95:shadowx=3:shadowy=3:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t\\,${startT}\\,${endT})'`;
       });
 
       // Rapid, engaging Ken Burns zoom & pan motion (responsive speed)

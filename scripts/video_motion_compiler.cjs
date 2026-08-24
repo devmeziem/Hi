@@ -167,20 +167,20 @@ async function compileVideoMotion() {
               ? `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0009,1.15)':d=${totalFrames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`
               : `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='if(lte(zoom,1.0),1.14,max(1.0,zoom-0.0009))':d=${totalFrames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
 
-            // Build dynamic non-overlapping burned captions
+            // Build dynamic non-overlapping burned captions with proper casing
             const textRaw = sl.text || sl.scriptText || '';
             const rawWords = textRaw.replace(/[\r\n]+/g, ' ').replace(/"/g, '').trim().split(/\s+/).filter(Boolean);
             const chunkLines = [];
             const CHUNK_SIZE = 3;
             for (let w = 0; w < rawWords.length; w += CHUNK_SIZE) {
-              chunkLines.push(rawWords.slice(w, w + CHUNK_SIZE).join(' ').toUpperCase());
+              chunkLines.push(rawWords.slice(w, w + CHUNK_SIZE).join(' '));
             }
 
             let topHookFilt = '';
             if (sIdx === 0) {
               const rawTitle = (job.title || 'DAILY STOIC MASTERY').replace(/#\w+/g, '').trim();
-              const cleanTopicHook = sanitizeForFfmpegDrawtext(rawTitle.slice(0, 48)).toUpperCase();
-              topHookFilt = `,drawtext=text='${cleanTopicHook}':fontsize=40:fontcolor=white:box=1:boxcolor=black@0.90:boxborderw=16:borderw=2:bordercolor=gold:shadowcolor=black@0.9:shadowx=2:shadowy=2:x=(w-text_w)/2:y=190:enable='between(t\\,0\\,4.5)'`;
+              const cleanTopicHook = sanitizeForFfmpegDrawtext(rawTitle.slice(0, 30));
+              topHookFilt = `,drawtext=text='${cleanTopicHook}':fontsize=32:fontcolor=0xFDE047:box=1:boxcolor=black@0.94:boxborderw=16:borderw=2:bordercolor=0xEAB308:shadowcolor=black@0.9:shadowx=2:shadowy=2:x=(w-text_w)/2:y=160:enable='between(t\\,0\\,4.5)'`;
             }
 
             let captionFilt = '';
@@ -190,7 +190,7 @@ async function compileVideoMotion() {
                 const startT = (cIdx * chunkDur).toFixed(2);
                 const endT = ((cIdx + 1) * chunkDur).toFixed(2);
                 const cleanChunk = sanitizeForFfmpegDrawtext(chunkText);
-                captionFilt += `,drawtext=text='${cleanChunk}':fontsize=48:fontcolor=white:box=1:boxcolor=black@0.92:boxborderw=18:borderw=3:bordercolor=black:shadowcolor=black@0.95:shadowx=3:shadowy=3:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t\\,${startT}\\,${endT})'`;
+                captionFilt += `,drawtext=text='${cleanChunk}':fontsize=46:fontcolor=white:box=1:boxcolor=black@0.92:boxborderw=22:borderw=3:bordercolor=white@0.35:shadowcolor=black@0.95:shadowx=3:shadowy=3:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t\\,${startT}\\,${endT})'`;
               });
             }
 
