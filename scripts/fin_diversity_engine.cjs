@@ -433,6 +433,119 @@ function synthesizeDeterministicFinStoryboard(archetype, topicTitle, channelHand
   };
 }
 
+/**
+ * Build rich prompt for 15-chapter 15-20 min educational masterclass video
+ */
+function buildFinDeepDivePrompt(archetype, recentHistory = [], channelHandle = '@bones_ceo') {
+  const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
+  const recentTitles = (recentHistory || []).slice(0, 15).map(h => `"${h.topic || h.title}"`).join(', ');
+  const resolvedOutro = resolveFinOutro(cleanHandle);
+
+  const systemPrompt = `You are a world-class financial educator and long-form documentary scriptwriter for the Fin Blueprint channel (${cleanHandle}).
+CHANNEL CORE POSITIONING:
+"Learn how to manage money, start small businesses, develop valuable skills, find legitimate opportunities, and understand finance in simple language."
+TARGET AUDIENCE: Everyday young people, students, beginners, low-income earners, and aspiring entrepreneurs starting with little or no capital ($0 to $50 / ₦0 to ₦50,000).
+
+LONG-FORM DEEP-DIVE REQUIREMENTS (15-20 MINUTE MASTERCLASS WITH 15 CHAPTERS):
+1. EXACTLY 15 COMPREHENSIVE CHAPTERS / SLIDES:
+   - Each slide represents an in-depth, thorough teaching section (~110-140 words per slide of rich, spoken-word educational narration).
+   - Total narration word count across 15 slides: ~1,800 to 2,100 words (translates to ~15-18 minutes of steady spoken audio).
+2. NON-GURU, PRACTICAL, HIGH-PROFIT VALUE:
+   - Do NOT promise or guarantee income, profit, or instant wealth.
+   - ALWAYS use honest, measured language: "potential revenue", "estimated margins", "results vary", "possible startup costs".
+   - The teaching must be intensely actionable, breakdown real supply costs, pricing formulas, and downside risks.
+3. GLOBAL DUAL-CURRENCY FORMAT (MANDATORY):
+   - Whenever mentioning currency, budgets, costs, or revenues, include BOTH Nigerian Naira (₦) and US Dollar ($) equivalents (e.g. "₦5,000 (about $3.50 USD)", "₦20,000 (around $13.50 USD)", "$10 (approx. ₦15,000)").
+4. 15-CHAPTER PROGRESSIVE CURRICULUM:
+   - Slide 0: Executive Hook & The Landscape
+   - Slide 1: The Core Problem & Common Financial Leaks
+   - Slide 2: The Foundational Principle & Mental Model
+   - Slide 3: Equipment, Phone Tools & Zero-Cost Resources Needed
+   - Slide 4: Step 1 - Market Research & Finding High-Demand Niches
+   - Slide 5: Step 2 - Sourcing, Production & Supply Costs
+   - Slide 6: Step 3 - Pricing Strategy & Unit Economics
+   - Slide 7: Step 4 - Gross Profit Margins & Break-Even Math
+   - Slide 8: Step 5 - Digital Customer Acquisition (Organic & Free Outreach)
+   - Slide 9: Step 6 - Cash Flow Discipline & Working Capital Safety
+   - Slide 10: Step 7 - Inflation Defense & Hedging Purchasing Power
+   - Slide 11: Real-World Case Study Breakdown (Scenario Walkthrough)
+   - Slide 12: Scaling from ₦5,000 ($3.50) to ₦50,000 ($35) Reinvestment Rules
+   - Slide 13: Free Certifications, Tools & Legitimate Grants Directory
+   - Slide 14: 30-Day Step-by-Step Action Checklist & Channel Outro (${resolvedOutro})
+5. MULTI-SOURCE VISUAL PLANNING:
+   - Detail a crisp, widescreen 16:9 cinematic photorealistic scene for each slide.
+
+OUTPUT FORMAT: Return strictly valid JSON matching this schema:
+{
+  "title": "Comprehensive Masterclass Title with Dual Currency Mention (No #Shorts)",
+  "category": "${archetype.category}",
+  "theme": "${archetype.theme}",
+  "angle": "${archetype.angle}",
+  "estimatedBudget": "${archetype.targetBudget}",
+  "description": "Full 15-chapter masterclass on ${archetype.theme}.\\n\\nTimestamps:\\n00:00 Introduction & Overview\\n...\\n\\n#PersonalFinance #SmallBusiness #MoneySkills #FinancialEducation",
+  "tags": ["#PersonalFinance", "#SmallBusiness", "#MoneySkills", "#FinancialEducation", "#BusinessBreakdown"],
+  "slides": [
+    {
+      "slideIndex": 0,
+      "chapterTitle": "Introduction & Market Opportunity",
+      "text": "Detailed 110-140 words spoken narration covering the overview and opportunity...",
+      "visual": "16:9 widescreen 8k photorealistic modern financial studio workspace with emerald green and gold ambient lighting..."
+    }
+    // ... exactly 15 slides total (index 0 to 14)
+  ]
+}`;
+
+  const userPrompt = `Generate a comprehensive 15-chapter 15-20 minute educational Masterclass script on "${archetype.theme}". Angle: "${archetype.angle}". Budget: "${archetype.targetBudget}". Avoid previous topics: [${recentTitles || 'None'}]. Ensure each slide has 110-140 words of rich spoken narration. Return strictly valid JSON.`;
+
+  return { systemPrompt, userPrompt };
+}
+
+/**
+ * Deterministic Fallback for 15-Chapter 15-20 Minute Masterclass
+ */
+function synthesizeDeterministicFinDeepDiveStoryboard(archetype, topicTitle, channelHandle = '@bones_ceo') {
+  const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
+  const resolvedOutro = resolveFinOutro(cleanHandle);
+  const arch = archetype || FIN_ARCHETYPES[0];
+  const cleanTopic = sanitizeFinString(topicTitle || arch.theme);
+
+  const chapters = [
+    { title: 'Executive Overview & The Small Capital Paradigm', focus: 'Why tiny capital is not a barrier when you focus on high-utility micro-services and zero-inventory business models.' },
+    { title: 'The Silent Money Traps & Beginner Mistakes', focus: 'Why 80% of new earners fail by buying unnecessary gear or trusting get-rich-quick schemes instead of solving real problems.' },
+    { title: 'The Core Principle: Cash Velocity Over Big Capital', focus: 'Understanding how moving $5 or ₦5,000 ten times a week creates more income than waiting months for a large grant.' },
+    { title: 'Essential Zero-Cost Tools & Smartphone Setup', focus: 'The exact free smartphone apps, digital ledger tools, and communication channels needed to operate efficiently.' },
+    { title: 'Step 1: Finding High-Demand Local & Digital Demand', focus: 'How to survey your neighborhood, school, or online communities to find what people are already spending money on.' },
+    { title: 'Step 2: Sourcing Supplies & Managing Initial Costs', focus: 'Negotiating micro-quantities from wholesale markets and keeping your upfront commitments strictly within your budget.' },
+    { title: 'Step 3: Realistic Pricing Strategy & Value Perception', focus: 'How to price your offer based on customer convenience and speed rather than competing on the bottom price.' },
+    { title: 'Step 4: Unit Economics & Calculating Break-Even Points', focus: 'The exact mathematical formula for calculating gross profit per unit and knowing how many sales you need each day.' },
+    { title: 'Step 5: Free Customer Acquisition & Word of Mouth', focus: 'Simple WhatsApp broadcast strategies, direct neighborhood outreach, and social media showcase techniques that cost $0.' },
+    { title: 'Step 6: Protecting Working Capital & Cash Leaks', focus: 'Why you must separate your personal feeding money from your business cash box from the very first transaction.' },
+    { title: 'Step 7: Inflation Defense & Currency Preservation', focus: 'How to hedge your growing savings using stable value methods and avoiding leaving idle cash in low-interest accounts.' },
+    { title: 'Case Study: The ₦10,000 to ₦100,000 Journey', focus: 'A step-by-step hypothetical walkthrough showing realistic timeline, reinvestment cycles, and operational challenges.' },
+    { title: 'Reinvestment Rules & Scaling Safely', focus: 'The 70-30 profit allocation rule: taking 30% for personal buffer and rolling 70% back into inventory expansion.' },
+    { title: 'Verified Free Certifications & Learning Resources', focus: 'Google Career certificates, digital skill libraries, and legitimate enterprise development resources you can access for free.' },
+    { title: '30-Day Step-by-Step Action Checklist & Conclusion', focus: `Your concrete 4-week implementation blueprint. Start small, stay disciplined, and ${resolvedOutro}` }
+  ];
+
+  return {
+    title: `${cleanTopic} - Complete Step-by-Step Masterclass`,
+    category: arch.category,
+    theme: arch.theme,
+    angle: arch.angle,
+    estimatedBudget: arch.targetBudget,
+    description: `Comprehensive 15-Chapter Masterclass on ${arch.theme}.\n\nTimestamps:\n` +
+      chapters.map((c, i) => `${String(Math.floor(i * 1.2)).padStart(2, '0')}:00 Chapter ${i + 1}: ${c.title}`).join('\n') +
+      `\n\n#PersonalFinance #SmallBusiness #MoneySkills #FinancialEducation`,
+    tags: ["#PersonalFinance", "#SmallBusiness", "#MoneySkills", "#FinancialEducation", "#BusinessBreakdown"],
+    slides: chapters.map((c, idx) => ({
+      slideIndex: idx,
+      chapterTitle: c.title,
+      text: `In this section of our masterclass on ${arch.theme}, we examine ${c.title.toLowerCase()}. ${c.focus} When you are working with a budget of ${arch.targetBudget}, every single dollar or naira counts. The goal is to build sustainable operational habits that eliminate unnecessary risk while steadily compounding your gross profit margins over time. Remember that real financial growth is not about overnight luck, but consistent daily execution.`,
+      visual: `16:9 widescreen 8k photorealistic modern educational scene, sleek dark obsidian slate studio, emerald green and gold ambient lighting, ultra-high definition, professional cinematic depth`
+    }))
+  };
+}
+
 module.exports = {
   FIN_CATEGORIES,
   FIN_ARCHETYPES,
@@ -442,6 +555,8 @@ module.exports = {
   resolveFinOutro,
   selectDiverseArchetype,
   buildFinPromptForSlot,
-  synthesizeDeterministicFinStoryboard
+  buildFinDeepDivePrompt,
+  synthesizeDeterministicFinStoryboard,
+  synthesizeDeterministicFinDeepDiveStoryboard
 };
 

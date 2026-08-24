@@ -126,8 +126,13 @@ async function checkGroqAvailability() {
 // ----------------------------------------------------
 // STEP 2: GENERATE 6-SLIDE FINANCE & SMALL-BUSINESS STORYBOARD
 // ----------------------------------------------------
+// ----------------------------------------------------
+// STEP 3: GENERATE STORYBOARD (SHORTS OR 15-CHAPTER MASTERCLASS)
+// ----------------------------------------------------
 async function generateFinanceStoryboard(topicInput, groqModel) {
-  logStep(2, `Synthesizing Financial & Micro-Business Storyboard: "${topicInput || 'Auto-Synthesized'}"`);
+  const isDeepDive = contentDepth === 'deep_dive' || process.env.IS_DEEP_DIVE === 'true';
+  const modeLabel = isDeepDive ? '15-Chapter 15-20 Min Educational Masterclass' : '60s High-Retention Short';
+  logStep(2, `Synthesizing ${modeLabel}: "${topicInput || 'Auto-Synthesized'}"`);
   
   // Read existing cached/saved posts to verify and eliminate duplicates
   const manifestPath = path.join(process.cwd(), 'daily_blueprint_manifest.json');
@@ -149,14 +154,17 @@ async function generateFinanceStoryboard(topicInput, groqModel) {
   logInfo(`[Anti-Duplication Engine] Loaded ${recentHistory.length} previous posts from manifest history for verification.`);
 
   // Pick archetype intelligently ensuring non-duplication
-  const { selectDiverseArchetype } = require('./fin_diversity_engine.cjs');
+  const { selectDiverseArchetype, buildFinDeepDivePrompt, synthesizeDeterministicFinDeepDiveStoryboard } = require('./fin_diversity_engine.cjs');
   const archetype = typeof selectDiverseArchetype === 'function' 
     ? selectDiverseArchetype(recentHistory)
     : FIN_ARCHETYPES[Math.floor(Math.random() * FIN_ARCHETYPES.length)];
 
   logInfo(`[Pillar] Theme: "${archetype.theme}" | Angle: "${archetype.angle}" | Budget: "${archetype.targetBudget}"`);
   
-  const { systemPrompt, userPrompt } = buildFinPromptForSlot(archetype, recentHistory, 0, CHANNEL_HANDLE);
+  const { systemPrompt, userPrompt } = isDeepDive
+    ? buildFinDeepDivePrompt(archetype, recentHistory, CHANNEL_HANDLE)
+    : buildFinPromptForSlot(archetype, recentHistory, 0, CHANNEL_HANDLE);
+
   let scriptData = null;
 
   // 1. PRIMARY: Groq LPU
@@ -171,7 +179,7 @@ async function generateFinanceStoryboard(topicInput, groqModel) {
             { role: 'user', content: `${userPrompt} Topic title: "${topicInput || archetype.angle}". Return strictly valid JSON.` }
           ],
           temperature: 0.7,
-          max_tokens: 1800,
+          max_tokens: isDeepDive ? 4500 : 1800,
           response_format: { type: 'json_object' }
         });
         const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
@@ -181,7 +189,7 @@ async function generateFinanceStoryboard(topicInput, groqModel) {
             'Authorization': `Bearer ${GROQ_API_KEY}`,
             'Content-Length': Buffer.byteLength(postData)
           },
-          timeout: 12000
+          timeout: 25000
         }, (res) => {
           let data = '';
           res.on('data', c => data += c);
@@ -203,7 +211,7 @@ async function generateFinanceStoryboard(topicInput, groqModel) {
       if (raw.success && raw.content) {
         scriptData = JSON.parse(raw.content.replace(/```json/gi, '').replace(/```/g, '').trim());
         if (scriptData && Array.isArray(scriptData.slides) && scriptData.slides.length >= 3) {
-          logSuccess(`Groq generated complete ${scriptData.slides.length}-slide finance package!`);
+          logSuccess(`Groq generated complete ${scriptData.slides.length}-chapter finance package!`);
         }
       }
     } catch (e) {
@@ -211,69 +219,19 @@ async function generateFinanceStoryboard(topicInput, groqModel) {
     }
   }
 
-  // 2. SECONDARY: Free Pollinations.ai Text API
-  if (!scriptData) {
-    const pModels = ['openai', 'mistral', 'qwen-coder'];
-    for (const pm of pModels) {
-      try {
-        logInfo(`[Storyboard Engine] Requesting script from Pollinations.ai (${pm})...`);
-        const raw = await new Promise((resolve) => {
-          const postData = JSON.stringify({
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: `${userPrompt} Topic title: "${topicInput || archetype.angle}". Return strictly valid JSON.` }
-            ],
-            model: pm,
-            jsonMode: true
-          });
-          const req = https.request('https://text.pollinations.ai/', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Content-Length': Buffer.byteLength(postData)
-            },
-            timeout: 15000
-          }, (res) => {
-            let data = '';
-            res.on('data', c => data += c);
-            res.on('end', () => {
-              if (res.statusCode >= 200 && res.statusCode < 300 && data.trim().length > 10) {
-                resolve({ success: true, content: data.trim() });
-              } else {
-                resolve({ success: false });
-              }
-            });
-          });
-          req.on('error', () => resolve({ success: false }));
-          req.on('timeout', () => { req.destroy(); resolve({ success: false }); });
-          req.write(postData);
-          req.end();
-        });
-
-        if (raw.success && raw.content) {
-          scriptData = JSON.parse(raw.content.replace(/```json/gi, '').replace(/```/g, '').trim());
-          if (scriptData && Array.isArray(scriptData.slides) && scriptData.slides.length >= 3) {
-            logSuccess(`Pollinations.ai (${pm}) generated ${scriptData.slides.length}-slide package!`);
-            break;
-          }
-        }
-      } catch {}
-    }
-  }
-
-  // 3. TERTIARY: Google Gemini / OpenAI / DeepSeek
+  // 2. SECONDARY: Google Gemini 2.0 Flash
   if (!scriptData && GEMINI_API_KEY) {
     try {
       logInfo(`[Storyboard Engine] Requesting script from Google Gemini...`);
       const raw = await new Promise((resolve) => {
         const postData = JSON.stringify({
           contents: [{ parts: [{ text: `${systemPrompt}\n\nTask: ${userPrompt} Return raw JSON.` }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 2000, responseMimeType: "application/json" }
+          generationConfig: { temperature: 0.7, maxOutputTokens: isDeepDive ? 6000 : 2000, responseMimeType: "application/json" }
         });
         const req = https.request(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) },
-          timeout: 15000
+          timeout: 25000
         }, (res) => {
           let d = '';
           res.on('data', c => d += c);
@@ -296,11 +254,13 @@ async function generateFinanceStoryboard(topicInput, groqModel) {
     } catch {}
   }
 
-  // 4. FALLBACK: Deterministic Diversity Engine
+  // 3. FALLBACK: Deterministic Diversity Engine
   if (!scriptData || !Array.isArray(scriptData.slides) || scriptData.slides.length < 3) {
     logWarning('[Storyboard Engine] Synthesizing verified deterministic financial package from Diversity Engine...');
-    scriptData = synthesizeDeterministicFinStoryboard(archetype, topicInput, CHANNEL_HANDLE);
-    logSuccess(`Diversity Engine synthesized authentic 6-slide financial blueprint!`);
+    scriptData = isDeepDive
+      ? synthesizeDeterministicFinDeepDiveStoryboard(archetype, topicInput, CHANNEL_HANDLE)
+      : synthesizeDeterministicFinStoryboard(archetype, topicInput, CHANNEL_HANDLE);
+    logSuccess(`Diversity Engine synthesized authentic ${scriptData.slides.length}-chapter financial masterclass!`);
   }
 
   // Run Safety & Risk Audit
@@ -320,9 +280,14 @@ async function generateFinanceStoryboard(topicInput, groqModel) {
       .replace(/[{}[\]]/g, '')
       .replace(/\s+/g, ' ')
       .trim();
-    cleanTitle = cleanTitle.replace(/#Shorts/gi, '').replace(/#\w+/g, '').trim();
-    if (cleanTitle.length > 68) cleanTitle = cleanTitle.slice(0, 65).trim();
-    scriptData.title = `${cleanTitle} #Shorts`;
+    if (!isDeepDive) {
+      cleanTitle = cleanTitle.replace(/#Shorts/gi, '').replace(/#\w+/g, '').trim();
+      if (cleanTitle.length > 68) cleanTitle = cleanTitle.slice(0, 65).trim();
+      scriptData.title = `${cleanTitle} #Shorts`;
+    } else {
+      if (cleanTitle.length > 95) cleanTitle = cleanTitle.slice(0, 90).trim();
+      scriptData.title = cleanTitle;
+    }
   }
 
   if (Array.isArray(scriptData.slides)) {
@@ -335,10 +300,10 @@ async function generateFinanceStoryboard(topicInput, groqModel) {
     });
   }
 
-  console.log(`\n  ${colors.bright}Generated Financial Storyboard:${colors.reset}`);
+  console.log(`\n  ${colors.bright}Generated Financial Masterclass:${colors.reset}`);
   console.log(`  Title: ${colors.green}${scriptData.title}${colors.reset}`);
   console.log(`  Budget Context: ${colors.yellow}${scriptData.estimatedBudget || archetype.targetBudget}${colors.reset}`);
-  console.log(`  Slide Count: ${colors.cyan}${scriptData.slides.length} slides${colors.reset}`);
+  console.log(`  Slide Count: ${colors.cyan}${scriptData.slides.length} slides (${isDeepDive ? '15-20 Min Long-Form' : 'Short'})${colors.reset}`);
 
   return scriptData;
 }
@@ -397,16 +362,81 @@ async function synthesizeSlideAudio(text, slideIndex) {
 }
 
 // ----------------------------------------------------
-// STEP 4: PHOTOREALISTIC 9:16 FINANCIAL VISUAL SYNTHESIS
+// STEP 4: MULTI-PROVIDER HIGH-RESOLUTION VISUAL SYNTHESIS
+// 5 Images via Pollinations.ai (Flux) + 10 Images via Cloudflare Flux-1-Schnell
 // ----------------------------------------------------
-async function synthesizeSlideVisual(visualPrompt, slideIndex) {
+async function synthesizeSlideVisual(visualPrompt, slideIndex, isDeepDive = false) {
   const imgPath = path.join(artifactsDir, `fin_slide_${slideIndex}.png`);
-  const enhancedPrompt = `${visualPrompt}, dark obsidian slate workspace, emerald green and warm gold rim lighting, 9:16 vertical ratio, 8k resolution, photorealistic cinematic style, studio lighting, hyper detailed`;
+  const aspect = isDeepDive ? '16:9 widescreen 1920x1080' : '9:16 vertical 1080x1920';
+  const width = isDeepDive ? 1920 : 1080;
+  const height = isDeepDive ? 1080 : 1920;
 
-  // 1. Try Pollinations.ai Flux Model (Free)
+  const enhancedPrompt = `${visualPrompt}, dark obsidian slate modern workspace, subtle emerald green and warm gold rim lighting, ${aspect}, 8k resolution, photorealistic cinematic style, studio lighting, hyper detailed, masterclass quality`;
+
+  // Pattern: Slides [1, 4, 7, 10, 13] -> Pollinations.ai Flux (5 images)
+  // Slides [2, 3, 5, 6, 8, 9, 11, 12, 14, 15] -> Cloudflare FLUX Schnell (10 images)
+  const usePollinationsPrimary = isDeepDive ? (slideIndex % 3 === 1) : true;
+
+  if (!usePollinationsPrimary && CLOUDFLARE_ACCOUNT_ID && CLOUDFLARE_API_TOKEN) {
+    // 1. Try Cloudflare Workers AI FLUX Schnell
+    try {
+      logInfo(`[Image Engine] Synthesizing Slide ${slideIndex} via Cloudflare FLUX Schnell...`);
+      const cfResult = await new Promise((resolve) => {
+        const postData = JSON.stringify({
+          prompt: enhancedPrompt.slice(0, 300),
+          num_steps: 4
+        });
+        const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/@cf/black-forest-labs/flux-1-schnell`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(postData)
+          },
+          timeout: 20000
+        }, (res) => {
+          const chunks = [];
+          res.on('data', c => chunks.push(c));
+          res.on('end', () => {
+            if (res.statusCode === 200) {
+              const buf = Buffer.concat(chunks);
+              try {
+                // If JSON base64 or direct binary
+                const str = buf.toString('utf8');
+                if (str.startsWith('{')) {
+                  const j = JSON.parse(str);
+                  if (j.result && j.result.image) {
+                    fs.writeFileSync(imgPath, Buffer.from(j.result.image, 'base64'));
+                    return resolve(true);
+                  }
+                }
+              } catch {}
+              if (buf.length > 5000) {
+                fs.writeFileSync(imgPath, buf);
+                return resolve(true);
+              }
+            }
+            resolve(false);
+          });
+        });
+        req.on('error', () => resolve(false));
+        req.on('timeout', () => { req.destroy(); resolve(false); });
+        req.write(postData);
+        req.end();
+      });
+
+      if (cfResult && fs.existsSync(imgPath) && fs.statSync(imgPath).size > 5000) {
+        logSuccess(`[Image Engine] Slide ${slideIndex} visual rendered via Cloudflare FLUX Schnell!`);
+        return imgPath;
+      }
+    } catch {}
+  }
+
+  // 2. Pollinations.ai FLUX (Free & High-Res)
   try {
+    logInfo(`[Image Engine] Synthesizing Slide ${slideIndex} via Pollinations.ai FLUX...`);
     const encoded = encodeURIComponent(enhancedPrompt.slice(0, 220));
-    const url = `https://image.pollinations.ai/prompt/${encoded}?width=1080&height=1920&nologo=true&model=flux`;
+    const url = `https://image.pollinations.ai/prompt/${encoded}?width=${width}&height=${height}&nologo=true&model=flux`;
     const ok = await new Promise((resolve) => {
       const f = fs.createWriteStream(imgPath);
       https.get(url, { timeout: 18000 }, (r) => {
@@ -420,13 +450,16 @@ async function synthesizeSlideVisual(visualPrompt, slideIndex) {
     });
 
     if (ok && fs.existsSync(imgPath) && fs.statSync(imgPath).size > 5000) {
+      logSuccess(`[Image Engine] Slide ${slideIndex} visual rendered via Pollinations.ai FLUX!`);
       return imgPath;
     }
   } catch {}
 
-  // 2. High-Tech Obsidian/Emerald Geometric Canvas Fallback
+  // 3. Ultra-Clean Geometric Studio Canvas Fallback
   try {
-    execSync(`ffmpeg -y -f lavfi -i "color=c=0x061118:s=1080x1920:d=1" -vf "drawbox=x=60:y=200:w=960:h=1520:color=0x10B981@0.15:t=fill,drawbox=x=60:y=200:w=960:h=1520:color=0x10B981@0.5:t=3" -frames:v 1 "${imgPath}" 2>/dev/null`);
+    const boxW = isDeepDive ? 1720 : 960;
+    const boxH = isDeepDive ? 880 : 1520;
+    execSync(`ffmpeg -y -f lavfi -i "color=c=0x061118:s=${width}x${height}:d=1" -vf "drawbox=x=60:y=100:w=${boxW}:h=${boxH}:color=0x10B981@0.15:t=fill,drawbox=x=60:y=100:w=${boxW}:h=${boxH}:color=0x10B981@0.5:t=3" -frames:v 1 "${imgPath}" 2>/dev/null`);
   } catch {
     fs.writeFileSync(imgPath, Buffer.from('png blob'));
   }
@@ -435,61 +468,79 @@ async function synthesizeSlideVisual(visualPrompt, slideIndex) {
 }
 
 // ----------------------------------------------------
-// STEP 5: RENDER SLIDES & COMPOSE FULL 1080x1920 MP4
+// STEP 5: RENDER SLIDES & COMPOSE FULL MP4 (16:9 MASTERCLASS OR 9:16 SHORTS)
 // ----------------------------------------------------
 async function renderFullFinanceVideo(storyboard) {
-  logStep(3, 'Synthesizing Audio, Images, and Rendering 1080x1920 Short...');
+  const isDeepDive = contentDepth === 'deep_dive' || process.env.IS_DEEP_DIVE === 'true' || (storyboard.slides && storyboard.slides.length >= 10);
+  const width = isDeepDive ? 1920 : 1080;
+  const height = isDeepDive ? 1080 : 1920;
+  const aspectLabel = isDeepDive ? '16:9 Landscape Masterclass' : '9:16 Vertical Short';
+
+  logStep(3, `Synthesizing Audio, Images, and Rendering ${aspectLabel} (${storyboard.slides.length} Chapters)...`);
   const slideClips = [];
 
   for (let i = 0; i < storyboard.slides.length; i++) {
     const slide = storyboard.slides[i];
-    console.log(`  Generating Assets for Slide ${i + 1}/${storyboard.slides.length}...`);
+    console.log(`  [Chapter ${i + 1}/${storyboard.slides.length}] Synthesizing audio & visual assets...`);
 
     const audioPath = await synthesizeSlideAudio(slide.text, i + 1);
-    const imgPath = await synthesizeSlideVisual(slide.visual || slide.text, i + 1);
+    const imgPath = await synthesizeSlideVisual(slide.visual || slide.text, i + 1, isDeepDive);
 
     // Get exact audio duration
-    let audioDur = 4.0;
+    let audioDur = isDeepDive ? 60.0 : 4.0;
     try {
       const probe = spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', audioPath]);
       const pVal = parseFloat(probe.stdout.toString().trim());
       if (!isNaN(pVal) && pVal > 1) audioDur = pVal;
     } catch {}
 
-    const slideDur = Math.max(3.5, Math.min(8.5, audioDur + 0.3));
+    const slideDur = Math.max(3.5, audioDur + 0.4);
     const totalFrames = Math.round(slideDur * 30);
     const slideClipPath = path.join(artifactsDir, `fin_clip_${i + 1}.mp4`);
 
-    // Caption chunking (2-3 words per chunk, natural proper casing)
-    const rawWords = (slide.text || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '').trim().split(/\s+/).filter(Boolean);
-    const chunkLines = [];
-    for (let w = 0; w < rawWords.length; w += 3) {
-      chunkLines.push(rawWords.slice(w, w + 3).join(' '));
+    let ffmpegCmd = '';
+
+    if (isDeepDive) {
+      // Long-form 16:9 Landscape layout with clean chapter banner and lower third captions
+      const cleanChapterTitle = sanitizeFinString(slide.chapterTitle || `Chapter ${i + 1}`).slice(0, 45);
+      const cleanNarration = sanitizeFinString(slide.text).slice(0, 110);
+      
+      const chapterBanner = `,drawbox=x=60:y=60:w=640:h=60:color=black@0.85:t=fill,drawbox=x=60:y=60:w=640:h=60:color=0x10B981:t=2,drawtext=text='${cleanChapterTitle}':fontsize=28:fontcolor=0xFDE047:x=85:y=76`;
+      const lowerThird = `,drawbox=x=120:y=920:w=1680:h=100:color=black@0.85:t=fill,drawbox=x=120:y=920:w=1680:h=100:color=0x10B981@0.5:t=2,drawtext=text='${cleanNarration}':fontsize=26:fontcolor=white:x=(w-text_w)/2:y=955`;
+      const slowPan = `zoompan=z='min(zoom+0.0001,1.08)':d=${totalFrames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1920x1080:fps=30`;
+
+      ffmpegCmd = `ffmpeg -y -loop 1 -i "${imgPath}" -i "${audioPath}" -vf "scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,${slowPan}${chapterBanner}${lowerThird}" -t ${slideDur} -c:v libx264 -preset veryfast -pix_fmt yuv420p -c:a aac -b:a 192k -shortest "${slideClipPath}" 2>/dev/null`;
+    } else {
+      // 9:16 Vertical layout with center animated subtitle chunks
+      const rawWords = (slide.text || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '').trim().split(/\s+/).filter(Boolean);
+      const chunkLines = [];
+      for (let w = 0; w < rawWords.length; w += 3) {
+        chunkLines.push(rawWords.slice(w, w + 3).join(' '));
+      }
+
+      const chunkDur = slideDur / Math.max(1, chunkLines.length);
+      let captionFilters = '';
+
+      let topHookFilter = '';
+      if (i === 0) {
+        const rawTitle = (storyboard.title || storyboard.theme || 'FINANCIAL MASTERY').replace(/#\w+/g, '').trim();
+        const cleanHook = sanitizeFinString(rawTitle.slice(0, 30));
+        topHookFilter = `,drawtext=text='${cleanHook}':fontsize=32:fontcolor=0xFDE047:box=1:boxcolor=black@0.94:boxborderw=16:borderw=2:bordercolor=0x10B981:shadowcolor=black@0.9:shadowx=2:shadowy=2:x=(w-text_w)/2:y=160:enable='between(t\\,0\\,4.5)'`;
+      }
+
+      chunkLines.forEach((chunkText, cIdx) => {
+        const startT = (cIdx * chunkDur).toFixed(2);
+        const endT = ((cIdx + 1) * chunkDur).toFixed(2);
+        const cleanChunk = sanitizeFinString(chunkText);
+        captionFilters += `,drawtext=text='${cleanChunk}':fontsize=46:fontcolor=white:box=1:boxcolor=black@0.92:boxborderw=22:borderw=3:bordercolor=0x10B981@0.5:shadowcolor=black@0.95:shadowx=3:shadowy=3:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t\\,${startT}\\,${endT})'`;
+      });
+
+      const zoomDir = i % 2 === 0
+        ? `zoompan=z='min(zoom+0.0009,1.15)':d=${totalFrames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`
+        : `zoompan=z='if(lte(zoom,1.0),1.14,max(1.0,zoom-0.0009))':d=${totalFrames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
+
+      ffmpegCmd = `ffmpeg -y -loop 1 -i "${imgPath}" -i "${audioPath}" -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,${zoomDir}${topHookFilter}${captionFilters}" -t ${slideDur} -c:v libx264 -preset veryfast -pix_fmt yuv420p -c:a aac -b:a 192k -shortest "${slideClipPath}" 2>/dev/null`;
     }
-
-    const chunkDur = slideDur / Math.max(1, chunkLines.length);
-    let captionFilters = '';
-
-    // Safe Top Topic Hook on Slide 1 (never clips off screen)
-    let topHookFilter = '';
-    if (i === 0) {
-      const rawTitle = (storyboard.title || storyboard.theme || 'FINANCIAL MASTERY').replace(/#\w+/g, '').trim();
-      const cleanHook = sanitizeFinString(rawTitle.slice(0, 30));
-      topHookFilter = `,drawtext=text='${cleanHook}':fontsize=32:fontcolor=0xFDE047:box=1:boxcolor=black@0.94:boxborderw=16:borderw=2:bordercolor=0x10B981:shadowcolor=black@0.9:shadowx=2:shadowy=2:x=(w-text_w)/2:y=160:enable='between(t\\,0\\,4.5)'`;
-    }
-
-    chunkLines.forEach((chunkText, cIdx) => {
-      const startT = (cIdx * chunkDur).toFixed(2);
-      const endT = ((cIdx + 1) * chunkDur).toFixed(2);
-      const cleanChunk = sanitizeFinString(chunkText);
-      captionFilters += `,drawtext=text='${cleanChunk}':fontsize=46:fontcolor=white:box=1:boxcolor=black@0.92:boxborderw=22:borderw=3:bordercolor=0x10B981@0.5:shadowcolor=black@0.95:shadowx=3:shadowy=3:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t\\,${startT}\\,${endT})'`;
-    });
-
-    const zoomDir = i % 2 === 0
-      ? `zoompan=z='min(zoom+0.0009,1.15)':d=${totalFrames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`
-      : `zoompan=z='if(lte(zoom,1.0),1.14,max(1.0,zoom-0.0009))':d=${totalFrames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
-
-    const ffmpegCmd = `ffmpeg -y -loop 1 -i "${imgPath}" -i "${audioPath}" -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,${zoomDir}${topHookFilter}${captionFilters}" -t ${slideDur} -c:v libx264 -pix_fmt yuv420p -c:a aac -b:a 192k -shortest "${slideClipPath}" 2>/dev/null`;
     
     try {
       execSync(ffmpegCmd);
@@ -508,13 +559,13 @@ async function renderFullFinanceVideo(storyboard) {
     fs.writeFileSync(listPath, slideClips.map(p => `file '${p}'`).join('\n'));
     try {
       execSync(`ffmpeg -y -f concat -safe 0 -i "${listPath}" -c copy "${finalVideoPath}" 2>/dev/null`);
-      logSuccess(`Complete 9:16 Vertical Video compiled successfully: ${finalVideoPath}`);
+      logSuccess(`Complete ${aspectLabel} compiled successfully: ${finalVideoPath}`);
       return finalVideoPath;
     } catch {}
   }
 
   // Direct safe fallback video
-  execSync(`ffmpeg -y -f lavfi -i color=c=0x061118:s=1080x1920:d=18 -f lavfi -i "sine=frequency=240:duration=18" -c:v libx264 -pix_fmt yuv420p -c:a aac -shortest "${finalVideoPath}" 2>/dev/null`);
+  execSync(`ffmpeg -y -f lavfi -i color=c=0x061118:s=${width}x${height}:d=18 -f lavfi -i "sine=frequency=240:duration=18" -c:v libx264 -pix_fmt yuv420p -c:a aac -shortest "${finalVideoPath}" 2>/dev/null`);
   return finalVideoPath;
 }
 

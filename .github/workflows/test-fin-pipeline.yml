@@ -1,6 +1,8 @@
 name: Test Fin Blueprint Pipeline
 
 on:
+  schedule:
+    - cron: '0 8 * * *' # Automated daily run at 08:00 UTC
   workflow_dispatch:
     inputs:
       topic:
@@ -11,15 +13,15 @@ on:
       content_depth:
         description: 'Content Depth & Duration'
         required: true
-        default: 'short_form'
+        default: 'deep_dive'
         type: choice
         options:
-          - short_form
           - deep_dive
+          - short_form
       dry_run:
         description: 'Dry Run Mode (Test generation only, no live YouTube upload)'
         required: true
-        default: true
+        default: false
         type: boolean
 
 jobs:

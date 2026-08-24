@@ -1,6 +1,8 @@
 name: Test Tech AI Pipeline
 
 on:
+  schedule:
+    - cron: '0 16 * * *' # Automated daily run at 16:00 UTC
   workflow_dispatch:
     inputs:
       topic:
@@ -19,7 +21,7 @@ on:
       dry_run:
         description: 'Dry Run Mode (Test generation only, no live YouTube upload)'
         required: true
-        default: true
+        default: false
         type: boolean
 
 jobs:
@@ -72,6 +74,19 @@ jobs:
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
           FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
         run: node scripts/test_tech_runner.cjs
+
+      - name: Commit & Push Daily Blueprint Manifest to Repository
+        if: always()
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add daily_blueprint_manifest.json 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "No changes to daily_blueprint_manifest.json."
+          else
+            git commit -m "chore(manifest): sync tech posted video metadata [skip ci]"
+            git push origin HEAD:${{ github.ref_name }} || echo "Auto-commit push skipped or branch protected."
+          fi
 
       - name: Cleanup Local Temporary Media & Blobs
         if: always()

@@ -1,6 +1,8 @@
 name: Test Stoic & Motivation Pipeline
 
 on:
+  schedule:
+    - cron: '0 12 * * *' # Automated daily run at 12:00 UTC
   workflow_dispatch:
     inputs:
       topic:
