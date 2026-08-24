@@ -43,6 +43,17 @@ async function downloadFile(url, destPath) {
   });
 }
 
+function sanitizeForFfmpegDrawtext(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/['"\\`]/g, '')
+    .replace(/[:%]/g, ' ')
+    .replace(/[[\]{}]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function checkFfmpeg() {
   try {
     const res = spawnSync('ffmpeg', ['-version']);
@@ -168,7 +179,7 @@ async function compileVideoMotion() {
             let topHookFilt = '';
             if (sIdx === 0) {
               const rawTitle = (job.title || 'DAILY STOIC MASTERY').replace(/#\w+/g, '').trim();
-              const cleanTopicHook = rawTitle.slice(0, 48).replace(/'/g, "\\'").replace(/:/g, '\\:').replace(/%/g, '\\%').toUpperCase();
+              const cleanTopicHook = sanitizeForFfmpegDrawtext(rawTitle.slice(0, 48)).toUpperCase();
               topHookFilt = `,drawtext=text='${cleanTopicHook}':fontsize=40:fontcolor=white:box=1:boxcolor=black@0.90:boxborderw=16:borderw=2:bordercolor=gold:shadowcolor=black@0.9:shadowx=2:shadowy=2:x=(w-text_w)/2:y=190:enable='between(t\\,0\\,4.5)'`;
             }
 
@@ -178,7 +189,7 @@ async function compileVideoMotion() {
               chunkLines.forEach((chunkText, cIdx) => {
                 const startT = (cIdx * chunkDur).toFixed(2);
                 const endT = ((cIdx + 1) * chunkDur).toFixed(2);
-                const cleanChunk = chunkText.replace(/'/g, "\\'").replace(/:/g, '\\:').replace(/%/g, '\\%');
+                const cleanChunk = sanitizeForFfmpegDrawtext(chunkText);
                 captionFilt += `,drawtext=text='${cleanChunk}':fontsize=48:fontcolor=white:box=1:boxcolor=black@0.92:boxborderw=18:borderw=3:bordercolor=black:shadowcolor=black@0.95:shadowx=3:shadowy=3:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t\\,${startT}\\,${endT})'`;
               });
             }

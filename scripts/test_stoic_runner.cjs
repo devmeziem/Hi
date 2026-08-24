@@ -85,11 +85,29 @@ const XAI_API_KEYS = Array.from(new Set([
 const CLOUDFLARE_ACCOUNT_ID = (process.env.CLOUDFLARE_ACCOUNT_ID || '').trim().replace(/^https?:\/\/[^\/]+\//, '').replace(/\/$/, '');
 const CLOUDFLARE_API_TOKEN = (process.env.CLOUDFLARE_API_TOKEN || '').trim();
 const GROQ_API_KEY = (process.env.GROQ_API_KEY || process.env.GROQ_KEY || '').trim();
+
+// Support channel-specific OAuth tokens as well as global fallbacks
+const YOUTUBE_CLIENT_ID = (process.env.YOUTUBE_CLIENT_ID_CH2 || process.env.YOUTUBE_CLIENT_ID || '').trim();
+const YOUTUBE_CLIENT_SECRET = (process.env.YOUTUBE_CLIENT_SECRET_CH2 || process.env.YOUTUBE_CLIENT_SECRET || '').trim();
 const YOUTUBE_REFRESH_TOKEN = (process.env.YOUTUBE_REFRESH_TOKEN_CH2 || process.env.YOUTUBE_REFRESH_TOKEN || '').trim();
-const YOUTUBE_CLIENT_ID = (process.env.YOUTUBE_CLIENT_ID || '').trim();
-const YOUTUBE_CLIENT_SECRET = (process.env.YOUTUBE_CLIENT_SECRET || '').trim();
+
 const CLOUDINARY_CLOUD_NAME = (process.env.CLOUDINARY_CLOUD_NAME || '').trim();
 const CLOUDINARY_UPLOAD_PRESET = (process.env.CLOUDINARY_UPLOAD_PRESET || '').trim();
+
+// Track auth failures gracefully
+let cloudflareAuthFailed = false;
+
+// Bulletproof FFmpeg drawtext string sanitization
+function sanitizeForFfmpegDrawtext(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/['"\\`]/g, '')     // Remove single/double quotes and backslashes to prevent filtergraph break-out
+    .replace(/[:%]/g, ' ')       // Remove colons/percents that confuse FFmpeg parameter parsing
+    .replace(/[[\]{}]/g, '')     // Remove bracket chars
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 console.log(`\n${colors.bright}${colors.cyan}══════════════════════════════════════════════════════════════════════${colors.reset}`);
 console.log(`${colors.bright}${colors.bgBlue} VOXAM RUNNER ENVIRONMENT & CREDENTIAL STATUS ${colors.reset}`);
@@ -1748,14 +1766,14 @@ async function renderFfmpegVideo(storyboard, enrichedSlides) {
       let topHookFilter = '';
       if (i === 0) {
         const rawTitle = (storyboard.title || storyboard.theme || 'DAILY STOIC MASTERY').replace(/#\w+/g, '').trim();
-        const cleanTopicHook = rawTitle.slice(0, 48).replace(/'/g, "\\'").replace(/:/g, '\\:').replace(/%/g, '\\%').toUpperCase();
+        const cleanTopicHook = sanitizeForFfmpegDrawtext(rawTitle.slice(0, 48)).toUpperCase();
         topHookFilter = `,drawtext=text='${cleanTopicHook}':fontsize=40:fontcolor=white:box=1:boxcolor=black@0.90:boxborderw=16:borderw=2:bordercolor=gold:shadowcolor=black@0.9:shadowx=2:shadowy=2:x=(w-text_w)/2:y=190:enable='between(t\\,0\\,4.5)'`;
       }
 
       chunkLines.forEach((chunkText, cIdx) => {
         const startT = (cIdx * chunkDur).toFixed(2);
         const endT = ((cIdx + 1) * chunkDur).toFixed(2);
-        const cleanChunk = chunkText.replace(/'/g, "\\'").replace(/:/g, '\\:').replace(/%/g, '\\%');
+        const cleanChunk = sanitizeForFfmpegDrawtext(chunkText);
         
         // Centered high-contrast kinetic subtitles with deep black drop-box in screen center
         captionFilter += `,drawtext=text='${cleanChunk}':fontsize=48:fontcolor=white:box=1:boxcolor=black@0.92:boxborderw=18:borderw=3:bordercolor=black:shadowcolor=black@0.95:shadowx=3:shadowy=3:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t\\,${startT}\\,${endT})'`;
