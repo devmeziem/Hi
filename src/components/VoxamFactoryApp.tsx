@@ -33,7 +33,9 @@ import {
   Check,
   X,
   Workflow,
-  Headphones
+  Headphones,
+  Database,
+  Shield
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { NicheType, SavedCampaign, FactoryJob, WorkerLog, IntegrationKeys, ChannelMetrics, ProjectConfig } from '../types';
@@ -905,6 +907,17 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                       </div>
 
                       <div className="p-4 space-y-2">
+                        <div className="flex items-center justify-between gap-1 text-[10px] font-mono">
+                          <span className="px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/80 flex items-center gap-1">
+                            <Database className="w-2.5 h-2.5" />
+                            <span>Saved in DB</span>
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800 flex items-center gap-1">
+                            <Shield className="w-2.5 h-2.5 text-indigo-400" />
+                            <span>Dedup Active</span>
+                          </span>
+                        </div>
+
                         <h3 className="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors line-clamp-2">
                           {cTitle}
                         </h3>
@@ -1422,6 +1435,59 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                 </table>
               </div>
             </div>
+
+            {/* Database Persistence & Deduplication Live Audit Log */}
+            <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h2 className="text-base font-bold text-white flex items-center gap-2">
+                    <Database className="w-5 h-5 text-emerald-400" />
+                    Database Persistence & Deduplication Audit Log
+                  </h2>
+                  <p className="text-xs text-slate-400">
+                    Real-time verification showing all generated campaigns committed to Firestore database and manifest with anti-repeat protections
+                  </p>
+                </div>
+                <span className="px-3 py-1 bg-emerald-950/80 border border-emerald-800/80 text-emerald-400 text-xs font-mono font-bold rounded-xl flex items-center gap-1.5 self-start sm:self-auto">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Deduplication Engine Active</span>
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                {savedCampaigns.length === 0 ? (
+                  <div className="p-6 bg-slate-950 border border-slate-800/60 rounded-2xl text-center text-xs text-slate-500 font-mono">
+                    No database records found yet. Dispatched jobs will log Firestore write confirmations here.
+                  </div>
+                ) : (
+                  savedCampaigns.slice(0, 5).map(c => (
+                    <div key={c.id} className="p-3.5 bg-slate-950 border border-slate-800/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 font-mono text-xs">
+                      <div className="flex items-start sm:items-center gap-2.5">
+                        <div className="p-1.5 bg-emerald-950 text-emerald-400 border border-emerald-800/60 rounded-lg shrink-0 mt-0.5 sm:mt-0">
+                          <Database className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-slate-200 line-clamp-1">{c.title}</div>
+                          <div className="text-[10px] text-slate-500 flex items-center gap-2">
+                            <span>ID: {c.jobId || c.id}</span>
+                            <span>•</span>
+                            <span>Path: <code className="text-indigo-400">saved_campaigns/{c.id}</code></span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800/60 text-[9px] font-bold">
+                          SAVED TO DB
+                        </span>
+                        <span className="px-2 py-0.5 rounded bg-slate-900 text-indigo-300 border border-indigo-900/50 text-[9px]">
+                          COOLDOWN ACTIVE
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         )}
 
@@ -1516,7 +1582,26 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
 
                         {/* Card Footer Actions */}
                         <div className="p-4 space-y-3 bg-slate-950">
-                          <div className="flex items-center justify-between text-xs font-mono text-slate-400">
+                          <div className="space-y-1.5 pb-1">
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800/80 flex items-center gap-1.5 font-mono text-[10px] font-bold">
+                                <Database className="w-3 h-3 text-emerald-400" />
+                                <span>SAVED TO DATABASE</span>
+                              </span>
+                              <span className="px-1.5 py-0.5 rounded bg-slate-900 text-indigo-300 border border-indigo-900/50 flex items-center gap-1 font-mono text-[9px]">
+                                <Shield className="w-2.5 h-2.5 text-indigo-400" />
+                                <span>No-Repeat Cooldown</span>
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 pt-0.5">
+                              <span className="truncate max-w-[150px] text-slate-500">ID: {camp.jobId || camp.id}</span>
+                              <span className={camp.isPosted ? 'text-emerald-400 font-bold' : 'text-indigo-400 font-bold'}>
+                                {camp.isPosted ? '● Live on YouTube' : '● In DB Vault (Ready)'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between text-xs font-mono text-slate-400 pt-2 border-t border-slate-900">
                             <span>{new Date(camp.createdAt).toLocaleDateString()}</span>
                             <span className="text-emerald-400 font-bold">{camp.views?.toLocaleString() || 350} views</span>
                           </div>

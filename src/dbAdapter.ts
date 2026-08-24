@@ -307,12 +307,13 @@ export const dbAdapter = {
               id: `camp-${j.id}`,
               jobId: j.id,
               title: j.title,
-              niche: (j.channelId as any) || 'finance_saas',
+              niche: (j.channelId as any) || 'motivation_stoicism',
               createdAt: j.createdAt || new Date().toISOString(),
               status: 'completed',
               isPosted: !!j.youtubeUrl,
               youtubeVideoId: j.youtubeVideoId || null,
               youtubeUrl: j.youtubeUrl || null,
+              videoUrl: j.renderedVideoUrl || (j.slides && j.slides[0]?.videoUrl) || '/rendered_videos/stoic_pipeline_short.mp4',
               views: j.youtubeUrl ? 1 : 0,
               likes: 0,
               comments: 0,
@@ -322,7 +323,7 @@ export const dbAdapter = {
                 youtube: {
                   title: j.title,
                   description: j.scriptText,
-                  tags: ['#Shorts', '#Automation', '#AI'],
+                  tags: ['#Shorts', '#Stoicism', '#Discipline', '#MarcusAurelius', '#Mindset'],
                   slides: j.slides || [
                     {
                       text: j.scriptText || j.title,

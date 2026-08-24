@@ -218,15 +218,27 @@ export const DynamicVideoMotionPlayer: React.FC<DynamicVideoMotionPlayerProps> =
           </div>
         </div>
 
-        {/* Synchronized Kinetic Subtitle Drop-Box Pill in Lower Bottom Safe Zone */}
-        <div className="absolute bottom-9 inset-x-2 z-30 flex flex-col items-center text-center pointer-events-none px-2">
-          <div className="inline-flex items-center justify-center flex-wrap gap-1 px-3.5 py-2 rounded-xl bg-black/92 backdrop-blur-xl border border-white/25 shadow-[0_8px_30px_rgba(0,0,0,0.95)] ring-1 ring-white/15 min-h-[44px] max-w-[88%] transition-all duration-100">
+        {/* Pinned Top Hook Title (First 4-5 Seconds) */}
+        {currentTimeSec <= 4.5 && (
+          <div className="absolute top-11 inset-x-2 z-30 flex justify-center pointer-events-none animate-fadeIn">
+            <div className="bg-black/92 backdrop-blur-xl border border-amber-400/80 px-3 py-1.5 rounded-full shadow-[0_0_20px_rgba(245,158,11,0.4)] flex items-center gap-1.5 max-w-[90%] ring-1 ring-amber-400/50">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse shrink-0" />
+              <span className="text-[11px] sm:text-xs font-black text-amber-300 tracking-wide uppercase truncate">
+                {title.replace(/#\w+/g, '').trim()}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Synchronized Kinetic Subtitle Drop-Box Pill in Screen Center */}
+        <div className="absolute inset-x-2 inset-y-0 z-30 flex flex-col justify-center items-center text-center pointer-events-none px-2">
+          <div className="inline-flex items-center justify-center flex-wrap gap-1 px-4 py-2.5 rounded-2xl bg-black/95 backdrop-blur-xl border-2 border-white/30 shadow-[0_12px_40px_rgba(0,0,0,0.98)] ring-1 ring-white/20 min-h-[50px] max-w-[90%] transition-all duration-100">
             {currentChunkWords.map((w, wIdx) => {
               const isGoldenWord = wIdx === activeWordInChunkIndex;
               return (
                 <span
                   key={wIdx}
-                  className={`text-[12px] sm:text-[14px] font-black uppercase tracking-wider transition-all duration-100 ${
+                  className={`text-[13px] sm:text-[15px] font-black uppercase tracking-wider transition-all duration-100 ${
                     isGoldenWord
                       ? 'text-[#FFD700] scale-105 drop-shadow-[0_0_12px_rgba(255,215,0,0.95)] underline decoration-[#FFD700] decoration-2 underline-offset-2'
                       : 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]'

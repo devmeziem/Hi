@@ -355,9 +355,11 @@ Return ONLY the title in plain text without quotes or markdown.`;
     }
   }
 
-  // 3. Try Groq (Fast Inference Models)
+  // 3. Try Groq (Fast Low-Consumption Inference Models)
   if (GROQ_API_KEY) {
-    const groqModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'deepseek-r1-distill-llama-70b', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
+    const groqModels = backupEngines?.groqWorkingModel
+      ? [backupEngines.groqWorkingModel, 'llama-3.1-8b-instant', 'llama-3.3-70b-versatile']
+      : ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile', 'mixtral-8x7b-32768'];
     for (const model of groqModels) {
       try {
         logInfo(`[Topic Discovery] Requesting topic from Groq (${model})...`);
@@ -368,7 +370,7 @@ Return ONLY the title in plain text without quotes or markdown.`;
               { role: 'system', content: 'You are a YouTube Shorts strategist. Generate titles strictly under 65 characters.' },
               { role: 'user', content: `Generate 1 concise, punchy title under 65 characters for "The Stoic Architect" on Theme: "${resolvedArchetype.theme}" (Angle: "${resolvedArchetype.angle}"). Avoid recent titles: [${recentExclusions || 'None'}]. Return ONLY the title text.` }
             ],
-            temperature: 0.9,
+            temperature: 0.8,
             max_tokens: 50
           });
           const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
@@ -409,7 +411,7 @@ Return ONLY the title in plain text without quotes or markdown.`;
             return cleanTopic;
           }
         } else {
-          logInfo(`[Topic Discovery] Groq (${model}) unavailable: ${res.error || 'Empty response'}`);
+          logInfo(`[Topic Discovery] Groq (${model}) notice: ${res.error || 'Empty response'}`);
         }
       } catch (err) {
         logInfo(`[Topic Discovery] Groq (${model}) notice: ${err.message}`);
@@ -509,13 +511,11 @@ async function testBackupEngines() {
   let groqWorkingModel = null;
 
   if (GROQ_API_KEY) {
-    // Dynamically query Groq models or try active fallbacks
+    // Verified fast, low-consumption models
     let candidateModels = [
-      'llama-3.3-70b-versatile',
       'llama-3.1-8b-instant',
-      'deepseek-r1-distill-llama-70b',
-      'mixtral-8x7b-32768',
-      'gemma2-9b-it'
+      'llama-3.3-70b-versatile',
+      'mixtral-8x7b-32768'
     ];
 
     try {
@@ -533,7 +533,7 @@ async function testBackupEngines() {
                 if (Array.isArray(j.data)) {
                   const textModels = j.data
                     .map(m => m.id)
-                    .filter(id => !id.includes('whisper') && !id.includes('guard') && !id.includes('vision'));
+                    .filter(id => !id.includes('whisper') && !id.includes('guard') && !id.includes('vision') && !id.includes('distill'));
                   if (textModels.length > 0) return resolve(textModels);
                 }
               } catch {}
@@ -544,7 +544,13 @@ async function testBackupEngines() {
         req.on('error', () => resolve(null));
         req.on('timeout', () => { req.destroy(); resolve(null); });
       });
-      if (activeList && activeList.length > 0) candidateModels = activeList;
+      if (activeList && activeList.length > 0) {
+        // Prioritize llama-3.1-8b-instant and llama-3.3-70b-versatile
+        candidateModels = [
+          ...activeList.filter(m => m === 'llama-3.1-8b-instant' || m === 'llama-3.3-70b-versatile'),
+          ...activeList.filter(m => m !== 'llama-3.1-8b-instant' && m !== 'llama-3.3-70b-versatile')
+        ];
+      }
     } catch {}
 
     for (const model of candidateModels) {
@@ -1134,11 +1140,19 @@ async function generateMediaAssets(storyboard) {
       try {
         const randomSeed = Math.floor(Math.random() * 99999999);
         logInfo(`[Cloudflare Image] Attempting model ${model} (seed: ${randomSeed})...`);
-        const postData = JSON.stringify({
-          prompt: `${prompt}, 8k vertical 9:16 cinematic luxury studio lighting, photorealistic, hyper-detailed, sharp focus, masterpiece`,
-          num_steps: model.includes('lightning') ? 4 : model.includes('flux') ? 4 : 20,
-          seed: randomSeed
-        });
+        let payloadObj = {
+          prompt: `${prompt}, 8k vertical 9:16 cinematic luxury studio lighting, photorealistic, hyper-detailed, sharp focus, masterpiece`
+        };
+        if (model.includes('flux')) {
+          payloadObj.steps = 4;
+        } else if (model.includes('lightning')) {
+          payloadObj.num_steps = 4;
+          payloadObj.seed = randomSeed;
+        } else {
+          payloadObj.num_steps = 20;
+          payloadObj.seed = randomSeed;
+        }
+        const postData = JSON.stringify(payloadObj);
 
         const res = await new Promise((resolve) => {
           const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${model}`, {
@@ -1316,8 +1330,8 @@ async function generateMediaAssets(storyboard) {
             voice: voice,
             lang: 'en-US',
             outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
-            pitch: '-3Hz',
-            rate: '-3%'
+            pitch: '-2Hz',
+            rate: '+8%'
           });
 
           await tts.ttsPromise(text, tempAudio);
@@ -1730,13 +1744,21 @@ async function renderFfmpegVideo(storyboard, enrichedSlides) {
       const chunkDur = slideDur / Math.max(chunkLines.length, 1);
       let captionFilter = '';
 
+      // Pinned Topic Hook at Top of Video for first 4.5 seconds (Slide 1)
+      let topHookFilter = '';
+      if (i === 0) {
+        const rawTitle = (storyboard.title || storyboard.theme || 'DAILY STOIC MASTERY').replace(/#\w+/g, '').trim();
+        const cleanTopicHook = rawTitle.slice(0, 48).replace(/'/g, "\\'").replace(/:/g, '\\:').replace(/%/g, '\\%').toUpperCase();
+        topHookFilter = `,drawtext=text='${cleanTopicHook}':fontsize=40:fontcolor=white:box=1:boxcolor=black@0.90:boxborderw=16:borderw=2:bordercolor=gold:shadowcolor=black@0.9:shadowx=2:shadowy=2:x=(w-text_w)/2:y=190:enable='between(t\\,0\\,4.5)'`;
+      }
+
       chunkLines.forEach((chunkText, cIdx) => {
         const startT = (cIdx * chunkDur).toFixed(2);
         const endT = ((cIdx + 1) * chunkDur).toFixed(2);
         const cleanChunk = chunkText.replace(/'/g, "\\'").replace(/:/g, '\\:').replace(/%/g, '\\%');
         
-        // Compact, high-visibility white text with black drop-box in lower bottom safe zone (y=h*0.82)
-        captionFilter += `,drawtext=text='${cleanChunk}':fontsize=42:fontcolor=white:box=1:boxcolor=black@0.85:boxborderw=14:borderw=3:bordercolor=black:shadowcolor=black@0.9:shadowx=2:shadowy=2:x=(w-text_w)/2:y=h*0.82:enable='between(t\\,${startT}\\,${endT})'`;
+        // Centered high-contrast kinetic subtitles with deep black drop-box in screen center
+        captionFilter += `,drawtext=text='${cleanChunk}':fontsize=48:fontcolor=white:box=1:boxcolor=black@0.92:boxborderw=18:borderw=3:bordercolor=black:shadowcolor=black@0.95:shadowx=3:shadowy=3:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t\\,${startT}\\,${endT})'`;
       });
 
       // Rapid, engaging Ken Burns zoom & pan motion (responsive speed)
@@ -1756,7 +1778,7 @@ async function renderFfmpegVideo(storyboard, enrichedSlides) {
         zoomFilter = `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0028,1.20)':d=${totalFrames}:x='iw/2-(iw/zoom/2)':y='(ih-ih/zoom)*(on/${totalFrames})':s=1080x1920:fps=30`;
       }
 
-      const fullVideoFilter = `${zoomFilter}${captionFilter}`;
+      const fullVideoFilter = `${zoomFilter}${topHookFilter}${captionFilter}`;
 
       logInfo(`[Slide ${slideNum}/${enrichedSlides.length}] Compiling 1080x1920 motion clip with burned kinetic captions (${slideDur.toFixed(1)}s, ${totalFrames} frames)...`);
 
@@ -2046,7 +2068,7 @@ async function syncToManifestAndDatabase(storyboard, enrichedSlides, publishResu
 
   currentManifest = [manifestEntry, ...currentManifest.filter(j => j.id !== manifestEntry.id)];
   fs.writeFileSync(manifestPath, JSON.stringify(currentManifest, null, 2));
-  logSuccess(`Updated 'daily_blueprint_manifest.json' with full 6-slide campaign data!`);
+  logSuccess(`[DATABASE: MANIFEST] Saved post to local/server manifest (ID: ${manifestEntry.id})`);
 
   // 2. Sync to Firestore Database via REST API
   try {
@@ -2090,9 +2112,9 @@ async function syncToManifestAndDatabase(storyboard, enrichedSlides, publishResu
         req.write(reqData);
         req.end();
       });
-      logSuccess(`Synced campaign to Firestore database ('saved_campaigns' collection)!`);
+      logSuccess(`[DATABASE: FIRESTORE] Post successfully saved to Firestore collection 'saved_campaigns' (Doc ID: ${campaignId})`);
     } else {
-      logInfo(`Remote Firestore sync skipped (no FIRESTORE_API_KEY provided). Local manifest preserved.`);
+      logInfo(`[DATABASE: PERSISTENCE] Saved to active manifest vault. (To enable cloud Firestore sync, provide FIRESTORE_API_KEY).`);
     }
 
     // 3. Save to Firestore Content History for Cooldown and Diversity tracking
@@ -2108,9 +2130,9 @@ async function syncToManifestAndDatabase(storyboard, enrichedSlides, publishResu
       storyExample: activeArch.storyExample,
       ending: storyboard.slides?.[storyboard.slides.length - 1]?.text || activeArch.outroPattern
     });
-    logSuccess(`[History System] Recorded generation metadata to Firestore 'content_history' for cooldown enforcement.`);
+    logSuccess(`[DATABASE: DEDUPLICATION] Topic "${storyboard.title}" logged to 'content_history' — Anti-duplicate 24h cooldown active!`);
   } catch (e) {
-    logInfo(`Firestore sync notice: ${e.message}`);
+    logInfo(`[DATABASE] Sync status: ${e.message}`);
   }
 
   return newCampaign;

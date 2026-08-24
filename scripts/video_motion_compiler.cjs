@@ -165,6 +165,13 @@ async function compileVideoMotion() {
               chunkLines.push(rawWords.slice(w, w + CHUNK_SIZE).join(' ').toUpperCase());
             }
 
+            let topHookFilt = '';
+            if (sIdx === 0) {
+              const rawTitle = (job.title || 'DAILY STOIC MASTERY').replace(/#\w+/g, '').trim();
+              const cleanTopicHook = rawTitle.slice(0, 48).replace(/'/g, "\\'").replace(/:/g, '\\:').replace(/%/g, '\\%').toUpperCase();
+              topHookFilt = `,drawtext=text='${cleanTopicHook}':fontsize=40:fontcolor=white:box=1:boxcolor=black@0.90:boxborderw=16:borderw=2:bordercolor=gold:shadowcolor=black@0.9:shadowx=2:shadowy=2:x=(w-text_w)/2:y=190:enable='between(t\\,0\\,4.5)'`;
+            }
+
             let captionFilt = '';
             if (chunkLines.length > 0) {
               const chunkDur = dur / Math.max(chunkLines.length, 1);
@@ -172,11 +179,11 @@ async function compileVideoMotion() {
                 const startT = (cIdx * chunkDur).toFixed(2);
                 const endT = ((cIdx + 1) * chunkDur).toFixed(2);
                 const cleanChunk = chunkText.replace(/'/g, "\\'").replace(/:/g, '\\:').replace(/%/g, '\\%');
-                captionFilt += `,drawtext=text='${cleanChunk}':fontsize=42:fontcolor=white:box=1:boxcolor=black@0.85:boxborderw=14:borderw=3:bordercolor=black:shadowcolor=black@0.9:shadowx=2:shadowy=2:x=(w-text_w)/2:y=h*0.82:enable='between(t\\,${startT}\\,${endT})'`;
+                captionFilt += `,drawtext=text='${cleanChunk}':fontsize=48:fontcolor=white:box=1:boxcolor=black@0.92:boxborderw=18:borderw=3:bordercolor=black:shadowcolor=black@0.95:shadowx=3:shadowy=3:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t\\,${startT}\\,${endT})'`;
               });
             }
 
-            const fullSlideFilter = `${zoomFilt}${captionFilt}`;
+            const fullSlideFilter = `${zoomFilt}${topHookFilt}${captionFilt}`;
             const cmd = `ffmpeg -y -loop 1 -i "${slImg}" -i "${slAud}" -c:v libx264 -preset ultrafast -crf 22 -pix_fmt yuv420p -t ${dur} -vf "${fullSlideFilter}" -c:a aac -b:a 192k -shortest "${slClip}"`;
             execSync(cmd, { stdio: 'pipe' });
             if (fs.existsSync(slClip)) slideClips.push(slClip);

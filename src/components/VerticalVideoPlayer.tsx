@@ -425,13 +425,25 @@ export const VerticalVideoPlayer: React.FC<VerticalVideoPlayerProps> = ({
                   ))}
                 </div>
 
-                {/* Subtitle / Caption Box: Persistent Rounded Drop-Box Pill with Synchronized Word Streaming in Lower Bottom */}
+                {/* Pinned Top Hook Title (First 4-5 Seconds / Slide 1) */}
+                {currentSlideIndex === 0 && (
+                  <div className="absolute top-12 inset-x-3 z-30 flex justify-center pointer-events-none animate-fadeIn">
+                    <div className="bg-black/92 backdrop-blur-xl border border-amber-400/80 px-3.5 py-1.5 rounded-full shadow-[0_0_20px_rgba(245,158,11,0.4)] flex items-center gap-2 max-w-[90%] ring-1 ring-amber-400/50">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse shrink-0" />
+                      <span className="text-xs sm:text-sm font-black text-amber-300 tracking-wide uppercase truncate">
+                        {safeTitle.replace(/#\w+/g, '').trim()}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Subtitle / Caption Box: Centered High-Contrast Drop-Box Pill with Synchronized Word Streaming */}
                 <div
                   onClick={() => setIsPlaying(!isPlaying)}
-                  className="relative z-20 flex-1 flex flex-col justify-end items-center pb-5 px-4 cursor-pointer select-none"
+                  className="relative z-20 flex-1 flex flex-col justify-center items-center px-4 cursor-pointer select-none"
                 >
-                  {/* Stable compact pill container in lower bottom with high contrast backdrop */}
-                  <div className="bg-black/92 backdrop-blur-xl border border-white/25 px-4 py-2.5 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.95)] min-h-[48px] max-w-[88%] flex items-center justify-center transition-all duration-150 ring-1 ring-white/15">
+                  {/* Stable compact pill container in screen center with high contrast backdrop */}
+                  <div className="bg-black/95 backdrop-blur-xl border-2 border-white/30 px-5 py-3 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.98)] min-h-[54px] max-w-[90%] flex items-center justify-center transition-all duration-150 ring-1 ring-white/20">
                     <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center">
                       {currentChunk.words.map((word, wIdx) => {
                         const isVisible = wIdx < visibleWordCount;
@@ -441,10 +453,10 @@ export const VerticalVideoPlayer: React.FC<VerticalVideoPlayerProps> = ({
                         return (
                           <span
                             key={`${activeChunkIndex}-${wIdx}`}
-                            className={`text-sm sm:text-base tracking-wide transition-all duration-100 inline-block ${
+                            className={`text-base sm:text-lg tracking-wide transition-all duration-100 inline-block ${
                               isCurrentWord
-                                ? 'text-[#FFD700] scale-105 font-black drop-shadow-[0_0_12px_rgba(255,215,0,0.95)]'
-                                : 'text-white font-black drop-shadow-[0_2px_4px_rgba(0,0,0,1)]'
+                                ? 'text-[#FFD700] scale-105 font-black drop-shadow-[0_0_14px_rgba(255,215,0,1)]'
+                                : 'text-white font-black drop-shadow-[0_2px_6px_rgba(0,0,0,1)]'
                             }`}
                           >
                             {word}

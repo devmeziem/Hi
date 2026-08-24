@@ -40,7 +40,7 @@ const STOIC_ARCHETYPES = [
     ],
     modernScenario: "Staring at your desk with zero motivation, overcoming the urge to scroll social media, and executing deep work regardless of mood.",
     visualStyle: 'Cinematic modern minimalist workspace at dawn, intense focused silhouette against high-contrast window light, moody 9:16 vertical 8k photorealistic',
-    outroPattern: "Execute regardless of how you feel. Follow {{CHANNEL_HANDLE}} for daily mental strength."
+    outroPattern: "Execute regardless of how you feel. Follow this channel for daily mental strength."
   },
   {
     lessonId: 'disrespect_silence',
@@ -55,7 +55,7 @@ const STOIC_ARCHETYPES = [
     ],
     modernScenario: "Navigating a hostile coworker, passive-aggressive remarks in a meeting, or online trolls without raising your voice.",
     visualStyle: 'Calm composed professional standing tall and unshakable in a blurred high-contrast boardroom or busy city street, sharp cinematic focus, 9:16 vertical 8k',
-    outroPattern: "Master your reaction, master your peace. Follow {{CHANNEL_HANDLE}} for mental fortitude."
+    outroPattern: "Master your reaction, master your peace. Follow this channel for mental fortitude."
   },
   {
     lessonId: 'failure_rebuild',
@@ -70,7 +70,7 @@ const STOIC_ARCHETYPES = [
     ],
     modernScenario: "Experiencing a collapsed venture, financial wipeout, or career setback, and systematically rebuilding daily habits without victimhood.",
     visualStyle: 'Solitary figure standing on a rain-slicked modern high-rise terrace overlooking a twilight cityscape with steely resolve, 9:16 vertical 8k',
-    outroPattern: "Rebuild stronger than what was broken. Follow {{CHANNEL_HANDLE}} for daily mental strength."
+    outroPattern: "Rebuild stronger than what was broken. Follow this channel for daily mental strength."
   },
   {
     lessonId: 'overthinking_action',
@@ -85,7 +85,7 @@ const STOIC_ARCHETYPES = [
     ],
     modernScenario: "Lying awake at 2 AM catastrophizing tomorrow's challenges, breaking the loop with objective grounding and decisive daytime action.",
     visualStyle: 'Moody cinematic shot of hands writing clearly in a sleek notebook under a focused warm desk lamp in a dark room, 9:16 vertical 8k',
-    outroPattern: "Silence the noise, master the moment. Follow {{CHANNEL_HANDLE}} for mental clarity."
+    outroPattern: "Silence the noise, master the moment. Follow this channel for mental clarity."
   },
   {
     lessonId: 'unsupported_isolation',
@@ -100,7 +100,7 @@ const STOIC_ARCHETYPES = [
     ],
     modernScenario: "Building a difficult skill, business, or fitness regimen late at night while friends and family doubt or mock your ambition.",
     visualStyle: 'Single illuminated room in a massive dark modern skyscraper at night, a solitary dedicated figure working steadily, 9:16 vertical 8k',
-    outroPattern: "Build in silence, let character speak. Follow {{CHANNEL_HANDLE}} for daily fortitude."
+    outroPattern: "Build in silence, let character speak. Follow this channel for daily fortitude."
   },
   {
     lessonId: 'pressure_calm',
@@ -115,7 +115,7 @@ const STOIC_ARCHETYPES = [
     ],
     modernScenario: "Navigating emergency project deadlines, high-stakes negotiations, or unexpected crisis situations with complete composure.",
     visualStyle: 'High-intensity chaotic environment in soft background blur, with a centered, razor-sharp calm subject in perfect focus, 9:16 vertical 8k',
-    outroPattern: "Stay cold, execute clean. Follow {{CHANNEL_HANDLE}} for mental strength."
+    outroPattern: "Stay cold, execute clean. Follow this channel for mental strength."
   },
   {
     lessonId: 'rejection_filter',
@@ -130,7 +130,7 @@ const STOIC_ARCHETYPES = [
     ],
     modernScenario: "Receiving harsh pitch rejections, workplace criticism, or public dismissal, calmly extracting feedback data and advancing.",
     visualStyle: 'Modern professional standing composed in an open architectural plaza at dusk, focused and unmoved by passing crowds, 9:16 vertical 8k',
-    outroPattern: "Let your results be your answer. Follow {{CHANNEL_HANDLE}} for mental toughness."
+    outroPattern: "Let your results be your answer. Follow this channel for mental toughness."
   },
   {
     lessonId: 'comparison_timeline',
@@ -145,7 +145,7 @@ const STOIC_ARCHETYPES = [
     ],
     modernScenario: "Scrolling through social media seeing peers flaunting sudden success, breaking the envy loop and refocusing on your daily craft.",
     visualStyle: 'Modern smartphone placed facedown on a clean slate desk as the user turns away to focus on deep focused work, 9:16 vertical 8k',
-    outroPattern: "Run your own race. Follow {{CHANNEL_HANDLE}} for daily mindset mastery."
+    outroPattern: "Run your own race. Follow this channel for daily mindset mastery."
   },
   {
     lessonId: 'loneliness_solitude',
@@ -160,7 +160,7 @@ const STOIC_ARCHETYPES = [
     ],
     modernScenario: "Spending weekends alone when others are partying, using the quiet hours for intense study, physical training, and building.",
     visualStyle: 'Serene silhouette in a minimalist loft apartment at blue hour overlooking a quiet morning sunrise, 9:16 vertical 8k',
-    outroPattern: "Master your solitude. Follow {{CHANNEL_HANDLE}} for mental fortitude."
+    outroPattern: "Master your solitude. Follow this channel for mental fortitude."
   },
   {
     lessonId: 'impulse_delay',
@@ -175,7 +175,7 @@ const STOIC_ARCHETYPES = [
     ],
     modernScenario: "Defeating late-night screen addiction, impulsive spending, or junk food cravings by inserting strategic friction.",
     visualStyle: 'Minimalist analog timer counting down on a modern dark wood desk beside a closed laptop, 9:16 vertical 8k photorealistic',
-    outroPattern: "Rule your impulses or they will rule you. Follow {{CHANNEL_HANDLE}} for self-mastery."
+    outroPattern: "Rule your impulses or they will rule you. Follow this channel for self-mastery."
   },
   {
     lessonId: 'delayed_gratification',
@@ -190,7 +190,7 @@ const STOIC_ARCHETYPES = [
     ],
     modernScenario: "Showing up to training, coding, or building daily for months with zero immediate feedback, trusting the compound curve.",
     visualStyle: 'Solid granite block being polished to mirror sheen under dramatic studio lighting, 9:16 vertical 8k',
-    outroPattern: "Play the long game. Follow {{CHANNEL_HANDLE}} for daily mental strength."
+    outroPattern: "Play the long game. Follow this channel for daily mental strength."
   },
   {
     lessonId: 'difficult_people_boundaries',
@@ -205,7 +205,7 @@ const STOIC_ARCHETYPES = [
     ],
     modernScenario: "Handling manipulative colleagues, chronic complainers, or boundary-pushing individuals with calm, firm boundaries.",
     visualStyle: 'Aesthetic glass partition in modern architectural interior reflecting clean light, symbolizing clear boundaries, 9:16 vertical 8k',
-    outroPattern: "Protect your energy. Rule your mind. Follow {{CHANNEL_HANDLE}}."
+    outroPattern: "Protect your energy. Rule your mind. Follow this channel for strength."
   },
   {
     lessonId: 'control_energy_ledger',
@@ -220,7 +220,7 @@ const STOIC_ARCHETYPES = [
     ],
     modernScenario: "Handling sudden economic shifts, travel disruptions, or external cancellations by shifting instantly to your next controllable move.",
     visualStyle: 'Open hand releasing autumn leaves in wind, juxtaposed with intense focused eyes locked onto the forward horizon, 9:16 vertical 8k',
-    outroPattern: "Control what is yours. Release the rest. Follow {{CHANNEL_HANDLE}} for mental clarity."
+    outroPattern: "Control what is yours. Release the rest. Follow this channel for mental clarity."
   },
   {
     lessonId: 'confidence_self_trust',
@@ -235,7 +235,7 @@ const STOIC_ARCHETYPES = [
     ],
     modernScenario: "Entering high-stakes meetings or making bold career decisions with quiet, grounded self-assurance.",
     visualStyle: 'Confident modern professional walking with purpose down a sleek architectural corridor in dramatic natural light, 9:16 vertical 8k',
-    outroPattern: "Build evidence, build trust. Follow {{CHANNEL_HANDLE}} for mental strength."
+    outroPattern: "Build evidence, build trust. Follow this channel for mental strength."
   },
   {
     lessonId: 'depleted_micro_momentum',
@@ -250,7 +250,7 @@ const STOIC_ARCHETYPES = [
     ],
     modernScenario: "Returning home exhausted from a demanding day and finding the focus to complete a key 20-minute study or training session.",
     visualStyle: 'Small spark catching in dry kindling, blooming into a steady warm flame against deep dark slate, 9:16 vertical 8k',
-    outroPattern: "Start small, finish unstoppable. Follow {{CHANNEL_HANDLE}} for daily motivation."
+    outroPattern: "Start small, finish unstoppable. Follow this channel for daily motivation."
   },
   {
     lessonId: 'mental_hardening',
@@ -265,7 +265,7 @@ const STOIC_ARCHETYPES = [
     ],
     modernScenario: "Tackling cold morning workouts, difficult direct conversations, or the hardest task first thing in the morning.",
     visualStyle: 'Athlete in pre-dawn fog breathing steady vapor, eyes locked forward with steely determination, 9:16 vertical 8k',
-    outroPattern: "Embrace the challenge, build the armor. Follow {{CHANNEL_HANDLE}} for fortitude."
+    outroPattern: "Embrace the challenge, build the armor. Follow this channel for fortitude."
   },
   {
     lessonId: 'reaction_tactical_pause',
@@ -280,7 +280,7 @@ const STOIC_ARCHETYPES = [
     ],
     modernScenario: "Receiving an infuriating email or provocative remark, responding with calm calculated logic instead of an emotional rant.",
     visualStyle: 'Water droplet falling into a calm glassy pool, creating a single pristine concentric ripple in golden twilight, 9:16 vertical 8k',
-    outroPattern: "Master the pause, own the outcome. Follow {{CHANNEL_HANDLE}} for emotional mastery."
+    outroPattern: "Master the pause, own the outcome. Follow this channel for emotional mastery."
   },
   {
     lessonId: 'judgment_spotlight_fallacy',
@@ -295,7 +295,7 @@ const STOIC_ARCHETYPES = [
     ],
     modernScenario: "Publishing a bold creative project, speaking up in a large meeting, or changing paths despite fear of judgment.",
     visualStyle: 'Figure stepping out from dark shadows into a clean focused beam of warm studio light, 9:16 vertical 8k',
-    outroPattern: "Step into the light. Follow {{CHANNEL_HANDLE}} for mental strength."
+    outroPattern: "Step into the light. Follow this channel for mental strength."
   },
   {
     lessonId: 'mental_toughness',
@@ -310,7 +310,7 @@ const STOIC_ARCHETYPES = [
     ],
     modernScenario: "Carrying heavy life responsibilities, working through intense fatigue, and maintaining character and honor under stress.",
     visualStyle: 'Immovable ancient lighthouse standing firm against towering crashing storm waves at dusk, 9:16 vertical 8k',
-    outroPattern: "Stand firm through the storm. Follow {{CHANNEL_HANDLE}} for daily strength."
+    outroPattern: "Stand firm through the storm. Follow this channel for daily strength."
   },
   {
     lessonId: 'deep_focus_distractions',
@@ -325,7 +325,7 @@ const STOIC_ARCHETYPES = [
     ],
     modernScenario: "Locking into 2 hours of uninterrupted deep work with phone on airplane mode, outproducing an entire distracted department.",
     visualStyle: 'Laser beam cutting with micron precision through dark obsidian glass, atmospheric smoke and blue rim light, 9:16 vertical 8k',
-    outroPattern: "Own your focus, own your life. Follow {{CHANNEL_HANDLE}} for mental clarity."
+    outroPattern: "Own your focus, own your life. Follow this channel for mental clarity."
   }
 ];
 
@@ -646,12 +646,26 @@ function selectDailyDiverseSlots(recentHistory, slotCount = 4) {
   return chosen;
 }
 
+const ROTATING_VIRAL_OUTROS = [
+  "You might not see us again — follow this channel for daily mental strength.",
+  "Follow this channel if you want to grow 1% stronger every single day.",
+  "You may never see this channel again — tap follow for daily discipline and fortitude.",
+  "Don't lose this wisdom — follow this channel to build your mental armor.",
+  "Follow this channel today for daily Stoic focus and personal mastery.",
+  "You might never see this channel again — follow for daily mindset elevation.",
+  "Tap follow on this channel to master self-discipline and inner peace.",
+  "Join this channel today and become indestructible against chaos."
+];
+
 /**
- * Resolve dynamic channel handle in outro patterns
+ * Resolve dynamic channel call-to-actions with high-retention rotating viral patterns
  */
-function resolveOutroPattern(pattern, channelHandle = '@thestoicarchitect-n4b') {
-  const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
-  return (pattern || '').replace(/\{\{CHANNEL_HANDLE\}\}/g, cleanHandle).replace(/@TheStoicArchitect\b/gi, cleanHandle);
+function resolveOutroPattern(pattern, channelHandle = '') {
+  if (pattern && !pattern.includes('{{CHANNEL_HANDLE}}') && !pattern.toLowerCase().includes('follow @') && pattern.length > 10) {
+    return pattern;
+  }
+  const randomIndex = Math.floor(Math.random() * ROTATING_VIRAL_OUTROS.length);
+  return ROTATING_VIRAL_OUTROS[randomIndex];
 }
 
 /**
