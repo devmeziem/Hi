@@ -49,6 +49,7 @@ import { AiPlayground } from './AiPlayground';
 import { PipelineAutomationTab } from './PipelineAutomationTab';
 import { VerticalVideoPlayer } from './VerticalVideoPlayer';
 import { DjSoundboardTab } from './DjSoundboardTab';
+import { FinanceEngineTab } from './FinanceEngineTab';
 
 interface VoxamFactoryAppProps {
   userEmail: string;
@@ -547,6 +548,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
           <nav className="p-3 space-y-1">
             {[
               { id: 'dashboard', label: 'Overview Dashboard', icon: LayoutDashboard },
+              { id: 'finance', label: 'Finance Engine (Channel 1)', icon: DollarSign },
               { id: 'pipeline', label: '4-Stage GitHub Pipeline', icon: Workflow },
               { id: 'dj', label: 'DJ Audio & TTS Studio', icon: Headphones },
               { id: 'playground', label: 'AI Test Lab & Grok Chat', icon: Sparkles },
@@ -1635,6 +1637,9 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
             </div>
           </div>
         )}
+
+        {/* TAB: FINANCE & SMALL BUSINESS ENGINE */}
+        {activeTab === 'finance' && <FinanceEngineTab keys={keys} />}
 
         {/* TAB: PIPELINE AUTOMATION */}
         {activeTab === 'pipeline' && <PipelineAutomationTab />}

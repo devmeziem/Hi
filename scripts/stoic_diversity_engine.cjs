@@ -705,8 +705,13 @@ STRICT SCRIPTWRITING & NARRATION RULES:
    - Avoid recent titles: [${recentTitles || 'None'}]
 
 OUTPUT FORMAT: Return strictly a valid JSON object matching the schema below.
+CRITICAL MANDATES:
+1. Return EXACTLY 6 slides (slideIndex 0 to 5). Never return more than 6 slides.
+2. NEVER copy placeholder notes, word count ranges, or brackets into the text.
+3. Every slide must contain 1-2 complete spoken English sentences that explain the idea clearly.
+
 {
-  "title": "Punchy, High-CTR Modern Stoic Title (e.g. Why Silence Destroys Disrespect or The 10-Minute Rule for Self-Control) #Shorts",
+  "title": "Why Silence Destroys Disrespect - The Stoic Rule #Shorts",
   "theme": "${slotArchetype.theme}",
   "angle": "${slotArchetype.angle}",
   "hook": "${slotArchetype.hookPatterns[slotIndex % slotArchetype.hookPatterns.length]}",
@@ -715,33 +720,33 @@ OUTPUT FORMAT: Return strictly a valid JSON object matching the schema below.
   "slides": [
     {
       "slideIndex": 0,
-      "text": "Opening hook addressing the modern pain point (12-16 words)...",
-      "visual": "Cinematic 9:16 vertical 8k shot adhering to ${slotArchetype.visualStyle} in unified slate & amber chiaroscuro palette..."
+      "text": "When someone disrespects you in public, your instinct is to fight back. Here is why absolute silence destroys them.",
+      "visual": "Calm professional in sharp dark suit standing unshakable in a busy city street, cinematic 9:16 vertical 8k amber rim lighting"
     },
     {
       "slideIndex": 1,
-      "text": "The psychological trap or common mistake people make (12-15 words)...",
-      "visual": "Detailed 9:16 vertical prompt matching the exact same scene style, lighting, and slate/amber color palette for scene 2..."
+      "text": "Reacting with anger proves that their words hurt you. You hand them complete control over your emotions.",
+      "visual": "Solitary composed figure unmoved amidst chaotic motion blur of city crowd, 9:16 vertical 8k deep shadows and golden highlights"
     },
     {
       "slideIndex": 2,
-      "text": "The core Stoic mental shift applied to modern life (12-15 words)...",
-      "visual": "Detailed 9:16 vertical prompt matching the exact same scene style, lighting, and slate/amber color palette for scene 3..."
+      "text": "Marcus Aurelius taught that external insults say everything about the speaker and nothing about you.",
+      "visual": "Atmospheric dramatic portrait of focused thinker with calm steely expression, 9:16 vertical 8k warm side lighting"
     },
     {
       "slideIndex": 3,
-      "text": "The practical tactical protocol to handle this situation (12-15 words)...",
-      "visual": "Detailed 9:16 vertical prompt matching the exact same scene style, lighting, and slate/amber color palette for scene 4..."
+      "text": "When you meet disrespect with quiet composure, you make their aggression look weak and foolish.",
+      "visual": "Close-up perspective of steady hands writing calmly in a leather journal under warm light, 9:16 vertical 8k"
     },
     {
       "slideIndex": 4,
-      "text": "The deeper mindset of sovereignty and mental toughness (12-15 words)...",
-      "visual": "Detailed 9:16 vertical prompt matching the exact same scene style, lighting, and slate/amber color palette for scene 5..."
+      "text": "True power is not being loud. True power is staying completely calm when tested.",
+      "visual": "Immovable dark stone monolith standing tall under starry dusk sky with warm golden horizon, 9:16 vertical 8k"
     },
     {
       "slideIndex": 5,
-      "text": "Final punchy rule + '${resolvedOutro}' (12-15 words)...",
-      "visual": "Detailed 9:16 vertical prompt matching the exact same scene style, lighting, and slate/amber color palette for scene 6 with cinematic resolution..."
+      "text": "Master your reaction, master your life. ${resolvedOutro}",
+      "visual": "Dramatic sunrise illuminating high-rise terrace with solitary triumphant figure, 9:16 vertical 8k gold and slate palette"
     }
   ]
 }`;

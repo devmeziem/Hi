@@ -229,6 +229,56 @@ async function resolveLiveChannelProfile() {
 let resolvedArchetype = null;
 let recentContentHistory = [];
 
+function sanitizeDiscoveryTopic(rawText) {
+  if (!rawText) return '';
+  let t = String(rawText);
+  // Strip <think>...</think> and unclosed <think>...
+  t = t.replace(/<think>[\s\S]*?<\/think>/gi, '');
+  t = t.replace(/<think>[\s\S]*/gi, '');
+  // Strip Thinking Process
+  t = t.replace(/Thinking Process:[\s\S]*?(?=\n\n|\n[A-Z0-9"']|$)/gi, '');
+  t = t.replace(/```[\s\S]*?```/gi, '');
+  // Extract clean non-empty single title line
+  const lines = t.split(/[\r\n]+/)
+    .map(l => l.replace(/^[\d\.\-\*\#\s"']+|["']+$/g, '').trim())
+    .filter(l => l.length > 5 && !l.toLowerCase().startsWith('here') && !l.toLowerCase().startsWith('sure'));
+  if (lines.length > 0) {
+    t = lines[0];
+  }
+  t = t.replace(/^["']|["']$/g, '').replace(/#\w+/g, '').trim();
+  if (t.length > 70) t = t.slice(0, 68).trim();
+  return t;
+}
+
+function cleanLlmJson(rawContent) {
+  if (!rawContent) return null;
+  let text = String(rawContent);
+  text = text.replace(/<think>[\s\S]*?<\/think>/gi, '');
+  text = text.replace(/<think>[\s\S]*/gi, '');
+  text = text.replace(/```json/gi, '').replace(/```/gi, '').trim();
+  const firstBrace = text.indexOf('{');
+  const lastBrace = text.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    text = text.substring(firstBrace, lastBrace + 1);
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function validateStoicStoryboard(storyboard) {
+  if (!storyboard || !Array.isArray(storyboard.slides) || storyboard.slides.length < 3) return false;
+  for (const slide of storyboard.slides) {
+    const txt = (slide.text || '').toLowerCase();
+    if (txt.includes('words)') || txt.includes('placeholder') || txt.includes('scene style') || txt.length < 12) {
+      return false;
+    }
+  }
+  return true;
+}
+
 async function resolveTopic(activeGrok, backupEngines) {
   await resolveLiveChannelProfile();
 
@@ -250,9 +300,9 @@ async function resolveTopic(activeGrok, backupEngines) {
   logInfo('No manual topic provided. Discovering a fresh, viral Stoic topic via AI Brain...');
   const recentExclusions = recentContentHistory.slice(0, 10).map(h => `"${h.topic}"`).join(', ');
 
-  // 1. Try Gemini (gemini-2.0-flash, gemini-1.5-flash, gemini-2.5-flash)
+  // 1. Try Gemini (gemini-2.0-flash, gemini-1.5-flash, gemini-1.5-flash-8b)
   if (GEMINI_API_KEY) {
-    const geminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash'];
+    const geminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
     for (const model of geminiModels) {
       try {
         logInfo(`[Topic Discovery] Requesting topic from Google Gemini (${model})...`);
@@ -298,9 +348,9 @@ Return ONLY the title in plain text without quotes or markdown.`;
           req.end();
         });
 
-        if (res.success && res.text && res.text.length > 5) {
-          const cleanTopic = res.text.replace(/^["']|["']$/g, '').trim();
-          if (!isTopicSimilarToHistory(cleanTopic, resolvedArchetype.theme, recentContentHistory)) {
+        if (res.success && res.text) {
+          const cleanTopic = sanitizeDiscoveryTopic(res.text);
+          if (cleanTopic.length > 5 && !isTopicSimilarToHistory(cleanTopic, resolvedArchetype.theme, recentContentHistory)) {
             logSuccess(`[Topic Discovery] Generated via Gemini (${model}): "${cleanTopic}"`);
             return cleanTopic;
           }
@@ -315,7 +365,7 @@ Return ONLY the title in plain text without quotes or markdown.`;
     logInfo('[Topic Discovery] Gemini API key not present, skipping Gemini...');
   }
 
-  // 2. Try Grok (xAI)
+  // 2. Try Grok (xAI) with verified available models
   if (activeGrok && activeGrok.key) {
     try {
       logInfo(`[Topic Discovery] Requesting topic from xAI Grok (${activeGrok.model || 'grok-2-latest'})...`);
@@ -324,7 +374,7 @@ Return ONLY the title in plain text without quotes or markdown.`;
           model: activeGrok.model || 'grok-2-latest',
           messages: [
             { role: 'system', content: 'You are a viral YouTube Shorts strategist for Stoicism and high-performance psychology.' },
-            { role: 'user', content: `Generate 1 fresh, high-retention title for "The Stoic Architect" on Theme: "${resolvedArchetype.theme}" (Angle: "${resolvedArchetype.angle}"). Avoid recent titles: [${recentExclusions || 'None'}]. Return ONLY the single title in plain text.` }
+            { role: 'user', content: `Generate 1 fresh, high-retention title under 65 characters for "The Stoic Architect" on Theme: "${resolvedArchetype.theme}" (Angle: "${resolvedArchetype.angle}"). Avoid recent titles: [${recentExclusions || 'None'}]. Return ONLY the single title in plain text without reasoning.` }
           ],
           temperature: 0.9,
           max_tokens: 60
@@ -359,9 +409,9 @@ Return ONLY the title in plain text without quotes or markdown.`;
         req.end();
       });
 
-      if (res.success && res.text && res.text.length > 5) {
-        const cleanTopic = res.text.replace(/^["']|["']$/g, '').trim();
-        if (!isTopicSimilarToHistory(cleanTopic, resolvedArchetype.theme, recentContentHistory)) {
+      if (res.success && res.text) {
+        const cleanTopic = sanitizeDiscoveryTopic(res.text);
+        if (cleanTopic.length > 5 && !isTopicSimilarToHistory(cleanTopic, resolvedArchetype.theme, recentContentHistory)) {
           logSuccess(`[Topic Discovery] Generated via Grok (${activeGrok.model}): "${cleanTopic}"`);
           return cleanTopic;
         }
@@ -376,8 +426,8 @@ Return ONLY the title in plain text without quotes or markdown.`;
   // 3. Try Groq (Fast Low-Consumption Inference Models)
   if (GROQ_API_KEY) {
     const groqModels = backupEngines?.groqWorkingModel
-      ? [backupEngines.groqWorkingModel, 'llama-3.1-8b-instant', 'llama-3.3-70b-versatile']
-      : ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile', 'mixtral-8x7b-32768'];
+      ? [backupEngines.groqWorkingModel, 'llama-3.1-8b-instant', 'gemma2-9b-it', 'llama-3.3-70b-versatile']
+      : ['llama-3.1-8b-instant', 'gemma2-9b-it', 'llama-3.3-70b-versatile', 'mixtral-8x7b-32768'];
     for (const model of groqModels) {
       try {
         logInfo(`[Topic Discovery] Requesting topic from Groq (${model})...`);
@@ -385,7 +435,7 @@ Return ONLY the title in plain text without quotes or markdown.`;
           const postData = JSON.stringify({
             model: model,
             messages: [
-              { role: 'system', content: 'You are a YouTube Shorts strategist. Generate titles strictly under 65 characters.' },
+              { role: 'system', content: 'You are a YouTube Shorts strategist. Generate titles strictly under 65 characters. Return only the title without any thinking tags or preamble.' },
               { role: 'user', content: `Generate 1 concise, punchy title under 65 characters for "The Stoic Architect" on Theme: "${resolvedArchetype.theme}" (Angle: "${resolvedArchetype.angle}"). Avoid recent titles: [${recentExclusions || 'None'}]. Return ONLY the title text.` }
             ],
             temperature: 0.8,
@@ -421,10 +471,9 @@ Return ONLY the title in plain text without quotes or markdown.`;
           req.end();
         });
 
-        if (res.success && res.text && res.text.length > 5) {
-          let cleanTopic = res.text.replace(/^["']|["']$/g, '').trim();
-          if (cleanTopic.length > 70) cleanTopic = cleanTopic.slice(0, 68).trim();
-          if (!isTopicSimilarToHistory(cleanTopic, resolvedArchetype.theme, recentContentHistory)) {
+        if (res.success && res.text) {
+          let cleanTopic = sanitizeDiscoveryTopic(res.text);
+          if (cleanTopic.length > 5 && !isTopicSimilarToHistory(cleanTopic, resolvedArchetype.theme, recentContentHistory)) {
             logSuccess(`[Topic Discovery] Generated via Groq (${model}): "${cleanTopic}"`);
             return cleanTopic;
           }
@@ -450,7 +499,8 @@ async function testGrokKeys() {
   logStep(1, 'Testing Grok (xAI) Multi-Token Connectivity');
   logInfo(`Found ${XAI_API_KEYS.length} candidate Grok token(s). Testing live inference...`);
 
-  const grokModels = ['grok-4-fast', 'grok-4', 'grok-3', 'grok-2-latest'];
+  // Active verified xAI models (ordered by efficiency and stability)
+  const grokModels = ['grok-2-latest', 'grok-2', 'grok-beta', 'grok-2-1212', 'grok-vision-beta'];
   let activeKey = null;
 
   for (let i = 0; i < XAI_API_KEYS.length; i++) {
@@ -532,8 +582,12 @@ async function testBackupEngines() {
     // Verified fast, low-consumption models
     let candidateModels = [
       'llama-3.1-8b-instant',
+      'gemma2-9b-it',
       'llama-3.3-70b-versatile',
-      'mixtral-8x7b-32768'
+      'llama-3.1-70b-versatile',
+      'mixtral-8x7b-32768',
+      'qwen-2.5-32b',
+      'deepseek-r1-distill-llama-70b'
     ];
 
     try {
@@ -551,7 +605,7 @@ async function testBackupEngines() {
                 if (Array.isArray(j.data)) {
                   const textModels = j.data
                     .map(m => m.id)
-                    .filter(id => !id.includes('whisper') && !id.includes('guard') && !id.includes('vision') && !id.includes('distill'));
+                    .filter(id => !id.includes('whisper') && !id.includes('guard') && !id.includes('vision'));
                   if (textModels.length > 0) return resolve(textModels);
                 }
               } catch {}
@@ -563,10 +617,10 @@ async function testBackupEngines() {
         req.on('timeout', () => { req.destroy(); resolve(null); });
       });
       if (activeList && activeList.length > 0) {
-        // Prioritize llama-3.1-8b-instant and llama-3.3-70b-versatile
+        // Prioritize low-consumption instant models
         candidateModels = [
-          ...activeList.filter(m => m === 'llama-3.1-8b-instant' || m === 'llama-3.3-70b-versatile'),
-          ...activeList.filter(m => m !== 'llama-3.1-8b-instant' && m !== 'llama-3.3-70b-versatile')
+          ...activeList.filter(m => m === 'llama-3.1-8b-instant' || m === 'gemma2-9b-it' || m === 'llama-3.3-70b-versatile'),
+          ...activeList.filter(m => m !== 'llama-3.1-8b-instant' && m !== 'gemma2-9b-it' && m !== 'llama-3.3-70b-versatile')
         ];
       }
     } catch {}
@@ -678,8 +732,10 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
       });
 
       if (raw.success && raw.content) {
-        scriptData = JSON.parse(raw.content);
-        if (scriptData && Array.isArray(scriptData.slides) && scriptData.slides.length >= 3) {
+        const parsed = cleanLlmJson(raw.content);
+        if (parsed && validateStoicStoryboard(parsed)) {
+          if (parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
+          scriptData = parsed;
           logSuccess(`[Storyboard Engine] Groq (${backupEngines.groqWorkingModel}) generated complete ${scriptData.slides.length}-slide package!`);
         }
       } else {
@@ -742,9 +798,10 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
         });
 
         if (raw.success && raw.content) {
-          const cleaned = raw.content.replace(/```json/gi, '').replace(/```/g, '').trim();
-          scriptData = JSON.parse(cleaned);
-          if (scriptData && Array.isArray(scriptData.slides) && scriptData.slides.length >= 3) {
+          const parsed = cleanLlmJson(raw.content);
+          if (parsed && validateStoicStoryboard(parsed)) {
+            if (parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
+            scriptData = parsed;
             logSuccess(`[Storyboard Engine] Cloudflare Low-Neuron (${model}) generated full ${scriptData.slides.length}-slide package!`);
             break;
           }
@@ -796,9 +853,10 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
         });
 
         if (raw.success && raw.content) {
-          const cleaned = raw.content.replace(/```json/gi, '').replace(/```/g, '').trim();
-          scriptData = JSON.parse(cleaned);
-          if (scriptData && Array.isArray(scriptData.slides) && scriptData.slides.length >= 3) {
+          const parsed = cleanLlmJson(raw.content);
+          if (parsed && validateStoicStoryboard(parsed)) {
+            if (parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
+            scriptData = parsed;
             logSuccess(`[Storyboard Engine] Pollinations.ai (${pModel}) generated full ${scriptData.slides.length}-slide package!`);
             break;
           }
@@ -811,7 +869,7 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
 
   // 4. QUATERNARY: Google Gemini 2.0 / 1.5 Flash (Free Tier)
   if (!scriptData && GEMINI_API_KEY) {
-    const candidateGeminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash'];
+    const candidateGeminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
     for (const model of candidateGeminiModels) {
       try {
         logInfo(`[Storyboard Engine] 4. Requesting storyboard from Google Gemini (${model})...`);
@@ -862,9 +920,10 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
         });
 
         if (raw.success && raw.content) {
-          const cleaned = raw.content.replace(/```json/gi, '').replace(/```/g, '').trim();
-          scriptData = JSON.parse(cleaned);
-          if (scriptData && Array.isArray(scriptData.slides) && scriptData.slides.length >= 3) {
+          const parsed = cleanLlmJson(raw.content);
+          if (parsed && validateStoicStoryboard(parsed)) {
+            if (parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
+            scriptData = parsed;
             logSuccess(`[Storyboard Engine] Google Gemini (${model}) generated full ${scriptData.slides.length}-slide storyboard!`);
             break;
           }
@@ -924,9 +983,10 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
         });
 
         if (raw.success && raw.content) {
-          const cleaned = raw.content.replace(/```json/gi, '').replace(/```/g, '').trim();
-          scriptData = JSON.parse(cleaned);
-          if (scriptData && Array.isArray(scriptData.slides) && scriptData.slides.length >= 3) {
+          const parsed = cleanLlmJson(raw.content);
+          if (parsed && validateStoicStoryboard(parsed)) {
+            if (parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
+            scriptData = parsed;
             logSuccess(`[Storyboard Engine] OpenAI (${model}) generated complete ${scriptData.slides.length}-slide storyboard!`);
             break;
           }
@@ -983,8 +1043,10 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
       });
 
       if (raw.success && raw.content) {
-        scriptData = JSON.parse(raw.content);
-        if (scriptData && Array.isArray(scriptData.slides) && scriptData.slides.length >= 3) {
+        const parsed = cleanLlmJson(raw.content);
+        if (parsed && validateStoicStoryboard(parsed)) {
+          if (parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
+          scriptData = parsed;
           logSuccess(`[Storyboard Engine] DeepSeek (deepseek-chat) generated ${scriptData.slides.length}-slide package!`);
         }
       }
@@ -1037,9 +1099,10 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
       });
 
       if (raw.success && raw.content) {
-        const cleaned = raw.content.replace(/```json/gi, '').replace(/```/g, '').trim();
-        scriptData = JSON.parse(cleaned);
-        if (scriptData && Array.isArray(scriptData.slides)) {
+        const parsed = cleanLlmJson(raw.content);
+        if (parsed && validateStoicStoryboard(parsed)) {
+          if (parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
+          scriptData = parsed;
           logSuccess(`[Storyboard Engine] Grok (${activeGrok.model}) generated full ${scriptData.slides.length}-slide package!`);
         }
       }
@@ -1050,6 +1113,7 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
   if (!scriptData || !Array.isArray(scriptData.slides) || scriptData.slides.length < 3) {
     logWarning('[Storyboard Engine] Remote LLM endpoints unavailable or rate-limited. Synthesizing rich Stoic Archetype Slot from Diversity Engine...');
     scriptData = synthesizeDeterministicStoryboard(activeArch, topic, liveChannelHandle);
+    if (scriptData.slides.length > 6) scriptData.slides = scriptData.slides.slice(0, 6);
     logSuccess(`[Storyboard Engine] Diversity Engine synthesized authentic ${scriptData.slides.length}-slide Stoic package with dynamic outro!`);
   }
 
@@ -1104,6 +1168,11 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
 // ----------------------------------------------------
 async function generateMediaAssets(storyboard) {
   logStep(4, 'Synthesizing Real 9:16 Visuals & TTS Voice Audio for All Slides');
+
+  if (storyboard && Array.isArray(storyboard.slides) && storyboard.slides.length > 6) {
+    logWarning(`[Media Engine] Storyboard has ${storyboard.slides.length} slides. Enforcing strict 6-slide limit for Stoic Shorts.`);
+    storyboard.slides = storyboard.slides.slice(0, 6);
+  }
 
   // Helper to download a URL to buffer with timeout and redirect handling
   async function downloadBuffer(url, timeoutMs = 15000) {

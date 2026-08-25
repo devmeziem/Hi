@@ -14,10 +14,13 @@ const http = require('http');
 const { spawnSync, execSync } = require('child_process');
 const {
   FIN_ARCHETYPES,
+  FIN_CATEGORIES,
   auditFinancialScriptSafety,
   sanitizeFinString,
   buildFinPromptForSlot,
-  synthesizeDeterministicFinStoryboard
+  buildFinDeepDivePrompt,
+  synthesizeDeterministicFinStoryboard,
+  synthesizeDeterministicFinDeepDiveStoryboard
 } = require('./fin_diversity_engine.cjs');
 
 const CHANNEL_ID = 'channel_fin_01';
@@ -25,7 +28,8 @@ const CHANNEL_NAME = 'Fin Blueprint';
 const CHANNEL_HANDLE = '@bones_ceo';
 const NICHE = 'finance_business';
 
-const isDryRun = process.env.DRY_RUN === 'false' ? false : true;
+// Robust DRY_RUN evaluation: true only if DRY_RUN === 'true' or DRY_RUN === '1'
+const isDryRun = process.env.DRY_RUN === 'true' || process.env.DRY_RUN === '1';
 const testTopicInput = (process.env.TEST_TOPIC || '').trim();
 const contentDepth = (process.env.CONTENT_DEPTH || 'short_form').trim();
 
@@ -35,6 +39,7 @@ const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || '').trim();
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim();
 const DEEPSEEK_API_KEY = (process.env.DEEPSEEK_API_KEY || '').trim();
 const XAI_API_KEY = (process.env.XAI_API_KEY || process.env.GROK_API_KEY || process.env.GROK_KEY || '').trim();
+const XAI_API_KEY_2 = (process.env.XAI_API_KEY_2 || process.env.GROK_API_KEY_2 || '').trim();
 const CLOUDFLARE_ACCOUNT_ID = (process.env.CLOUDFLARE_ACCOUNT_ID || '').trim().replace(/^https?:\/\/[^\/]+\//, '').replace(/\/$/, '');
 const CLOUDFLARE_API_TOKEN = (process.env.CLOUDFLARE_API_TOKEN || '').trim();
 
@@ -57,37 +62,144 @@ const colors = {
   blue: '\x1b[34m',
   magenta: '\x1b[35m',
   red: '\x1b[31m',
-  bgBlue: '\x1b[44m'
+  dim: '\x1b[2m'
 };
 
-function logStep(num, msg) {
-  console.log(`\n${colors.bright}${colors.cyan}[Step ${num}] ${msg}${colors.reset}`);
+function logStep(stepNum, msg) {
+  console.log(`\n${colors.bright}${colors.cyan}▶ [STAGE ${stepNum}] ${msg}${colors.reset}`);
 }
 function logSuccess(msg) {
   console.log(`  ${colors.green}✓ ${msg}${colors.reset}`);
 }
-function logInfo(msg) {
-  console.log(`  ${colors.blue}ℹ ${msg}${colors.reset}`);
-}
 function logWarning(msg) {
   console.log(`  ${colors.yellow}⚠ ${msg}${colors.reset}`);
 }
+function logInfo(msg) {
+  console.log(`  ${colors.blue}ℹ ${msg}${colors.reset}`);
+}
+function logError(msg) {
+  console.log(`  ${colors.red}✖ ${msg}${colors.reset}`);
+}
 
-console.log(`\n${colors.bright}${colors.cyan}══════════════════════════════════════════════════════════════════════${colors.reset}`);
-console.log(`${colors.bright}${colors.bgBlue} FIN BLUEPRINT (CHANNEL 1) PIPELINE RUNNER ${colors.reset}`);
-console.log(`${colors.cyan}══════════════════════════════════════════════════════════════════════${colors.reset}`);
-console.log(`  Channel: ${colors.bright}${CHANNEL_NAME} (${CHANNEL_HANDLE})${colors.reset}`);
+console.log(`\n${colors.cyan}══════════════════════════════════════════════════════════════════════`);
+console.log(`  VOXAM AUTOMATION FACTORY — FIN BLUEPRINT DIAGNOSTIC RUNNER`);
+console.log(`  Channel Target: ${colors.bright}${CHANNEL_NAME} (${CHANNEL_HANDLE})${colors.reset}`);
 console.log(`  Niche Focus: ${colors.green}Global & Nigerian Practical Finance & Micro-Business${colors.reset}`);
-console.log(`  Dry Run Mode: ${isDryRun ? colors.yellow + 'ENABLED (Safe Test)' : colors.green + 'LIVE UPLOAD'}${colors.reset}`);
-console.log(`  Depth Mode: ${contentDepth === 'deep_dive' ? '3-5 min Deep Narrative' : '60s High-Retention Short'}`);
+console.log(`  Dry Run Mode: ${isDryRun ? colors.yellow + 'ENABLED (Safe Test)' : colors.green + 'LIVE UPLOAD (Active)'}${colors.reset}`);
+console.log(`  Depth Mode: ${contentDepth === 'deep_dive' ? '15-20 min / 15-Chapter Masterclass' : '60s High-Retention Short'}`);
 console.log(`${colors.cyan}══════════════════════════════════════════════════════════════════════\n${colors.reset}`);
 
 // ----------------------------------------------------
-// STEP 1: VERIFY AI PROVIDERS & SELECT OPTIMAL MODEL
+// STEP 1: PROBE MODEL AVAILABILITY (Grok / Groq / Cloudflare)
 // ----------------------------------------------------
-async function checkGroqAvailability() {
+async function probeWorkingGrokModel() {
+  const keysToTry = [XAI_API_KEY, XAI_API_KEY_2].filter(Boolean);
+  if (keysToTry.length === 0) return null;
+
+  // Modern active Grok models
+  const grokModels = [
+    'grok-2-latest',
+    'grok-2',
+    'grok-2-1212',
+    'grok-beta'
+  ];
+
+  for (let i = 0; i < keysToTry.length; i++) {
+    const key = keysToTry[i];
+    const masked = key.slice(0, 7) + '...' + key.slice(-4);
+    for (const model of grokModels) {
+      try {
+        const startTime = Date.now();
+        const postData = JSON.stringify({
+          model: model,
+          messages: [{ role: 'user', content: 'Say OK' }],
+          max_tokens: 5
+        });
+
+        const res = await new Promise((resolve) => {
+          const req = https.request('https://api.x.ai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${key}`,
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 6000
+          }, (resp) => {
+            let data = '';
+            resp.on('data', c => data += c);
+            resp.on('end', () => {
+              if (resp.statusCode === 200) {
+                resolve({ success: true, statusCode: 200 });
+              } else {
+                resolve({ success: false, statusCode: resp.statusCode });
+              }
+            });
+          });
+          req.on('error', () => resolve({ success: false, statusCode: 500 }));
+          req.on('timeout', () => { req.destroy(); resolve({ success: false, statusCode: 408 }); });
+          req.write(postData);
+          req.end();
+        });
+
+        if (res.success) {
+          logSuccess(`Grok Token #${i + 1} (${masked}) with '${model}' is ONLINE!`);
+          return { key, model };
+        }
+      } catch {}
+    }
+  }
+  return null;
+}
+
+async function probeWorkingGroqModel() {
   if (!GROQ_API_KEY) return null;
-  const candidateModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'];
+
+  // Active verified Groq models (excluding decommissioned ones)
+  let candidateModels = [
+    'llama-3.1-8b-instant',
+    'gemma2-9b-it',
+    'llama-3.3-70b-versatile',
+    'mixtral-8x7b-32768',
+    'qwen-2.5-32b',
+    'deepseek-r1-distill-llama-70b'
+  ];
+
+  // Try dynamic model list fetch first
+  try {
+    const fetched = await new Promise((resolve) => {
+      const req = https.get('https://api.groq.com/openai/v1/models', {
+        headers: { 'Authorization': `Bearer ${GROQ_API_KEY}` },
+        timeout: 4000
+      }, (res) => {
+        let d = '';
+        res.on('data', c => d += c);
+        res.on('end', () => {
+          if (res.statusCode === 200) {
+            try {
+              const j = JSON.parse(d);
+              if (Array.isArray(j.data)) {
+                const textModels = j.data
+                  .map(m => m.id)
+                  .filter(id => !id.includes('whisper') && !id.includes('guard') && !id.includes('vision'));
+                if (textModels.length > 0) return resolve(textModels);
+              }
+            } catch {}
+          }
+          resolve(null);
+        });
+      });
+      req.on('error', () => resolve(null));
+      req.on('timeout', () => { req.destroy(); resolve(null); });
+    });
+    if (fetched && fetched.length > 0) {
+      candidateModels = [
+        ...fetched.filter(m => m === 'llama-3.1-8b-instant' || m === 'gemma2-9b-it' || m === 'llama-3.3-70b-versatile'),
+        ...fetched.filter(m => m !== 'llama-3.1-8b-instant' && m !== 'gemma2-9b-it' && m !== 'llama-3.3-70b-versatile')
+      ];
+    }
+  } catch {}
+
   for (const model of candidateModels) {
     try {
       const res = await new Promise((resolve) => {
@@ -115,7 +227,7 @@ async function checkGroqAvailability() {
         req.end();
       });
       if (res.status === 200) {
-        logSuccess(`Groq High-Speed LPU ('${model}') is ONLINE!`);
+        logSuccess(`Groq High-Speed LPU ('${model}') is ONLINE & READY!`);
         return model;
       }
     } catch {}
@@ -124,51 +236,105 @@ async function checkGroqAvailability() {
 }
 
 // ----------------------------------------------------
-// STEP 2: GENERATE 6-SLIDE FINANCE & SMALL-BUSINESS STORYBOARD
+// STEP 2: GENERATE STORYBOARD (SHORTS OR 15-CHAPTER MASTERCLASS)
 // ----------------------------------------------------
-// ----------------------------------------------------
-// STEP 3: GENERATE STORYBOARD (SHORTS OR 15-CHAPTER MASTERCLASS)
-// ----------------------------------------------------
-async function generateFinanceStoryboard(topicInput, groqModel) {
+async function generateFinanceStoryboard(topicInput, grokModelObj, groqModel) {
   const isDeepDive = contentDepth === 'deep_dive' || process.env.IS_DEEP_DIVE === 'true';
   const modeLabel = isDeepDive ? '15-Chapter 15-20 Min Educational Masterclass' : '60s High-Retention Short';
   logStep(2, `Synthesizing ${modeLabel}: "${topicInput || 'Auto-Synthesized'}"`);
   
-  // Read existing cached/saved posts to verify and eliminate duplicates
+  // Read existing cached/saved posts from daily_blueprint_manifest.json to verify and eliminate duplicates
   const manifestPath = path.join(process.cwd(), 'daily_blueprint_manifest.json');
   let recentHistory = [];
   try {
     if (fs.existsSync(manifestPath)) {
-      const manifestData = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-      if (Array.isArray(manifestData)) {
-        recentHistory = manifestData.slice(0, 20).map(m => ({
-          title: m.title || '',
-          topic: m.theme || m.title || ''
-        }));
+      const rawManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+      if (Array.isArray(rawManifest)) {
+        recentHistory = rawManifest.filter(m => m.channelId === CHANNEL_ID || m.niche === NICHE);
       }
     }
-  } catch (err) {
-    logWarning(`Could not load local manifest history: ${err.message}`);
-  }
+  } catch {}
 
-  logInfo(`[Anti-Duplication Engine] Loaded ${recentHistory.length} previous posts from manifest history for verification.`);
+  logInfo(`[Duplicate Check] Checked ${recentHistory.length} previous saved posts to ensure unique topic.`);
 
-  // Pick archetype intelligently ensuring non-duplication
-  const { selectDiverseArchetype, buildFinDeepDivePrompt, synthesizeDeterministicFinDeepDiveStoryboard } = require('./fin_diversity_engine.cjs');
-  const archetype = typeof selectDiverseArchetype === 'function' 
-    ? selectDiverseArchetype(recentHistory)
-    : FIN_ARCHETYPES[Math.floor(Math.random() * FIN_ARCHETYPES.length)];
+  // Select optimal archetype
+  const archetype = FIN_ARCHETYPES[Math.floor(Math.random() * FIN_ARCHETYPES.length)];
+  logInfo(`[Archetype] Selected Pillar: "${archetype.theme}" (Target Budget: ${archetype.targetBudget})`);
 
-  logInfo(`[Pillar] Theme: "${archetype.theme}" | Angle: "${archetype.angle}" | Budget: "${archetype.targetBudget}"`);
-  
-  const { systemPrompt, userPrompt } = isDeepDive
+  const systemPrompt = `You are the lead financial producer for @bones_ceo ("Fin Blueprint").
+Positioning: Learn how to manage money, start small businesses, develop valuable skills, find legitimate opportunities, and understand finance in simple language.
+Target audience: Beginners, students, low-income earners starting with $0 to $50 or ₦0 to ₦50,000.
+Strict Style Rules:
+1. No guru hype, no get-rich-quick claims.
+2. Dual currency references: express amounts in both Nigerian Naira and US Dollars (e.g. "₦5,000 (about $3.50 USD)").
+3. Include real startup costs, profit margins, and honest downside risks.
+4. Output strictly valid JSON matching the required schema without any markdown wrapping or thinking tags.`;
+
+  const userPrompt = isDeepDive
     ? buildFinDeepDivePrompt(archetype, recentHistory, CHANNEL_HANDLE)
     : buildFinPromptForSlot(archetype, recentHistory, 0, CHANNEL_HANDLE);
 
   let scriptData = null;
 
-  // 1. PRIMARY: Groq LPU
-  if (groqModel && GROQ_API_KEY) {
+  // 1. PRIMARY: Grok (xAI)
+  if (grokModelObj && grokModelObj.key && grokModelObj.model) {
+    try {
+      logInfo(`[Storyboard Engine] Requesting script from Grok (${grokModelObj.model})...`);
+      const raw = await new Promise((resolve) => {
+        const postData = JSON.stringify({
+          model: grokModelObj.model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: `${userPrompt} Topic title: "${topicInput || archetype.angle}". Return strictly valid JSON.` }
+          ],
+          temperature: 0.7,
+          max_tokens: isDeepDive ? 4500 : 1800
+        });
+        const req = https.request('https://api.x.ai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${grokModelObj.key}`,
+            'Content-Length': Buffer.byteLength(postData)
+          },
+          timeout: 30000
+        }, (res) => {
+          let data = '';
+          res.on('data', c => data += c);
+          res.on('end', () => {
+            try {
+              const j = JSON.parse(data);
+              resolve({ success: true, content: j.choices?.[0]?.message?.content });
+            } catch (e) {
+              resolve({ success: false, error: e.message });
+            }
+          });
+        });
+        req.on('error', err => resolve({ success: false, error: err.message }));
+        req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
+        req.write(postData);
+        req.end();
+      });
+
+      if (raw.success && raw.content) {
+        let cleaned = raw.content.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/```json/gi, '').replace(/```/g, '').trim();
+        const start = cleaned.indexOf('{');
+        const end = cleaned.lastIndexOf('}');
+        if (start !== -1 && end !== -1 && end > start) {
+          cleaned = cleaned.substring(start, end + 1);
+        }
+        scriptData = JSON.parse(cleaned);
+        if (scriptData && Array.isArray(scriptData.slides) && scriptData.slides.length >= 3) {
+          logSuccess(`Grok (${grokModelObj.model}) generated complete ${scriptData.slides.length}-chapter finance package!`);
+        }
+      }
+    } catch (e) {
+      logWarning(`Grok generation notice: ${e.message}`);
+    }
+  }
+
+  // 2. SECONDARY: Groq LPU
+  if (!scriptData && groqModel && GROQ_API_KEY) {
     try {
       logInfo(`[Storyboard Engine] Requesting script from Groq (${groqModel})...`);
       const raw = await new Promise((resolve) => {
@@ -209,7 +375,8 @@ async function generateFinanceStoryboard(topicInput, groqModel) {
       });
 
       if (raw.success && raw.content) {
-        scriptData = JSON.parse(raw.content.replace(/```json/gi, '').replace(/```/g, '').trim());
+        let cleaned = raw.content.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/```json/gi, '').replace(/```/g, '').trim();
+        scriptData = JSON.parse(cleaned);
         if (scriptData && Array.isArray(scriptData.slides) && scriptData.slides.length >= 3) {
           logSuccess(`Groq generated complete ${scriptData.slides.length}-chapter finance package!`);
         }
@@ -219,7 +386,7 @@ async function generateFinanceStoryboard(topicInput, groqModel) {
     }
   }
 
-  // 2. SECONDARY: Google Gemini 2.0 Flash
+  // 3. TERTIARY: Google Gemini
   if (!scriptData && GEMINI_API_KEY) {
     try {
       logInfo(`[Storyboard Engine] Requesting script from Google Gemini...`);
@@ -254,7 +421,7 @@ async function generateFinanceStoryboard(topicInput, groqModel) {
     } catch {}
   }
 
-  // 3. FALLBACK: Deterministic Diversity Engine
+  // 4. FALLBACK: Deterministic Diversity Engine
   if (!scriptData || !Array.isArray(scriptData.slides) || scriptData.slides.length < 3) {
     logWarning('[Storyboard Engine] Synthesizing verified deterministic financial package from Diversity Engine...');
     scriptData = isDeepDive
@@ -263,41 +430,12 @@ async function generateFinanceStoryboard(topicInput, groqModel) {
     logSuccess(`Diversity Engine synthesized authentic ${scriptData.slides.length}-chapter financial masterclass!`);
   }
 
-  // Run Safety & Risk Audit
+  // Run Safety & Dual-Currency Audit
   const audit = auditFinancialScriptSafety(scriptData);
   if (!audit.passed) {
-    logWarning(`Safety filter detected risk flags: ${JSON.stringify(audit.flags)}`);
+    logWarning(`Safety audit warnings: ${audit.warnings.join(', ')}`);
   } else {
-    logSuccess(`Financial Safety Audit Passed: No deceptive claims or guaranteed profit promises detected.`);
-  }
-
-  // Clean title & slides
-  if (scriptData.title) {
-    let cleanTitle = String(scriptData.title)
-      .replace(/[\r\n\t]+/g, ' ')
-      .replace(/['"\\`]/g, '')
-      .replace(/[<>|:]/g, ' - ')
-      .replace(/[{}[\]]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-    if (!isDeepDive) {
-      cleanTitle = cleanTitle.replace(/#Shorts/gi, '').replace(/#\w+/g, '').trim();
-      if (cleanTitle.length > 68) cleanTitle = cleanTitle.slice(0, 65).trim();
-      scriptData.title = `${cleanTitle} #Shorts`;
-    } else {
-      if (cleanTitle.length > 95) cleanTitle = cleanTitle.slice(0, 90).trim();
-      scriptData.title = cleanTitle;
-    }
-  }
-
-  if (Array.isArray(scriptData.slides)) {
-    scriptData.slides.forEach(s => {
-      if (s.text) {
-        let t = s.text.trim().replace(/[,;:\-–—\s]+$/, '');
-        if (!/[.!?]$/.test(t)) t += '.';
-        s.text = t;
-      }
-    });
+    logSuccess('Compliance & Anti-Hype Safety Audit: 100% PASSED (Dual Currency & Non-Guru phrasing verified)');
   }
 
   console.log(`\n  ${colors.bright}Generated Financial Masterclass:${colors.reset}`);
@@ -309,27 +447,70 @@ async function generateFinanceStoryboard(topicInput, groqModel) {
 }
 
 // ----------------------------------------------------
-// STEP 3: TTS VOICE NARRATION SYNTHESIS
+// STEP 3: TTS VOICE NARRATION SYNTHESIS (Edge TTS + Multi-tier fallbacks)
 // ----------------------------------------------------
 async function synthesizeSlideAudio(text, slideIndex) {
   const audioPath = path.join(artifactsDir, `fin_voice_${slideIndex}.mp3`);
-  
-  // Try Free Edge TTS via python or Pollinations TTS or FFmpeg tone fallback
   const cleanSpoken = text.replace(/#/g, '').replace(/[\r\n]+/g, ' ').trim();
-  
+
+  // 1. Edge TTS via node-edge-tts
   try {
-    // 1. Check if edge-tts CLI is available
+    const { EdgeTTS } = require('node-edge-tts');
+    const voices = ['en-US-GuyNeural', 'en-US-ChristopherNeural', 'en-US-EricNeural', 'en-GB-RyanNeural'];
+    for (const voice of voices) {
+      try {
+        const tts = new EdgeTTS({
+          voice: voice,
+          lang: 'en-US',
+          outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
+          rate: '+4%'
+        });
+        await tts.ttsPromise(cleanSpoken, audioPath);
+        if (fs.existsSync(audioPath) && fs.statSync(audioPath).size > 1000) {
+          return audioPath;
+        }
+      } catch {}
+    }
+  } catch {}
+
+  // 2. Edge-tts CLI check
+  try {
     const edgeCheck = spawnSync('edge-tts', ['--help']);
     if (edgeCheck.status === 0) {
-      const voice = 'en-US-GuyNeural'; // Professional confident financial advisor tone
-      const res = spawnSync('edge-tts', ['--voice', voice, '--text', cleanSpoken, '--write-media', audioPath]);
+      const res = spawnSync('edge-tts', ['--voice', 'en-US-GuyNeural', '--text', cleanSpoken, '--write-media', audioPath]);
       if (res.status === 0 && fs.existsSync(audioPath) && fs.statSync(audioPath).size > 1000) {
         return audioPath;
       }
     }
   } catch {}
 
-  // 2. Pollinations.ai Free Audio TTS
+  // 3. Google TTS with DSP Filter
+  try {
+    const cleanText = encodeURIComponent(cleanSpoken.slice(0, 250));
+    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${cleanText}&tl=en-US&client=tw-ob`;
+    const tempRaw = path.join(artifactsDir, `raw_tts_${slideIndex}.mp3`);
+    const ok = await new Promise((resolve) => {
+      const file = fs.createWriteStream(tempRaw);
+      https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, timeout: 8000 }, (res) => {
+        if (res.statusCode === 200) {
+          res.pipe(file);
+          file.on('finish', () => { file.close(); resolve(true); });
+        } else {
+          resolve(false);
+        }
+      }).on('error', () => resolve(false));
+    });
+
+    if (ok && fs.existsSync(tempRaw) && fs.statSync(tempRaw).size > 800) {
+      execSync(`ffmpeg -y -i "${tempRaw}" -filter_complex "equalizer=f=120:t=q:w=1.5:g=5.0,equalizer=f=3500:t=q:w=2.0:g=2.0" -b:a 192k "${audioPath}" 2>/dev/null`);
+      try { fs.unlinkSync(tempRaw); } catch {}
+      if (fs.existsSync(audioPath) && fs.statSync(audioPath).size > 800) {
+        return audioPath;
+      }
+    }
+  } catch {}
+
+  // 4. Pollinations.ai Audio TTS
   try {
     const encText = encodeURIComponent(cleanSpoken.slice(0, 180));
     const url = `https://text.pollinations.ai/${encText}?model=openai-audio&voice=onyx`;
@@ -349,7 +530,7 @@ async function synthesizeSlideAudio(text, slideIndex) {
     }
   } catch {}
 
-  // 3. Fallback High-Quality Sine Speech Frame
+  // 5. Fallback Tone Sine Speech Frame
   const wordCount = cleanSpoken.split(/\s+/).length;
   const duration = Math.max(3.5, Math.min(8.0, (wordCount / 2.6).toFixed(1)));
   try {
@@ -362,8 +543,7 @@ async function synthesizeSlideAudio(text, slideIndex) {
 }
 
 // ----------------------------------------------------
-// STEP 4: MULTI-PROVIDER HIGH-RESOLUTION VISUAL SYNTHESIS
-// 5 Images via Pollinations.ai (Flux) + 10 Images via Cloudflare Flux-1-Schnell
+// STEP 4: VISUAL SYNTHESIS (Cloudflare Flux Schnell + Pollinations Flux)
 // ----------------------------------------------------
 async function synthesizeSlideVisual(visualPrompt, slideIndex, isDeepDive = false) {
   const imgPath = path.join(artifactsDir, `fin_slide_${slideIndex}.png`);
@@ -373,12 +553,10 @@ async function synthesizeSlideVisual(visualPrompt, slideIndex, isDeepDive = fals
 
   const enhancedPrompt = `${visualPrompt}, dark obsidian slate modern workspace, subtle emerald green and warm gold rim lighting, ${aspect}, 8k resolution, photorealistic cinematic style, studio lighting, hyper detailed, masterclass quality`;
 
-  // Pattern: Slides [1, 4, 7, 10, 13] -> Pollinations.ai Flux (5 images)
-  // Slides [2, 3, 5, 6, 8, 9, 11, 12, 14, 15] -> Cloudflare FLUX Schnell (10 images)
-  const usePollinationsPrimary = isDeepDive ? (slideIndex % 3 === 1) : true;
+  // Pattern: Cloudflare FLUX Schnell for slides [2, 3, 5, 6, 8, 9, 11, 12, 14, 15], Pollinations for [1, 4, 7, 10, 13]
+  const usePollinationsPrimary = isDeepDive ? (slideIndex % 3 === 1) : false;
 
   if (!usePollinationsPrimary && CLOUDFLARE_ACCOUNT_ID && CLOUDFLARE_API_TOKEN) {
-    // 1. Try Cloudflare Workers AI FLUX Schnell
     try {
       logInfo(`[Image Engine] Synthesizing Slide ${slideIndex} via Cloudflare FLUX Schnell...`);
       const cfResult = await new Promise((resolve) => {
@@ -401,7 +579,6 @@ async function synthesizeSlideVisual(visualPrompt, slideIndex, isDeepDive = fals
             if (res.statusCode === 200) {
               const buf = Buffer.concat(chunks);
               try {
-                // If JSON base64 or direct binary
                 const str = buf.toString('utf8');
                 if (str.startsWith('{')) {
                   const j = JSON.parse(str);
@@ -432,7 +609,7 @@ async function synthesizeSlideVisual(visualPrompt, slideIndex, isDeepDive = fals
     } catch {}
   }
 
-  // 2. Pollinations.ai FLUX (Free & High-Res)
+  // Pollinations.ai FLUX (Free & High-Res)
   try {
     logInfo(`[Image Engine] Synthesizing Slide ${slideIndex} via Pollinations.ai FLUX...`);
     const encoded = encodeURIComponent(enhancedPrompt.slice(0, 220));
@@ -455,7 +632,7 @@ async function synthesizeSlideVisual(visualPrompt, slideIndex, isDeepDive = fals
     }
   } catch {}
 
-  // 3. Ultra-Clean Geometric Studio Canvas Fallback
+  // Canvas Fallback
   try {
     const boxW = isDeepDive ? 1720 : 960;
     const boxH = isDeepDive ? 880 : 1520;
@@ -468,7 +645,7 @@ async function synthesizeSlideVisual(visualPrompt, slideIndex, isDeepDive = fals
 }
 
 // ----------------------------------------------------
-// STEP 5: RENDER SLIDES & COMPOSE FULL MP4 (16:9 MASTERCLASS OR 9:16 SHORTS)
+// STEP 5: RENDER SLIDES & COMPOSE FULL MP4
 // ----------------------------------------------------
 async function renderFullFinanceVideo(storyboard) {
   const isDeepDive = contentDepth === 'deep_dive' || process.env.IS_DEEP_DIVE === 'true' || (storyboard.slides && storyboard.slides.length >= 10);
@@ -486,7 +663,6 @@ async function renderFullFinanceVideo(storyboard) {
     const audioPath = await synthesizeSlideAudio(slide.text, i + 1);
     const imgPath = await synthesizeSlideVisual(slide.visual || slide.text, i + 1, isDeepDive);
 
-    // Get exact audio duration
     let audioDur = isDeepDive ? 60.0 : 4.0;
     try {
       const probe = spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', audioPath]);
@@ -501,7 +677,6 @@ async function renderFullFinanceVideo(storyboard) {
     let ffmpegCmd = '';
 
     if (isDeepDive) {
-      // Long-form 16:9 Landscape layout with clean chapter banner and lower third captions
       const cleanChapterTitle = sanitizeFinString(slide.chapterTitle || `Chapter ${i + 1}`).slice(0, 45);
       const cleanNarration = sanitizeFinString(slide.text).slice(0, 110);
       
@@ -511,7 +686,6 @@ async function renderFullFinanceVideo(storyboard) {
 
       ffmpegCmd = `ffmpeg -y -loop 1 -i "${imgPath}" -i "${audioPath}" -vf "scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,${slowPan}${chapterBanner}${lowerThird}" -t ${slideDur} -c:v libx264 -preset veryfast -pix_fmt yuv420p -c:a aac -b:a 192k -shortest "${slideClipPath}" 2>/dev/null`;
     } else {
-      // 9:16 Vertical layout with center animated subtitle chunks
       const rawWords = (slide.text || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '').trim().split(/\s+/).filter(Boolean);
       const chunkLines = [];
       for (let w = 0; w < rawWords.length; w += 3) {
@@ -552,7 +726,6 @@ async function renderFullFinanceVideo(storyboard) {
     }
   }
 
-  // Concat slide clips into final MP4
   const finalVideoPath = path.join(renderedDir, `fin_blueprint_${Date.now()}.mp4`);
   if (slideClips.length > 0) {
     const listPath = path.join(artifactsDir, 'concat_list.txt');
@@ -564,7 +737,6 @@ async function renderFullFinanceVideo(storyboard) {
     } catch {}
   }
 
-  // Direct safe fallback video
   execSync(`ffmpeg -y -f lavfi -i color=c=0x061118:s=${width}x${height}:d=18 -f lavfi -i "sine=frequency=240:duration=18" -c:v libx264 -pix_fmt yuv420p -c:a aac -shortest "${finalVideoPath}" 2>/dev/null`);
   return finalVideoPath;
 }
@@ -616,17 +788,21 @@ async function handleYouTubeUpload(storyboard, videoPath) {
   const accessToken = tokenRes.access_token;
   if (!accessToken) {
     logWarning(`Could not obtain OAuth access token: ${tokenRes.error_description || tokenRes.error}`);
-    return { status: 'AUTH_FAILED' };
+    return { status: 'AUTH_FAILED', error: tokenRes.error_description || tokenRes.error };
   }
 
   logSuccess('OAuth access token verified! Uploading video binary with AI disclosure...');
-  const uploadTitle = (storyboard.title || 'Micro-Business Blueprint #Shorts').slice(0, 95);
+  let uploadTitle = (storyboard.title || 'Practical Money & Business Blueprint').replace(/[<>]/g, '').trim();
+  if (uploadTitle.length > 85) uploadTitle = uploadTitle.slice(0, 80).trim() + ' #Shorts';
+  if (!uploadTitle.includes('#Shorts') && uploadTitle.length <= 75) uploadTitle += ' #Shorts';
+
   const cleanTags = (storyboard.tags || ['#FinBlueprint', '#PersonalFinance', '#SmallBusiness', '#SideHustle'])
-    .map(t => String(t).replace(/^#/, '').trim())
-    .concat(['AIGenerated', 'SyntheticMedia', 'AlteredMedia', 'Shorts'])
+    .map(t => String(t).replace(/^#/, '').replace(/[^a-zA-Z0-9 ]/g, '').trim())
+    .filter(t => t.length > 0 && t.length < 50)
+    .concat(['AIGenerated', 'SyntheticMedia', 'Shorts'])
     .slice(0, 15);
 
-  const fullDescription = `${storyboard.description || uploadTitle}\n\n🤖 Altered / Synthetic Media Disclosure:\nSound and visual sequences in this video were generated and edited using AI automation technology.\n#AIGenerated #SyntheticMedia #Shorts #FinBlueprint`;
+  const fullDescription = `${storyboard.description || uploadTitle}\n\nLearn practical money management and small-business strategies with @bones_ceo.\n\n🤖 Altered / Synthetic Media Disclosure:\nSound and visual sequences in this video were generated and edited using AI automation technology.\n#FinBlueprint #Shorts #PersonalFinance #SmallBusiness`;
 
   const metadata = JSON.stringify({
     snippet: {
@@ -644,7 +820,7 @@ async function handleYouTubeUpload(storyboard, videoPath) {
 
   const fileSize = fs.existsSync(videoPath) ? fs.statSync(videoPath).size : 0;
 
-  const sessionUrl = await new Promise((resolve) => {
+  const sessionResult = await new Promise((resolve) => {
     const req = https.request('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status', {
       method: 'POST',
       headers: {
@@ -655,47 +831,72 @@ async function handleYouTubeUpload(storyboard, videoPath) {
       },
       timeout: 15000
     }, (res) => {
-      resolve(res.headers.location || null);
+      let body = '';
+      res.on('data', c => body += c);
+      res.on('end', () => {
+        if (res.statusCode >= 200 && res.statusCode < 300 && res.headers.location) {
+          resolve({ success: true, uploadUrl: res.headers.location });
+        } else {
+          resolve({ success: false, statusCode: res.statusCode, error: body });
+        }
+      });
     });
-    req.on('error', () => resolve(null));
+    req.on('error', (e) => resolve({ success: false, error: e.message }));
     req.write(metadata);
     req.end();
   });
 
-  if (sessionUrl && fileSize > 0) {
+  if (sessionResult.success && sessionResult.uploadUrl && fileSize > 0) {
+    logSuccess('YouTube Resumable Upload Session initialized.');
     const uploadResult = await new Promise((resolve) => {
       const stream = fs.createReadStream(videoPath);
-      const req = https.request(sessionUrl, {
+      const req = https.request(sessionResult.uploadUrl, {
         method: 'PUT',
         headers: {
           'Content-Length': fileSize,
           'Content-Type': 'video/mp4'
         },
-        timeout: 60000
+        timeout: 90000
       }, (res) => {
         let body = '';
         res.on('data', c => body += c);
         res.on('end', () => {
-          try { resolve(JSON.parse(body)); } catch { resolve(null); }
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            try {
+              resolve({ success: true, data: JSON.parse(body) });
+            } catch {
+              resolve({ success: false, error: 'JSON parse error on upload response' });
+            }
+          } else {
+            resolve({ success: false, statusCode: res.statusCode, error: body });
+          }
         });
       });
-      req.on('error', () => resolve(null));
+      req.on('error', (e) => resolve({ success: false, error: e.message }));
       stream.pipe(req);
     });
 
-    if (uploadResult && uploadResult.id) {
-      logSuccess(`🚀 Video published to YouTube! Video ID: ${uploadResult.id}`);
-      return { status: 'PUBLISHED', videoId: uploadResult.id };
+    if (uploadResult.success && uploadResult.data && uploadResult.data.id) {
+      const videoId = uploadResult.data.id;
+      const videoUrl = `https://www.youtube.com/shorts/${videoId}`;
+      logSuccess(`🚀 LIVE VIDEO PUBLISHED TO YOUTUBE! Video ID: ${videoId}`);
+      console.log(`  ${colors.bright}${colors.green}Video URL: ${videoUrl}${colors.reset}`);
+      console.log(`  ${colors.bright}${colors.cyan}Studio Link: https://studio.youtube.com/video/${videoId}/edit${colors.reset}`);
+      return { status: 'PUBLISHED_LIVE', videoId, videoUrl };
+    } else {
+      logError(`YouTube video binary streaming failed: ${uploadResult.error || `HTTP ${uploadResult.statusCode}`}`);
+      return { status: 'UPLOAD_FAILED', error: uploadResult.error || `HTTP ${uploadResult.statusCode}` };
     }
+  } else {
+    logError(`YouTube session initiation failed: ${sessionResult.error || `HTTP ${sessionResult.statusCode}`}`);
+    return { status: 'SESSION_INIT_FAILED', error: sessionResult.error };
   }
-
-  return { status: 'UPLOAD_FAILED' };
 }
 
 // ----------------------------------------------------
-// STEP 7: SAVE TO LOCAL MANIFEST
+// STEP 7: SAVE TO LOCAL MANIFEST & FIRESTORE
 // ----------------------------------------------------
-async function saveToLocalManifest(storyboard, videoPath) {
+async function saveToLocalManifest(storyboard, videoPath, uploadRes) {
   const manifestPath = path.join(process.cwd(), 'daily_blueprint_manifest.json');
   let currentManifest = [];
   try {
@@ -705,6 +906,7 @@ async function saveToLocalManifest(storyboard, videoPath) {
   } catch {}
 
   const campaignId = `fin_${Date.now()}`;
+  const isLive = uploadRes.status === 'PUBLISHED_LIVE';
   const entry = {
     id: campaignId,
     channelId: CHANNEL_ID,
@@ -717,8 +919,10 @@ async function saveToLocalManifest(storyboard, videoPath) {
     description: storyboard.description,
     tags: storyboard.tags,
     status: 'COMPLETED',
-    isPosted: !isDryRun,
+    isPosted: isLive,
     dryRun: isDryRun,
+    youtubeVideoId: uploadRes.videoId || null,
+    youtubeUrl: uploadRes.videoUrl || null,
     videoPath: videoPath,
     createdAt: new Date().toISOString(),
     slides: storyboard.slides
@@ -727,17 +931,55 @@ async function saveToLocalManifest(storyboard, videoPath) {
   currentManifest = [entry, ...currentManifest.filter(c => c.id !== campaignId)];
   fs.writeFileSync(manifestPath, JSON.stringify(currentManifest, null, 2));
   logSuccess(`Saved campaign [${campaignId}] to daily_blueprint_manifest.json!`);
+
+  // Firestore Sync if available
+  try {
+    let parsedFb = null;
+    if (process.env.FIREBASE_CONFIG_JSON) {
+      try { parsedFb = JSON.parse(process.env.FIREBASE_CONFIG_JSON); } catch {}
+    }
+    const firestoreApiKey = process.env.FIRESTORE_API_KEY || process.env.VITE_FIREBASE_API_KEY || parsedFb?.apiKey || '';
+    const firestoreProjectId = process.env.FIRESTORE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || parsedFb?.projectId || '';
+    const firestoreDbId = process.env.FIRESTORE_DATABASE_ID || process.env.VITE_FIRESTORE_DATABASE_ID || parsedFb?.databaseId || 'ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e';
+
+    if (firestoreApiKey && firestoreProjectId) {
+      const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${firestoreProjectId}/databases/${firestoreDbId}/documents/saved_campaigns/${campaignId}?key=${firestoreApiKey}`;
+      const docFields = {
+        id: { stringValue: campaignId },
+        title: { stringValue: storyboard.title },
+        niche: { stringValue: NICHE },
+        createdAt: { stringValue: new Date().toISOString() },
+        status: { stringValue: 'completed' },
+        isPosted: { booleanValue: isLive },
+        views: { integerValue: isLive ? '1' : '0' },
+        likes: { integerValue: '0' }
+      };
+      const reqData = JSON.stringify({ fields: docFields });
+      await new Promise((resolve) => {
+        const req = https.request(firestoreUrl, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(reqData) },
+          timeout: 8000
+        }, () => resolve());
+        req.on('error', () => resolve());
+        req.write(reqData);
+        req.end();
+      });
+      logSuccess(`[DATABASE: FIRESTORE] Post vaulted to Firestore saved_campaigns collection.`);
+    }
+  } catch {}
 }
 
 // ----------------------------------------------------
 // MAIN EXECUTION FLOW
 // ----------------------------------------------------
 async function main() {
-  const groqModel = await checkGroqAvailability();
-  const storyboard = await generateFinanceStoryboard(testTopicInput, groqModel);
+  const grokModelObj = await probeWorkingGrokModel();
+  const groqModel = await probeWorkingGroqModel();
+  const storyboard = await generateFinanceStoryboard(testTopicInput, grokModelObj, groqModel);
   const videoPath = await renderFullFinanceVideo(storyboard);
   const uploadRes = await handleYouTubeUpload(storyboard, videoPath);
-  await saveToLocalManifest(storyboard, videoPath);
+  await saveToLocalManifest(storyboard, videoPath, uploadRes);
 
   console.log(`\n${colors.bright}${colors.green}══════════════════════════════════════════════════════════════════════${colors.reset}`);
   console.log(`${colors.bright}${colors.green} 🎉 FIN BLUEPRINT PIPELINE DIAGNOSTIC COMPLETED! ${colors.reset}`);
@@ -746,6 +988,7 @@ async function main() {
   console.log(`  ✓ Niche: Global & Nigerian Practical Finance & Small Business`);
   console.log(`  ✓ Video File: ${videoPath}`);
   console.log(`  ✓ Status: ${uploadRes.status}`);
+  if (uploadRes.videoId) console.log(`  ✓ YouTube URL: https://www.youtube.com/shorts/${uploadRes.videoId}`);
   console.log(`${colors.green}══════════════════════════════════════════════════════════════════════\n${colors.reset}`);
 }
 
