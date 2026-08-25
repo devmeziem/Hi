@@ -2,6 +2,62 @@ import { db, isFirebaseEnabled } from './firebase';
 import { collection, doc, getDocs, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { SavedCampaign, FactoryJob, WorkerLog, IntegrationKeys, ChannelMetrics, ProjectConfig } from './types';
 
+export function safeJsonStringify(obj: any, space?: number): string {
+  const seen = new WeakSet();
+  try {
+    return JSON.stringify(obj, (key, value) => {
+      if (typeof value === 'object' && value !== null) {
+        if (seen.has(value)) {
+          return '[Circular]';
+        }
+        seen.add(value);
+        // Exclude DOM nodes, audio/video elements, window, etc.
+        if (typeof (value as any).nodeType === 'number' || value instanceof Event || (typeof window !== 'undefined' && value === window)) {
+          return undefined;
+        }
+      }
+      return value;
+    }, space);
+  } catch (e) {
+    return String(obj || '');
+  }
+}
+
+export function cleanForFirestore<T>(obj: T): any {
+  if (obj === null || obj === undefined) return null;
+  const seen = new WeakSet();
+
+  function recurse(val: any): any {
+    if (val === null || val === undefined) return null;
+    if (typeof val !== 'object') return val;
+    if (val instanceof Date) return val.toISOString();
+    if (seen.has(val)) return '[Circular]';
+    seen.add(val);
+
+    // If it's a DOM node or event or function, skip
+    if (typeof val.nodeType === 'number' || val instanceof Event || typeof val === 'function') {
+      return null;
+    }
+
+    if (Array.isArray(val)) {
+      return val.map(recurse).filter(v => v !== null && v !== undefined);
+    }
+
+    const clean: any = {};
+    for (const [k, v] of Object.entries(val)) {
+      if (v !== undefined && typeof v !== 'function') {
+        const cleanedVal = recurse(v);
+        if (cleanedVal !== undefined) {
+          clean[k] = cleanedVal;
+        }
+      }
+    }
+    return clean;
+  }
+
+  return recurse(obj);
+}
+
 function getLocalData<T>(key: string, defaultVal: T): T {
   try {
     const raw = localStorage.getItem(key);
@@ -13,7 +69,7 @@ function getLocalData<T>(key: string, defaultVal: T): T {
 
 function setLocalData<T>(key: string, val: T): void {
   try {
-    localStorage.setItem(key, JSON.stringify(val));
+    localStorage.setItem(key, safeJsonStringify(val));
   } catch (err) {
     console.warn("LocalStorage setItem failed:", err);
   }
@@ -206,7 +262,8 @@ export const dbAdapter = {
 
     if (isFirebaseEnabled && db) {
       try {
-        await setDoc(doc(db, 'factory_jobs', job.id), job);
+        const cleaned = cleanForFirestore(job);
+        await setDoc(doc(db, 'factory_jobs', job.id), cleaned);
       } catch (e) {
         console.warn("Firebase saveJob fallback to local:", e);
       }
@@ -253,7 +310,8 @@ export const dbAdapter = {
 
     if (isFirebaseEnabled && db) {
       try {
-        await setDoc(doc(db, 'saved_campaigns', campaign.id), campaign);
+        const cleaned = cleanForFirestore(campaign);
+        await setDoc(doc(db, 'saved_campaigns', campaign.id), cleaned);
       } catch (e) {
         console.warn("Firebase saveCampaign fallback to local:", e);
       }
@@ -397,7 +455,8 @@ export const dbAdapter = {
 
     if (isFirebaseEnabled && db) {
       try {
-        await setDoc(doc(db, 'worker_logs', log.id), log);
+        const cleaned = cleanForFirestore(log);
+        await setDoc(doc(db, 'worker_logs', log.id), cleaned);
       } catch (e) {
         console.warn("Firebase saveLog fallback to local:", e);
       }
@@ -444,7 +503,7 @@ export const dbAdapter = {
     }
     if (isFirebaseEnabled && db) {
       try {
-        await setDoc(doc(db, 'approved_users', email), { email, approvedAt: new Date().toISOString() });
+        await setDoc(doc(db, 'approved_users', email), cleanForFirestore({ email, approvedAt: new Date().toISOString() }));
       } catch (e) {
         console.warn("Firebase approveUser failed:", e);
       }
@@ -456,7 +515,7 @@ export const dbAdapter = {
     setLocalData('voxam_connected_channels', channels);
     if (isFirebaseEnabled && db) {
       try {
-        await setDoc(doc(db, 'system_config', 'channels'), { channels, updatedAt: new Date().toISOString() });
+        await setDoc(doc(db, 'system_config', 'channels'), cleanForFirestore({ channels, updatedAt: new Date().toISOString() }));
       } catch (e) {
         console.warn("Firebase saveChannels fallback to local:", e);
       }
@@ -484,7 +543,7 @@ export const dbAdapter = {
     setLocalData('voxam_active_projects', projects);
     if (isFirebaseEnabled && db) {
       try {
-        await setDoc(doc(db, 'system_config', 'projects'), { projects, updatedAt: new Date().toISOString() });
+        await setDoc(doc(db, 'system_config', 'projects'), cleanForFirestore({ projects, updatedAt: new Date().toISOString() }));
       } catch (e) {
         console.warn("Firebase saveProjects fallback to local:", e);
       }
@@ -515,7 +574,7 @@ export const dbAdapter = {
     setLocalData('voxam_integration_keys', keys);
     if (isFirebaseEnabled && db) {
       try {
-        await setDoc(doc(db, 'integration_keys', 'global_keys'), keys);
+        await setDoc(doc(db, 'integration_keys', 'global_keys'), cleanForFirestore(keys));
       } catch (e) {
         console.warn("Firebase saveKeys fallback to local:", e);
       }

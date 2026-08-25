@@ -43,6 +43,7 @@ import {
   AiScriptOutput
 } from '../aiEngine';
 import { uploadToCloudinaryUnsigned } from '../socialIntegrations';
+import { safeJsonStringify } from '../dbAdapter';
 import { dbAdapter } from '../dbAdapter';
 import { DynamicVideoMotionPlayer } from './DynamicVideoMotionPlayer';
 import { VideoSlide } from '../types';
@@ -1465,7 +1466,7 @@ Format your response strictly as a JSON array of 3 strings, with no markdown cod
                     <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
                       <span className="font-bold text-slate-200 uppercase font-mono">YouTube Published Payload</span>
                       <button
-                        onClick={() => copyToClipboard(JSON.stringify(testPostResult, null, 2), 'payload-copy')}
+                        onClick={() => copyToClipboard(safeJsonStringify(testPostResult, 2), 'payload-copy')}
                         className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 cursor-pointer font-mono"
                       >
                         {copiedId === 'payload-copy' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}

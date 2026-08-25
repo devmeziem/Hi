@@ -1,5 +1,5 @@
 import { IntegrationKeys } from './types';
-import { dbAdapter } from './dbAdapter';
+import { dbAdapter, safeJsonStringify } from './dbAdapter';
 
 export const DEFAULT_KEYS: IntegrationKeys = {
   cloudinaryCloudName: '',
@@ -67,7 +67,7 @@ export const loadKeys = (): IntegrationKeys => {
 };
 
 export const saveKeys = (keys: IntegrationKeys) => {
-  localStorage.setItem('voxam_integration_keys', JSON.stringify(keys));
+  localStorage.setItem('voxam_integration_keys', safeJsonStringify(keys));
 };
 
 export async function getIntegrationKeys(): Promise<IntegrationKeys> {

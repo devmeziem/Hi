@@ -325,7 +325,7 @@ export async function generateCloudflareImage(params: {
     return data.image; // Base64 data URL
   }
 
-  throw new Error('No image returned by Cloudflare AI: ' + JSON.stringify(data));
+  throw new Error('No image returned by Cloudflare AI: ' + (typeof data === 'object' ? (data?.error || data?.message || 'Empty response') : String(data)));
 }
 
 /**
@@ -413,7 +413,7 @@ export async function generateCloudflareTTS(params: {
     };
   }
 
-  throw new Error('No audio returned by Cloudflare TTS: ' + JSON.stringify(data));
+  throw new Error('No audio returned by Cloudflare TTS: ' + (typeof data === 'object' ? (data?.error || data?.message || 'Empty audio') : String(data)));
 }
 
 /**
