@@ -1419,7 +1419,7 @@ async function generateMediaAssets(storyboard) {
             lang: 'en-US',
             outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
             pitch: '-2Hz',
-            rate: '+8%'
+            rate: '-3%'
           });
 
           await tts.ttsPromise(text, tempAudio);
@@ -1812,9 +1812,9 @@ async function renderFfmpegVideo(storyboard, enrichedSlides) {
         }
       }
 
-      // Determine duration of voiceover (+0.4s breathing room between slides)
+      // Determine duration of voiceover (+0.5s breathing room between slides, min 10s per slide so total video is >= 60s)
       const rawAudioDur = getAudioDuration(slideAudioPath);
-      const slideDur = Math.max(3.5, Math.min(9.0, rawAudioDur + 0.4));
+      const slideDur = Math.max(10.0, rawAudioDur + 0.5);
       const totalFrames = Math.round(slideDur * 30);
 
       // Clean slide text for on-screen captions (natural spoken 2-3 word discrete chunks)
@@ -1870,7 +1870,7 @@ async function renderFfmpegVideo(storyboard, enrichedSlides) {
 
       logInfo(`[Slide ${slideNum}/${enrichedSlides.length}] Compiling 1080x1920 motion clip with burned kinetic captions (${slideDur.toFixed(1)}s, ${totalFrames} frames)...`);
 
-      const slideFfmpegCmd = `ffmpeg -y -loop 1 -i "${slideImgPath}" -i "${slideAudioPath}" -c:v libx264 -preset ultrafast -crf 22 -pix_fmt yuv420p -t ${slideDur} -vf "${fullVideoFilter}" -c:a aac -b:a 192k -shortest "${slideClipPath}"`;
+      const slideFfmpegCmd = `ffmpeg -y -loop 1 -i "${slideImgPath}" -i "${slideAudioPath}" -c:v libx264 -preset ultrafast -crf 22 -pix_fmt yuv420p -t ${slideDur} -vf "${fullVideoFilter}" -af "apad=whole_dur=${slideDur}" -c:a aac -b:a 192k "${slideClipPath}"`;
       execSync(slideFfmpegCmd, { stdio: 'pipe' });
 
       if (fs.existsSync(slideClipPath)) {
