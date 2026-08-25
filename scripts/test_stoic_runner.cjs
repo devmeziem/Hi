@@ -67,7 +67,8 @@ function logInfo(msg) {
 const args = process.argv.slice(2);
 const isDryRun = args.includes('--dry-run') || String(process.env.DRY_RUN).toLowerCase() === 'true';
 const inputTopic = process.env.TEST_TOPIC ? process.env.TEST_TOPIC.trim() : '';
-const contentDepth = process.env.CONTENT_DEPTH || 'short_form'; // 'short_form' or 'deep_dive'
+const currentUtcHour = new Date().getUTCHours();
+const contentDepth = process.env.CONTENT_DEPTH || (currentUtcHour === 1 ? 'deep_dive' : 'short_form'); // 'short_form' or 'deep_dive'
 
 // API Credentials
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim();
@@ -1828,25 +1829,28 @@ async function renderFfmpegVideo(storyboard, enrichedSlides) {
         chunkLines.push(words.slice(w, w + CHUNK_SIZE).join(' '));
       }
       
-      // Build dynamic time-sliced drawtext filters
-      const chunkDur = slideDur / Math.max(chunkLines.length, 1);
+      // Build dynamic time-sliced drawtext filters with exact spoken audio synchronization
+      const spokenDur = Math.max(0.1, rawAudioDur);
+      const chunkDur = spokenDur / Math.max(chunkLines.length, 1);
       let captionFilter = '';
 
-      // Pinned Topic Hook at Top of Video for first 4.5 seconds (Slide 1) - Safe 1080p mobile viewport
+      // Pinned Topic Hook at Top of Video for first 4.5 seconds (Slide 1) - Safe 1080p mobile viewport (y=200)
       let topHookFilter = '';
       if (i === 0) {
         const rawTitle = (storyboard.title || storyboard.theme || 'DAILY STOIC MASTERY').replace(/#\w+/g, '').trim();
-        const cleanTopicHook = sanitizeForFfmpegDrawtext(rawTitle.slice(0, 30));
-        topHookFilter = `,drawtext=text='${cleanTopicHook}':fontsize=32:fontcolor=0xFDE047:box=1:boxcolor=black@0.94:boxborderw=16:borderw=2:bordercolor=0xEAB308:shadowcolor=black@0.9:shadowx=2:shadowy=2:x=(w-text_w)/2:y=160:enable='between(t\\,0\\,4.5)'`;
+        const cleanTopicHook = sanitizeForFfmpegDrawtext(rawTitle.slice(0, 32).toUpperCase());
+        topHookFilter = `,drawtext=text='${cleanTopicHook}':fontsize=36:fontcolor=0xFDE047:borderw=5:bordercolor=black:shadowcolor=black@0.9:shadowx=3:shadowy=3:x=(w-text_w)/2:y=200:enable='between(t\\,0\\,4.5)'`;
       }
 
       chunkLines.forEach((chunkText, cIdx) => {
         const startT = (cIdx * chunkDur).toFixed(2);
-        const endT = ((cIdx + 1) * chunkDur).toFixed(2);
-        const cleanChunk = sanitizeForFfmpegDrawtext(chunkText);
+        // The last chunk stays visible until slideDur finishes
+        const endT = (cIdx === chunkLines.length - 1 ? slideDur : (cIdx + 1) * chunkDur).toFixed(2);
+        const cleanChunk = sanitizeForFfmpegDrawtext(chunkText.toUpperCase());
         
-        // Centered high-contrast kinetic subtitles with rounded pill border matching UI
-        captionFilter += `,drawtext=text='${cleanChunk}':fontsize=46:fontcolor=white:box=1:boxcolor=black@0.92:boxborderw=22:borderw=3:bordercolor=white@0.35:shadowcolor=black@0.95:shadowx=3:shadowy=3:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t\\,${startT}\\,${endT})'`;
+        // Modern UI kinetic subtitles (Alex Hormozi / CapCut dynamic style: 62pt, bold black borderw=6, no box, lower-third sweet spot y=1260)
+        const fontColor = cIdx % 2 === 0 ? '0xFFFFFF' : '0xFDE047'; // Alternating platinum white and gold
+        captionFilter += `,drawtext=text='${cleanChunk}':fontsize=62:fontcolor=${fontColor}:borderw=6:bordercolor=black:shadowcolor=black@0.85:shadowx=4:shadowy=4:x=(w-text_w)/2:y=1260:enable='between(t\\,${startT}\\,${endT})'`;
       });
 
       // Rapid, engaging Ken Burns zoom & pan motion (responsive speed)
@@ -1997,14 +2001,13 @@ async function handleYouTubePublish(storyboard, renderResult) {
       const metadata = JSON.stringify({
         snippet: {
           title: uploadTitle,
-          description: (storyboard.description || uploadTitle).trim(),
+          description: `${(storyboard.description || uploadTitle).trim()}\n\nDaily timeless wisdom and stoic mindset strategies with The Stoic Architect (@thestoicarchitect-n4b).\n\n#Stoic #Shorts #MarcusAurelius #Discipline #Mindset #Philosophy`,
           tags: cleanTags,
           categoryId: '27' // Education
         },
         status: {
           privacyStatus: 'public',
-          selfDeclaredMadeForKids: false,
-          containsSyntheticMedia: true // Active YouTube Synthetic / AI Generated metadata flag
+          selfDeclaredMadeForKids: false
         }
       });
 
@@ -2093,16 +2096,128 @@ async function handleYouTubePublish(storyboard, renderResult) {
 }
 
 // ----------------------------------------------------
+// STEP 7.5: UPLOAD RENDERED VIDEO TO CLOUDINARY
+// ----------------------------------------------------
+async function uploadToCloudinary(videoFilePath, publicId) {
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME || '';
+  const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET || '';
+  const apiKey = process.env.CLOUDINARY_API_KEY || '';
+  const apiSecret = process.env.CLOUDINARY_API_SECRET || '';
+  const cloudinaryUrlEnv = process.env.CLOUDINARY_URL || '';
+
+  let effectiveCloudName = cloudName;
+  let effectiveApiKey = apiKey;
+  let effectiveApiSecret = apiSecret;
+
+  if (cloudinaryUrlEnv && cloudinaryUrlEnv.startsWith('cloudinary://')) {
+    try {
+      const parsed = new URL(cloudinaryUrlEnv);
+      effectiveCloudName = parsed.hostname || effectiveCloudName;
+      effectiveApiKey = parsed.username || effectiveApiKey;
+      effectiveApiSecret = parsed.password || effectiveApiSecret;
+    } catch {}
+  }
+
+  if (!videoFilePath || !fs.existsSync(videoFilePath)) {
+    return null;
+  }
+
+  if (!effectiveCloudName) {
+    logInfo('[CLOUDINARY] Cloudinary cloud name not configured. Saving local & YouTube endpoints.');
+    return null;
+  }
+
+  logInfo(`[CLOUDINARY] Uploading rendered Stoic video to Cloudinary cloud "${effectiveCloudName}"...`);
+  try {
+    const fileBuffer = fs.readFileSync(videoFilePath);
+    const base64Data = `data:video/mp4;base64,${fileBuffer.toString('base64')}`;
+    const timestamp = Math.floor(Date.now() / 1000);
+
+    let postParams = {};
+    if (uploadPreset) {
+      postParams = {
+        file: base64Data,
+        upload_preset: uploadPreset,
+        folder: 'voxam_shorts',
+        public_id: publicId || `stoic_short_${Date.now()}`
+      };
+    } else if (effectiveApiKey && effectiveApiSecret) {
+      const crypto = require('crypto');
+      const paramsToSign = `folder=voxam_shorts&public_id=${publicId || `stoic_short_${Date.now()}`}&timestamp=${timestamp}${effectiveApiSecret}`;
+      const signature = crypto.createHash('sha1').update(paramsToSign).digest('hex');
+      postParams = {
+        file: base64Data,
+        api_key: effectiveApiKey,
+        timestamp: timestamp,
+        folder: 'voxam_shorts',
+        public_id: publicId || `stoic_short_${Date.now()}`,
+        signature: signature
+      };
+    } else {
+      postParams = {
+        file: base64Data,
+        folder: 'voxam_shorts'
+      };
+    }
+
+    const postData = JSON.stringify(postParams);
+    const result = await new Promise((resolve) => {
+      const req = https.request(`https://api.cloudinary.com/v1_1/${effectiveCloudName}/video/upload`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(postData)
+        },
+        timeout: 180000
+      }, (res) => {
+        let body = '';
+        res.on('data', chunk => body += chunk);
+        res.on('end', () => {
+          try {
+            const parsed = JSON.parse(body);
+            if (res.statusCode >= 200 && res.statusCode < 300 && parsed.secure_url) {
+              resolve({ success: true, url: parsed.secure_url, publicId: parsed.public_id });
+            } else {
+              resolve({ success: false, error: parsed.error?.message || body });
+            }
+          } catch (e) {
+            resolve({ success: false, error: e.message });
+          }
+        });
+      });
+      req.on('error', (e) => resolve({ success: false, error: e.message }));
+      req.write(postData);
+      req.end();
+    });
+
+    if (result.success && result.url) {
+      logSuccess(`[CLOUDINARY] Stoic video upload successful! URL: ${result.url}`);
+      return result.url;
+    } else {
+      logWarn(`[CLOUDINARY] Upload response: ${result.error}`);
+    }
+  } catch (err) {
+    logWarn(`[CLOUDINARY] Upload exception: ${err.message}`);
+  }
+  return null;
+}
+
+// ----------------------------------------------------
 // STEP 8: SYNC TO MANIFEST & FIRESTORE DATABASE
 // ----------------------------------------------------
-async function syncToManifestAndDatabase(storyboard, enrichedSlides, publishResult, currentTopic) {
+async function syncToManifestAndDatabase(storyboard, enrichedSlides, publishResult, currentTopic, renderResult, cloudinaryUrl) {
   logStep(8, 'Synchronizing Blueprint Manifest & In-App Player Database');
 
   const campaignId = `camp-stoic-${Date.now()}`;
   const topicName = currentTopic || storyboard.title || 'Stoic Masterclass';
+  const finalVideoUrl = cloudinaryUrl || publishResult.videoUrl || renderResult?.videoFilePath || '/rendered_videos/stoic_pipeline_short.mp4';
+  
   const newCampaign = {
     id: campaignId,
     jobId: `job-stoic-${Date.now()}`,
+    channelId: 'motivation_stoicism',
+    channelName: 'The Stoic Architect (@thestoicarchitect-n4b)',
+    channelHandle: '@thestoicarchitect-n4b',
     title: storyboard.title,
     niche: 'motivation_stoicism',
     createdAt: new Date().toISOString(),
@@ -2110,9 +2225,15 @@ async function syncToManifestAndDatabase(storyboard, enrichedSlides, publishResu
     isPosted: publishResult.status === 'PUBLISHED_LIVE',
     youtubeVideoId: publishResult.videoId || null,
     youtubeUrl: publishResult.videoUrl || null,
+    cloudinaryUrl: cloudinaryUrl || null,
+    videoUrl: finalVideoUrl,
+    renderedVideoUrl: finalVideoUrl,
+    videoPath: renderResult?.videoFilePath || null,
+    durationSeconds: renderResult?.durationSeconds || 60,
     views: publishResult.status === 'PUBLISHED_LIVE' ? 1 : 0,
     likes: 0,
     comments: 0,
+    slides: enrichedSlides,
     payload: {
       channelId: 'motivation_stoicism',
       topic: topicName,
@@ -2142,14 +2263,16 @@ async function syncToManifestAndDatabase(storyboard, enrichedSlides, publishResu
     slotNumber: 1,
     title: storyboard.title,
     scriptText: enrichedSlides.map(s => s.text).join(' '),
-    visualPrompt: enrichedSlides[0].imagePrompt,
+    visualPrompt: enrichedSlides[0]?.imagePrompt || '',
     aiEngine: 'Grok 2 / Llama 3.3 70B',
     stage: 'COMPLETED',
     status: 'COMPLETED',
     createdAt: new Date().toISOString(),
-    generatedImageUrl: enrichedSlides[0].imageUrl,
-    audioUrl: enrichedSlides[0].audioUrl,
-    renderedVideoUrl: publishResult.videoUrl || `/rendered_videos/stoic_pipeline_short.mp4`,
+    generatedImageUrl: enrichedSlides[0]?.imageUrl || '',
+    audioUrl: enrichedSlides[0]?.audioUrl || '',
+    cloudinaryUrl: cloudinaryUrl || null,
+    videoUrl: finalVideoUrl,
+    renderedVideoUrl: finalVideoUrl,
     slides: enrichedSlides,
     youtubeUrl: publishResult.videoUrl || null
   };
@@ -2158,7 +2281,7 @@ async function syncToManifestAndDatabase(storyboard, enrichedSlides, publishResu
   fs.writeFileSync(manifestPath, JSON.stringify(currentManifest, null, 2));
   logSuccess(`[DATABASE: MANIFEST] Saved post to local/server manifest (ID: ${manifestEntry.id})`);
 
-  // 2. Sync to Firestore Database via REST API
+  // 2. Sync to Firestore Database via REST API (both saved_campaigns & video_vault)
   try {
     let parsedFb = null;
     try {
@@ -2170,21 +2293,66 @@ async function syncToManifestAndDatabase(storyboard, enrichedSlides, publishResu
     const firestoreDbId = process.env.FIRESTORE_DATABASE_ID || process.env.VITE_FIRESTORE_DATABASE_ID || parsedFb?.databaseId || 'ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e';
 
     if (firestoreApiKey && firestoreProjectId) {
-      const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${firestoreProjectId}/databases/${firestoreDbId}/documents/saved_campaigns/${campaignId}?key=${firestoreApiKey}`;
-      
+      const firestoreSlides = (enrichedSlides || []).map(s => ({
+        mapValue: {
+          fields: {
+            text: { stringValue: s.text || '' },
+            scriptText: { stringValue: s.scriptText || s.text || '' },
+            voiceoverTts: { stringValue: s.voiceoverTts || s.text || '' },
+            imagePrompt: { stringValue: s.imagePrompt || '' },
+            imageUrl: { stringValue: s.imageUrl || '' },
+            audioUrl: { stringValue: s.audioUrl || '' },
+            durationSeconds: { doubleValue: Number(s.durationSeconds || 10) },
+            effect: { stringValue: s.effect || 'ken-burns' }
+          }
+        }
+      }));
+
       // Convert to Firestore Document format
       const docFields = {
         id: { stringValue: campaignId },
+        jobId: { stringValue: `job-stoic-${Date.now()}` },
         title: { stringValue: storyboard.title },
         niche: { stringValue: 'motivation_stoicism' },
+        channelId: { stringValue: 'motivation_stoicism' },
+        channelHandle: { stringValue: '@thestoicarchitect-n4b' },
         createdAt: { stringValue: new Date().toISOString() },
         status: { stringValue: 'completed' },
         isPosted: { booleanValue: publishResult.status === 'PUBLISHED_LIVE' },
-        views: { integerValue: '0' },
-        likes: { integerValue: '0' }
+        youtubeVideoId: { stringValue: publishResult.videoId || '' },
+        youtubeUrl: { stringValue: publishResult.videoUrl || '' },
+        cloudinaryUrl: { stringValue: cloudinaryUrl || '' },
+        videoUrl: { stringValue: finalVideoUrl },
+        durationSeconds: { integerValue: String(Math.round(renderResult?.durationSeconds || 60)) },
+        views: { integerValue: publishResult.status === 'PUBLISHED_LIVE' ? '1' : '0' },
+        likes: { integerValue: '0' },
+        payload: {
+          mapValue: {
+            fields: {
+              channelId: { stringValue: 'motivation_stoicism' },
+              topic: { stringValue: topicName },
+              youtube: {
+                mapValue: {
+                  fields: {
+                    title: { stringValue: storyboard.title },
+                    description: { stringValue: storyboard.description || '' },
+                    slides: {
+                      arrayValue: {
+                        values: firestoreSlides
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       };
 
       const reqData = JSON.stringify({ fields: docFields });
+
+      // Save to saved_campaigns
+      const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${firestoreProjectId}/databases/${firestoreDbId}/documents/saved_campaigns/${campaignId}?key=${firestoreApiKey}`;
       await new Promise((resolve) => {
         const req = https.request(firestoreUrl, {
           method: 'PATCH',
@@ -2193,16 +2361,31 @@ async function syncToManifestAndDatabase(storyboard, enrichedSlides, publishResu
             'Content-Length': Buffer.byteLength(reqData)
           },
           timeout: 8000
-        }, (res) => {
-          resolve();
-        });
+        }, () => resolve());
         req.on('error', () => resolve());
         req.write(reqData);
         req.end();
       });
-      logSuccess(`[DATABASE: FIRESTORE] Post successfully saved to Firestore collection 'saved_campaigns' (Doc ID: ${campaignId})`);
+
+      // Save to video_vault
+      const vaultUrl = `https://firestore.googleapis.com/v1/projects/${firestoreProjectId}/databases/${firestoreDbId}/documents/video_vault/${campaignId}?key=${firestoreApiKey}`;
+      await new Promise((resolve) => {
+        const req = https.request(vaultUrl, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(reqData)
+          },
+          timeout: 8000
+        }, () => resolve());
+        req.on('error', () => resolve());
+        req.write(reqData);
+        req.end();
+      });
+
+      logSuccess(`[DATABASE: FIRESTORE] Post successfully saved to Firestore 'saved_campaigns' and 'video_vault' collections.`);
     } else {
-      logInfo(`[DATABASE: PERSISTENCE] Saved to active manifest vault. (To enable cloud Firestore sync, provide FIRESTORE_API_KEY).`);
+      logInfo(`[DATABASE: PERSISTENCE] Saved to active manifest vault.`);
     }
 
     // 3. Save to Firestore Content History for Cooldown and Diversity tracking
@@ -2245,7 +2428,11 @@ async function runDiagnostics() {
   await testAudioTracks();
   const renderResult = await renderFfmpegVideo(storyboard, enrichedSlides);
   const publishResult = await handleYouTubePublish(storyboard, renderResult);
-  const savedCampaign = await syncToManifestAndDatabase(storyboard, enrichedSlides, publishResult, currentTopic);
+  
+  // Upload to Cloudinary for web video playback
+  const cloudinaryUrl = await uploadToCloudinary(renderResult.videoFilePath, `stoic_${Date.now()}`);
+
+  const savedCampaign = await syncToManifestAndDatabase(storyboard, enrichedSlides, publishResult, currentTopic, renderResult, cloudinaryUrl);
 
   // Save diagnostic output artifact
   const testOutputDir = path.join(process.cwd(), 'test_artifacts');
@@ -2262,6 +2449,7 @@ async function runDiagnostics() {
     slides: enrichedSlides,
     renderResult: renderResult,
     publishResult: publishResult,
+    cloudinaryUrl: cloudinaryUrl,
     savedCampaign: savedCampaign
   };
 
@@ -2279,6 +2467,7 @@ async function runDiagnostics() {
     console.log(`${colors.bright}${colors.yellow}⚠ PIPELINE COMPLETED LOCALLY (YouTube Upload Status: ${publishResult.status})${colors.reset}`);
     if (publishResult.error) console.log(`  Detail: ${publishResult.error}`);
   }
+  if (cloudinaryUrl) console.log(`  Cloudinary URL: ${colors.green}${cloudinaryUrl}${colors.reset}`);
   console.log(`  Report: test_artifacts/stoic_test_report.json`);
   console.log(`  In-App Player: Saved to Vault and Blueprint Manifest`);
   console.log(`${colors.bright}${colors.cyan}══════════════════════════════════════════════════════════════════════${colors.reset}\n`);

@@ -29,21 +29,18 @@ const FIN_CATEGORIES = {
   BUSINESS_BREAKDOWNS: 'business_breakdowns',             // Unit economics, startup supplies, gross profit math
   BEGINNER_INVESTING_CRYPTO: 'beginner_investing_crypto', // Bitcoin, USDT stablecoins, inflation hedging, self-custody
   FINANCIAL_CALCULATORS: 'financial_calculators',         // Compounding $1/day, break-even math, purchasing power
-  CHALLENGES_EXPERIMENTS: 'challenges_experiments'        // Transparent 30-day budget & micro-business experiments
-};
-
-// 16 Comprehensive Financial Archetypes spanning all pillars with dual currency relevance
+  CHALLENGES_EXPERIMENTS: 'challenges_experiments'        // Transparent 30-day budget & micro-business exp// 16 Comprehensive Financial Archetypes spanning all pillars with dual currency relevance and simple language
 const FIN_ARCHETYPES = [
   {
     id: 'fin_01_micro_startup_food',
     category: FIN_CATEGORIES.SMALL_CAPITAL_BUSINESS,
     theme: 'Small-Capital Business: Snack & Micro-Reselling',
-    angle: '3 Businesses You Can Start With Under ₦5,000 ($3.50 USD)',
+    angle: '3 Simple Businesses You Can Start With Under ₦5,000 ($3.50 USD)',
     targetBudget: '₦5,000 (~$3.50 USD)',
     hookPatterns: [
       'If you only have ₦5,000 or about $3.50 to start a business, here is what actually works.',
-      'Stop waiting for millions — here are 3 micro-businesses starting under $5 or ₦5,000.',
-      'What I would do to make income if I only had ₦5,000 ($3.50 USD) left today.'
+      'Stop waiting for millions of cash — here are 3 simple micro businesses starting under $5 or ₦5,000.',
+      'What you can do to make honest money if you only have ₦5,000 ($3.50 USD) in your pocket today.'
     ],
     narrativeArc: 'Hook on tiny capital -> 3 practical low-equipment ideas (snack packs, micro-delivery, item flipping) -> Real supply cost & margin math -> Downside risk -> CTA',
     visualAesthetic: 'Crisp cinematic 9:16 vertical 8k scene, modern minimalist workspace, emerald green and gold rim lighting, dark slate backdrop, crisp bokeh depth of field',
@@ -53,12 +50,12 @@ const FIN_ARCHETYPES = [
     id: 'fin_02_budgeting_50_30_20',
     category: FIN_CATEGORIES.SAVING_PERSONAL_FINANCE,
     theme: 'Personal Finance: Zero-Based Realistic Budgeting',
-    angle: 'How to Budget ₦20,000 ($13.50 USD) Without Going Broke Before Month-End',
+    angle: 'How to Budget ₦20,000 ($13.50 USD) So Your Money Lasts All Month',
     targetBudget: '₦20,000 (~$13.50 USD)',
     hookPatterns: [
-      'Why does your money disappear 3 days after you get paid? Here is the 50-30-20 fix.',
-      'How to budget ₦20,000 ($13.50 USD) when prices and inflation keep climbing.',
-      'The single budgeting mistake that keeps 90% of beginners trapped living paycheck to paycheck.'
+      'Why does your money disappear 3 days after getting paid? Here is the simple 50-30-20 fix.',
+      'How to budget ₦20,000 or $13.50 USD so you do not run out of cash before the month ends.',
+      'The biggest budgeting mistake that keeps beginners broke, and how to fix it in 60 seconds.'
     ],
     narrativeArc: 'Hook on disappearing cash -> The 50/30/20 breakdown for small amounts -> Cutting silent expense leaks -> Emergency buffer -> CTA',
     visualAesthetic: 'Clean high-contrast smartphone budget interface, warm studio lighting with dark slate background, clear typography, financial stability aesthetic',
@@ -67,13 +64,13 @@ const FIN_ARCHETYPES = [
   {
     id: 'fin_03_inflation_purchasing_power',
     category: FIN_CATEGORIES.FINANCIAL_EDUCATION,
-    theme: 'Financial Education: Inflation & Cash Erosion Explained',
-    angle: 'What Inflation Actually Does to ₦50,000 ($35 USD) Over 12 Months',
+    theme: 'Financial Education: Inflation & Rising Market Prices Explained Simply',
+    angle: 'What Inflation Actually Means For Your ₦50,000 ($35 USD) Savings',
     targetBudget: '₦50,000 (~$35 USD)',
     hookPatterns: [
-      'Keeping all your cash under the mattress is quietly costing you 25% of your purchasing power.',
-      'What inflation really means for your everyday grocery shopping in 60 seconds.',
-      'Why a 10% salary raise might still leave you poorer if you do not understand inflation.'
+      'Keeping cash under your mattress quietly steals your money. Here is what inflation means in plain words.',
+      'What inflation actually does to your grocery shopping money in under 60 seconds.',
+      'Why prices keep rising in the market and how to protect your savings from losing value.'
     ],
     narrativeArc: 'Definition in plain terms -> Real grocery basket purchasing power comparison -> Why idle cash erodes -> Practical hedging strategies -> CTA',
     visualAesthetic: 'Sleek financial diagram, purchasing power comparison chart, obsidian black background with emerald and gold accents, 9:16 vertical 8k cinematic shot',
@@ -83,12 +80,12 @@ const FIN_ARCHETYPES = [
     id: 'fin_04_phone_only_monetization',
     category: FIN_CATEGORIES.SKILLS_TO_INCOME,
     theme: 'Phone-Only Digital Skills & Remote Income',
-    angle: '3 High-Income Digital Skills You Can Learn for Free on Just Your Phone',
+    angle: '3 Free Digital Skills You Can Learn On Just Your Smartphone',
     targetBudget: '$0 (Phone & Internet Only)',
     hookPatterns: [
-      'You do not need an expensive laptop to build monetizable digital skills in 2026.',
-      'Turn your smartphone into a remote income engine with these 3 free skills.',
-      'The highest-paying digital skills anyone with a phone and internet can learn this month.'
+      'You do not need an expensive laptop to make money online in 2026. Your phone is enough.',
+      'Turn your smartphone into a daily income engine with these 3 free practical skills.',
+      'Three high-value digital skills anyone with a phone and internet can learn this week for free.'
     ],
     narrativeArc: 'Problem of expensive gear -> 3 realistic phone skills (CapCut video editing, copywriting, social media management) -> Free learning sources -> Client outreach -> CTA',
     visualAesthetic: 'Modern creator setup, smartphone with mobile video editor timeline, ambient cyan and gold backlight, crisp 35mm portrait lens',
@@ -97,13 +94,13 @@ const FIN_ARCHETYPES = [
   {
     id: 'fin_05_scam_red_flags',
     category: FIN_CATEGORIES.SCAM_AWARENESS,
-    theme: 'Scam & Fraud Prevention: Exposing Ponzi & Crypto Traps',
-    angle: '5 Red Flags of Fake Investment Schemes (Ponzi & Crypto Traps)',
+    theme: 'Scam & Fraud Prevention: Exposing Ponzi & Fake Investment Traps',
+    angle: '5 Simple Signs of a Fake Investment Scam Before You Lose Your Money',
     targetBudget: 'Protecting Your Capital',
     hookPatterns: [
-      'If anyone promises you guaranteed 30% weekly returns, run the other way immediately.',
-      'How to spot a fake investment scheme in under 30 seconds before losing your hard-earned money.',
-      'The 3 biggest scams targeting young people and students right now.'
+      'If anyone promises you guaranteed 30% weekly profit, run away immediately. It is a scam.',
+      'How to spot a fake investment scheme in under 30 seconds before losing your hard-earned cash.',
+      'The 3 biggest money traps targeting young people and students right now.'
     ],
     narrativeArc: 'The psychological lure -> 5 undeniable red flags (guarantees, recruitment pressure, fake audits) -> Real example -> How to verify legitimacy -> CTA',
     visualAesthetic: 'High-contrast security and warning aesthetic, deep charcoal and red-amber accent lighting, sleek digital shield motif, 9:16 vertical 8k cinematic',
@@ -112,13 +109,13 @@ const FIN_ARCHETYPES = [
   {
     id: 'fin_06_business_economics_breakdown',
     category: FIN_CATEGORIES.BUSINESS_BREAKDOWNS,
-    theme: 'Business Breakdowns: Unit Economics & Margins',
-    angle: 'The Real Math Behind a ₦10,000 ($7 USD) Snack Reselling Micro-Business',
+    theme: 'Business Breakdowns: Real Profit Margins on Small Items',
+    angle: 'The Real Math Behind Starting a ₦10,000 ($7 USD) Snack Reselling Business',
     targetBudget: '₦10,000 (~$7 USD)',
     hookPatterns: [
-      'Can you really turn ₦10,000 ($7 USD) into a profitable micro-business? Let us do the exact math.',
-      'Here is the complete cost breakdown, pricing, and profit margin of an everyday street snack business.',
-      'The hidden costs that ruin small business owners before they even make their first profit.'
+      'Can you turn ₦10,000 or $7 USD into daily profit? Let us do the simple math together.',
+      'Here is the exact cost, selling price, and real profit of a simple street snack business.',
+      'The hidden costs that hurt small business owners before they even make their first profit.'
     ],
     narrativeArc: 'The business premise -> Startup supply cost breakdown -> Pricing strategy -> Estimated gross margin & hidden expenses -> Break-even reality -> CTA',
     visualAesthetic: 'Clean commercial packaging setup, clear financial breakdown table, warm tungsten studio lighting, realistic depth of field',
@@ -127,13 +124,13 @@ const FIN_ARCHETYPES = [
   {
     id: 'fin_07_stablecoins_hedging',
     category: FIN_CATEGORIES.BEGINNER_INVESTING_CRYPTO,
-    theme: 'Beginner Crypto: Stablecoins (USDT/USDC) Demystified',
-    angle: 'What Are Stablecoins (USDT/USDC) and Why Do Millions Use Them to Beat Inflation?',
+    theme: 'Beginner Crypto: Digital Dollars (USDT) Explained for Starters',
+    angle: 'What Are Digital Dollars (USDT) and Why Do People Save in Them?',
     targetBudget: 'Any Budget ($1+ / ₦1,500+)',
     hookPatterns: [
-      'What is a stablecoin, and why are millions using USDT to protect their savings from currency drops?',
-      'Crypto does not have to be a gamble — here is how digital dollars work for complete beginners.',
-      'Before you touch crypto, understand the difference between Bitcoin, Altcoins, and Stablecoins.'
+      'What is a digital dollar like USDT, and why do millions use it to protect their savings?',
+      'Crypto does not have to be confusing — here is how digital dollar savings work for beginners.',
+      'Before you touch crypto, learn why digital dollars stay stable while other coins go up and down.'
     ],
     narrativeArc: 'Plain definition -> How 1 USDT stays $1 USD -> Use case for beating local devaluation -> Self-custody safety rules -> CTA',
     visualAesthetic: 'Futuristic clean financial interface, glowing emerald and gold crypto tokens on dark obsidian slate, sleek 3D perspective, 9:16 vertical 8k',
@@ -142,13 +139,13 @@ const FIN_ARCHETYPES = [
   {
     id: 'fin_08_free_certifications_grants',
     category: FIN_CATEGORIES.FREE_OPPORTUNITIES,
-    theme: 'Free Opportunities: Verified Tech Certifications & Grants',
-    angle: '3 100% Free Google & Microsoft Certifications to Boost Your Career',
+    theme: 'Free Opportunities: Free Tech Certifications to Learn Online',
+    angle: '3 Free Certifications From Google and Microsoft That Teach Real Skills',
     targetBudget: '$0 (100% Free)',
     hookPatterns: [
-      'Companies are hiring for these 3 skills, and the training is 100% free from Google.',
-      'Stop paying for overpriced courses — get certified by top tech companies for zero cost.',
-      'The top free global certifications you can complete on your phone this weekend.'
+      'Top companies look for these skills, and Google teaches them completely for free.',
+      'Do not pay for overpriced courses — get free certificates from big tech companies today.',
+      'The top free global certificates you can finish right on your phone this week.'
     ],
     narrativeArc: 'High cost of education vs free tech programs -> 3 specific free certs -> What you learn -> How to put it on LinkedIn/Resume -> CTA',
     visualAesthetic: 'Modern digital certificate interface, glowing green verified badge, modern study desk, crisp cinematic lighting, 9:16 vertical 8k',
@@ -157,13 +154,13 @@ const FIN_ARCHETYPES = [
   {
     id: 'fin_09_compound_interest_dollar_day',
     category: FIN_CATEGORIES.FINANCIAL_CALCULATORS,
-    theme: 'Financial Calculators: The Power of Compounding Growth',
-    angle: 'What Happens If You Invest $1 a Day (₦1,500) Over 10 Years?',
+    theme: 'Financial Calculators: How Small Daily Savings Grow Over Time',
+    angle: 'What Happens When You Save Just $1 (₦1,500) Every Single Day?',
     targetBudget: '$1/day (₦1,500/day)',
     hookPatterns: [
-      'Albert Einstein called compound interest the eighth wonder of the world — here is why.',
-      'What happens when you consistently invest just $1 or ₦1,500 every single day?',
-      'How small consistent savings beat big lump sums through the power of compound growth.'
+      'What happens if you save just $1 or ₦1,500 every single day for the next ten years?',
+      'Why saving small amounts every day beats trying to save one big lump sum.',
+      'How compound growth works: your money makes small profit, and that profit makes even more profit.'
     ],
     narrativeArc: 'The compound formula explained simply -> The 1-year vs 5-year vs 10-year curve -> Rule of 72 -> Practical starting step -> CTA',
     visualAesthetic: 'Exponential growth chart visualization, glowing green compounding curve on sleek dark glass, 9:16 vertical 8k cinematic studio shot',
@@ -172,13 +169,13 @@ const FIN_ARCHETYPES = [
   {
     id: 'fin_10_thrift_reselling_hustle',
     category: FIN_CATEGORIES.SMALL_CAPITAL_BUSINESS,
-    theme: 'Small-Capital Business: Thrift & E-Commerce Reselling',
-    angle: 'How to Start a Thrift Reselling Side-Hustle With Under ₦15,000 ($10 USD)',
+    theme: 'Small-Capital Business: Buying and Reselling Clean Second-Hand Clothes',
+    angle: 'How to Start a Clothing Reselling Hustle With Under ₦15,000 ($10 USD)',
     targetBudget: '₦15,000 (~$10 USD)',
     hookPatterns: [
-      'Thrift and vintage clothing reselling is one of the highest margin micro-businesses today.',
-      'How to source, photograph, and flip thrift items online starting with only $10 or ₦15,000.',
-      'The 3 rules of profitable online reselling that guarantee you never get stuck with dead stock.'
+      'Buying neat second-hand clothes and selling them online is one of the easiest small businesses to start.',
+      'How to buy, take clean pictures, and sell thrift items with only $10 or ₦15,000.',
+      'Three simple rules for selling clothes online so you never get stuck with unsold items.'
     ],
     narrativeArc: 'Sourcing cheap inventory -> Cleaning and presentation -> Pricing for 100% markup -> Packaging & shipping -> CTA',
     visualAesthetic: 'Aesthetic vintage clothing rack, smartphone product photoshoot setup, warm sunlight and tungsten studio lighting, 9:16 vertical 8k',
@@ -187,13 +184,13 @@ const FIN_ARCHETYPES = [
   {
     id: 'fin_11_emergency_fund_blueprint',
     category: FIN_CATEGORIES.SAVING_PERSONAL_FINANCE,
-    theme: 'Personal Finance: Building Your First ₦10,000 ($7 USD) Emergency Fund',
-    angle: 'How to Save Your First ₦10,000 ($7 USD) Emergency Buffer on Low Income',
+    theme: 'Personal Finance: Saving Your First ₦10,000 ($7 USD) Safety Buffer',
+    angle: 'How to Save Your First ₦10,000 ($7 USD) Cushion When Money is Tight',
     targetBudget: '₦10,000 (~$7 USD)',
     hookPatterns: [
-      'An emergency fund is not an investment — it is mental peace of mind for unexpected shock.',
+      'An emergency fund is money you lock away for unexpected emergencies like hospital bills or phone repairs.',
       'How to save your first ₦10,000 ($7 USD) emergency cushion without starving.',
-      'Why you should never invest your last cash before building an emergency safety net.'
+      'Why you should always save a little emergency cash before putting money into any business.'
     ],
     narrativeArc: 'The unexpected expense trap -> Why emergency savings must be liquid -> The ₦500 / $0.35 daily savings challenge -> Where to store it safely -> CTA',
     visualAesthetic: 'Clean locked digital vault concept, warm emerald rim lighting, modern glass aesthetic, 9:16 vertical 8k cinematic',
@@ -202,13 +199,13 @@ const FIN_ARCHETYPES = [
   {
     id: 'fin_12_interest_rates_apr_explained',
     category: FIN_CATEGORIES.FINANCIAL_EDUCATION,
-    theme: 'Financial Education: Loan Apps & Hidden APR Traps',
-    angle: 'How High-Interest Quick Loan Apps Trap Borrowers in Debt Cycles',
+    theme: 'Financial Education: Quick Loan Apps & High Borrowing Fees Explained',
+    angle: 'How High-Interest Quick Loan Apps Trap Borrowers in Endless Debt',
     targetBudget: 'Financial Protection',
     hookPatterns: [
-      'Borrowing ₦10,000 and paying back ₦13,000 in two weeks is a 780% yearly interest rate.',
-      'What quick loan apps do not tell you about compound penalties and privacy risks.',
-      'How to calculate the real APR on any loan before accepting money into your account.'
+      'If you borrow ₦10,000 and have to pay back ₦13,000 in just two weeks, that fee is dangerously high.',
+      'What quick loan apps do not tell you about heavy hidden penalties and daily interest.',
+      'How to check the real cost of borrowing money before taking any quick loan.'
     ],
     narrativeArc: 'The allure of instant loan apps -> The hidden math of bi-weekly fees (APR explained) -> Debt spiral danger -> Safe alternative solutions -> CTA',
     visualAesthetic: 'Digital smartphone loan interface warning breakdown, dramatic moody slate lighting with red and gold highlights, 9:16 vertical 8k',
@@ -306,27 +303,31 @@ CHANNEL CORE POSITIONING:
 TARGET AUDIENCE: Everyday young people, students, beginners, low-income earners, and aspiring entrepreneurs starting with little or no capital ($0 to $50 / ₦0 to ₦50,000).
 
 MANDATORY RULES & CONTENT STANDARDS:
-1. NEVER BEHAVE AS A FINANCIAL GURU OR PROMISE WEALTH:
+1. NEVER USE BIG OR COMPLICATED GRAMMAR (5TH-GRADE READING LEVEL):
+   - Use simple, everyday words that a young student, kid, or complete beginner can understand immediately.
+   - If you mention any financial concept (like "Inflation", "APR", "Gross Profit", "Emergency Fund", "Debt", "Compound Interest"), you MUST explain it immediately in plain, friendly words.
+   - Example: "Inflation means market prices go up while your pocket money stays the same."
+   - Example: "Profit is the extra money you keep after paying for your supplies."
+2. NEVER BEHAVE AS A FINANCIAL GURU OR PROMISE WEALTH:
    - Do NOT promise or guarantee income, profit, or instant wealth.
-   - ALWAYS use honest, measured language: "potential revenue", "estimated margins", "results vary", "possible startup costs".
+   - ALWAYS use honest, measured language: "potential income", "estimated profit", "results vary", "possible startup costs".
    - The viewer must leave thinking: "I learned something practical, realistic, and risk-aware."
-2. GLOBAL DUAL-CURRENCY FORMAT (MANDATORY):
-   - Whenever mentioning currency or budget amounts, seamlessly include BOTH Nigerian Naira (₦) and US Dollar ($) equivalents.
+3. GLOBAL DUAL-CURRENCY FORMAT (MANDATORY):
+   - Whenever mentioning money or budget amounts, seamlessly include BOTH Nigerian Naira (₦) and US Dollar ($) equivalents.
    - Examples: "₦5,000 (about $3.50 USD)", "₦20,000 (around $13.50 USD)", "$10 (approx. ₦15,000)".
-3. CRYSTAL CLEAR, SPOKEN CONVERSATIONAL ENGLISH:
-   - Write in plain, conversational English suitable for clear text-to-speech reading.
-   - Avoid complicated financial jargon; if a term like "gross margin" or "APR" is used, explain it immediately in plain words.
-   - Slide lengths: strictly 1-2 complete spoken sentences (12-16 words per slide).
-4. STRICT 6-SLIDE NARRATIVE COHESION (THE 6-STEP ARC):
-   - Slide 0 (Hook): Direct opening naming the real situation/budget in dual currency ($ / ₦).
-   - Slide 1 (The Trap / Friction): Explain the common mistake or why people lose money here.
-   - Slide 2 (The Simple Principle): The foundational rule or concept explained plainly.
-   - Slide 3 (The Actionable Math): Real startup cost, supply breakdown, or calculation.
-   - Slide 4 (The Risk & Defense): The downside risk and how to protect money.
-   - Slide 5 (Closing & Outro): A final piece of advice + "${resolvedOutro}".
-5. ANTI-DUPLICATION MANDATE:
+4. NATURAL SPEECH LENGTH (22-28 SPOKEN WORDS PER SLIDE):
+   - Write exactly 22 to 28 spoken words per slide (around 2 complete, easy-to-read spoken sentences).
+   - This ensures a steady, relaxed 10 to 11 seconds of continuous spoken voiceover per slide.
+5. STRICT 6-SLIDE NARRATIVE COHESION (THE 6-STEP ARC):
+   - Slide 0 (The Opening Hook): Direct question or statement naming the situation/budget in dual currency ($ / ₦).
+   - Slide 1 (The Common Mistake): Explain the trap beginners fall into and why they lose money.
+   - Slide 2 (The Simple Rule Explained): The main principle explained in super simple words.
+   - Slide 3 (The Easy Math): A real, simple supply cost and profit calculation.
+   - Slide 4 (Protecting Your Cash): How to avoid losing money or getting scammed.
+   - Slide 5 (Closing Takeaway & Outro): A final friendly advice + "${resolvedOutro}".
+6. ANTI-DUPLICATION MANDATE:
    - Recently covered titles: [${recentTitles || 'None'}]. Do NOT duplicate these topics or angles.
-6. UNIFIED VISUAL STYLE:
+7. UNIFIED 9:16 VERTICAL VISUAL STYLE:
    - 9:16 vertical 8k photorealistic aesthetic with dark obsidian slate background, emerald green and warm gold rim lighting.
 
 OUTPUT FORMAT: Return strictly a valid JSON object matching this schema:
@@ -342,32 +343,32 @@ OUTPUT FORMAT: Return strictly a valid JSON object matching this schema:
   "slides": [
     {
       "slideIndex": 0,
-      "text": "Opening hook addressing the small budget in USD and Naira (12-16 words)...",
+      "text": "Opening hook addressing the small budget in simple words with USD and Naira (22-28 words)...",
       "visual": "Cinematic 9:16 vertical 8k scene, modern minimalist workspace, emerald and gold ambient rim light..."
     },
     {
       "slideIndex": 1,
-      "text": "The hidden trap or mistake beginners make with this budget (12-15 words)...",
+      "text": "The hidden trap or mistake beginners make explained with simple everyday words (22-28 words)...",
       "visual": "Matching 9:16 vertical 8k shot with consistent emerald/gold color palette and sharp depth of field..."
     },
     {
       "slideIndex": 2,
-      "text": "The core simple financial rule or business model (12-15 words)...",
+      "text": "The simple financial rule explained with an easy everyday definition (22-28 words)...",
       "visual": "Matching 9:16 vertical shot, clean financial interface or business supply setup..."
     },
     {
       "slideIndex": 3,
-      "text": "Concrete pricing, startup cost, or profit margin breakdown (12-15 words)...",
+      "text": "Concrete pricing, startup cost, or profit margin breakdown in simple math (22-28 words)...",
       "visual": "Matching 9:16 vertical shot, clear visual breakdown chart with high-contrast text..."
     },
     {
       "slideIndex": 4,
-      "text": "The practical takeaway and how to manage downside risks (12-15 words)...",
+      "text": "The practical takeaway on how to protect your hard-earned cash (22-28 words)...",
       "visual": "Matching 9:16 vertical shot, confident modern entrepreneur in cinematic lighting..."
     },
     {
       "slideIndex": 5,
-      "text": "Final punchy rule + '${resolvedOutro}' (12-15 words)...",
+      "text": "Final punchy rule + '${resolvedOutro}' (22-28 words)...",
       "visual": "Matching 9:16 vertical shot, clean modern studio resolution with subtle logo watermark..."
     }
   ]
@@ -375,7 +376,7 @@ OUTPUT FORMAT: Return strictly a valid JSON object matching this schema:
 
   const userPrompt = `Generate a brand new, highly practical Finance & Small-Business Short storyboard for Slot ${slotIndex + 1}.
 Theme: "${archetype.theme}". Angle: "${archetype.angle}". Target Budget: "${archetype.targetBudget}".
-Avoid previous titles: [${recentTitles || 'None'}]. Ensure realistic calculations with dual $ / ₦ context. Output strictly valid JSON.`;
+Use very simple, easy-to-understand words. Explain any difficult terms on the spot. Write 22-28 words per slide. Avoid previous titles: [${recentTitles || 'None'}]. Ensure realistic calculations with dual $ / ₦ context. Output strictly valid JSON.`;
 
   return { systemPrompt, userPrompt };
 }
@@ -401,32 +402,32 @@ function synthesizeDeterministicFinStoryboard(archetype, topicTitle, channelHand
     slides: [
       {
         slideIndex: 0,
-        text: `If you have ${arch.targetBudget} to start, you do not need huge capital to build real momentum.`,
+        text: `If you only have ${arch.targetBudget} in your pocket today, you do not need millions of cash to start making honest daily income.`,
         visual: `Cinematic 9:16 vertical 8k photorealistic scene, modern minimalist desk, emerald and gold rim lighting, dark obsidian slate backdrop`
       },
       {
         slideIndex: 1,
-        text: `The biggest mistake beginners make is waiting for millions instead of testing high-demand micro-services today.`,
+        text: `The biggest mistake most beginners make is waiting around for huge money instead of testing small, simple services that people need right now in their neighborhood.`,
         visual: `Cinematic 9:16 vertical 8k shot, entrepreneur evaluating budget options on mobile phone screen, crisp depth of field`
       },
       {
         slideIndex: 2,
-        text: `Focus entirely on cash flow: keep your fixed costs near zero and reinvest your first profits immediately.`,
+        text: `Always watch your cash flow. Cash flow simply means the money coming into your hand versus the money leaving your pocket every single day.`,
         visual: `Cinematic 9:16 vertical 8k shot, clean financial calculator diagram with glowing emerald growth curves`
       },
       {
         slideIndex: 3,
-        text: `Calculate your margins beforehand: if supplies cost $2 and you sell for $5, your gross profit is $3 per unit.`,
+        text: `Check your profit margins before selling. Profit is the extra cash left over after buying your supplies, like spending $2 on items and selling for $5.`,
         visual: `Cinematic 9:16 vertical 8k shot, practical micro-business supply inventory in high-contrast studio setting`
       },
       {
         slideIndex: 4,
-        text: `Always separate your personal money from your business cash so inflation and impulse buys never eat your working capital.`,
+        text: `Never mix your personal pocket money with your business cash. Keep your business money separate so emergency expenses do not eat up your startup capital.`,
         visual: `Cinematic 9:16 vertical 8k shot, modern disciplined entrepreneur managing digital accounts`
       },
       {
         slideIndex: 5,
-        text: `Start small, test fast, and ${resolvedOutro}`,
+        text: `Start small, be patient, keep your costs low, and ${resolvedOutro}`,
         visual: `Cinematic 9:16 vertical 8k shot, inspiring modern city office background with amber and emerald bokeh glow`
       }
     ]

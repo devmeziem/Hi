@@ -73,7 +73,8 @@ const NICHE = 'finance_business';
 const args = process.argv.slice(2);
 const isDryRun = args.includes('--dry-run') || String(process.env.DRY_RUN).toLowerCase() === 'true';
 const inputTopic = process.env.TEST_TOPIC ? process.env.TEST_TOPIC.trim() : '';
-const contentDepth = process.env.CONTENT_DEPTH || 'short_form';
+const currentUtcHour = new Date().getUTCHours();
+const contentDepth = process.env.CONTENT_DEPTH || (currentUtcHour === 2 ? 'deep_dive' : 'short_form');
 
 // API Credentials
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim();
@@ -666,11 +667,12 @@ async function synthesizeEnrichedSlides(storyboard) {
   async function generateEdgeBassTTS(text) {
     try {
       const { EdgeTTS } = require('node-edge-tts');
+      // Warm, engaging, clear educational voices
       const voices = [
-        'en-US-GuyNeural',         // Clear, engaging financial mentor
-        'en-US-ChristopherNeural', // Deep authoritative teacher
-        'en-US-EricNeural',        // Calm articulate baritone
-        'en-GB-RyanNeural'         // Refined British financial educator
+        'en-US-ChristopherNeural', // Warm, patient, highly clear educational teacher
+        'en-US-GuyNeural',         // Clear, conversational financial mentor
+        'en-GB-RyanNeural',        // Refined, articulate educator
+        'en-US-EricNeural'         // Calm, resonant baritone
       ];
 
       for (const voice of voices) {
@@ -680,8 +682,8 @@ async function synthesizeEnrichedSlides(storyboard) {
             voice: voice,
             lang: 'en-US',
             outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
-            pitch: '-1Hz',
-            rate: '-3%' // Reduced speed for clear, easy-to-understand narration
+            pitch: '+0Hz',
+            rate: '-3%' // Natural educational pacing for easy, crystal-clear comprehension
           });
 
           await tts.ttsPromise(text, tempAudio);
@@ -690,7 +692,7 @@ async function synthesizeEnrichedSlides(storyboard) {
             const audioBuf = fs.readFileSync(tempAudio);
             try { fs.unlinkSync(tempAudio); } catch {}
             if (audioBuf.length > 1000) {
-              logSuccess(`[Microsoft Edge TTS] Synthesized clear deliberate voice (${voice}) (${audioBuf.length.toLocaleString()} bytes)`);
+              logSuccess(`[Microsoft Edge TTS] Synthesized educational voice (${voice}) (${audioBuf.length.toLocaleString()} bytes)`);
               return {
                 audioBuffer: audioBuf,
                 audioUrl: `data:audio/mpeg;base64,${audioBuf.toString('base64')}`,
@@ -774,10 +776,10 @@ async function synthesizeEnrichedSlides(storyboard) {
     return null;
   }
 
-  // Synthesize voice using multi-tier hierarchy
+  // Synthesize voice using multi-tier hierarchy: Microsoft Edge Educational Neural is PRIMARY
   async function synthesizeVoiceHierarchy(text) {
-    let tts = await generateCloudflareTTS(text);
-    if (!tts) tts = await generateEdgeBassTTS(text);
+    let tts = await generateEdgeBassTTS(text);
+    if (!tts) tts = await generateCloudflareTTS(text);
     if (!tts) tts = await generateGoogleDspTTS(text);
     if (!tts) tts = await generatePollinationsTTS(text);
     return tts;
@@ -790,9 +792,10 @@ async function synthesizeEnrichedSlides(storyboard) {
     const slideNum = i + 1;
     logInfo(`[Slide ${slideNum}/${storyboard.slides.length}] Synthesizing visual & audio assets...`);
 
-    // 1. Generate Visual Image
-    let imgResult = await generateCloudflareImage(slide.visual || slide.text);
-    if (!imgResult) imgResult = await generatePollinationsImage(slide.visual || slide.text);
+    // 1. Generate Visual Image (Synchronized to topic & slide concept)
+    const visualTopicPrompt = `${storyboard.theme || storyboard.title}: ${slide.visual || slide.text}`;
+    let imgResult = await generateCloudflareImage(visualTopicPrompt);
+    if (!imgResult) imgResult = await generatePollinationsImage(visualTopicPrompt);
 
     let imageBuffer = imgResult?.imageBuffer || null;
     let imageUrl = imgResult?.imageUrl || null;
@@ -882,7 +885,7 @@ async function renderFullFinanceFfmpegVideo(storyboard, enrichedSlides) {
 
       // Measure duration: Min 10.0s per slide so 6 slides total 62s - 75s (always >= 60s / 1 min)
       const rawAudioDur = getAudioDuration(slideAudioPath);
-      const slideDur = Math.max(10.0, rawAudioDur + 0.5);
+      const slideDur = Math.max(10.0, rawAudioDur + 0.4);
       const totalFrames = Math.round(slideDur * 30);
 
       // Clean slide text for on-screen captions
@@ -890,28 +893,32 @@ async function renderFullFinanceFfmpegVideo(storyboard, enrichedSlides) {
       const words = rawText.split(/\s+/).filter(Boolean);
 
       const chunkLines = [];
-      const CHUNK_SIZE = 3;
+      const CHUNK_SIZE = 3; // 2-3 punchy words per kinetic subtitle burst
       for (let w = 0; w < words.length; w += CHUNK_SIZE) {
         chunkLines.push(words.slice(w, w + CHUNK_SIZE).join(' '));
       }
 
-      const chunkDur = slideDur / Math.max(chunkLines.length, 1);
+      // EXACT SYNC: Compute subtitle timings strictly against rawAudioDur (spoken audio length)
+      const spokenDur = Math.max(0.1, rawAudioDur);
+      const chunkDur = spokenDur / Math.max(chunkLines.length, 1);
       let captionFilter = '';
 
-      // Slide 1 Pinned Hook Banner
+      // Slide 1 Pinned Hook Banner at top (Mobile Shorts safe zone y=200)
       let topHookFilter = '';
       if (i === 0) {
         const rawTitle = (storyboard.title || storyboard.theme || 'FINANCIAL MASTERY').replace(/#\w+/g, '').trim();
-        const cleanHook = sanitizeForFfmpegDrawtext(rawTitle.slice(0, 32));
-        topHookFilter = `,drawtext=text='${cleanHook}':fontsize=32:fontcolor=0xFDE047:box=1:boxcolor=black@0.94:boxborderw=16:borderw=2:bordercolor=0x10B981:shadowcolor=black@0.9:shadowx=2:shadowy=2:x=(w-text_w)/2:y=160:enable='between(t\\,0\\,4.5)'`;
+        const cleanHook = sanitizeForFfmpegDrawtext(rawTitle.slice(0, 32).toUpperCase());
+        topHookFilter = `,drawtext=text='${cleanHook}':fontsize=36:fontcolor=0xFFEA00:borderw=5:bordercolor=black:shadowcolor=black@0.9:shadowx=3:shadowy=3:x=(w-text_w)/2:y=200:enable='between(t\\,0\\,4.5)'`;
       }
 
       chunkLines.forEach((chunkText, cIdx) => {
         const startT = (cIdx * chunkDur).toFixed(2);
-        const endT = ((cIdx + 1) * chunkDur).toFixed(2);
-        const cleanChunk = sanitizeForFfmpegDrawtext(chunkText);
-        // Financial emerald & gold theme subtitles
-        captionFilter += `,drawtext=text='${cleanChunk}':fontsize=46:fontcolor=white:box=1:boxcolor=black@0.92:boxborderw=22:borderw=3:bordercolor=0x10B981@0.5:shadowcolor=black@0.95:shadowx=3:shadowy=3:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t\\,${startT}\\,${endT})'`;
+        // The last chunk stays visible until slideDur finishes
+        const endT = (cIdx === chunkLines.length - 1 ? slideDur : (cIdx + 1) * chunkDur).toFixed(2);
+        const cleanChunk = sanitizeForFfmpegDrawtext(chunkText.toUpperCase());
+        // Modern UI Captions: Large 60pt font, bold black stroke (borderw=6), canary yellow or platinum white, lower-third sweet spot (y=1260)
+        const fontColor = cIdx % 2 === 0 ? '0xFFEA00' : '0xFFFFFF'; // Alternating canary yellow & white for viral retention
+        captionFilter += `,drawtext=text='${cleanChunk}':fontsize=62:fontcolor=${fontColor}:borderw=6:bordercolor=black:shadowcolor=black@0.85:shadowx=4:shadowy=4:x=(w-text_w)/2:y=1260:enable='between(t\\,${startT}\\,${endT})'`;
       });
 
       // ----------------------------------------------------
@@ -920,10 +927,11 @@ async function renderFullFinanceFfmpegVideo(storyboard, enrichedSlides) {
       let zoomFilter = '';
       const motionStyle = i % 5;
 
-      if (motionStyle === 0) {
+      if (i === 0) {
         // STYLE 1: The "GBIM" Gavel Slam / Explosive Impact Zoom-Out Hit!
-        // Begins at extreme close-up (1.35) and violently slams/snaps back to 1.05 in 0.35s with exponential damping screen shake, then slowly pushes
-        zoomFilter = `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='if(lte(on,12), 1.35 - 0.28*(on/12), min(zoom+0.0018, 1.15))':d=${totalFrames}:x='(iw-iw/zoom)/2 + if(lte(on,20), 8*sin(on*3)*exp(-on/10), 0)':y='(ih-ih/zoom)/2 + if(lte(on,20), 8*cos(on*3)*exp(-on/10), 0)':s=1080x1920:fps=30`;
+        // Begins at extreme close-up (1.45), violently slams/snaps back to 1.06 in first 8 frames (0.26s),
+        // with immediate rapid high-frequency violent camera shake (14*sin(on*7.5)*exp(-on/7)), then slow smooth push
+        zoomFilter = `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='if(lte(on,8), 1.45 - 0.39*(on/8), min(zoom+0.0018, 1.14))':d=${totalFrames}:x='(iw-iw/zoom)/2 + if(lte(on,25), 14*sin(on*7.5)*exp(-on/7), 0)':y='(ih-ih/zoom)/2 + if(lte(on,25), 12*cos(on*8.2)*exp(-on/7), 0)':s=1080x1920:fps=30`;
       } else if (motionStyle === 1) {
         // STYLE 2: High-Tension Camera Shake & Urgent Pulse (Great for Scam Warnings / Expense Leaks)
         zoomFilter = `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0025, 1.20)':d=${totalFrames}:x='(iw-iw/zoom)/2 + 4*sin(on*2.5)':y='(ih-ih/zoom)/2 + 3*cos(on*2.5)':s=1080x1920:fps=30`;
@@ -1055,7 +1063,7 @@ async function handleYouTubePublish(storyboard, renderResult) {
         .filter(t => t.length > 0 && t.length < 50)
         .slice(0, 15);
 
-      const fullDescription = `${storyboard.description || uploadTitle}\n\nLearn practical money management and small-business strategies with @bones_ceo.\n\n🤖 Altered / Synthetic Media Disclosure:\nSound and visual sequences in this video were generated and edited using AI automation technology.\n#FinBlueprint #Shorts #PersonalFinance #SmallBusiness`;
+      const fullDescription = `${storyboard.description || uploadTitle}\n\nPractical money management and small-business strategies with @bones_ceo.\n\n#FinBlueprint #Shorts #PersonalFinance #SmallBusiness #Wealth #Entrepreneurship`;
 
       const metadata = JSON.stringify({
         snippet: {
@@ -1066,8 +1074,7 @@ async function handleYouTubePublish(storyboard, renderResult) {
         },
         status: {
           privacyStatus: 'public',
-          selfDeclaredMadeForKids: false,
-          containsSyntheticMedia: true // Active YouTube Synthetic / AI Generated metadata flag
+          selfDeclaredMadeForKids: false
         }
       });
 
@@ -1154,9 +1161,116 @@ async function handleYouTubePublish(storyboard, renderResult) {
 }
 
 // ----------------------------------------------------
+// STEP 6.5: UPLOAD RENDERED VIDEO TO CLOUDINARY
+// ----------------------------------------------------
+async function uploadToCloudinary(videoFilePath, publicId) {
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME || '';
+  const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET || '';
+  const apiKey = process.env.CLOUDINARY_API_KEY || '';
+  const apiSecret = process.env.CLOUDINARY_API_SECRET || '';
+  const cloudinaryUrlEnv = process.env.CLOUDINARY_URL || '';
+
+  let effectiveCloudName = cloudName;
+  let effectiveApiKey = apiKey;
+  let effectiveApiSecret = apiSecret;
+
+  if (cloudinaryUrlEnv && cloudinaryUrlEnv.startsWith('cloudinary://')) {
+    try {
+      const parsed = new URL(cloudinaryUrlEnv);
+      effectiveCloudName = parsed.hostname || effectiveCloudName;
+      effectiveApiKey = parsed.username || effectiveApiKey;
+      effectiveApiSecret = parsed.password || effectiveApiSecret;
+    } catch {}
+  }
+
+  if (!videoFilePath || !fs.existsSync(videoFilePath)) {
+    return null;
+  }
+
+  if (!effectiveCloudName) {
+    logInfo('[CLOUDINARY] Cloudinary cloud name not configured. Saving local & YouTube endpoints.');
+    return null;
+  }
+
+  logInfo(`[CLOUDINARY] Uploading rendered video to Cloudinary cloud "${effectiveCloudName}"...`);
+  try {
+    const fileBuffer = fs.readFileSync(videoFilePath);
+    const base64Data = `data:video/mp4;base64,${fileBuffer.toString('base64')}`;
+    const timestamp = Math.floor(Date.now() / 1000);
+
+    let postParams = {};
+    if (uploadPreset) {
+      postParams = {
+        file: base64Data,
+        upload_preset: uploadPreset,
+        folder: 'voxam_shorts',
+        public_id: publicId || `fin_short_${Date.now()}`
+      };
+    } else if (effectiveApiKey && effectiveApiSecret) {
+      const crypto = require('crypto');
+      const paramsToSign = `folder=voxam_shorts&public_id=${publicId || `fin_short_${Date.now()}`}&timestamp=${timestamp}${effectiveApiSecret}`;
+      const signature = crypto.createHash('sha1').update(paramsToSign).digest('hex');
+      postParams = {
+        file: base64Data,
+        api_key: effectiveApiKey,
+        timestamp: timestamp,
+        folder: 'voxam_shorts',
+        public_id: publicId || `fin_short_${Date.now()}`,
+        signature: signature
+      };
+    } else {
+      postParams = {
+        file: base64Data,
+        folder: 'voxam_shorts'
+      };
+    }
+
+    const postData = JSON.stringify(postParams);
+    const result = await new Promise((resolve) => {
+      const req = https.request(`https://api.cloudinary.com/v1_1/${effectiveCloudName}/video/upload`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(postData)
+        },
+        timeout: 180000
+      }, (res) => {
+        let body = '';
+        res.on('data', chunk => body += chunk);
+        res.on('end', () => {
+          try {
+            const parsed = JSON.parse(body);
+            if (res.statusCode >= 200 && res.statusCode < 300 && parsed.secure_url) {
+              resolve({ success: true, url: parsed.secure_url, publicId: parsed.public_id });
+            } else {
+              resolve({ success: false, error: parsed.error?.message || body });
+            }
+          } catch (e) {
+            resolve({ success: false, error: e.message });
+          }
+        });
+      });
+      req.on('error', (e) => resolve({ success: false, error: e.message }));
+      req.write(postData);
+      req.end();
+    });
+
+    if (result.success && result.url) {
+      logSuccess(`[CLOUDINARY] Upload successful! URL: ${result.url}`);
+      return result.url;
+    } else {
+      logWarn(`[CLOUDINARY] Upload response: ${result.error}`);
+    }
+  } catch (err) {
+    logWarn(`[CLOUDINARY] Upload exception: ${err.message}`);
+  }
+  return null;
+}
+
+// ----------------------------------------------------
 // STEP 7: SAVE TO LOCAL MANIFEST & FIRESTORE
 // ----------------------------------------------------
-async function saveToLocalManifest(storyboard, renderResult, uploadRes) {
+async function saveToLocalManifest(storyboard, renderResult, uploadRes, cloudinaryUrl) {
   logStep(7, 'Synchronizing Manifest & Firestore Campaign Vault');
 
   const manifestPath = path.join(process.cwd(), 'daily_blueprint_manifest.json');
@@ -1169,8 +1283,11 @@ async function saveToLocalManifest(storyboard, renderResult, uploadRes) {
 
   const campaignId = `fin_${Date.now()}`;
   const isLive = uploadRes.status === 'PUBLISHED_LIVE';
+  const finalVideoUrl = cloudinaryUrl || uploadRes.videoUrl || renderResult.videoFilePath || '/rendered_videos/fin_blueprint_master_short.mp4';
+  
   const entry = {
     id: campaignId,
+    jobId: `job-fin-${Date.now()}`,
     channelId: CHANNEL_ID,
     channelName: CHANNEL_NAME,
     channelHandle: CHANNEL_HANDLE,
@@ -1185,17 +1302,30 @@ async function saveToLocalManifest(storyboard, renderResult, uploadRes) {
     dryRun: isDryRun,
     youtubeVideoId: uploadRes.videoId || null,
     youtubeUrl: uploadRes.videoUrl || null,
+    cloudinaryUrl: cloudinaryUrl || null,
+    videoUrl: finalVideoUrl,
+    renderedVideoUrl: finalVideoUrl,
     videoPath: renderResult.videoFilePath || null,
     durationSeconds: renderResult.durationSeconds || 65,
     createdAt: new Date().toISOString(),
-    slides: storyboard.slides
+    slides: storyboard.slides,
+    payload: {
+      channelId: NICHE,
+      topic: storyboard.title,
+      youtube: {
+        title: storyboard.title,
+        description: storyboard.description,
+        tags: storyboard.tags,
+        slides: storyboard.slides
+      }
+    }
   };
 
   currentManifest = [entry, ...currentManifest.filter(c => c.id !== campaignId)];
   fs.writeFileSync(manifestPath, JSON.stringify(currentManifest, null, 2));
   logSuccess(`Saved campaign [${campaignId}] to daily_blueprint_manifest.json!`);
 
-  // Sync to Firestore
+  // Sync to Firestore Database (both saved_campaigns and video_vault)
   try {
     let parsedFb = null;
     if (process.env.FIREBASE_CONFIG_JSON) {
@@ -1206,18 +1336,66 @@ async function saveToLocalManifest(storyboard, renderResult, uploadRes) {
     const firestoreDbId = process.env.FIRESTORE_DATABASE_ID || process.env.VITE_FIRESTORE_DATABASE_ID || parsedFb?.databaseId || 'ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e';
 
     if (firestoreApiKey && firestoreProjectId) {
-      const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${firestoreProjectId}/databases/${firestoreDbId}/documents/saved_campaigns/${campaignId}?key=${firestoreApiKey}`;
+      // Build full slide payloads for web UI
+      const firestoreSlides = (storyboard.slides || []).map(s => ({
+        mapValue: {
+          fields: {
+            text: { stringValue: s.text || '' },
+            scriptText: { stringValue: s.scriptText || s.text || '' },
+            voiceoverTts: { stringValue: s.voiceoverTts || s.text || '' },
+            imagePrompt: { stringValue: s.imagePrompt || '' },
+            imageUrl: { stringValue: s.imageUrl || '' },
+            audioUrl: { stringValue: s.audioUrl || '' },
+            durationSeconds: { doubleValue: Number(s.durationSeconds || 10) },
+            effect: { stringValue: s.effect || 'ken-burns' }
+          }
+        }
+      }));
+
       const docFields = {
         id: { stringValue: campaignId },
+        jobId: { stringValue: `job-fin-${Date.now()}` },
         title: { stringValue: storyboard.title },
         niche: { stringValue: NICHE },
+        channelId: { stringValue: CHANNEL_ID },
+        channelHandle: { stringValue: CHANNEL_HANDLE },
         createdAt: { stringValue: new Date().toISOString() },
         status: { stringValue: 'completed' },
         isPosted: { booleanValue: isLive },
+        youtubeVideoId: { stringValue: uploadRes.videoId || '' },
+        youtubeUrl: { stringValue: uploadRes.videoUrl || '' },
+        cloudinaryUrl: { stringValue: cloudinaryUrl || '' },
+        videoUrl: { stringValue: finalVideoUrl },
+        durationSeconds: { integerValue: String(Math.round(renderResult.durationSeconds || 65)) },
         views: { integerValue: isLive ? '1' : '0' },
-        likes: { integerValue: '0' }
+        likes: { integerValue: '0' },
+        payload: {
+          mapValue: {
+            fields: {
+              channelId: { stringValue: NICHE },
+              topic: { stringValue: storyboard.title },
+              youtube: {
+                mapValue: {
+                  fields: {
+                    title: { stringValue: storyboard.title },
+                    description: { stringValue: storyboard.description || '' },
+                    slides: {
+                      arrayValue: {
+                        values: firestoreSlides
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       };
+
       const reqData = JSON.stringify({ fields: docFields });
+
+      // Save to saved_campaigns
+      const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${firestoreProjectId}/databases/${firestoreDbId}/documents/saved_campaigns/${campaignId}?key=${firestoreApiKey}`;
       await new Promise((resolve) => {
         const req = https.request(firestoreUrl, {
           method: 'PATCH',
@@ -1228,9 +1406,25 @@ async function saveToLocalManifest(storyboard, renderResult, uploadRes) {
         req.write(reqData);
         req.end();
       });
-      logSuccess(`[DATABASE: FIRESTORE] Post vaulted to Firestore saved_campaigns collection.`);
+
+      // Also save to video_vault
+      const vaultUrl = `https://firestore.googleapis.com/v1/projects/${firestoreProjectId}/databases/${firestoreDbId}/documents/video_vault/${campaignId}?key=${firestoreApiKey}`;
+      await new Promise((resolve) => {
+        const req = https.request(vaultUrl, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(reqData) },
+          timeout: 8000
+        }, () => resolve());
+        req.on('error', () => resolve());
+        req.write(reqData);
+        req.end();
+      });
+
+      logSuccess(`[DATABASE: FIRESTORE] Post vaulted to Firestore saved_campaigns & video_vault collections with full video stream.`);
     }
-  } catch {}
+  } catch (err) {
+    logInfo(`[DATABASE: FIRESTORE] Sync status: ${err.message}`);
+  }
 }
 
 // ----------------------------------------------------
@@ -1243,7 +1437,11 @@ async function main() {
   const enrichedSlides = await synthesizeEnrichedSlides(storyboard);
   const renderResult = await renderFullFinanceFfmpegVideo(storyboard, enrichedSlides);
   const uploadRes = await handleYouTubePublish(storyboard, renderResult);
-  await saveToLocalManifest(storyboard, renderResult, uploadRes);
+  
+  // Upload to Cloudinary for web video playback
+  const cloudinaryUrl = await uploadToCloudinary(renderResult.videoFilePath, `fin_${Date.now()}`);
+  
+  await saveToLocalManifest(storyboard, renderResult, uploadRes, cloudinaryUrl);
 
   console.log(`\n${colors.bright}${colors.green}══════════════════════════════════════════════════════════════════════${colors.reset}`);
   console.log(`${colors.bright}${colors.green} 🎉 FIN BLUEPRINT PIPELINE EXECUTION COMPLETED! ${colors.reset}`);
@@ -1254,6 +1452,7 @@ async function main() {
   console.log(`  ✓ Duration: ${(renderResult.durationSeconds || 65).toFixed(1)}s (100% Compliant > 60s Short)`);
   console.log(`  ✓ Status: ${uploadRes.status}`);
   if (uploadRes.videoId) console.log(`  ✓ YouTube URL: https://www.youtube.com/shorts/${uploadRes.videoId}`);
+  if (cloudinaryUrl) console.log(`  ✓ Cloudinary Video URL: ${cloudinaryUrl}`);
   console.log(`${colors.green}══════════════════════════════════════════════════════════════════════\n${colors.reset}`);
 }
 

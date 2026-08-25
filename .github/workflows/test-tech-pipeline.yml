@@ -1,8 +1,10 @@
 name: Test Tech AI Pipeline
 
+# PAUSED: Tech AI channel cron schedule is temporarily paused while transitioning to a new niche.
+# on:
+#   schedule:
+#     - cron: '0 16 * * *'
 on:
-  schedule:
-    - cron: '0 16 * * *' # Automated daily run at 16:00 UTC
   workflow_dispatch:
     inputs:
       topic:

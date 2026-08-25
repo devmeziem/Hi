@@ -2,7 +2,7 @@ name: Test Fin Blueprint Pipeline
 
 on:
   schedule:
-    - cron: '0 7,12,17,22 * * *' # Automated 4x daily posts at 07:00, 12:00, 17:00, 22:00 UTC
+    - cron: '0 2,7,12,17,22 * * *' # Automated 5x daily posts: 4x Shorts (07:00, 12:00, 17:00, 22:00 UTC) + 1x Deep Dive (02:00 UTC)
   workflow_dispatch:
     inputs:
       topic:

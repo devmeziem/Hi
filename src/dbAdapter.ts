@@ -266,9 +266,27 @@ export const dbAdapter = {
 
     if (isFirebaseEnabled && db) {
       try {
-        const snap = await getDocs(collection(db, 'saved_campaigns'));
-        if (snap.docs.length > 0) {
-          campaigns = snap.docs.map(d => d.data() as SavedCampaign);
+        const [snapSaved, snapVault] = await Promise.allSettled([
+          getDocs(collection(db, 'saved_campaigns')),
+          getDocs(collection(db, 'video_vault'))
+        ]);
+        
+        const map = new Map<string, SavedCampaign>();
+        if (snapSaved.status === 'fulfilled' && snapSaved.value.docs.length > 0) {
+          for (const d of snapSaved.value.docs) {
+            const data = d.data() as SavedCampaign;
+            map.set(data.id || d.id, { ...data, id: data.id || d.id });
+          }
+        }
+        if (snapVault.status === 'fulfilled' && snapVault.value.docs.length > 0) {
+          for (const d of snapVault.value.docs) {
+            const data = d.data() as SavedCampaign;
+            const existing = map.get(data.id || d.id);
+            map.set(data.id || d.id, { ...existing, ...data, id: data.id || d.id });
+          }
+        }
+        if (map.size > 0) {
+          campaigns = Array.from(map.values());
         }
       } catch (e) {
         console.warn("Firebase getSavedCampaigns fallback to local:", e);
@@ -307,23 +325,23 @@ export const dbAdapter = {
               id: `camp-${j.id}`,
               jobId: j.id,
               title: j.title,
-              niche: (j.channelId as any) || 'motivation_stoicism',
+              niche: (j.channelId as any) || (j.niche as any) || 'motivation_stoicism',
               createdAt: j.createdAt || new Date().toISOString(),
               status: 'completed',
               isPosted: !!j.youtubeUrl,
               youtubeVideoId: j.youtubeVideoId || null,
               youtubeUrl: j.youtubeUrl || null,
-              videoUrl: j.renderedVideoUrl || (j.slides && j.slides[0]?.videoUrl) || '/rendered_videos/stoic_pipeline_short.mp4',
+              videoUrl: j.cloudinaryUrl || j.renderedVideoUrl || (j.slides && j.slides[0]?.videoUrl) || j.videoUrl || null,
               views: j.youtubeUrl ? 1 : 0,
               likes: 0,
               comments: 0,
-              payload: {
-                channelId: j.channelId,
+              payload: j.payload || {
+                channelId: j.channelId || j.niche,
                 topic: j.title,
                 youtube: {
                   title: j.title,
-                  description: j.scriptText,
-                  tags: ['#Shorts', '#Stoicism', '#Discipline', '#MarcusAurelius', '#Mindset'],
+                  description: j.scriptText || j.description,
+                  tags: j.tags || ['#Shorts', '#FinBlueprint', '#Stoicism', '#Discipline', '#Wealth'],
                   slides: j.slides || [
                     {
                       text: j.scriptText || j.title,
