@@ -139,13 +139,15 @@ async function compileVideoMotion() {
                 .trim();
               let synthDone = false;
               try {
+                const isFin = (job.channelId || '').toLowerCase().includes('fin') || (job.niche || '').toLowerCase().includes('fin');
+                const ttsRate = isFin ? '+4%' : '+2%';
                 const { EdgeTTS } = require('node-edge-tts');
                 const tts = new EdgeTTS({
-                  voice: 'en-US-ChristopherNeural',
+                  voice: isFin ? 'en-US-GuyNeural' : 'en-US-ChristopherNeural',
                   lang: 'en-US',
                   outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
                   pitch: '+0Hz',
-                  rate: '+10%'
+                  rate: ttsRate
                 });
                 await tts.ttsPromise(textRaw, slAud);
                 if (fs.existsSync(slAud) && fs.statSync(slAud).size > 1000) synthDone = true;
@@ -175,7 +177,7 @@ async function compileVideoMotion() {
             try {
               const p = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${slAud}"`, { encoding: 'utf8' }).trim();
               const f = parseFloat(p);
-              if (!isNaN(f) && f > 0) dur = Math.max(2.2, f + 0.10);
+              if (!isNaN(f) && f > 0) dur = Math.max(2.4, f + 0.12);
             } catch {}
 
             const totalFrames = Math.round(dur * 30);
@@ -187,7 +189,7 @@ async function compileVideoMotion() {
             const textRaw = sl.text || sl.scriptText || '';
             const rawWords = textRaw.replace(/[\r\n]+/g, ' ').replace(/"/g, '').trim().split(/\s+/).filter(Boolean);
             const chunkLines = [];
-            const CHUNK_SIZE = 3;
+            const CHUNK_SIZE = 2;
             for (let w = 0; w < rawWords.length; w += CHUNK_SIZE) {
               chunkLines.push(rawWords.slice(w, w + CHUNK_SIZE).join(' '));
             }
@@ -195,8 +197,8 @@ async function compileVideoMotion() {
             let topHookFilt = '';
             if (sIdx === 0) {
               const rawTitle = (job.title || 'DAILY STOIC MASTERY').replace(/#\w+/g, '').trim();
-              const cleanTopicHook = sanitizeForFfmpegDrawtext(rawTitle.slice(0, 30));
-              topHookFilt = `,drawtext=text='${cleanTopicHook}':fontsize=32:fontcolor=0xFDE047:box=1:boxcolor=black@0.94:boxborderw=16:borderw=2:bordercolor=0xEAB308:shadowcolor=black@0.9:shadowx=2:shadowy=2:x=(w-text_w)/2:y=160:enable='between(t\\,0\\,4.5)'`;
+              const cleanTopicHook = sanitizeForFfmpegDrawtext(rawTitle.slice(0, 24).toUpperCase());
+              topHookFilt = `,drawtext=text='${cleanTopicHook}':fontsize=30:fontcolor=0xFDE047:borderw=4:bordercolor=black:shadowcolor=black@0.9:shadowx=3:shadowy=3:x=(w-text_w)/2:y=240:fix_bounds=1:enable='between(t\\,0\\,3.5)'`;
             }
 
             let captionFilt = '';
@@ -205,8 +207,10 @@ async function compileVideoMotion() {
               chunkLines.forEach((chunkText, cIdx) => {
                 const startT = (cIdx * chunkDur).toFixed(2);
                 const endT = ((cIdx + 1) * chunkDur).toFixed(2);
-                const cleanChunk = sanitizeForFfmpegDrawtext(chunkText);
-                captionFilt += `,drawtext=text='${cleanChunk}':fontsize=46:fontcolor=white:box=1:boxcolor=black@0.92:boxborderw=22:borderw=3:bordercolor=white@0.35:shadowcolor=black@0.95:shadowx=3:shadowy=3:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t\\,${startT}\\,${endT})'`;
+                const cleanChunk = sanitizeForFfmpegDrawtext(chunkText.toUpperCase());
+                const fontSize = cleanChunk.length > 16 ? 40 : cleanChunk.length > 11 ? 44 : 48;
+                const fontColor = cIdx % 2 === 0 ? 'white' : '0xFDE047';
+                captionFilt += `,drawtext=text='${cleanChunk}':fontsize=${fontSize}:fontcolor=${fontColor}:borderw=4:bordercolor=black:shadowcolor=black@0.9:shadowx=3:shadowy=3:x=(w-text_w)/2:y=1220:fix_bounds=1:enable='between(t\\,${startT}\\,${endT})'`;
               });
             }
 

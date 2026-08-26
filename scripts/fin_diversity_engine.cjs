@@ -213,6 +213,51 @@ const FIN_ARCHETYPES = [
     narrativeArc: 'The allure of instant loan apps -> The hidden math of bi-weekly fees (APR explained) -> Debt spiral danger -> Safe alternative solutions -> CTA',
     visualAesthetic: 'Digital smartphone loan interface warning breakdown, dramatic moody slate lighting with red and gold highlights, 9:16 vertical 8k',
     outroPattern: 'Follow @bones_ceo to protect your credit and make smart borrowing decisions.'
+  },
+  {
+    id: 'fin_qa_why_always_broke',
+    category: FIN_CATEGORIES.SAVING_PERSONAL_FINANCE,
+    theme: 'Why Are You Still Broke Despite Working Hard?',
+    angle: 'Question & Simple Answer: Why Hard Work Alone Does Not Make You Rich & The 3 Rules to Fix It',
+    targetBudget: 'Any Income Level',
+    hookPatterns: [
+      'Why are you still broke even though you work long, exhausting hours every single day?',
+      'Have you ever wondered why working hard at a normal job is not making you wealthy?',
+      'Why does your salary disappear before the next month even begins?'
+    ],
+    narrativeArc: 'Relatable Question -> The Silent Spending Trap -> The Simple 3-Step Money Blueprint (Learn, Save, Multiply) -> Plain-Language Takeaway -> CTA',
+    visualAesthetic: 'Modern realistic scene of a young professional looking at smartphone banking ledger with growing confidence, emerald green ambient rim lighting, 9:16 vertical 8k',
+    outroPattern: 'Follow @bones_ceo to learn how to keep and grow your money in simple English.'
+  },
+  {
+    id: 'fin_qa_phone_skills_zero_cash',
+    category: FIN_CATEGORIES.SKILLS_TO_INCOME,
+    theme: 'Can You Make Money With Just Your Phone and Zero Cash?',
+    angle: 'Question & Simple Answer: 3 Real Phone Skills You Can Learn in 7 Days for Free',
+    targetBudget: '$0 (Phone & Internet Only)',
+    hookPatterns: [
+      'Can you actually make honest money with just your smartphone and zero starting cash?',
+      'If you have zero capital but you have a phone with internet, what can you start today?',
+      'How can a student or beginner earn their first dollar online using only their mobile phone?'
+    ],
+    narrativeArc: 'Direct Question -> 3 Verified Phone Skills (CapCut editing, social media copywriting, flyer design) -> Free YouTube training roadmap -> Safe client outreach -> CTA',
+    visualAesthetic: 'Crisp cinematic shot of hands editing vertical video clips smoothly on a modern smartphone, warm gold studio bokeh, 9:16 vertical 8k',
+    outroPattern: 'Follow @bones_ceo for realistic phone-only income blueprints and daily money tips.'
+  },
+  {
+    id: 'fin_qa_why_money_loses_value',
+    category: FIN_CATEGORIES.FINANCIAL_EDUCATION,
+    theme: 'Why Does Saved Cash Buy Less Food Every Year?',
+    angle: 'Question & Simple Answer: What Inflation Means in Plain Words & How to Protect Your Savings',
+    targetBudget: '₦10,000+ ($7+ USD)',
+    hookPatterns: [
+      'Why does ₦10,000 or $10 buy fewer groceries today than it did last year?',
+      'Why is leaving all your money sitting in a normal bank account quietly losing you cash?',
+      'What is inflation, and why does the price of rice, bread, and fuel keep going up?'
+    ],
+    narrativeArc: 'Everyday Question -> Simple Grocery Basket Math -> The Definition of Inflation in Plain English -> 2 Easy Protection Steps (Commodities, Digital Dollars) -> CTA',
+    visualAesthetic: 'Clean comparative infographic of everyday grocery baskets over time, sleek high-contrast financial display, 9:16 vertical 8k',
+    outroPattern: 'Follow @bones_ceo to understand money and protect your hard-earned savings.'
   }
 ];
 

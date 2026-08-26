@@ -297,6 +297,19 @@ function prepareTextForSpeech(rawText) {
   return clean;
 }
 
+// Helper to trim trailing and leading silence from synthesized audio files
+function trimAudioSilence(filePath) {
+  if (!fs.existsSync(filePath)) return;
+  try {
+    const tempTrim = filePath.replace(/\.mp3$/, '_trim.mp3');
+    // Strip silence below -40dB with 80ms stop duration
+    execSync(`ffmpeg -y -i "${filePath}" -af "silenceremove=stop_periods=-1:stop_duration=0.08:stop_threshold=-40dB,silenceremove=start_periods=1:start_duration=0.02:start_threshold=-40dB" -b:a 192k "${tempTrim}" 2>/dev/null`);
+    if (fs.existsSync(tempTrim) && fs.statSync(tempTrim).size > 500) {
+      fs.renameSync(tempTrim, filePath);
+    }
+  } catch {}
+}
+
 function validateStoicStoryboard(storyboard) {
   if (!storyboard || !Array.isArray(storyboard.slides) || storyboard.slides.length < 3) return false;
   
@@ -1443,19 +1456,6 @@ async function generateMediaAssets(storyboard) {
     return null;
   }
 
-  // Helper to trim trailing and leading silence from synthesized audio files
-  function trimAudioSilence(filePath) {
-    if (!fs.existsSync(filePath)) return;
-    try {
-      const tempTrim = filePath.replace(/\.mp3$/, '_trim.mp3');
-      // Strip silence below -40dB with 80ms stop duration
-      execSync(`ffmpeg -y -i "${filePath}" -af "silenceremove=stop_periods=-1:stop_duration=0.08:stop_threshold=-40dB,silenceremove=start_periods=1:start_duration=0.02:start_threshold=-40dB" -b:a 192k "${tempTrim}" 2>/dev/null`);
-      if (fs.existsSync(tempTrim) && fs.statSync(tempTrim).size > 500) {
-        fs.renameSync(tempTrim, filePath);
-      }
-    } catch {}
-  }
-
   // 1. Primary Engine: Microsoft Edge TTS Studio-Grade Deep Stoic Voice (Christopher / Guy / Eric / Ryan)
   async function generateEdgeBassTTS(text) {
     try {
@@ -1477,7 +1477,7 @@ async function generateMediaAssets(storyboard) {
             lang: 'en-US',
             outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
             pitch: '+0Hz',
-            rate: '+10%' // Snappy, engaging Shorts pacing - eliminates awkward sentence lag
+            rate: '+2%' // Natural, deeply understandable Stoic mentor cadence
           });
 
           await tts.ttsPromise(cleanText, tempAudio);
@@ -1520,8 +1520,8 @@ async function generateMediaAssets(storyboard) {
         
         fs.writeFileSync(tempRaw, rawBuf);
 
-        // FFmpeg DSP: Pitch lower (-1.5 semitones), bass boost at 120Hz (+4.5dB), tempo +1.08x, crisp presence clarity
-        const dspCmd = `ffmpeg -y -i "${tempRaw}" -filter_complex "asetrate=24000*0.94,aresample=24000,atempo=1.12,equalizer=f=120:t=q:w=1.5:g=4.5,equalizer=f=3500:t=q:w=2.0:g=2.5,silenceremove=stop_periods=-1:stop_duration=0.08:stop_threshold=-40dB" -b:a 192k "${tempDeep}"`;
+        // FFmpeg DSP: Pitch lower (-1.5 semitones), bass boost at 120Hz (+4.5dB), tempo +1.02x, crisp presence clarity
+        const dspCmd = `ffmpeg -y -i "${tempRaw}" -filter_complex "asetrate=24000*0.96,aresample=24000,atempo=1.02,equalizer=f=120:t=q:w=1.5:g=4.5,equalizer=f=3500:t=q:w=2.0:g=2.5,silenceremove=stop_periods=-1:stop_duration=0.08:stop_threshold=-40dB" -b:a 192k "${tempDeep}"`;
         execSync(dspCmd, { stdio: 'pipe' });
 
         if (fs.existsSync(tempDeep)) {
@@ -1888,12 +1888,12 @@ async function renderFfmpegVideo(storyboard, enrichedSlides) {
       const chunkDur = spokenDur / Math.max(chunkLines.length, 1);
       let captionFilter = '';
 
-      // Pinned Topic Hook at Top of Video for first 3.5 seconds (Slide 1) - Safe 1080p mobile viewport (y=220)
+      // Pinned Topic Hook at Top of Video for first 3.5 seconds (Slide 1) - Safe 1080p mobile viewport (y=240)
       let topHookFilter = '';
       if (i === 0) {
         const rawTitle = (storyboard.title || storyboard.theme || 'DAILY STOIC MASTERY').replace(/#\w+/g, '').trim();
-        const cleanTopicHook = sanitizeForFfmpegDrawtext(rawTitle.slice(0, 30).toUpperCase());
-        topHookFilter = `,drawtext=text='${cleanTopicHook}':fontsize=34:fontcolor=0xFDE047:borderw=5:bordercolor=black:shadowcolor=black@0.9:shadowx=3:shadowy=3:x=(w-text_w)/2:y=220:fix_bounds=1:enable='between(t\\,0\\,3.5)'`;
+        const cleanTopicHook = sanitizeForFfmpegDrawtext(rawTitle.slice(0, 24).toUpperCase());
+        topHookFilter = `,drawtext=text='${cleanTopicHook}':fontsize=30:fontcolor=0xFDE047:borderw=4:bordercolor=black:shadowcolor=black@0.9:shadowx=3:shadowy=3:x=(w-text_w)/2:y=240:fix_bounds=1:enable='between(t\\,0\\,3.5)'`;
       }
 
       chunkLines.forEach((chunkText, cIdx) => {
@@ -1902,9 +1902,9 @@ async function renderFfmpegVideo(storyboard, enrichedSlides) {
         const endT = (cIdx === chunkLines.length - 1 ? slideDur : (cIdx + 1) * chunkDur).toFixed(2);
         const cleanChunk = sanitizeForFfmpegDrawtext(chunkText.toUpperCase());
         // Dynamic adaptive font size: downscale for longer text so captions never go off screen
-        const fontSize = cleanChunk.length > 20 ? 44 : cleanChunk.length > 14 ? 50 : 56;
+        const fontSize = cleanChunk.length > 16 ? 40 : cleanChunk.length > 11 ? 44 : 48;
         const fontColor = cIdx % 2 === 0 ? '0xFFFFFF' : '0xFDE047'; // Alternating platinum white and gold
-        captionFilter += `,drawtext=text='${cleanChunk}':fontsize=${fontSize}:fontcolor=${fontColor}:borderw=5:bordercolor=black:shadowcolor=black@0.85:shadowx=3:shadowy=3:x=(w-text_w)/2:y=1220:fix_bounds=1:enable='between(t\\,${startT}\\,${endT})'`;
+        captionFilter += `,drawtext=text='${cleanChunk}':fontsize=${fontSize}:fontcolor=${fontColor}:borderw=4:bordercolor=black:shadowcolor=black@0.85:shadowx=3:shadowy=3:x=(w-text_w)/2:y=1220:fix_bounds=1:enable='between(t\\,${startT}\\,${endT})'`;
       });
 
       // Rapid, engaging Ken Burns zoom & pan motion (responsive speed)

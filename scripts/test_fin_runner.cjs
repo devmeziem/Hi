@@ -901,7 +901,7 @@ async function synthesizeEnrichedSlides(storyboard) {
             lang: 'en-US',
             outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
             pitch: '+0Hz',
-            rate: '+10%' // Snappy, engaging Shorts pacing - eliminates awkward sentence lag
+            rate: '+4%' // Clear, conversational, highly engaging finance educator pacing
           });
 
           await tts.ttsPromise(cleanText, tempAudio);
@@ -947,7 +947,7 @@ async function synthesizeEnrichedSlides(storyboard) {
       });
 
       if (ok && fs.existsSync(tempRaw) && fs.statSync(tempRaw).size > 800) {
-        execSync(`ffmpeg -y -i "${tempRaw}" -filter_complex "atempo=1.12,equalizer=f=120:t=q:w=1.5:g=4.0,equalizer=f=3500:t=q:w=2.0:g=2.0,silenceremove=stop_periods=-1:stop_duration=0.08:stop_threshold=-40dB" -b:a 192k "${tempProcessed}" 2>/dev/null`);
+        execSync(`ffmpeg -y -i "${tempRaw}" -filter_complex "atempo=1.04,equalizer=f=120:t=q:w=1.5:g=4.0,equalizer=f=3500:t=q:w=2.0:g=2.0,silenceremove=stop_periods=-1:stop_duration=0.08:stop_threshold=-40dB" -b:a 192k "${tempProcessed}" 2>/dev/null`);
         try { fs.unlinkSync(tempRaw); } catch {}
         if (fs.existsSync(tempProcessed)) {
           const buf = fs.readFileSync(tempProcessed);
@@ -1123,12 +1123,12 @@ async function renderFullFinanceFfmpegVideo(storyboard, enrichedSlides) {
       const chunkDur = spokenDur / Math.max(chunkLines.length, 1);
       let captionFilter = '';
 
-      // Slide 1 Pinned Hook Banner at top (Mobile Shorts safe zone y=220)
+      // Slide 1 Pinned Hook Banner at top (Mobile Shorts safe zone y=240)
       let topHookFilter = '';
       if (i === 0) {
         const rawTitle = (storyboard.title || storyboard.theme || 'FINANCIAL MASTERY').replace(/#\w+/g, '').trim();
-        const cleanHook = sanitizeForFfmpegDrawtext(rawTitle.slice(0, 30).toUpperCase());
-        topHookFilter = `,drawtext=text='${cleanHook}':fontsize=34:fontcolor=0xFFEA00:borderw=5:bordercolor=black:shadowcolor=black@0.9:shadowx=3:shadowy=3:x=(w-text_w)/2:y=220:fix_bounds=1:enable='between(t\\,0\\,3.5)'`;
+        const cleanHook = sanitizeForFfmpegDrawtext(rawTitle.slice(0, 24).toUpperCase());
+        topHookFilter = `,drawtext=text='${cleanHook}':fontsize=30:fontcolor=0xFFEA00:borderw=4:bordercolor=black:shadowcolor=black@0.9:shadowx=3:shadowy=3:x=(w-text_w)/2:y=240:fix_bounds=1:enable='between(t\\,0\\,3.5)'`;
       }
 
       chunkLines.forEach((chunkText, cIdx) => {
@@ -1137,10 +1137,10 @@ async function renderFullFinanceFfmpegVideo(storyboard, enrichedSlides) {
         const endT = (cIdx === chunkLines.length - 1 ? slideDur : (cIdx + 1) * chunkDur).toFixed(2);
         const cleanChunk = sanitizeForFfmpegDrawtext(chunkText.toUpperCase());
         // Dynamic adaptive font size: downscales for longer text so captions never go off screen
-        const fontSize = cleanChunk.length > 20 ? 44 : cleanChunk.length > 14 ? 50 : 56;
+        const fontSize = cleanChunk.length > 16 ? 40 : cleanChunk.length > 11 ? 44 : 48;
         const fontColor = cIdx % 2 === 0 ? '0xFFEA00' : '0xFFFFFF'; // Alternating canary yellow & white
         // Safe position with fix_bounds=1 and y=1220
-        captionFilter += `,drawtext=text='${cleanChunk}':fontsize=${fontSize}:fontcolor=${fontColor}:borderw=5:bordercolor=black:shadowcolor=black@0.85:shadowx=3:shadowy=3:x=(w-text_w)/2:y=1220:fix_bounds=1:enable='between(t\\,${startT}\\,${endT})'`;
+        captionFilter += `,drawtext=text='${cleanChunk}':fontsize=${fontSize}:fontcolor=${fontColor}:borderw=4:bordercolor=black:shadowcolor=black@0.85:shadowx=3:shadowy=3:x=(w-text_w)/2:y=1220:fix_bounds=1:enable='between(t\\,${startT}\\,${endT})'`;
       });
 
       // ----------------------------------------------------
@@ -1496,7 +1496,6 @@ async function uploadToCloudinary(videoFilePath, publicId) {
     logWarning(`[CLOUDINARY] Upload exception: ${err.message}`);
   }
   return null;
-}
 }
 
 // ----------------------------------------------------

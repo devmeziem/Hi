@@ -364,12 +364,20 @@ async function serverGenerateEdgeTTS(text: string, voice = 'en-US-ChristopherNeu
       voice: voice,
       lang: 'en-US',
       outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
-      pitch: '-5Hz',
-      rate: '+5%'
+      pitch: '+0Hz',
+      rate: voice.includes('Guy') ? '+4%' : '+2%'
     });
     const tempAudioPath = path.join(process.cwd(), `temp_tts_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.mp3`);
     await edge.ttsPromise(text, tempAudioPath);
     if (fs.existsSync(tempAudioPath)) {
+      try {
+        const tempTrim = tempAudioPath.replace(/\.mp3$/, '_trim.mp3');
+        const { execSync } = await import('child_process');
+        execSync(`ffmpeg -y -i "${tempAudioPath}" -af "silenceremove=stop_periods=-1:stop_duration=0.08:stop_threshold=-40dB,silenceremove=start_periods=1:start_duration=0.02:start_threshold=-40dB" -b:a 192k "${tempTrim}" 2>/dev/null`);
+        if (fs.existsSync(tempTrim) && fs.statSync(tempTrim).size > 500) {
+          fs.renameSync(tempTrim, tempAudioPath);
+        }
+      } catch {}
       const buffer = fs.readFileSync(tempAudioPath);
       try { fs.unlinkSync(tempAudioPath); } catch {}
       return {

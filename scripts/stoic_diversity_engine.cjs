@@ -326,6 +326,81 @@ const STOIC_ARCHETYPES = [
     modernScenario: "Locking into 2 hours of uninterrupted deep work with phone on airplane mode, outproducing an entire distracted department.",
     visualStyle: 'Laser beam cutting with micron precision through dark obsidian glass, atmospheric smoke and blue rim light, 9:16 vertical 8k',
     outroPattern: "Own your focus, own your life. Follow this channel for mental clarity."
+  },
+  {
+    lessonId: 'qa_mental_exhaustion',
+    theme: 'Why Are You Always Mentally Exhausted?',
+    angle: 'Question & Simple Answer: Why You Feel Tired Without Physical Work & 3 Easy Steps to Fix It',
+    philosophicalPrinciple: 'Mental conservation — unnecessary cognitive friction and rumination deplete energy faster than physical labor.',
+    narrativeStructure: 'Burning Question -> Surprising Plain Reason -> 3 Simple Daily Steps -> Clear Takeaway',
+    hookPatterns: [
+      "Why do you feel completely drained even when you did not do heavy physical work today?",
+      "Have you ever wondered why your brain feels exhausted by 2 PM? Here is the simple reason.",
+      "Why does doing nothing all day sometimes make you feel more tired than working hard?"
+    ],
+    modernScenario: "Feeling overwhelmed by mental fatigue from phone notifications and racing thoughts, resetting energy with 3 simple habits.",
+    visualStyle: 'Calm reflective figure placing smartphone facedown on clean wooden desk beside an open notebook in soft morning window light, 9:16 vertical 8k',
+    outroPattern: "Protect your mental energy. Follow this channel for daily clarity."
+  },
+  {
+    lessonId: 'qa_silence_rude_people',
+    theme: 'Why Does Silence Defeat Rude People?',
+    angle: 'Question & Simple Answer: Why Quiet Silence Destroys Disrespect Faster Than Shouting',
+    philosophicalPrinciple: 'Sovereign stillness — refusing to feed another person\'s anger leaves their malice stranded in public embarrassment.',
+    narrativeStructure: 'Relatable Question -> The Psychology of Disrespect -> The Power of Calm Silence -> The Sovereign Takeaway',
+    hookPatterns: [
+      "Why does keeping quiet hurt a rude person far more than shouting back at them?",
+      "When someone insults you in public, why is complete silence your most dangerous weapon?",
+      "Ever notice why calm people always win arguments against angry people?"
+    ],
+    modernScenario: "Facing an aggressive remark from a coworker or stranger and responding with calm, unbothered stillness that disarms the room.",
+    visualStyle: 'Unshakable composed individual with calm steady gaze in an atmospheric boardroom with moody warm side lighting, 9:16 vertical 8k',
+    outroPattern: "Master your reaction, own your peace. Follow this channel for mental strength."
+  },
+  {
+    lessonId: 'qa_stop_caring_opinions',
+    theme: 'How to Stop Caring What People Think?',
+    angle: 'Question & Simple Answer: The 10-Second Truth That Frees You From Other People\'s Opinions',
+    philosophicalPrinciple: 'Freedom from social validation — recognizing that other people\'s judgments are fleeting and irrelevant to your real worth.',
+    narrativeStructure: 'Core Question -> The 10-Second Truth -> Everyday Low-Language Reality Check -> Inner Freedom Protocol',
+    hookPatterns: [
+      "How do you stop caring what people say about you behind your back?",
+      "Why do we spend so much time worrying about the opinions of people we do not even respect?",
+      "Want to know how to stop feeling embarrassed in front of strangers in 10 seconds?"
+    ],
+    modernScenario: "Overcoming social anxiety and self-consciousness when starting a new venture or speaking in public.",
+    visualStyle: 'Confident figure walking calmly through a blurred busy modern street at golden hour, sharp depth of field, 9:16 vertical 8k',
+    outroPattern: "Live for your character, not their applause. Follow this channel for daily fortitude."
+  },
+  {
+    lessonId: 'qa_why_we_overthink',
+    theme: 'Why Do You Overthink Everything at Night?',
+    angle: 'Question & Simple Answer: Why Your Brain Invents Fake Problems & The Simple Fix',
+    philosophicalPrinciple: 'Grounding in present reality — replacing catastrophic imagination with tangible physical action.',
+    narrativeStructure: 'Late-Night Question -> The Brain Alarm Trap -> The 2-Minute Physical Reset -> Mental Calm',
+    hookPatterns: [
+      "Why do you stay awake at night worrying about things that never actually happen?",
+      "Why does your brain make small problems look ten times bigger right before you fall asleep?",
+      "How can you turn off racing thoughts when you are trying to sleep?"
+    ],
+    modernScenario: "Lying awake staring at the ceiling catastrophizing tomorrow, using a simple 2-minute paper dump to sleep peacefully.",
+    visualStyle: 'Dark moody minimalist bedroom with warm bedside lamp, hand closing a notebook in peaceful relief, 9:16 vertical 8k',
+    outroPattern: "Silence the noise and master your mind. Follow this channel for mental strength."
+  },
+  {
+    lessonId: 'qa_start_small_habits',
+    theme: 'Why Do You Quit Good Habits So Fast?',
+    angle: 'Question & Simple Answer: The 2-Minute Habit Rule That Beats Laziness Every Single Day',
+    philosophicalPrinciple: 'Micro-consistency over macro-delusion — small daily actions compound into unshakeable life transformations.',
+    narrativeStructure: 'Relatable Question -> The Motivation Myth -> The 2-Minute Rule in Simple English -> Unstoppable Growth',
+    hookPatterns: [
+      "Why do you start new habits with huge excitement and quit just 3 days later?",
+      "Why is it so hard to stay consistent with exercise or reading, and how do you fix it today?",
+      "How can doing just 2 minutes of work a day change your entire life?"
+    ],
+    modernScenario: "Breaking out of the cycle of starting and quitting fitness or study routines by using ultra-simple 2-minute daily minimums.",
+    visualStyle: 'Clean modern desk with single hourglass sand timer, focused morning sunlight, pristine minimalist atmosphere, 9:16 vertical 8k',
+    outroPattern: "Start small, never quit. Follow this channel for daily self-mastery."
   }
 ];
 
@@ -677,22 +752,23 @@ function buildStoicPromptForSlot(slotArchetype, recentHistory, slotIndex = 0, ch
   const resolvedOutro = resolveOutroPattern(slotArchetype.outroPattern, cleanHandle);
 
   const systemPrompt = `You are a master scriptwriter and YouTube Shorts director for the Modern Stoicism & Mental Strength channel (${cleanHandle}).
-CHANNEL GOAL: Explain modern stoicism and mental resilience in simple, direct, engaging, and spoken-conversational language.
-AUDIENCE: Everyday ambitious people dealing with stress, difficult people, self-doubt, burnout, and distraction.
+CHANNEL GOAL: Explain modern stoicism, daily discipline, and mental resilience in ultra-simple, low-level, engaging, and spoken-conversational English.
+AUDIENCE: Everyday normal people dealing with stress, difficult people, self-doubt, burnout, and daily distractions.
 
 STRICT SCRIPTWRITING & NARRATION RULES:
-1. CRYSTAL CLEAR EXPLANATIONS (NO JARGON OR ABSTRACT POETRY):
-   - The narration must sound like a wise mentor speaking directly to the listener in plain English.
+1. SIMPLE, LOW-LANGUAGE EXPLANATIONS (5TH TO 7TH GRADE LEVEL):
+   - Narration must sound like a wise, friendly mentor speaking directly to the listener in plain, simple English.
+   - When appropriate, frame the post around a burning daily life question and answer it step-by-step.
    - Explain the core topic directly. Do not wander off topic.
-   - Use clear subject-verb sentences that flow smoothly when read aloud by text-to-speech.
-   - Avoid fragmented or confusing sentence splices. Every slide MUST be 1-2 complete, punchy spoken sentences (12-18 words per slide).
+   - Use simple words, short sentences, and real-life examples. NO complex philosophy jargon, Latin phrases, or pretentious vocabulary.
+   - Every slide MUST be 1-2 complete, punchy spoken sentences (12-18 words per slide) that flow naturally in text-to-speech.
 
 2. 6-SLIDE NARRATIVE COHESION (THE 6-STEP ARC):
-   - Slide 0 (Direct Hook): Immediately state the exact problem or situation in clear terms that grab attention.
-   - Slide 1 (The Trap): Explain why reacting or failing here hurts the viewer, making them feel the friction.
-   - Slide 2 (The Mental Shift): Give the simple principle (e.g., control what you can, let go of what you cannot).
-   - Slide 3 (The Action Rule): Give one concrete, practical action they can take today in their real life.
-   - Slide 4 (The Psychological Victory): Explain the empowering outcome when they master this rule.
+   - Slide 0 (Question / Hook): Ask a burning relatable question or state an eye-opening daily situation.
+   - Slide 1 (The Root Cause): Explain the simple reason why this happens in everyday life.
+   - Slide 2 (The Simple Answer / Mindset Shift): Give the clear, straightforward answer in plain words.
+   - Slide 3 (The Practical Action): Give one simple, concrete action they can take today with zero friction.
+   - Slide 4 (The Big Benefit): Explain the empowering peace and confidence they get when they apply this.
    - Slide 5 (Closing & Outro): A final one-line reminder + "${resolvedOutro}".
 
 3. UNIFIED VISUAL IDENTITY (9:16 Vertical 8k Cinematic):
