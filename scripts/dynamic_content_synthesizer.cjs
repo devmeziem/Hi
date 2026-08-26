@@ -113,61 +113,271 @@ function isDuplicateTopic(channelId, candidateText) {
 }
 
 /**
+ * Helper to safely extract and clean JSON from any LLM response, stripping thoughts/plans
+ */
+function cleanAndParseLlmJson(rawText) {
+  if (!rawText || typeof rawText !== 'string') return null;
+  let cleaned = rawText
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .replace(/<think>[\s\S]*/gi, '')
+    .replace(/```json/gi, '')
+    .replace(/```/gi, '')
+    .trim();
+
+  const start = cleaned.indexOf('{');
+  const end = cleaned.lastIndexOf('}');
+  if (start !== -1 && end !== -1 && end > start) {
+    cleaned = cleaned.substring(start, end + 1);
+  }
+
+  try {
+    const parsed = JSON.parse(cleaned);
+    if (!parsed || !Array.isArray(parsed.slides) || parsed.slides.length < 3) return null;
+
+    // Validate that slides contain real narration, NOT plan/debug/logs
+    const isPlanOrLog = parsed.slides.some(s => {
+      const txt = (s.text || '').toLowerCase();
+      return txt.includes('step 1:') || txt.includes('phase 1:') || txt.includes('plan:') ||
+             txt.includes('logs:') || txt.includes('execution plan') || txt.includes('diagnostic:') ||
+             txt.startsWith('slide ') || txt.includes('todo:');
+    });
+
+    if (isPlanOrLog) {
+      console.warn('[AI Synthesizer] Rejected payload containing internal planning or diagnostic log text.');
+      return null;
+    }
+
+    // Clean slide text for natural speech
+    parsed.slides.forEach(s => {
+      if (s.text) {
+        s.text = s.text
+          .replace(/^(slide\s*\d+[:\-.]?|narration[:\-.]?|host[:\-.]?|voiceover[:\-.]?)\s*/i, '')
+          .replace(/[\r\n\t]+/g, ' ')
+          .replace(/['"\\`]/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
+    });
+
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Multi-Provider AI Caller for dynamic script generation
+ * Cascade: Groq LPU -> Gemini Flash -> Pollinations Free AI -> Cloudflare AI -> xAI Grok -> DeepSeek -> OpenAI
  */
 async function callLlmForScript(channelId, promptPayload) {
   // 1. Try Groq (Ultra-Fast LPU)
   if (GROQ_API_KEY) {
+    const groqModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'];
+    for (const gModel of groqModels) {
+      try {
+        console.log(`[AI Synthesizer] Querying Groq LPU (${gModel})...`);
+        const postData = JSON.stringify({
+          model: gModel,
+          messages: [
+            { role: 'system', content: promptPayload.systemPrompt },
+            { role: 'user', content: promptPayload.userPrompt }
+          ],
+          temperature: 0.8,
+          max_tokens: 1800,
+          response_format: { type: 'json_object' }
+        });
+
+        const res = await new Promise((resolve) => {
+          const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${GROQ_API_KEY}`,
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 12000
+          }, (resp) => {
+            let data = '';
+            resp.on('data', c => data += c);
+            resp.on('end', () => {
+              if (resp.statusCode === 200) {
+                try {
+                  const j = JSON.parse(data);
+                  resolve(j.choices[0]?.message?.content);
+                } catch { resolve(null); }
+              } else { resolve(null); }
+            });
+          });
+          req.on('error', () => resolve(null));
+          req.on('timeout', () => { req.destroy(); resolve(null); });
+          req.write(postData);
+          req.end();
+        });
+
+        const parsed = cleanAndParseLlmJson(res);
+        if (parsed) {
+          console.log(`[AI Synthesizer] ✅ Groq (${gModel}) generated fresh storyboard!`);
+          return parsed;
+        }
+      } catch (e) {
+        console.warn(`[AI Synthesizer] Groq (${gModel}) notice:`, e.message);
+      }
+    }
+  }
+
+  // 2. Try Google Gemini Flash
+  if (GEMINI_API_KEY) {
+    const geminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash'];
+    for (const gModel of geminiModels) {
+      try {
+        console.log(`[AI Synthesizer] Querying Google Gemini (${gModel})...`);
+        const postData = JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `${promptPayload.systemPrompt}\n\nTask: ${promptPayload.userPrompt}\nReturn STRICT valid JSON without markdown.`
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.8,
+            maxOutputTokens: 2000,
+            responseMimeType: "application/json"
+          }
+        });
+
+        const res = await new Promise((resolve) => {
+          const req = https.request(`https://generativelanguage.googleapis.com/v1beta/models/${gModel}:generateContent?key=${GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) },
+            timeout: 14000
+          }, (resp) => {
+            let data = '';
+            resp.on('data', c => data += c);
+            resp.on('end', () => {
+              try {
+                const j = JSON.parse(data);
+                resolve(j.candidates?.[0]?.content?.parts?.[0]?.text);
+              } catch { resolve(null); }
+            });
+          });
+          req.on('error', () => resolve(null));
+          req.on('timeout', () => { req.destroy(); resolve(null); });
+          req.write(postData);
+          req.end();
+        });
+
+        const parsed = cleanAndParseLlmJson(res);
+        if (parsed) {
+          console.log(`[AI Synthesizer] ✅ Google Gemini (${gModel}) generated fresh storyboard!`);
+          return parsed;
+        }
+      } catch (e) {
+        console.warn(`[AI Synthesizer] Gemini (${gModel}) notice:`, e.message);
+      }
+    }
+  }
+
+  // 3. Try Pollinations.ai Free Text API (100% Free, NO API Key Required)
+  const pollModels = ['openai', 'mistral', 'qwen-coder', 'llama'];
+  for (const pModel of pollModels) {
     try {
-      console.log('[AI Synthesizer] Querying Groq LPU (llama-3.3-70b-versatile)...');
+      console.log(`[AI Synthesizer] Querying Pollinations Free AI (${pModel})...`);
       const postData = JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
         messages: [
           { role: 'system', content: promptPayload.systemPrompt },
-          { role: 'user', content: promptPayload.userPrompt }
+          { role: 'user', content: `${promptPayload.userPrompt} Return strictly raw JSON.` }
         ],
-        temperature: 0.85, // Higher entropy for fresh angles
-        max_tokens: 1500,
-        response_format: { type: 'json_object' }
+        model: pModel,
+        jsonMode: true
       });
 
       const res = await new Promise((resolve) => {
-        const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
+        const req = https.request('https://text.pollinations.ai/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${GROQ_API_KEY}`,
             'Content-Length': Buffer.byteLength(postData)
           },
-          timeout: 12000
+          timeout: 16000
         }, (resp) => {
           let data = '';
           resp.on('data', c => data += c);
           resp.on('end', () => {
-            if (resp.statusCode === 200) {
-              try {
-                const j = JSON.parse(data);
-                const content = j.choices[0]?.message?.content;
-                resolve(JSON.parse(content));
-              } catch { resolve(null); }
+            if (resp.statusCode >= 200 && resp.statusCode < 300) {
+              resolve(data);
             } else { resolve(null); }
           });
         });
         req.on('error', () => resolve(null));
+        req.on('timeout', () => { req.destroy(); resolve(null); });
         req.write(postData);
         req.end();
       });
 
-      if (res && res.slides && res.slides.length >= 5) {
-        console.log('[AI Synthesizer] ✅ Groq successfully generated novel storyboard!');
-        return res;
+      const parsed = cleanAndParseLlmJson(res);
+      if (parsed) {
+        console.log(`[AI Synthesizer] ✅ Pollinations AI (${pModel}) generated fresh storyboard!`);
+        return parsed;
       }
     } catch (e) {
-      console.warn('[AI Synthesizer] Groq query error:', e.message);
+      console.warn(`[AI Synthesizer] Pollinations (${pModel}) notice:`, e.message);
     }
   }
 
-  // 2. Try xAI Grok
+  // 4. Try Cloudflare Workers AI
+  if (CLOUDFLARE_ACCOUNT_ID && CLOUDFLARE_API_TOKEN) {
+    const cfModels = [
+      '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+      '@cf/meta/llama-3.2-3b-instruct',
+      '@cf/meta/llama-3.1-8b-instruct'
+    ];
+    for (const cfModel of cfModels) {
+      try {
+        console.log(`[AI Synthesizer] Querying Cloudflare Workers AI (${cfModel})...`);
+        const postData = JSON.stringify({
+          messages: [
+            { role: 'system', content: promptPayload.systemPrompt },
+            { role: 'user', content: promptPayload.userPrompt }
+          ],
+          temperature: 0.8
+        });
+
+        const res = await new Promise((resolve) => {
+          const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${cfModel}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 15000
+          }, (resp) => {
+            let data = '';
+            resp.on('data', c => data += c);
+            resp.on('end', () => {
+              if (resp.statusCode === 200) {
+                try {
+                  const j = JSON.parse(data);
+                  resolve(j.result?.response || j.response);
+                } catch { resolve(null); }
+              } else { resolve(null); }
+            });
+          });
+          req.on('error', () => resolve(null));
+          req.on('timeout', () => { req.destroy(); resolve(null); });
+          req.write(postData);
+          req.end();
+        });
+
+        const parsed = cleanAndParseLlmJson(res);
+        if (parsed) {
+          console.log(`[AI Synthesizer] ✅ Cloudflare AI (${cfModel}) generated fresh storyboard!`);
+          return parsed;
+        }
+      } catch {}
+    }
+  }
+
+  // 5. Try xAI Grok
   if (XAI_API_KEYS.length > 0) {
     for (const key of XAI_API_KEYS) {
       try {
@@ -198,69 +408,68 @@ async function callLlmForScript(channelId, promptPayload) {
               if (resp.statusCode === 200) {
                 try {
                   const j = JSON.parse(data);
-                  const content = j.choices[0]?.message?.content;
-                  const clean = content.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim();
-                  resolve(JSON.parse(clean));
+                  resolve(j.choices[0]?.message?.content);
                 } catch { resolve(null); }
               } else { resolve(null); }
             });
           });
           req.on('error', () => resolve(null));
+          req.on('timeout', () => { req.destroy(); resolve(null); });
           req.write(postData);
           req.end();
         });
 
-        if (res && res.slides && res.slides.length >= 5) {
-          console.log('[AI Synthesizer] ✅ Grok successfully generated novel storyboard!');
-          return res;
+        const parsed = cleanAndParseLlmJson(res);
+        if (parsed) {
+          console.log('[AI Synthesizer] ✅ Grok successfully generated fresh storyboard!');
+          return parsed;
         }
       } catch {}
     }
   }
 
-  // 3. Try Cloudflare Workers AI
-  if (CLOUDFLARE_ACCOUNT_ID && CLOUDFLARE_API_TOKEN) {
+  // 6. Try DeepSeek / OpenAI if available
+  const deepseekKey = process.env.DEEPSEEK_API_KEY;
+  if (deepseekKey) {
     try {
-      console.log('[AI Synthesizer] Querying Cloudflare Workers AI (Llama 3.3 70B)...');
+      console.log('[AI Synthesizer] Querying DeepSeek API...');
       const postData = JSON.stringify({
+        model: 'deepseek-chat',
         messages: [
           { role: 'system', content: promptPayload.systemPrompt },
           { role: 'user', content: promptPayload.userPrompt }
         ],
-        temperature: 0.8
+        temperature: 0.7,
+        max_tokens: 1600
       });
-
       const res = await new Promise((resolve) => {
-        const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`, {
+        const req = https.request('https://api.deepseek.com/chat/completions', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${deepseekKey}`,
             'Content-Length': Buffer.byteLength(postData)
           },
-          timeout: 15000
+          timeout: 14000
         }, (resp) => {
           let data = '';
           resp.on('data', c => data += c);
           resp.on('end', () => {
-            if (resp.statusCode === 200) {
-              try {
-                const j = JSON.parse(data);
-                const raw = j.result?.response || '';
-                const clean = raw.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim();
-                resolve(JSON.parse(clean));
-              } catch { resolve(null); }
-            } else { resolve(null); }
+            try {
+              const j = JSON.parse(data);
+              resolve(j.choices?.[0]?.message?.content);
+            } catch { resolve(null); }
           });
         });
         req.on('error', () => resolve(null));
+        req.on('timeout', () => { req.destroy(); resolve(null); });
         req.write(postData);
         req.end();
       });
-
-      if (res && res.slides && res.slides.length >= 5) {
-        console.log('[AI Synthesizer] ✅ Cloudflare AI successfully generated novel storyboard!');
-        return res;
+      const parsed = cleanAndParseLlmJson(res);
+      if (parsed) {
+        console.log('[AI Synthesizer] ✅ DeepSeek generated fresh storyboard!');
+        return parsed;
       }
     } catch {}
   }
@@ -493,15 +702,7 @@ Return JSON schema with topic, title, description, tags, and 6 slides (each with
       if (!isDup || customTopic) {
         console.log(`[AI Synthesizer] ✅ Unique novel topic approved: "${generatedTopic}"`);
         
-        // Ensure AI Disclosure is stamped into description and tags
-        const aiDisclaimer = `\n\n🤖 Altered / Synthetic Media Disclosure:\nSound and visual sequences in this video were generated and edited using AI automation technology.\n#AIGenerated #SyntheticMedia #Shorts`;
-        if (!aiResult.description.includes('Synthetic Media Disclosure')) {
-          aiResult.description += aiDisclaimer;
-        }
-
-        const standardAiTags = ['#AIGenerated', '#SyntheticMedia', '#Shorts'];
-        aiResult.tags = Array.from(new Set([...(aiResult.tags || []), ...standardAiTags]));
-
+        // Clean and record unique novel topic
         recordTopicInHistory(channelId, generatedTopic, aiResult.title, aiResult.slides[0]?.text);
         return aiResult;
       }

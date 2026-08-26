@@ -63,6 +63,57 @@ function logInfo(msg) {
   console.log(`  ${colors.dim}ℹ${colors.reset} ${msg}`);
 }
 
+const logWarn = logWarning;
+
+/**
+ * Fetch live market benchmarks (USD/NGN, BTC, USDT) for authentic, real-world data
+ */
+async function fetchLiveFinMarketData() {
+  logInfo('[Market Data] Fetching real-time market benchmarks (USD/NGN rate & Crypto)...');
+  const data = {
+    usdNgnRate: 1540,
+    btcUsd: 88500,
+    usdtNgn: 1550,
+    timestamp: new Date().toISOString()
+  };
+
+  try {
+    const fetched = await new Promise((resolve) => {
+      const req = https.get('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,tether&vs_currencies=usd,ngn', {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+        timeout: 4000
+      }, (r) => {
+        let b = '';
+        r.on('data', c => b += c);
+        r.on('end', () => {
+          try {
+            const j = JSON.parse(b);
+            if (j.bitcoin?.usd) {
+              data.btcUsd = j.bitcoin.usd;
+              if (j.tether?.ngn) data.usdtNgn = Math.round(j.tether.ngn);
+              if (j.tether?.ngn) data.usdNgnRate = Math.round(j.tether.ngn);
+              resolve(true);
+            } else {
+              resolve(false);
+            }
+          } catch { resolve(false); }
+        });
+      });
+      req.on('error', () => resolve(false));
+      req.on('timeout', () => { req.destroy(); resolve(false); });
+    });
+
+    if (fetched) {
+      logSuccess(`[Market Data] Live Rate: 1 USD ≈ ₦${data.usdNgnRate.toLocaleString()} | BTC: $${data.btcUsd.toLocaleString()}`);
+    } else {
+      logInfo(`[Market Data] Using baseline exchange benchmark: 1 USD ≈ ₦${data.usdNgnRate.toLocaleString()}`);
+    }
+  } catch {
+    logInfo(`[Market Data] Baseline exchange benchmark active: 1 USD ≈ ₦${data.usdNgnRate.toLocaleString()}`);
+  }
+  return data;
+}
+
 // Channel Configuration
 const CHANNEL_ID = 'channel_fin_01';
 const CHANNEL_NAME = process.env.FIN_CHANNEL_NAME || 'Fin Blueprint';
@@ -118,6 +169,59 @@ function sanitizeForFfmpegDrawtext(str) {
     .replace(/[[\]{}]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+// Clean text for speech synthesis, stripping pauses, markdown, and currency symbols
+function prepareTextForSpeech(rawText) {
+  if (!rawText) return '';
+  let clean = String(rawText)
+    .replace(/^(slide\s*\d+[:\-.]?|narration[:\-.]?|host[:\-.]?|voiceover[:\-.]?)\s*/i, '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/\.{2,}/g, '.')
+    .replace(/[:;–—]/g, ', ')
+    .replace(/&/g, ' and ')
+    .replace(/%/g, ' percent ')
+    .replace(/\$/g, ' dollars ')
+    .replace(/₦/g, ' Naira ')
+    .replace(/\bvs\.?\b/gi, 'versus')
+    .replace(/\bw\/\b/gi, 'with')
+    .replace(/\be\.g\.?\b/gi, 'for example')
+    .replace(/\bi\.e\.?\b/gi, 'that is')
+    .replace(/#\w+/g, '')
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/['"\\`]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return clean;
+}
+
+function trimAudioSilence(filePath) {
+  if (!fs.existsSync(filePath)) return;
+  try {
+    const tempTrim = filePath.replace(/\.mp3$/, '_trim.mp3');
+    execSync(`ffmpeg -y -i "${filePath}" -af "silenceremove=stop_periods=-1:stop_duration=0.08:stop_threshold=-40dB,silenceremove=start_periods=1:start_duration=0.02:start_threshold=-40dB" -b:a 192k "${tempTrim}" 2>/dev/null`);
+    if (fs.existsSync(tempTrim) && fs.statSync(tempTrim).size > 500) {
+      fs.renameSync(tempTrim, filePath);
+    }
+  } catch {}
+}
+
+function validateFinStoryboard(storyboard) {
+  if (!storyboard || !Array.isArray(storyboard.slides) || storyboard.slides.length < 3) return false;
+  const isPlanOrLog = storyboard.slides.some(slide => {
+    const txt = (slide.text || '').toLowerCase();
+    return txt.includes('step 1:') || txt.includes('phase 1:') || txt.includes('plan:') ||
+           txt.includes('logs:') || txt.includes('execution plan') || txt.includes('diagnostic:') ||
+           txt.includes('placeholder') || txt.includes('todo:') || txt.length < 10;
+  });
+  if (isPlanOrLog) {
+    logWarning('[Storyboard Engine] Rejected storyboard containing plan / diagnostic log text.');
+    return false;
+  }
+  storyboard.slides.forEach(slide => {
+    slide.text = prepareTextForSpeech(slide.text);
+  });
+  return true;
 }
 
 console.log(`\n${colors.bright}${colors.cyan}══════════════════════════════════════════════════════════════════════${colors.reset}`);
@@ -294,10 +398,29 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
   const { systemPrompt, userPrompt } = buildFinPromptForSlot(archetype, recentHistory, 0, CHANNEL_HANDLE);
   let scriptData = null;
 
+  // Helper to test parsed JSON
+  const testCandidate = (rawText, providerName) => {
+    if (!rawText) return null;
+    let cleaned = rawText.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/```json/gi, '').replace(/```/g, '').trim();
+    const start = cleaned.indexOf('{');
+    const end = cleaned.lastIndexOf('}');
+    if (start !== -1 && end !== -1 && end > start) {
+      cleaned = cleaned.substring(start, end + 1);
+    }
+    try {
+      const parsed = JSON.parse(cleaned);
+      if (validateFinStoryboard(parsed)) {
+        logSuccess(`[Storyboard Engine] Success from ${providerName}!`);
+        return parsed;
+      }
+    } catch {}
+    return null;
+  };
+
   // 1. PRIMARY: Grok (xAI)
   if (grokObj && grokObj.key && grokObj.model) {
     try {
-      logInfo(`[Storyboard Engine] Generating from Grok (${grokObj.model})...`);
+      logInfo(`[Storyboard Engine] 1. Requesting storyboard from Grok (${grokObj.model})...`);
       const raw = await new Promise((resolve) => {
         const postData = JSON.stringify({
           model: grokObj.model,
@@ -336,113 +459,206 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
       });
 
       if (raw.success && raw.content) {
-        let cleaned = raw.content.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/```json/gi, '').replace(/```/g, '').trim();
-        const start = cleaned.indexOf('{');
-        const end = cleaned.lastIndexOf('}');
-        if (start !== -1 && end !== -1 && end > start) {
-          cleaned = cleaned.substring(start, end + 1);
-        }
-        scriptData = JSON.parse(cleaned);
-        if (scriptData && Array.isArray(scriptData.slides) && scriptData.slides.length >= 5) {
-          logSuccess(`Grok (${grokObj.model}) generated complete 6-slide financial script!`);
-        }
+        scriptData = testCandidate(raw.content, `Grok (${grokObj.model})`);
       }
     } catch (e) {
       logWarning(`Grok generation notice: ${e.message}`);
     }
   }
 
-  // 2. SECONDARY: Groq LPU
-  if (!scriptData && groqModel && GROQ_API_KEY) {
-    try {
-      logInfo(`[Storyboard Engine] Generating from Groq (${groqModel})...`);
-      const raw = await new Promise((resolve) => {
-        const postData = JSON.stringify({
-          model: groqModel,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: `${userPrompt} ${topicInput ? `Custom Topic: "${topicInput}".` : ''} Return strictly valid JSON.` }
-          ],
-          temperature: 0.7,
-          max_tokens: 2200,
-          response_format: { type: 'json_object' }
-        });
-        const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${GROQ_API_KEY}`,
-            'Content-Length': Buffer.byteLength(postData)
-          },
-          timeout: 20000
-        }, (res) => {
-          let data = '';
-          res.on('data', c => data += c);
-          res.on('end', () => {
-            try {
-              const j = JSON.parse(data);
-              resolve({ success: true, content: j.choices?.[0]?.message?.content });
-            } catch (e) {
-              resolve({ success: false, error: e.message });
-            }
+  // 2. SECONDARY: Groq LPU Models
+  if (!scriptData && GROQ_API_KEY) {
+    const groqModels = [groqModel, 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'].filter(Boolean);
+    for (const gModel of groqModels) {
+      if (scriptData) break;
+      try {
+        logInfo(`[Storyboard Engine] 2. Requesting storyboard from Groq LPU (${gModel})...`);
+        const raw = await new Promise((resolve) => {
+          const postData = JSON.stringify({
+            model: gModel,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: `${userPrompt} ${topicInput ? `Custom Topic: "${topicInput}".` : ''} Return strictly valid JSON.` }
+            ],
+            temperature: 0.7,
+            max_tokens: 2200,
+            response_format: { type: 'json_object' }
           });
+          const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${GROQ_API_KEY}`,
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 20000
+          }, (res) => {
+            let data = '';
+            res.on('data', c => data += c);
+            res.on('end', () => {
+              try {
+                const j = JSON.parse(data);
+                resolve({ success: true, content: j.choices?.[0]?.message?.content });
+              } catch (e) {
+                resolve({ success: false, error: e.message });
+              }
+            });
+          });
+          req.on('error', err => resolve({ success: false, error: err.message }));
+          req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
+          req.write(postData);
+          req.end();
         });
-        req.on('error', err => resolve({ success: false, error: err.message }));
-        req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
-        req.write(postData);
-        req.end();
-      });
 
-      if (raw.success && raw.content) {
-        let cleaned = raw.content.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/```json/gi, '').replace(/```/g, '').trim();
-        scriptData = JSON.parse(cleaned);
-        if (scriptData && Array.isArray(scriptData.slides) && scriptData.slides.length >= 5) {
-          logSuccess(`Groq generated complete 6-slide financial script!`);
+        if (raw.success && raw.content) {
+          scriptData = testCandidate(raw.content, `Groq (${gModel})`);
         }
+      } catch (e) {
+        logWarning(`Groq notice on ${gModel}: ${e.message}`);
       }
-    } catch (e) {
-      logWarning(`Groq notice: ${e.message}`);
     }
   }
 
-  // 3. TERTIARY: Google Gemini Flash
+  // 3. TERTIARY: Google Gemini Models
   if (!scriptData && GEMINI_API_KEY) {
-    try {
-      logInfo(`[Storyboard Engine] Generating from Google Gemini...`);
-      const raw = await new Promise((resolve) => {
-        const postData = JSON.stringify({
-          contents: [{ parts: [{ text: `${systemPrompt}\n\nTask: ${userPrompt} Return raw JSON.` }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 2500, responseMimeType: "application/json" }
-        });
-        const req = https.request(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) },
-          timeout: 20000
-        }, (res) => {
-          let d = '';
-          res.on('data', c => d += c);
-          res.on('end', () => {
-            try {
-              const j = JSON.parse(d);
-              resolve({ success: true, content: j.candidates?.[0]?.content?.parts?.[0]?.text });
-            } catch { resolve({ success: false }); }
+    const geminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash'];
+    for (const gModel of geminiModels) {
+      if (scriptData) break;
+      try {
+        logInfo(`[Storyboard Engine] 3. Requesting storyboard from Google Gemini (${gModel})...`);
+        const raw = await new Promise((resolve) => {
+          const postData = JSON.stringify({
+            contents: [{ parts: [{ text: `${systemPrompt}\n\nTask: ${userPrompt} Return raw JSON.` }] }],
+            generationConfig: { temperature: 0.7, maxOutputTokens: 2500, responseMimeType: "application/json" }
           });
+          const req = https.request(`https://generativelanguage.googleapis.com/v1beta/models/${gModel}:generateContent?key=${GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) },
+            timeout: 20000
+          }, (res) => {
+            let d = '';
+            res.on('data', c => d += c);
+            res.on('end', () => {
+              try {
+                const j = JSON.parse(d);
+                resolve({ success: true, content: j.candidates?.[0]?.content?.parts?.[0]?.text });
+              } catch { resolve({ success: false }); }
+            });
+          });
+          req.on('error', () => resolve({ success: false }));
+          req.on('timeout', () => { req.destroy(); resolve({ success: false }); });
+          req.write(postData);
+          req.end();
         });
-        req.on('error', () => resolve({ success: false }));
-        req.on('timeout', () => { req.destroy(); resolve({ success: false }); });
-        req.write(postData);
-        req.end();
-      });
 
-      if (raw.success && raw.content) {
-        scriptData = JSON.parse(raw.content);
-        logSuccess(`Google Gemini generated full finance storyboard!`);
-      }
-    } catch {}
+        if (raw.success && raw.content) {
+          scriptData = testCandidate(raw.content, `Google Gemini (${gModel})`);
+        }
+      } catch {}
+    }
   }
 
-  // 4. FALLBACK: Deterministic Diversity Engine
-  if (!scriptData || !Array.isArray(scriptData.slides) || scriptData.slides.length < 5) {
+  // 4. QUATERNARY: Pollinations Free AI Models
+  if (!scriptData) {
+    const pollModels = ['openai', 'mistral', 'llama', 'qwen-coder'];
+    for (const pModel of pollModels) {
+      if (scriptData) break;
+      try {
+        logInfo(`[Storyboard Engine] 4. Requesting storyboard from Pollinations AI (${pModel})...`);
+        const raw = await new Promise((resolve) => {
+          const fullPrompt = `${systemPrompt}\n\nTask: ${userPrompt} ${topicInput ? `Custom Topic: "${topicInput}".` : ''}\n\nOutput STRICT JSON with a 'slides' array of 6 items.`;
+          const postData = JSON.stringify({
+            messages: [{ role: 'user', content: fullPrompt }],
+            model: pModel,
+            jsonMode: true
+          });
+          const req = https.request('https://text.pollinations.ai/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 20000
+          }, (res) => {
+            let data = '';
+            res.on('data', c => data += c);
+            res.on('end', () => {
+              if (res.statusCode === 200) {
+                resolve({ success: true, content: data });
+              } else {
+                resolve({ success: false });
+              }
+            });
+          });
+          req.on('error', () => resolve({ success: false }));
+          req.on('timeout', () => { req.destroy(); resolve({ success: false }); });
+          req.write(postData);
+          req.end();
+        });
+
+        if (raw.success && raw.content) {
+          scriptData = testCandidate(raw.content, `Pollinations (${pModel})`);
+        }
+      } catch {}
+    }
+  }
+
+  // 5. QUINARY: Cloudflare Workers AI
+  if (!scriptData && CLOUDFLARE_ACCOUNT_ID && CLOUDFLARE_API_TOKEN && !cloudflareAuthFailed) {
+    const cfModels = ['@cf/meta/llama-3.3-70b-instruct-fp8-fast', '@cf/meta/llama-3.2-3b-instruct', '@cf/meta/llama-3.1-8b-instruct'];
+    for (const cModel of cfModels) {
+      if (scriptData || cloudflareAuthFailed) break;
+      try {
+        logInfo(`[Storyboard Engine] 5. Requesting storyboard from Cloudflare AI (${cModel})...`);
+        const raw = await new Promise((resolve) => {
+          const postData = JSON.stringify({
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: `${userPrompt} Output STRICT JSON.` }
+            ]
+          });
+          const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${cModel}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 25000
+          }, (res) => {
+            let data = '';
+            res.on('data', c => data += c);
+            res.on('end', () => {
+              if (res.statusCode === 200) {
+                try {
+                  const j = JSON.parse(data);
+                  resolve({ success: true, content: j.result?.response || data });
+                } catch {
+                  resolve({ success: true, content: data });
+                }
+              } else if (res.statusCode === 401) {
+                cloudflareAuthFailed = true;
+                resolve({ success: false });
+              } else {
+                resolve({ success: false });
+              }
+            });
+          });
+          req.on('error', () => resolve({ success: false }));
+          req.on('timeout', () => { req.destroy(); resolve({ success: false }); });
+          req.write(postData);
+          req.end();
+        });
+
+        if (raw.success && raw.content) {
+          scriptData = testCandidate(raw.content, `Cloudflare (${cModel})`);
+        }
+      } catch {}
+    }
+  }
+
+  // 6. FALLBACK: Deterministic Diversity Engine
+  if (!scriptData || !Array.isArray(scriptData.slides) || scriptData.slides.length < 3) {
     logWarning('[Storyboard Engine] Synthesizing verified deterministic financial package from Diversity Engine...');
     scriptData = synthesizeDeterministicFinStoryboard(archetype, topicInput, CHANNEL_HANDLE);
     logSuccess(`Diversity Engine synthesized authentic 6-slide financial masterclass!`);
@@ -663,16 +879,18 @@ async function synthesizeEnrichedSlides(storyboard) {
     return null;
   }
 
-  // Microsoft Edge TTS with Natural Deliberate Pacing (-3% rate for clear comprehension)
+  // Microsoft Edge TTS with Natural Deliberate Pacing (+10% rate for engaging Shorts delivery)
   async function generateEdgeBassTTS(text) {
     try {
+      const cleanText = prepareTextForSpeech(text);
       const { EdgeTTS } = require('node-edge-tts');
       // Warm, engaging, clear educational voices
       const voices = [
         'en-US-ChristopherNeural', // Warm, patient, highly clear educational teacher
         'en-US-GuyNeural',         // Clear, conversational financial mentor
         'en-GB-RyanNeural',        // Refined, articulate educator
-        'en-US-EricNeural'         // Calm, resonant baritone
+        'en-US-EricNeural',        // Calm, resonant baritone
+        'en-US-BrianNeural'        // Crisp modern masculine
       ];
 
       for (const voice of voices) {
@@ -683,15 +901,16 @@ async function synthesizeEnrichedSlides(storyboard) {
             lang: 'en-US',
             outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
             pitch: '+0Hz',
-            rate: '-3%' // Natural educational pacing for easy, crystal-clear comprehension
+            rate: '+10%' // Snappy, engaging Shorts pacing - eliminates awkward sentence lag
           });
 
-          await tts.ttsPromise(text, tempAudio);
+          await tts.ttsPromise(cleanText, tempAudio);
 
           if (fs.existsSync(tempAudio)) {
+            trimAudioSilence(tempAudio);
             const audioBuf = fs.readFileSync(tempAudio);
             try { fs.unlinkSync(tempAudio); } catch {}
-            if (audioBuf.length > 1000) {
+            if (audioBuf.length > 800) {
               logSuccess(`[Microsoft Edge TTS] Synthesized educational voice (${voice}) (${audioBuf.length.toLocaleString()} bytes)`);
               return {
                 audioBuffer: audioBuf,
@@ -709,7 +928,7 @@ async function synthesizeEnrichedSlides(storyboard) {
   // Google Translate TTS with DSP Equalizer
   async function generateGoogleDspTTS(text) {
     try {
-      const cleanSpoken = text.replace(/#/g, '').replace(/[\r\n]+/g, ' ').trim();
+      const cleanSpoken = prepareTextForSpeech(text);
       const encText = encodeURIComponent(cleanSpoken.slice(0, 260));
       const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encText}&tl=en-US&client=tw-ob`;
       const tempRaw = path.join(artifactsDir, `raw_g_tts_${Date.now()}.mp3`);
@@ -728,7 +947,7 @@ async function synthesizeEnrichedSlides(storyboard) {
       });
 
       if (ok && fs.existsSync(tempRaw) && fs.statSync(tempRaw).size > 800) {
-        execSync(`ffmpeg -y -i "${tempRaw}" -filter_complex "atempo=0.92,equalizer=f=120:t=q:w=1.5:g=4.0,equalizer=f=3500:t=q:w=2.0:g=2.0" -b:a 192k "${tempProcessed}" 2>/dev/null`);
+        execSync(`ffmpeg -y -i "${tempRaw}" -filter_complex "atempo=1.12,equalizer=f=120:t=q:w=1.5:g=4.0,equalizer=f=3500:t=q:w=2.0:g=2.0,silenceremove=stop_periods=-1:stop_duration=0.08:stop_threshold=-40dB" -b:a 192k "${tempProcessed}" 2>/dev/null`);
         try { fs.unlinkSync(tempRaw); } catch {}
         if (fs.existsSync(tempProcessed)) {
           const buf = fs.readFileSync(tempProcessed);
@@ -883,9 +1102,10 @@ async function renderFullFinanceFfmpegVideo(storyboard, enrichedSlides) {
         execSync(`ffmpeg -y -f lavfi -i "sine=frequency=0:duration=10" -c:a libmp3lame "${slideAudioPath}" 2>/dev/null`);
       }
 
-      // Measure duration: Min 10.0s per slide so 6 slides total 62s - 75s (always >= 60s / 1 min)
+      // Natural slide duration with fast pacing (no long pause between slides)
+      trimAudioSilence(slideAudioPath);
       const rawAudioDur = getAudioDuration(slideAudioPath);
-      const slideDur = Math.max(10.0, rawAudioDur + 0.4);
+      const slideDur = Math.max(2.2, rawAudioDur + 0.10);
       const totalFrames = Math.round(slideDur * 30);
 
       // Clean slide text for on-screen captions
@@ -893,7 +1113,7 @@ async function renderFullFinanceFfmpegVideo(storyboard, enrichedSlides) {
       const words = rawText.split(/\s+/).filter(Boolean);
 
       const chunkLines = [];
-      const CHUNK_SIZE = 3; // 2-3 punchy words per kinetic subtitle burst
+      const CHUNK_SIZE = 2; // 2 words per burst guarantees text fits within 1080px without clipping
       for (let w = 0; w < words.length; w += CHUNK_SIZE) {
         chunkLines.push(words.slice(w, w + CHUNK_SIZE).join(' '));
       }
@@ -903,12 +1123,12 @@ async function renderFullFinanceFfmpegVideo(storyboard, enrichedSlides) {
       const chunkDur = spokenDur / Math.max(chunkLines.length, 1);
       let captionFilter = '';
 
-      // Slide 1 Pinned Hook Banner at top (Mobile Shorts safe zone y=200)
+      // Slide 1 Pinned Hook Banner at top (Mobile Shorts safe zone y=220)
       let topHookFilter = '';
       if (i === 0) {
         const rawTitle = (storyboard.title || storyboard.theme || 'FINANCIAL MASTERY').replace(/#\w+/g, '').trim();
-        const cleanHook = sanitizeForFfmpegDrawtext(rawTitle.slice(0, 32).toUpperCase());
-        topHookFilter = `,drawtext=text='${cleanHook}':fontsize=36:fontcolor=0xFFEA00:borderw=5:bordercolor=black:shadowcolor=black@0.9:shadowx=3:shadowy=3:x=(w-text_w)/2:y=200:enable='between(t\\,0\\,4.5)'`;
+        const cleanHook = sanitizeForFfmpegDrawtext(rawTitle.slice(0, 30).toUpperCase());
+        topHookFilter = `,drawtext=text='${cleanHook}':fontsize=34:fontcolor=0xFFEA00:borderw=5:bordercolor=black:shadowcolor=black@0.9:shadowx=3:shadowy=3:x=(w-text_w)/2:y=220:fix_bounds=1:enable='between(t\\,0\\,3.5)'`;
       }
 
       chunkLines.forEach((chunkText, cIdx) => {
@@ -916,9 +1136,11 @@ async function renderFullFinanceFfmpegVideo(storyboard, enrichedSlides) {
         // The last chunk stays visible until slideDur finishes
         const endT = (cIdx === chunkLines.length - 1 ? slideDur : (cIdx + 1) * chunkDur).toFixed(2);
         const cleanChunk = sanitizeForFfmpegDrawtext(chunkText.toUpperCase());
-        // Modern UI Captions: Large 60pt font, bold black stroke (borderw=6), canary yellow or platinum white, lower-third sweet spot (y=1260)
-        const fontColor = cIdx % 2 === 0 ? '0xFFEA00' : '0xFFFFFF'; // Alternating canary yellow & white for viral retention
-        captionFilter += `,drawtext=text='${cleanChunk}':fontsize=62:fontcolor=${fontColor}:borderw=6:bordercolor=black:shadowcolor=black@0.85:shadowx=4:shadowy=4:x=(w-text_w)/2:y=1260:enable='between(t\\,${startT}\\,${endT})'`;
+        // Dynamic adaptive font size: downscales for longer text so captions never go off screen
+        const fontSize = cleanChunk.length > 20 ? 44 : cleanChunk.length > 14 ? 50 : 56;
+        const fontColor = cIdx % 2 === 0 ? '0xFFEA00' : '0xFFFFFF'; // Alternating canary yellow & white
+        // Safe position with fix_bounds=1 and y=1220
+        captionFilter += `,drawtext=text='${cleanChunk}':fontsize=${fontSize}:fontcolor=${fontColor}:borderw=5:bordercolor=black:shadowcolor=black@0.85:shadowx=3:shadowy=3:x=(w-text_w)/2:y=1220:fix_bounds=1:enable='between(t\\,${startT}\\,${endT})'`;
       });
 
       // ----------------------------------------------------
@@ -1074,7 +1296,8 @@ async function handleYouTubePublish(storyboard, renderResult) {
         },
         status: {
           privacyStatus: 'public',
-          selfDeclaredMadeForKids: false
+          selfDeclaredMadeForKids: false,
+          containsSyntheticMedia: true
         }
       });
 
@@ -1195,13 +1418,12 @@ async function uploadToCloudinary(videoFilePath, publicId) {
   logInfo(`[CLOUDINARY] Uploading rendered video to Cloudinary cloud "${effectiveCloudName}"...`);
   try {
     const fileBuffer = fs.readFileSync(videoFilePath);
-    const base64Data = `data:video/mp4;base64,${fileBuffer.toString('base64')}`;
     const timestamp = Math.floor(Date.now() / 1000);
+    const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
 
-    let postParams = {};
+    let fields = {};
     if (uploadPreset) {
-      postParams = {
-        file: base64Data,
+      fields = {
         upload_preset: uploadPreset,
         folder: 'voxam_shorts',
         public_id: publicId || `fin_short_${Date.now()}`
@@ -1210,28 +1432,36 @@ async function uploadToCloudinary(videoFilePath, publicId) {
       const crypto = require('crypto');
       const paramsToSign = `folder=voxam_shorts&public_id=${publicId || `fin_short_${Date.now()}`}&timestamp=${timestamp}${effectiveApiSecret}`;
       const signature = crypto.createHash('sha1').update(paramsToSign).digest('hex');
-      postParams = {
-        file: base64Data,
+      fields = {
         api_key: effectiveApiKey,
-        timestamp: timestamp,
+        timestamp: String(timestamp),
         folder: 'voxam_shorts',
         public_id: publicId || `fin_short_${Date.now()}`,
         signature: signature
       };
     } else {
-      postParams = {
-        file: base64Data,
+      fields = {
+        upload_preset: 'voxawell',
         folder: 'voxam_shorts'
       };
     }
 
-    const postData = JSON.stringify(postParams);
+    const chunks = [];
+    for (const [k, v] of Object.entries(fields)) {
+      chunks.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${k}"\r\n\r\n${v}\r\n`));
+    }
+    chunks.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="fin_video.mp4"\r\nContent-Type: video/mp4\r\n\r\n`));
+    chunks.push(fileBuffer);
+    chunks.push(Buffer.from(`\r\n--${boundary}--\r\n`));
+
+    const postBuffer = Buffer.concat(chunks);
+
     const result = await new Promise((resolve) => {
       const req = https.request(`https://api.cloudinary.com/v1_1/${effectiveCloudName}/video/upload`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(postData)
+          'Content-Type': `multipart/form-data; boundary=${boundary}`,
+          'Content-Length': postBuffer.length
         },
         timeout: 180000
       }, (res) => {
@@ -1251,7 +1481,8 @@ async function uploadToCloudinary(videoFilePath, publicId) {
         });
       });
       req.on('error', (e) => resolve({ success: false, error: e.message }));
-      req.write(postData);
+      req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Upload timeout' }); });
+      req.write(postBuffer);
       req.end();
     });
 
@@ -1259,12 +1490,13 @@ async function uploadToCloudinary(videoFilePath, publicId) {
       logSuccess(`[CLOUDINARY] Upload successful! URL: ${result.url}`);
       return result.url;
     } else {
-      logWarn(`[CLOUDINARY] Upload response: ${result.error}`);
+      logWarning(`[CLOUDINARY] Upload notice: ${result.error || 'Upload could not complete'}`);
     }
   } catch (err) {
-    logWarn(`[CLOUDINARY] Upload exception: ${err.message}`);
+    logWarning(`[CLOUDINARY] Upload exception: ${err.message}`);
   }
   return null;
+}
 }
 
 // ----------------------------------------------------

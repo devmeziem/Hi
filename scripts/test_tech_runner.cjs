@@ -139,10 +139,9 @@ async function handleYouTubeUpload(storyboard, videoPath) {
   const uploadTitle = (storyboard.title || 'AI Automation Architecture #Shorts').slice(0, 95);
   const cleanTags = (storyboard.tags || ['#GodswillIsaac', '#AIAutomation', '#DevOps'])
     .map(t => String(t).replace(/^#/, '').trim())
-    .concat(['AIGenerated', 'SyntheticMedia', 'AlteredMedia', 'Shorts'])
     .slice(0, 15);
 
-  const fullDescription = `${storyboard.description || uploadTitle}\n\n🤖 Altered / Synthetic Media Disclosure:\nSound and visual sequences in this video were generated and edited using AI automation technology.\n#AIGenerated #SyntheticMedia #Shorts #GodswillIsaac`;
+  const fullDescription = `${(storyboard.description || uploadTitle).trim()}\n\nAI automation and high-scale engineering with Godswill Isaac (@bonesceo).\n\n#GodswillIsaac #AIAutomation #DevOps #Engineering #Shorts`;
 
   const metadata = JSON.stringify({
     snippet: {

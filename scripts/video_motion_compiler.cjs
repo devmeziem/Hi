@@ -129,7 +129,14 @@ async function compileVideoMotion() {
             if (sl.audioUrl && (sl.audioUrl.startsWith('http') || sl.audioUrl.startsWith('data:audio'))) {
               await downloadFile(sl.audioUrl, slAud);
             } else {
-              const textRaw = sl.text || sl.scriptText || 'Inspiring daily wisdom';
+              const textRaw = (sl.text || sl.scriptText || 'Inspiring daily wisdom')
+                .replace(/\.{2,}/g, '.')
+                .replace(/[:;–—]/g, ', ')
+                .replace(/&/g, ' and ')
+                .replace(/%/g, ' percent ')
+                .replace(/\$/g, ' dollars ')
+                .replace(/₦/g, ' Naira ')
+                .trim();
               let synthDone = false;
               try {
                 const { EdgeTTS } = require('node-edge-tts');
@@ -137,8 +144,8 @@ async function compileVideoMotion() {
                   voice: 'en-US-ChristopherNeural',
                   lang: 'en-US',
                   outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
-                  pitch: '-8Hz',
-                  rate: '-4%'
+                  pitch: '+0Hz',
+                  rate: '+10%'
                 });
                 await tts.ttsPromise(textRaw, slAud);
                 if (fs.existsSync(slAud) && fs.statSync(slAud).size > 1000) synthDone = true;
@@ -154,12 +161,21 @@ async function compileVideoMotion() {
               }
             }
 
-            // Probe duration
-            let dur = 6.0;
+            // Trim audio trailing and leading silence
+            try {
+              const trimmed = slAud.replace(/\.mp3$/, '_trim.mp3');
+              execSync(`ffmpeg -y -i "${slAud}" -af "silenceremove=stop_periods=-1:stop_duration=0.08:stop_threshold=-40dB,silenceremove=start_periods=1:start_duration=0.02:start_threshold=-40dB" -b:a 192k "${trimmed}" 2>/dev/null`);
+              if (fs.existsSync(trimmed) && fs.statSync(trimmed).size > 500) {
+                fs.renameSync(trimmed, slAud);
+              }
+            } catch {}
+
+            // Probe duration - tight snappy Shorts pacing
+            let dur = 3.0;
             try {
               const p = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${slAud}"`, { encoding: 'utf8' }).trim();
               const f = parseFloat(p);
-              if (!isNaN(f) && f > 0) dur = Math.max(3.5, Math.min(9.0, f + 0.4));
+              if (!isNaN(f) && f > 0) dur = Math.max(2.2, f + 0.10);
             } catch {}
 
             const totalFrames = Math.round(dur * 30);

@@ -29,7 +29,10 @@ const FIN_CATEGORIES = {
   BUSINESS_BREAKDOWNS: 'business_breakdowns',             // Unit economics, startup supplies, gross profit math
   BEGINNER_INVESTING_CRYPTO: 'beginner_investing_crypto', // Bitcoin, USDT stablecoins, inflation hedging, self-custody
   FINANCIAL_CALCULATORS: 'financial_calculators',         // Compounding $1/day, break-even math, purchasing power
-  CHALLENGES_EXPERIMENTS: 'challenges_experiments'        // Transparent 30-day budget & micro-business exp// 16 Comprehensive Financial Archetypes spanning all pillars with dual currency relevance and simple language
+  CHALLENGES_EXPERIMENTS: 'challenges_experiments'        // Transparent 30-day budget & micro-business experiments
+};
+
+// 16 Comprehensive Financial Archetypes spanning all pillars with dual currency relevance and simple language
 const FIN_ARCHETYPES = [
   {
     id: 'fin_01_micro_startup_food',

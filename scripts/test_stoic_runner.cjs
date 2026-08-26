@@ -63,6 +63,8 @@ function logInfo(msg) {
   console.log(`  ${colors.dim}ℹ${colors.reset} ${msg}`);
 }
 
+const logWarn = logWarning;
+
 // Parse Command Line Flags & Environment Variables
 const args = process.argv.slice(2);
 const isDryRun = args.includes('--dry-run') || String(process.env.DRY_RUN).toLowerCase() === 'true';
@@ -269,14 +271,54 @@ function cleanLlmJson(rawContent) {
   }
 }
 
+/**
+ * Clean text for natural speech synthesis, removing ellipses and dead pauses
+ */
+function prepareTextForSpeech(rawText) {
+  if (!rawText) return '';
+  let clean = String(rawText)
+    .replace(/^(slide\s*\d+[:\-.]?|narration[:\-.]?|host[:\-.]?|voiceover[:\-.]?)\s*/i, '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/\.{2,}/g, '.') // remove multi-dots/ellipses that cause 1-2s pauses
+    .replace(/[:;–—]/g, ', ') // replace pauses with soft conversational commas
+    .replace(/&/g, ' and ')
+    .replace(/%/g, ' percent ')
+    .replace(/\$/g, ' dollars ')
+    .replace(/₦/g, ' Naira ')
+    .replace(/\bvs\.?\b/gi, 'versus')
+    .replace(/\bw\/\b/gi, 'with')
+    .replace(/\be\.g\.?\b/gi, 'for example')
+    .replace(/\bi\.e\.?\b/gi, 'that is')
+    .replace(/#\w+/g, '')
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/['"\\`]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return clean;
+}
+
 function validateStoicStoryboard(storyboard) {
   if (!storyboard || !Array.isArray(storyboard.slides) || storyboard.slides.length < 3) return false;
-  for (const slide of storyboard.slides) {
+  
+  // Reject internal planning notes or diagnostic logs
+  const isPlanOrLog = storyboard.slides.some(slide => {
     const txt = (slide.text || '').toLowerCase();
-    if (txt.includes('words)') || txt.includes('placeholder') || txt.includes('scene style') || txt.length < 12) {
-      return false;
-    }
+    return txt.includes('step 1:') || txt.includes('phase 1:') || txt.includes('plan:') ||
+           txt.includes('logs:') || txt.includes('execution plan') || txt.includes('diagnostic:') ||
+           txt.includes('placeholder') || txt.includes('scene style') || txt.includes('todo:') ||
+           txt.length < 10;
+  });
+
+  if (isPlanOrLog) {
+    logWarning('[Storyboard Engine] Rejected storyboard containing plan / diagnostic log text.');
+    return false;
   }
+
+  // Clean all slide texts for spoken delivery
+  storyboard.slides.forEach(slide => {
+    slide.text = prepareTextForSpeech(slide.text);
+  });
+
   return true;
 }
 
@@ -301,9 +343,9 @@ async function resolveTopic(activeGrok, backupEngines) {
   logInfo('No manual topic provided. Discovering a fresh, viral Stoic topic via AI Brain...');
   const recentExclusions = recentContentHistory.slice(0, 10).map(h => `"${h.topic}"`).join(', ');
 
-  // 1. Try Gemini (gemini-2.0-flash, gemini-1.5-flash, gemini-1.5-flash-8b)
+  // 1. Try Gemini (gemini-2.5-flash, gemini-2.0-flash, gemini-1.5-flash-latest, etc.)
   if (GEMINI_API_KEY) {
-    const geminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
+    const geminiModels = ['gemini-2.5-flash', 'gemini-2.0-flash-exp', 'gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash'];
     for (const model of geminiModels) {
       try {
         logInfo(`[Topic Discovery] Requesting topic from Google Gemini (${model})...`);
@@ -870,7 +912,7 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
 
   // 4. QUATERNARY: Google Gemini 2.0 / 1.5 Flash (Free Tier)
   if (!scriptData && GEMINI_API_KEY) {
-    const candidateGeminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
+    const candidateGeminiModels = ['gemini-2.5-flash', 'gemini-2.0-flash-exp', 'gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash'];
     for (const model of candidateGeminiModels) {
       try {
         logInfo(`[Storyboard Engine] 4. Requesting storyboard from Google Gemini (${model})...`);
@@ -1401,14 +1443,29 @@ async function generateMediaAssets(storyboard) {
     return null;
   }
 
+  // Helper to trim trailing and leading silence from synthesized audio files
+  function trimAudioSilence(filePath) {
+    if (!fs.existsSync(filePath)) return;
+    try {
+      const tempTrim = filePath.replace(/\.mp3$/, '_trim.mp3');
+      // Strip silence below -40dB with 80ms stop duration
+      execSync(`ffmpeg -y -i "${filePath}" -af "silenceremove=stop_periods=-1:stop_duration=0.08:stop_threshold=-40dB,silenceremove=start_periods=1:start_duration=0.02:start_threshold=-40dB" -b:a 192k "${tempTrim}" 2>/dev/null`);
+      if (fs.existsSync(tempTrim) && fs.statSync(tempTrim).size > 500) {
+        fs.renameSync(tempTrim, filePath);
+      }
+    } catch {}
+  }
+
   // 1. Primary Engine: Microsoft Edge TTS Studio-Grade Deep Stoic Voice (Christopher / Guy / Eric / Ryan)
   async function generateEdgeBassTTS(text) {
     try {
+      const cleanText = prepareTextForSpeech(text);
       const { EdgeTTS } = require('node-edge-tts');
       const masculineVoices = [
         'en-US-ChristopherNeural', // Deep resonant authoritative masculine (Stoic master)
         'en-US-GuyNeural',         // Warm masculine baritone
         'en-US-EricNeural',        // Rich steady masculine
+        'en-US-BrianNeural',       // Crisp modern masculine
         'en-GB-RyanNeural'         // Thoughtful British baritone
       ];
 
@@ -1419,16 +1476,17 @@ async function generateMediaAssets(storyboard) {
             voice: voice,
             lang: 'en-US',
             outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
-            pitch: '-2Hz',
-            rate: '-3%'
+            pitch: '+0Hz',
+            rate: '+10%' // Snappy, engaging Shorts pacing - eliminates awkward sentence lag
           });
 
-          await tts.ttsPromise(text, tempAudio);
+          await tts.ttsPromise(cleanText, tempAudio);
 
           if (fs.existsSync(tempAudio)) {
+            trimAudioSilence(tempAudio);
             const audioBuf = fs.readFileSync(tempAudio);
             try { fs.unlinkSync(tempAudio); } catch {}
-            if (audioBuf.length > 1000) {
+            if (audioBuf.length > 800) {
               logSuccess(`[Edge TTS] Synthesized natural authoritative voice (${voice}) (${audioBuf.length.toLocaleString()} bytes)`);
               return {
                 audioUrl: `data:audio/mpeg;base64,${audioBuf.toString('base64')}`,
@@ -1451,14 +1509,9 @@ async function generateMediaAssets(storyboard) {
   // 2. Second Fallback: DSP Bass-Boosted Google Speech Voice
   async function generateDspBassTTS(text) {
     try {
-      const formatted = text
-        .replace(/Rule\s*(\d+):/gi, 'Rule $1. ... ')
-        .replace(/(\d+)\.\s+/g, '$1. ... ')
-        .replace(/([.!?])\s+/g, '$1 ... ')
-        .trim();
-
-      const cleanText = encodeURIComponent(formatted.slice(0, 300));
-      const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${cleanText}&tl=en-US&client=tw-ob`;
+      const cleanText = prepareTextForSpeech(text);
+      const encText = encodeURIComponent(cleanText.slice(0, 300));
+      const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encText}&tl=en-US&client=tw-ob`;
       const rawBuf = await downloadBuffer(url, 12000);
       
       if (rawBuf && rawBuf.byteLength > 800) {
@@ -1467,8 +1520,8 @@ async function generateMediaAssets(storyboard) {
         
         fs.writeFileSync(tempRaw, rawBuf);
 
-        // FFmpeg DSP: Pitch lower (-2.5 semitones), bass boost at 120Hz (+6.5dB), presence clarity at 3.5kHz, warm dynamic limiter
-        const dspCmd = `ffmpeg -y -i "${tempRaw}" -filter_complex "asetrate=24000*0.90,aresample=24000,atempo=1.00,equalizer=f=120:t=q:w=1.5:g=6.5,equalizer=f=3500:t=q:w=2.0:g=2.5,compand=attacks=0.02:decays=0.15:points=-80/-80|-20/-12|0/-3" -b:a 192k "${tempDeep}"`;
+        // FFmpeg DSP: Pitch lower (-1.5 semitones), bass boost at 120Hz (+4.5dB), tempo +1.08x, crisp presence clarity
+        const dspCmd = `ffmpeg -y -i "${tempRaw}" -filter_complex "asetrate=24000*0.94,aresample=24000,atempo=1.12,equalizer=f=120:t=q:w=1.5:g=4.5,equalizer=f=3500:t=q:w=2.0:g=2.5,silenceremove=stop_periods=-1:stop_duration=0.08:stop_threshold=-40dB" -b:a 192k "${tempDeep}"`;
         execSync(dspCmd, { stdio: 'pipe' });
 
         if (fs.existsSync(tempDeep)) {
@@ -1813,18 +1866,19 @@ async function renderFfmpegVideo(storyboard, enrichedSlides) {
         }
       }
 
-      // Determine duration of voiceover (+0.5s breathing room between slides, min 10s per slide so total video is >= 60s)
+      // Determine duration of voiceover (snappy pacing, no awkward long pause between slides)
+      trimAudioSilence(slideAudioPath);
       const rawAudioDur = getAudioDuration(slideAudioPath);
-      const slideDur = Math.max(10.0, rawAudioDur + 0.5);
+      const slideDur = Math.max(2.2, rawAudioDur + 0.10);
       const totalFrames = Math.round(slideDur * 30);
 
-      // Clean slide text for on-screen captions (natural spoken 2-3 word discrete chunks)
+      // Clean slide text for on-screen captions (natural spoken 2-word discrete chunks for safe mobile display)
       const rawText = (slide.text || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '').trim();
       const words = rawText.split(/\s+/).filter(Boolean);
       
-      // Natural non-overlapping sequential chunks (preserving proper casing)
+      // Natural non-overlapping sequential chunks (max 2 words per burst to guarantee safety)
       const chunkLines = [];
-      const CHUNK_SIZE = 3;
+      const CHUNK_SIZE = 2;
       for (let w = 0; w < words.length; w += CHUNK_SIZE) {
         chunkLines.push(words.slice(w, w + CHUNK_SIZE).join(' '));
       }
@@ -1834,12 +1888,12 @@ async function renderFfmpegVideo(storyboard, enrichedSlides) {
       const chunkDur = spokenDur / Math.max(chunkLines.length, 1);
       let captionFilter = '';
 
-      // Pinned Topic Hook at Top of Video for first 4.5 seconds (Slide 1) - Safe 1080p mobile viewport (y=200)
+      // Pinned Topic Hook at Top of Video for first 3.5 seconds (Slide 1) - Safe 1080p mobile viewport (y=220)
       let topHookFilter = '';
       if (i === 0) {
         const rawTitle = (storyboard.title || storyboard.theme || 'DAILY STOIC MASTERY').replace(/#\w+/g, '').trim();
-        const cleanTopicHook = sanitizeForFfmpegDrawtext(rawTitle.slice(0, 32).toUpperCase());
-        topHookFilter = `,drawtext=text='${cleanTopicHook}':fontsize=36:fontcolor=0xFDE047:borderw=5:bordercolor=black:shadowcolor=black@0.9:shadowx=3:shadowy=3:x=(w-text_w)/2:y=200:enable='between(t\\,0\\,4.5)'`;
+        const cleanTopicHook = sanitizeForFfmpegDrawtext(rawTitle.slice(0, 30).toUpperCase());
+        topHookFilter = `,drawtext=text='${cleanTopicHook}':fontsize=34:fontcolor=0xFDE047:borderw=5:bordercolor=black:shadowcolor=black@0.9:shadowx=3:shadowy=3:x=(w-text_w)/2:y=220:fix_bounds=1:enable='between(t\\,0\\,3.5)'`;
       }
 
       chunkLines.forEach((chunkText, cIdx) => {
@@ -1847,10 +1901,10 @@ async function renderFfmpegVideo(storyboard, enrichedSlides) {
         // The last chunk stays visible until slideDur finishes
         const endT = (cIdx === chunkLines.length - 1 ? slideDur : (cIdx + 1) * chunkDur).toFixed(2);
         const cleanChunk = sanitizeForFfmpegDrawtext(chunkText.toUpperCase());
-        
-        // Modern UI kinetic subtitles (Alex Hormozi / CapCut dynamic style: 62pt, bold black borderw=6, no box, lower-third sweet spot y=1260)
+        // Dynamic adaptive font size: downscale for longer text so captions never go off screen
+        const fontSize = cleanChunk.length > 20 ? 44 : cleanChunk.length > 14 ? 50 : 56;
         const fontColor = cIdx % 2 === 0 ? '0xFFFFFF' : '0xFDE047'; // Alternating platinum white and gold
-        captionFilter += `,drawtext=text='${cleanChunk}':fontsize=62:fontcolor=${fontColor}:borderw=6:bordercolor=black:shadowcolor=black@0.85:shadowx=4:shadowy=4:x=(w-text_w)/2:y=1260:enable='between(t\\,${startT}\\,${endT})'`;
+        captionFilter += `,drawtext=text='${cleanChunk}':fontsize=${fontSize}:fontcolor=${fontColor}:borderw=5:bordercolor=black:shadowcolor=black@0.85:shadowx=3:shadowy=3:x=(w-text_w)/2:y=1220:fix_bounds=1:enable='between(t\\,${startT}\\,${endT})'`;
       });
 
       // Rapid, engaging Ken Burns zoom & pan motion (responsive speed)
@@ -2007,7 +2061,8 @@ async function handleYouTubePublish(storyboard, renderResult) {
         },
         status: {
           privacyStatus: 'public',
-          selfDeclaredMadeForKids: false
+          selfDeclaredMadeForKids: false,
+          containsSyntheticMedia: true
         }
       });
 
@@ -2130,13 +2185,12 @@ async function uploadToCloudinary(videoFilePath, publicId) {
   logInfo(`[CLOUDINARY] Uploading rendered Stoic video to Cloudinary cloud "${effectiveCloudName}"...`);
   try {
     const fileBuffer = fs.readFileSync(videoFilePath);
-    const base64Data = `data:video/mp4;base64,${fileBuffer.toString('base64')}`;
     const timestamp = Math.floor(Date.now() / 1000);
+    const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
 
-    let postParams = {};
+    let fields = {};
     if (uploadPreset) {
-      postParams = {
-        file: base64Data,
+      fields = {
         upload_preset: uploadPreset,
         folder: 'voxam_shorts',
         public_id: publicId || `stoic_short_${Date.now()}`
@@ -2145,28 +2199,36 @@ async function uploadToCloudinary(videoFilePath, publicId) {
       const crypto = require('crypto');
       const paramsToSign = `folder=voxam_shorts&public_id=${publicId || `stoic_short_${Date.now()}`}&timestamp=${timestamp}${effectiveApiSecret}`;
       const signature = crypto.createHash('sha1').update(paramsToSign).digest('hex');
-      postParams = {
-        file: base64Data,
+      fields = {
         api_key: effectiveApiKey,
-        timestamp: timestamp,
+        timestamp: String(timestamp),
         folder: 'voxam_shorts',
         public_id: publicId || `stoic_short_${Date.now()}`,
         signature: signature
       };
     } else {
-      postParams = {
-        file: base64Data,
+      fields = {
+        upload_preset: 'voxawell',
         folder: 'voxam_shorts'
       };
     }
 
-    const postData = JSON.stringify(postParams);
+    const chunks = [];
+    for (const [k, v] of Object.entries(fields)) {
+      chunks.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${k}"\r\n\r\n${v}\r\n`));
+    }
+    chunks.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="stoic_video.mp4"\r\nContent-Type: video/mp4\r\n\r\n`));
+    chunks.push(fileBuffer);
+    chunks.push(Buffer.from(`\r\n--${boundary}--\r\n`));
+
+    const postBuffer = Buffer.concat(chunks);
+
     const result = await new Promise((resolve) => {
       const req = https.request(`https://api.cloudinary.com/v1_1/${effectiveCloudName}/video/upload`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(postData)
+          'Content-Type': `multipart/form-data; boundary=${boundary}`,
+          'Content-Length': postBuffer.length
         },
         timeout: 180000
       }, (res) => {
@@ -2186,7 +2248,8 @@ async function uploadToCloudinary(videoFilePath, publicId) {
         });
       });
       req.on('error', (e) => resolve({ success: false, error: e.message }));
-      req.write(postData);
+      req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Upload timeout' }); });
+      req.write(postBuffer);
       req.end();
     });
 
@@ -2194,10 +2257,10 @@ async function uploadToCloudinary(videoFilePath, publicId) {
       logSuccess(`[CLOUDINARY] Stoic video upload successful! URL: ${result.url}`);
       return result.url;
     } else {
-      logWarn(`[CLOUDINARY] Upload response: ${result.error}`);
+      logWarning(`[CLOUDINARY] Upload notice: ${result.error || 'Upload could not complete'}`);
     }
   } catch (err) {
-    logWarn(`[CLOUDINARY] Upload exception: ${err.message}`);
+    logWarning(`[CLOUDINARY] Upload exception: ${err.message}`);
   }
   return null;
 }
