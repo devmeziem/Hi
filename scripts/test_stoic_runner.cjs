@@ -21,8 +21,10 @@ const {
   saveContentHistoryToFirestore,
   selectDailyDiverseSlots,
   buildStoicPromptForSlot,
+  buildStoicDeepDivePrompt,
   isTopicSimilarToHistory,
-  synthesizeDeterministicStoryboard
+  synthesizeDeterministicStoryboard,
+  synthesizeDeterministicStoicDeepDiveStoryboard
 } = require('./stoic_diversity_engine.cjs');
 
 // ANSI Color helper for terminal logs
@@ -635,15 +637,16 @@ async function testBackupEngines() {
   let groqWorkingModel = null;
 
   if (GROQ_API_KEY) {
-    // Verified fast, low-consumption models
+    // Verified fast, low-consumption working Groq models
     let candidateModels = [
-      'llama-3.1-8b-instant',
-      'gemma2-9b-it',
       'llama-3.3-70b-versatile',
-      'llama-3.1-70b-versatile',
+      'llama-3.1-8b-instant',
       'mixtral-8x7b-32768',
+      'gemma2-9b-it',
+      'deepseek-r1-distill-llama-70b',
       'qwen-2.5-32b',
-      'deepseek-r1-distill-llama-70b'
+      'llama3-70b-8192',
+      'llama3-8b-8192'
     ];
 
     try {
@@ -735,9 +738,12 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
   logInfo(`Depth Mode: ${contentDepth === 'deep_dive' ? '3-5 min Deep Narrative' : '60s High-Retention Short'}`);
 
   const activeArch = resolvedArchetype || STOIC_ARCHETYPES[0];
-  logInfo(`[Archetype] Theme: "${activeArch.theme}" | Angle: "${activeArch.angle}" | Historical Figure: "${activeArch.historicalFigure}"`);
+  logInfo(`[Archetype] Theme: "${activeArch.theme}" | Angle: "${activeArch.angle}"`);
 
-  const { systemPrompt, userPrompt } = buildStoicPromptForSlot(activeArch, recentContentHistory, 0, liveChannelHandle);
+  const isDeepDive = contentDepth === 'deep_dive';
+  const { systemPrompt, userPrompt } = isDeepDive
+    ? buildStoicDeepDivePrompt(activeArch, recentContentHistory, liveChannelHandle)
+    : buildStoicPromptForSlot(activeArch, recentContentHistory, 0, liveChannelHandle);
 
   let scriptData = null;
 
@@ -1168,8 +1174,10 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
   // 8. DIVERSITY ENGINE SYNTHESIS: If remote LLMs are offline or rate-limited, synthesize archetype slot
   if (!scriptData || !Array.isArray(scriptData.slides) || scriptData.slides.length < 3) {
     logWarning('[Storyboard Engine] Remote LLM endpoints unavailable or rate-limited. Synthesizing rich Stoic Archetype Slot from Diversity Engine...');
-    scriptData = synthesizeDeterministicStoryboard(activeArch, topic, liveChannelHandle);
-    if (scriptData.slides.length > 6) scriptData.slides = scriptData.slides.slice(0, 6);
+    scriptData = isDeepDive
+      ? synthesizeDeterministicStoicDeepDiveStoryboard(activeArch, topic, liveChannelHandle)
+      : synthesizeDeterministicStoryboard(activeArch, topic, liveChannelHandle);
+    if (!isDeepDive && scriptData.slides.length > 6) scriptData.slides = scriptData.slides.slice(0, 6);
     logSuccess(`[Storyboard Engine] Diversity Engine synthesized authentic ${scriptData.slides.length}-slide Stoic package with dynamic outro!`);
   }
 
@@ -1189,7 +1197,7 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
     });
   }
 
-  // Enforce strict YouTube title length, special-character sanitization, and Shorts indexing compliance
+  // Enforce strict YouTube title length, special-character sanitization, and Shorts/Longform indexing compliance
   if (scriptData.title) {
     let cleanTitle = String(scriptData.title)
       .replace(/[\r\n\t]+/g, ' ')
@@ -1198,12 +1206,17 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
       .replace(/[{}[\]]/g, '')
       .replace(/\s+/g, ' ')
       .trim();
-    // Normalize #Shorts tag
-    cleanTitle = cleanTitle.replace(/#Shorts/gi, '').replace(/#\w+/g, '').trim();
-    if (cleanTitle.length > 68) {
-      cleanTitle = cleanTitle.slice(0, 65).trim();
+    if (isDeepDive) {
+      cleanTitle = cleanTitle.replace(/#Shorts/gi, '').replace(/#\w+/g, '').trim();
+      if (cleanTitle.length > 85) cleanTitle = cleanTitle.slice(0, 82).trim();
+      scriptData.title = cleanTitle;
+    } else {
+      cleanTitle = cleanTitle.replace(/#Shorts/gi, '').replace(/#\w+/g, '').trim();
+      if (cleanTitle.length > 68) {
+        cleanTitle = cleanTitle.slice(0, 65).trim();
+      }
+      scriptData.title = `${cleanTitle} #Shorts`;
     }
-    scriptData.title = `${cleanTitle} #Shorts`;
   }
 
   console.log(`\n  ${colors.bright}Generated Complete Storyboard Breakdown:${colors.reset}`);
@@ -1477,7 +1490,7 @@ async function generateMediaAssets(storyboard) {
             lang: 'en-US',
             outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
             pitch: '+0Hz',
-            rate: '+2%' // Natural, deeply understandable Stoic mentor cadence
+            rate: '+0%' // Grounded, natural, normal-speed Stoic pacing
           });
 
           await tts.ttsPromise(cleanText, tempAudio);
@@ -1888,12 +1901,12 @@ async function renderFfmpegVideo(storyboard, enrichedSlides) {
       const chunkDur = spokenDur / Math.max(chunkLines.length, 1);
       let captionFilter = '';
 
-      // Pinned Topic Hook at Top of Video for first 3.5 seconds (Slide 1) - Safe 1080p mobile viewport (y=240)
+      // Pinned Topic Hook at Top of Video for first 3.5 seconds (Slide 1) - Safe 1080p mobile viewport
       let topHookFilter = '';
       if (i === 0) {
         const rawTitle = (storyboard.title || storyboard.theme || 'DAILY STOIC MASTERY').replace(/#\w+/g, '').trim();
-        const cleanTopicHook = sanitizeForFfmpegDrawtext(rawTitle.slice(0, 24).toUpperCase());
-        topHookFilter = `,drawtext=text='${cleanTopicHook}':fontsize=30:fontcolor=0xFDE047:borderw=4:bordercolor=black:shadowcolor=black@0.9:shadowx=3:shadowy=3:x=(w-text_w)/2:y=240:fix_bounds=1:enable='between(t\\,0\\,3.5)'`;
+        const cleanTopicHook = sanitizeForFfmpegDrawtext(rawTitle.slice(0, 26).toUpperCase());
+        topHookFilter = `,drawtext=text='${cleanTopicHook}':fontsize=34:fontcolor=0xFDE047:box=1:boxcolor=black@0.88:boxborderw=12:borderw=3:bordercolor=0xFDE047:x=(w-text_w)/2:y=250:fix_bounds=1:enable='between(t\\,0\\,3.5)'`;
       }
 
       chunkLines.forEach((chunkText, cIdx) => {
@@ -1902,9 +1915,9 @@ async function renderFfmpegVideo(storyboard, enrichedSlides) {
         const endT = (cIdx === chunkLines.length - 1 ? slideDur : (cIdx + 1) * chunkDur).toFixed(2);
         const cleanChunk = sanitizeForFfmpegDrawtext(chunkText.toUpperCase());
         // Dynamic adaptive font size: downscale for longer text so captions never go off screen
-        const fontSize = cleanChunk.length > 16 ? 40 : cleanChunk.length > 11 ? 44 : 48;
+        const fontSize = cleanChunk.length > 20 ? 36 : cleanChunk.length > 13 ? 40 : 44;
         const fontColor = cIdx % 2 === 0 ? '0xFFFFFF' : '0xFDE047'; // Alternating platinum white and gold
-        captionFilter += `,drawtext=text='${cleanChunk}':fontsize=${fontSize}:fontcolor=${fontColor}:borderw=4:bordercolor=black:shadowcolor=black@0.85:shadowx=3:shadowy=3:x=(w-text_w)/2:y=1220:fix_bounds=1:enable='between(t\\,${startT}\\,${endT})'`;
+        captionFilter += `,drawtext=text='${cleanChunk}':fontsize=${fontSize}:fontcolor=${fontColor}:box=1:boxcolor=black@0.82:boxborderw=10:borderw=3:bordercolor=black:x=(w-text_w)/2:y=1180:fix_bounds=1:enable='between(t\\,${startT}\\,${endT})'`;
       });
 
       // Rapid, engaging Ken Burns zoom & pan motion (responsive speed)
@@ -2125,10 +2138,14 @@ async function handleYouTubePublish(storyboard, renderResult) {
 
         if (uploadResult.success && uploadResult.data && uploadResult.data.id) {
           const videoId = uploadResult.data.id;
-          const videoUrl = `https://www.youtube.com/shorts/${videoId}`;
+          const videoUrl = isDeepDive ? `https://www.youtube.com/watch?v=${videoId}` : `https://www.youtube.com/shorts/${videoId}`;
           logSuccess(`LIVE VIDEO PUBLISHED TO YOUTUBE!`);
           console.log(`  ${colors.bright}${colors.green}Video URL: ${videoUrl}${colors.reset}`);
           console.log(`  ${colors.bright}${colors.cyan}Studio Link: https://studio.youtube.com/video/${videoId}/edit${colors.reset}`);
+
+          // Post and pin an engaging question comment on the published video
+          await postYouTubePinnedComment(accessToken, videoId, storyboard, 'stoic');
+
           return { status: 'PUBLISHED_LIVE', videoId, videoUrl };
         } else {
           logError(`YouTube video binary streaming failed: ${uploadResult.error || `HTTP ${uploadResult.statusCode}`}`);
@@ -2151,7 +2168,80 @@ async function handleYouTubePublish(storyboard, renderResult) {
 }
 
 // ----------------------------------------------------
-// STEP 7.5: UPLOAD RENDERED VIDEO TO CLOUDINARY
+// STEP 7.4: POST ENGAGING PINNED COMMENT ON YOUTUBE VIDEO
+// ----------------------------------------------------
+async function postYouTubePinnedComment(accessToken, videoId, storyboard, niche = 'stoic') {
+  if (!accessToken || !videoId) return null;
+
+  let commentText = '';
+  if (niche === 'stoic') {
+    commentText = `Daily Reflection Question: What is one situation today where choosing calm silence and self-discipline will protect your peace? Drop your answer below 👇\n\nStay focused, stay disciplined. Subscribe to @TheStoicArchitect for daily mental fortitude!`;
+  } else {
+    commentText = `Question for you: Which of these practical business models would you test first with minimal capital? Share your thoughts below 👇\n\nSave this blueprint & subscribe to @bones_ceo for daily practical wealth breakdowns!`;
+  }
+
+  logInfo(`[Pinned Comment] Posting engaging top-level comment on YouTube video (${videoId})...`);
+  console.log(`  ${colors.bright}${colors.cyan}Pinned Comment Text:\n  "${commentText.replace(/\n/g, '\n  ')}"${colors.reset}`);
+
+  try {
+    const postData = JSON.stringify({
+      snippet: {
+        videoId: videoId,
+        topLevelComment: {
+          snippet: {
+            textOriginal: commentText
+          }
+        }
+      }
+    });
+
+    const result = await new Promise((resolve) => {
+      const req = https.request('https://www.googleapis.com/youtube/v3/commentThreads?part=snippet', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(postData)
+        },
+        timeout: 10000
+      }, (res) => {
+        let d = '';
+        res.on('data', c => d += c);
+        res.on('end', () => {
+          if (res.statusCode === 200 || res.statusCode === 201) {
+            try {
+              const j = JSON.parse(d);
+              resolve({ success: true, commentId: j.id, text: commentText });
+            } catch {
+              resolve({ success: true, text: commentText });
+            }
+          } else {
+            resolve({ success: false, statusCode: res.statusCode, error: d.slice(0, 200) });
+          }
+        });
+      });
+      req.on('error', e => resolve({ success: false, error: e.message }));
+      req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
+      req.write(postData);
+      req.end();
+    });
+
+    if (result.success) {
+      logSuccess(`PINNED COMMENT PUBLISHED TO YOUTUBE! (Comment ID: ${result.commentId || 'active'})`);
+      console.log(`  ${colors.bright}${colors.green}Pinned Comment Active: "${commentText.split('\n')[0]}"${colors.reset}`);
+      return result;
+    } else {
+      logWarning(`YouTube comment thread post notice (HTTP ${result.statusCode}): ${result.error || 'Check channel permissions'}`);
+      return null;
+    }
+  } catch (err) {
+    logWarning(`Pinned comment exception: ${err.message}`);
+    return null;
+  }
+}
+
+// ----------------------------------------------------
+// STEP 7.5: UPLOAD RENDERED VIDEO TO CLOUDINARY (UNSIGNED PRESET SAFE)
 // ----------------------------------------------------
 async function uploadToCloudinary(videoFilePath, publicId) {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME || '';
@@ -2190,10 +2280,9 @@ async function uploadToCloudinary(videoFilePath, publicId) {
 
     let fields = {};
     if (uploadPreset) {
+      // Unsigned upload preset: ONLY pass upload_preset parameter
       fields = {
-        upload_preset: uploadPreset,
-        folder: 'voxam_shorts',
-        public_id: publicId || `stoic_short_${Date.now()}`
+        upload_preset: uploadPreset
       };
     } else if (effectiveApiKey && effectiveApiSecret) {
       const crypto = require('crypto');
@@ -2208,8 +2297,7 @@ async function uploadToCloudinary(videoFilePath, publicId) {
       };
     } else {
       fields = {
-        upload_preset: 'voxawell',
-        folder: 'voxam_shorts'
+        upload_preset: 'voxawell'
       };
     }
 
@@ -2224,7 +2312,7 @@ async function uploadToCloudinary(videoFilePath, publicId) {
     const postBuffer = Buffer.concat(chunks);
 
     const result = await new Promise((resolve) => {
-      const req = https.request(`https://api.cloudinary.com/v1_1/${effectiveCloudName}/video/upload`, {
+      const req = https.request(`https://api.cloudinary.com/v1_1/${effectiveCloudName}/auto/upload`, {
         method: 'POST',
         headers: {
           'Content-Type': `multipart/form-data; boundary=${boundary}`,

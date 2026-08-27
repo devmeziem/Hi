@@ -53,8 +53,8 @@ const STOIC_ARCHETYPES = [
       "A rude comment only has power if you agree to let it hurt you. Stop giving away your energy.",
       "The most dangerous response to disrespect is not anger. It is complete, calm indifference."
     ],
-    modernScenario: "Navigating a hostile coworker, passive-aggressive remarks in a meeting, or online trolls without raising your voice.",
-    visualStyle: 'Calm composed professional standing tall and unshakable in a blurred high-contrast boardroom or busy city street, sharp cinematic focus, 9:16 vertical 8k',
+    modernScenario: "Navigating a rude comment, a dismissive person, or online negativity without raising your voice or losing your cool.",
+    visualStyle: 'Calm composed person standing tall and unshakable in a quiet morning city street, sharp cinematic focus, 9:16 vertical 8k',
     outroPattern: "Master your reaction, master your peace. Follow this channel for mental fortitude."
   },
   {
@@ -233,8 +233,8 @@ const STOIC_ARCHETYPES = [
       "You don't need mirror affirmations. You need a stack of undeniable proof that you do what you say.",
       "How to stop seeking permission from others and start trusting your own judgment."
     ],
-    modernScenario: "Entering high-stakes meetings or making bold career decisions with quiet, grounded self-assurance.",
-    visualStyle: 'Confident modern professional walking with purpose down a sleek architectural corridor in dramatic natural light, 9:16 vertical 8k',
+    modernScenario: "Facing challenging daily decisions, social pressure, or unpredictable situations with quiet, grounded self-assurance.",
+    visualStyle: 'Confident person walking with purpose down a modern sunlit pathway in dramatic natural light, 9:16 vertical 8k',
     outroPattern: "Build evidence, build trust. Follow this channel for mental strength."
   },
   {
@@ -884,6 +884,106 @@ function synthesizeDeterministicStoryboard(slotArchetype, topicTitle, channelHan
   };
 }
 
+/**
+ * Build rich prompt for 15-chapter 15-20 min Stoic Masterclass video
+ */
+function buildStoicDeepDivePrompt(archetype, recentHistory = [], channelHandle = '@thestoicarchitect-n4b') {
+  const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
+  const recentTitles = (recentHistory || []).slice(0, 15).map(h => `"${h.topic || h.title}"`).join(', ');
+  const resolvedOutro = resolveOutroPattern(archetype.outroPattern, cleanHandle);
+
+  const systemPrompt = `You are a master Stoic philosopher, psychologist, and long-form documentary scriptwriter for the channel (${cleanHandle}).
+CHANNEL GOAL: Deliver deep, practical, spoken-conversational modern Stoic wisdom that transforms everyday lives.
+AUDIENCE: Normal everyday people seeking unshakeable discipline, emotional mastery, and mental fortitude.
+
+LONG-FORM MASTERCLASS REQUIREMENTS (15 CHAPTERS / 15-20 MINUTES):
+1. EXACTLY 15 COMPREHENSIVE CHAPTERS (SLIDES 0 TO 14):
+   - Each slide represents an in-depth teaching section (~100-130 words of natural, wise, spoken-word narration).
+   - Clear, low-level English (5th-7th grade readability) that answers real human questions.
+2. 15-CHAPTER PROGRESSIVE STOIC BLUEPRINT:
+   - Slide 0: Executive Hook & The Reality of Modern Mental Chaos
+   - Slide 1: The Core Question - Why Do We Lose Our Peace?
+   - Slide 2: The Dichotomy of Control (The Foundation)
+   - Slide 3: Taming the Emotional Spike (The 10-Second Pause)
+   - Slide 4: Overcoming the Fear of Other People's Opinions
+   - Slide 5: Transforming Pain & Rejection into Raw Fuel (Amor Fati)
+   - Slide 6: The Daily Contract - Discipline Over Fleeting Moods
+   - Slide 7: Silence as Power - Disarming Disrespect Without Anger
+   - Slide 8: The Solitude Protocol - Building Your Fortress in Private
+   - Slide 9: Conquering Cheap Dopamine & Impulsive Desires
+   - Slide 10: Keeping Promises to Yourself (Evidence-Based Self-Trust)
+   - Slide 11: Real-Life Modern Scenario & Step-by-Step Resolution
+   - Slide 12: Morning & Evening Mental Audits (The Daily Routine)
+   - Slide 13: Memento Mori - Using Urgency to Eliminate Trivial Drama
+   - Slide 14: The 30-Day Stoic Reset Blueprint & Outro (${resolvedOutro})
+3. VISUALS: 16:9 widescreen 8k cinematic dark slate and warm amber lighting.
+
+OUTPUT FORMAT: Return strictly valid JSON matching:
+{
+  "title": "Stoic Masterclass Title (No #Shorts)",
+  "theme": "${archetype.theme}",
+  "angle": "${archetype.angle}",
+  "description": "Full 15-chapter masterclass on ${archetype.theme}.\\n\\n#Stoicism #Mindset #Discipline #MentalStrength",
+  "tags": ["#Stoicism", "#Mindset", "#Discipline", "#MentalStrength", "#SelfControl"],
+  "slides": [
+    {
+      "slideIndex": 0,
+      "chapterTitle": "Introduction & The Modern Trap",
+      "text": "Detailed 100-130 words spoken narration...",
+      "visual": "16:9 widescreen 8k cinematic atmospheric shot with warm amber and deep slate tones..."
+    }
+  ]
+}`;
+
+  const userPrompt = `Generate a complete 15-chapter 15-20 min Masterclass script on "${archetype.theme}". Angle: "${archetype.angle}". Avoid recent topics: [${recentTitles || 'None'}]. Return strictly valid JSON.`;
+
+  return { systemPrompt, userPrompt };
+}
+
+/**
+ * High-quality deterministic fallback for 15-Chapter Stoic Masterclass
+ */
+function synthesizeDeterministicStoicDeepDiveStoryboard(archetype, topicTitle, channelHandle = '@thestoicarchitect-n4b') {
+  const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
+  const resolvedOutro = resolveOutroPattern(archetype ? archetype.outroPattern : '', cleanHandle);
+  const arch = archetype || STOIC_ARCHETYPES[0];
+  const title = topicTitle && topicTitle.length > 5 ? topicTitle : `${arch.theme} - The Complete Stoic Masterclass`;
+
+  const chapters = [
+    { title: 'The Modern Trap: Why We Lose Our Peace', text: `In a world full of noise, notifications, and endless demands, most people live in a constant state of reaction. They let external events dictate their mood, their focus, and their self-worth. Stoicism is not about suppressing your emotions; it is the ancient art of reclaiming your sovereignty. When you master your mind, nothing outside can shake your foundation.` },
+    { title: 'The Dichotomy of Control: The Golden Rule', text: `Epictetus taught that life is divided into two categories: things you control, and things you do not. You control your thoughts, your daily habits, and your responses. You do not control the economy, other people, or past mistakes. The moment you stop pouring energy into things outside your control, ninety percent of your anxiety instantly evaporates.` },
+    { title: 'The Sovereign Pause: Mastering Reaction', text: `Between every stimulus and your reaction, there is a small pocket of space. In that space lies your freedom. When someone cuts you off, insults you, or ruins your plans, pause for ten seconds. Take a deep breath. Let reason take the wheel before emotion causes you to say or do something you will regret.` },
+    { title: 'The Illusion of Approval: Escaping People-Pleasing', text: `Seeking validation from others is like handing them the keys to your happiness. When you depend on compliments to feel good, insults will easily destroy you. Marcus Aurelius reminded himself every morning that the opinions of others say everything about their character and nothing about his own.` },
+    { title: 'Amor Fati: Loving What Happens', text: `Amor Fati means loving your fate, whatever it brings. When plans collapse or hardships strike, a weak mind complains and asks why me. A Stoic asks: what does this teach me right now? Every obstacle is raw fuel for character development. You do not merely survive difficulty; you use it to grow stronger.` },
+    { title: 'The Non-Negotiable Contract: Discipline Over Mood', text: `Motivation is an unreliable friend. It arrives with excitement and disappears when the work gets difficult. Discipline is a non-negotiable contract you sign with yourself. You show up, you study, you build, and you train regardless of whether you feel like it. Consistency is the only true separator.` },
+    { title: 'Silence as Power: Defeating Hostility', text: `When someone tries to provoke you with disrespect, reacting with anger proves they found your weak spot. Silence, delivered with calm eye contact and steady composure, exposes their aggression as childish and weak. True strength is quiet; weakness is loud and reactive.` },
+    { title: 'The Laboratory of Solitude: Building in the Dark', text: `Many people fear being alone because they cannot stand the quiet of their own thoughts. But solitude is the laboratory where your strongest self is built. Use your private hours to read, meditate, refine your skills, and build a fortress that no sudden storm can knock down.` },
+    { title: 'Conquering Impulse: The 10-Minute Rule', text: `Cheap dopamine is everywhere, from endless scrolling to impulse spending. Every time you surrender to an impulsive urge, you teach your brain that your willpower cannot be trusted. Use the ten-minute rule: when a craving hits, wait ten minutes. Most cravings fade when forced to face deliberate delay.` },
+    { title: 'Evidence-Based Self-Trust: Keeping Promises', text: `You cannot fake real confidence. Affirmations in the mirror will not give you genuine self-trust. Genuine confidence is built on a stack of undeniable proof: waking up on time, finishing what you started, and keeping the small promises you made to yourself when no one was watching.` },
+    { title: 'Modern Scenario: Navigating Daily Chaos', text: `Consider a day when everything seems to go wrong at work or at home. Deadlines clash, plans fall apart, and people are difficult. Instead of spiraling, treat the entire day as an obstacle course designed specifically to test your composure. Smile at the resistance and execute one clear step at a time.` },
+    { title: 'The Morning & Evening Audit: Daily Mental Hygiene', text: `Begin your morning by setting your mental armor. Prepare your mind for difficult people and unexpected delays. End your night with a calm three-question audit: What did I do well today? Where did I lose control? How can I respond better tomorrow? Continuous reflection creates continuous growth.` },
+    { title: 'Memento Mori: The Ultimate Clarity Filter', text: `Remembering that your time on this earth is finite is not morbid; it is the ultimate tool for clarity. When you realize how short life is, you immediately stop wasting precious hours arguing over petty slights, holding grudges, or worrying about things that will not matter next year.` },
+    { title: 'The Inner Citadel: Becoming Indestructible', text: `Your mind is your ultimate fortress. External circumstances can take your money, your comfort, or your reputation, but no one can take your virtue, your discipline, or your peace unless you willingly surrender them. Protect your inner citadel with relentless daily practice.` },
+    { title: 'The 30-Day Action Blueprint & Conclusion', text: `Commit to practicing these principles for the next thirty days. Speak less, listen more, pause before reacting, and execute your daily duties with quiet excellence. Control your mind, own your destiny. ${resolvedOutro}` }
+  ];
+
+  return {
+    title: title,
+    theme: arch.theme,
+    angle: arch.angle,
+    description: `Comprehensive 15-Chapter Masterclass on ${arch.theme}.\n\nTimestamps:\n` +
+      chapters.map((c, i) => `${String(Math.floor(i * 1.2)).padStart(2, '0')}:00 Chapter ${i + 1}: ${c.title}`).join('\n') +
+      `\n\n#Stoicism #Mindset #Discipline #MentalStrength #SelfControl`,
+    tags: ["#Stoicism", "#Mindset", "#Discipline", "#MentalStrength", "#SelfControl"],
+    slides: chapters.map((c, idx) => ({
+      slideIndex: idx,
+      chapterTitle: c.title,
+      text: c.text,
+      visual: `16:9 widescreen 8k photorealistic modern cinematic studio setting with deep dark slate background, warm golden amber rim lighting, razor-sharp focus`
+    }))
+  };
+}
+
 module.exports = {
   STOIC_ARCHETYPES,
   classifyLessonIntent,
@@ -893,5 +993,8 @@ module.exports = {
   selectDailyDiverseSlots,
   resolveOutroPattern,
   buildStoicPromptForSlot,
-  synthesizeDeterministicStoryboard
+  buildStoicDeepDivePrompt,
+  synthesizeDeterministicStoryboard,
+  synthesizeDeterministicStoicDeepDiveStoryboard
 };
+

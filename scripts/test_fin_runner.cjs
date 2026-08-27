@@ -22,7 +22,9 @@ const {
   auditFinancialScriptSafety,
   sanitizeFinString,
   buildFinPromptForSlot,
-  synthesizeDeterministicFinStoryboard
+  buildFinDeepDivePrompt,
+  synthesizeDeterministicFinStoryboard,
+  synthesizeDeterministicFinDeepDiveStoryboard
 } = require('./fin_diversity_engine.cjs');
 
 // ANSI Color helper for clean terminal outputs
@@ -318,12 +320,14 @@ async function probeBackupEngines() {
 
   if (GROQ_API_KEY) {
     let candidateModels = [
-      'llama-3.1-8b-instant',
-      'gemma2-9b-it',
       'llama-3.3-70b-versatile',
+      'llama-3.1-8b-instant',
       'mixtral-8x7b-32768',
+      'gemma2-9b-it',
+      'deepseek-r1-distill-llama-70b',
       'qwen-2.5-32b',
-      'deepseek-r1-distill-llama-70b'
+      'llama3-70b-8192',
+      'llama3-8b-8192'
     ];
 
     for (const model of candidateModels) {
@@ -395,7 +399,10 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
 
   logInfo(`[Archetype] Selected Pillar: "${archetype.theme}" (Target Budget: ${archetype.targetBudget})`);
 
-  const { systemPrompt, userPrompt } = buildFinPromptForSlot(archetype, recentHistory, 0, CHANNEL_HANDLE);
+  const isDeepDive = contentDepth === 'deep_dive';
+  const { systemPrompt, userPrompt } = isDeepDive
+    ? buildFinDeepDivePrompt(archetype, recentHistory, CHANNEL_HANDLE)
+    : buildFinPromptForSlot(archetype, recentHistory, 0, CHANNEL_HANDLE);
   let scriptData = null;
 
   // Helper to test parsed JSON
@@ -660,12 +667,14 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
   // 6. FALLBACK: Deterministic Diversity Engine
   if (!scriptData || !Array.isArray(scriptData.slides) || scriptData.slides.length < 3) {
     logWarning('[Storyboard Engine] Synthesizing verified deterministic financial package from Diversity Engine...');
-    scriptData = synthesizeDeterministicFinStoryboard(archetype, topicInput, CHANNEL_HANDLE);
-    logSuccess(`Diversity Engine synthesized authentic 6-slide financial masterclass!`);
+    scriptData = isDeepDive
+      ? synthesizeDeterministicFinDeepDiveStoryboard(archetype, topicInput, CHANNEL_HANDLE)
+      : synthesizeDeterministicFinStoryboard(archetype, topicInput, CHANNEL_HANDLE);
+    logSuccess(`Diversity Engine synthesized authentic ${scriptData.slides.length}-slide financial masterclass!`);
   }
 
-  // Enforce strictly 6 slides for high-retention Short format
-  if (scriptData.slides.length > 6) {
+  // Enforce strictly 6 slides for high-retention Short format (unless deep dive masterclass)
+  if (!isDeepDive && scriptData.slides.length > 6) {
     scriptData.slides = scriptData.slides.slice(0, 6);
   }
 
@@ -901,7 +910,7 @@ async function synthesizeEnrichedSlides(storyboard) {
             lang: 'en-US',
             outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
             pitch: '+0Hz',
-            rate: '+4%' // Clear, conversational, highly engaging finance educator pacing
+            rate: '+0%' // Grounded, natural, clear educational financial pacing
           });
 
           await tts.ttsPromise(cleanText, tempAudio);
@@ -1123,12 +1132,12 @@ async function renderFullFinanceFfmpegVideo(storyboard, enrichedSlides) {
       const chunkDur = spokenDur / Math.max(chunkLines.length, 1);
       let captionFilter = '';
 
-      // Slide 1 Pinned Hook Banner at top (Mobile Shorts safe zone y=240)
+      // Slide 1 Pinned Hook Banner at top (3-second topic safe zone y=250 with background box)
       let topHookFilter = '';
       if (i === 0) {
-        const rawTitle = (storyboard.title || storyboard.theme || 'FINANCIAL MASTERY').replace(/#\w+/g, '').trim();
-        const cleanHook = sanitizeForFfmpegDrawtext(rawTitle.slice(0, 24).toUpperCase());
-        topHookFilter = `,drawtext=text='${cleanHook}':fontsize=30:fontcolor=0xFFEA00:borderw=4:bordercolor=black:shadowcolor=black@0.9:shadowx=3:shadowy=3:x=(w-text_w)/2:y=240:fix_bounds=1:enable='between(t\\,0\\,3.5)'`;
+        const rawTitle = (storyboard.title || storyboard.theme || 'FINANCIAL BLUEPRINT').replace(/#\w+/g, '').trim();
+        const cleanHook = sanitizeForFfmpegDrawtext(rawTitle.slice(0, 26).toUpperCase());
+        topHookFilter = `,drawtext=text='${cleanHook}':fontsize=32:fontcolor=0xFFEA00:box=1:boxcolor=black@0.80:boxborderw=8:borderw=3:bordercolor=black:shadowcolor=black@0.9:shadowx=2:shadowy=2:x=(w-text_w)/2:y=250:fix_bounds=1:enable='between(t\\,0\\,3.5)'`;
       }
 
       chunkLines.forEach((chunkText, cIdx) => {
@@ -1136,11 +1145,11 @@ async function renderFullFinanceFfmpegVideo(storyboard, enrichedSlides) {
         // The last chunk stays visible until slideDur finishes
         const endT = (cIdx === chunkLines.length - 1 ? slideDur : (cIdx + 1) * chunkDur).toFixed(2);
         const cleanChunk = sanitizeForFfmpegDrawtext(chunkText.toUpperCase());
-        // Dynamic adaptive font size: downscales for longer text so captions never go off screen
-        const fontSize = cleanChunk.length > 16 ? 40 : cleanChunk.length > 11 ? 44 : 48;
+        // Dynamic adaptive font size and safety bounds to prevent off-screen captions
+        const fontSize = cleanChunk.length > 16 ? 36 : cleanChunk.length > 10 ? 40 : 44;
         const fontColor = cIdx % 2 === 0 ? '0xFFEA00' : '0xFFFFFF'; // Alternating canary yellow & white
-        // Safe position with fix_bounds=1 and y=1220
-        captionFilter += `,drawtext=text='${cleanChunk}':fontsize=${fontSize}:fontcolor=${fontColor}:borderw=4:bordercolor=black:shadowcolor=black@0.85:shadowx=3:shadowy=3:x=(w-text_w)/2:y=1220:fix_bounds=1:enable='between(t\\,${startT}\\,${endT})'`;
+        // Centered inside mobile safe zone y=1180 with solid readable backing
+        captionFilter += `,drawtext=text='${cleanChunk}':fontsize=${fontSize}:fontcolor=${fontColor}:box=1:boxcolor=black@0.82:boxborderw=8:borderw=3:bordercolor=black:shadowcolor=black@0.9:shadowx=2:shadowy=2:x=(w-text_w)/2:y=1180:fix_bounds=1:enable='between(t\\,${startT}\\,${endT})'`;
       });
 
       // ----------------------------------------------------
@@ -1361,10 +1370,15 @@ async function handleYouTubePublish(storyboard, renderResult) {
 
         if (uploadResult.success && uploadResult.data && uploadResult.data.id) {
           const videoId = uploadResult.data.id;
-          const videoUrl = `https://www.youtube.com/shorts/${videoId}`;
-          logSuccess(`🚀 LIVE VIDEO PUBLISHED TO YOUTUBE! Video ID: ${videoId}`);
+          const isDeepDive = contentDepth === 'deep_dive';
+          const videoUrl = isDeepDive ? `https://www.youtube.com/watch?v=${videoId}` : `https://www.youtube.com/shorts/${videoId}`;
+          logSuccess(`LIVE VIDEO PUBLISHED TO YOUTUBE! Video ID: ${videoId}`);
           console.log(`  ${colors.bright}${colors.green}Video URL: ${videoUrl}${colors.reset}`);
           console.log(`  ${colors.bright}${colors.cyan}Studio Link: https://studio.youtube.com/video/${videoId}/edit${colors.reset}`);
+
+          // Post and pin an engaging question comment on the published video
+          await postYouTubePinnedComment(accessToken, videoId, storyboard, 'fin');
+
           return { status: 'PUBLISHED_LIVE', videoId, videoUrl };
         } else {
           logError(`YouTube video binary streaming failed: ${uploadResult.error || `HTTP ${uploadResult.statusCode}`}`);
@@ -1384,7 +1398,75 @@ async function handleYouTubePublish(storyboard, renderResult) {
 }
 
 // ----------------------------------------------------
-// STEP 6.5: UPLOAD RENDERED VIDEO TO CLOUDINARY
+// STEP 6.4: POST ENGAGING PINNED COMMENT ON YOUTUBE VIDEO
+// ----------------------------------------------------
+async function postYouTubePinnedComment(accessToken, videoId, storyboard, niche = 'fin') {
+  if (!accessToken || !videoId) return null;
+
+  const commentText = `Question for you: Which of these practical business models would you test first with minimal capital? Share your thoughts below 👇\n\nSave this blueprint & subscribe to @bones_ceo for daily practical wealth breakdowns!`;
+
+  logInfo(`[Pinned Comment] Posting engaging top-level comment on YouTube video (${videoId})...`);
+  console.log(`  ${colors.bright}${colors.cyan}Pinned Comment Text:\n  "${commentText.replace(/\n/g, '\n  ')}"${colors.reset}`);
+
+  try {
+    const postData = JSON.stringify({
+      snippet: {
+        videoId: videoId,
+        topLevelComment: {
+          snippet: {
+            textOriginal: commentText
+          }
+        }
+      }
+    });
+
+    const result = await new Promise((resolve) => {
+      const req = https.request('https://www.googleapis.com/youtube/v3/commentThreads?part=snippet', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(postData)
+        },
+        timeout: 10000
+      }, (res) => {
+        let d = '';
+        res.on('data', c => d += c);
+        res.on('end', () => {
+          if (res.statusCode === 200 || res.statusCode === 201) {
+            try {
+              const j = JSON.parse(d);
+              resolve({ success: true, commentId: j.id, text: commentText });
+            } catch {
+              resolve({ success: true, text: commentText });
+            }
+          } else {
+            resolve({ success: false, statusCode: res.statusCode, error: d.slice(0, 200) });
+          }
+        });
+      });
+      req.on('error', e => resolve({ success: false, error: e.message }));
+      req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
+      req.write(postData);
+      req.end();
+    });
+
+    if (result.success) {
+      logSuccess(`PINNED COMMENT PUBLISHED TO YOUTUBE! (Comment ID: ${result.commentId || 'active'})`);
+      console.log(`  ${colors.bright}${colors.green}Pinned Comment Active: "${commentText.split('\n')[0]}"${colors.reset}`);
+      return result;
+    } else {
+      logWarning(`YouTube comment thread post notice (HTTP ${result.statusCode}): ${result.error || 'Check channel permissions'}`);
+      return null;
+    }
+  } catch (err) {
+    logWarning(`Pinned comment exception: ${err.message}`);
+    return null;
+  }
+}
+
+// ----------------------------------------------------
+// STEP 6.5: UPLOAD RENDERED VIDEO TO CLOUDINARY (UNSIGNED PRESET SAFE)
 // ----------------------------------------------------
 async function uploadToCloudinary(videoFilePath, publicId) {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME || '';
@@ -1423,10 +1505,9 @@ async function uploadToCloudinary(videoFilePath, publicId) {
 
     let fields = {};
     if (uploadPreset) {
+      // Unsigned upload preset: ONLY pass upload_preset parameter
       fields = {
-        upload_preset: uploadPreset,
-        folder: 'voxam_shorts',
-        public_id: publicId || `fin_short_${Date.now()}`
+        upload_preset: uploadPreset
       };
     } else if (effectiveApiKey && effectiveApiSecret) {
       const crypto = require('crypto');
@@ -1441,8 +1522,7 @@ async function uploadToCloudinary(videoFilePath, publicId) {
       };
     } else {
       fields = {
-        upload_preset: 'voxawell',
-        folder: 'voxam_shorts'
+        upload_preset: 'voxawell'
       };
     }
 
@@ -1457,7 +1537,7 @@ async function uploadToCloudinary(videoFilePath, publicId) {
     const postBuffer = Buffer.concat(chunks);
 
     const result = await new Promise((resolve) => {
-      const req = https.request(`https://api.cloudinary.com/v1_1/${effectiveCloudName}/video/upload`, {
+      const req = https.request(`https://api.cloudinary.com/v1_1/${effectiveCloudName}/auto/upload`, {
         method: 'POST',
         headers: {
           'Content-Type': `multipart/form-data; boundary=${boundary}`,
