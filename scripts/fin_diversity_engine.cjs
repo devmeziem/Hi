@@ -430,14 +430,294 @@ Use very simple, easy-to-understand words. Explain any difficult terms on the sp
 }
 
 /**
- * Deterministic fallback storyboard synthesis if AI providers are unreachable
+ * Deterministic fallback storyboard synthesis if AI providers are unreachable.
+ * Dynamically synthesizes topic-specific, highly tailored 6-slide storyboards
+ * with unique scripts, dual-currency math, and matching visual prompts for every category.
  */
 function synthesizeDeterministicFinStoryboard(archetype, topicTitle, channelHandle = '@bones_ceo') {
   const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
   const resolvedOutro = resolveFinOutro(cleanHandle);
   const arch = archetype || FIN_ARCHETYPES[0];
   const cleanTopic = sanitizeFinString(topicTitle || arch.angle);
+  const topicLower = (cleanTopic + ' ' + (arch.theme || '') + ' ' + (arch.angle || '')).toLowerCase();
 
+  // 1. LOAN APPS / HIGH INTEREST / DEBT TRAP
+  if (topicLower.includes('loan') || topicLower.includes('borrow') || topicLower.includes('apr') || topicLower.includes('debt') || topicLower.includes('interest')) {
+    return {
+      title: `${cleanTopic.slice(0, 60)} #Shorts`,
+      category: FIN_CATEGORIES.FINANCIAL_EDUCATION,
+      theme: 'Financial Education: Quick Loan Apps & High Borrowing Fees Explained',
+      angle: 'How High-Interest Quick Loan Apps Trap Borrowers in Endless Debt',
+      hook: 'Have you ever wondered why quick loan apps give you instant cash in 5 minutes with no collateral?',
+      description: `The real danger of quick loan apps and how high interest rates trap everyday people in endless debt.\n\n#Shorts #PersonalFinance #LoanApps #DebtFree #MoneyTips #FinancialLiteracy`,
+      tags: ["#Shorts", "#PersonalFinance", "#LoanApps", "#DebtFree", "#MoneyTips", "#FinancialLiteracy"],
+      estimatedBudget: 'Financial Protection ($0)',
+      slides: [
+        {
+          slideIndex: 0,
+          text: `Have you ever wondered why quick loan apps give you instant money in five minutes without asking for any collateral or proof of salary?`,
+          visual: `Cinematic 9:16 vertical 8k shot, smartphone screen displaying instant loan approved notification with warning glowing amber highlights`
+        },
+        {
+          slideIndex: 1,
+          text: `Here is the hidden trap: If you borrow ₦10,000 and they charge you ₦3,500 fee in just two weeks, that is not a small fee — that is 35 percent every fourteen days.`,
+          visual: `Cinematic 9:16 vertical 8k visual breakdown chart showing small loan amount overshadowed by huge red repayment penalties`
+        },
+        {
+          slideIndex: 2,
+          text: `When you miss the deadline by just one day, predatory apps often start calling everyone in your phone contacts and texting shameful messages to force you to pay.`,
+          visual: `Cinematic 9:16 vertical 8k shot, cyber security shield on modern mobile interface alerting user to unauthorized phone permissions`
+        },
+        {
+          slideIndex: 3,
+          text: `Before you click accept on any mobile loan app, always check the exact repayment date and total fees. If the interest is higher than five percent, do not take it.`,
+          visual: `Cinematic 9:16 vertical 8k close-up, sharp financial checklist on clean desk with calculator and emerald approval checkmark`
+        },
+        {
+          slideIndex: 4,
+          text: `Instead of borrowing for daily food or transport, build a tiny emergency fund of ₦5,000 or about $3.50 so you never have to borrow to survive.`,
+          visual: `Cinematic 9:16 vertical 8k shot, clean transparent savings jar with neatly organized dollar and naira bills on dark slate desk`
+        },
+        {
+          slideIndex: 5,
+          text: `Protect your peace of mind, avoid predatory debt traps, and ${resolvedOutro}`,
+          visual: `Cinematic 9:16 vertical 8k shot, confident disciplined entrepreneur working at modern desk in emerald and gold ambient studio glow`
+        }
+      ]
+    };
+  }
+
+  // 2. PHONE SKILLS & REMOTE INCOME ($0 / ₦0)
+  if (topicLower.includes('skill') || topicLower.includes('phone') || topicLower.includes('remote') || topicLower.includes('online income') || topicLower.includes('laptop') || topicLower.includes('canva') || topicLower.includes('capcut')) {
+    return {
+      title: `${cleanTopic.slice(0, 60)} #Shorts`,
+      category: FIN_CATEGORIES.SKILLS_TO_INCOME,
+      theme: 'Phone-Only Digital Skills & Remote Income',
+      angle: '3 Free Digital Skills You Can Learn On Just Your Smartphone',
+      hook: 'You do not need an expensive laptop to make honest money online in 2026 — your phone is enough.',
+      description: `3 valuable digital skills you can learn and offer with just a smartphone and internet connection.\n\n#Shorts #DigitalSkills #MakeMoneyOnline #SideHustle #PhoneIncome #Freelancing`,
+      tags: ["#Shorts", "#DigitalSkills", "#MakeMoneyOnline", "#SideHustle", "#PhoneIncome", "#Freelancing"],
+      estimatedBudget: '$0 (Phone & Internet Only)',
+      slides: [
+        {
+          slideIndex: 0,
+          text: `You do not need an expensive laptop or millions of cash to earn money online in 2026. If you have a smartphone, you already have the tool.`,
+          visual: `Cinematic 9:16 vertical 8k scene, hands holding a sleek smartphone displaying a video editing timeline with emerald and gold ambient light`
+        },
+        {
+          slideIndex: 1,
+          text: `The first high-demand skill is vertical video editing using free mobile apps like CapCut. Local businesses and creators will happily pay you $10 or ₦15,000 per video.`,
+          visual: `Cinematic 9:16 vertical 8k shot, clean screen recording view of mobile video cutting and dynamic captions on modern smartphone`
+        },
+        {
+          slideIndex: 2,
+          text: `The second skill is simple social media flyer design using Canva. Small shop owners need daily product posters and WhatsApp status designs to attract customers.`,
+          visual: `Cinematic 9:16 vertical 8k shot, colorful modern promotional product flyer template being customized on mobile canvas`
+        },
+        {
+          slideIndex: 3,
+          text: `The third skill is writing short sales captions. Help busy shop owners write clear WhatsApp broadcast messages that describe their products and prices clearly.`,
+          visual: `Cinematic 9:16 vertical 8k shot, clean messaging interface showing customer orders coming in through clear promotional text`
+        },
+        {
+          slideIndex: 4,
+          text: `Spend just thirty minutes every evening watching free tutorials on YouTube. Practice creating three sample designs before messaging local shop owners.`,
+          visual: `Cinematic 9:16 vertical 8k shot, organized student workspace with notebook, phone on tripod, and warm ambient lighting`
+        },
+        {
+          slideIndex: 5,
+          text: `Turn your screen time into daily income, and ${resolvedOutro}`,
+          visual: `Cinematic 9:16 vertical 8k shot, young creator smiling confidently in modern workspace with emerald green rim lighting`
+        }
+      ]
+    };
+  }
+
+  // 3. SCAM AWARENESS & FRAUD PREVENTION
+  if (topicLower.includes('scam') || topicLower.includes('ponzi') || topicLower.includes('trap') || topicLower.includes('fake') || topicLower.includes('fraud') || topicLower.includes('giveaway')) {
+    return {
+      title: `${cleanTopic.slice(0, 60)} #Shorts`,
+      category: FIN_CATEGORIES.SCAM_AWARENESS,
+      theme: 'Scam & Fraud Prevention: Exposing Ponzi & Fake Investment Traps',
+      angle: '5 Simple Signs of a Fake Investment Scam Before You Lose Your Money',
+      hook: 'If anyone promises you guaranteed 30% weekly profit with zero risk, run away immediately.',
+      description: `How to spot fake investment schemes and protect your hard-earned money from Ponzi traps.\n\n#Shorts #ScamAlert #ProtectYourMoney #FinancialLiteracy #PersonalFinance`,
+      tags: ["#Shorts", "#ScamAlert", "#ProtectYourMoney", "#FinancialLiteracy", "#PersonalFinance"],
+      estimatedBudget: 'Capital Protection ($0)',
+      slides: [
+        {
+          slideIndex: 0,
+          text: `If anyone messages you promising guaranteed thirty percent weekly profit with zero risk, do not send one dime. It is one hundred percent a scam.`,
+          visual: `Cinematic 9:16 vertical 8k scene, high-contrast security warning aesthetic with glowing red-amber caution icon and dark slate background`
+        },
+        {
+          slideIndex: 1,
+          text: `Real businesses and banks only make small realistic returns over months. No legitimate investment can double your cash in seven days out of thin air.`,
+          visual: `Cinematic 9:16 vertical 8k shot, comparison chart showing realistic bank interest versus fake unrealistic scam spike`
+        },
+        {
+          slideIndex: 2,
+          text: `Watch out for high referral pressure. If an app forces you to bring three new people before you can withdraw your own money, it is a collapsing Ponzi scheme.`,
+          visual: `Cinematic 9:16 vertical 8k shot, digital network diagram collapsing in red warnings with security lock engaging`
+        },
+        {
+          slideIndex: 3,
+          text: `Never invest money into any platform that has no verified government registration, no clear office address, and only accepts anonymous crypto or gift cards.`,
+          visual: `Cinematic 9:16 vertical 8k shot, official financial regulatory license and padlock verification badge on clean digital tablet`
+        },
+        {
+          slideIndex: 4,
+          text: `Always remember: It is far better to protect your ₦10,000 or $7 than to lose everything chasing fast, fake profits that do not exist.`,
+          visual: `Cinematic 9:16 vertical 8k shot, secure digital bank vault interface glowing with emerald green protective shields`
+        },
+        {
+          slideIndex: 5,
+          text: `Stay vigilant, protect your hard-earned money, and ${resolvedOutro}`,
+          visual: `Cinematic 9:16 vertical 8k shot, modern professional standing with confidence in sleek office with gold and slate tones`
+        }
+      ]
+    };
+  }
+
+  // 4. INFLATION & PURCHASING POWER
+  if (topicLower.includes('inflation') || topicLower.includes('purchasing power') || topicLower.includes('prices') || topicLower.includes('devaluation') || topicLower.includes('market')) {
+    return {
+      title: `${cleanTopic.slice(0, 60)} #Shorts`,
+      category: FIN_CATEGORIES.FINANCIAL_EDUCATION,
+      theme: 'Financial Education: Inflation & Rising Market Prices Explained Simply',
+      angle: 'What Inflation Actually Means For Your ₦50,000 ($35 USD) Savings',
+      hook: 'Keeping idle cash under your mattress quietly steals your money every single year.',
+      description: `What inflation is in simple language and how to protect your savings from losing purchasing power.\n\n#Shorts #Inflation #FinancialEducation #MoneyTips #Economics #Savings`,
+      tags: ["#Shorts", "#Inflation", "#FinancialEducation", "#MoneyTips", "#Economics", "#Savings"],
+      estimatedBudget: '₦50,000 (~$35 USD)',
+      slides: [
+        {
+          slideIndex: 0,
+          text: `Keeping idle cash under your mattress or in a zero-interest account quietly steals your purchasing power every single year. Here is why.`,
+          visual: `Cinematic 9:16 vertical 8k scene, visual comparison of a full grocery basket in 2020 versus half-empty basket today on dark slate counter`
+        },
+        {
+          slideIndex: 1,
+          text: `Inflation simply means market prices go up while your cash note stays the same. If ₦5,000 bought two bags of rice before, today it might only buy one.`,
+          visual: `Cinematic 9:16 vertical 8k shot, sleek price comparison chart with clean typography showing purchasing power trend over time`
+        },
+        {
+          slideIndex: 2,
+          text: `Your bank balance number did not decrease, but the amount of food, clothes, and fuel that money can actually purchase got smaller.`,
+          visual: `Cinematic 9:16 vertical 8k shot, clean smartphone banking screen showing balance beside real-world commodity costs`
+        },
+        {
+          slideIndex: 3,
+          text: `To protect your savings, do not leave extra money sitting idle. Put your long-term funds into income-producing assets, valuable skills, or stable dollar assets.`,
+          visual: `Cinematic 9:16 vertical 8k shot, glowing emerald growth asset allocation diagram with gold accents on obsidian background`
+        },
+        {
+          slideIndex: 4,
+          text: `Even saving in digital dollars like USDT can help protect your savings if your local currency is falling in value against the US dollar.`,
+          visual: `Cinematic 9:16 vertical 8k shot, secure digital dollar stablecoin wallet on modern smartphone screen`
+        },
+        {
+          slideIndex: 5,
+          text: `Stay ahead of rising prices, protect your purchasing power, and ${resolvedOutro}`,
+          visual: `Cinematic 9:16 vertical 8k shot, confident young entrepreneur analyzing financial growth charts in modern studio lighting`
+        }
+      ]
+    };
+  }
+
+  // 5. BUDGETING 50/30/20 & EXPENSE LEAKS
+  if (topicLower.includes('budget') || topicLower.includes('salary') || topicLower.includes('50/30/20') || topicLower.includes('broke') || topicLower.includes('spending') || topicLower.includes('save money')) {
+    return {
+      title: `${cleanTopic.slice(0, 60)} #Shorts`,
+      category: FIN_CATEGORIES.SAVING_PERSONAL_FINANCE,
+      theme: 'Personal Finance: Zero-Based Realistic Budgeting',
+      angle: 'How to Budget ₦20,000 ($13.50 USD) So Your Money Lasts All Month',
+      hook: 'Why does your money disappear three days after payday? Here is the simple 50-30-20 rule.',
+      description: `How to budget small money so it lasts all month without running broke before payday.\n\n#Shorts #Budgeting #MoneyManagement #PersonalFinance #SavingMoney #SalaryTips`,
+      tags: ["#Shorts", "#Budgeting", "#MoneyManagement", "#PersonalFinance", "#SavingMoney", "#SalaryTips"],
+      estimatedBudget: '₦20,000 (~$13.50 USD)',
+      slides: [
+        {
+          slideIndex: 0,
+          text: `Why does your money disappear three days after getting paid? The problem is not how much you earn — it is having zero budget structure.`,
+          visual: `Cinematic 9:16 vertical 8k scene, young adult reviewing monthly expense spreadsheet on smartphone with dark emerald ambient glow`
+        },
+        {
+          slideIndex: 1,
+          text: `Here is the simple 50-30-20 rule: Take fifty percent of your income for must-have survival needs like basic food, rent, and daily transport.`,
+          visual: `Cinematic 9:16 vertical 8k shot, clean pie chart visual breakdown showing fifty percent allocated to essentials in gold and emerald`
+        },
+        {
+          slideIndex: 2,
+          text: `Take thirty percent for your personal wants and small lifestyle items. This gives you freedom to enjoy life without feeling guilty or starving.`,
+          visual: `Cinematic 9:16 vertical 8k shot, thirty percent lifestyle allocation section highlighted clearly on clean budget app interface`
+        },
+        {
+          slideIndex: 3,
+          text: `Most importantly, lock away the remaining twenty percent immediately for your future savings and emergency fund before you spend a single coin.`,
+          visual: `Cinematic 9:16 vertical 8k shot, locked digital vault icon representing twenty percent emergency savings growing steadily`
+        },
+        {
+          slideIndex: 4,
+          text: `If you earn ₦20,000 or about $13.50, that means saving ₦4,000 ($2.70) every single month without fail. Small habits build big stability.`,
+          visual: `Cinematic 9:16 vertical 8k shot, clear cash allocation envelopes neatly labeled Needs, Wants, and Savings on wooden desk`
+        },
+        {
+          slideIndex: 5,
+          text: `Take control of your cash flow today, and ${resolvedOutro}`,
+          visual: `Cinematic 9:16 vertical 8k shot, relaxed smiling young adult holding phone showing a balanced budget with gold rim lighting`
+        }
+      ]
+    };
+  }
+
+  // 6. THRIFT / SECOND-HAND CLOTHES RESELLING
+  if (topicLower.includes('thrift') || topicLower.includes('cloth') || topicLower.includes('wear') || topicLower.includes('okrika') || topicLower.includes('fashion')) {
+    return {
+      title: `${cleanTopic.slice(0, 60)} #Shorts`,
+      category: FIN_CATEGORIES.SMALL_CAPITAL_BUSINESS,
+      theme: 'Small-Capital Business: Buying and Reselling Clean Second-Hand Clothes',
+      angle: 'How to Start a Clothing Reselling Hustle With Under ₦15,000 ($10 USD)',
+      hook: 'Buying neat second-hand clothes and selling them online is one of the easiest businesses to start with $10.',
+      description: `Step-by-step breakdown of how to start a thrift clothing reselling business with minimal capital.\n\n#Shorts #ThriftReselling #SmallBusiness #SideHustle #FashionHustle #MakeMoney`,
+      tags: ["#Shorts", "#ThriftReselling", "#SmallBusiness", "#SideHustle", "#FashionHustle", "#MakeMoney"],
+      estimatedBudget: '₦15,000 (~$10 USD)',
+      slides: [
+        {
+          slideIndex: 0,
+          text: `Buying neat second-hand clothes and reselling them online is one of the easiest micro businesses you can start with under ₦15,000 or $10 USD.`,
+          visual: `Cinematic 9:16 vertical 8k scene, aesthetic curated clothing rack with trendy vintage jackets in warm studio lighting`
+        },
+        {
+          slideIndex: 1,
+          text: `Go to your local wholesale market early in the morning. Handpick ten clean vintage shirts or tops for about ₦800 to ₦1,000 ($0.60) each.`,
+          visual: `Cinematic 9:16 vertical 8k shot, close-up of quality fabric selection with sharp focus and warm natural sunlight`
+        },
+        {
+          slideIndex: 2,
+          text: `Wash them thoroughly with fragrant detergent and iron them crisply. Good presentation is what turns a regular item into a premium vintage piece.`,
+          visual: `Cinematic 9:16 vertical 8k shot, beautifully ironed stylish shirt hanging against a clean minimalist backdrop with soft shadows`
+        },
+        {
+          slideIndex: 3,
+          text: `Take clear photos using natural morning sunlight. Post them on WhatsApp status and Instagram with exact sizes, pricing each shirt at ₦2,500 ($1.70).`,
+          visual: `Cinematic 9:16 vertical 8k shot, smartphone camera screen snapping an aesthetic product photo with clean studio lighting`
+        },
+        {
+          slideIndex: 4,
+          text: `Selling all ten shirts brings in ₦25,000 ($17). After deducting your ₦10,000 cost, your estimated gross profit is ₦15,000 ($10 USD).`,
+          visual: `Cinematic 9:16 vertical 8k shot, clean financial balance calculation showing startup costs versus gross profit margins`
+        },
+        {
+          slideIndex: 5,
+          text: `Reinvest your profit into buying twenty shirts next round, and ${resolvedOutro}`,
+          visual: `Cinematic 9:16 vertical 8k shot, young fashion entrepreneur packing stylish orders into neat kraft paper bags with gold seal`
+        }
+      ]
+    };
+  }
+
+  // 7. DEFAULT PRACTICAL BUSINESS BLUEPRINT (SNACK RESELLING / MICRO-STARTUP)
   return {
     title: `${cleanTopic.slice(0, 60)} #Shorts`,
     category: arch.category,

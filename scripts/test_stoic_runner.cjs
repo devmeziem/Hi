@@ -1993,6 +1993,8 @@ async function handleYouTubePublish(storyboard, renderResult) {
   logStep(7, 'YouTube Data API v3 Upload & Channel Sync');
   logInfo(`Channel Target: The Stoic Architect (@thestoicarchitect-n4b)`);
 
+  const isDeepDive = contentDepth === 'deep_dive' || Boolean(storyboard?.isDeepDive);
+
   if (!YOUTUBE_CLIENT_ID || !YOUTUBE_CLIENT_SECRET || !YOUTUBE_REFRESH_TOKEN) {
     logWarning('YouTube OAuth credentials not provided in environment. Storing to Campaign Vault.');
     return { status: 'VAULT_ARCHIVED' };
@@ -2075,7 +2077,7 @@ async function handleYouTubePublish(storyboard, renderResult) {
         status: {
           privacyStatus: 'public',
           selfDeclaredMadeForKids: false,
-          containsSyntheticMedia: true
+          embeddable: true
         }
       });
 
