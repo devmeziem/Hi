@@ -751,85 +751,93 @@ function buildStoicPromptForSlot(slotArchetype, recentHistory, slotIndex = 0, ch
   const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
   const resolvedOutro = resolveOutroPattern(slotArchetype.outroPattern, cleanHandle);
 
-  const systemPrompt = `You are a master scriptwriter and YouTube Shorts director for the Modern Stoicism & Mental Strength channel (${cleanHandle}).
-CHANNEL GOAL: Explain modern stoicism, daily discipline, and mental resilience in ultra-simple, low-level, engaging, and spoken-conversational English.
+  const systemPrompt = `You are a master scriptwriter and YouTube director for the Modern Stoicism & Mental Strength channel (${cleanHandle}).
+CHANNEL GOAL: Deliver practical, deeply explanatory modern stoicism, emotional discipline, and mental fortitude in clear, spoken-conversational English.
 AUDIENCE: Everyday normal people dealing with stress, difficult people, self-doubt, burnout, and daily distractions.
 
-STRICT SCRIPTWRITING & NARRATION RULES:
-1. SIMPLE, LOW-LANGUAGE EXPLANATIONS (5TH TO 7TH GRADE LEVEL):
-   - Narration must sound like a wise, friendly mentor speaking directly to the listener in plain, simple English.
-   - When appropriate, frame the post around a burning daily life question and answer it step-by-step.
-   - Explain the core topic directly. Do not wander off topic.
-   - Use simple words, short sentences, and real-life examples. NO complex philosophy jargon, Latin phrases, or pretentious vocabulary.
-   - Every slide MUST be 1-2 complete, punchy spoken sentences (12-18 words per slide) that flow naturally in text-to-speech.
+CRITICAL DURATION & DEPTH MANDATES:
+1. MINIMUM RUNTIME RULE: Every video MUST be AT LEAST 60 SECONDS (1 full minute or more).
+2. EXACTLY 8 COMPREHENSIVE SLIDES (slideIndex 0 to 7):
+   - You MUST generate exactly 8 distinct, progressive, and deeply explanatory slides.
+   - Each slide MUST contain 2 to 3 complete, natural spoken sentences (25 to 35 spoken words per slide).
+   - Total script word count MUST be between 220 and 280 words to guarantee a 65-75 second natural spoken runtime.
 
-2. 6-SLIDE NARRATIVE COHESION (THE 6-STEP ARC):
-   - Slide 0 (Question / Hook): Ask a burning relatable question or state an eye-opening daily situation.
-   - Slide 1 (The Root Cause): Explain the simple reason why this happens in everyday life.
-   - Slide 2 (The Simple Answer / Mindset Shift): Give the clear, straightforward answer in plain words.
-   - Slide 3 (The Practical Action): Give one simple, concrete action they can take today with zero friction.
-   - Slide 4 (The Big Benefit): Explain the empowering peace and confidence they get when they apply this.
-   - Slide 5 (Closing & Outro): A final one-line reminder + "${resolvedOutro}".
+STRICT 8-SLIDE EXPLANATORY NARRATIVE ARC:
+   - Slide 0 (The Burning Question / Real-Life Situation): Hook the viewer with a relatable, high-stakes question or everyday scenario.
+   - Slide 1 (The Hidden Root Cause): Clearly explain why most people fail or suffer here in everyday psychological terms.
+   - Slide 2 (The Core Stoic Truth): Deliver the foundational insight in plain English with zero pretentiousness or Latin jargon.
+   - Slide 3 (The Step-by-Step Breakdown): Explain the exact mechanics of how to handle the situation when it occurs.
+   - Slide 4 (Real-World Modern Scenario): Walk through a tangible, relatable example (at work, in relationships, or online).
+   - Slide 5 (The Critical Mistake to Avoid): Warn against the biggest trap that ruins progress (e.g. ego, revenge, overthinking).
+   - Slide 6 (The Compounding Benefit): Describe the unshakable calm, confidence, and self-respect gained over time.
+   - Slide 7 (The Timeless Rule & Outro): A powerful final summary takeaway + "${resolvedOutro}".
 
-3. UNIFIED VISUAL IDENTITY (9:16 Vertical 8k Cinematic):
-   - All 6 visual prompts MUST share the same aesthetic: ${slotArchetype.visualStyle}
+UNIFIED VISUAL IDENTITY (9:16 Vertical 8k Cinematic):
+   - All 8 visual prompts MUST share the same aesthetic: ${slotArchetype.visualStyle}
    - Lighting: Warm amber rim lighting, dark moody obsidian slate background, sharp 35mm anamorphic portrait depth of field.
 
-4. TARGET THEME & ANGLE:
+TARGET THEME & ANGLE:
    - Theme: ${slotArchetype.theme}
    - Angle: ${slotArchetype.angle}
    - Avoid recent titles: [${recentTitles || 'None'}]
 
 OUTPUT FORMAT: Return strictly a valid JSON object matching the schema below.
-CRITICAL MANDATES:
-1. Return EXACTLY 6 slides (slideIndex 0 to 5). Never return more than 6 slides.
-2. NEVER copy placeholder notes, word count ranges, or brackets into the text.
-3. Every slide must contain 1-2 complete spoken English sentences that explain the idea clearly.
+CRITICAL: Output EXACTLY 8 slides (slideIndex 0 to 7). Never return less than 8 slides.
 
 {
   "title": "Why Silence Destroys Disrespect - The Stoic Rule #Shorts",
   "theme": "${slotArchetype.theme}",
   "angle": "${slotArchetype.angle}",
   "hook": "${slotArchetype.hookPatterns[slotIndex % slotArchetype.hookPatterns.length]}",
-  "description": "Powerful modern breakdown of ${slotArchetype.theme} and mental strength.\\n\\n#Shorts #Discipline #Motivation #MentalStrength #SelfControl #Mindset #Stoicism #PersonalGrowth #Confidence",
+  "description": "Comprehensive modern breakdown of ${slotArchetype.theme} and mental strength.\\n\\n#Shorts #Discipline #Motivation #MentalStrength #SelfControl #Mindset #Stoicism #PersonalGrowth #Confidence",
   "tags": ["#Shorts", "#Discipline", "#Motivation", "#MentalStrength", "#SelfControl", "#Stoicism", "#Mindset", "#PersonalGrowth"],
   "slides": [
     {
       "slideIndex": 0,
-      "text": "When someone disrespects you in public, your instinct is to fight back. Here is why absolute silence destroys them.",
+      "text": "When someone disrespects you in public, your immediate instinct is to shout back or defend yourself. But have you ever wondered why staying completely silent destroys their ego far more than any insult?",
       "visual": "Calm professional in sharp dark suit standing unshakable in a busy city street, cinematic 9:16 vertical 8k amber rim lighting"
     },
     {
       "slideIndex": 1,
-      "text": "Reacting with anger proves that their words hurt you. You hand them complete control over your emotions.",
+      "text": "Here is what is really happening beneath the surface: A rude person insults you because they are desperate for a reaction. They want to drag you down to their chaotic emotional level to feel in control.",
       "visual": "Solitary composed figure unmoved amidst chaotic motion blur of city crowd, 9:16 vertical 8k deep shadows and golden highlights"
     },
     {
       "slideIndex": 2,
-      "text": "Marcus Aurelius taught that external insults say everything about the speaker and nothing about you.",
+      "text": "The moment you get angry, you prove that their words pierced your armor. You hand them complete power over your mood, your blood pressure, and your dignity for the rest of the day.",
       "visual": "Atmospheric dramatic portrait of focused thinker with calm steely expression, 9:16 vertical 8k warm side lighting"
     },
     {
       "slideIndex": 3,
-      "text": "When you meet disrespect with quiet composure, you make their aggression look weak and foolish.",
+      "text": "Ancient Stoic philosophy teaches a simple principle called the Dichotomy of Control. Other people's opinions are completely outside your control, but your composure is entirely up to you.",
       "visual": "Close-up perspective of steady hands writing calmly in a leather journal under warm light, 9:16 vertical 8k"
     },
     {
       "slideIndex": 4,
-      "text": "True power is not being loud. True power is staying completely calm when tested.",
-      "visual": "Immovable dark stone monolith standing tall under starry dusk sky with warm golden horizon, 9:16 vertical 8k"
+      "text": "When someone throws an insult at you today, pause for ten full seconds. Look them dead in the eye with zero anger, take a slow breath, and say absolutely nothing before moving on.",
+      "visual": "Confident individual pausing calmly in atmospheric boardroom with moody warm side lighting, 9:16 vertical 8k"
     },
     {
       "slideIndex": 5,
-      "text": "Master your reaction, master your life. ${resolvedOutro}",
+      "text": "Your quiet composure acts like an emotional mirror. It forces them to sit alone with their own bitterness while showing everyone in the room that you are completely untouchable.",
+      "visual": "Immovable dark stone monolith standing tall under starry dusk sky with warm golden horizon, 9:16 vertical 8k"
+    },
+    {
+      "slideIndex": 6,
+      "text": "True strength is never about being the loudest person in the room. Real power is having the self-mastery to walk away untouched by other people's insecurity and noise.",
+      "visual": "Sharp silhouette of disciplined person walking purposefully through morning mist with gold rim lighting, 9:16 vertical 8k"
+    },
+    {
+      "slideIndex": 7,
+      "text": "Master your reaction, protect your mental fortress, and ${resolvedOutro}",
       "visual": "Dramatic sunrise illuminating high-rise terrace with solitary triumphant figure, 9:16 vertical 8k gold and slate palette"
     }
   ]
 }`;
 
-  const userPrompt = `Generate a brand new, highly original Modern Stoic & Mental Strength Short storyboard for Slot ${slotIndex + 1} of 4.
+  const userPrompt = `Generate a brand new, highly original and deeply explanatory Modern Stoic Short storyboard for Slot ${slotIndex + 1} of 4.
 Theme: "${slotArchetype.theme}". Angle: "${slotArchetype.angle}". Modern Scenario: "${slotArchetype.modernScenario}".
-Ensure the content is practical, modern, and psychologically powerful with zero historical biography fluff. Output strictly valid JSON matching the schema.`;
+MANDATE: Must contain EXACTLY 8 slides (slideIndex 0 to 7) with 25-35 words per slide for a full 60+ second deep explanatory runtime. Output strictly valid JSON.`;
 
   return { systemPrompt, userPrompt };
 }
@@ -847,38 +855,48 @@ function synthesizeDeterministicStoryboard(slotArchetype, topicTitle, channelHan
     theme: slotArchetype.theme,
     angle: slotArchetype.angle,
     hook: hook,
-    description: `Master modern mental strength and resilience.\n\n#Shorts #Discipline #Motivation #MentalStrength #SelfControl #Mindset #Stoicism #PersonalGrowth #Confidence`,
+    description: `Comprehensive modern breakdown of ${slotArchetype.theme} and mental strength.\n\n#Shorts #Discipline #Motivation #MentalStrength #SelfControl #Mindset #Stoicism #PersonalGrowth #Confidence`,
     tags: ["#Shorts", "#Discipline", "#Motivation", "#MentalStrength", "#SelfControl", "#Stoicism", "#Mindset", "#PersonalGrowth"],
     slides: [
       {
         slideIndex: 0,
-        text: hook,
+        text: `When life tests your character and throws chaos in your path, your immediate reaction is the only thing in this world you truly own. Why do most people surrender their peace so easily?`,
         visual: `Cinematic vertical 9:16 shot, ${slotArchetype.visualStyle}, atmospheric cinematic lighting, dark slate and amber color tone, 8k resolution`
       },
       {
         slideIndex: 1,
-        text: `Most people react with anger or panic, giving away their power to external chaos.`,
+        text: `Most people operate on automatic pilot. When traffic slows down, when someone is rude, or when plans collapse, they immediately react with panic, anger, and helpless frustration.`,
         visual: `Cinematic vertical 9:16 shot matching ${slotArchetype.visualStyle}, close angle, rich slate gray shadows with warm amber rim light, 8k resolution`
       },
       {
         slideIndex: 2,
-        text: `The Stoic truth is simple: you cannot control outside events, only your internal discipline.`,
+        text: `The core Stoic principle is simple: external events have zero power to hurt you until you judge them as bad. Your mind alone decides whether an obstacle breaks you or builds you.`,
         visual: `Cinematic vertical 9:16 shot matching ${slotArchetype.visualStyle}, solitary contemplative figure in sharp focus, slate stone texture and golden highlights, 8k`
       },
       {
         slideIndex: 3,
-        text: `When adversity strikes, pause for ten seconds and let logic lead before emotion speaks.`,
+        text: `When unexpected adversity strikes you today, institute a strict ten-second pause. Do not speak, do not send that angry text, and do not make emotional decisions in the heat of the moment.`,
         visual: `Cinematic vertical 9:16 shot matching ${slotArchetype.visualStyle}, intense focused perspective, atmospheric depth, cinematic slate and golden amber tones, 8k`
       },
       {
         slideIndex: 4,
-        text: `Your mental peace is your fortress; never surrender it to opinions or temporary setbacks.`,
-        visual: `Cinematic vertical 9:16 shot matching ${slotArchetype.visualStyle}, powerful solid architectural composition, deep slate and warm amber illumination, 8k`
+        text: `Ask yourself one objective question: Is this situation within my direct control, or is it outside my control? If you cannot change it, worrying about it is completely useless.`,
+        visual: `Cinematic vertical 9:16 shot matching ${slotArchetype.visualStyle}, close-up of steady hands writing in dark leather notebook under warm lamp, 8k`
       },
       {
         slideIndex: 5,
-        text: `Control your mind, own your destiny. ${resolvedOutro}`,
+        text: `Redirect every drop of your energy into what you can control right now: your effort, your discipline, your kindness, and your relentless commitment to doing the work.`,
+        visual: `Cinematic vertical 9:16 shot matching ${slotArchetype.visualStyle}, powerful solid architectural composition, deep slate and warm amber illumination, 8k`
+      },
+      {
+        slideIndex: 6,
+        text: `When you master this daily habit, you become emotionally indestructible. Life's storms will rage around you, but the fortress inside your mind will remain completely calm and centered.`,
         visual: `Cinematic vertical 9:16 shot matching ${slotArchetype.visualStyle}, dramatic sunrise lighting breaking through dark slate clouds, golden rays, 8k resolution`
+      },
+      {
+        slideIndex: 7,
+        text: `Silence the noise, master your internal dialogue, and ${resolvedOutro}`,
+        visual: `Cinematic vertical 9:16 shot matching ${slotArchetype.visualStyle}, confident thinker looking towards horizon at dawn, warm amber and obsidian tones, 8k`
       }
     ]
   };
