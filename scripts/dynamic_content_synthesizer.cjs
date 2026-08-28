@@ -227,7 +227,7 @@ async function callLlmForScript(channelId, promptPayload) {
 
   // 2. Try Google Gemini Flash
   if (GEMINI_API_KEY) {
-    const geminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash'];
+    const geminiModels = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash-exp'];
     for (const gModel of geminiModels) {
       try {
         console.log(`[AI Synthesizer] Querying Google Gemini (${gModel})...`);
@@ -504,27 +504,27 @@ function generateProceduralFallback(channelId, customTopic) {
       tags: ['#FinBlueprint', '#MicroSaaS', '#MakeMoneyOnline', '#SideHustle', '#Shorts', '#BusinessTips'],
       slides: [
         {
-          text: `Hello, welcome to Fin Blueprint! Today we'll be discussing how to start a high-yield digital retainer with zero coding.`,
+          text: `Did you know ${b} are secretly losing millions every month just by ${f}?`,
           visual: `Modern sleek financial desk with MacBook showing revenue webhook dashboard and emerald charts, 8k 9:16 vertical photorealistic`
         },
         {
-          text: `${b} consistently suffer by ${f}. This causes massive operational bottlenecks.`,
+          text: `When businesses rely on slow manual paper workflows, 30% of their repeat customers vanish into thin air.`,
           visual: `Split screen showing disorganized paperwork juxtaposed with clean digital POS tablet dashboard, 8k 9:16 vertical`
         },
         {
-          text: `Using a ${t}, you automate their customer workflow in under forty-five minutes without touching complex backend code.`,
+          text: `By setting up a simple ${t}, you completely automate their orders in under forty-five minutes without coding.`,
           visual: `Crisp smartphone screen showing automated order confirmation and instant emerald PDF notification, 8k 9:16 vertical`
         },
         {
-          text: `Charge each client a modest ${r} monthly maintenance retainer. With four active clients, you secure ${tot} predictable monthly cashflow.`,
+          text: `Charge each client a modest ${r} ($15-$30) monthly maintenance retainer. Just four businesses yield ${tot} ($150-$200) recurring profit.`,
           visual: `Clean minimalist financial ledger showing recurring retainer clients compounding into ${tot} MRR, 8k 9:16 vertical`
         },
         {
-          text: `Golden rule: Always solve a single high-friction operational bottleneck for businesses with existing paying foot traffic.`,
+          text: `Golden rule: Always solve high-friction bottlenecks for established businesses with existing customer traffic.`,
           visual: `Aesthetic boardroom table with gold coins, tablet metrics, and financial independence blueprint, 8k 9:16 vertical`
         },
         {
-          text: `Take action today. Get the free 15k Naira Micro-SaaS starter blueprint linked in the description below!`,
+          text: `Follow @bones_ceo for daily practical blueprints, because building recurring cashflow is simple when you know...`,
           visual: `Polished cinematic outro frame with gold Fin Blueprint logo and call-to-action button over dark slate studio backdrop, 8k 9:16 vertical`
         }
       ]
@@ -547,11 +547,11 @@ function generateProceduralFallback(channelId, customTopic) {
       tags: ['#GodswillIsaac', '#AIAutomation', '#DevOps', '#GitHubActions', '#Shorts', '#TechNews'],
       slides: [
         {
-          text: `Hello, welcome to Tech AI Automation! Today we are exploring autonomous multi-agent engineering workflows.`,
+          text: `Stop wasting thousands of dollars on manual video rendering when you can fully automate it with ${s}.`,
           visual: `Futuristic dark mode developer workstation with terminal executing automated CI CD pipeline and glowing neon code metrics, 8k 9:16 vertical`
         },
         {
-          text: `Traditional content engineering bottlenecks teams because ${p}.`,
+          text: `Traditional content teams struggle because ${p}, creating massive overhead.`,
           visual: `Split screen comparing slow manual editing timeline with single clean automated YAML workflow file executing in cloud, 8k 9:16 vertical`
         },
         {
@@ -559,7 +559,7 @@ function generateProceduralFallback(channelId, customTopic) {
           visual: `High-tech server rack with glowing green neural pathways showing sub-second inference and AI model architecture, 8k 9:16 vertical`
         },
         {
-          text: `We achieve complete automation through ${sol}, burning dynamic kinetic subtitles directly into 9:16 vertical frames.`,
+          text: `We achieve complete automation through ${sol}, burning kinetic subtitles directly into 1080p vertical video.`,
           visual: `Detailed visual of automated FFmpeg rendering engine processing layered video tracks, audio ducking, and subtitle filters, 8k 9:16 vertical`
         },
         {
@@ -567,7 +567,7 @@ function generateProceduralFallback(channelId, customTopic) {
           visual: `Clean cloud architecture diagram showing scheduled cron triggering automated pipeline with 100 percent success checkmarks, 8k 9:16 vertical`
         },
         {
-          text: `Level up your automation stack. Fork the complete open-source multi-agent workflow linked in our description below!`,
+          text: `Subscribe for daily AI engineering systems and discover the true power behind...`,
           visual: `Cinematic dark tech outro card with Godswill Isaac subscribe badge and GitHub repository link over matrix code rain, 8k 9:16 vertical`
         }
       ]

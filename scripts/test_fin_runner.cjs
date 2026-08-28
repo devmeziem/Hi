@@ -545,7 +545,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
 
   // 3. TERTIARY: Google Gemini Models
   if (!scriptData && GEMINI_API_KEY) {
-    const geminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash'];
+    const geminiModels = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash-exp'];
     for (const gModel of geminiModels) {
       if (scriptData) break;
       try {

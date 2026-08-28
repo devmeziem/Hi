@@ -751,93 +751,75 @@ function buildStoicPromptForSlot(slotArchetype, recentHistory, slotIndex = 0, ch
   const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
   const resolvedOutro = resolveOutroPattern(slotArchetype.outroPattern, cleanHandle);
 
-  const systemPrompt = `You are a master scriptwriter and YouTube director for the Modern Stoicism & Mental Strength channel (${cleanHandle}).
-CHANNEL GOAL: Deliver practical, deeply explanatory modern stoicism, emotional discipline, and mental fortitude in clear, spoken-conversational English.
+  const systemPrompt = `You are a master viral scriptwriter and YouTube director for the Modern Stoicism & Mental Strength channel (${cleanHandle}).
+CHANNEL GOAL: Deliver practical, high-impact modern stoicism, emotional discipline, and mental fortitude in clear, spoken-conversational English.
 AUDIENCE: Everyday normal people dealing with stress, difficult people, self-doubt, burnout, and daily distractions.
 
-CRITICAL DURATION & DEPTH MANDATES:
-1. MINIMUM RUNTIME RULE: Every video MUST be AT LEAST 60 SECONDS (1 full minute or more).
-2. EXACTLY 8 COMPREHENSIVE SLIDES (slideIndex 0 to 7):
-   - You MUST generate exactly 8 distinct, progressive, and deeply explanatory slides.
-   - Each slide MUST contain 2 to 3 complete, natural spoken sentences (25 to 35 spoken words per slide).
-   - Total script word count MUST be between 220 and 280 words to guarantee a 65-75 second natural spoken runtime.
-
-STRICT 8-SLIDE EXPLANATORY NARRATIVE ARC:
-   - Slide 0 (The Burning Question / Real-Life Situation): Hook the viewer with a relatable, high-stakes question or everyday scenario.
-   - Slide 1 (The Hidden Root Cause): Clearly explain why most people fail or suffer here in everyday psychological terms.
-   - Slide 2 (The Core Stoic Truth): Deliver the foundational insight in plain English with zero pretentiousness or Latin jargon.
-   - Slide 3 (The Step-by-Step Breakdown): Explain the exact mechanics of how to handle the situation when it occurs.
-   - Slide 4 (Real-World Modern Scenario): Walk through a tangible, relatable example (at work, in relationships, or online).
-   - Slide 5 (The Critical Mistake to Avoid): Warn against the biggest trap that ruins progress (e.g. ego, revenge, overthinking).
-   - Slide 6 (The Compounding Benefit): Describe the unshakable calm, confidence, and self-respect gained over time.
-   - Slide 7 (The Timeless Rule & Outro): A powerful final summary takeaway + "${resolvedOutro}".
+CRITICAL YOUTUBE SHORTS ALGORITHM RETENTION RULES (32-42 SECONDS TOTAL):
+1. RUNTIME & PACING: Exactly 6 high-impact slides (slideIndex 0 to 5). Each slide MUST have 18 to 25 punchy spoken words (110-140 words total).
+2. SLIDE 0 (ANTI-SWIPE HOOK): Zero pleasantries or historical fluff! Start directly with an intense pattern-interrupt question or shocking stat in under 12 words.
+3. SLIDE 1 (THE PSYCHOLOGICAL TRAP): Why most people react impulsively and hand over their power.
+4. SLIDE 2 (THE STOIC MINDSET SHIFT): The core mental principle in plain modern language.
+5. SLIDE 3 (THE TACTICAL DAILY PROTOCOL): Concrete physical/mental action to execute immediately.
+6. SLIDE 4 (SOVEREIGN BENEFIT): Why this response makes you completely untouchable.
+7. SLIDE 5 (INFINITE RETENTION LOOP & OUTRO): Golden law + short CTA + seamless bridge phrase that connects grammatically right back into Slide 0!
 
 UNIFIED VISUAL IDENTITY (9:16 Vertical 8k Cinematic):
-   - All 8 visual prompts MUST share the same aesthetic: ${slotArchetype.visualStyle}
-   - Lighting: Warm amber rim lighting, dark moody obsidian slate background, sharp 35mm anamorphic portrait depth of field.
+- All 6 visual prompts MUST share the same aesthetic: ${slotArchetype.visualStyle}
+- Lighting: Warm amber rim lighting, dark moody obsidian slate background, sharp 35mm anamorphic portrait depth of field.
 
 TARGET THEME & ANGLE:
-   - Theme: ${slotArchetype.theme}
-   - Angle: ${slotArchetype.angle}
-   - Avoid recent titles: [${recentTitles || 'None'}]
+- Theme: ${slotArchetype.theme}
+- Angle: ${slotArchetype.angle}
+- Avoid recent titles: [${recentTitles || 'None'}]
 
 OUTPUT FORMAT: Return strictly a valid JSON object matching the schema below.
-CRITICAL: Output EXACTLY 8 slides (slideIndex 0 to 7). Never return less than 8 slides.
+CRITICAL: Output EXACTLY 6 slides (slideIndex 0 to 5).
 
 {
-  "title": "Why Silence Destroys Disrespect - The Stoic Rule #Shorts",
+  "title": "High-CTR Title Under 55 Chars #Shorts",
   "theme": "${slotArchetype.theme}",
   "angle": "${slotArchetype.angle}",
   "hook": "${slotArchetype.hookPatterns[slotIndex % slotArchetype.hookPatterns.length]}",
-  "description": "Comprehensive modern breakdown of ${slotArchetype.theme} and mental strength.\\n\\n#Shorts #Discipline #Motivation #MentalStrength #SelfControl #Mindset #Stoicism #PersonalGrowth #Confidence",
+  "description": "Practical breakdown of ${slotArchetype.theme} and mental strength.\\n\\n#Shorts #Discipline #Motivation #MentalStrength #SelfControl #Mindset #Stoicism #PersonalGrowth",
   "tags": ["#Shorts", "#Discipline", "#Motivation", "#MentalStrength", "#SelfControl", "#Stoicism", "#Mindset", "#PersonalGrowth"],
   "slides": [
     {
       "slideIndex": 0,
-      "text": "When someone disrespects you in public, your immediate instinct is to shout back or defend yourself. But have you ever wondered why staying completely silent destroys their ego far more than any insult?",
+      "text": "Shocking hook or burning question with zero greetings (18-22 words)...",
       "visual": "Calm professional in sharp dark suit standing unshakable in a busy city street, cinematic 9:16 vertical 8k amber rim lighting"
     },
     {
       "slideIndex": 1,
-      "text": "Here is what is really happening beneath the surface: A rude person insults you because they are desperate for a reaction. They want to drag you down to their chaotic emotional level to feel in control.",
+      "text": "The psychological trap beginners fall into explained simply (18-22 words)...",
       "visual": "Solitary composed figure unmoved amidst chaotic motion blur of city crowd, 9:16 vertical 8k deep shadows and golden highlights"
     },
     {
       "slideIndex": 2,
-      "text": "The moment you get angry, you prove that their words pierced your armor. You hand them complete power over your mood, your blood pressure, and your dignity for the rest of the day.",
+      "text": "The core Stoic mental shift in plain modern English (18-22 words)...",
       "visual": "Atmospheric dramatic portrait of focused thinker with calm steely expression, 9:16 vertical 8k warm side lighting"
     },
     {
       "slideIndex": 3,
-      "text": "Ancient Stoic philosophy teaches a simple principle called the Dichotomy of Control. Other people's opinions are completely outside your control, but your composure is entirely up to you.",
+      "text": "The tactical step-by-step action to take right now (18-22 words)...",
       "visual": "Close-up perspective of steady hands writing calmly in a leather journal under warm light, 9:16 vertical 8k"
     },
     {
       "slideIndex": 4,
-      "text": "When someone throws an insult at you today, pause for ten full seconds. Look them dead in the eye with zero anger, take a slow breath, and say absolutely nothing before moving on.",
+      "text": "Why this makes your character and peace untouchable (18-22 words)...",
       "visual": "Confident individual pausing calmly in atmospheric boardroom with moody warm side lighting, 9:16 vertical 8k"
     },
     {
       "slideIndex": 5,
-      "text": "Your quiet composure acts like an emotional mirror. It forces them to sit alone with their own bitterness while showing everyone in the room that you are completely untouchable.",
-      "visual": "Immovable dark stone monolith standing tall under starry dusk sky with warm golden horizon, 9:16 vertical 8k"
-    },
-    {
-      "slideIndex": 6,
-      "text": "True strength is never about being the loudest person in the room. Real power is having the self-mastery to walk away untouched by other people's insecurity and noise.",
+      "text": "Golden rule + follow ${cleanHandle} + seamless bridge back to slide 0 (18-22 words)...",
       "visual": "Sharp silhouette of disciplined person walking purposefully through morning mist with gold rim lighting, 9:16 vertical 8k"
-    },
-    {
-      "slideIndex": 7,
-      "text": "Master your reaction, protect your mental fortress, and ${resolvedOutro}",
-      "visual": "Dramatic sunrise illuminating high-rise terrace with solitary triumphant figure, 9:16 vertical 8k gold and slate palette"
     }
   ]
 }`;
 
-  const userPrompt = `Generate a brand new, highly original and deeply explanatory Modern Stoic Short storyboard for Slot ${slotIndex + 1} of 4.
+  const userPrompt = `Generate a fresh, viral, high-retention 6-slide Modern Stoic Short storyboard for Slot ${slotIndex + 1} of 4.
 Theme: "${slotArchetype.theme}". Angle: "${slotArchetype.angle}". Modern Scenario: "${slotArchetype.modernScenario}".
-MANDATE: Must contain EXACTLY 8 slides (slideIndex 0 to 7) with 25-35 words per slide for a full 60+ second deep explanatory runtime. Output strictly valid JSON.`;
+MANDATE: Output EXACTLY 6 slides (slideIndex 0 to 5) with 18-25 words per slide (32-42s runtime). Output strictly valid JSON.`;
 
   return { systemPrompt, userPrompt };
 }

@@ -291,6 +291,52 @@ async function serverCallGroq(prompt: string, systemPrompt?: string): Promise<st
 }
 
 /**
+ * Server-Side FLUX.1 Visual Enhancement Engine (High-CTR Shorts Thumbnail Specialist)
+ */
+async function serverGenerateFluxVisualEnhancement(
+  topic: string,
+  niche: string = 'finance_saas',
+  baseVisual: string = '',
+  customAccountId?: string,
+  customApiToken?: string
+): Promise<{ imageUrl: string; enhancedPrompt: string; model: string; provider: string } | null> {
+  const cleanTopic = (topic || 'High Impact Opportunity').replace(/[#"]/g, '').trim();
+
+  let styleModifier = '';
+  if (niche.includes('finance') || niche.includes('saas') || niche.includes('wealth')) {
+    styleModifier = 'dark obsidian slate studio setting, vibrant emerald green hologram revenue chart, crisp dual currency ₦ and $ floating glass coins, warm gold volumetric rim lighting, photorealistic hands holding sleek smartphone with positive cashflow dashboard, high contrast, sharp focus, 8k 9:16 vertical poster';
+  } else if (niche.includes('stoic') || niche.includes('motivation') || niche.includes('mindset')) {
+    styleModifier = 'ancient weathered Roman marble bust of Marcus Aurelius with intense gaze, dramatic chiaroscuro side lighting, warm amber golden-hour glow against pitch black void, anamorphic 35mm lens blur, hyperdetailed stone textures, deep shadows, 8k 9:16 vertical cinematic masterpiece';
+  } else {
+    styleModifier = 'futuristic cybernetic workstation, neon cyan and electric violet edge glow, glowing AI neural network nodes floating in air, dark glass terminal displaying clean automated code, ultra-sharp depth of field, 8k 9:16 vertical tech showcase';
+  }
+
+  const promptCore = baseVisual && baseVisual.length > 10 ? baseVisual : cleanTopic;
+  const enhancedPrompt = `${promptCore}, ${styleModifier}, high contrast, saturated focal points, zero blur, professional YouTube Shorts viral thumbnail, 1080x1920`;
+
+  // 1. Try Cloudflare Workers AI FLUX.1 Schnell
+  const cfImage = await serverGenerateCloudflareImage(enhancedPrompt, customAccountId, customApiToken);
+  if (cfImage) {
+    return {
+      imageUrl: cfImage,
+      enhancedPrompt,
+      model: 'FLUX.1-schnell (Black Forest Labs)',
+      provider: 'Cloudflare Workers AI (@cf/black-forest-labs/flux-1-schnell)'
+    };
+  }
+
+  // 2. Pollinations FLUX.1 Fallback
+  const seed = Math.floor(Math.random() * 99999999);
+  const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(enhancedPrompt.slice(0, 260))}?width=1080&height=1920&nologo=true&model=flux&seed=${seed}`;
+  return {
+    imageUrl: pollinationsUrl,
+    enhancedPrompt,
+    model: 'FLUX.1 (Black Forest Labs)',
+    provider: 'Pollinations FLUX.1 Engine'
+  };
+}
+
+/**
  * Server-Side Cloudflare Workers AI Image Generation (@cf/black-forest-labs/flux-1-schnell FIRST, then SDXL-Lightning)
  */
 async function serverGenerateCloudflareImage(prompt: string, customAccountId?: string, customApiToken?: string): Promise<string | null> {
@@ -627,6 +673,42 @@ Respond STRICTLY with valid raw JSON without markdown:
       } catch (err: any) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: err.message || 'Image Generation Failed' }));
+      }
+    });
+    return;
+  }
+
+  // 2.5 VISUAL ENHANCEMENT ENDPOINT: FLUX.1 Model specifically for High-CTR YouTube Shorts Opening Slide & Thumbnails
+  if (urlPath === '/api/visual-enhancement' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', async () => {
+      try {
+        const { topic = '', niche = 'finance_saas', baseVisual = '', prompt = '', accountId, apiToken } = JSON.parse(body || '{}');
+
+        const activeTopic = topic || prompt || 'High Impact Opportunity';
+        console.log(`[API Server: Visual Enhancement]: Synthesizing FLUX.1 high-contrast CTR thumbnail for "${activeTopic}" (${niche})...`);
+
+        const result = await serverGenerateFluxVisualEnhancement(activeTopic, niche, baseVisual || prompt, accountId, apiToken);
+
+        if (result) {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            success: true,
+            imageUrl: result.imageUrl,
+            enhancedPrompt: result.enhancedPrompt,
+            model: result.model,
+            provider: result.provider,
+            stage: 'visual_enhancement',
+            generatedAt: new Date().toISOString()
+          }));
+        } else {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'FLUX.1 Visual Enhancement synthesis failed across all providers.' }));
+        }
+      } catch (err: any) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message || 'Visual Enhancement Request Failed' }));
       }
     });
     return;

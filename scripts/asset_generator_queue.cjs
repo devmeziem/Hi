@@ -322,18 +322,33 @@ async function processAssetQueue() {
 
     for (let sIdx = 0; sIdx < slides.length; sIdx++) {
       const slide = slides[sIdx];
-      const slidePrompt = slide.visual || job.visualPrompt || job.title;
+      const isSlideZero = sIdx === 0;
+      let slidePrompt = slide.visual || job.visualPrompt || job.title;
+
+      // [VISUAL ENHANCEMENT STEP]: Optimize Slide 0 with FLUX.1 High-CTR Style Engine
+      if (isSlideZero) {
+        console.log(`\n  ⭐ [FLUX.1 Visual Enhancement Step]: Synthesizing high-contrast CTR thumbnail for Slide 0...`);
+        const niche = job.channelId || 'finance_saas';
+        let styleMod = 'dark obsidian slate studio setting, emerald green hologram revenue chart, crisp dual currency ₦ and $, warm gold rim lighting, photorealistic, high contrast, sharp focus, 8k 9:16 vertical poster';
+        if (niche.includes('stoic') || niche.includes('motivation')) {
+          styleMod = 'ancient weathered Roman marble bust with intense gaze, dramatic chiaroscuro side lighting, warm golden-hour glow against dark void, deep shadows, 8k 9:16 vertical cinematic';
+        } else if (niche.includes('tech') || niche.includes('ai')) {
+          styleMod = 'futuristic cybernetic workstation, neon cyan and violet glow, glowing neural network nodes, ultra-sharp depth of field, 8k 9:16 vertical tech showcase';
+        }
+        slidePrompt = `${slidePrompt}, ${styleMod}, saturated focal points, zero blur, YouTube Shorts high-CTR viral opening frame`;
+      }
+
       console.log(`\n  [Slide ${sIdx + 1}/${slides.length}] Visual Prompt: "${slidePrompt.slice(0, 70)}..."`);
 
       let slideImageUrl = null;
       let slideImageProvider = 'Pollinations Flux';
 
-      // 1. Primary: Cloudflare Workers AI
+      // 1. Primary: Cloudflare Workers AI FLUX.1 / SDXL
       try {
         const cfImg = await generateCloudflareAiImage(slidePrompt);
         if (cfImg) {
           slideImageUrl = cfImg.url;
-          slideImageProvider = cfImg.provider;
+          slideImageProvider = isSlideZero ? `FLUX.1 Visual Enhancement (${cfImg.provider})` : cfImg.provider;
           console.log(`    ✔ [Slide ${sIdx + 1} Image] ${slideImageProvider}`);
         }
       } catch (err) {
@@ -345,7 +360,7 @@ async function processAssetQueue() {
         const slideSeed = Math.floor(Math.random() * 99999999);
         const encodedPrompt = encodeURIComponent(slidePrompt + ' 8k ultra-hd cinematic photorealistic vertical 9:16');
         slideImageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1080&height=1920&nologo=true&model=flux&seed=${slideSeed}&n=${Date.now() + sIdx}`;
-        slideImageProvider = `Pollinations Flux (seed: ${slideSeed})`;
+        slideImageProvider = isSlideZero ? `FLUX.1 Visual Enhancement (Pollinations Engine)` : `Pollinations Flux (seed: ${slideSeed})`;
         console.log(`    ✔ [Slide ${sIdx + 1} Image Fallback] ${slideImageProvider}`);
       }
 

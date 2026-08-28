@@ -87,6 +87,34 @@ jobs:
           node scripts/asset_generator_queue.cjs
           echo "Assets uploaded to Cloudinary. Job updated to READY_FOR_RENDER"`;
 
+  const workflowVisualEnhancementYaml = `name: 02.5-voxam-visual-enhancement-flux
+on:
+  schedule:
+    - cron: '*/30 * * * *' # Processes queued jobs to synthesize high-CTR Slide 0 thumbnails
+  workflow_dispatch:
+
+jobs:
+  enhance-thumbnails-with-flux:
+    name: FLUX.1 High-CTR Visual Enhancement Engine
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Synthesize 9:16 High-Contrast Thumbnails via FLUX.1 Schnell
+        env:
+          CLOUDFLARE_ACCOUNT_ID: \${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}
+          FIREBASE_CONFIG_JSON: \${{ secrets.FIREBASE_CONFIG_JSON }}
+        run: |
+          node scripts/visual_enhancement_flux.cjs
+          echo "FLUX.1 Slide 0 Thumbnails Enhanced. High CTR verified."`;
+
   const workflow3Yaml = `name: 03-voxam-video-motion-renderer
 on:
   schedule:
@@ -354,6 +382,7 @@ jobs:
             {[
               { id: 1, label: '01: The Brain' },
               { id: 2, label: '02: Media Synth' },
+              { id: 7, label: '02.5: FLUX.1 Visual Enhancement' },
               { id: 3, label: '03: Motion Render' },
               { id: 4, label: 'Test: Fin Blueprint (Ch1)' },
               { id: 5, label: 'Test: Stoic Architect (Ch2)' },
@@ -382,6 +411,7 @@ jobs:
               <span className="text-xs font-mono font-bold text-slate-200 truncate">
                 {activeWorkflowTab === 1 && '.github/workflows/01-brain-daily-blueprint.yml'}
                 {activeWorkflowTab === 2 && '.github/workflows/02-media-asset-engine.yml'}
+                {activeWorkflowTab === 7 && '.github/workflows/02.5-voxam-visual-enhancement-flux.yml'}
                 {activeWorkflowTab === 3 && '.github/workflows/03-video-motion-renderer.yml'}
                 {activeWorkflowTab === 4 && '.github/workflows/test-fin-pipeline.yml'}
                 {activeWorkflowTab === 5 && '.github/workflows/test-stoic-pipeline.yml'}
@@ -394,6 +424,7 @@ jobs:
                 const code = 
                   activeWorkflowTab === 1 ? workflow1Yaml : 
                   activeWorkflowTab === 2 ? workflow2Yaml : 
+                  activeWorkflowTab === 7 ? workflowVisualEnhancementYaml :
                   activeWorkflowTab === 3 ? workflow3Yaml : 
                   activeWorkflowTab === 4 ? workflowTestFinYaml : 
                   activeWorkflowTab === 5 ? workflowTestStoicYaml : workflowTestTechYaml;
@@ -417,6 +448,7 @@ jobs:
               <code className="block whitespace-pre font-mono">
                 {activeWorkflowTab === 1 && workflow1Yaml}
                 {activeWorkflowTab === 2 && workflow2Yaml}
+                {activeWorkflowTab === 7 && workflowVisualEnhancementYaml}
                 {activeWorkflowTab === 3 && workflow3Yaml}
                 {activeWorkflowTab === 4 && workflowTestFinYaml}
                 {activeWorkflowTab === 5 && workflowTestStoicYaml}

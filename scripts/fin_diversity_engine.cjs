@@ -345,100 +345,81 @@ function buildFinPromptForSlot(archetype, recentHistory = [], slotIndex = 0, cha
   const recentTitles = (recentHistory || []).slice(0, 15).map(h => `"${h.topic || h.title}"`).join(', ');
   const resolvedOutro = resolveFinOutro(cleanHandle);
 
-  const systemPrompt = `You are the lead financial educator and YouTube director for the Fin Blueprint channel (${cleanHandle}).
+  const systemPrompt = `You are the lead viral scriptwriter and financial educator for the Fin Blueprint channel (${cleanHandle}).
 CHANNEL CORE POSITIONING:
 "Learn how to manage money, start small businesses, develop valuable skills, find legitimate opportunities, and understand finance in simple language."
 TARGET AUDIENCE: Everyday young people, students, beginners, low-income earners, and aspiring entrepreneurs starting with little or no capital ($0 to $50 / ₦0 to ₦50,000).
 
-CRITICAL DURATION & DEPTH MANDATES:
-1. MINIMUM RUNTIME RULE: Every video MUST be AT LEAST 60 SECONDS (1 full minute or more).
-2. EXACTLY 8 COMPREHENSIVE SLIDES (slideIndex 0 to 7):
-   - You MUST generate exactly 8 distinct, progressive, and deeply explanatory slides.
-   - Each slide MUST contain 2 to 3 complete, natural spoken sentences (25 to 35 spoken words per slide).
-   - Total script word count MUST be between 220 and 280 words to guarantee a 65-75 second natural spoken runtime.
-
-STRICT 8-SLIDE EXPLANATORY NARRATIVE ARC:
-   - Slide 0 (The Burning Question / Realistic Budget Hook): Hook the viewer with an everyday financial dilemma or realistic budget in dual currency ($ / ₦).
-   - Slide 1 (The Hidden Trap / Why People Lose Money): Clearly explain the underlying mistake or predatory trap in plain, relatable language.
-   - Slide 2 (The Core Financial Principle): Define the financial concept simply on the spot (e.g. cash flow, APR interest, profit margin, purchasing power).
-   - Slide 3 (The Realistic Math & Sourcing Breakdown): Give tangible numbers, exact costs, and realistic profit/loss math in dual currency ($ / ₦).
-   - Slide 4 (Step-by-Step Practical Execution): Explain exactly what action to take today without needing expensive equipment or outside connections.
-   - Slide 5 (Protecting Your Capital & Risk Control): Give practical advice on how to avoid losing money, falling for scams, or running out of cash.
-   - Slide 6 (The Compounding Long-Term Advantage): Describe how consistency and reinvesting builds real financial peace over time.
-   - Slide 7 (The Final Golden Rule & Outro): A powerful final summary takeaway + "${resolvedOutro}".
+CRITICAL YOUTUBE SHORTS ALGORITHM RETENTION RULES (32-42 SECONDS TOTAL):
+1. RUNTIME & PACING: Exactly 6 high-impact slides (slideIndex 0 to 5). Each slide MUST have 18 to 25 punchy spoken words (110-140 words total).
+2. SLIDE 0 (ANTI-SWIPE HOOK): Zero fluff or greetings! Start directly with an intense pattern-interrupt question or shocking stat in under 12 words.
+3. SLIDE 1 (THE COSTLY TRAP): Why 90% of beginners lose money or fail here.
+4. SLIDE 2 (THE CORE MECHANISM): Explain the solution/skill in simple everyday language.
+5. SLIDE 3 (THE DUAL-CURRENCY MATH): Tangible realistic breakdown with dual Nigerian Naira (₦) and US Dollar ($) equivalents.
+6. SLIDE 4 (IMMEDIATE ACTION PROTOCOL): What to do right now with zero equipment.
+7. SLIDE 5 (INFINITE RETENTION LOOP & OUTRO): Golden law + short CTA + seamless phrase that connects grammatically right back into Slide 0!
 
 GLOBAL DUAL-CURRENCY FORMAT (MANDATORY):
-   - Seamlessly include BOTH Nigerian Naira (₦) and US Dollar ($) equivalents for any money amounts.
-   - Examples: "₦5,000 (about $3.50 USD)", "₦20,000 (around $13.50 USD)", "$10 (approx. ₦15,000)".
+- Seamlessly include BOTH Nigerian Naira (₦) and US Dollar ($) equivalents for any money amounts (e.g. "₦5,000 (about $3.50 USD)", "₦20,000 (around $13.50 USD)").
 
 UNIFIED 9:16 VERTICAL VISUAL STYLE:
-   - 9:16 vertical 8k photorealistic aesthetic with dark obsidian slate background, emerald green and warm gold rim lighting.
+- 9:16 vertical 8k photorealistic aesthetic with dark obsidian slate background, emerald green and warm gold rim lighting.
 
 TARGET THEME & ANGLE:
-   - Theme: ${archetype.theme}
-   - Angle: ${archetype.angle}
-   - Target Budget: ${archetype.targetBudget}
-   - Avoid recent titles: [${recentTitles || 'None'}]
+- Theme: ${archetype.theme}
+- Angle: ${archetype.angle}
+- Target Budget: ${archetype.targetBudget}
+- Avoid recent titles: [${recentTitles || 'None'}]
 
 OUTPUT FORMAT: Return strictly a valid JSON object matching this schema:
-CRITICAL: Output EXACTLY 8 slides (slideIndex 0 to 7). Never return less than 8 slides.
+CRITICAL: Output EXACTLY 6 slides (slideIndex 0 to 5).
 
 {
-  "title": "Punchy High-CTR Title with Global Dual-Currency Mention #Shorts",
+  "title": "Curiosity-Driven Title Under 55 Chars #Shorts",
   "category": "${archetype.category}",
   "theme": "${archetype.theme}",
   "angle": "${archetype.angle}",
   "hook": "${archetype.hookPatterns[slotIndex % archetype.hookPatterns.length]}",
-  "description": "Comprehensive practical breakdown of ${archetype.theme}.\\n\\n#Shorts #PersonalFinance #SmallBusiness #MoneyTips #SideHustle #FinancialLiteracy #BusinessIdeas",
-  "tags": ["#Shorts", "#PersonalFinance", "#SmallBusiness", "#MoneyTips", "#SideHustle", "#FinancialLiteracy", "#BusinessBreakdown"],
+  "description": "Practical breakdown of ${archetype.theme}.\\n\\n#Shorts #PersonalFinance #SmallBusiness #MoneyTips #SideHustle #FinancialLiteracy",
+  "tags": ["#Shorts", "#PersonalFinance", "#SmallBusiness", "#MoneyTips", "#SideHustle", "#FinancialLiteracy"],
   "estimatedBudget": "${archetype.targetBudget}",
   "slides": [
     {
       "slideIndex": 0,
-      "text": "Opening hook addressing the realistic starting budget and problem in simple words with USD and Naira (25-35 words)...",
+      "text": "Shocking hook or burning question with zero greetings (18-22 words)...",
       "visual": "Cinematic 9:16 vertical 8k scene, modern minimalist workspace, emerald and gold ambient rim light..."
     },
     {
       "slideIndex": 1,
-      "text": "The hidden trap or mistake beginners make explained with simple everyday words (25-35 words)...",
+      "text": "The hidden mistake beginners make explained simply (18-22 words)...",
       "visual": "Matching 9:16 vertical 8k shot with consistent emerald/gold color palette and sharp depth of field..."
     },
     {
       "slideIndex": 2,
-      "text": "The simple financial rule explained with an easy everyday definition (25-35 words)...",
+      "text": "The core financial solution in plain English (18-22 words)...",
       "visual": "Matching 9:16 vertical shot, clean financial interface or business supply setup..."
     },
     {
       "slideIndex": 3,
-      "text": "Concrete pricing, startup cost, or profit margin breakdown in simple dual-currency math (25-35 words)...",
+      "text": "Exact costs and profit math in dual USD and Naira (18-22 words)...",
       "visual": "Matching 9:16 vertical shot, clear visual breakdown chart with high-contrast text..."
     },
     {
       "slideIndex": 4,
-      "text": "Step-by-step practical execution of what to do today with zero friction (25-35 words)...",
+      "text": "Step-by-step action to execute today without equipment (18-22 words)...",
       "visual": "Matching 9:16 vertical shot, close-up hands demonstrating practical setup..."
     },
     {
       "slideIndex": 5,
-      "text": "The critical risk warning on how to protect your capital and avoid scams (25-35 words)...",
-      "visual": "Matching 9:16 vertical shot, cyber security shield or verified accounting balance..."
-    },
-    {
-      "slideIndex": 6,
-      "text": "The compounding benefit of reinvesting and building sustainable cash flow (25-35 words)...",
-      "visual": "Matching 9:16 vertical shot, confident modern entrepreneur in cinematic lighting..."
-    },
-    {
-      "slideIndex": 7,
-      "text": "Final golden summary rule + '${resolvedOutro}' (25-35 words)...",
+      "text": "Golden rule + follow ${cleanHandle} + seamless bridge back to slide 0 (18-22 words)...",
       "visual": "Matching 9:16 vertical shot, clean modern studio resolution with subtle gold accents..."
     }
   ]
 }`;
 
-  const userPrompt = `Generate a brand new, highly practical and deeply explanatory Finance Short storyboard for Slot ${slotIndex + 1}.
+  const userPrompt = `Generate a fresh, viral, high-retention 6-slide YouTube Shorts script for Slot ${slotIndex + 1}.
 Theme: "${archetype.theme}". Angle: "${archetype.angle}". Target Budget: "${archetype.targetBudget}".
-MANDATE: Must contain EXACTLY 8 slides (slideIndex 0 to 7) with 25-35 words per slide for a full 60+ second deep explanatory runtime. Ensure realistic calculations with dual $ / ₦ context. Output strictly valid JSON.`;
+MANDATE: Output EXACTLY 6 slides (slideIndex 0 to 5) with 18-25 words per slide (32-42s runtime). Include realistic dual-currency calculations ($ and ₦). Output strictly valid JSON.`;
 
   return { systemPrompt, userPrompt };
 }
@@ -450,7 +431,11 @@ MANDATE: Must contain EXACTLY 8 slides (slideIndex 0 to 7) with 25-35 words per 
  */
 function synthesizeDeterministicFinStoryboard(archetype, topicTitle, channelHandle = '@bones_ceo') {
   throw new Error('[FATAL] Fallback scripts are disabled. Pure dynamic AI storyboard generation is required. Please check your AI API keys.');
-}
+  const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
+  const resolvedOutro = resolveFinOutro(cleanHandle);
+  const arch = archetype || FIN_ARCHETYPES[0];
+  const cleanTopic = sanitizeFinString(topicTitle || arch.angle);
+  const topicLower = (cleanTopic + ' ' + (arch.theme || '') + ' ' + (arch.angle || '')).toLowerCase();
 
   // 1. LOAN APPS / HIGH INTEREST / DEBT TRAP
   if (topicLower.includes('loan') || topicLower.includes('borrow') || topicLower.includes('apr') || topicLower.includes('debt') || topicLower.includes('interest')) {
@@ -915,7 +900,10 @@ OUTPUT FORMAT: Return strictly valid JSON matching this schema:
  */
 function synthesizeDeterministicFinDeepDiveStoryboard(archetype, topicTitle, channelHandle = '@bones_ceo') {
   throw new Error('[FATAL] Fallback scripts are disabled. Pure dynamic AI storyboard generation is required. Please check your AI API keys.');
-}
+  const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
+  const resolvedOutro = resolveFinOutro(cleanHandle);
+  const arch = archetype || FIN_ARCHETYPES[0];
+  const cleanTopic = sanitizeFinString(topicTitle || arch.theme);
 
   const chapters = [
     { title: 'Executive Overview & The Small Capital Paradigm', focus: 'Why tiny capital is not a barrier when you focus on high-utility micro-services and zero-inventory business models.' },

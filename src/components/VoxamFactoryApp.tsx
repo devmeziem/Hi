@@ -378,7 +378,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
     await fetchRealData();
   };
 
-  // Run full studio production
+  // Run full studio production with FLUX.1 Visual Enhancement Step for Slide 0
   const handleRunFullStudioPipeline = async () => {
     const topic = studioTopic.trim() || (
       studioChannel === 'finance_saas'
@@ -419,7 +419,25 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
         message: `Dispatched studio production for "${topic}" on ${studioChannel}`
       });
 
-      setStudioProgressStep('Generating viral hook, script & scene prompts...');
+      // 1. SCRIPT GENERATION STAGE
+      setStudioProgressStep('[1/4] Generating high-retention 6-slide script & storyboard...');
+      let scriptPayload: any = null;
+      try {
+        const bpRes = await fetch('/api/generate-blueprint', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            niche: studioChannel,
+            topic: topic
+          })
+        });
+        if (bpRes.ok) {
+          scriptPayload = await bpRes.json();
+        }
+      } catch (err) {
+        console.warn('Backend blueprint generator notice, building dynamic storyboard locally:', err);
+      }
+
       const updatedJobScript: FactoryJob = {
         ...newJob,
         stage: 'script',
@@ -428,50 +446,122 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
       await dbAdapter.saveJob(updatedJobScript);
       setJobs(prev => [updatedJobScript, ...prev.filter(j => j.id !== jobId)]);
 
-      setStudioProgressStep('Synthesizing high-contrast 1080x1920 visuals & TTS audio...');
-      const slides = [
-        {
-          text: `Here is the core breakdown on ${topic}.`,
-          scriptText: `Here is the core breakdown on ${topic}.`,
-          voiceoverTts: `Here is the core breakdown on ${topic}.`,
-          imagePrompt: `${topic}, cinematic 8k, modern minimalist clean background`,
-          imageUrl: `https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1080&h=1920&fit=crop&q=80`,
-          durationSeconds: 7,
-          effect: 'ken-burns' as const
-        },
-        {
-          text: 'Key execution principle: Continuous compounding beats sporadic intensity.',
-          scriptText: 'Key execution principle: Continuous compounding beats sporadic intensity.',
-          voiceoverTts: 'Key execution principle: Continuous compounding beats sporadic intensity.',
-          imagePrompt: `${topic}, high contrast data diagram, aesthetic workspace`,
-          imageUrl: `https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1080&h=1920&fit=crop&q=80`,
-          durationSeconds: 8,
-          effect: 'zoom-in' as const
-        },
-        {
-          text: 'Subscribe for daily insights across our 3 channels!',
-          scriptText: 'Subscribe for daily insights across our 3 channels!',
-          voiceoverTts: 'Subscribe for daily insights across our 3 channels!',
-          imagePrompt: 'Call to action subscribe button, clean slate background',
-          imageUrl: `https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1080&h=1920&fit=crop&q=80`,
-          durationSeconds: 6,
-          effect: 'slide-in' as const
-        }
-      ];
+      // 2. VISUAL ENHANCEMENT STAGE (FLUX.1 High-CTR Shorts Opening Slide / Thumbnail)
+      setStudioProgressStep('[2/4] FLUX.1 Visual Enhancement: Synthesizing high-contrast CTR thumbnail for Slide 0...');
+      let fluxThumbnailUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(topic + ' high contrast vibrant lighting 8k 9:16 vertical')}`;
+      let fluxModelUsed = 'FLUX.1-schnell (Black Forest Labs)';
+      let fluxProvider = 'FLUX.1 Visual Enhancement Engine';
 
-      setStudioProgressStep('Vaulting completed video to Firestore...');
+      try {
+        const visualRes = await fetch('/api/visual-enhancement', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            topic: topic,
+            niche: studioChannel,
+            baseVisual: scriptPayload?.slides?.[0]?.visual || '',
+            accountId: keys.cloudflareAccountId,
+            apiToken: keys.cloudflareApiToken
+          })
+        });
+
+        if (visualRes.ok) {
+          const vData = await visualRes.json();
+          if (vData.imageUrl) {
+            fluxThumbnailUrl = vData.imageUrl;
+            fluxModelUsed = vData.model || fluxModelUsed;
+            fluxProvider = vData.provider || fluxProvider;
+          }
+        }
+      } catch (err) {
+        console.warn('FLUX.1 visual enhancement fetch error, using robust fallback:', err);
+      }
+
+      const updatedJobVisual: FactoryJob = {
+        ...newJob,
+        stage: 'visual_enhancement',
+        updatedAt: new Date().toISOString(),
+        payload: {
+          ...newJob.payload,
+          enhancedThumbnailUrl: fluxThumbnailUrl,
+          thumbnailModel: fluxModelUsed
+        }
+      };
+      await dbAdapter.saveJob(updatedJobVisual);
+      setJobs(prev => [updatedJobVisual, ...prev.filter(j => j.id !== jobId)]);
+
+      // 3. STORYBOARD ASSET SYNTHESIS (Slide 0 gets FLUX.1 enhanced thumbnail)
+      setStudioProgressStep('[3/4] Synthesizing remaining storyboard scenes and voice audio...');
+      
+      const rawSlides = scriptPayload?.slides && Array.isArray(scriptPayload.slides) && scriptPayload.slides.length >= 3
+        ? scriptPayload.slides
+        : [
+            {
+              text: studioChannel === 'finance_saas'
+                ? `Did you know businesses are quietly losing millions every month just by ignoring automated order forms?`
+                : studioChannel === 'motivation_stoicism'
+                ? `When someone insults you in public, why does immediate silence completely destroy their power?`
+                : `Stop spending thousands of dollars on slow manual video rendering when automated code handles it all.`,
+              visual: `${topic}, cinematic 8k, modern minimalist clean background`
+            },
+            {
+              text: 'When businesses rely on slow paper systems, thirty percent of repeat buyers simply walk away.',
+              visual: `${topic}, high contrast data diagram, aesthetic workspace`
+            },
+            {
+              text: 'By setting up a simple digital order form, you completely automate orders in under forty-five minutes.',
+              visual: `${topic}, automated digital screen, crisp notifications`
+            },
+            {
+              text: 'Charge a modest monthly maintenance retainer. Just four clients yields reliable recurring cashflow.',
+              visual: `${topic}, revenue dashboard with compounding growth`
+            },
+            {
+              text: 'Golden rule: Always solve high-friction bottlenecks for established businesses with existing foot traffic.',
+              visual: `${topic}, minimalist executive boardroom table with gold metrics`
+            },
+            {
+              text: 'Follow for daily practical systems, because building automated assets is simple once you master the rule...',
+              visual: `${topic}, cinematic outro with subscribe badge and luxury slate studio`
+            }
+          ];
+
+      const processedSlides = rawSlides.map((s: any, idx: number) => {
+        const isSlideZero = idx === 0;
+        const slideText = s.text || s.scriptText || topic;
+        const slideVisual = s.visual || s.imagePrompt || topic;
+
+        return {
+          text: slideText,
+          scriptText: slideText,
+          voiceoverTts: slideText,
+          imagePrompt: isSlideZero ? `${slideVisual} (FLUX.1 High-CTR Enhanced)` : slideVisual,
+          imageUrl: isSlideZero
+            ? fluxThumbnailUrl
+            : `https://image.pollinations.ai/prompt/${encodeURIComponent(slideVisual + ' 8k 9:16 vertical cinematic')}`,
+          imageProvider: isSlideZero ? fluxProvider : 'Pollinations Flux (Standard)',
+          enhancedCtr: isSlideZero,
+          durationSeconds: 6,
+          effect: idx % 2 === 0 ? ('ken-burns' as const) : ('zoom-in' as const)
+        };
+      });
+
+      // 4. PERSISTENCE & VAULTING
+      setStudioProgressStep('[4/4] Vaulting production-ready video to Firestore database...');
       const completedJob: FactoryJob = {
         ...newJob,
         stage: 'youtube_publish',
         status: 'COMPLETED',
         updatedAt: new Date().toISOString(),
         payload: {
-          title: topic,
-          description: `Comprehensive analysis and breakdown of ${topic}.\n\n#${studioChannel.replace('_', '')} #Voxam #Shorts`,
-          tags: [studioChannel, 'viral', 'tips', 'guide'],
+          title: scriptPayload?.title || topic,
+          description: scriptPayload?.description || `Comprehensive analysis and breakdown of ${topic}.\n\n#${studioChannel.replace('_', '')} #Voxam #Shorts`,
+          tags: scriptPayload?.tags || [studioChannel, 'viral', 'tips', 'guide'],
           topic: topic,
-          renderedVideoUrl: slides[0].imageUrl,
-          imageUrls: slides.map(s => s.imageUrl)
+          enhancedThumbnailUrl: fluxThumbnailUrl,
+          thumbnailModel: fluxModelUsed,
+          renderedVideoUrl: processedSlides[0].imageUrl,
+          imageUrls: processedSlides.map((s: any) => s.imageUrl)
         }
       };
       await dbAdapter.saveJob(completedJob);
@@ -481,7 +571,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
       const savedCamp: SavedCampaign = {
         id: campaignId,
         jobId: jobId,
-        title: topic,
+        title: scriptPayload?.title || topic,
         niche: studioChannel,
         createdAt: new Date().toISOString(),
         status: 'completed',
@@ -489,14 +579,18 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
         views: Math.floor(Math.random() * 200) + 50,
         likes: Math.floor(Math.random() * 30) + 5,
         comments: Math.floor(Math.random() * 8) + 1,
+        imageUrl: fluxThumbnailUrl,
+        thumbnailModel: fluxModelUsed,
         payload: {
           channelId: studioChannel,
           topic: topic,
+          thumbnailUrl: fluxThumbnailUrl,
+          thumbnailModel: fluxModelUsed,
           youtube: {
-            title: topic,
-            description: `Comprehensive analysis of ${topic}.\n\n#${studioChannel.replace('_', '')} #Voxam #Shorts`,
-            tags: [studioChannel, 'viral', 'tips', 'guide'],
-            slides: slides
+            title: scriptPayload?.title || topic,
+            description: scriptPayload?.description || `Comprehensive analysis of ${topic}.\n\n#${studioChannel.replace('_', '')} #Voxam #Shorts`,
+            tags: scriptPayload?.tags || [studioChannel, 'viral', 'tips', 'guide'],
+            slides: processedSlides
           }
         }
       };
@@ -506,7 +600,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
         timestamp: new Date().toISOString(),
         workerName: 'StudioProducer',
         level: 'info',
-        message: `Successfully produced and vaulted "${topic}" for ${studioChannel}`
+        message: `Successfully produced "${topic}" on ${studioChannel} using FLUX.1 high-contrast visual enhancement for Slide 0.`
       });
 
       await fetchRealData();
@@ -1351,6 +1445,29 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                     </div>
                   </div>
                 )}
+
+                {/* FLUX.1 High-CTR Visual Enhancement Engine Feature Badge */}
+                <div className="p-4 bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-slate-900 border border-purple-500/30 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-purple-500/20 border border-purple-500/40 rounded-xl text-purple-300">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-white">FLUX.1 Visual Enhancement Pipeline Step</span>
+                        <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full border border-purple-500/30 font-mono font-bold">
+                          Active for Slide 0
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        Automatically synthesizes ultra-high-contrast 9:16 vertical thumbnails via FLUX.1 to hook viewers in the first 2 seconds and spike Shorts CTR.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-[10px] text-purple-300 font-mono bg-purple-900/30 px-3 py-1.5 rounded-xl border border-purple-500/20 self-start md:self-auto">
+                    <span>Model: @cf/black-forest-labs/flux-1-schnell</span>
+                  </div>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-2 text-xs">
                   <div

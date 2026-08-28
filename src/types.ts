@@ -59,9 +59,11 @@ export interface VideoSlide {
   voiceoverTts?: string;
   imagePrompt?: string;
   imageUrl?: string;
+  imageProvider?: string;
   audioUrl?: string;
   durationSeconds: number;
   effect?: 'ken-burns' | 'zoom-in' | 'zoom-out' | 'slide-in' | 'pan';
+  enhancedCtr?: boolean;
 }
 
 export interface SavedCampaign {
@@ -77,12 +79,15 @@ export interface SavedCampaign {
   comments?: number;
   audioUrl?: string;
   imageUrl?: string;
+  thumbnailModel?: string;
   videoUrl?: string;
   payload?: {
     channelId?: string;
     topic?: string;
     audioUrl?: string;
     bgMusicUrl?: string;
+    thumbnailUrl?: string;
+    thumbnailModel?: string;
     youtube?: {
       title?: string;
       description?: string;
@@ -96,7 +101,7 @@ export interface FactoryJob {
   id: string;
   projectId: string;
   channelId: NicheType | string;
-  stage: 'idea' | 'script' | 'scene_plan' | 'image_synth' | 'tts_audio' | 'ffmpeg_render' | 'cloudinary_upload' | 'youtube_publish';
+  stage: 'idea' | 'script' | 'scene_plan' | 'visual_enhancement' | 'image_synth' | 'tts_audio' | 'ffmpeg_render' | 'cloudinary_upload' | 'youtube_publish';
   status: 'QUEUED' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
   attempts: number;
   maxAttempts: number;
@@ -109,6 +114,8 @@ export interface FactoryJob {
     script?: string;
     scenePlan?: any[];
     imageUrls?: string[];
+    enhancedThumbnailUrl?: string;
+    thumbnailModel?: string;
     audioUrl?: string;
     renderedVideoUrl?: string;
     cloudinaryUrl?: string;
