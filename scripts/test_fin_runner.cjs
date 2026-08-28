@@ -22,9 +22,7 @@ const {
   auditFinancialScriptSafety,
   sanitizeFinString,
   buildFinPromptForSlot,
-  buildFinDeepDivePrompt,
-  synthesizeDeterministicFinStoryboard,
-  synthesizeDeterministicFinDeepDiveStoryboard
+  buildFinDeepDivePrompt
 } = require('./fin_diversity_engine.cjs');
 
 // ANSI Color helper for clean terminal outputs
@@ -404,6 +402,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
     ? buildFinDeepDivePrompt(archetype, recentHistory, CHANNEL_HANDLE)
     : buildFinPromptForSlot(archetype, recentHistory, 0, CHANNEL_HANDLE);
   let scriptData = null;
+  const aiErrorLogs = [];
 
   // Helper to test parsed JSON
   const testCandidate = (rawText, providerName) => {
@@ -451,26 +450,35 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
           let data = '';
           res.on('data', c => data += c);
           res.on('end', () => {
-            try {
-              const j = JSON.parse(data);
-              resolve({ success: true, content: j.choices?.[0]?.message?.content });
-            } catch (e) {
-              resolve({ success: false, error: e.message });
+            if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+              try {
+                const j = JSON.parse(data);
+                resolve({ success: true, content: j.choices?.[0]?.message?.content });
+              } catch (e) {
+                resolve({ success: false, error: `Invalid JSON response: ${e.message}` });
+              }
+            } else {
+              resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 200)}` });
             }
           });
         });
         req.on('error', err => resolve({ success: false, error: err.message }));
-        req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
+        req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Request timed out' }); });
         req.write(postData);
         req.end();
       });
 
       if (raw.success && raw.content) {
         scriptData = testCandidate(raw.content, `Grok (${grokObj.model})`);
+        if (!scriptData) aiErrorLogs.push(`Grok (${grokObj.model}): Response did not pass storyboard schema validation.`);
+      } else {
+        aiErrorLogs.push(`Grok (${grokObj.model}): ${raw.error || 'Failed'}`);
       }
     } catch (e) {
-      logWarning(`Grok generation notice: ${e.message}`);
+      aiErrorLogs.push(`Grok Exception: ${e.message}`);
     }
+  } else {
+    aiErrorLogs.push('Grok (xAI): No API key provided in XAI_API_KEY/GROK_API_KEY');
   }
 
   // 2. SECONDARY: Groq LPU Models
@@ -503,11 +511,15 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
             let data = '';
             res.on('data', c => data += c);
             res.on('end', () => {
-              try {
-                const j = JSON.parse(data);
-                resolve({ success: true, content: j.choices?.[0]?.message?.content });
-              } catch (e) {
-                resolve({ success: false, error: e.message });
+              if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+                try {
+                  const j = JSON.parse(data);
+                  resolve({ success: true, content: j.choices?.[0]?.message?.content });
+                } catch (e) {
+                  resolve({ success: false, error: `Parse error: ${e.message}` });
+                }
+              } else {
+                resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 200)}` });
               }
             });
           });
@@ -519,11 +531,16 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
 
         if (raw.success && raw.content) {
           scriptData = testCandidate(raw.content, `Groq (${gModel})`);
+          if (!scriptData) aiErrorLogs.push(`Groq (${gModel}): Response failed schema validation.`);
+        } else {
+          aiErrorLogs.push(`Groq (${gModel}): ${raw.error || 'Failed'}`);
         }
       } catch (e) {
-        logWarning(`Groq notice on ${gModel}: ${e.message}`);
+        aiErrorLogs.push(`Groq (${gModel}) Exception: ${e.message}`);
       }
     }
+  } else if (!scriptData) {
+    aiErrorLogs.push('Groq LPU: No API key provided in GROQ_API_KEY');
   }
 
   // 3. TERTIARY: Google Gemini Models
@@ -546,77 +563,45 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
             let d = '';
             res.on('data', c => d += c);
             res.on('end', () => {
-              try {
-                const j = JSON.parse(d);
-                resolve({ success: true, content: j.candidates?.[0]?.content?.parts?.[0]?.text });
-              } catch { resolve({ success: false }); }
+              if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+                try {
+                  const j = JSON.parse(d);
+                  resolve({ success: true, content: j.candidates?.[0]?.content?.parts?.[0]?.text });
+                } catch (e) {
+                  resolve({ success: false, error: `Parse error: ${e.message}` });
+                }
+              } else {
+                resolve({ success: false, error: `HTTP ${res.statusCode}: ${d.slice(0, 200)}` });
+              }
             });
           });
-          req.on('error', () => resolve({ success: false }));
-          req.on('timeout', () => { req.destroy(); resolve({ success: false }); });
+          req.on('error', err => resolve({ success: false, error: err.message }));
+          req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
           req.write(postData);
           req.end();
         });
 
         if (raw.success && raw.content) {
           scriptData = testCandidate(raw.content, `Google Gemini (${gModel})`);
+          if (!scriptData) aiErrorLogs.push(`Google Gemini (${gModel}): Output failed schema validation.`);
+        } else {
+          aiErrorLogs.push(`Google Gemini (${gModel}): ${raw.error || 'Failed'}`);
         }
-      } catch {}
+      } catch (e) {
+        aiErrorLogs.push(`Google Gemini (${gModel}) Exception: ${e.message}`);
+      }
     }
+  } else if (!scriptData) {
+    aiErrorLogs.push('Google Gemini: No API key provided in GEMINI_API_KEY');
   }
 
-  // 4. QUATERNARY: Pollinations Free AI Models
-  if (!scriptData) {
-    const pollModels = ['openai', 'mistral', 'llama', 'qwen-coder'];
-    for (const pModel of pollModels) {
-      if (scriptData) break;
-      try {
-        logInfo(`[Storyboard Engine] 4. Requesting storyboard from Pollinations AI (${pModel})...`);
-        const raw = await new Promise((resolve) => {
-          const fullPrompt = `${systemPrompt}\n\nTask: ${userPrompt} ${topicInput ? `Custom Topic: "${topicInput}".` : ''}\n\nOutput STRICT JSON with a 'slides' array of 6 items.`;
-          const postData = JSON.stringify({
-            messages: [{ role: 'user', content: fullPrompt }],
-            model: pModel,
-            jsonMode: true
-          });
-          const req = https.request('https://text.pollinations.ai/', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Content-Length': Buffer.byteLength(postData)
-            },
-            timeout: 20000
-          }, (res) => {
-            let data = '';
-            res.on('data', c => data += c);
-            res.on('end', () => {
-              if (res.statusCode === 200) {
-                resolve({ success: true, content: data });
-              } else {
-                resolve({ success: false });
-              }
-            });
-          });
-          req.on('error', () => resolve({ success: false }));
-          req.on('timeout', () => { req.destroy(); resolve({ success: false }); });
-          req.write(postData);
-          req.end();
-        });
-
-        if (raw.success && raw.content) {
-          scriptData = testCandidate(raw.content, `Pollinations (${pModel})`);
-        }
-      } catch {}
-    }
-  }
-
-  // 5. QUINARY: Cloudflare Workers AI
+  // 4. QUATERNARY: Cloudflare Workers AI
   if (!scriptData && CLOUDFLARE_ACCOUNT_ID && CLOUDFLARE_API_TOKEN && !cloudflareAuthFailed) {
     const cfModels = ['@cf/meta/llama-3.3-70b-instruct-fp8-fast', '@cf/meta/llama-3.2-3b-instruct', '@cf/meta/llama-3.1-8b-instruct'];
     for (const cModel of cfModels) {
       if (scriptData || cloudflareAuthFailed) break;
       try {
-        logInfo(`[Storyboard Engine] 5. Requesting storyboard from Cloudflare AI (${cModel})...`);
+        logInfo(`[Storyboard Engine] 4. Requesting storyboard from Cloudflare AI (${cModel})...`);
         const raw = await new Promise((resolve) => {
           const postData = JSON.stringify({
             messages: [
@@ -643,39 +628,98 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
                 } catch {
                   resolve({ success: true, content: data });
                 }
-              } else if (res.statusCode === 401) {
-                cloudflareAuthFailed = true;
-                resolve({ success: false });
               } else {
-                resolve({ success: false });
+                if (res.statusCode === 401) cloudflareAuthFailed = true;
+                resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 200)}` });
               }
             });
           });
-          req.on('error', () => resolve({ success: false }));
-          req.on('timeout', () => { req.destroy(); resolve({ success: false }); });
+          req.on('error', err => resolve({ success: false, error: err.message }));
+          req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
           req.write(postData);
           req.end();
         });
 
         if (raw.success && raw.content) {
           scriptData = testCandidate(raw.content, `Cloudflare (${cModel})`);
+          if (!scriptData) aiErrorLogs.push(`Cloudflare (${cModel}): Output failed schema validation.`);
+        } else {
+          aiErrorLogs.push(`Cloudflare (${cModel}): ${raw.error || 'Failed'}`);
         }
-      } catch {}
+      } catch (e) {
+        aiErrorLogs.push(`Cloudflare (${cModel}) Exception: ${e.message}`);
+      }
+    }
+  } else if (!scriptData) {
+    aiErrorLogs.push('Cloudflare Workers AI: CLOUDFLARE_ACCOUNT_ID or CLOUDFLARE_API_TOKEN missing');
+  }
+
+  // 5. QUINARY: Pollinations AI
+  if (!scriptData) {
+    const pollModels = ['openai', 'mistral', 'llama', 'qwen-coder'];
+    for (const pModel of pollModels) {
+      if (scriptData) break;
+      try {
+        logInfo(`[Storyboard Engine] 5. Requesting storyboard from Pollinations AI (${pModel})...`);
+        const raw = await new Promise((resolve) => {
+          const fullPrompt = `${systemPrompt}\n\nTask: ${userPrompt} ${topicInput ? `Custom Topic: "${topicInput}".` : ''}\n\nOutput STRICT JSON with a 'slides' array.`;
+          const postData = JSON.stringify({
+            messages: [{ role: 'user', content: fullPrompt }],
+            model: pModel,
+            jsonMode: true
+          });
+          const req = https.request('https://text.pollinations.ai/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 20000
+          }, (res) => {
+            let data = '';
+            res.on('data', c => data += c);
+            res.on('end', () => {
+              if (res.statusCode >= 200 && res.statusCode < 300) {
+                resolve({ success: true, content: data });
+              } else {
+                resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 200)}` });
+              }
+            });
+          });
+          req.on('error', err => resolve({ success: false, error: err.message }));
+          req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
+          req.write(postData);
+          req.end();
+        });
+
+        if (raw.success && raw.content) {
+          scriptData = testCandidate(raw.content, `Pollinations (${pModel})`);
+          if (!scriptData) aiErrorLogs.push(`Pollinations (${pModel}): Output failed schema validation.`);
+        } else {
+          aiErrorLogs.push(`Pollinations (${pModel}): ${raw.error || 'Failed'}`);
+        }
+      } catch (e) {
+        aiErrorLogs.push(`Pollinations (${pModel}) Exception: ${e.message}`);
+      }
     }
   }
 
-  // 6. FALLBACK: Deterministic Diversity Engine
+  // FAIL-FAST ENFORCEMENT: Fallbacks are disabled. If all AI providers fail, display diagnostic report and HALT immediately.
   if (!scriptData || !Array.isArray(scriptData.slides) || scriptData.slides.length < 3) {
-    logWarning('[Storyboard Engine] Synthesizing verified deterministic financial package from Diversity Engine...');
-    scriptData = isDeepDive
-      ? synthesizeDeterministicFinDeepDiveStoryboard(archetype, topicInput, CHANNEL_HANDLE)
-      : synthesizeDeterministicFinStoryboard(archetype, topicInput, CHANNEL_HANDLE);
-    logSuccess(`Diversity Engine synthesized authentic ${scriptData.slides.length}-slide financial masterclass!`);
-  }
-
-  // Enforce strictly 6 slides for high-retention Short format (unless deep dive masterclass)
-  if (!isDeepDive && scriptData.slides.length > 6) {
-    scriptData.slides = scriptData.slides.slice(0, 6);
+    logError('[Storyboard Engine] FATAL: All AI Storyboard Generation Providers Failed!');
+    console.log(`\n${colors.bright}${colors.red}╔════════════════════════════════════════════════════════════════════════════════╗${colors.reset}`);
+    console.log(`${colors.bright}${colors.red}║              FATAL: AI SCRIPT GENERATION FAILED (ALL PROVIDERS)                ║${colors.reset}`);
+    console.log(`${colors.bright}${colors.red}╠════════════════════════════════════════════════════════════════════════════════╣${colors.reset}`);
+    console.log(`${colors.yellow}  Fallback scripts have been STRICTLY DISABLED to prevent posting duplicate       ${colors.reset}`);
+    console.log(`${colors.yellow}  or repeated static videos. The workflow has stopped so you can fix credentials. ${colors.reset}`);
+    console.log(`${colors.bright}${colors.red}╠════════════════════════════════════════════════════════════════════════════════╣${colors.reset}`);
+    console.log(`${colors.bright}  Diagnostic Failure Summary per Provider:${colors.reset}`);
+    aiErrorLogs.forEach((err, idx) => {
+      console.log(`    ${colors.red}${idx + 1}.${colors.reset} ${err}`);
+    });
+    console.log(`${colors.bright}${colors.red}╚════════════════════════════════════════════════════════════════════════════════╝${colors.reset}`);
+    console.log(`\n${colors.cyan}👉 Action Required:${colors.reset} Please verify and configure valid AI API keys (e.g. GEMINI_API_KEY, GROK_API_KEY, GROQ_API_KEY, CLOUDFLARE_API_TOKEN) in Settings / Environment Variables.\n`);
+    throw new Error(`[FATAL AI ERROR] Storyboard generation failed across all AI providers. Execution halted immediately.\n\nProvider Diagnostics:\n${aiErrorLogs.map((e, i) => `${i + 1}. ${e}`).join('\n')}`);
   }
 
   // Safety & Dual Currency Compliance Audit
@@ -689,7 +733,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
   console.log(`\n  ${colors.bright}Generated Financial Masterclass:${colors.reset}`);
   console.log(`  Title  : ${colors.green}${scriptData.title}${colors.reset}`);
   console.log(`  Budget : ${colors.yellow}${scriptData.estimatedBudget || archetype.targetBudget}${colors.reset}`);
-  console.log(`  Slides : ${colors.cyan}${scriptData.slides.length} slides (Target: 60s - 75s Vertical Short)${colors.reset}`);
+  console.log(`  Slides : ${colors.cyan}${scriptData.slides.length} slides (Target: 60s+ Explanatory Video)${colors.reset}`);
 
   return scriptData;
 }

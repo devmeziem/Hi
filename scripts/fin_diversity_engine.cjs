@@ -449,11 +449,8 @@ MANDATE: Must contain EXACTLY 8 slides (slideIndex 0 to 7) with 25-35 words per 
  * with unique scripts, dual-currency math, and matching visual prompts for every category (60s+ runtime).
  */
 function synthesizeDeterministicFinStoryboard(archetype, topicTitle, channelHandle = '@bones_ceo') {
-  const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
-  const resolvedOutro = resolveFinOutro(cleanHandle);
-  const arch = archetype || FIN_ARCHETYPES[0];
-  const cleanTopic = sanitizeFinString(topicTitle || arch.angle);
-  const topicLower = (cleanTopic + ' ' + (arch.theme || '') + ' ' + (arch.angle || '')).toLowerCase();
+  throw new Error('[FATAL] Fallback scripts are disabled. Pure dynamic AI storyboard generation is required. Please check your AI API keys.');
+}
 
   // 1. LOAN APPS / HIGH INTEREST / DEBT TRAP
   if (topicLower.includes('loan') || topicLower.includes('borrow') || topicLower.includes('apr') || topicLower.includes('debt') || topicLower.includes('interest')) {
@@ -917,10 +914,8 @@ OUTPUT FORMAT: Return strictly valid JSON matching this schema:
  * Deterministic Fallback for 15-Chapter 15-20 Minute Masterclass
  */
 function synthesizeDeterministicFinDeepDiveStoryboard(archetype, topicTitle, channelHandle = '@bones_ceo') {
-  const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
-  const resolvedOutro = resolveFinOutro(cleanHandle);
-  const arch = archetype || FIN_ARCHETYPES[0];
-  const cleanTopic = sanitizeFinString(topicTitle || arch.theme);
+  throw new Error('[FATAL] Fallback scripts are disabled. Pure dynamic AI storyboard generation is required. Please check your AI API keys.');
+}
 
   const chapters = [
     { title: 'Executive Overview & The Small Capital Paradigm', focus: 'Why tiny capital is not a barrier when you focus on high-utility micro-services and zero-inventory business models.' },

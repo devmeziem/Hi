@@ -579,107 +579,13 @@ Respond STRICTLY with valid raw JSON without markdown:
         }
 
         if (!parsed || !parsed.title || !Array.isArray(parsed.slides) || parsed.slides.length < 4) {
-          modelUsed = 'Deterministic Verified Blueprint (6-Slide)';
-          if (topic.toLowerCase().includes('news') || topic.toLowerCase().includes('rate') || topic.toLowerCase().includes('fintech')) {
-            // Format 2: Finance News Breakdown & Opinion Poll (6 Slides)
-            parsed = {
-              title: `Finance News: High-Yield Digital Vaults vs Inflation`,
-              description: `Breaking down current fintech interest rate shifts and inflation hedging strategies.\n\nQuestion of the day: Where are you parking cash this year?\n#FinanceNews #FinBlueprint #MoneyTips #Fintech #Shorts`,
-              tags: ['#FinanceNews', '#FinBlueprint', '#Fintech', '#MoneyTips', '#Shorts'],
-              slides: [
-                {
-                  text: `Hello, welcome to Fin Blueprint! Today we'll be discussing the latest finance news on high-yield fintech savings rates.`,
-                  visual: `Modern sleek financial news studio broadcast backdrop with glowing green market indices and digital ticker, 8k 9:16 vertical photorealistic`
-                },
-                {
-                  text: `Traditional commercial banks still offer under two percent annual interest, meaning inflation eats away at idle deposits.`,
-                  visual: `Dramatic high contrast split screen of traditional bank vault exterior juxtaposed with declining purchasing power curve, 8k 9:16 vertical`
-                },
-                {
-                  text: `Fintech automated digital vaults now yield 15 to 18 percent APY by deploying funds into low-risk treasury bills.`,
-                  visual: `High resolution comparison chart comparing traditional bank deposit rates versus high-yield fintech digital vault yields, 8k vertical 9:16`
-                },
-                {
-                  text: `These digital vaults offer instant daily interest compounding and liquid withdrawals without heavy lock-up penalties.`,
-                  visual: `Clean aesthetic smartphone screen showing verified daily interest notifications in green digits with emerald lock icon, 8k 9:16 vertical`
-                },
-                {
-                  text: `Always ensure the fintech platform is fully backed by regulatory deposit insurance before allocating significant capital.`,
-                  visual: `Glowing holographic shield with certified financial security badge and padlock, luxury dark studio lighting, 8k 9:16 vertical`
-                },
-                {
-                  text: `What would you do: Option A — Save in digital vaults, or Option B — Reinvest in side businesses? Drop your thoughts below!`,
-                  visual: `Clean high-contrast interactive graphic showing Option A versus Option B with an engaging comments poll badge, 8k 9:16`
-                }
-              ]
-            };
-          } else if (topic.toLowerCase().includes('story') || topic.toLowerCase().includes('case') || topic.toLowerCase().includes('funds')) {
-            // Format 3: True Case Study / Starting Small Story (6 Slides)
-            parsed = {
-              title: `How Starting with ₦10,000 Built a 6-Figure Monthly Cashflow`,
-              description: `Real case study on how David launched a digital order catalog service with minimal startup capital.\n\n#SmallBusiness #FinBlueprint #WealthMindset #SideHustle #Shorts`,
-              tags: ['#SmallBusiness', '#FinBlueprint', '#WealthMindset', '#CaseStudy', '#Shorts'],
-              slides: [
-                {
-                  text: `Hello, welcome to Fin Blueprint! Today we'll be discussing the inspiring story of how starting with just little funds built big revenue.`,
-                  visual: `Focused young entrepreneur working diligently on a smartphone at a clean wooden desk with morning sunlight, 8k 9:16 vertical photorealistic`
-                },
-                {
-                  text: `David had only ₦10,000 for mobile data and zero budget for office rent or physical product inventory.`,
-                  visual: `Aesthetic minimalist desk setup with smartphone, notebook, and clean cup of coffee in warm natural lighting, 8k 9:16 vertical`
-                },
-                {
-                  text: `He designed interactive WhatsApp product catalogs and digital menus for 3 neighborhood bakeries in his local area.`,
-                  visual: `Vibrant local artisan bakery storefront with a tablet displaying a beautifully organized digital product menu, 8k 9:16 vertical`
-                },
-                {
-                  text: `By streamlining their client orders, each bakery gladly paid a ₦25,000 monthly retainer for ongoing menu updates.`,
-                  visual: `Clean smartphone screen displaying successful payment confirmation alerts and happy business client messages, 8k 9:16 vertical`
-                },
-                {
-                  text: `He reinvested every single kobo of profit into automated ordering tools without taking on any risky loans.`,
-                  visual: `Inspiring modern creative office workspace with laptop showing verified green cashflow charts and growth curve, 8k 9:16 vertical`
-                },
-                {
-                  text: `Start with what you have, keep your overhead zero, and compound daily. Follow for daily financial blueprints!`,
-                  visual: `Sleek aesthetic call to action with glowing emerald verified badge and notification bell icon, 8k 9:16 vertical studio lighting`
-                }
-              ]
-            };
-          } else {
-            // Format 1: Practical Low-Capital Side Hustle Blueprint (6 Slides)
-            parsed = {
-              title: `How to Start a High-Demand Side Hustle with Low Capital`,
-              description: `Step-by-step practical guide on launching a zero-inventory digital logistics coordination hustle with low friction.\n\n#SideHustle #FinBlueprint #MoneyManagement #FinancialFreedom #Shorts`,
-              tags: ['#SideHustle', '#FinBlueprint', '#SmallBusiness', '#PassiveIncome', '#Shorts'],
-              slides: [
-                {
-                  text: `Hello, welcome to Fin Blueprint! Today we'll be discussing on how to start a profitable side hustle that can boom with minimal issues.`,
-                  visual: `Professional entrepreneur in modern smart casual attire presenting a clean digital financial roadmap on tablet, 8k 9:16 vertical photorealistic`
-                },
-                {
-                  text: `Instead of buying expensive inventory, focus on digital service coordination for local retail and fashion shops.`,
-                  visual: `Modern boutique store shelves with clothing and accessories with a digital order barcode scanner in foreground, 8k 9:16 vertical`
-                },
-                {
-                  text: `Set up automated 1-page WhatsApp order forms and invoice tracking templates to help shops manage customer orders.`,
-                  visual: `High-contrast smartphone screen displaying an organized WhatsApp business product catalog and automated client invoice ledger, 8k 9:16 vertical`
-                },
-                {
-                  text: `Local shop owners spend hours replying to DMs manually and will happily pay you a weekly retainer to automate this.`,
-                  visual: `Busy shop owner smiling relieved while looking at automated order dashboard on tablet, warm ambient store lighting, 8k 9:16 vertical`
-                },
-                {
-                  text: `Secure 3 local business retainers to build consistent monthly cash flow with near zero operational overhead.`,
-                  visual: `Financial balance sheet with emerald green surplus indicators and steady recurring retainer metrics, 8k 9:16 vertical`
-                },
-                {
-                  text: `Work smart, validate fast, and scale steadily. Check the link in bio for the complete step-by-step starter blueprint!`,
-                  visual: `Sleek aesthetic call to action with glowing emerald verified badge and notification bell icon, 8k 9:16 vertical studio lighting`
-                }
-              ]
-            };
-          }
+          console.error(`[API Server] FATAL: AI Blueprint Generation Failed. Fallbacks are disabled.`);
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            error: `[FATAL AI ERROR] Failed to generate dynamic script using AI providers (Grok, Cloudflare, Groq). Deterministic fallback scripts have been removed. Please verify your AI API keys.`,
+            rawOutput: outputText || 'No response received from AI models'
+          }));
+          return;
         }
 
         res.writeHead(200, { 'Content-Type': 'application/json' });

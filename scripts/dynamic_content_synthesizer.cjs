@@ -709,11 +709,9 @@ Return JSON schema with topic, title, description, tags, and 6 slides (each with
     }
   }
 
-  // Procedural Fallback Engine
-  console.log('[AI Synthesizer] Generating procedural combinatorial storyboard...');
-  const proceduralResult = generateProceduralFallback(channelId, customTopic);
-  recordTopicInHistory(channelId, proceduralResult.topic || proceduralResult.title, proceduralResult.title, proceduralResult.slides[0]?.text);
-  return proceduralResult;
+  // Procedural Fallback Engine DISABLED per user mandate
+  console.error('[AI Synthesizer] FATAL: Dynamic AI script generation failed across all attempts. Fallback scripts are disabled.');
+  throw new Error(`[FATAL AI ERROR] AI generation failed for channel ${channelId} (${channelName}). Fallback scripts have been strictly disabled.`);
 }
 
 module.exports = {
