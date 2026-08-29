@@ -1423,6 +1423,8 @@ async function handleYouTubePublish(storyboard, renderResult) {
   logStep(6, 'YouTube Data API v3 Upload & Altered / Synthetic Media Disclosure');
   logInfo(`Channel Target: ${CHANNEL_NAME} (${CHANNEL_HANDLE})`);
 
+  const isDeepDive = contentDepth === 'deep_dive' || Boolean(storyboard?.isDeepDive) || (storyboard?.slides?.length > 6);
+
   if (!YOUTUBE_CLIENT_ID || !YOUTUBE_CLIENT_SECRET || !YOUTUBE_REFRESH_TOKEN) {
     logWarning('YouTube OAuth credentials not provided in environment. Storing locally to manifest.');
     return { status: 'VAULT_ARCHIVED' };
@@ -1567,7 +1569,6 @@ async function handleYouTubePublish(storyboard, renderResult) {
 
         if (uploadResult.success && uploadResult.data && uploadResult.data.id) {
           const videoId = uploadResult.data.id;
-          const isDeepDive = contentDepth === 'deep_dive';
           const videoUrl = isDeepDive ? `https://www.youtube.com/watch?v=${videoId}` : `https://www.youtube.com/shorts/${videoId}`;
           logSuccess(`LIVE VIDEO PUBLISHED TO YOUTUBE! Video ID: ${videoId}`);
           console.log(`  ${colors.bright}${colors.green}Video URL: ${videoUrl}${colors.reset}`);

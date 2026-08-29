@@ -633,6 +633,7 @@ async function fetchRecentFinHistoryFromFirestore(channelId = 'finance_business'
  */
 function isFinTopicSimilarToHistory(candidateTopic, candidateTheme, recentHistory = [], threshold = 0.50) {
   if (!candidateTopic) return true;
+  const historyArr = Array.isArray(recentHistory) ? recentHistory : [];
   const normCandidate = candidateTopic.toLowerCase().replace(/[^a-z0-9]/g, ' ').trim();
   const stopWords = new Set(['how', 'the', 'what', 'when', 'with', 'your', 'from', 'this', 'that', 'they', 'will', 'start', 'make', 'money', 'business', 'cash', 'daily', 'every', 'free', 'step', 'best', 'simple', 'real', 'naira', 'dollar', 'shorts']);
 
@@ -640,10 +641,10 @@ function isFinTopicSimilarToHistory(candidateTopic, candidateTheme, recentHistor
     normCandidate.split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w))
   );
 
-  const windowToCheck = recentHistory.slice(0, 30);
+  const windowToCheck = historyArr.slice(0, 30);
 
   for (const item of windowToCheck) {
-    const prevText = ((item.topic || item.title || '') + ' ' + (item.theme || '')).toLowerCase().replace(/[^a-z0-9]/g, ' ').trim();
+    const prevText = (((item && (item.topic || item.title)) || '') + ' ' + ((item && item.theme) || '')).toLowerCase().replace(/[^a-z0-9]/g, ' ').trim();
     if (normCandidate === prevText || prevText.includes(normCandidate) || normCandidate.includes(prevText)) {
       return true;
     }
@@ -666,7 +667,8 @@ function isFinTopicSimilarToHistory(candidateTopic, candidateTheme, recentHistor
  * Pick an archetype that has NOT been used in recent history to prevent duplicate posts
  */
 function selectDiverseFinArchetype(recentHistory = [], attemptOffset = 0) {
-  const recentTitles = (recentHistory || []).map(h => ((h.title || h.topic || '') + ' ' + (h.theme || '')).toLowerCase());
+  const historyArr = Array.isArray(recentHistory) ? recentHistory : [];
+  const recentTitles = historyArr.map(h => (((h && (h.title || h.topic)) || '') + ' ' + ((h && h.theme) || '')).toLowerCase());
   
   // Filter out any archetypes whose theme or id was used recently
   const unused = FIN_ARCHETYPES.filter(arch => {
@@ -674,7 +676,8 @@ function selectDiverseFinArchetype(recentHistory = [], attemptOffset = 0) {
   });
 
   const pool = unused.length > 0 ? unused : FIN_ARCHETYPES;
-  const index = (Math.floor(Math.random() * pool.length) + attemptOffset) % pool.length;
+  const offset = typeof attemptOffset === 'number' ? attemptOffset : 0;
+  const index = (Math.floor(Math.random() * pool.length) + offset) % pool.length;
   return pool[index];
 }
 

@@ -486,6 +486,7 @@ async function fetchRecentHistoryFromFirestore(channelId = 'motivation_stoicism'
  */
 function isTopicSimilarToHistory(candidateTopic, candidateTheme, recentHistory = [], threshold = 0.50) {
   if (!candidateTopic) return true;
+  const historyArr = Array.isArray(recentHistory) ? recentHistory : [];
   const normCandidate = candidateTopic.toLowerCase().replace(/[^a-z0-9]/g, ' ').trim();
   const stopWords = new Set(['how', 'the', 'what', 'when', 'with', 'your', 'from', 'this', 'that', 'they', 'will', 'stoic', 'stoicism', 'rule', 'rules', 'mind', 'mental', 'life', 'daily', 'shorts']);
 
@@ -493,10 +494,10 @@ function isTopicSimilarToHistory(candidateTopic, candidateTheme, recentHistory =
     normCandidate.split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w))
   );
 
-  const windowToCheck = recentHistory.slice(0, 30);
+  const windowToCheck = historyArr.slice(0, 30);
 
   for (const item of windowToCheck) {
-    const prevText = ((item.topic || item.title || '') + ' ' + (item.theme || '')).toLowerCase().replace(/[^a-z0-9]/g, ' ').trim();
+    const prevText = (((item && (item.topic || item.title)) || '') + ' ' + ((item && item.theme) || '')).toLowerCase().replace(/[^a-z0-9]/g, ' ').trim();
     if (normCandidate === prevText || prevText.includes(normCandidate) || normCandidate.includes(prevText)) {
       return true;
     }
@@ -516,10 +517,26 @@ function isTopicSimilarToHistory(candidateTopic, candidateTheme, recentHistory =
 }
 
 /**
- * Select daily diverse slots avoiding recent themes
+ * Select daily diverse slots avoiding recent themes.
+ * Supports flexible signature: selectDailyDiverseSlots(count, history) or selectDailyDiverseSlots(history, count)
  */
-function selectDailyDiverseSlots(count = 4, recentHistory = []) {
-  const recentThemes = new Set(recentHistory.map(h => (h.theme || '').toLowerCase()));
+function selectDailyDiverseSlots(arg1 = 4, arg2 = []) {
+  let count = 4;
+  let recentHistory = [];
+
+  if (Array.isArray(arg1)) {
+    recentHistory = arg1;
+    count = typeof arg2 === 'number' ? arg2 : 4;
+  } else if (typeof arg1 === 'number') {
+    count = arg1;
+    recentHistory = Array.isArray(arg2) ? arg2 : [];
+  } else if (Array.isArray(arg2)) {
+    recentHistory = arg2;
+  }
+
+  if (!Array.isArray(recentHistory)) recentHistory = [];
+
+  const recentThemes = new Set(recentHistory.map(h => ((h && h.theme) || '').toLowerCase()));
   const available = STOIC_ARCHETYPES.filter(a => !recentThemes.has(a.theme.toLowerCase()));
   const pool = available.length >= count ? available : STOIC_ARCHETYPES;
 

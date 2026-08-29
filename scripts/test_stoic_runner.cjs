@@ -362,7 +362,7 @@ async function resolveTopic(activeGrok, backupEngines) {
   }
 
   logInfo('No manual topic provided. Discovering a fresh, viral Stoic topic via AI Brain...');
-  const recentExclusions = recentContentHistory.slice(0, 10).map(h => `"${h.topic}"`).join(', ');
+  const recentExclusions = (recentContentHistory || []).slice(0, 10).map(h => `"${h.topic || h.title || ''}"`).filter(s => s !== '""').join(', ');
 
   // 1. Try Gemini (gemini-2.5-flash, gemini-2.0-flash, gemini-1.5-flash-latest, etc.)
   if (GEMINI_API_KEY) {
