@@ -17,6 +17,7 @@ const https = require('https');
 const { execSync, spawnSync } = require('child_process');
 const {
   STOIC_ARCHETYPES,
+  getFirestoreConfig,
   fetchRecentHistoryFromFirestore,
   saveContentHistoryToFirestore,
   selectDailyDiverseSlots,
@@ -2418,14 +2419,7 @@ async function syncToManifestAndDatabase(storyboard, enrichedSlides, publishResu
 
   // 2. Sync to Firestore Database via REST API (both saved_campaigns & video_vault)
   try {
-    let parsedFb = null;
-    try {
-      if (process.env.FIREBASE_CONFIG_JSON) parsedFb = JSON.parse(process.env.FIREBASE_CONFIG_JSON);
-    } catch {}
-
-    const firestoreApiKey = process.env.FIRESTORE_API_KEY || process.env.VITE_FIREBASE_API_KEY || parsedFb?.apiKey || '';
-    const firestoreProjectId = process.env.FIRESTORE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || parsedFb?.projectId || '';
-    const firestoreDbId = process.env.FIRESTORE_DATABASE_ID || process.env.VITE_FIRESTORE_DATABASE_ID || parsedFb?.databaseId || 'ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e';
+    const { projectId: firestoreProjectId, apiKey: firestoreApiKey, databaseId: firestoreDbId } = getFirestoreConfig();
 
     if (firestoreApiKey && firestoreProjectId) {
       const firestoreSlides = (enrichedSlides || []).map(s => ({

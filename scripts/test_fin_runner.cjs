@@ -19,6 +19,9 @@ const { execSync, spawnSync } = require('child_process');
 const {
   FIN_ARCHETYPES,
   FIN_CATEGORIES,
+  FIN_SERIES,
+  CATEGORY_FLOW_GUIDES,
+  getFirestoreConfig,
   auditFinancialScriptSafety,
   sanitizeFinString,
   buildFinPromptForSlot,
@@ -1836,13 +1839,7 @@ async function saveToLocalManifest(storyboard, renderResult, uploadRes, cloudina
 
   // Sync to Firestore Database (both saved_campaigns and video_vault)
   try {
-    let parsedFb = null;
-    if (process.env.FIREBASE_CONFIG_JSON) {
-      try { parsedFb = JSON.parse(process.env.FIREBASE_CONFIG_JSON); } catch {}
-    }
-    const firestoreApiKey = process.env.FIRESTORE_API_KEY || process.env.VITE_FIREBASE_API_KEY || parsedFb?.apiKey || '';
-    const firestoreProjectId = process.env.FIRESTORE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || parsedFb?.projectId || '';
-    const firestoreDbId = process.env.FIRESTORE_DATABASE_ID || process.env.VITE_FIRESTORE_DATABASE_ID || parsedFb?.databaseId || 'ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e';
+    const { projectId: firestoreProjectId, apiKey: firestoreApiKey, databaseId: firestoreDbId } = getFirestoreConfig();
 
     if (firestoreApiKey && firestoreProjectId) {
       // Build full slide payloads for web UI

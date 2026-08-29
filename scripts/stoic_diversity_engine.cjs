@@ -15,10 +15,29 @@ const https = require('https');
 const LOCAL_HISTORY_CACHE_FILE = path.join(process.cwd(), 'daily_stoic_history_cache.json');
 const MANIFEST_PATH = path.join(process.cwd(), 'daily_blueprint_manifest.json');
 
-// Firestore credentials
-const FIRESTORE_PROJECT_ID = process.env.FIRESTORE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || 'ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e';
-const FIRESTORE_API_KEY = process.env.FIRESTORE_API_KEY || process.env.VITE_FIREBASE_API_KEY || '';
-const FIRESTORE_DATABASE_ID = process.env.FIRESTORE_DATABASE_ID || process.env.VITE_FIRESTORE_DATABASE_ID || 'ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e';
+/**
+ * Safely resolve Firebase / Firestore configuration from env or firebase-applet-config.json
+ */
+function getFirestoreConfig() {
+  let fb = null;
+  try {
+    if (process.env.FIREBASE_CONFIG_JSON) {
+      fb = JSON.parse(process.env.FIREBASE_CONFIG_JSON);
+    }
+  } catch {}
+  if (!fb) {
+    const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
+    if (fs.existsSync(configPath)) {
+      try {
+        fb = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      } catch {}
+    }
+  }
+  const projectId = process.env.FIRESTORE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || fb?.projectId || 'gen-lang-client-0135161700';
+  const apiKey = process.env.FIRESTORE_API_KEY || process.env.VITE_FIREBASE_API_KEY || fb?.apiKey || '';
+  const databaseId = process.env.FIRESTORE_DATABASE_ID || process.env.VITE_FIRESTORE_DATABASE_ID || fb?.firestoreDatabaseId || fb?.databaseId || 'ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e';
+  return { projectId, apiKey, databaseId };
+}
 
 /**
  * Format a complete, viral YouTube Shorts title with high-CTR trending hashtags
@@ -69,19 +88,37 @@ function formatViralShortsTitle(rawHeadline, nicheOrCategory = 'stoic', isDeepDi
   const coreTags = ['#Shorts', '#viral', '#trending'];
   const extraTags = tagPool.filter(t => !coreTags.includes(t));
 
-  // Max headline length target around 68 chars to preserve hashtag space
-  if (headline.length > 68) {
-    const trimmed = headline.slice(0, 68);
-    const lastSpace = trimmed.lastIndexOf(' ');
-    headline = (lastSpace > 25 ? trimmed.slice(0, lastSpace) : trimmed).trim();
+  // If headline is too long, find the best natural semantic breaking point
+  if (headline.length > 60) {
+    const parts = headline.split(/[\-–—:]+/);
+    if (parts.length > 1 && parts[0].trim().length >= 20 && parts[0].trim().length <= 60) {
+      headline = parts[0].trim();
+    } else {
+      const clauseMatches = [...headline.matchAll(/\b(with|using|so\s+that|so\s+your|when|before|to\s+pass|for\s+busy|for\s+under|to\s+turn|to\s+start|to\s+build|to\s+master|to\s+conquer)\b/gi)];
+      let bestCut = -1;
+      for (const m of clauseMatches) {
+        if (m.index && m.index >= 22 && m.index <= 60) {
+          bestCut = m.index;
+        }
+      }
+      if (bestCut > 0) {
+        headline = headline.slice(0, bestCut).trim();
+      } else {
+        const trimmed = headline.slice(0, 58);
+        const lastSpace = trimmed.lastIndexOf(' ');
+        headline = (lastSpace > 20 ? trimmed.slice(0, lastSpace) : trimmed).trim();
+      }
+    }
   }
 
   // Clean trailing connector words or punctuation to guarantee a complete phrase
-  headline = headline
-    .replace(/[,\-;:–—]+$/, '')
-    .replace(/\s+(and|to|with|the|of|in|for|by|or|a|an|from|on|is|are|your|their|that)\s*$/i, '')
-    .replace(/[,\-;:–—]+$/, '')
-    .trim();
+  const trailingConnectorsRegex = /[\s\-,;:–—&+/]+(and|to|with|the|of|in|for|by|or|a|an|from|on|is|are|your|their|that|before|after|how|what|why|when|where|which|while|if|as|at|into|onto|about|than|you|they|this|these|those|so|busy|multi|some|any|my|our)?\s*$/i;
+  let prevLength = 0;
+  while (headline.length !== prevLength && trailingConnectorsRegex.test(headline)) {
+    prevLength = headline.length;
+    headline = headline.replace(trailingConnectorsRegex, '').trim();
+  }
+  headline = headline.replace(/[,\-;:–—&+/]+$/, '').trim();
 
   // 3. Greedily append hashtags up to 98 chars total
   let finalTitle = headline;
@@ -430,10 +467,47 @@ async function fetchRecentHistoryFromFirestore(channelId = 'motivation_stoicism'
     } catch {}
   }
 
-  // 3. Fetch from Firestore REST API (content_history)
-  if (FIRESTORE_API_KEY && FIRESTORE_PROJECT_ID) {
+  // 3. Fetch from Firestore REST API (content_history and saved_campaigns)
+  const { projectId, apiKey, databaseId } = getFirestoreConfig();
+  if (apiKey && projectId) {
     try {
-      const url = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT_ID}/databases/${FIRESTORE_DATABASE_ID}/documents/content_history?pageSize=${limit}&key=${FIRESTORE_API_KEY}`;
+      const campUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${databaseId}/documents/saved_campaigns?pageSize=${limit}&key=${apiKey}`;
+      const campRes = await new Promise((resolve) => {
+        const req = https.get(campUrl, { timeout: 6000 }, (resp) => {
+          let data = '';
+          resp.on('data', c => data += c);
+          resp.on('end', () => {
+            if (resp.statusCode === 200) {
+              try {
+                const j = JSON.parse(data);
+                resolve({ success: true, documents: j.documents || [] });
+              } catch (e) { resolve({ success: false }); }
+            } else { resolve({ success: false }); }
+          });
+        });
+        req.on('error', () => resolve({ success: false }));
+        req.on('timeout', () => { req.destroy(); resolve({ success: false }); });
+      });
+
+      if (campRes.success && Array.isArray(campRes.documents)) {
+        for (const doc of campRes.documents) {
+          const fields = doc.fields || {};
+          const title = fields.title?.stringValue || fields.topic?.stringValue || '';
+          if (title) {
+            historyItems.push({
+              topic: title,
+              title: title,
+              theme: fields.theme?.stringValue || title,
+              angle: fields.angle?.stringValue || '',
+              createdAt: fields.createdAt?.stringValue || ''
+            });
+          }
+        }
+      }
+    } catch {}
+
+    try {
+      const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${databaseId}/documents/content_history?pageSize=${limit}&key=${apiKey}`;
       const res = await new Promise((resolve) => {
         const req = https.get(url, { timeout: 6000 }, (resp) => {
           let data = '';

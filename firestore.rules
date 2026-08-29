@@ -3,47 +3,47 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Approved users collection
     match /approved_users/{userId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if true;
     }
     
     // Saved Campaigns collection
     match /saved_campaigns/{campaignId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if true;
     }
 
     // Video Vault & Schedules
     match /video_vault/{videoId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if true;
     }
 
     // Worker Activity Logs
     match /worker_logs/{logId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if true;
     }
 
     // Integration & Channel Keys
     match /integration_keys/{keyId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if true;
     }
 
     // System Config & Channels
     match /system_config/{configId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if true;
     }
 
     // Custom AI fallback settings
     match /custom_fallbacks/{fallbackId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if true;
     }
 
     // Content History & Deduplication Cooldowns
     match /content_history/{historyId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if true;
     }
 
     // Factory Jobs & Queues rules
     match /factory_jobs/{jobId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if true;
     }
   }
 }
