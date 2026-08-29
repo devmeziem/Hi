@@ -1,446 +1,426 @@
 /**
- * Stoic Content Diversity & History Cooldown Engine
- * Handles Firestore history synchronization, duplicate prevention, and multi-dimensional variation
- * (topic, angle, hook, story/example, visual concept, narrative structure, ending)
+ * Stoic Architecture Diversity & Script Synthesis Engine
+ * Channel: @TheStoicArchitect / Modern Stoicism & Mental Strength
+ * 
+ * CORE CHANNEL PRINCIPLE:
+ * Deliver deep, practical, spoken-conversational modern Stoic wisdom,
+ * emotional discipline, and mental fortitude for everyday people.
  */
 
-const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
 
-let parsedFirebaseConfig = null;
-try {
-  if (process.env.FIREBASE_CONFIG_JSON) {
-    parsedFirebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG_JSON);
-  }
-} catch {}
+// Local history cache files
+const LOCAL_HISTORY_CACHE_FILE = path.join(process.cwd(), 'daily_stoic_history_cache.json');
+const MANIFEST_PATH = path.join(process.cwd(), 'daily_blueprint_manifest.json');
 
-const FIRESTORE_PROJECT_ID = process.env.FIRESTORE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || parsedFirebaseConfig?.projectId || "";
-const FIRESTORE_DATABASE_ID = process.env.FIRESTORE_DATABASE_ID || parsedFirebaseConfig?.databaseId || "ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e";
-const FIRESTORE_API_KEY = process.env.FIRESTORE_API_KEY || process.env.VITE_FIREBASE_API_KEY || parsedFirebaseConfig?.apiKey || "";
-
-// Local cache fallback for resilience
-const LOCAL_HISTORY_CACHE_FILE = path.join(process.cwd(), '.content_history_cache.json');
+// Firestore credentials
+const FIRESTORE_PROJECT_ID = process.env.FIRESTORE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || 'ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e';
+const FIRESTORE_API_KEY = process.env.FIRESTORE_API_KEY || process.env.VITE_FIREBASE_API_KEY || '';
+const FIRESTORE_DATABASE_ID = process.env.FIRESTORE_DATABASE_ID || process.env.VITE_FIRESTORE_DATABASE_ID || 'ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e';
 
 /**
- * 20 Distinct Modern Stoic & Mental Strength Content Archetypes
- * Grounded in Stoic psychology, focused 100% on modern daily challenges.
+ * Format a complete, viral YouTube Shorts title with high-CTR trending hashtags
+ * Ensures NO mid-word cutoffs, NO incomplete sentences, and fits within YouTube's 100-char limit.
  */
-const STOIC_ARCHETYPES = [
+function formatViralShortsTitle(rawHeadline, nicheOrCategory = 'stoic', isDeepDive = false) {
+  if (!rawHeadline) rawHeadline = 'The Stoic Mindset Mastery Blueprint';
+  
+  // 1. Clean raw title from markdown, thinking blocks, code quotes, etc.
+  let headline = String(rawHeadline)
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .replace(/<think>[\s\S]*/gi, '')
+    .replace(/Thinking Process:[\s\S]*?(?=\n\n|\n[A-Z0-9"']|$)/gi, '')
+    .replace(/```[\s\S]*?```/gi, '')
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/['"\\`]/g, '')
+    .replace(/[<>|:]/g, ' - ')
+    .replace(/[{}[\]]/g, '')
+    .replace(/#\w+/g, '') // remove existing loose hashtags to rebuild cleanly
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // If long-form / deep-dive (15-20 min masterclass), no #Shorts hashtag
+  if (isDeepDive) {
+    if (headline.length > 90) {
+      const trimmed = headline.slice(0, 88);
+      const lastSpace = trimmed.lastIndexOf(' ');
+      headline = (lastSpace > 30 ? trimmed.slice(0, lastSpace) : trimmed).trim();
+    }
+    headline = headline.replace(/[\s\-,;:]+(and|to|with|the|of|in|for|by|or|a|an|from|on|is|are)?$/i, '').trim();
+    return headline;
+  }
+
+  // 2. Select curated viral & trending hashtags for this niche
+  const lower = (nicheOrCategory || '').toLowerCase();
+  let tagPool = [];
+  if (lower.includes('stoic') || lower.includes('mind') || lower.includes('discipline') || lower.includes('motivation')) {
+    tagPool = ['#Shorts', '#viral', '#trending', '#stoic', '#mindset', '#discipline', '#motivation', '#fyp'];
+  } else if (lower.includes('fin') || lower.includes('money') || lower.includes('business') || lower.includes('wealth')) {
+    tagPool = ['#Shorts', '#viral', '#trending', '#money', '#finance', '#wealth', '#business', '#fyp'];
+  } else if (lower.includes('tech') || lower.includes('ai') || lower.includes('code') || lower.includes('developer')) {
+    tagPool = ['#Shorts', '#viral', '#trending', '#ai', '#tech', '#coding', '#developer', '#fyp'];
+  } else {
+    tagPool = ['#Shorts', '#viral', '#trending', '#fyp', '#explore'];
+  }
+
+  // Mandatory primary viral tags
+  const coreTags = ['#Shorts', '#viral', '#trending'];
+  const extraTags = tagPool.filter(t => !coreTags.includes(t));
+
+  // Max headline length target around 68 chars to preserve hashtag space
+  if (headline.length > 68) {
+    const trimmed = headline.slice(0, 68);
+    const lastSpace = trimmed.lastIndexOf(' ');
+    headline = (lastSpace > 25 ? trimmed.slice(0, lastSpace) : trimmed).trim();
+  }
+
+  // Clean trailing connector words or punctuation to guarantee a complete phrase
+  headline = headline
+    .replace(/[,\-;:–—]+$/, '')
+    .replace(/\s+(and|to|with|the|of|in|for|by|or|a|an|from|on|is|are|your|their|that)\s*$/i, '')
+    .replace(/[,\-;:–—]+$/, '')
+    .trim();
+
+  // 3. Greedily append hashtags up to 98 chars total
+  let finalTitle = headline;
+  const allTagsToTry = [...coreTags, ...extraTags];
+  
+  for (const tag of allTagsToTry) {
+    if ((finalTitle + ' ' + tag).length <= 98) {
+      finalTitle += ' ' + tag;
+    }
+  }
+
+  return finalTitle;
+}
+
+// 8 Distinct Rotating Hook Frameworks for Stoicism & Mindset
+const ROTATING_STOIC_HOOK_TEMPLATES = [
   {
-    lessonId: 'discipline_contract',
-    theme: 'Discipline Over Motivation',
-    angle: 'Eliminating Mood-Based Action & The Non-Negotiable Contract',
-    philosophicalPrinciple: 'Self-command over fleeting impulses — reason dictates action, not temporary emotional state.',
-    narrativeStructure: 'The Motivation Trap -> The Identity Shift -> The Daily Non-Negotiable Protocol',
-    hookPatterns: [
-      "Motivation is an emotion. Discipline is a contract you signed with yourself when you were thinking clearly.",
-      "If you only work when you feel inspired, you will be outworked by anyone who simply refuses to quit.",
-      "The reason you fail to stay consistent isn't lack of willpower — it's waiting to feel ready."
-    ],
-    modernScenario: "Staring at your desk with zero motivation, overcoming the urge to scroll social media, and executing deep work regardless of mood.",
-    visualStyle: 'Cinematic modern minimalist workspace at dawn, intense focused silhouette against high-contrast window light, moody 9:16 vertical 8k photorealistic',
-    outroPattern: "Execute regardless of how you feel. Follow this channel for daily mental strength."
+    id: 'contrarian_paradox',
+    name: 'Contrarian Paradox',
+    formula: 'The reason you are exhausted is not hard work—it is caring about things you cannot control...',
+    generateHook: (theme) => `The real reason you feel mentally exhausted is not your workload—it is caring about things you cannot control.`
   },
   {
+    id: 'brutal_truth',
+    name: 'Brutal Reality / Ancient Law',
+    formula: 'Nobody is coming to save you. Marcus Aurelius realized 2,000 years ago that your transformation begins when...',
+    generateHook: (theme) => `Nobody is coming to save you. The day you stop waiting for external rescue is the day your real power awakens.`
+  },
+  {
+    id: 'under_fire_scenario',
+    name: 'Under-Fire Scenario',
+    formula: 'When someone insults you or disrespects your name, the most dangerous response is not anger—it is...',
+    generateHook: (theme) => `When someone disrespects you or tries to provoke an argument, the most dangerous response is not anger—it is complete, icy silence.`
+  },
+  {
+    id: 'curiosity_gap_tactical',
+    name: '5-Second Gap Curiosity',
+    formula: 'There is a 5-second space between what happens to you and how you react that dictates your entire future...',
+    generateHook: (theme) => `There is a 5-second space between a provocation and your response. That gap is where your freedom and sovereignty live.`
+  },
+  {
+    id: 'iron_law_mindset',
+    name: 'The Iron Law of Mental Fortress',
+    formula: 'The first law of mental toughness: If you do not rule your own mind, the world will happily rule it for you...',
+    generateHook: (theme) => `The first law of mental toughness: If you do not rule your own mind, chaotic people and trivial events will happily rule it for you.`
+  },
+  {
+    id: 'challenge_diagnostic',
+    name: '40-Second Mental Armor Challenge',
+    formula: 'Give me 40 seconds to give you psychological armor that makes you immune to other people\'s opinions...',
+    generateHook: (theme) => `Give me 40 seconds to give you the psychological armor that makes you completely immune to disrespect and judgment.`
+  },
+  {
+    id: 'question_pivot_night',
+    name: 'Late-Night Overthinking Question',
+    formula: 'Why do you stay awake overthinking everything at 2 AM? It is not anxiety—it is this single mental trap...',
+    generateHook: (theme) => `Why do you stay awake overthinking conversations from three years ago? It is not anxiety—it is this single mental trap.`
+  },
+  {
+    id: 'power_of_solitude',
+    name: 'Solitude & Self-Mastery',
+    formula: 'When everyone is running after cheap dopamine and noisy validation, the most formidable person in the room is...',
+    generateHook: (theme) => `When everyone is addicted to cheap dopamine and validation, the most formidable person is the one who can sit alone in quiet discipline.`
+  }
+];
+
+// 10 Distinct Rotating Outro & Infinite Loop Formats
+const ROTATING_STOIC_OUTROS = [
+  {
+    id: 'stoic_question_reversal',
+    template: (handle) => `Follow ${handle} to build unshakeable mental armor every day, because the real secret to self-control is...`
+  },
+  {
+    id: 'stoic_first_principle',
+    template: (handle) => `Tap follow on ${handle} for daily fortitude, and remember that conquering your mind always starts with...`
+  },
+  {
+    id: 'stoic_silent_trap',
+    template: (handle) => `Follow ${handle} to master daily chaos, because whenever life tests your patience, you must remember that...`
+  },
+  {
+    id: 'stoic_action_origin',
+    template: (handle) => `Save this wisdom and follow ${handle}, because becoming emotionally untouchable begins the exact second you ask...`
+  },
+  {
+    id: 'stoic_reverse_psychology',
+    template: (handle) => `Most people will react with weakness, but disciplined minds follow ${handle} and immediately remember that...`
+  },
+  {
+    id: 'stoic_foundation_recall',
+    template: (handle) => `Follow ${handle} for unshakeable focus, because the only thing you truly own in this chaotic world is...`
+  },
+  {
+    id: 'stoic_critical_inquiry',
+    template: (handle) => `Subscribe to ${handle} for daily stoic clarity, and before you react to anything today, ask yourself...`
+  },
+  {
+    id: 'stoic_discipline_contract',
+    template: (handle) => `Build evidence and follow ${handle}, because the non-negotiable contract with yourself always starts with...`
+  },
+  {
+    id: 'stoic_fortress_defense',
+    template: (handle) => `Join ${handle} to become indestructible against life's storms, and always remember that real power begins by...`
+  },
+  {
+    id: 'stoic_algorithmic_repeat',
+    template: (handle) => `Watch this again and follow ${handle}, because the single master key to mental peace is...`
+  }
+];
+
+// 25+ Comprehensive Stoic Archetypes
+const STOIC_ARCHETYPES = [
+  {
     lessonId: 'disrespect_silence',
-    theme: 'Dealing with Disrespect',
-    angle: 'The Power of Total Calm & Emotional Immunity to Insults',
-    philosophicalPrinciple: 'Dichotomy of Control — external disrespect is a reflection of the attacker\'s weakness, not your worth.',
-    narrativeStructure: 'The Reaction Trap -> The Sovereign Pause -> Disarming Hostility with Stillness',
-    hookPatterns: [
-      "When someone disrespects you in public, your instinct is to attack. Here is why absolute silence destroys them.",
-      "A rude comment only has power if you agree to let it hurt you. Stop giving away your energy.",
-      "The most dangerous response to disrespect is not anger. It is complete, calm indifference."
-    ],
-    modernScenario: "Navigating a rude comment, a dismissive person, or online negativity without raising your voice or losing your cool.",
-    visualStyle: 'Calm composed person standing tall and unshakable in a quiet morning city street, sharp cinematic focus, 9:16 vertical 8k',
-    outroPattern: "Master your reaction, master your peace. Follow this channel for mental fortitude."
+    theme: 'Responding to Disrespect with Silence',
+    angle: 'The Psychology of Strategic Silence: Why Silence Is the Ultimate Weapon Against Provocation',
+    philosophicalPrinciple: 'Inner Citadel — no external insult can pierce your peace unless your own judgment permits it.',
+    hookArchetypeId: 'under_fire_scenario',
+    modernScenario: 'Someone tries to humiliate or provoke you in a public meeting or social group.',
+    visualStyle: 'Moody obsidian marble bust in dramatic cinematic chiaroscuro, warm amber side rim lighting, 9:16 vertical 8k'
   },
   {
     lessonId: 'failure_rebuild',
-    theme: 'Rebuilding Yourself After Failure',
-    angle: 'The Clean Slate Protocol & Turning Total Loss into Starting Capital',
-    philosophicalPrinciple: 'Amor Fati — accepting reality as it is and using the rubble as the foundation for your next build.',
-    narrativeStructure: 'Stripping the Ego -> The Objective Audit -> The Step-by-Step Rebuilding Blueprint',
-    hookPatterns: [
-      "Losing everything hurts. But hitting rock bottom gives you the firmest foundation to rebuild.",
-      "Failure is not your identity; it is just feedback on a flawed strategy. Here is how to rebuild from zero.",
-      "When your plans collapse, don't ask 'why me?' Ask 'what does this demand from me right now?'"
-    ],
-    modernScenario: "Experiencing a collapsed venture, financial wipeout, or career setback, and systematically rebuilding daily habits without victimhood.",
-    visualStyle: 'Solitary figure standing on a rain-slicked modern high-rise terrace overlooking a twilight cityscape with steely resolve, 9:16 vertical 8k',
-    outroPattern: "Rebuild stronger than what was broken. Follow this channel for daily mental strength."
+    theme: 'Rebuilding from Failure & Starting Over',
+    angle: 'The Amor Fati Blueprint: How to Rebuild Your Entire Life When Everything Falls Apart',
+    philosophicalPrinciple: 'Amor Fati — loving your fate, using the fire of adversity as fuel for your next chapter.',
+    hookArchetypeId: 'brutal_truth',
+    modernScenario: 'Recovering from a severe business loss, relationship collapse, or career setback.',
+    visualStyle: 'Solitary figure rising amidst dramatic mountain mist at golden hour sunrise, sharp cinematic depth of field'
   },
   {
     lessonId: 'overthinking_action',
-    theme: 'Silencing Overthinking & Anxiety',
-    angle: 'The Present-Moment Audit & Breaking the Mental Spiral with Action',
-    philosophicalPrinciple: 'Objective representation — grounding the mind in physical facts rather than catastrophic imaginary futures.',
-    narrativeStructure: 'Diagnosing the Spiral -> Cognitive De-escalation -> Immediate Physical Execution',
-    hookPatterns: [
-      "Overthinking is your brain inventing emergencies that will never actually happen. Here is how to stop the loop.",
-      "You cannot think your way out of anxiety. You can only act your way into clarity.",
-      "Whenever your mind starts spiraling late at night, use this 10-second mental reset."
-    ],
-    modernScenario: "Lying awake at 2 AM catastrophizing tomorrow's challenges, breaking the loop with objective grounding and decisive daytime action.",
-    visualStyle: 'Moody cinematic shot of hands writing clearly in a sleek notebook under a focused warm desk lamp in a dark room, 9:16 vertical 8k',
-    outroPattern: "Silence the noise, master the moment. Follow this channel for mental clarity."
+    theme: 'Killing Overthinking & Analysis Paralysis',
+    angle: 'The Action Antidote: Why Physical Momentum Destroys Mental Anxiety in 60 Seconds',
+    philosophicalPrinciple: 'Action cures fear — the imagination creates a thousand false catastrophes that never occur.',
+    hookArchetypeId: 'question_pivot_night',
+    modernScenario: 'Staring at the ceiling at 2 AM paralyzed by worry about tomorrow\'s decisions.',
+    visualStyle: 'Close-up of intense focused eyes in dark moody slate atmosphere, sharp amber rim light, 9:16 vertical 8k'
   },
   {
     lessonId: 'unsupported_isolation',
-    theme: 'Staying Focused When Nobody Supports You',
-    angle: 'The Silent Grind & Drawing Validation Exclusively from Within',
-    philosophicalPrinciple: 'The Inner Citadel — authentic self-worth requires no external cheering section or public validation.',
-    narrativeStructure: 'The Hunger for Approval -> The Sovereign Shift -> Building Relentlessly in the Dark',
-    hookPatterns: [
-      "When nobody believes in your vision, that isn't a curse. It is the ultimate test of your self-reliance.",
-      "Stop looking for a cheerleading squad. The most transformative chapters of your life will be written alone.",
-      "Work in the dark until your results speak so loudly that you never have to announce yourself."
-    ],
-    modernScenario: "Building a difficult skill, business, or fitness regimen late at night while friends and family doubt or mock your ambition.",
-    visualStyle: 'Single illuminated room in a massive dark modern skyscraper at night, a solitary dedicated figure working steadily, 9:16 vertical 8k',
-    outroPattern: "Build in silence, let character speak. Follow this channel for daily fortitude."
+    theme: 'Thriving When Nobody Supports You',
+    angle: 'The Lone Wolf Protocol: How to Build Immense Strength in Complete Solitude',
+    philosophicalPrinciple: 'Self-Reliance — your character is forged in the dark when nobody is watching or clapping.',
+    hookArchetypeId: 'power_of_solitude',
+    modernScenario: 'Working towards ambitious goals with zero encouragement from family or peers.',
+    visualStyle: 'Atmospheric solitary figure walking purposefully through dark architectural archways towards bright sunlight'
   },
   {
     lessonId: 'pressure_calm',
-    theme: 'Staying Calm Under Pressure',
-    angle: 'The Slow Heartbeat Protocol & Tactical Prioritization Amidst Chaos',
-    philosophicalPrinciple: 'Ataraxia (untroubled mind) — detaching emotional distress from high-stakes operational execution.',
-    narrativeStructure: 'The Crisis Spike -> Physiological Brake -> Tactical High-Leverage Execution',
-    hookPatterns: [
-      "When everything is on fire, panicking burns twice as much energy. Here is how to stay ice cold under pressure.",
-      "The person who stays calmest in a crisis controls the entire room. Here is the mental framework.",
-      "Pressure is not an enemy. It is a filter that separates the disciplined from the reactive."
-    ],
-    modernScenario: "Navigating emergency project deadlines, high-stakes negotiations, or unexpected crisis situations with complete composure.",
-    visualStyle: 'High-intensity chaotic environment in soft background blur, with a centered, razor-sharp calm subject in perfect focus, 9:16 vertical 8k',
-    outroPattern: "Stay cold, execute clean. Follow this channel for mental strength."
+    theme: 'Staying Ice Cold Under Extreme Pressure',
+    angle: 'The 10-Second Tactical Pause: How to Lower Heart Rate & Maintain Absolute Calm in Crisis',
+    philosophicalPrinciple: 'Apatheia — freedom from disruptive passions and emotional reactivity under fire.',
+    hookArchetypeId: 'curiosity_gap_tactical',
+    modernScenario: 'High-stakes negotiations, urgent emergencies, or unexpected severe conflicts.',
+    visualStyle: 'Still drop of water creating pristine ripple in glassy black pool, warm gold rim light, 9:16 vertical 8k'
   },
   {
     lessonId: 'rejection_filter',
-    theme: 'Handling Rejection & Criticism',
-    angle: 'The Competence Filter & Emotional Immunity to Outside Opinions',
-    philosophicalPrinciple: 'Socratic detachment — extract useful signal from criticism, discard emotional noise with zero resentment.',
-    narrativeStructure: 'The Sting of Rejection -> The Objective Data Filter -> Transmuting Rejection into Momentum',
-    hookPatterns: [
-      "Rejection is never a stop sign. It is simply redirection toward something you are actually built for.",
-      "Never take criticism personally from someone you wouldn't ask for advice. Here is how to build mental immunity.",
-      "How to become emotionally bulletproof when everyone is criticizing your work."
-    ],
-    modernScenario: "Receiving harsh pitch rejections, workplace criticism, or public dismissal, calmly extracting feedback data and advancing.",
-    visualStyle: 'Modern professional standing composed in an open architectural plaza at dusk, focused and unmoved by passing crowds, 9:16 vertical 8k',
-    outroPattern: "Let your results be your answer. Follow this channel for mental toughness."
+    theme: 'Overcoming Rejection & Criticism',
+    angle: 'The Rejection Armor: Why Being Rejected Is the Greatest Filter for True Greatness',
+    philosophicalPrinciple: 'Indifferents — external opinions have zero intrinsic moral value over your soul.',
+    hookArchetypeId: 'challenge_diagnostic',
+    modernScenario: 'Receiving harsh criticism online, a rejected job application, or social dismissal.',
+    visualStyle: 'Sharp silhouette of focused individual standing unwavering in a busy blurred city, 9:16 vertical 8k'
   },
   {
     lessonId: 'comparison_timeline',
-    theme: 'Overcoming Comparison & Social Media Envy',
-    angle: 'Your Own Timeline & Eliminating Status Anxiety',
-    philosophicalPrinciple: 'Internal standard of excellence — measuring growth only against who you were yesterday, never another\'s highlight reel.',
-    narrativeStructure: 'The Highlight Reel Illusion -> Reality Check -> Returning 100% Focus to Your Own Craft',
-    hookPatterns: [
-      "Comparing your behind-the-scenes to someone else's edited highlight reel is the fastest way to feel miserable.",
-      "The moment you look to the left or right to see how fast others are running, you trip over your own feet.",
-      "True confidence isn't walking into a room thinking you're better than everyone; it's walking in without needing to compare at all."
-    ],
-    modernScenario: "Scrolling through social media seeing peers flaunting sudden success, breaking the envy loop and refocusing on your daily craft.",
-    visualStyle: 'Modern smartphone placed facedown on a clean slate desk as the user turns away to focus on deep focused work, 9:16 vertical 8k',
-    outroPattern: "Run your own race. Follow this channel for daily mindset mastery."
-  },
-  {
-    lessonId: 'loneliness_solitude',
-    theme: 'Loneliness vs The Power of Solitude',
-    angle: 'The Transformation Chamber & Upgrading Yourself in Isolation',
-    philosophicalPrinciple: 'The Sacred Sanctuary — converting empty isolation into deep self-knowledge, clarity, and unshakeable inner peace.',
-    narrativeStructure: 'The Ache of Isolation -> Reframing Empty Hours -> The Daily Transformation Protocol',
-    hookPatterns: [
-      "Feeling lonely is a sign that you are looking outside for something only your own character can provide.",
-      "Solitude is not emptiness; it is the laboratory where your strongest self is forged.",
-      "Why high-performers intentionally embrace periods of isolation to change their entire life."
-    ],
-    modernScenario: "Spending weekends alone when others are partying, using the quiet hours for intense study, physical training, and building.",
-    visualStyle: 'Serene silhouette in a minimalist loft apartment at blue hour overlooking a quiet morning sunrise, 9:16 vertical 8k',
-    outroPattern: "Master your solitude. Follow this channel for mental fortitude."
+    theme: 'Curing Social Comparison & Envy',
+    angle: 'The Singular Lane: How to Stop Comparing Your Real Life to Other People\'s Highlight Reels',
+    philosophicalPrinciple: 'Virtue as Sole Good — true excellence is competing only with who you were yesterday.',
+    hookArchetypeId: 'contrarian_paradox',
+    modernScenario: 'Doom-scrolling social media feeling inadequate seeing peers appear to succeed faster.',
+    visualStyle: 'Sleek dark minimalist study, glowing single amber lantern illuminating open leather notebook, 9:16 vertical 8k'
   },
   {
     lessonId: 'impulse_delay',
-    theme: 'Self-Control & Resisting Impulses',
-    angle: 'The 10-Minute Friction Rule & Conquering Cheap Dopamine',
-    philosophicalPrinciple: 'Mastery of the Hegemonikon (ruling center) — training reason to triumph over animalistic cravings.',
-    narrativeStructure: 'The Urge Surge -> The Cooling Interval -> The Sovereign Decision',
-    hookPatterns: [
-      "Every time you give in to a cheap impulse, you train your brain that your willpower cannot be trusted.",
-      "The 10-Minute Rule: How to kill cravings, doom-scrolling, and impulse spending before they start.",
-      "Self-control is not about deprivation; it is the ultimate expression of personal freedom."
-    ],
-    modernScenario: "Defeating late-night screen addiction, impulsive spending, or junk food cravings by inserting strategic friction.",
-    visualStyle: 'Minimalist analog timer counting down on a modern dark wood desk beside a closed laptop, 9:16 vertical 8k photorealistic',
-    outroPattern: "Rule your impulses or they will rule you. Follow this channel for self-mastery."
+    theme: 'Conquering Cheap Dopamine & Impulsive Desires',
+    angle: 'The Dopamine Reset: How to Break Free From Mindless Scrolling & Craving Instant Gratification',
+    philosophicalPrinciple: 'Temperance / Moderation — mastering bodily impulses so your rational mind reigns supreme.',
+    hookArchetypeId: 'iron_law_mindset',
+    modernScenario: 'Struggling with phone addiction, late-night junk food, and endless procrastination.',
+    visualStyle: 'Smartphone face-down on dark polished slate table, hands resting calmly in meditative focus, 9:16 vertical 8k'
   },
   {
     lessonId: 'delayed_gratification',
-    theme: 'Delayed Gratification & The Long Game',
-    angle: 'Boring Consistency & The 1,000-Day Compounding Law',
-    philosophicalPrinciple: 'Natural law of compounding — immense achievements are the uncelebrated accumulation of unremarkable daily choices.',
-    narrativeStructure: 'The Instant Fix Illusion -> The Boring Middle -> The Unstoppable Compound Curve',
-    hookPatterns: [
-      "In a world addicted to instant gratification, the person willing to work for 3 years without applause will dominate.",
-      "Stop looking for the magic shortcut. The real shortcut is doing the unglamorous work every single day without bragging.",
-      "Why 99% of people quit right before their daily efforts begin compounding."
-    ],
-    modernScenario: "Showing up to training, coding, or building daily for months with zero immediate feedback, trusting the compound curve.",
-    visualStyle: 'Solid granite block being polished to mirror sheen under dramatic studio lighting, 9:16 vertical 8k',
-    outroPattern: "Play the long game. Follow this channel for daily mental strength."
+    theme: 'The Long Game & Compounding Discipline',
+    angle: 'The Compound Character Principle: Why Boring Daily Repetitions Create Undefeatable Men and Women',
+    philosophicalPrinciple: 'Perseverance — great things are not created by sudden impulse, but by small things brought together.',
+    hookArchetypeId: 'brutal_truth',
+    modernScenario: 'Feeling discouraged after weeks of hard work with no visible dramatic changes.',
+    visualStyle: 'Massive ancient stone monolith standing unweathered against stormy ocean waves at twilight, 9:16 vertical 8k'
   },
   {
     lessonId: 'difficult_people_boundaries',
-    theme: 'Dealing with Difficult & Toxic People',
-    angle: 'The Emotional Mirror & Establishing Unshakable Personal Boundaries',
-    philosophicalPrinciple: 'Acceptance of human nature — anticipating flawed behavior without allowing toxic energy to penetrate your inner sanctuary.',
-    narrativeStructure: 'The Expectation Trap -> The Armor of Realism -> Non-Reactive Boundary Setting',
-    hookPatterns: [
-      "You cannot control toxic people, but you can control how easily they get access to your mental energy.",
-      "When dealing with difficult people, remember: their chaos is their problem, not your assignment to fix.",
-      "How to set ruthless boundaries with energy-draining people without starting a fight."
-    ],
-    modernScenario: "Handling manipulative colleagues, chronic complainers, or boundary-pushing individuals with calm, firm boundaries.",
-    visualStyle: 'Aesthetic glass partition in modern architectural interior reflecting clean light, symbolizing clear boundaries, 9:16 vertical 8k',
-    outroPattern: "Protect your energy. Rule your mind. Follow this channel for strength."
+    theme: 'Setting Boundaries with Toxic & Difficult People',
+    angle: 'The Armor of Realism: How to Deal with Manipulative People Without Losing Your Peace',
+    philosophicalPrinciple: 'Expectation of Human Nature — Marcus Aurelius morning meditation on meeting ungrateful and arrogant people.',
+    hookArchetypeId: 'under_fire_scenario',
+    modernScenario: 'Handling toxic colleagues, demanding relatives, or passive-aggressive acquaintances.',
+    visualStyle: 'Aesthetic glass partition reflecting clean golden light, symbolizing impenetrable boundaries, 9:16 vertical 8k'
   },
   {
     lessonId: 'control_energy_ledger',
-    theme: 'Letting Go of What You Cannot Control',
-    angle: 'The Energy Ledger & Radical Surrender to the Unchangeable',
-    philosophicalPrinciple: 'The Fundamental Dichotomy of Control — dividing all life into what is up to us and what is not.',
-    narrativeStructure: 'The Friction of Resistance -> The Two-Column Audit -> Pouring 100% Effort into What Remains',
-    hookPatterns: [
-      "90% of your stress comes from trying to control things that were never yours to manage.",
-      "The moment you stop fighting reality and focus entirely on your next move, your anxiety disappears.",
-      "Here is a 30-second mental audit to instantly eliminate worry over things you cannot change."
-    ],
-    modernScenario: "Handling sudden economic shifts, travel disruptions, or external cancellations by shifting instantly to your next controllable move.",
-    visualStyle: 'Open hand releasing autumn leaves in wind, juxtaposed with intense focused eyes locked onto the forward horizon, 9:16 vertical 8k',
-    outroPattern: "Control what is yours. Release the rest. Follow this channel for mental clarity."
+    theme: 'Radical Surrender to What You Cannot Control',
+    angle: 'The Energy Ledger: How to Instantly Eliminate 90% of Daily Stress by Releasing the Unchangeable',
+    philosophicalPrinciple: 'Dichotomy of Control — dividing all life into what is up to us and what is not.',
+    hookArchetypeId: 'contrarian_paradox',
+    modernScenario: 'Facing unexpected flight cancellations, bad weather, or macroeconomic shifts.',
+    visualStyle: 'Open hand releasing autumn leaves in wind, eyes locked forward onto the rising horizon, 9:16 vertical 8k'
   },
   {
     lessonId: 'confidence_self_trust',
-    theme: 'Unshakable Confidence & Self-Trust',
-    angle: 'Evidence-Based Self-Trust & Keeping Promises to Yourself',
-    philosophicalPrinciple: 'Virtue and integrity — confidence is the natural byproduct of private alignment between word and action.',
-    narrativeStructure: 'The Fake Confidence Trap -> The Self-Betrayal Cycle -> Building Undeniable Proof of Competence',
-    hookPatterns: [
-      "Real confidence is not loud bravado. It is the quiet knowing that you always keep the promises you make to yourself.",
-      "You don't need mirror affirmations. You need a stack of undeniable proof that you do what you say.",
-      "How to stop seeking permission from others and start trusting your own judgment."
-    ],
-    modernScenario: "Facing challenging daily decisions, social pressure, or unpredictable situations with quiet, grounded self-assurance.",
-    visualStyle: 'Confident person walking with purpose down a modern sunlit pathway in dramatic natural light, 9:16 vertical 8k',
-    outroPattern: "Build evidence, build trust. Follow this channel for mental strength."
+    theme: 'Evidence-Based Self-Trust & Keeping Promises',
+    angle: 'The Integrity Protocol: How to Build Real Unshakeable Confidence Without Fake Affirmations',
+    philosophicalPrinciple: 'Virtue and integrity — confidence is the byproduct of private alignment between word and action.',
+    hookArchetypeId: 'iron_law_mindset',
+    modernScenario: 'Overcoming chronic self-doubt and impostor syndrome when taking on bigger responsibilities.',
+    visualStyle: 'Confident figure walking with purpose down a sunlit architectural corridor in dramatic natural light, 9:16 vertical 8k'
   },
   {
     lessonId: 'depleted_micro_momentum',
-    theme: 'Motivation When You Feel Completely Depleted',
-    angle: 'The Micro-Momentum Protocol & Lowering the Friction Barrier',
+    theme: 'Motivation When You Feel Completely Exhausted',
+    angle: 'The 2-Minute Gateway: How to Trick an Exhausted Brain Into Starting When You Want to Quit',
     philosophicalPrinciple: 'Action precedes emotion — initiating physical momentum with the smallest meaningful action.',
-    narrativeStructure: 'The Paralysis of Exhaustion -> The 2-Minute Gateway -> Reigniting the Internal Fire',
-    hookPatterns: [
-      "When you have zero energy and feel completely burned out, do not try to climb the mountain. Just tie your shoes.",
-      "How to trick your exhausted brain into starting when everything inside you wants to quit.",
-      "Momentum does not follow motivation. Motivation follows action."
-    ],
-    modernScenario: "Returning home exhausted from a demanding day and finding the focus to complete a key 20-minute study or training session.",
-    visualStyle: 'Small spark catching in dry kindling, blooming into a steady warm flame against deep dark slate, 9:16 vertical 8k',
-    outroPattern: "Start small, finish unstoppable. Follow this channel for daily motivation."
+    hookArchetypeId: 'curiosity_gap_tactical',
+    modernScenario: 'Returning home drained after a grueling day and finding the willpower to train or study.',
+    visualStyle: 'Small spark blooming into a steady warm flame against deep dark slate, 9:16 vertical 8k'
   },
   {
     lessonId: 'mental_hardening',
-    theme: 'Mental Hardening & Anti-Fragility',
-    angle: 'Voluntary Discomfort & Building Psychological Armor',
-    philosophicalPrinciple: 'Voluntary hardship — intentionally facing difficulty so that unexpected adversity cannot shatter you.',
-    narrativeStructure: 'The Softness Trap -> The Voluntary Challenge -> Becoming Indestructible',
-    hookPatterns: [
-      "Comfort is a slow poison. If you never deliberately challenge yourself, the smallest inconvenience will break you.",
-      "Do one hard thing every single day that makes you uncomfortable. That is how you build mental armor.",
-      "Stop wishing for an easier life. Train yourself to be a stronger person."
-    ],
-    modernScenario: "Tackling cold morning workouts, difficult direct conversations, or the hardest task first thing in the morning.",
-    visualStyle: 'Athlete in pre-dawn fog breathing steady vapor, eyes locked forward with steely determination, 9:16 vertical 8k',
-    outroPattern: "Embrace the challenge, build the armor. Follow this channel for fortitude."
-  },
-  {
-    lessonId: 'reaction_tactical_pause',
-    theme: 'Controlling Your Reactions Under Fire',
-    angle: 'The 5-Second Tactical Pause & Owning the Space Between Stimulus and Response',
-    philosophicalPrinciple: 'Sovereignty of judgment — external events are neutral until your interpretation gives them positive or negative meaning.',
-    narrativeStructure: 'The Reflex Spike -> The Tactical Pause -> The Calculated Response',
-    hookPatterns: [
-      "Between what happens to you and how you react, there is a 5-second gap. That gap is where your power lives.",
-      "When you react instantly, you hand your steering wheel to whoever provoked you.",
-      "How to train your nervous system to stay completely calm when triggered."
-    ],
-    modernScenario: "Receiving an infuriating email or provocative remark, responding with calm calculated logic instead of an emotional rant.",
-    visualStyle: 'Water droplet falling into a calm glassy pool, creating a single pristine concentric ripple in golden twilight, 9:16 vertical 8k',
-    outroPattern: "Master the pause, own the outcome. Follow this channel for emotional mastery."
+    theme: 'Voluntary Hardship & Anti-Fragility',
+    angle: 'The Cold Water Protocol: Why Seeking Discomfort Makes You Immune to Life\'s Hardships',
+    philosophicalPrinciple: 'Voluntary hardship — intentionally facing difficulty so unexpected adversity cannot break you.',
+    hookArchetypeId: 'challenge_diagnostic',
+    modernScenario: 'Taking cold showers, hard workouts, or tackling the most dreaded email first thing in the morning.',
+    visualStyle: 'Athlete in pre-dawn mist breathing steady vapor, eyes locked forward with steely resolve, 9:16 vertical 8k'
   },
   {
     lessonId: 'judgment_spotlight_fallacy',
-    theme: 'Overcoming Fear of Judgment',
-    angle: 'The Spotlight Fallacy & Freedom from the Imaginary Audience',
-    philosophicalPrinciple: 'Freedom from vanity — recognizing that people are consumed with their own anxieties, liberating you to act boldly.',
-    narrativeStructure: 'The Paralyzing Fear -> The Reality Check -> Stepping Forward Boldly',
-    hookPatterns: [
-      "Nobody is thinking about you as much as you think they are. Everyone is too busy worrying about themselves.",
-      "The moment you stop living for the approval of people who don't even know you is the day your real life begins.",
-      "How to speak up, share your work, and take risks without fear of looking foolish."
-    ],
-    modernScenario: "Publishing a bold creative project, speaking up in a large meeting, or changing paths despite fear of judgment.",
-    visualStyle: 'Figure stepping out from dark shadows into a clean focused beam of warm studio light, 9:16 vertical 8k',
-    outroPattern: "Step into the light. Follow this channel for mental strength."
+    theme: 'Overcoming the Fear of Looking Foolish',
+    angle: 'The Spotlight Fallacy: Why Nobody Cares About Your Mistakes as Much as You Think',
+    philosophicalPrinciple: 'Freedom from vanity — recognizing that people are consumed with their own anxieties.',
+    hookArchetypeId: 'contrarian_paradox',
+    modernScenario: 'Speaking up in a large meeting, publishing creative work, or starting a public venture.',
+    visualStyle: 'Figure stepping out from deep shadows into a clean focused beam of warm studio light, 9:16 vertical 8k'
   },
   {
     lessonId: 'mental_toughness',
-    theme: 'Becoming Mentally Stronger in Hard Times',
-    angle: 'The Crucible Principle & Forging Character Through Struggle',
-    philosophicalPrinciple: 'The Obstacle is the Way — adversity is not in the way of your growth; it is the raw material of your growth.',
-    narrativeStructure: 'The Heavy Burden -> The Perspective Reframe -> Rising Above the Storm',
-    hookPatterns: [
-      "Smooth seas never made a skilled sailor. The hardships you are facing right now are forging your greatest strength.",
-      "You are not being buried by your problems; you are being planted. Here is how to grow through the dark.",
-      "When life tests your limits, remember: you are far stronger than your comfort zone let you believe."
-    ],
-    modernScenario: "Carrying heavy life responsibilities, working through intense fatigue, and maintaining character and honor under stress.",
-    visualStyle: 'Immovable ancient lighthouse standing firm against towering crashing storm waves at dusk, 9:16 vertical 8k',
-    outroPattern: "Stand firm through the storm. Follow this channel for daily strength."
+    theme: 'Adversity as Raw Fuel (The Obstacle is the Way)',
+    angle: 'The Crucible Principle: How Hard Times Are Forging Your Greatest Strength',
+    philosophicalPrinciple: 'The Obstacle is the Way — adversity is the raw material of personal transformation.',
+    hookArchetypeId: 'brutal_truth',
+    modernScenario: 'Carrying heavy family responsibilities, working through financial stress, and refusing to break.',
+    visualStyle: 'Ancient stone lighthouse standing firm against towering crashing storm waves at dusk, 9:16 vertical 8k'
   },
   {
     lessonId: 'deep_focus_distractions',
-    theme: 'Unbreakable Focus in a Distracted World',
-    angle: 'Attention Sovereignty & Building an Impenetrable Mental Fortress',
-    philosophicalPrinciple: 'Guardianship of attention — your focus is your life; letting trivial distractions steal it is self-sabotage.',
-    narrativeStructure: 'The Distraction Economy -> The Attention Audit -> The Fortress of Deep Work',
-    hookPatterns: [
-      "If you cannot control your attention for 60 minutes, you are not free — you are a product.",
-      "In an era of endless digital noise, the ability to focus deeply on one thing is a superpower.",
-      "How to build a mental fortress that makes you completely immune to digital distractions."
-    ],
-    modernScenario: "Locking into 2 hours of uninterrupted deep work with phone on airplane mode, outproducing an entire distracted department.",
-    visualStyle: 'Laser beam cutting with micron precision through dark obsidian glass, atmospheric smoke and blue rim light, 9:16 vertical 8k',
-    outroPattern: "Own your focus, own your life. Follow this channel for mental clarity."
+    theme: 'Guarding Your Attention in a Noisy World',
+    angle: 'The Attention Fortress: How to Eliminate Distractions and Enter Deep Work at Will',
+    philosophicalPrinciple: 'Guardianship of attention — your focus is your life; letting trivial noise steal it is self-sabotage.',
+    hookArchetypeId: 'iron_law_mindset',
+    modernScenario: 'Struggling to stay focused on deep reading or analytical tasks amidst constant notifications.',
+    visualStyle: 'Soundproof minimalist study with warm wooden accents, single focused desk lamp in dark room, 9:16 vertical 8k'
   },
   {
-    lessonId: 'qa_mental_exhaustion',
-    theme: 'Why Are You Always Mentally Exhausted?',
-    angle: 'Question & Simple Answer: Why You Feel Tired Without Physical Work & 3 Easy Steps to Fix It',
-    philosophicalPrinciple: 'Mental conservation — unnecessary cognitive friction and rumination deplete energy faster than physical labor.',
-    narrativeStructure: 'Burning Question -> Surprising Plain Reason -> 3 Simple Daily Steps -> Clear Takeaway',
-    hookPatterns: [
-      "Why do you feel completely drained even when you did not do heavy physical work today?",
-      "Have you ever wondered why your brain feels exhausted by 2 PM? Here is the simple reason.",
-      "Why does doing nothing all day sometimes make you feel more tired than working hard?"
-    ],
-    modernScenario: "Feeling overwhelmed by mental fatigue from phone notifications and racing thoughts, resetting energy with 3 simple habits.",
-    visualStyle: 'Calm reflective figure placing smartphone facedown on clean wooden desk beside an open notebook in soft morning window light, 9:16 vertical 8k',
-    outroPattern: "Protect your mental energy. Follow this channel for daily clarity."
+    lessonId: 'memento_mori_urgency',
+    theme: 'Memento Mori: Using Mortality to Kill Procrastination',
+    angle: 'The Death Clock: Why Remembering Your Time Is Limited Destroys Trivial Drama Instantly',
+    philosophicalPrinciple: 'Memento Mori — remember that you must die; let that define what you do, say, and think.',
+    hookArchetypeId: 'brutal_truth',
+    modernScenario: 'Wasting days on petty arguments or delaying important life dreams out of fear.',
+    visualStyle: 'Aesthetic bronze hourglass with flowing golden sand, dramatic low key lighting, 9:16 vertical 8k'
   },
   {
-    lessonId: 'qa_silence_rude_people',
-    theme: 'Why Does Silence Defeat Rude People?',
-    angle: 'Question & Simple Answer: Why Quiet Silence Destroys Disrespect Faster Than Shouting',
-    philosophicalPrinciple: 'Sovereign stillness — refusing to feed another person\'s anger leaves their malice stranded in public embarrassment.',
-    narrativeStructure: 'Relatable Question -> The Psychology of Disrespect -> The Power of Calm Silence -> The Sovereign Takeaway',
-    hookPatterns: [
-      "Why does keeping quiet hurt a rude person far more than shouting back at them?",
-      "When someone insults you in public, why is complete silence your most dangerous weapon?",
-      "Ever notice why calm people always win arguments against angry people?"
-    ],
-    modernScenario: "Facing an aggressive remark from a coworker or stranger and responding with calm, unbothered stillness that disarms the room.",
-    visualStyle: 'Unshakable composed individual with calm steady gaze in an atmospheric boardroom with moody warm side lighting, 9:16 vertical 8k',
-    outroPattern: "Master your reaction, own your peace. Follow this channel for mental strength."
+    lessonId: 'evening_mental_audit',
+    theme: 'The Seneca Evening Review Routine',
+    angle: 'The 3-Question Nightly Audit That Eliminates Regret and Builds Daily Growth',
+    philosophicalPrinciple: 'Self-Examination — examining your day without cruelty, noting what went well and what to improve.',
+    hookArchetypeId: 'question_pivot_night',
+    modernScenario: 'Closing the day with clarity instead of tossing and turning with mental anxiety.',
+    visualStyle: 'Leather journal on dark wood desk beside extinguished candle with wisps of smoke, 9:16 vertical 8k'
   },
   {
-    lessonId: 'qa_stop_caring_opinions',
-    theme: 'How to Stop Caring What People Think?',
-    angle: 'Question & Simple Answer: The 10-Second Truth That Frees You From Other People\'s Opinions',
-    philosophicalPrinciple: 'Freedom from social validation — recognizing that other people\'s judgments are fleeting and irrelevant to your real worth.',
-    narrativeStructure: 'Core Question -> The 10-Second Truth -> Everyday Low-Language Reality Check -> Inner Freedom Protocol',
-    hookPatterns: [
-      "How do you stop caring what people say about you behind your back?",
-      "Why do we spend so much time worrying about the opinions of people we do not even respect?",
-      "Want to know how to stop feeling embarrassed in front of strangers in 10 seconds?"
-    ],
-    modernScenario: "Overcoming social anxiety and self-consciousness when starting a new venture or speaking in public.",
-    visualStyle: 'Confident figure walking calmly through a blurred busy modern street at golden hour, sharp depth of field, 9:16 vertical 8k',
-    outroPattern: "Live for your character, not their applause. Follow this channel for daily fortitude."
-  },
-  {
-    lessonId: 'qa_why_we_overthink',
-    theme: 'Why Do You Overthink Everything at Night?',
-    angle: 'Question & Simple Answer: Why Your Brain Invents Fake Problems & The Simple Fix',
-    philosophicalPrinciple: 'Grounding in present reality — replacing catastrophic imagination with tangible physical action.',
-    narrativeStructure: 'Late-Night Question -> The Brain Alarm Trap -> The 2-Minute Physical Reset -> Mental Calm',
-    hookPatterns: [
-      "Why do you stay awake at night worrying about things that never actually happen?",
-      "Why does your brain make small problems look ten times bigger right before you fall asleep?",
-      "How can you turn off racing thoughts when you are trying to sleep?"
-    ],
-    modernScenario: "Lying awake staring at the ceiling catastrophizing tomorrow, using a simple 2-minute paper dump to sleep peacefully.",
-    visualStyle: 'Dark moody minimalist bedroom with warm bedside lamp, hand closing a notebook in peaceful relief, 9:16 vertical 8k',
-    outroPattern: "Silence the noise and master your mind. Follow this channel for mental strength."
-  },
-  {
-    lessonId: 'qa_start_small_habits',
-    theme: 'Why Do You Quit Good Habits So Fast?',
-    angle: 'Question & Simple Answer: The 2-Minute Habit Rule That Beats Laziness Every Single Day',
-    philosophicalPrinciple: 'Micro-consistency over macro-delusion — small daily actions compound into unshakeable life transformations.',
-    narrativeStructure: 'Relatable Question -> The Motivation Myth -> The 2-Minute Rule in Simple English -> Unstoppable Growth',
-    hookPatterns: [
-      "Why do you start new habits with huge excitement and quit just 3 days later?",
-      "Why is it so hard to stay consistent with exercise or reading, and how do you fix it today?",
-      "How can doing just 2 minutes of work a day change your entire life?"
-    ],
-    modernScenario: "Breaking out of the cycle of starting and quitting fitness or study routines by using ultra-simple 2-minute daily minimums.",
-    visualStyle: 'Clean modern desk with single hourglass sand timer, focused morning sunlight, pristine minimalist atmosphere, 9:16 vertical 8k',
-    outroPattern: "Start small, never quit. Follow this channel for daily self-mastery."
+    lessonId: 'ego_is_the_enemy',
+    theme: 'Killing the Ego Before It Destroys You',
+    angle: 'The Quiet Master: Why Staying Humble in Success Protects You From Devastating Falls',
+    philosophicalPrinciple: 'Humility — pride comes before destruction; the student mindset keeps you sharp forever.',
+    hookArchetypeId: 'iron_law_mindset',
+    modernScenario: 'Experiencing early success and feeling tempted to brag, spend recklessly, or become complacent.',
+    visualStyle: 'Sculptor quietly working on fine marble details, bathed in warm morning atelier light, 9:16 vertical 8k'
   }
 ];
 
 /**
- * Extract semantic lesson identifier from topic / hook text
+ * Resolve dynamic rotating outro for Stoic channel
  */
-function classifyLessonIntent(text) {
-  if (!text) return 'general_stoic';
-  const lower = text.toLowerCase();
-
-  if (lower.includes('disrespect') || lower.includes('insult') || lower.includes('rude') || lower.includes('mock') || lower.includes('silence')) return 'disrespect_silence';
-  if (lower.includes('fail') || lower.includes('rebuild') || lower.includes('rock bottom') || lower.includes('collapse') || lower.includes('loss')) return 'failure_rebuild';
-  if (lower.includes('overthink') || lower.includes('anxiety') || lower.includes('spiral') || lower.includes('worry') || lower.includes('night')) return 'overthinking_action';
-  if (lower.includes('alone') || lower.includes('nobody support') || lower.includes('solitude') || lower.includes('lonel') || lower.includes('dark')) return 'unsupported_isolation';
-  if (lower.includes('pressure') || lower.includes('panic') || lower.includes('crisis') || lower.includes('calm under') || lower.includes('ice cold')) return 'pressure_calm';
-  if (lower.includes('reject') || lower.includes('critic') || lower.includes('hate') || lower.includes('opinion')) return 'rejection_filter';
-  if (lower.includes('compar') || lower.includes('envy') || lower.includes('jealous') || lower.includes('social media') || lower.includes('highlight reel')) return 'comparison_timeline';
-  if (lower.includes('impulse') || lower.includes('craving') || lower.includes('dopamine') || lower.includes('scroll') || lower.includes('willpower') || lower.includes('self-control')) return 'impulse_delay';
-  if (lower.includes('delayed') || lower.includes('gratification') || lower.includes('long game') || lower.includes('shortcut') || lower.includes('compound')) return 'delayed_gratification';
-  if (lower.includes('difficult people') || lower.includes('toxic') || lower.includes('drain') || lower.includes('boundary') || lower.includes('boundaries')) return 'difficult_people_boundaries';
-  if (lower.includes('control') || lower.includes('let go') || lower.includes('cannot change') || lower.includes('release') || lower.includes('surrender')) return 'control_energy_ledger';
-  if (lower.includes('confiden') || lower.includes('self-trust') || lower.includes('self-respect') || lower.includes('promise')) return 'confidence_self_trust';
-  if (lower.includes('depleted') || lower.includes('burnout') || lower.includes('exhaust') || lower.includes('tired') || lower.includes('micro-momentum') || lower.includes('start small')) return 'depleted_micro_momentum';
-  if (lower.includes('comfort') || lower.includes('hard thing') || lower.includes('armor') || lower.includes('uncomfortable') || lower.includes('hardening')) return 'mental_hardening';
-  if (lower.includes('reaction') || lower.includes('pause') || lower.includes('trigger') || lower.includes('5-second') || lower.includes('respond')) return 'reaction_tactical_pause';
-  if (lower.includes('judgment') || lower.includes('spotlight') || lower.includes('approval') || lower.includes('foolish') || lower.includes('embarrass')) return 'judgment_spotlight_fallacy';
-  if (lower.includes('tough') || lower.includes('storm') || lower.includes('sailor') || lower.includes('adversity') || lower.includes('hard times')) return 'mental_toughness';
-  if (lower.includes('focus') || lower.includes('distract') || lower.includes('attention') || lower.includes('deep work')) return 'deep_focus_distractions';
-  if (lower.includes('discipline') || lower.includes('lazy') || lower.includes('habit') || lower.includes('contract') || lower.includes('consistent')) return 'discipline_contract';
-
-  return 'general_stoic';
+function resolveStoicOutro(channelHandle = '@thestoicarchitect-n4b', seed = Math.random()) {
+  const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
+  const index = Math.floor(Math.abs(seed) * ROTATING_STOIC_OUTROS.length) % ROTATING_STOIC_OUTROS.length;
+  const outroObj = ROTATING_STOIC_OUTROS[index];
+  return outroObj.template(cleanHandle);
 }
 
 /**
- * Fetch recent content history from Firestore REST API
+ * Select a rotating hook format
  */
-async function fetchRecentHistoryFromFirestore(channelId = 'motivation_stoicism', limit = 25) {
+function selectStoicHookFormat(slotIndex = 0, historyCount = 0) {
+  const index = (slotIndex + historyCount + Math.floor(Math.random() * 3)) % ROTATING_STOIC_HOOK_TEMPLATES.length;
+  return ROTATING_STOIC_HOOK_TEMPLATES[index];
+}
+
+/**
+ * Fetch recent stoic history from Firestore REST API and local cache
+ */
+async function fetchRecentHistoryFromFirestore(channelId = 'motivation_stoicism', limit = 35) {
   const historyItems = [];
 
-  // 1. Try local cache first
+  // 1. Check local manifest
+  if (fs.existsSync(MANIFEST_PATH)) {
+    try {
+      const raw = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
+      if (Array.isArray(raw)) {
+        for (const item of raw) {
+          if (item.title || item.topic) {
+            historyItems.push({
+              topic: item.topic || item.title,
+              title: item.title || item.topic,
+              theme: item.theme || item.title,
+              angle: item.angle || '',
+              createdAt: item.timestamp || item.createdAt || ''
+            });
+          }
+        }
+      }
+    } catch {}
+  }
+
+  // 2. Check local stoic cache file
   if (fs.existsSync(LOCAL_HISTORY_CACHE_FILE)) {
     try {
       const cached = JSON.parse(fs.readFileSync(LOCAL_HISTORY_CACHE_FILE, 'utf8'));
@@ -450,101 +430,48 @@ async function fetchRecentHistoryFromFirestore(channelId = 'motivation_stoicism'
     } catch {}
   }
 
-  // 2. Fetch from Firestore REST API
-  try {
-    const url = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT_ID}/databases/${FIRESTORE_DATABASE_ID}/documents/content_history?pageSize=${limit}&key=${FIRESTORE_API_KEY}`;
-    const res = await new Promise((resolve) => {
-      const req = https.get(url, { timeout: 8000 }, (resp) => {
-        let data = '';
-        resp.on('data', c => data += c);
-        resp.on('end', () => {
-          if (resp.statusCode === 200) {
-            try {
-              const j = JSON.parse(data);
-              resolve({ success: true, documents: j.documents || [] });
-            } catch (e) {
-              resolve({ success: false, error: e.message });
-            }
-          } else {
-            resolve({ success: false, statusCode: resp.statusCode, error: data.slice(0, 150) });
-          }
+  // 3. Fetch from Firestore REST API (content_history)
+  if (FIRESTORE_API_KEY && FIRESTORE_PROJECT_ID) {
+    try {
+      const url = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT_ID}/databases/${FIRESTORE_DATABASE_ID}/documents/content_history?pageSize=${limit}&key=${FIRESTORE_API_KEY}`;
+      const res = await new Promise((resolve) => {
+        const req = https.get(url, { timeout: 6000 }, (resp) => {
+          let data = '';
+          resp.on('data', c => data += c);
+          resp.on('end', () => {
+            if (resp.statusCode === 200) {
+              try {
+                const j = JSON.parse(data);
+                resolve({ success: true, documents: j.documents || [] });
+              } catch (e) { resolve({ success: false }); }
+            } else { resolve({ success: false }); }
+          });
         });
+        req.on('error', () => resolve({ success: false }));
+        req.on('timeout', () => { req.destroy(); resolve({ success: false }); });
       });
-      req.on('error', err => resolve({ success: false, error: err.message }));
-      req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'timeout' }); });
-    });
 
-    if (res.success && Array.isArray(res.documents)) {
-      for (const doc of res.documents) {
-        const fields = doc.fields || {};
-        const item = {
-          id: doc.name ? doc.name.split('/').pop() : fields.id?.stringValue,
-          channelId: fields.channelId?.stringValue || 'motivation_stoicism',
-          topic: fields.topic?.stringValue || fields.title?.stringValue || '',
-          theme: fields.theme?.stringValue || '',
-          angle: fields.angle?.stringValue || '',
-          hook: fields.hook?.stringValue || '',
-          visualStyle: fields.visualStyle?.stringValue || '',
-          narrativeStructure: fields.narrativeStructure?.stringValue || '',
-          createdAt: fields.createdAt?.stringValue || ''
-        };
-        if (item.topic && (!channelId || item.channelId === channelId)) {
-          historyItems.push(item);
+      if (res.success && Array.isArray(res.documents)) {
+        for (const doc of res.documents) {
+          const fields = doc.fields || {};
+          const item = {
+            topic: fields.topic?.stringValue || fields.title?.stringValue || '',
+            title: fields.title?.stringValue || fields.topic?.stringValue || '',
+            theme: fields.theme?.stringValue || '',
+            angle: fields.angle?.stringValue || '',
+            createdAt: fields.createdAt?.stringValue || ''
+          };
+          if (item.topic) historyItems.push(item);
         }
       }
-    }
-  } catch (err) {
-    console.warn("Firestore history fetch notice:", err.message);
+    } catch {}
   }
 
-  // 3. Also check saved_campaigns collection to ensure any campaigns are caught
-  try {
-    const campUrl = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT_ID}/databases/${FIRESTORE_DATABASE_ID}/documents/saved_campaigns?pageSize=${limit}&key=${FIRESTORE_API_KEY}`;
-    const campRes = await new Promise((resolve) => {
-      const req = https.get(campUrl, { timeout: 6000 }, (resp) => {
-        let data = '';
-        resp.on('data', c => data += c);
-        resp.on('end', () => {
-          if (resp.statusCode === 200) {
-            try {
-              const j = JSON.parse(data);
-              resolve({ success: true, documents: j.documents || [] });
-            } catch (e) {
-              resolve({ success: false });
-            }
-          } else {
-            resolve({ success: false });
-          }
-        });
-      });
-      req.on('error', () => resolve({ success: false }));
-      req.on('timeout', () => { req.destroy(); resolve({ success: false }); });
-    });
-
-    if (campRes.success && Array.isArray(campRes.documents)) {
-      for (const doc of campRes.documents) {
-        const fields = doc.fields || {};
-        const title = fields.title?.stringValue || '';
-        const niche = fields.niche?.stringValue || '';
-        if (title && (niche === 'motivation_stoicism' || niche.includes('stoic'))) {
-          historyItems.push({
-            topic: title,
-            theme: title,
-            angle: 'Legacy Campaign',
-            hook: title,
-            visualStyle: '',
-            createdAt: fields.createdAt?.stringValue || ''
-          });
-        }
-      }
-    }
-  } catch {}
-
-  // Deduplicate history items by topic name
+  // Deduplicate history items
   const seen = new Set();
   const deduped = [];
   for (const h of historyItems) {
-    const key = (h.topic || '').toLowerCase().trim();
+    const key = (h.topic || h.title || '').toLowerCase().trim();
     if (key && !seen.has(key)) {
       seen.add(key);
       deduped.push(h);
@@ -555,111 +482,26 @@ async function fetchRecentHistoryFromFirestore(channelId = 'motivation_stoicism'
 }
 
 /**
- * Save newly generated topic/content metadata to Firestore & local cache
+ * Strict check if candidate topic matches or is too similar to recent history
  */
-async function saveContentHistoryToFirestore(entry) {
-  const historyId = `hist_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-  const record = {
-    id: historyId,
-    channelId: entry.channelId || 'motivation_stoicism',
-    title: entry.title || entry.topic,
-    topic: entry.topic,
-    theme: entry.theme || 'Stoic Philosophy',
-    angle: entry.angle || 'Practical Self-Improvement',
-    hook: entry.hook || '',
-    storyExample: entry.storyExample || '',
-    visualStyle: entry.visualStyle || '',
-    narrativeStructure: entry.narrativeStructure || 'Standard 6-Slide Storyboard',
-    usedAiModel: entry.usedAiModel || 'AI Generator',
-    createdAt: new Date().toISOString()
-  };
-
-  // 1. Update local cache
-  try {
-    let localList = [];
-    if (fs.existsSync(LOCAL_HISTORY_CACHE_FILE)) {
-      try {
-        localList = JSON.parse(fs.readFileSync(LOCAL_HISTORY_CACHE_FILE, 'utf8'));
-      } catch {}
-    }
-    localList.unshift(record);
-    fs.writeFileSync(LOCAL_HISTORY_CACHE_FILE, JSON.stringify(localList.slice(0, 100), null, 2));
-  } catch {}
-
-  // 2. Post to Firestore REST API
-  try {
-    const url = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT_ID}/databases/${FIRESTORE_DATABASE_ID}/documents/content_history?documentId=${historyId}&key=${FIRESTORE_API_KEY}`;
-    const firestoreFields = {
-      id: { stringValue: historyId },
-      channelId: { stringValue: record.channelId },
-      title: { stringValue: record.title },
-      topic: { stringValue: record.topic },
-      theme: { stringValue: record.theme },
-      angle: { stringValue: record.angle },
-      hook: { stringValue: record.hook },
-      storyExample: { stringValue: record.storyExample },
-      visualStyle: { stringValue: record.visualStyle },
-      narrativeStructure: { stringValue: record.narrativeStructure },
-      usedAiModel: { stringValue: record.usedAiModel },
-      createdAt: { stringValue: record.createdAt }
-    };
-
-    const postData = JSON.stringify({ fields: firestoreFields });
-    await new Promise((resolve) => {
-      const req = https.request(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(postData)
-        },
-        timeout: 8000
-      }, (res) => {
-        resolve();
-      });
-      req.on('error', () => resolve());
-      req.on('timeout', () => { req.destroy(); resolve(); });
-      req.write(postData);
-      req.end();
-    });
-  } catch (e) {
-    console.warn("Firestore history save notice:", e.message);
-  }
-
-  return record;
-}
-
-/**
- * Check if a candidate topic or angle is too similar to recent history (cooldown check)
- * Enforces both semantic lesson intent matching and lexical word overlap.
- */
-function isTopicSimilarToHistory(candidateTopic, candidateTheme, recentHistory, threshold = 0.55) {
+function isTopicSimilarToHistory(candidateTopic, candidateTheme, recentHistory = [], threshold = 0.50) {
   if (!candidateTopic) return true;
   const normCandidate = candidateTopic.toLowerCase().replace(/[^a-z0-9]/g, ' ').trim();
-  const candidateLesson = classifyLessonIntent(candidateTopic + ' ' + (candidateTheme || ''));
-
-  // Stop words to ignore during lexical comparison
-  const stopWords = new Set(['how', 'the', 'what', 'when', 'with', 'your', 'from', 'this', 'that', 'they', 'will', 'stop', 'rule', 'laws', 'life', 'mind', 'power', 'secret', 'stoic', 'daily', 'people', 'every', 'real', 'make', 'give', 'step', 'take', 'time']);
+  const stopWords = new Set(['how', 'the', 'what', 'when', 'with', 'your', 'from', 'this', 'that', 'they', 'will', 'stoic', 'stoicism', 'rule', 'rules', 'mind', 'mental', 'life', 'daily', 'shorts']);
 
   const wordsCandidate = new Set(
-    normCandidate.split(/\s+/)
-      .filter(w => w.length > 3 && !stopWords.has(w))
+    normCandidate.split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w))
   );
 
-  // Check the most recent 10 history items for duplicate underlying lessons
-  const recentWindow = recentHistory.slice(0, 10);
+  const windowToCheck = recentHistory.slice(0, 30);
 
-  for (const h of recentWindow) {
-    const prevTopic = (h.topic || '').toLowerCase().replace(/[^a-z0-9]/g, ' ').trim();
-    if (normCandidate === prevTopic) return true;
-
-    // 1. Semantic Lesson Intent Match (Cooldown on identical underlying lesson)
-    const prevLesson = classifyLessonIntent((h.topic || '') + ' ' + (h.theme || ''));
-    if (candidateLesson !== 'general_stoic' && candidateLesson === prevLesson) {
-      return true; // Cooldown: Same underlying lesson was used recently!
+  for (const item of windowToCheck) {
+    const prevText = ((item.topic || item.title || '') + ' ' + (item.theme || '')).toLowerCase().replace(/[^a-z0-9]/g, ' ').trim();
+    if (normCandidate === prevText || prevText.includes(normCandidate) || normCandidate.includes(prevText)) {
+      return true;
     }
 
-    // 2. Lexical word overlap
-    const wordsPrev = prevTopic.split(/\s+/).filter(w => w.length > 3 && !stopWords.has(w));
+    const wordsPrev = prevText.split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w));
     if (wordsCandidate.size > 0 && wordsPrev.length > 0) {
       let matches = 0;
       for (const w of wordsPrev) {
@@ -674,80 +516,26 @@ function isTopicSimilarToHistory(candidateTopic, candidateTheme, recentHistory, 
 }
 
 /**
- * Select a balanced, diverse set of distinct archetypes for daily batch generation
- * taking into account recent Firestore history to avoid cooldown violations.
+ * Select daily diverse slots avoiding recent themes
  */
-function selectDailyDiverseSlots(recentHistory, slotCount = 4) {
-  const recentThemes = new Set(recentHistory.slice(0, 12).map(h => (h.theme || '').toLowerCase()));
-  const recentAngles = new Set(recentHistory.slice(0, 12).map(h => (h.angle || '').toLowerCase()));
-  const recentLessons = new Set(recentHistory.slice(0, 10).map(h => classifyLessonIntent((h.topic || '') + ' ' + (h.theme || ''))));
+function selectDailyDiverseSlots(count = 4, recentHistory = []) {
+  const recentThemes = new Set(recentHistory.map(h => (h.theme || '').toLowerCase()));
+  const available = STOIC_ARCHETYPES.filter(a => !recentThemes.has(a.theme.toLowerCase()));
+  const pool = available.length >= count ? available : STOIC_ARCHETYPES;
 
-  // Prioritize archetypes whose themes, angles, and lesson IDs have NOT been used recently
-  const scoredArchetypes = STOIC_ARCHETYPES.map((arch, index) => {
-    let score = 100;
-    if (recentLessons.has(arch.lessonId)) score -= 70;
-    if (recentThemes.has(arch.theme.toLowerCase())) score -= 40;
-    if (recentAngles.has(arch.angle.toLowerCase())) score -= 30;
-    // Add minor entropy to break ties across runs
-    score += (index * 13 + Date.now()) % 19;
-    return { arch, score };
-  });
-
-  scoredArchetypes.sort((a, b) => b.score - a.score);
-
-  const chosen = [];
-  const pickedThemes = new Set();
-  const pickedLessons = new Set();
-
-  for (const item of scoredArchetypes) {
-    if (chosen.length >= slotCount) break;
-    if (!pickedThemes.has(item.arch.theme) && !pickedLessons.has(item.arch.lessonId)) {
-      chosen.push(item.arch);
-      pickedThemes.add(item.arch.theme);
-      pickedLessons.add(item.arch.lessonId);
-    }
-  }
-
-  // Fallback fill if needed
-  if (chosen.length < slotCount) {
-    for (const item of scoredArchetypes) {
-      if (chosen.length >= slotCount) break;
-      if (!chosen.includes(item.arch)) {
-        chosen.push(item.arch);
-      }
-    }
-  }
-
-  return chosen;
-}
-
-const ROTATING_VIRAL_OUTROS = [
-  "Follow @TheStoicArchitect to build unshakeable mental armor every day, because the real secret to self-control is...",
-  "You may never see this channel again — follow @TheStoicArchitect now for daily fortitude, and remember that conquering your mind starts with...",
-  "Tap follow on @TheStoicArchitect to master daily chaos, because whenever life tests your patience, you must remember...",
-  "Don't lose this wisdom — follow @TheStoicArchitect for daily resilience, and never forget that mental toughness is simply...",
-  "Follow @TheStoicArchitect today for unshakeable focus, because the only thing you truly control in this world is...",
-  "Join @TheStoicArchitect to become indestructible against life's chaos, and always remember that real power begins by..."
-];
-
-/**
- * Resolve dynamic channel call-to-actions with high-retention rotating viral patterns
- */
-function resolveOutroPattern(pattern, channelHandle = '@thestoicarchitect-n4b') {
-  const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
-  const randomIndex = Math.floor(Math.random() * ROTATING_VIRAL_OUTROS.length);
-  const baseOutro = ROTATING_VIRAL_OUTROS[randomIndex];
-  return baseOutro.replace('@TheStoicArchitect', cleanHandle);
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
 }
 
 /**
- * Build rich system and user prompts for multi-model AI generators that enforce
- * CLEAR, CONVERSATIONAL, AND HIGHLY UNDERSTANDABLE SPOKEN SCRIPTWRITING.
+ * Build rich system and user prompts for multi-model AI generators with rotating hooks and loops
  */
 function buildStoicPromptForSlot(slotArchetype, recentHistory, slotIndex = 0, channelHandle = '@thestoicarchitect-n4b') {
-  const recentTitles = (recentHistory || []).slice(0, 12).map(h => `"${h.topic}"`).join(', ');
+  const recentTitles = (recentHistory || []).slice(0, 20).map(h => `"${h.topic || h.title}"`).join(', ');
   const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
-  const resolvedOutro = resolveOutroPattern(slotArchetype.outroPattern, cleanHandle);
+  
+  const chosenHookFormat = selectStoicHookFormat(slotIndex, (recentHistory || []).length);
+  const chosenOutro = resolveStoicOutro(cleanHandle, slotIndex * 13 + Date.now());
 
   const systemPrompt = `You are a master viral scriptwriter and YouTube director for the Modern Stoicism & Mental Strength channel (${cleanHandle}).
 CHANNEL GOAL: Deliver practical, high-impact modern stoicism, emotional discipline, and mental fortitude in clear, spoken-conversational English.
@@ -755,128 +543,121 @@ AUDIENCE: Everyday normal people dealing with stress, difficult people, self-dou
 
 CRITICAL YOUTUBE SHORTS ALGORITHM RETENTION RULES (32-42 SECONDS TOTAL):
 1. RUNTIME & PACING: Exactly 6 high-impact slides (slideIndex 0 to 5). Each slide MUST have 18 to 25 punchy spoken words (110-140 words total).
-2. SLIDE 0 (ANTI-SWIPE HOOK): Zero pleasantries or historical fluff! Start directly with an intense pattern-interrupt question or shocking stat in under 12 words.
+2. SLIDE 0 (ANTI-SWIPE HOOK): Use the '${chosenHookFormat.name}' format! Formula: "${chosenHookFormat.formula}". Start directly with an intense pattern-interrupt question or shocking statement in under 12 words.
 3. SLIDE 1 (THE PSYCHOLOGICAL TRAP): Why most people react impulsively and hand over their power.
 4. SLIDE 2 (THE STOIC MINDSET SHIFT): The core mental principle in plain modern language.
 5. SLIDE 3 (THE TACTICAL DAILY PROTOCOL): Concrete physical/mental action to execute immediately.
 6. SLIDE 4 (SOVEREIGN BENEFIT): Why this response makes you completely untouchable.
-7. SLIDE 5 (INFINITE RETENTION LOOP & OUTRO): Golden law + short CTA + seamless bridge phrase that connects grammatically right back into Slide 0!
+7. SLIDE 5 (INFINITE RETENTION LOOP & OUTRO): Golden law + short CTA + this exact seamless bridge: "${chosenOutro}" that connects grammatically right back into Slide 0!
 
 UNIFIED VISUAL IDENTITY (9:16 Vertical 8k Cinematic):
 - All 6 visual prompts MUST share the same aesthetic: ${slotArchetype.visualStyle}
 - Lighting: Warm amber rim lighting, dark moody obsidian slate background, sharp 35mm anamorphic portrait depth of field.
 
+EXCLUDED PREVIOUS TOPICS (DO NOT REPEAT):
+[${recentTitles || 'None'}]
+
 TARGET THEME & ANGLE:
 - Theme: ${slotArchetype.theme}
 - Angle: ${slotArchetype.angle}
-- Avoid recent titles: [${recentTitles || 'None'}]
 
 OUTPUT FORMAT: Return strictly a valid JSON object matching the schema below.
 CRITICAL: Output EXACTLY 6 slides (slideIndex 0 to 5).
 
 {
-  "title": "High-CTR Title Under 55 Chars #Shorts",
+  "title": "Complete High-Impact Hook Title (around 35-50 chars) #Shorts #viral #trending",
   "theme": "${slotArchetype.theme}",
   "angle": "${slotArchetype.angle}",
-  "hook": "${slotArchetype.hookPatterns[slotIndex % slotArchetype.hookPatterns.length]}",
-  "description": "Practical breakdown of ${slotArchetype.theme} and mental strength.\\n\\n#Shorts #Discipline #Motivation #MentalStrength #SelfControl #Mindset #Stoicism #PersonalGrowth",
-  "tags": ["#Shorts", "#Discipline", "#Motivation", "#MentalStrength", "#SelfControl", "#Stoicism", "#Mindset", "#PersonalGrowth"],
+  "description": "Practical breakdown of ${slotArchetype.theme} and mental strength.\\n\\n#Shorts #viral #trending #Discipline #Motivation #MentalStrength #SelfControl #Stoicism #Mindset #PersonalGrowth #fyp",
+  "tags": ["#Shorts", "#viral", "#trending", "#Discipline", "#Motivation", "#MentalStrength", "#SelfControl", "#Stoicism", "#Mindset", "#PersonalGrowth", "#fyp"],
   "slides": [
     {
       "slideIndex": 0,
-      "text": "Shocking hook or burning question with zero greetings (18-22 words)...",
-      "visual": "Calm professional in sharp dark suit standing unshakable in a busy city street, cinematic 9:16 vertical 8k amber rim lighting"
+      "text": "Shocking hook matching ${chosenHookFormat.name} (18-22 words)...",
+      "visual": "Cinematic 9:16 vertical 8k scene, ${slotArchetype.visualStyle}"
     },
     {
       "slideIndex": 1,
       "text": "The psychological trap beginners fall into explained simply (18-22 words)...",
-      "visual": "Solitary composed figure unmoved amidst chaotic motion blur of city crowd, 9:16 vertical 8k deep shadows and golden highlights"
+      "visual": "Cinematic 9:16 vertical 8k scene matching ${slotArchetype.visualStyle}"
     },
     {
       "slideIndex": 2,
       "text": "The core Stoic mental shift in plain modern English (18-22 words)...",
-      "visual": "Atmospheric dramatic portrait of focused thinker with calm steely expression, 9:16 vertical 8k warm side lighting"
+      "visual": "Cinematic 9:16 vertical 8k scene matching ${slotArchetype.visualStyle}"
     },
     {
       "slideIndex": 3,
       "text": "The tactical step-by-step action to take right now (18-22 words)...",
-      "visual": "Close-up perspective of steady hands writing calmly in a leather journal under warm light, 9:16 vertical 8k"
+      "visual": "Cinematic 9:16 vertical 8k scene matching ${slotArchetype.visualStyle}"
     },
     {
       "slideIndex": 4,
       "text": "Why this makes your character and peace untouchable (18-22 words)...",
-      "visual": "Confident individual pausing calmly in atmospheric boardroom with moody warm side lighting, 9:16 vertical 8k"
+      "visual": "Cinematic 9:16 vertical 8k scene matching ${slotArchetype.visualStyle}"
     },
     {
       "slideIndex": 5,
-      "text": "Golden rule + follow ${cleanHandle} + seamless bridge back to slide 0 (18-22 words)...",
-      "visual": "Sharp silhouette of disciplined person walking purposefully through morning mist with gold rim lighting, 9:16 vertical 8k"
+      "text": "Golden rule + ${chosenOutro} (18-22 words)...",
+      "visual": "Cinematic 9:16 vertical 8k scene matching ${slotArchetype.visualStyle}"
     }
   ]
 }`;
 
-  const userPrompt = `Generate a fresh, viral, high-retention 6-slide Modern Stoic Short storyboard for Slot ${slotIndex + 1} of 4.
-Theme: "${slotArchetype.theme}". Angle: "${slotArchetype.angle}". Modern Scenario: "${slotArchetype.modernScenario}".
-MANDATE: Output EXACTLY 6 slides (slideIndex 0 to 5) with 18-25 words per slide (32-42s runtime). Output strictly valid JSON.`;
+  const userPrompt = `Generate a fresh, viral, high-retention 6-slide Modern Stoic Short storyboard for Slot ${slotIndex + 1}.
+Theme: "${slotArchetype.theme}". Angle: "${slotArchetype.angle}". Hook Format: "${chosenHookFormat.name}".
+MANDATE: Output EXACTLY 6 slides (slideIndex 0 to 5) with 18-25 words per slide (32-42s runtime). Connect Slide 5 seamlessly into Slide 0. Output strictly valid JSON.`;
 
-  return { systemPrompt, userPrompt };
+  return { systemPrompt, userPrompt, chosenHookFormat, chosenOutro };
 }
 
 /**
- * High-quality deterministic fallback storyboard generator when external LLMs are unreachable or rate-limited
+ * Deterministic fallback storyboard generator strictly outputting 6 slides (32-42s runtime)
  */
-function synthesizeDeterministicStoryboard(slotArchetype, topicTitle, channelHandle = '@thestoicarchitect-n4b') {
-  const resolvedOutro = resolveOutroPattern(slotArchetype.outroPattern, channelHandle);
-  const hook = slotArchetype.hookPatterns[0] || "When life tests your character, your reaction is the only thing you truly own.";
-  const title = (topicTitle && topicTitle.length > 5) ? topicTitle : `${slotArchetype.theme} - The Stoic Rule for Mental Strength #Shorts`;
+function synthesizeDeterministicStoryboard(slotArchetype, topicTitle, channelHandle = '@thestoicarchitect-n4b', slotIndex = 0) {
+  const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
+  const resolvedOutro = resolveStoicOutro(cleanHandle, slotIndex * 11 + Date.now());
+  const arch = slotArchetype || STOIC_ARCHETYPES[0];
+  const rawTitle = (topicTitle && topicTitle.length > 5) ? topicTitle : `${arch.theme} - The Stoic Rule for Mental Strength`;
+  const title = formatViralShortsTitle(rawTitle, 'stoic', false);
 
   return {
     title: title,
-    theme: slotArchetype.theme,
-    angle: slotArchetype.angle,
-    hook: hook,
-    description: `Comprehensive modern breakdown of ${slotArchetype.theme} and mental strength.\n\n#Shorts #Discipline #Motivation #MentalStrength #SelfControl #Mindset #Stoicism #PersonalGrowth #Confidence`,
-    tags: ["#Shorts", "#Discipline", "#Motivation", "#MentalStrength", "#SelfControl", "#Stoicism", "#Mindset", "#PersonalGrowth"],
+    theme: arch.theme,
+    angle: arch.angle,
+    hook: arch.angle,
+    description: `Comprehensive modern breakdown of ${arch.theme} and mental strength.\n\n#Shorts #viral #trending #Discipline #Motivation #MentalStrength #SelfControl #Stoicism #Mindset #PersonalGrowth #Confidence #fyp`,
+    tags: ["#Shorts", "#viral", "#trending", "#Discipline", "#Motivation", "#MentalStrength", "#SelfControl", "#Stoicism", "#Mindset", "#PersonalGrowth", "#fyp"],
     slides: [
       {
         slideIndex: 0,
-        text: `When life tests your character and throws chaos in your path, your immediate reaction is the only thing in this world you truly own. Why do most people surrender their peace so easily?`,
-        visual: `Cinematic vertical 9:16 shot, ${slotArchetype.visualStyle}, atmospheric cinematic lighting, dark slate and amber color tone, 8k resolution`
+        text: `When life tests your character and throws chaos in your path, your immediate reaction is the only thing in this world you truly own.`,
+        visual: `Cinematic vertical 9:16 shot, ${arch.visualStyle}, atmospheric cinematic lighting, dark slate and amber color tone, 8k resolution`
       },
       {
         slideIndex: 1,
-        text: `Most people operate on automatic pilot. When traffic slows down, when someone is rude, or when plans collapse, they immediately react with panic, anger, and helpless frustration.`,
-        visual: `Cinematic vertical 9:16 shot matching ${slotArchetype.visualStyle}, close angle, rich slate gray shadows with warm amber rim light, 8k resolution`
+        text: `Most people operate on automatic pilot. When provoked or facing sudden friction, they immediately react with panic, anger, and helpless frustration.`,
+        visual: `Cinematic vertical 9:16 shot matching ${arch.visualStyle}, close angle, rich slate gray shadows with warm amber rim light, 8k`
       },
       {
         slideIndex: 2,
-        text: `The core Stoic principle is simple: external events have zero power to hurt you until you judge them as bad. Your mind alone decides whether an obstacle breaks you or builds you.`,
-        visual: `Cinematic vertical 9:16 shot matching ${slotArchetype.visualStyle}, solitary contemplative figure in sharp focus, slate stone texture and golden highlights, 8k`
+        text: `The core Stoic principle is simple: external events have zero power to hurt you until your mind judges them as harmful or humiliating.`,
+        visual: `Cinematic vertical 9:16 shot matching ${arch.visualStyle}, solitary contemplative figure in sharp focus, slate stone texture and golden highlights, 8k`
       },
       {
         slideIndex: 3,
-        text: `When unexpected adversity strikes you today, institute a strict ten-second pause. Do not speak, do not send that angry text, and do not make emotional decisions in the heat of the moment.`,
-        visual: `Cinematic vertical 9:16 shot matching ${slotArchetype.visualStyle}, intense focused perspective, atmospheric depth, cinematic slate and golden amber tones, 8k`
+        text: `Institute a strict ten-second tactical pause. Do not speak, do not react with anger, and evaluate if this obstacle is within your control.`,
+        visual: `Cinematic vertical 9:16 shot matching ${arch.visualStyle}, intense focused perspective, atmospheric depth, cinematic slate and golden amber tones, 8k`
       },
       {
         slideIndex: 4,
-        text: `Ask yourself one objective question: Is this situation within my direct control, or is it outside my control? If you cannot change it, worrying about it is completely useless.`,
-        visual: `Cinematic vertical 9:16 shot matching ${slotArchetype.visualStyle}, close-up of steady hands writing in dark leather notebook under warm lamp, 8k`
+        text: `Redirect every drop of your energy into your next controllable action: your effort, your calm, and your private commitment to excellence.`,
+        visual: `Cinematic vertical 9:16 shot matching ${arch.visualStyle}, powerful solid architectural composition, deep slate and warm amber illumination, 8k`
       },
       {
         slideIndex: 5,
-        text: `Redirect every drop of your energy into what you can control right now: your effort, your discipline, your kindness, and your relentless commitment to doing the work.`,
-        visual: `Cinematic vertical 9:16 shot matching ${slotArchetype.visualStyle}, powerful solid architectural composition, deep slate and warm amber illumination, 8k`
-      },
-      {
-        slideIndex: 6,
-        text: `When you master this daily habit, you become emotionally indestructible. Life's storms will rage around you, but the fortress inside your mind will remain completely calm and centered.`,
-        visual: `Cinematic vertical 9:16 shot matching ${slotArchetype.visualStyle}, dramatic sunrise lighting breaking through dark slate clouds, golden rays, 8k resolution`
-      },
-      {
-        slideIndex: 7,
         text: `Silence the noise, master your internal dialogue, and ${resolvedOutro}`,
-        visual: `Cinematic vertical 9:16 shot matching ${slotArchetype.visualStyle}, confident thinker looking towards horizon at dawn, warm amber and obsidian tones, 8k`
+        visual: `Cinematic vertical 9:16 shot matching ${arch.visualStyle}, confident thinker looking towards horizon at dawn, warm amber and obsidian tones, 8k`
       }
     ]
   };
@@ -887,8 +668,8 @@ function synthesizeDeterministicStoryboard(slotArchetype, topicTitle, channelHan
  */
 function buildStoicDeepDivePrompt(archetype, recentHistory = [], channelHandle = '@thestoicarchitect-n4b') {
   const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
-  const recentTitles = (recentHistory || []).slice(0, 15).map(h => `"${h.topic || h.title}"`).join(', ');
-  const resolvedOutro = resolveOutroPattern(archetype.outroPattern, cleanHandle);
+  const recentTitles = (recentHistory || []).slice(0, 20).map(h => `"${h.topic || h.title}"`).join(', ');
+  const resolvedOutro = resolveStoicOutro(cleanHandle);
 
   const systemPrompt = `You are a master Stoic philosopher, psychologist, and long-form documentary scriptwriter for the channel (${cleanHandle}).
 CHANNEL GOAL: Deliver deep, practical, spoken-conversational modern Stoic wisdom that transforms everyday lives.
@@ -896,7 +677,7 @@ AUDIENCE: Normal everyday people seeking unshakeable discipline, emotional maste
 
 LONG-FORM MASTERCLASS REQUIREMENTS (15 CHAPTERS / 15-20 MINUTES):
 1. EXACTLY 15 COMPREHENSIVE CHAPTERS (SLIDES 0 TO 14):
-   - Each slide represents an in-depth teaching section (~100-130 words of natural, wise, spoken-word narration).
+   - Each slide represents an in-depth teaching section (~110-140 words of natural, wise, spoken-word narration).
    - Clear, low-level English (5th-7th grade readability) that answers real human questions.
 2. 15-CHAPTER PROGRESSIVE STOIC BLUEPRINT:
    - Slide 0: Executive Hook & The Reality of Modern Mental Chaos
@@ -927,72 +708,73 @@ OUTPUT FORMAT: Return strictly valid JSON matching:
     {
       "slideIndex": 0,
       "chapterTitle": "Introduction & The Modern Trap",
-      "text": "Detailed 100-130 words spoken narration...",
-      "visual": "16:9 widescreen 8k cinematic atmospheric shot with warm amber and deep slate tones..."
+      "text": "Detailed 110-140 words spoken narration...",
+      "visual": "16:9 widescreen 8k cinematic dark slate and warm amber lighting..."
     }
   ]
 }`;
 
-  const userPrompt = `Generate a complete 15-chapter 15-20 min Masterclass script on "${archetype.theme}". Angle: "${archetype.angle}". Avoid recent topics: [${recentTitles || 'None'}]. Return strictly valid JSON.`;
+  const userPrompt = `Generate a 15-chapter 15-20 minute Stoic Masterclass documentary script on "${archetype.theme}". Angle: "${archetype.angle}". Avoid recent titles: [${recentTitles || 'None'}]. Return strictly valid JSON.`;
 
   return { systemPrompt, userPrompt };
 }
 
 /**
- * High-quality deterministic fallback for 15-Chapter Stoic Masterclass
+ * Deterministic Fallback for 15-Chapter Masterclass
  */
-function synthesizeDeterministicStoicDeepDiveStoryboard(archetype, topicTitle, channelHandle = '@thestoicarchitect-n4b') {
+function synthesizeDeterministicDeepDiveStoryboard(archetype, topicTitle, channelHandle = '@thestoicarchitect-n4b') {
   const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
-  const resolvedOutro = resolveOutroPattern(archetype ? archetype.outroPattern : '', cleanHandle);
+  const resolvedOutro = resolveStoicOutro(cleanHandle);
   const arch = archetype || STOIC_ARCHETYPES[0];
-  const title = topicTitle && topicTitle.length > 5 ? topicTitle : `${arch.theme} - The Complete Stoic Masterclass`;
+  const cleanTopic = (topicTitle && topicTitle.length > 5) ? topicTitle : arch.theme;
 
   const chapters = [
-    { title: 'The Modern Trap: Why We Lose Our Peace', text: `In a world full of noise, notifications, and endless demands, most people live in a constant state of reaction. They let external events dictate their mood, their focus, and their self-worth. Stoicism is not about suppressing your emotions; it is the ancient art of reclaiming your sovereignty. When you master your mind, nothing outside can shake your foundation.` },
-    { title: 'The Dichotomy of Control: The Golden Rule', text: `Epictetus taught that life is divided into two categories: things you control, and things you do not. You control your thoughts, your daily habits, and your responses. You do not control the economy, other people, or past mistakes. The moment you stop pouring energy into things outside your control, ninety percent of your anxiety instantly evaporates.` },
-    { title: 'The Sovereign Pause: Mastering Reaction', text: `Between every stimulus and your reaction, there is a small pocket of space. In that space lies your freedom. When someone cuts you off, insults you, or ruins your plans, pause for ten seconds. Take a deep breath. Let reason take the wheel before emotion causes you to say or do something you will regret.` },
-    { title: 'The Illusion of Approval: Escaping People-Pleasing', text: `Seeking validation from others is like handing them the keys to your happiness. When you depend on compliments to feel good, insults will easily destroy you. Marcus Aurelius reminded himself every morning that the opinions of others say everything about their character and nothing about his own.` },
-    { title: 'Amor Fati: Loving What Happens', text: `Amor Fati means loving your fate, whatever it brings. When plans collapse or hardships strike, a weak mind complains and asks why me. A Stoic asks: what does this teach me right now? Every obstacle is raw fuel for character development. You do not merely survive difficulty; you use it to grow stronger.` },
-    { title: 'The Non-Negotiable Contract: Discipline Over Mood', text: `Motivation is an unreliable friend. It arrives with excitement and disappears when the work gets difficult. Discipline is a non-negotiable contract you sign with yourself. You show up, you study, you build, and you train regardless of whether you feel like it. Consistency is the only true separator.` },
-    { title: 'Silence as Power: Defeating Hostility', text: `When someone tries to provoke you with disrespect, reacting with anger proves they found your weak spot. Silence, delivered with calm eye contact and steady composure, exposes their aggression as childish and weak. True strength is quiet; weakness is loud and reactive.` },
-    { title: 'The Laboratory of Solitude: Building in the Dark', text: `Many people fear being alone because they cannot stand the quiet of their own thoughts. But solitude is the laboratory where your strongest self is built. Use your private hours to read, meditate, refine your skills, and build a fortress that no sudden storm can knock down.` },
-    { title: 'Conquering Impulse: The 10-Minute Rule', text: `Cheap dopamine is everywhere, from endless scrolling to impulse spending. Every time you surrender to an impulsive urge, you teach your brain that your willpower cannot be trusted. Use the ten-minute rule: when a craving hits, wait ten minutes. Most cravings fade when forced to face deliberate delay.` },
-    { title: 'Evidence-Based Self-Trust: Keeping Promises', text: `You cannot fake real confidence. Affirmations in the mirror will not give you genuine self-trust. Genuine confidence is built on a stack of undeniable proof: waking up on time, finishing what you started, and keeping the small promises you made to yourself when no one was watching.` },
-    { title: 'Modern Scenario: Navigating Daily Chaos', text: `Consider a day when everything seems to go wrong at work or at home. Deadlines clash, plans fall apart, and people are difficult. Instead of spiraling, treat the entire day as an obstacle course designed specifically to test your composure. Smile at the resistance and execute one clear step at a time.` },
-    { title: 'The Morning & Evening Audit: Daily Mental Hygiene', text: `Begin your morning by setting your mental armor. Prepare your mind for difficult people and unexpected delays. End your night with a calm three-question audit: What did I do well today? Where did I lose control? How can I respond better tomorrow? Continuous reflection creates continuous growth.` },
-    { title: 'Memento Mori: The Ultimate Clarity Filter', text: `Remembering that your time on this earth is finite is not morbid; it is the ultimate tool for clarity. When you realize how short life is, you immediately stop wasting precious hours arguing over petty slights, holding grudges, or worrying about things that will not matter next year.` },
-    { title: 'The Inner Citadel: Becoming Indestructible', text: `Your mind is your ultimate fortress. External circumstances can take your money, your comfort, or your reputation, but no one can take your virtue, your discipline, or your peace unless you willingly surrender them. Protect your inner citadel with relentless daily practice.` },
-    { title: 'The 30-Day Action Blueprint & Conclusion', text: `Commit to practicing these principles for the next thirty days. Speak less, listen more, pause before reacting, and execute your daily duties with quiet excellence. Control your mind, own your destiny. ${resolvedOutro}` }
+    { title: 'The Modern Mental Crisis', focus: 'Why 99% of people are overwhelmed by constant digital noise, emotional reactivity, and loss of sovereignty.' },
+    { title: 'The Core Question: Why Do We Lose Our Peace?', focus: 'Examining the hidden belief that external situations owe us comfort, ease, and praise.' },
+    { title: 'The Dichotomy of Control', focus: 'Drawing an absolute, impenetrable line between what is strictly up to us and what is completely outside our power.' },
+    { title: 'The 10-Second Tactical Pause', focus: 'How to halt the fight-or-flight nervous response before speaking, emailing, or reacting under fire.' },
+    { title: 'Freedom from Other People’s Opinions', focus: 'Recognizing the spotlight fallacy and realizing that other people’s praise or criticism has zero bearing on your true virtue.' },
+    { title: 'Amor Fati: Loving Adversity as Fuel', focus: 'How to stop wishing for an easier life and treat every obstacle as the exact training ground you need.' },
+    { title: 'The Daily Contract: Discipline Over Mood', focus: 'Why motivation is a weak, unreliable emotion, and why keeping private daily commitments builds real self-respect.' },
+    { title: 'Strategic Silence: Disarming Disrespect', focus: 'Why reacting with fury surrenders your power, and why calm silence dismantles manipulative behavior.' },
+    { title: 'The Solitude Fortress', focus: 'Learning to sit alone in a quiet room without needing digital dopamine or superficial social validation.' },
+    { title: 'Conquering Impulsive Desires', focus: 'How delaying gratification for 24 hours rewires your dopamine baseline and restores mental clarity.' },
+    { title: 'Evidence-Based Self-Trust', focus: 'Why real confidence is not positive affirmations, but a mountain of undeniable proof that you keep your word.' },
+    { title: 'Real-Life Scenario Walkthrough', focus: 'A step-by-step breakdown of how a Stoic handles betrayal, economic hardship, or severe career setbacks.' },
+    { title: 'Morning & Evening Mental Audits', focus: 'The exact two-minute journaling questions Marcus Aurelius and Seneca used to begin and end each day.' },
+    { title: 'Memento Mori: The Ultimate Clarity', focus: 'Using the certainty of death to dissolve petty grievances, social anxiety, and foolish procrastination.' },
+    { title: 'The 30-Day Stoic Reset Blueprint', focus: `Your complete daily implementation protocol. Rule your mind, conquer your desires, and ${resolvedOutro}` }
   ];
 
   return {
-    title: title,
+    title: `${cleanTopic} - Complete Stoic Masterclass Documentary`,
     theme: arch.theme,
     angle: arch.angle,
-    description: `Comprehensive 15-Chapter Masterclass on ${arch.theme}.\n\nTimestamps:\n` +
+    description: `Full 15-Chapter Masterclass on ${arch.theme}.\n\nTimestamps:\n` +
       chapters.map((c, i) => `${String(Math.floor(i * 1.2)).padStart(2, '0')}:00 Chapter ${i + 1}: ${c.title}`).join('\n') +
-      `\n\n#Stoicism #Mindset #Discipline #MentalStrength #SelfControl`,
-    tags: ["#Stoicism", "#Mindset", "#Discipline", "#MentalStrength", "#SelfControl"],
+      `\n\n#Stoicism #Mindset #Discipline #MentalStrength #Philosophy`,
+    tags: ["#Stoicism", "#Mindset", "#Discipline", "#MentalStrength", "#Philosophy", "#SelfControl"],
     slides: chapters.map((c, idx) => ({
       slideIndex: idx,
       chapterTitle: c.title,
-      text: c.text,
-      visual: `16:9 widescreen 8k photorealistic modern cinematic studio setting with deep dark slate background, warm golden amber rim lighting, razor-sharp focus`
+      text: `In this chapter of our masterclass on ${arch.theme}, we analyze ${c.title.toLowerCase()}. ${c.focus} When Marcus Aurelius and Epictetus taught these principles in ancient Rome, human nature was identical to today. You will face arrogant people, unexpected delays, and sudden loss. Your fortress is not built with stone walls, but with an unshakeable mind that refuses to surrender its peace to external events.`,
+      visual: `16:9 widescreen 8k cinematic scene, atmospheric dark slate architecture with warm golden amber rim lighting, ultra-high resolution, documentary depth`
     }))
   };
 }
 
 module.exports = {
   STOIC_ARCHETYPES,
-  classifyLessonIntent,
+  ROTATING_STOIC_HOOK_TEMPLATES,
+  ROTATING_STOIC_OUTROS,
+  formatViralShortsTitle,
+  resolveStoicOutro,
+  selectStoicHookFormat,
   fetchRecentHistoryFromFirestore,
-  saveContentHistoryToFirestore,
   isTopicSimilarToHistory,
   selectDailyDiverseSlots,
-  resolveOutroPattern,
   buildStoicPromptForSlot,
   buildStoicDeepDivePrompt,
   synthesizeDeterministicStoryboard,
-  synthesizeDeterministicStoicDeepDiveStoryboard
+  synthesizeDeterministicDeepDiveStoryboard
 };
-

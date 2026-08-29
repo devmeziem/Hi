@@ -8,6 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+const { formatViralShortsTitle } = require('./fin_diversity_engine.cjs');
 
 const DEFAULT_CLIENT_ID = process.env.YOUTUBE_CLIENT_ID || '';
 const DEFAULT_CLIENT_SECRET = process.env.YOUTUBE_CLIENT_SECRET || '';
@@ -22,7 +23,7 @@ const CHANNEL_CONFIG = {
     refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH1 || process.env.YOUTUBE_REFRESH_TOKEN || '',
     affiliateCta: '💰 Launch your AI Micro-SaaS: https://selar.co/m/bones-ceo (15k Naira Blueprint)',
     pinnedComment: '📌 Get the exact Micro-SaaS order template + 15k Naira startup guide here: https://selar.co/m/bones-ceo',
-    tags: ['#Shorts', '#MicroSaaS', '#FinBlueprint', '#MakeMoneyOnline', '#SideHustle', '#NigeriaTech']
+    tags: ['#Shorts', '#viral', '#trending', '#MicroSaaS', '#FinBlueprint', '#MakeMoneyOnline', '#SideHustle', '#Wealth', '#fyp']
   },
   motivation_stoicism: {
     handle: '@thestoicarchitect-n4b',
@@ -33,7 +34,7 @@ const CHANNEL_CONFIG = {
     refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH2 || process.env.YOUTUBE_REFRESH_TOKEN || '',
     affiliateCta: '🏛️ Follow @TheStoicArchitect for daily Stoic wisdom and mental strength.',
     pinnedComment: '📌 "No person is free who is not master of himself." Which of these Stoic rules resonates most with you today? Subscribe to @TheStoicArchitect for daily fortitude.',
-    tags: ['#Shorts', '#Stoicism', '#MarcusAurelius', '#Discipline', '#Motivation', '#Mindset', '#Wisdom', '#PersonalGrowth', '#DailyStoic']
+    tags: ['#Shorts', '#viral', '#trending', '#Stoicism', '#MarcusAurelius', '#Discipline', '#Motivation', '#Mindset', '#Wisdom', '#DailyStoic', '#fyp']
   },
   tech_ai: {
     handle: '@bonesceo',
@@ -44,7 +45,7 @@ const CHANNEL_CONFIG = {
     refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH3 || process.env.YOUTUBE_REFRESH_TOKEN || '',
     affiliateCta: '⚡ Access Full Stack AI Automation Repos: https://selar.co/m/voxam-tech',
     pinnedComment: '📌 Fork the autonomous multi-agent GitHub Actions repo: https://github.com/devmeziem/Voxam',
-    tags: ['#Shorts', '#AI', '#Coding', '#Cloudflare', '#DeepSeek', '#OpenSource']
+    tags: ['#Shorts', '#viral', '#trending', '#AI', '#Coding', '#Cloudflare', '#DeepSeek', '#OpenSource', '#fyp']
   }
 };
 
@@ -104,14 +105,18 @@ async function getAccessToken(refreshToken, customClientId, customClientSecret) 
 /**
  * Upload Video to YouTube via YouTube Data API v3 Resumable Upload
  */
-async function uploadToYouTube(accessToken, videoFilePath, title, description, tags) {
+async function uploadToYouTube(accessToken, videoFilePath, title, description, tags, channelKey = 'finance_saas') {
   return new Promise((resolve) => {
-    const cleanDescription = (description || title).trim();
-    const cleanTags = Array.from(new Set([...(tags || []), 'Shorts'])).filter(t => t.length > 0 && t.length < 50).slice(0, 15);
+    const cleanTitle = formatViralShortsTitle(title, channelKey === 'motivation_stoicism' ? 'stoic' : 'fin');
+    const cleanDescription = (description || cleanTitle).trim();
+    const cleanTags = Array.from(new Set([...(tags || []), 'Shorts', 'viral', 'trending', 'fyp']))
+      .map(t => String(t).replace(/^#/, '').replace(/[^a-zA-Z0-9 ]/g, '').trim())
+      .filter(t => t.length > 0 && t.length < 50)
+      .slice(0, 15);
 
     const metadata = JSON.stringify({
       snippet: {
-        title: title.slice(0, 95),
+        title: cleanTitle,
         description: cleanDescription,
         tags: cleanTags,
         categoryId: '27' // Education / How-to

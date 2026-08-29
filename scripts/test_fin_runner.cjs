@@ -24,7 +24,13 @@ const {
   buildFinPromptForSlot,
   buildFinDeepDivePrompt,
   synthesizeDeterministicFinStoryboard,
-  synthesizeDeterministicFinDeepDiveStoryboard
+  synthesizeDeterministicFinDeepDiveStoryboard,
+  fetchRecentFinHistoryFromFirestore,
+  isFinTopicSimilarToHistory,
+  selectDiverseFinArchetype,
+  selectFinHookFormat,
+  resolveFinOutro,
+  formatViralShortsTitle
 } = require('./fin_diversity_engine.cjs');
 
 // ANSI Color helper for clean terminal outputs
@@ -387,49 +393,151 @@ async function probeBackupEngines() {
   return { groqWorkingModel };
 }
 
+/// ----------------------------------------------------
+// DYNAMIC FINANCE TOPIC DISCOVERY & ROTATION ENGINE
 // ----------------------------------------------------
-// STEP 3: GENERATE 6-SLIDE DUAL-CURRENCY STORYBOARD (WITH RETRY LOOP)
+async function discoverDynamicFinanceTopic(resolvedArchetype, activeGrok, recentHistory = []) {
+  logInfo(`[Topic Discovery] Discovering fresh, high-CTR viral topic for Pillar: "${resolvedArchetype.theme}"...`);
+  const recentExclusions = recentHistory.slice(0, 25).map(h => `"${h.topic || h.title}"`).join(', ');
+
+  // 1. Try Google Gemini
+  if (GEMINI_API_KEY) {
+    const geminiModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    for (const model of geminiModels) {
+      try {
+        const postData = JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `You are a world-class viral YouTube Shorts strategist for practical finance and micro-business.
+Generate 1 fresh, complete, high-retention title (around 35-50 characters) for 'Fin Blueprint' on Theme: "${resolvedArchetype.theme}" (Angle: "${resolvedArchetype.angle}").
+Target Budget: "${resolvedArchetype.targetBudget}".
+MANDATORY: Return ONLY the single title text as a complete, grammatically whole thought in plain English. No quotes, no markdown, no explanation, do NOT cut off mid-sentence.
+EXCLUDED PREVIOUS TITLES: [${recentExclusions || 'None'}]`
+            }]
+          }],
+          generationConfig: { temperature: 0.85, maxOutputTokens: 60 }
+        });
+
+        const res = await new Promise((resolve) => {
+          const req = https.request(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) },
+            timeout: 10000
+          }, (resp) => {
+            let data = '';
+            resp.on('data', c => data += c);
+            resp.on('end', () => {
+              if (resp.statusCode === 200) {
+                try {
+                  const j = JSON.parse(data);
+                  resolve({ success: true, text: j.candidates?.[0]?.content?.parts?.[0]?.text?.trim() });
+                } catch { resolve({ success: false }); }
+              } else { resolve({ success: false }); }
+            });
+          });
+          req.on('error', () => resolve({ success: false }));
+          req.on('timeout', () => { req.destroy(); resolve({ success: false }); });
+          req.write(postData);
+          req.end();
+        });
+
+        if (res.success && res.text) {
+          const cleanTopic = sanitizeFinString(res.text).replace(/^#+/, '').replace(/^Title:\s*/i, '').trim();
+          if (cleanTopic.length > 8 && !isFinTopicSimilarToHistory(cleanTopic, resolvedArchetype.theme, recentHistory)) {
+            logSuccess(`[Topic Discovery] Discovered via Gemini (${model}): "${cleanTopic}"`);
+            return cleanTopic;
+          }
+        }
+      } catch {}
+    }
+  }
+
+  // 2. Try Grok (xAI)
+  if (activeGrok && activeGrok.key) {
+    try {
+      const postData = JSON.stringify({
+        model: activeGrok.model || 'grok-2-latest',
+        messages: [
+          { role: 'system', content: 'You are a viral YouTube Shorts strategist for practical finance and micro-business.' },
+          { role: 'user', content: `Generate 1 fresh, complete, high-retention title (around 35-50 characters) for 'Fin Blueprint' on Theme: "${resolvedArchetype.theme}" (Angle: "${resolvedArchetype.angle}"). Avoid recent titles: [${recentExclusions || 'None'}]. Return ONLY the single title in plain text as a complete, grammatically whole phrase without reasoning or cuts.` }
+        ],
+        temperature: 0.85,
+        max_tokens: 60
+      });
+
+      const res = await new Promise((resolve) => {
+        const req = https.request('https://api.x.ai/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${activeGrok.key}`, 'Content-Length': Buffer.byteLength(postData) },
+          timeout: 10000
+        }, (resp) => {
+          let data = '';
+          resp.on('data', c => data += c);
+          resp.on('end', () => {
+            if (resp.statusCode === 200) {
+              try {
+                const j = JSON.parse(data);
+                resolve({ success: true, text: j.choices?.[0]?.message?.content?.trim() });
+              } catch { resolve({ success: false }); }
+            } else { resolve({ success: false }); }
+          });
+        });
+        req.on('error', () => resolve({ success: false }));
+        req.on('timeout', () => { req.destroy(); resolve({ success: false }); });
+        req.write(postData);
+        req.end();
+      });
+
+      if (res.success && res.text) {
+        const cleanTopic = sanitizeFinString(res.text).replace(/^Title:\s*/i, '').trim();
+        if (cleanTopic.length > 8 && !isFinTopicSimilarToHistory(cleanTopic, resolvedArchetype.theme, recentHistory)) {
+          logSuccess(`[Topic Discovery] Discovered via Grok (${activeGrok.model}): "${cleanTopic}"`);
+          return cleanTopic;
+        }
+      }
+    } catch {}
+  }
+
+  // 3. Fallback: Archetype angle with clean title formatting
+  return resolvedArchetype.angle;
+}
+
+// ----------------------------------------------------
+// STEP 3: GENERATE 6-SLIDE DUAL-CURRENCY STORYBOARD (WITH DEDUPLICATION & ROTATION)
 // ----------------------------------------------------
 async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
-  logStep(3, `Synthesizing High-Retention Finance Storyboard: "${topicInput || 'Auto-Synthesized'}"`);
+  logStep(3, `Synthesizing High-Retention Finance Storyboard`);
 
-  // Check manifest & history to eliminate duplicate topics
-  const manifestPath = path.join(process.cwd(), 'daily_blueprint_manifest.json');
-  let recentHistory = [];
-  try {
-    if (fs.existsSync(manifestPath)) {
-      const raw = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-      if (Array.isArray(raw)) {
-        recentHistory = raw.filter(m => m.channelId === CHANNEL_ID || m.niche === NICHE);
-      }
-    }
-  } catch {}
-
-  logInfo(`[Duplicate Check] Checked ${recentHistory.length} previous saved posts to guarantee a unique topic.`);
+  // Fetch complete recent content history from Firestore REST API and local cache
+  const recentHistory = await fetchRecentFinHistoryFromFirestore(CHANNEL_ID, 35);
+  logInfo(`[Duplicate Check] Audited ${recentHistory.length} historical posts to guarantee 100% unique topic.`);
 
   const isDeepDive = contentDepth === 'deep_dive';
   let scriptData = null;
-  const aiErrorLogs = [];
   const maxAttempts = 3;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     if (scriptData) break;
     logInfo(`[Storyboard Engine] === Storyboard Generation Attempt ${attempt}/${maxAttempts} ===`);
 
-    // Select archetype with rotation on retry
-    const recentTitles = recentHistory.map(h => (h.title || h.theme || '').toLowerCase());
-    const unusedArchetypes = FIN_ARCHETYPES.filter(a => !recentTitles.some(t => t.includes(a.theme.toLowerCase())));
-    const pool = unusedArchetypes.length > 0 ? unusedArchetypes : FIN_ARCHETYPES;
-    const archIndex = (Math.floor(Math.random() * pool.length) + attempt - 1) % pool.length;
-    const archetype = pool[archIndex];
-
+    // Pick diverse, non-recent archetype to prevent repetitive themes
+    const archetype = selectDiverseFinArchetype(recentHistory, attempt - 1);
     logInfo(`[Archetype] Selected Pillar: "${archetype.theme}" (Target Budget: ${archetype.targetBudget})`);
 
-    const { systemPrompt, userPrompt } = isDeepDive
+    // Dynamically resolve topic if not explicitly passed
+    let activeTopic = topicInput;
+    if (!activeTopic || activeTopic.trim().length < 4) {
+      activeTopic = await discoverDynamicFinanceTopic(archetype, grokObj, recentHistory);
+    }
+    logInfo(`[Topic Selected] "${activeTopic}"`);
+
+    const { systemPrompt, userPrompt, chosenHookFormat, chosenOutro } = isDeepDive
       ? buildFinDeepDivePrompt(archetype, recentHistory, CHANNEL_HANDLE)
       : buildFinPromptForSlot(archetype, recentHistory, attempt - 1, CHANNEL_HANDLE);
 
-    // 1. PRIMARY: Groq LPU Models (Ultra fast & highly reliable)
+    logInfo(`[Hook & Loop Rotation] Intro Hook: "${chosenHookFormat.name}" | Outro Loop Bridge: "${chosenOutro.slice(0, 45)}..."`);
+
+    // 1. PRIMARY: Groq LPU Models
     if (!scriptData && GROQ_API_KEY) {
       const groqModels = [groqModel, 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'deepseek-r1-distill-llama-70b', 'gemma2-9b-it', 'qwen-2.5-32b'].filter(Boolean);
       for (const gModel of groqModels) {
@@ -441,7 +549,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
               model: gModel,
               messages: [
                 { role: 'system', content: systemPrompt },
-                { role: 'user', content: `${userPrompt} ${topicInput ? `Topic Title: "${topicInput}".` : ''} Return strictly valid JSON.` }
+                { role: 'user', content: `${userPrompt} Topic Title: "${activeTopic}". Return strictly valid JSON.` }
               ],
               temperature: 0.7,
               max_tokens: 2200,
@@ -459,20 +567,16 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
               let data = '';
               res.on('data', c => data += c);
               res.on('end', () => {
-                if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+                if (res.statusCode >= 200 && res.statusCode < 300) {
                   try {
                     const j = JSON.parse(data);
                     resolve({ success: true, content: j.choices?.[0]?.message?.content });
-                  } catch (e) {
-                    resolve({ success: false, error: `Parse error: ${e.message}` });
-                  }
-                } else {
-                  resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 150)}` });
-                }
+                  } catch (e) { resolve({ success: false, error: e.message }); }
+                } else { resolve({ success: false, error: `HTTP ${res.statusCode}` }); }
               });
             });
             req.on('error', err => resolve({ success: false, error: err.message }));
-            req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout (18s)' }); });
+            req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
             req.write(postData);
             req.end();
           });
@@ -484,15 +588,9 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
               scriptData = parsed;
               logSuccess(`[Storyboard Engine] Groq (${gModel}) generated complete ${scriptData.slides.length}-slide storyboard!`);
               break;
-            } else {
-              aiErrorLogs.push(`Groq (${gModel}): JSON failed validation.`);
             }
-          } else {
-            aiErrorLogs.push(`Groq (${gModel}): ${raw.error || 'Failed'}`);
           }
-        } catch (e) {
-          aiErrorLogs.push(`Groq (${gModel}) Exception: ${e.message}`);
-        }
+        } catch {}
       }
     }
 
@@ -505,7 +603,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
           logInfo(`[Storyboard Engine] 2. Requesting storyboard from Google Gemini (${gModel})...`);
           const raw = await new Promise((resolve) => {
             const postData = JSON.stringify({
-              contents: [{ parts: [{ text: `${systemPrompt}\n\nTask: ${userPrompt} ${topicInput ? `Topic Title: "${topicInput}".` : ''} Return strictly raw JSON matching the schema.` }] }],
+              contents: [{ parts: [{ text: `${systemPrompt}\n\nTask: ${userPrompt} Topic Title: "${activeTopic}". Return strictly raw JSON matching the schema.` }] }],
               generationConfig: { temperature: 0.7, maxOutputTokens: 2500, responseMimeType: "application/json" }
             });
             const req = https.request(`https://generativelanguage.googleapis.com/v1beta/models/${gModel}:generateContent?key=${GEMINI_API_KEY}`, {
@@ -516,20 +614,16 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
               let d = '';
               res.on('data', c => d += c);
               res.on('end', () => {
-                if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+                if (res.statusCode >= 200 && res.statusCode < 300) {
                   try {
                     const j = JSON.parse(d);
                     resolve({ success: true, content: j.candidates?.[0]?.content?.parts?.[0]?.text });
-                  } catch (e) {
-                    resolve({ success: false, error: `Parse error: ${e.message}` });
-                  }
-                } else {
-                  resolve({ success: false, error: `HTTP ${res.statusCode}: ${d.slice(0, 150)}` });
-                }
+                  } catch (e) { resolve({ success: false, error: e.message }); }
+                } else { resolve({ success: false, error: `HTTP ${res.statusCode}` }); }
               });
             });
             req.on('error', err => resolve({ success: false, error: err.message }));
-            req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout (20s)' }); });
+            req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
             req.write(postData);
             req.end();
           });
@@ -541,21 +635,15 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
               scriptData = parsed;
               logSuccess(`[Storyboard Engine] Gemini (${gModel}) generated complete ${scriptData.slides.length}-slide storyboard!`);
               break;
-            } else {
-              aiErrorLogs.push(`Gemini (${gModel}): JSON failed validation.`);
             }
-          } else {
-            aiErrorLogs.push(`Gemini (${gModel}): ${raw.error || 'Failed'}`);
           }
-        } catch (e) {
-          aiErrorLogs.push(`Gemini (${gModel}) Exception: ${e.message}`);
-        }
+        } catch {}
       }
     }
 
     // 3. TERTIARY: OpenAI
     if (!scriptData && OPENAI_API_KEY) {
-      const openaiModels = ['gpt-4o-mini', 'gpt-4o', 'gpt-3.5-turbo'];
+      const openaiModels = ['gpt-4o-mini', 'gpt-4o'];
       for (const oModel of openaiModels) {
         if (scriptData) break;
         try {
@@ -565,7 +653,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
               model: oModel,
               messages: [
                 { role: 'system', content: systemPrompt },
-                { role: 'user', content: `${userPrompt} ${topicInput ? `Topic Title: "${topicInput}".` : ''} Return strictly valid JSON.` }
+                { role: 'user', content: `${userPrompt} Topic Title: "${activeTopic}". Return strictly valid JSON.` }
               ],
               response_format: { type: 'json_object' },
               temperature: 0.75,
@@ -587,16 +675,12 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
                   try {
                     const j = JSON.parse(data);
                     resolve({ success: true, content: j.choices?.[0]?.message?.content });
-                  } catch (e) {
-                    resolve({ success: false, error: `Parse error: ${e.message}` });
-                  }
-                } else {
-                  resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 150)}` });
-                }
+                  } catch (e) { resolve({ success: false, error: e.message }); }
+                } else { resolve({ success: false, error: `HTTP ${res.statusCode}` }); }
               });
             });
             req.on('error', err => resolve({ success: false, error: err.message }));
-            req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout (18s)' }); });
+            req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
             req.write(postData);
             req.end();
           });
@@ -608,19 +692,13 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
               scriptData = parsed;
               logSuccess(`[Storyboard Engine] OpenAI (${oModel}) generated complete ${scriptData.slides.length}-slide storyboard!`);
               break;
-            } else {
-              aiErrorLogs.push(`OpenAI (${oModel}): JSON failed validation.`);
             }
-          } else {
-            aiErrorLogs.push(`OpenAI (${oModel}): ${raw.error || 'Failed'}`);
           }
-        } catch (e) {
-          aiErrorLogs.push(`OpenAI (${oModel}) Exception: ${e.message}`);
-        }
+        } catch {}
       }
     }
 
-    // 4. QUATERNARY: DeepSeek (deepseek-chat)
+    // 4. QUATERNARY: DeepSeek
     if (!scriptData && DEEPSEEK_API_KEY) {
       try {
         logInfo(`[Storyboard Engine] 4. Requesting storyboard from DeepSeek (deepseek-chat)...`);
@@ -629,7 +707,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
             model: 'deepseek-chat',
             messages: [
               { role: 'system', content: systemPrompt },
-              { role: 'user', content: `${userPrompt} ${topicInput ? `Topic Title: "${topicInput}".` : ''} Return strictly valid JSON.` }
+              { role: 'user', content: `${userPrompt} Topic Title: "${activeTopic}". Return strictly valid JSON.` }
             ],
             response_format: { type: 'json_object' },
             temperature: 0.7,
@@ -651,16 +729,12 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
                 try {
                   const j = JSON.parse(data);
                   resolve({ success: true, content: j.choices?.[0]?.message?.content });
-                } catch (e) {
-                  resolve({ success: false, error: `Parse error: ${e.message}` });
-                }
-              } else {
-                resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 150)}` });
-              }
+                } catch (e) { resolve({ success: false, error: e.message }); }
+              } else { resolve({ success: false, error: `HTTP ${res.statusCode}` }); }
             });
           });
           req.on('error', err => resolve({ success: false, error: err.message }));
-          req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout (18s)' }); });
+          req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
           req.write(postData);
           req.end();
         });
@@ -670,16 +744,10 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
           if (parsed && validateFinStoryboard(parsed)) {
             if (!isDeepDive && parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
             scriptData = parsed;
-            logSuccess(`[Storyboard Engine] DeepSeek (deepseek-chat) generated complete ${scriptData.slides.length}-slide storyboard!`);
-          } else {
-            aiErrorLogs.push(`DeepSeek: JSON failed validation.`);
+            logSuccess(`[Storyboard Engine] DeepSeek generated complete ${scriptData.slides.length}-slide storyboard!`);
           }
-        } else {
-          aiErrorLogs.push(`DeepSeek: ${raw.error || 'Failed'}`);
         }
-      } catch (e) {
-        aiErrorLogs.push(`DeepSeek Exception: ${e.message}`);
-      }
+      } catch {}
     }
 
     // 5. QUINARY: Grok (xAI)
@@ -691,7 +759,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
             model: grokObj.model || 'grok-2-latest',
             messages: [
               { role: 'system', content: systemPrompt },
-              { role: 'user', content: `${userPrompt} ${topicInput ? `Custom Topic: "${topicInput}".` : ''} Return strictly valid JSON.` }
+              { role: 'user', content: `${userPrompt} Custom Topic: "${activeTopic}". Return strictly valid JSON.` }
             ],
             temperature: 0.7,
             max_tokens: 2200
@@ -709,20 +777,16 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
             let data = '';
             res.on('data', c => data += c);
             res.on('end', () => {
-              if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+              if (res.statusCode >= 200 && res.statusCode < 300) {
                 try {
                   const j = JSON.parse(data);
                   resolve({ success: true, content: j.choices?.[0]?.message?.content });
-                } catch (e) {
-                  resolve({ success: false, error: `Parse error: ${e.message}` });
-                }
-              } else {
-                resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 150)}` });
-              }
+                } catch (e) { resolve({ success: false, error: e.message }); }
+              } else { resolve({ success: false, error: `HTTP ${res.statusCode}` }); }
             });
           });
           req.on('error', err => resolve({ success: false, error: err.message }));
-          req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout (20s)' }); });
+          req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
           req.write(postData);
           req.end();
         });
@@ -733,15 +797,9 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
             if (!isDeepDive && parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
             scriptData = parsed;
             logSuccess(`[Storyboard Engine] Grok (${grokObj.model}) generated complete ${scriptData.slides.length}-slide storyboard!`);
-          } else {
-            aiErrorLogs.push(`Grok (${grokObj.model}): JSON failed validation.`);
           }
-        } else {
-          aiErrorLogs.push(`Grok (${grokObj.model}): ${raw.error || 'Failed'}`);
         }
-      } catch (e) {
-        aiErrorLogs.push(`Grok Exception: ${e.message}`);
-      }
+      } catch {}
     }
 
     // 6. SENARY: Cloudflare Workers AI
@@ -749,9 +807,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
       const cfModels = [
         '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
         '@cf/meta/llama-3.2-3b-instruct',
-        '@cf/meta/llama-3.1-8b-instruct',
-        '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
-        '@cf/qwen/qwen2.5-72b-instruct'
+        '@cf/meta/llama-3.1-8b-instruct'
       ];
       for (const cModel of cfModels) {
         if (scriptData || cloudflareAuthFailed) break;
@@ -761,7 +817,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
             const postData = JSON.stringify({
               messages: [
                 { role: 'system', content: systemPrompt },
-                { role: 'user', content: `${userPrompt} Output STRICT JSON.` }
+                { role: 'user', content: `${userPrompt} Topic Title: "${activeTopic}". Output STRICT JSON.` }
               ]
             });
             const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${cModel}`, {
@@ -780,17 +836,15 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
                   try {
                     const j = JSON.parse(data);
                     resolve({ success: true, content: j.result?.response || data });
-                  } catch {
-                    resolve({ success: true, content: data });
-                  }
+                  } catch { resolve({ success: true, content: data }); }
                 } else {
                   if (res.statusCode === 401) cloudflareAuthFailed = true;
-                  resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 150)}` });
+                  resolve({ success: false, error: `HTTP ${res.statusCode}` });
                 }
               });
             });
             req.on('error', err => resolve({ success: false, error: err.message }));
-            req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout (22s)' }); });
+            req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
             req.write(postData);
             req.end();
           });
@@ -802,28 +856,26 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
               scriptData = parsed;
               logSuccess(`[Storyboard Engine] Cloudflare (${cModel}) generated complete ${scriptData.slides.length}-slide storyboard!`);
               break;
-            } else {
-              aiErrorLogs.push(`Cloudflare (${cModel}): JSON failed validation.`);
             }
-          } else {
-            aiErrorLogs.push(`Cloudflare (${cModel}): ${raw.error || 'Failed'}`);
           }
-        } catch (e) {
-          aiErrorLogs.push(`Cloudflare (${cModel}) Exception: ${e.message}`);
-        }
+        } catch {}
       }
     }
   }
 
-  // 7. DIVERSITY ENGINE SYNTHESIS: Deterministic safety net if remote LLMs are offline or rate-limited
+  // 7. DIVERSITY ENGINE SYNTHESIS: Deterministic safety net with dynamic hook & outro loop
   if (!scriptData || !Array.isArray(scriptData.slides) || scriptData.slides.length < 3) {
     logWarning('[Storyboard Engine] Remote LLM endpoints unavailable or rate-limited. Synthesizing rich Fin Blueprint Archetype from Diversity Engine...');
-    const chosenArch = FIN_ARCHETYPES[Math.floor(Math.random() * FIN_ARCHETYPES.length)];
+    const chosenArch = selectDiverseFinArchetype(recentHistory, 0);
+    const activeTopic = topicInput || chosenArch.angle;
     scriptData = isDeepDive
-      ? synthesizeDeterministicFinDeepDiveStoryboard(chosenArch, topicInput, CHANNEL_HANDLE)
-      : synthesizeDeterministicFinStoryboard(chosenArch, topicInput, CHANNEL_HANDLE);
+      ? synthesizeDeterministicFinDeepDiveStoryboard(chosenArch, activeTopic, CHANNEL_HANDLE)
+      : synthesizeDeterministicFinStoryboard(chosenArch, activeTopic, CHANNEL_HANDLE);
     if (!isDeepDive && scriptData.slides.length > 6) scriptData.slides = scriptData.slides.slice(0, 6);
   }
+
+  // Ensure title is complete, un-truncated, and equipped with viral & trending hashtags
+  scriptData.title = formatViralShortsTitle(scriptData.title || scriptData.topic || chosenArch.angle, 'fin', isDeepDive);
 
   // Safety & Dual Currency Compliance Audit
   const audit = auditFinancialScriptSafety(scriptData);
@@ -1432,16 +1484,14 @@ async function handleYouTubePublish(storyboard, renderResult) {
     try {
       const fileSize = fs.statSync(renderResult.videoFilePath).size;
 
-      let uploadTitle = (storyboard.title || 'Practical Money & Business Blueprint').replace(/[<>]/g, '').trim();
-      if (uploadTitle.length > 85) uploadTitle = uploadTitle.slice(0, 80).trim() + ' #Shorts';
-      if (!uploadTitle.includes('#Shorts') && uploadTitle.length <= 75) uploadTitle += ' #Shorts';
+      let uploadTitle = formatViralShortsTitle(storyboard.title || 'Practical Money & Business Blueprint', 'fin', isDeepDive);
 
-      const cleanTags = (storyboard.tags || ['Shorts', 'PersonalFinance', 'SmallBusiness', 'MoneyTips', 'FinancialLiteracy', 'SideHustle'])
+      const cleanTags = (storyboard.tags || ['Shorts', 'viral', 'trending', 'PersonalFinance', 'SmallBusiness', 'MoneyTips', 'FinancialLiteracy', 'SideHustle', 'Wealth', 'fyp'])
         .map(t => String(t).replace(/^#/, '').replace(/[^a-zA-Z0-9 ]/g, '').trim())
         .filter(t => t.length > 0 && t.length < 50)
         .slice(0, 15);
 
-      const fullDescription = `${storyboard.description || uploadTitle}\n\nPractical money management and small-business strategies with @bones_ceo.\n\n#FinBlueprint #Shorts #PersonalFinance #SmallBusiness #Wealth #Entrepreneurship`;
+      const fullDescription = `${storyboard.description || uploadTitle}\n\nPractical money management and small-business strategies with @bones_ceo.\n\n#FinBlueprint #Shorts #viral #trending #PersonalFinance #SmallBusiness #Wealth #Entrepreneurship #fyp`;
 
       const metadata = JSON.stringify({
         snippet: {

@@ -13,7 +13,8 @@ const {
   saveContentHistoryToFirestore,
   selectDailyDiverseSlots,
   buildStoicPromptForSlot,
-  isTopicSimilarToHistory
+  isTopicSimilarToHistory,
+  formatViralShortsTitle
 } = require('./stoic_diversity_engine.cjs');
 
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim();
@@ -937,11 +938,14 @@ Respond strictly in raw JSON format:
         }
       }
 
+      // Enforce viral & trending hashtag formatting and prevent truncation
+      title = formatViralShortsTitle(title, niche.id === 'finance_business' ? 'fin' : 'stoic');
+
       // Record topic for deduplication
       generatedTopicHistory.add(title);
 
-      const description = `${scriptText || title}\n\n#Shorts #${niche.id.replace(/[^a-zA-Z0-9]/g, '')} #Motivation #Mindset #Discipline #Success`;
-      const tags = ['#Shorts', `#${niche.id.replace(/[^a-zA-Z0-9]/g, '')}`, '#Motivation', '#Mindset', '#Discipline', '#Success'];
+      const description = `${scriptText || title}\n\n#Shorts #${niche.id.replace(/[^a-zA-Z0-9]/g, '')} #viral #trending #Motivation #Mindset #Discipline #Success #fyp`;
+      const tags = ['#Shorts', '#viral', '#trending', `#${niche.id.replace(/[^a-zA-Z0-9]/g, '')}`, '#Motivation', '#Mindset', '#Discipline', '#Success', '#fyp'];
 
       const jobData = {
         id: jobId,

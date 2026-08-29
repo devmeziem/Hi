@@ -24,7 +24,8 @@ const {
   buildStoicDeepDivePrompt,
   isTopicSimilarToHistory,
   synthesizeDeterministicStoryboard,
-  synthesizeDeterministicStoicDeepDiveStoryboard
+  synthesizeDeterministicStoicDeepDiveStoryboard,
+  formatViralShortsTitle
 } = require('./stoic_diversity_engine.cjs');
 
 // ANSI Color helper for terminal logs
@@ -251,7 +252,12 @@ function sanitizeDiscoveryTopic(rawText) {
     t = lines[0];
   }
   t = t.replace(/^["']|["']$/g, '').replace(/#\w+/g, '').trim();
-  if (t.length > 70) t = t.slice(0, 68).trim();
+  if (t.length > 70) {
+    const trimmed = t.slice(0, 68);
+    const lastSpace = trimmed.lastIndexOf(' ');
+    t = (lastSpace > 25 ? trimmed.slice(0, lastSpace) : trimmed).trim();
+  }
+  t = t.replace(/[,\-;:–—]+$/, '').replace(/\s+(and|to|with|the|of|in|for|by|or|a|an|from|on|is|are)\s*$/i, '').trim();
   return t;
 }
 
@@ -364,13 +370,13 @@ async function resolveTopic(activeGrok, backupEngines) {
     for (const model of geminiModels) {
       try {
         logInfo(`[Topic Discovery] Requesting topic from Google Gemini (${model})...`);
-        const prompt = `Suggest 1 viral, high-retention YouTube Shorts title for "${liveChannelName}" (${liveChannelHandle}).
+        const prompt = `Suggest 1 viral, complete, high-retention YouTube Shorts title (around 35-50 characters) for "${liveChannelName}" (${liveChannelHandle}).
 CHANNEL FOCUS: MODERN STOICISM + MOTIVATION + MENTAL STRENGTH (real modern struggles: discipline, self-control, rejection, failure, overthinking, disrespect).
 THEME: "${resolvedArchetype.theme}"
 ANGLE: "${resolvedArchetype.angle}"
 DO NOT USE BIOGRAPHIES OR QUOTES LISTS.
 DO NOT USE OR DUPLICATE RECENT TITLES: [${recentExclusions || 'None'}]
-Return ONLY the title in plain text without quotes or markdown.`;
+Return ONLY the single title text in plain text as a complete, grammatically whole thought without quotes, markdown, or cut-offs.`;
         const res = await new Promise((resolve) => {
           const postData = JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
@@ -432,7 +438,7 @@ Return ONLY the title in plain text without quotes or markdown.`;
           model: activeGrok.model || 'grok-2-latest',
           messages: [
             { role: 'system', content: 'You are a viral YouTube Shorts strategist for Stoicism and high-performance psychology.' },
-            { role: 'user', content: `Generate 1 fresh, high-retention title under 65 characters for "The Stoic Architect" on Theme: "${resolvedArchetype.theme}" (Angle: "${resolvedArchetype.angle}"). Avoid recent titles: [${recentExclusions || 'None'}]. Return ONLY the single title in plain text without reasoning.` }
+            { role: 'user', content: `Generate 1 fresh, complete, high-retention title (around 35-50 characters) for "The Stoic Architect" on Theme: "${resolvedArchetype.theme}" (Angle: "${resolvedArchetype.angle}"). Avoid recent titles: [${recentExclusions || 'None'}]. Return ONLY the single title in plain text as a complete grammatical phrase without reasoning or cuts.` }
           ],
           temperature: 0.9,
           max_tokens: 60
@@ -493,8 +499,8 @@ Return ONLY the title in plain text without quotes or markdown.`;
           const postData = JSON.stringify({
             model: model,
             messages: [
-              { role: 'system', content: 'You are a YouTube Shorts strategist. Generate titles strictly under 65 characters. Return only the title without any thinking tags or preamble.' },
-              { role: 'user', content: `Generate 1 concise, punchy title under 65 characters for "The Stoic Architect" on Theme: "${resolvedArchetype.theme}" (Angle: "${resolvedArchetype.angle}"). Avoid recent titles: [${recentExclusions || 'None'}]. Return ONLY the title text.` }
+              { role: 'system', content: 'You are a YouTube Shorts strategist. Return only a complete, grammatically whole title without any thinking tags or preamble.' },
+              { role: 'user', content: `Generate 1 concise, complete title (around 35-50 characters) for "The Stoic Architect" on Theme: "${resolvedArchetype.theme}" (Angle: "${resolvedArchetype.angle}"). Avoid recent titles: [${recentExclusions || 'None'}]. Return ONLY the title text.` }
             ],
             temperature: 0.8,
             max_tokens: 50
@@ -1194,27 +1200,8 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
     });
   }
 
-  // Enforce strict YouTube title length, special-character sanitization, and Shorts/Longform indexing compliance
-  if (scriptData.title) {
-    let cleanTitle = String(scriptData.title)
-      .replace(/[\r\n\t]+/g, ' ')
-      .replace(/['"\\`]/g, '')
-      .replace(/[<>|:]/g, ' - ')
-      .replace(/[{}[\]]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-    if (isDeepDive) {
-      cleanTitle = cleanTitle.replace(/#Shorts/gi, '').replace(/#\w+/g, '').trim();
-      if (cleanTitle.length > 85) cleanTitle = cleanTitle.slice(0, 82).trim();
-      scriptData.title = cleanTitle;
-    } else {
-      cleanTitle = cleanTitle.replace(/#Shorts/gi, '').replace(/#\w+/g, '').trim();
-      if (cleanTitle.length > 68) {
-        cleanTitle = cleanTitle.slice(0, 65).trim();
-      }
-      scriptData.title = `${cleanTitle} #Shorts`;
-    }
-  }
+  // Enforce strict YouTube title formatting with complete viral and trending hashtags
+  scriptData.title = formatViralShortsTitle(scriptData.title || activeTopic || 'Stoic Rule for Mental Strength', 'stoic', isDeepDive);
 
   console.log(`\n  ${colors.bright}Generated Complete Storyboard Breakdown:${colors.reset}`);
   console.log(`  Title: ${colors.green}${scriptData.title}${colors.reset}`);
@@ -2055,11 +2042,9 @@ async function handleYouTubePublish(storyboard, renderResult) {
     try {
       const fileSize = fs.statSync(renderResult.videoFilePath).size;
       
-      let uploadTitle = (storyboard.title || 'The Stoic Mindset').replace(/[<>]/g, '').trim();
-      if (uploadTitle.length > 85) uploadTitle = uploadTitle.slice(0, 80).trim() + ' #Shorts';
-      if (!uploadTitle.includes('#Shorts') && uploadTitle.length <= 75) uploadTitle += ' #Shorts';
+      let uploadTitle = formatViralShortsTitle(storyboard.title || 'The Stoic Mindset', 'stoic', isDeepDive);
 
-      const cleanTags = (storyboard.tags || ['Shorts', 'Stoicism', 'Discipline', 'Motivation', 'MarcusAurelius', 'Mindset'])
+      const cleanTags = (storyboard.tags || ['Shorts', 'viral', 'trending', 'Stoicism', 'Discipline', 'Motivation', 'MarcusAurelius', 'Mindset', 'Philosophy', 'fyp'])
         .map(t => String(t).replace(/^#/, '').replace(/[^a-zA-Z0-9 ]/g, '').trim())
         .filter(t => t.length > 0 && t.length < 50)
         .slice(0, 15);
@@ -2067,7 +2052,7 @@ async function handleYouTubePublish(storyboard, renderResult) {
       const metadata = JSON.stringify({
         snippet: {
           title: uploadTitle,
-          description: `${(storyboard.description || uploadTitle).trim()}\n\nDaily timeless wisdom and stoic mindset strategies with The Stoic Architect (@thestoicarchitect-n4b).\n\n#Stoic #Shorts #MarcusAurelius #Discipline #Mindset #Philosophy`,
+          description: `${(storyboard.description || uploadTitle).trim()}\n\nDaily timeless wisdom and stoic mindset strategies with The Stoic Architect (@thestoicarchitect-n4b).\n\n#Stoic #Shorts #viral #trending #MarcusAurelius #Discipline #Mindset #Philosophy #fyp`,
           tags: cleanTags,
           categoryId: '27' // Education
         },

@@ -9,16 +9,102 @@
  * Target: Ordinary young people, students, beginners, low-income users, and aspiring entrepreneurs
  * starting with little or no capital ($0 to $50 / ₦0 to ₦50,000).
  * 
- * NON-GURU / ANTI-HYPE PRINCIPLE:
- * Never present as a guru or promise guaranteed income/wealth.
- * Uses realistic disclaimer language: "potential revenue", "estimated margins", "results vary", "possible costs".
- * 
  * DUAL GLOBAL/LOCAL CURRENCY FORMAT:
  * Formats financial sums seamlessly for both global (USD $) and local (₦ Naira) audiences,
  * e.g., "₦5,000 (about $3.50 USD)" or "$10 (around ₦15,000)".
  */
 
-// 10 Core Content Pillars from User Specification
+const fs = require('fs');
+const path = require('path');
+const https = require('https');
+
+// Local history cache file
+const LOCAL_FIN_HISTORY_CACHE = path.join(process.cwd(), 'daily_fin_history_cache.json');
+const MANIFEST_PATH = path.join(process.cwd(), 'daily_blueprint_manifest.json');
+
+// Firestore credentials
+const FIRESTORE_PROJECT_ID = process.env.FIRESTORE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || 'ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e';
+const FIRESTORE_API_KEY = process.env.FIRESTORE_API_KEY || process.env.VITE_FIREBASE_API_KEY || '';
+const FIRESTORE_DATABASE_ID = process.env.FIRESTORE_DATABASE_ID || process.env.VITE_FIRESTORE_DATABASE_ID || 'ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e';
+
+/**
+ * Format a complete, viral YouTube Shorts title with high-CTR trending hashtags
+ * Ensures NO mid-word cutoffs, NO incomplete sentences, and fits within YouTube's 100-char limit.
+ */
+function formatViralShortsTitle(rawHeadline, nicheOrCategory = 'fin', isDeepDive = false) {
+  if (!rawHeadline) rawHeadline = 'High Impact Daily Blueprint';
+  
+  // 1. Clean raw title from markdown, thinking blocks, code quotes, etc.
+  let headline = String(rawHeadline)
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .replace(/<think>[\s\S]*/gi, '')
+    .replace(/Thinking Process:[\s\S]*?(?=\n\n|\n[A-Z0-9"']|$)/gi, '')
+    .replace(/```[\s\S]*?```/gi, '')
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/['"\\`]/g, '')
+    .replace(/[<>|:]/g, ' - ')
+    .replace(/[{}[\]]/g, '')
+    .replace(/#\w+/g, '') // remove existing loose hashtags to rebuild systematically
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // If long-form / deep-dive (15-20 min masterclass), no #Shorts hashtag
+  if (isDeepDive) {
+    if (headline.length > 90) {
+      const trimmed = headline.slice(0, 88);
+      const lastSpace = trimmed.lastIndexOf(' ');
+      headline = (lastSpace > 30 ? trimmed.slice(0, lastSpace) : trimmed).trim();
+    }
+    headline = headline.replace(/[\s\-,;:]+(and|to|with|the|of|in|for|by|or|a|an|from|on|is|are)?$/i, '').trim();
+    return headline;
+  }
+
+  // 2. Select curated viral & trending hashtags for this niche
+  const lower = (nicheOrCategory || '').toLowerCase();
+  let tagPool = [];
+  if (lower.includes('fin') || lower.includes('money') || lower.includes('business') || lower.includes('wealth')) {
+    tagPool = ['#Shorts', '#viral', '#trending', '#money', '#finance', '#wealth', '#business', '#fyp'];
+  } else if (lower.includes('stoic') || lower.includes('mind') || lower.includes('discipline') || lower.includes('motivation')) {
+    tagPool = ['#Shorts', '#viral', '#trending', '#stoic', '#mindset', '#discipline', '#motivation', '#fyp'];
+  } else if (lower.includes('tech') || lower.includes('ai') || lower.includes('code') || lower.includes('developer')) {
+    tagPool = ['#Shorts', '#viral', '#trending', '#ai', '#tech', '#coding', '#developer', '#fyp'];
+  } else {
+    tagPool = ['#Shorts', '#viral', '#trending', '#fyp', '#explore'];
+  }
+
+  // Mandatory primary viral tags
+  const coreTags = ['#Shorts', '#viral', '#trending'];
+  const extraTags = tagPool.filter(t => !coreTags.includes(t));
+
+  // Max headline length should leave room for at least "#Shorts #viral #trending" (25 chars + space = 26)
+  // Max YouTube title limit is 100 characters. So max headline target is ~68 chars.
+  if (headline.length > 68) {
+    const trimmed = headline.slice(0, 68);
+    const lastSpace = trimmed.lastIndexOf(' ');
+    headline = (lastSpace > 25 ? trimmed.slice(0, lastSpace) : trimmed).trim();
+  }
+
+  // Clean trailing connector words or punctuation to guarantee a complete phrase
+  headline = headline
+    .replace(/[,\-;:–—]+$/, '')
+    .replace(/\s+(and|to|with|the|of|in|for|by|or|a|an|from|on|is|are|your|their|that)\s*$/i, '')
+    .replace(/[,\-;:–—]+$/, '')
+    .trim();
+
+  // 3. Greedily append hashtags up to 98 chars total
+  let finalTitle = headline;
+  const allTagsToTry = [...coreTags, ...extraTags];
+  
+  for (const tag of allTagsToTry) {
+    if ((finalTitle + ' ' + tag).length <= 98) {
+      finalTitle += ' ' + tag;
+    }
+  }
+
+  return finalTitle;
+}
+
+// 10 Core Content Pillars
 const FIN_CATEGORIES = {
   SMALL_CAPITAL_BUSINESS: 'small_capital_business',       // ₦0 - ₦5k / $0 - $5 startup ideas
   SAVING_PERSONAL_FINANCE: 'saving_personal_finance',     // Budgeting, expense leaks, emergency funds
@@ -32,242 +118,329 @@ const FIN_CATEGORIES = {
   CHALLENGES_EXPERIMENTS: 'challenges_experiments'        // Transparent 30-day budget & micro-business experiments
 };
 
-// 16 Comprehensive Financial Archetypes spanning all pillars with dual currency relevance and simple language
+// 8 Distinct Rotating Hook Frameworks (Intro formats)
+const ROTATING_FIN_HOOK_TEMPLATES = [
+  {
+    id: 'contrarian_myth_buster',
+    name: 'Contrarian Myth Buster',
+    formula: 'Stop doing [Common Habit] immediately if you want [Outcome]. Here is why 90% of people stay broke...',
+    generateHook: (theme, budget) => `Stop saving cash under your mattress if you want financial freedom. Here is the harsh mathematical truth...`
+  },
+  {
+    id: 'shocking_stat_math',
+    name: 'Shocking Statistic / Mathematical Contrast',
+    formula: '90% of beginners lose money doing X, while the top 1% use this exact formula with only [Budget]...',
+    generateHook: (theme, budget) => `90% of beginners lose their money within 30 days, while smart builders turn ${budget} into daily cash flow with this rule...`
+  },
+  {
+    id: 'direct_emergency_scenario',
+    name: 'Direct Emergency Scenario',
+    formula: 'If you have only [Budget] left in your bank account today, here is the exact protocol to execute before tomorrow...',
+    generateHook: (theme, budget) => `If you have only ${budget} left to your name today, do not panic. Here is the exact protocol to execute before sunset...`
+  },
+  {
+    id: 'curiosity_gap_trap',
+    name: 'Curiosity Gap / The Silent Money Trap',
+    formula: 'There is a silent money trap draining your account every month that banks will never warn you about...',
+    generateHook: (theme, budget) => `There is a silent money leak draining your pockets every single week that nobody ever warned you about...`
+  },
+  {
+    id: 'iron_rule_law',
+    name: 'The Iron Rule / First Law',
+    formula: 'Rule number one of [Theme]: If you do not master this first, every dollar you earn will disappear...',
+    generateHook: (theme, budget) => `Rule number one of building wealth: If you do not master this fundamental habit, every dollar or naira you earn will disappear...`
+  },
+  {
+    id: 'step_by_step_challenge',
+    name: '45-Second Action Challenge',
+    formula: 'Give me 45 seconds, and I will show you how to turn [Problem] into [Outcome] with zero upfront gear...',
+    generateHook: (theme, budget) => `Give me 45 seconds, and I will show you how to launch a legitimate income stream with only ${budget}...`
+  },
+  {
+    id: 'story_case_study',
+    name: 'Realistic Micro Case Study',
+    formula: 'A beginner with zero starting capital and just a mobile phone used this exact blueprint to generate daily cash...',
+    generateHook: (theme, budget) => `A beginner with zero prior experience started with just a smartphone and ${budget}. Here is the exact blueprint they used...`
+  },
+  {
+    id: 'question_pivot',
+    name: 'Provocative Question & Pivot',
+    formula: 'Why do most hardworking people stay broke? It is not lack of effort—it comes down to this single flaw...',
+    generateHook: (theme, budget) => `Why do most people work 50 exhausting hours a week and still end up broke? It is not lack of effort—it is this single flaw...`
+  }
+];
+
+// 10 Distinct Rotating Outro & Infinite Loop Formats (Outro formats)
+const ROTATING_FIN_OUTROS = [
+  {
+    id: 'question_reversal',
+    template: (handle) => `Save this video and follow ${handle}, because the single smartest question you can ask right now is...`
+  },
+  {
+    id: 'first_principle',
+    template: (handle) => `Tap follow on ${handle} for daily practical blueprints, and never forget that everything starts with rule number one...`
+  },
+  {
+    id: 'silent_trap',
+    template: (handle) => `Follow ${handle} to protect your money, because the single biggest mistake beginners make before starting is...`
+  },
+  {
+    id: 'action_origin',
+    template: (handle) => `Share this with a friend and follow ${handle}, because your financial transformation begins the exact second you ask...`
+  },
+  {
+    id: 'reverse_psychology',
+    template: (handle) => `Most people will scroll past this and stay broke, but disciplined builders follow ${handle} and immediately remember that...`
+  },
+  {
+    id: 'foundation_recall',
+    template: (handle) => `Follow ${handle} for real-world money mastery, because when you have zero cash in your pocket, your first move is...`
+  },
+  {
+    id: 'critical_inquiry',
+    template: (handle) => `Subscribe to ${handle} for daily financial clarity, and before you spend another single naira or dollar, ask yourself...`
+  },
+  {
+    id: 'mathematical_truth',
+    template: (handle) => `Follow ${handle} to build genuine wealth, because the math never lies, especially when it comes to...`
+  },
+  {
+    id: 'discipline_contract',
+    template: (handle) => `Lock in your financial discipline with ${handle}, because escaping the paycheck-to-paycheck cycle always begins with...`
+  },
+  {
+    id: 'algorithmic_repeat',
+    template: (handle) => `Watch this again and follow ${handle}, because the most profitable secret hidden inside this blueprint is...`
+  }
+];
+
+// 25+ Comprehensive Diverse Financial Archetypes
 const FIN_ARCHETYPES = [
   {
-    id: 'fin_01_micro_startup_food',
+    id: 'fin_01_snack_reselling',
     category: FIN_CATEGORIES.SMALL_CAPITAL_BUSINESS,
-    theme: 'Small-Capital Business: Snack & Micro-Reselling',
-    angle: '3 Simple Businesses You Can Start With Under ₦5,000 ($3.50 USD)',
+    theme: 'Snack & Micro-Item Reselling',
+    angle: 'How to Turn ₦5,000 ($3.50 USD) into Daily Cash Flow Reselling Bottled Drinks and Snacks',
     targetBudget: '₦5,000 (~$3.50 USD)',
-    hookPatterns: [
-      'If you only have ₦5,000 or about $3.50 to start a business, here is what actually works.',
-      'Stop waiting for millions of cash — here are 3 simple micro businesses starting under $5 or ₦5,000.',
-      'What you can do to make honest money if you only have ₦5,000 ($3.50 USD) in your pocket today.'
-    ],
-    narrativeArc: 'Hook on tiny capital -> 3 practical low-equipment ideas (snack packs, micro-delivery, item flipping) -> Real supply cost & margin math -> Downside risk -> CTA',
-    visualAesthetic: 'Crisp cinematic 9:16 vertical 8k scene, modern minimalist workspace, emerald green and gold rim lighting, dark slate backdrop, crisp bokeh depth of field',
-    outroPattern: 'Follow @bones_ceo to learn real money management and business blueprints every day.'
+    hookArchetypeId: 'shocking_stat_math',
+    visualAesthetic: 'Crisp cinematic 9:16 vertical 8k scene, aesthetic wooden market stall, emerald green and gold rim lighting, dark obsidian slate backdrop'
   },
   {
     id: 'fin_02_budgeting_50_30_20',
     category: FIN_CATEGORIES.SAVING_PERSONAL_FINANCE,
-    theme: 'Personal Finance: Zero-Based Realistic Budgeting',
-    angle: 'How to Budget ₦20,000 ($13.50 USD) So Your Money Lasts All Month',
+    theme: 'The 50/30/20 Budgeting Rule for Small Incomes',
+    angle: 'How to Budget ₦20,000 ($13.50 USD) So Your Money Lasts the Entire Month Without Debt',
     targetBudget: '₦20,000 (~$13.50 USD)',
-    hookPatterns: [
-      'Why does your money disappear 3 days after getting paid? Here is the simple 50-30-20 fix.',
-      'How to budget ₦20,000 or $13.50 USD so you do not run out of cash before the month ends.',
-      'The biggest budgeting mistake that keeps beginners broke, and how to fix it in 60 seconds.'
-    ],
-    narrativeArc: 'Hook on disappearing cash -> The 50/30/20 breakdown for small amounts -> Cutting silent expense leaks -> Emergency buffer -> CTA',
-    visualAesthetic: 'Clean high-contrast smartphone budget interface, warm studio lighting with dark slate background, clear typography, financial stability aesthetic',
-    outroPattern: 'Tap follow on @bones_ceo to master your personal finances and grow your savings.'
+    hookArchetypeId: 'contrarian_myth_buster',
+    visualAesthetic: 'Clean high-contrast smartphone budgeting interface, warm studio lighting with dark slate background, clear typography, financial stability aesthetic'
   },
   {
     id: 'fin_03_inflation_purchasing_power',
     category: FIN_CATEGORIES.FINANCIAL_EDUCATION,
-    theme: 'Financial Education: Inflation & Rising Market Prices Explained Simply',
-    angle: 'What Inflation Actually Means For Your ₦50,000 ($35 USD) Savings',
+    theme: 'Inflation & Why Saved Cash Loses Value',
+    angle: 'What Inflation Actually Means for Your ₦50,000 ($35 USD) Bank Savings & 2 Ways to Protect It',
     targetBudget: '₦50,000 (~$35 USD)',
-    hookPatterns: [
-      'Keeping cash under your mattress quietly steals your money. Here is what inflation means in plain words.',
-      'What inflation actually does to your grocery shopping money in under 60 seconds.',
-      'Why prices keep rising in the market and how to protect your savings from losing value.'
-    ],
-    narrativeArc: 'Definition in plain terms -> Real grocery basket purchasing power comparison -> Why idle cash erodes -> Practical hedging strategies -> CTA',
-    visualAesthetic: 'Sleek financial diagram, purchasing power comparison chart, obsidian black background with emerald and gold accents, 9:16 vertical 8k cinematic shot',
-    outroPattern: 'Follow @bones_ceo for simple, jargon-free financial education every morning.'
+    hookArchetypeId: 'curiosity_gap_trap',
+    visualAesthetic: 'Sleek financial diagram, purchasing power comparison chart, obsidian black background with emerald and gold accents, 9:16 vertical 8k'
   },
   {
-    id: 'fin_04_phone_only_monetization',
+    id: 'fin_04_phone_video_editing',
     category: FIN_CATEGORIES.SKILLS_TO_INCOME,
-    theme: 'Phone-Only Digital Skills & Remote Income',
-    angle: '3 Free Digital Skills You Can Learn On Just Your Smartphone',
+    theme: 'Phone-Only Vertical Video Editing (CapCut)',
+    angle: 'How to Earn Your First $15 (₦20,000) Editing Short-Form Videos Using Only Your Phone',
     targetBudget: '$0 (Phone & Internet Only)',
-    hookPatterns: [
-      'You do not need an expensive laptop to make money online in 2026. Your phone is enough.',
-      'Turn your smartphone into a daily income engine with these 3 free practical skills.',
-      'Three high-value digital skills anyone with a phone and internet can learn this week for free.'
-    ],
-    narrativeArc: 'Problem of expensive gear -> 3 realistic phone skills (CapCut video editing, copywriting, social media management) -> Free learning sources -> Client outreach -> CTA',
-    visualAesthetic: 'Modern creator setup, smartphone with mobile video editor timeline, ambient cyan and gold backlight, crisp 35mm portrait lens',
-    outroPattern: 'Follow @bones_ceo for actionable skill breakdowns and remote income strategies.'
+    hookArchetypeId: 'step_by_step_challenge',
+    visualAesthetic: 'Modern creator setup, smartphone with mobile video editor timeline, ambient cyan and gold backlight, crisp 35mm portrait lens'
   },
   {
-    id: 'fin_05_scam_red_flags',
+    id: 'fin_05_ponzi_scam_red_flags',
     category: FIN_CATEGORIES.SCAM_AWARENESS,
-    theme: 'Scam & Fraud Prevention: Exposing Ponzi & Fake Investment Traps',
-    angle: '5 Simple Signs of a Fake Investment Scam Before You Lose Your Money',
-    targetBudget: 'Protecting Your Capital',
-    hookPatterns: [
-      'If anyone promises you guaranteed 30% weekly profit, run away immediately. It is a scam.',
-      'How to spot a fake investment scheme in under 30 seconds before losing your hard-earned cash.',
-      'The 3 biggest money traps targeting young people and students right now.'
-    ],
-    narrativeArc: 'The psychological lure -> 5 undeniable red flags (guarantees, recruitment pressure, fake audits) -> Real example -> How to verify legitimacy -> CTA',
-    visualAesthetic: 'High-contrast security and warning aesthetic, deep charcoal and red-amber accent lighting, sleek digital shield motif, 9:16 vertical 8k cinematic',
-    outroPattern: 'Follow @bones_ceo to protect your money and stay ahead of financial scams.'
+    theme: 'Spotting Investment Scams & Ponzi Schemes',
+    angle: '4 Immediate Red Flags of Fake High-Yield Investment Schemes Before You Lose Your Capital',
+    targetBudget: 'Capital Protection ($0)',
+    hookArchetypeId: 'iron_rule_law',
+    visualAesthetic: 'High-contrast security and warning aesthetic, deep charcoal and red-amber accent lighting, sleek digital shield motif, 9:16 vertical 8k'
   },
   {
-    id: 'fin_06_business_economics_breakdown',
-    category: FIN_CATEGORIES.BUSINESS_BREAKDOWNS,
-    theme: 'Business Breakdowns: Real Profit Margins on Small Items',
-    angle: 'The Real Math Behind Starting a ₦10,000 ($7 USD) Snack Reselling Business',
-    targetBudget: '₦10,000 (~$7 USD)',
-    hookPatterns: [
-      'Can you turn ₦10,000 or $7 USD into daily profit? Let us do the simple math together.',
-      'Here is the exact cost, selling price, and real profit of a simple street snack business.',
-      'The hidden costs that hurt small business owners before they even make their first profit.'
-    ],
-    narrativeArc: 'The business premise -> Startup supply cost breakdown -> Pricing strategy -> Estimated gross margin & hidden expenses -> Break-even reality -> CTA',
-    visualAesthetic: 'Clean commercial packaging setup, clear financial breakdown table, warm tungsten studio lighting, realistic depth of field',
-    outroPattern: 'Follow @bones_ceo for transparent business breakdowns and startup economics.'
+    id: 'fin_06_thrift_clothing_flipping',
+    category: FIN_CATEGORIES.SMALL_CAPITAL_BUSINESS,
+    theme: 'Second-Hand / Thrift Clothing Flipping',
+    angle: 'How to Start a Curated Vintage Clothing Hustle With Under ₦15,000 ($10 USD)',
+    targetBudget: '₦15,000 (~$10 USD)',
+    hookArchetypeId: 'story_case_study',
+    visualAesthetic: 'Aesthetic curated vintage clothing rack, smartphone product photoshoot setup, warm sunlight and tungsten studio lighting, 9:16 vertical 8k'
   },
   {
-    id: 'fin_07_stablecoins_hedging',
+    id: 'fin_07_stablecoins_usdt_explained',
     category: FIN_CATEGORIES.BEGINNER_INVESTING_CRYPTO,
-    theme: 'Beginner Crypto: Digital Dollars (USDT) Explained for Starters',
-    angle: 'What Are Digital Dollars (USDT) and Why Do People Save in Them?',
+    theme: 'Digital Dollar (USDT) Savings & Devaluation Defense',
+    angle: 'What Are Digital Dollars (USDT) and How Do Ordinary People Use Them to Hedge Inflation?',
     targetBudget: 'Any Budget ($1+ / ₦1,500+)',
-    hookPatterns: [
-      'What is a digital dollar like USDT, and why do millions use it to protect their savings?',
-      'Crypto does not have to be confusing — here is how digital dollar savings work for beginners.',
-      'Before you touch crypto, learn why digital dollars stay stable while other coins go up and down.'
-    ],
-    narrativeArc: 'Plain definition -> How 1 USDT stays $1 USD -> Use case for beating local devaluation -> Self-custody safety rules -> CTA',
-    visualAesthetic: 'Futuristic clean financial interface, glowing emerald and gold crypto tokens on dark obsidian slate, sleek 3D perspective, 9:16 vertical 8k',
-    outroPattern: 'Follow @bones_ceo for honest, hype-free crypto education and security tips.'
+    hookArchetypeId: 'question_pivot',
+    visualAesthetic: 'Futuristic clean financial interface, glowing emerald and gold crypto tokens on dark obsidian slate, sleek 3D perspective, 9:16 vertical 8k'
   },
   {
-    id: 'fin_08_free_certifications_grants',
+    id: 'fin_08_free_google_certs',
     category: FIN_CATEGORIES.FREE_OPPORTUNITIES,
-    theme: 'Free Opportunities: Free Tech Certifications to Learn Online',
-    angle: '3 Free Certifications From Google and Microsoft That Teach Real Skills',
+    theme: 'Free Big Tech Career Certifications',
+    angle: '3 Completely Free Tech Certifications From Google and Microsoft You Can Finish on Your Phone',
     targetBudget: '$0 (100% Free)',
-    hookPatterns: [
-      'Top companies look for these skills, and Google teaches them completely for free.',
-      'Do not pay for overpriced courses — get free certificates from big tech companies today.',
-      'The top free global certificates you can finish right on your phone this week.'
-    ],
-    narrativeArc: 'High cost of education vs free tech programs -> 3 specific free certs -> What you learn -> How to put it on LinkedIn/Resume -> CTA',
-    visualAesthetic: 'Modern digital certificate interface, glowing green verified badge, modern study desk, crisp cinematic lighting, 9:16 vertical 8k',
-    outroPattern: 'Follow @bones_ceo for verified free grants, courses, and career opportunities.'
+    hookArchetypeId: 'contrarian_myth_buster',
+    visualAesthetic: 'Modern digital certificate interface, glowing green verified badge, modern study desk, crisp cinematic lighting, 9:16 vertical 8k'
   },
   {
     id: 'fin_09_compound_interest_dollar_day',
     category: FIN_CATEGORIES.FINANCIAL_CALCULATORS,
-    theme: 'Financial Calculators: How Small Daily Savings Grow Over Time',
-    angle: 'What Happens When You Save Just $1 (₦1,500) Every Single Day?',
+    theme: 'The Compounding Math of Saving $1 (₦1,500) Daily',
+    angle: 'The Real Math of What Happens When You Save Just $1 or ₦1,500 Every Single Day for 5 Years',
     targetBudget: '$1/day (₦1,500/day)',
-    hookPatterns: [
-      'What happens if you save just $1 or ₦1,500 every single day for the next ten years?',
-      'Why saving small amounts every day beats trying to save one big lump sum.',
-      'How compound growth works: your money makes small profit, and that profit makes even more profit.'
-    ],
-    narrativeArc: 'The compound formula explained simply -> The 1-year vs 5-year vs 10-year curve -> Rule of 72 -> Practical starting step -> CTA',
-    visualAesthetic: 'Exponential growth chart visualization, glowing green compounding curve on sleek dark glass, 9:16 vertical 8k cinematic studio shot',
-    outroPattern: 'Follow @bones_ceo to learn how to build long-term wealth step by step.'
+    hookArchetypeId: 'shocking_stat_math',
+    visualAesthetic: 'Exponential growth chart visualization, glowing green compounding curve on sleek dark glass, 9:16 vertical 8k cinematic studio shot'
   },
   {
-    id: 'fin_10_thrift_reselling_hustle',
-    category: FIN_CATEGORIES.SMALL_CAPITAL_BUSINESS,
-    theme: 'Small-Capital Business: Buying and Reselling Clean Second-Hand Clothes',
-    angle: 'How to Start a Clothing Reselling Hustle With Under ₦15,000 ($10 USD)',
-    targetBudget: '₦15,000 (~$10 USD)',
-    hookPatterns: [
-      'Buying neat second-hand clothes and selling them online is one of the easiest small businesses to start.',
-      'How to buy, take clean pictures, and sell thrift items with only $10 or ₦15,000.',
-      'Three simple rules for selling clothes online so you never get stuck with unsold items.'
-    ],
-    narrativeArc: 'Sourcing cheap inventory -> Cleaning and presentation -> Pricing for 100% markup -> Packaging & shipping -> CTA',
-    visualAesthetic: 'Aesthetic vintage clothing rack, smartphone product photoshoot setup, warm sunlight and tungsten studio lighting, 9:16 vertical 8k',
-    outroPattern: 'Follow @bones_ceo for practical small-business blueprints and side-hustle guides.'
+    id: 'fin_10_loan_apps_apr_danger',
+    category: FIN_CATEGORIES.FINANCIAL_EDUCATION,
+    theme: 'Quick Mobile Loan Apps & Hidden High Fees',
+    angle: 'The Hidden Math Behind Quick Loan Apps: Why a 30% Two-Week Fee Will Trap You in Debt',
+    targetBudget: 'Financial Defense',
+    hookArchetypeId: 'curiosity_gap_trap',
+    visualAesthetic: 'Digital smartphone loan interface warning breakdown, dramatic moody slate lighting with red and gold highlights, 9:16 vertical 8k'
   },
   {
-    id: 'fin_11_emergency_fund_blueprint',
+    id: 'fin_11_emergency_fund_buffer',
     category: FIN_CATEGORIES.SAVING_PERSONAL_FINANCE,
-    theme: 'Personal Finance: Saving Your First ₦10,000 ($7 USD) Safety Buffer',
-    angle: 'How to Save Your First ₦10,000 ($7 USD) Cushion When Money is Tight',
+    theme: 'Building Your First ₦10,000 ($7 USD) Safety Buffer',
+    angle: 'How to Build a ₦10,000 ($7 USD) Emergency Fund When You Live on a Low Income',
     targetBudget: '₦10,000 (~$7 USD)',
-    hookPatterns: [
-      'An emergency fund is money you lock away for unexpected emergencies like hospital bills or phone repairs.',
-      'How to save your first ₦10,000 ($7 USD) emergency cushion without starving.',
-      'Why you should always save a little emergency cash before putting money into any business.'
-    ],
-    narrativeArc: 'The unexpected expense trap -> Why emergency savings must be liquid -> The ₦500 / $0.35 daily savings challenge -> Where to store it safely -> CTA',
-    visualAesthetic: 'Clean locked digital vault concept, warm emerald rim lighting, modern glass aesthetic, 9:16 vertical 8k cinematic',
-    outroPattern: 'Follow @bones_ceo for realistic budgeting systems and emergency fund guides.'
+    hookArchetypeId: 'direct_emergency_scenario',
+    visualAesthetic: 'Clean locked digital vault concept, warm emerald rim lighting, modern glass aesthetic, 9:16 vertical 8k cinematic'
   },
   {
-    id: 'fin_12_interest_rates_apr_explained',
-    category: FIN_CATEGORIES.FINANCIAL_EDUCATION,
-    theme: 'Financial Education: Quick Loan Apps & High Borrowing Fees Explained',
-    angle: 'How High-Interest Quick Loan Apps Trap Borrowers in Endless Debt',
-    targetBudget: 'Financial Protection',
-    hookPatterns: [
-      'If you borrow ₦10,000 and have to pay back ₦13,000 in just two weeks, that fee is dangerously high.',
-      'What quick loan apps do not tell you about heavy hidden penalties and daily interest.',
-      'How to check the real cost of borrowing money before taking any quick loan.'
-    ],
-    narrativeArc: 'The allure of instant loan apps -> The hidden math of bi-weekly fees (APR explained) -> Debt spiral danger -> Safe alternative solutions -> CTA',
-    visualAesthetic: 'Digital smartphone loan interface warning breakdown, dramatic moody slate lighting with red and gold highlights, 9:16 vertical 8k',
-    outroPattern: 'Follow @bones_ceo to protect your credit and make smart borrowing decisions.'
-  },
-  {
-    id: 'fin_qa_why_always_broke',
-    category: FIN_CATEGORIES.SAVING_PERSONAL_FINANCE,
-    theme: 'Why Are You Still Broke Despite Working Hard?',
-    angle: 'Question & Simple Answer: Why Hard Work Alone Does Not Make You Rich & The 3 Rules to Fix It',
-    targetBudget: 'Any Income Level',
-    hookPatterns: [
-      'Why are you still broke even though you work long, exhausting hours every single day?',
-      'Have you ever wondered why working hard at a normal job is not making you wealthy?',
-      'Why does your salary disappear before the next month even begins?'
-    ],
-    narrativeArc: 'Relatable Question -> The Silent Spending Trap -> The Simple 3-Step Money Blueprint (Learn, Save, Multiply) -> Plain-Language Takeaway -> CTA',
-    visualAesthetic: 'Modern realistic scene of a young professional looking at smartphone banking ledger with growing confidence, emerald green ambient rim lighting, 9:16 vertical 8k',
-    outroPattern: 'Follow @bones_ceo to learn how to keep and grow your money in simple English.'
-  },
-  {
-    id: 'fin_qa_phone_skills_zero_cash',
+    id: 'fin_12_freelance_whatsapp_catalogs',
     category: FIN_CATEGORIES.SKILLS_TO_INCOME,
-    theme: 'Can You Make Money With Just Your Phone and Zero Cash?',
-    angle: 'Question & Simple Answer: 3 Real Phone Skills You Can Learn in 7 Days for Free',
-    targetBudget: '$0 (Phone & Internet Only)',
-    hookPatterns: [
-      'Can you actually make honest money with just your smartphone and zero starting cash?',
-      'If you have zero capital but you have a phone with internet, what can you start today?',
-      'How can a student or beginner earn their first dollar online using only their mobile phone?'
-    ],
-    narrativeArc: 'Direct Question -> 3 Verified Phone Skills (CapCut editing, social media copywriting, flyer design) -> Free YouTube training roadmap -> Safe client outreach -> CTA',
-    visualAesthetic: 'Crisp cinematic shot of hands editing vertical video clips smoothly on a modern smartphone, warm gold studio bokeh, 9:16 vertical 8k',
-    outroPattern: 'Follow @bones_ceo for realistic phone-only income blueprints and daily money tips.'
+    theme: 'Setting Up Digital WhatsApp Catalogs for Local Shops',
+    angle: 'How to Charge Local Retailers ₦10,000 ($7 USD) to Digitize Their Inventory on WhatsApp',
+    targetBudget: '$0 (Phone Only)',
+    hookArchetypeId: 'step_by_step_challenge',
+    visualAesthetic: 'Smartphone screen showing clean mobile business catalog with incoming customer orders, warm gold lighting'
   },
   {
-    id: 'fin_qa_why_money_loses_value',
+    id: 'fin_13_unit_economics_pricing',
+    category: FIN_CATEGORIES.BUSINESS_BREAKDOWNS,
+    theme: 'Unit Economics: Cost per Unit vs Selling Price',
+    angle: 'Why Most Small Businesses Fail: The Missing Unit Economics Formula Explained in Plain English',
+    targetBudget: 'Business Mechanics',
+    hookArchetypeId: 'iron_rule_law',
+    visualAesthetic: 'Clear financial unit cost balance ledger on tablet screen, emerald profit margin curves, 9:16 vertical 8k'
+  },
+  {
+    id: 'fin_14_high_yield_vaults_vs_banks',
     category: FIN_CATEGORIES.FINANCIAL_EDUCATION,
-    theme: 'Why Does Saved Cash Buy Less Food Every Year?',
-    angle: 'Question & Simple Answer: What Inflation Means in Plain Words & How to Protect Your Savings',
-    targetBudget: '₦10,000+ ($7+ USD)',
-    hookPatterns: [
-      'Why does ₦10,000 or $10 buy fewer groceries today than it did last year?',
-      'Why is leaving all your money sitting in a normal bank account quietly losing you cash?',
-      'What is inflation, and why does the price of rice, bread, and fuel keep going up?'
-    ],
-    narrativeArc: 'Everyday Question -> Simple Grocery Basket Math -> The Definition of Inflation in Plain English -> 2 Easy Protection Steps (Commodities, Digital Dollars) -> CTA',
-    visualAesthetic: 'Clean comparative infographic of everyday grocery baskets over time, sleek high-contrast financial display, 9:16 vertical 8k',
-    outroPattern: 'Follow @bones_ceo to understand money and protect your hard-earned savings.'
+    theme: 'Fintech High-Yield Vaults vs Traditional Bank Accounts',
+    angle: 'Why Traditional Banks Pay 1% While Fintech Digital Vaults Pay 15% APY Interest',
+    targetBudget: '₦5,000+ ($3.50+ USD)',
+    hookArchetypeId: 'question_pivot',
+    visualAesthetic: 'Comparative high-contrast digital vault metrics glowing emerald against standard low bank ledger, 9:16 vertical'
+  },
+  {
+    id: 'fin_15_ai_flyer_design_service',
+    category: FIN_CATEGORIES.SKILLS_TO_INCOME,
+    theme: 'AI-Powered Business Flyer Design with Free Tools',
+    angle: 'How to Create Professional Marketing Flyers for Local Churches and Businesses Using Free AI Tools',
+    targetBudget: '$0 (Free AI Tools)',
+    hookArchetypeId: 'story_case_study',
+    visualAesthetic: 'Hands crafting sleek promotional flyers on tablet using modern AI design suite, vibrant lighting, 9:16 vertical'
+  },
+  {
+    id: 'fin_16_micro_poultry_farming',
+    category: FIN_CATEGORIES.SMALL_CAPITAL_BUSINESS,
+    theme: 'Small-Scale Backyard Poultry / Egg Logistics',
+    angle: 'How to Start a Backyard Egg Distribution Route With Under ₦25,000 ($17 USD) Capital',
+    targetBudget: '₦25,000 (~$17 USD)',
+    hookArchetypeId: 'direct_emergency_scenario',
+    visualAesthetic: 'Clean organic farm crates with fresh farm eggs in morning golden sunlight, modern agricultural entrepreneur'
+  },
+  {
+    id: 'fin_17_silent_subscription_audit',
+    category: FIN_CATEGORIES.SAVING_PERSONAL_FINANCE,
+    theme: 'The 15-Minute Bank Statement & Airtime Leak Audit',
+    angle: 'How to Find and Cut ₦15,000 ($10 USD) of Invisible Monthly Leaks from Your Bank Account',
+    targetBudget: 'Cost Reduction ($0)',
+    hookArchetypeId: 'curiosity_gap_trap',
+    visualAesthetic: 'Sharp financial audit checklist on dark sleek tablet with red expense cuts and green balance totals, 9:16 vertical'
+  },
+  {
+    id: 'fin_18_cleaning_supplies_reselling',
+    category: FIN_CATEGORIES.SMALL_CAPITAL_BUSINESS,
+    theme: 'Liquid Soap & Cleaning Chemical Formulation',
+    angle: 'How to Produce and Bottle 20 Liters of Multi-Purpose Liquid Soap for Under ₦8,000 ($5.50 USD)',
+    targetBudget: '₦8,000 (~$5.50 USD)',
+    hookArchetypeId: 'shocking_stat_math',
+    visualAesthetic: 'Crystal clean bottled eco-friendly cleaning liquid with modern minimalist labels, warm bright studio lighting'
+  },
+  {
+    id: 'fin_19_negotiation_skills_everyday',
+    category: FIN_CATEGORIES.FINANCIAL_EDUCATION,
+    theme: 'Everyday Negotiation & Wholesale Purchasing Rules',
+    angle: '3 Simple Negotiation Rules to Save 20% on Every Wholesale Market Purchase Without Being Aggressive',
+    targetBudget: 'Smart Buying',
+    hookArchetypeId: 'iron_rule_law',
+    visualAesthetic: 'Confident business person shaking hands in bustling modern marketplace, golden hour light, cinematic depth'
+  },
+  {
+    id: 'fin_20_social_media_moderation',
+    category: FIN_CATEGORIES.SKILLS_TO_INCOME,
+    theme: 'Remote WhatsApp & Instagram Community Management',
+    angle: 'How to Get Paid ₦30,000 ($20 USD) Monthly to Manage Direct Messages for Busy Online Vendors',
+    targetBudget: '$0 (Phone Only)',
+    hookArchetypeId: 'step_by_step_challenge',
+    visualAesthetic: 'Smartphone display showing neatly answered client inquiries and confirmed deliveries in sleek dark UI'
+  },
+  {
+    id: 'fin_21_pos_agent_cash_flow',
+    category: FIN_CATEGORIES.BUSINESS_BREAKDOWNS,
+    theme: 'POS & Agency Banking Mechanics',
+    angle: 'The Real Daily Math of Running a POS Agency Terminal: Terminal Costs, Float, and Daily Commission',
+    targetBudget: '₦40,000 (~$27 USD)',
+    hookArchetypeId: 'question_pivot',
+    visualAesthetic: 'Modern POS terminal printing clean receipt with emerald transaction approved badge, high-contrast studio'
+  },
+  {
+    id: 'fin_22_30_day_no_takeout_challenge',
+    category: FIN_CATEGORIES.CHALLENGES_EXPERIMENTS,
+    theme: 'The 30-Day Zero Impulse Spending Challenge',
+    angle: 'What Happened When a Student Tracked Every Single ₦500 ($0.35 USD) Spent for 30 Days',
+    targetBudget: 'Behavioral Reset',
+    hookArchetypeId: 'story_case_study',
+    visualAesthetic: 'Daily progress calendar with consecutive green checkmarks, minimalist wooden desk, warm morning glow'
+  },
+  {
+    id: 'fin_23_freelance_resume_revamp',
+    category: FIN_CATEGORIES.SKILLS_TO_INCOME,
+    theme: 'ATS Resume & LinkedIn Optimization for Remote Jobs',
+    angle: 'How to Fix Your Resume in 20 Minutes Using Free AI Tools to Pass Automated Job Filters',
+    targetBudget: '$0 (Free AI)',
+    hookArchetypeId: 'contrarian_myth_buster',
+    visualAesthetic: 'Modern sleek resume layout on computer screen with green 98% ATS match score, modern office backdrop'
+  },
+  {
+    id: 'fin_24_micro_logistics_errand_service',
+    category: FIN_CATEGORIES.SMALL_CAPITAL_BUSINESS,
+    theme: 'Campus & Neighborhood Micro-Errand Logistics',
+    angle: 'How to Earn Daily Income Running Urgent Errand Deliveries for Busy Working Mothers and Professionals',
+    targetBudget: '₦2,000 (~$1.40 USD Transport)',
+    hookArchetypeId: 'direct_emergency_scenario',
+    visualAesthetic: 'Fast moving courier holding neatly sealed package with GPS route on smartphone, bright daylight city background'
+  },
+  {
+    id: 'fin_25_separating_business_personal_cash',
+    category: FIN_CATEGORIES.SAVING_PERSONAL_FINANCE,
+    theme: 'Separating Business Capital From Personal Feeding Money',
+    angle: 'The Fatal Mistake That Kills 80% of Micro-Businesses: Eating Your Startup Capital by Mistake',
+    targetBudget: 'Discipline Rule',
+    hookArchetypeId: 'curiosity_gap_trap',
+    visualAesthetic: 'Two distinct digital accounts displayed side by side: Business Working Float vs Personal Living Allowance'
   }
-];
-
-const ROTATING_FIN_OUTROS = [
-  "Follow @bones_ceo to protect your cash and build real wealth, which is why the smartest question you can ask is...",
-  "Follow @bones_ceo for honest financial education every day, and never forget that making money starts by asking...",
-  "Follow @bones_ceo to master your capital, because the secret to real financial freedom is...",
-  "Save this blueprint and follow @bones_ceo, because before you invest another single naira or dollar, you must know...",
-  "Tap follow on @bones_ceo for daily practical blueprints, and always remember the single most dangerous mistake is...",
-  "Follow @bones_ceo to avoid costly financial traps, because the difference between broke and wealthy is..."
 ];
 
 // Dangerous financial claims blacklist for Safety System
@@ -314,36 +487,206 @@ function sanitizeFinString(str) {
 }
 
 /**
- * Resolve outro for channel
+ * Resolve dynamic rotating outro for channel
  */
-function resolveFinOutro(channelHandle = '@bones_ceo') {
+function resolveFinOutro(channelHandle = '@bones_ceo', seed = Math.random()) {
   const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
-  const randomIndex = Math.floor(Math.random() * ROTATING_FIN_OUTROS.length);
-  return ROTATING_FIN_OUTROS[randomIndex].replace('@bones_ceo', cleanHandle);
+  const index = Math.floor(Math.abs(seed) * ROTATING_FIN_OUTROS.length) % ROTATING_FIN_OUTROS.length;
+  const outroObj = ROTATING_FIN_OUTROS[index];
+  return outroObj.template(cleanHandle);
+}
+
+/**
+ * Select a rotating hook format
+ */
+function selectFinHookFormat(slotIndex = 0, historyCount = 0) {
+  const index = (slotIndex + historyCount + Math.floor(Math.random() * 3)) % ROTATING_FIN_HOOK_TEMPLATES.length;
+  return ROTATING_FIN_HOOK_TEMPLATES[index];
+}
+
+/**
+ * Fetch recent finance history from Firestore REST API and local cache
+ */
+async function fetchRecentFinHistoryFromFirestore(channelId = 'finance_business', limit = 35) {
+  const historyItems = [];
+
+  // 1. Check local manifest
+  if (fs.existsSync(MANIFEST_PATH)) {
+    try {
+      const raw = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
+      if (Array.isArray(raw)) {
+        for (const item of raw) {
+          if (item.title || item.topic) {
+            historyItems.push({
+              topic: item.topic || item.title,
+              title: item.title || item.topic,
+              theme: item.theme || item.title,
+              angle: item.angle || '',
+              createdAt: item.timestamp || item.createdAt || ''
+            });
+          }
+        }
+      }
+    } catch {}
+  }
+
+  // 2. Check local fin cache file
+  if (fs.existsSync(LOCAL_FIN_HISTORY_CACHE)) {
+    try {
+      const cached = JSON.parse(fs.readFileSync(LOCAL_FIN_HISTORY_CACHE, 'utf8'));
+      if (Array.isArray(cached)) {
+        historyItems.push(...cached);
+      }
+    } catch {}
+  }
+
+  // 3. Fetch from Firestore REST API (content_history)
+  if (FIRESTORE_API_KEY && FIRESTORE_PROJECT_ID) {
+    try {
+      const url = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT_ID}/databases/${FIRESTORE_DATABASE_ID}/documents/content_history?pageSize=${limit}&key=${FIRESTORE_API_KEY}`;
+      const res = await new Promise((resolve) => {
+        const req = https.get(url, { timeout: 6000 }, (resp) => {
+          let data = '';
+          resp.on('data', c => data += c);
+          resp.on('end', () => {
+            if (resp.statusCode === 200) {
+              try {
+                const j = JSON.parse(data);
+                resolve({ success: true, documents: j.documents || [] });
+              } catch (e) { resolve({ success: false }); }
+            } else { resolve({ success: false }); }
+          });
+        });
+        req.on('error', () => resolve({ success: false }));
+        req.on('timeout', () => { req.destroy(); resolve({ success: false }); });
+      });
+
+      if (res.success && Array.isArray(res.documents)) {
+        for (const doc of res.documents) {
+          const fields = doc.fields || {};
+          const item = {
+            topic: fields.topic?.stringValue || fields.title?.stringValue || '',
+            title: fields.title?.stringValue || fields.topic?.stringValue || '',
+            theme: fields.theme?.stringValue || '',
+            angle: fields.angle?.stringValue || '',
+            createdAt: fields.createdAt?.stringValue || ''
+          };
+          if (item.topic) historyItems.push(item);
+        }
+      }
+    } catch {}
+
+    // 4. Fetch from Firestore saved_campaigns
+    try {
+      const campUrl = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT_ID}/databases/${FIRESTORE_DATABASE_ID}/documents/saved_campaigns?pageSize=${limit}&key=${FIRESTORE_API_KEY}`;
+      const campRes = await new Promise((resolve) => {
+        const req = https.get(campUrl, { timeout: 6000 }, (resp) => {
+          let data = '';
+          resp.on('data', c => data += c);
+          resp.on('end', () => {
+            if (resp.statusCode === 200) {
+              try {
+                const j = JSON.parse(data);
+                resolve({ success: true, documents: j.documents || [] });
+              } catch (e) { resolve({ success: false }); }
+            } else { resolve({ success: false }); }
+          });
+        });
+        req.on('error', () => resolve({ success: false }));
+        req.on('timeout', () => { req.destroy(); resolve({ success: false }); });
+      });
+
+      if (campRes.success && Array.isArray(campRes.documents)) {
+        for (const doc of campRes.documents) {
+          const fields = doc.fields || {};
+          const title = fields.title?.stringValue || fields.topic?.stringValue || '';
+          if (title) {
+            historyItems.push({
+              topic: title,
+              title: title,
+              theme: fields.theme?.stringValue || title,
+              angle: fields.angle?.stringValue || '',
+              createdAt: fields.createdAt?.stringValue || ''
+            });
+          }
+        }
+      }
+    } catch {}
+  }
+
+  // Deduplicate history items
+  const seen = new Set();
+  const deduped = [];
+  for (const h of historyItems) {
+    const key = (h.topic || h.title || '').toLowerCase().trim();
+    if (key && !seen.has(key)) {
+      seen.add(key);
+      deduped.push(h);
+    }
+  }
+
+  return deduped;
+}
+
+/**
+ * Strict check if candidate topic matches or is too similar to recent history
+ */
+function isFinTopicSimilarToHistory(candidateTopic, candidateTheme, recentHistory = [], threshold = 0.50) {
+  if (!candidateTopic) return true;
+  const normCandidate = candidateTopic.toLowerCase().replace(/[^a-z0-9]/g, ' ').trim();
+  const stopWords = new Set(['how', 'the', 'what', 'when', 'with', 'your', 'from', 'this', 'that', 'they', 'will', 'start', 'make', 'money', 'business', 'cash', 'daily', 'every', 'free', 'step', 'best', 'simple', 'real', 'naira', 'dollar', 'shorts']);
+
+  const wordsCandidate = new Set(
+    normCandidate.split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w))
+  );
+
+  const windowToCheck = recentHistory.slice(0, 30);
+
+  for (const item of windowToCheck) {
+    const prevText = ((item.topic || item.title || '') + ' ' + (item.theme || '')).toLowerCase().replace(/[^a-z0-9]/g, ' ').trim();
+    if (normCandidate === prevText || prevText.includes(normCandidate) || normCandidate.includes(prevText)) {
+      return true;
+    }
+
+    const wordsPrev = prevText.split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w));
+    if (wordsCandidate.size > 0 && wordsPrev.length > 0) {
+      let matches = 0;
+      for (const w of wordsPrev) {
+        if (wordsCandidate.has(w)) matches++;
+      }
+      const overlap = matches / Math.min(wordsCandidate.size, wordsPrev.length);
+      if (overlap >= threshold) return true;
+    }
+  }
+
+  return false;
 }
 
 /**
  * Pick an archetype that has NOT been used in recent history to prevent duplicate posts
  */
-function selectDiverseArchetype(recentHistory = []) {
-  const recentTitles = (recentHistory || []).map(h => (h.title || h.topic || '').toLowerCase());
-  const available = FIN_ARCHETYPES.filter(arch => {
-    return !recentTitles.some(t => t.includes(arch.theme.toLowerCase()) || t.includes(arch.id));
+function selectDiverseFinArchetype(recentHistory = [], attemptOffset = 0) {
+  const recentTitles = (recentHistory || []).map(h => ((h.title || h.topic || '') + ' ' + (h.theme || '')).toLowerCase());
+  
+  // Filter out any archetypes whose theme or id was used recently
+  const unused = FIN_ARCHETYPES.filter(arch => {
+    return !recentTitles.some(t => t.includes(arch.theme.toLowerCase()) || t.includes(arch.id.toLowerCase()) || t.includes(arch.angle.toLowerCase().slice(0, 20)));
   });
 
-  if (available.length > 0) {
-    return available[Math.floor(Math.random() * available.length)];
-  }
-  return FIN_ARCHETYPES[Math.floor(Math.random() * FIN_ARCHETYPES.length)];
+  const pool = unused.length > 0 ? unused : FIN_ARCHETYPES;
+  const index = (Math.floor(Math.random() * pool.length) + attemptOffset) % pool.length;
+  return pool[index];
 }
 
 /**
- * Build rich system and user prompts for finance LLM generation with global dual currency
+ * Build rich system and user prompts for finance LLM generation with rotating hook & outro formats
  */
 function buildFinPromptForSlot(archetype, recentHistory = [], slotIndex = 0, channelHandle = '@bones_ceo') {
   const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
-  const recentTitles = (recentHistory || []).slice(0, 15).map(h => `"${h.topic || h.title}"`).join(', ');
-  const resolvedOutro = resolveFinOutro(cleanHandle);
+  const recentTitles = (recentHistory || []).slice(0, 20).map(h => `"${h.topic || h.title}"`).join(', ');
+  
+  const chosenHookFormat = selectFinHookFormat(slotIndex, recentHistory.length);
+  const chosenOutro = resolveFinOutro(cleanHandle, slotIndex * 17 + Date.now());
 
   const systemPrompt = `You are the lead viral scriptwriter and financial educator for the Fin Blueprint channel (${cleanHandle}).
 CHANNEL CORE POSITIONING:
@@ -352,475 +695,120 @@ TARGET AUDIENCE: Everyday young people, students, beginners, low-income earners,
 
 CRITICAL YOUTUBE SHORTS ALGORITHM RETENTION RULES (32-42 SECONDS TOTAL):
 1. RUNTIME & PACING: Exactly 6 high-impact slides (slideIndex 0 to 5). Each slide MUST have 18 to 25 punchy spoken words (110-140 words total).
-2. SLIDE 0 (ANTI-SWIPE HOOK): Zero fluff or greetings! Start directly with an intense pattern-interrupt question or shocking stat in under 12 words.
+2. SLIDE 0 (ANTI-SWIPE HOOK): Use the '${chosenHookFormat.name}' format! Formula: "${chosenHookFormat.formula}". Start directly with an intense pattern-interrupt question or shocking stat in under 12 words.
 3. SLIDE 1 (THE COSTLY TRAP): Why 90% of beginners lose money or fail here.
 4. SLIDE 2 (THE CORE MECHANISM): Explain the solution/skill in simple everyday language.
-5. SLIDE 3 (THE DUAL-CURRENCY MATH): Tangible realistic breakdown with dual Nigerian Naira (₦) and US Dollar ($) equivalents.
+5. SLIDE 3 (THE DUAL-CURRENCY MATH): Tangible realistic breakdown with dual Nigerian Naira (₦) and US Dollar ($) equivalents (e.g. "₦5,000 (about $3.50 USD)").
 6. SLIDE 4 (IMMEDIATE ACTION PROTOCOL): What to do right now with zero equipment.
-7. SLIDE 5 (INFINITE RETENTION LOOP & OUTRO): Golden law + short CTA + seamless phrase that connects grammatically right back into Slide 0!
+7. SLIDE 5 (INFINITE RETENTION LOOP & OUTRO): Golden law + short CTA + this exact seamless bridge: "${chosenOutro}" that connects grammatically right back into Slide 0!
 
 GLOBAL DUAL-CURRENCY FORMAT (MANDATORY):
-- Seamlessly include BOTH Nigerian Naira (₦) and US Dollar ($) equivalents for any money amounts (e.g. "₦5,000 (about $3.50 USD)", "₦20,000 (around $13.50 USD)").
+- Seamlessly include BOTH Nigerian Naira (₦) and US Dollar ($) equivalents for any money amounts.
 
-UNIFIED 9:16 VERTICAL VISUAL STYLE:
-- 9:16 vertical 8k photorealistic aesthetic with dark obsidian slate background, emerald green and warm gold rim lighting.
-
-TARGET THEME & ANGLE:
-- Theme: ${archetype.theme}
-- Angle: ${archetype.angle}
-- Target Budget: ${archetype.targetBudget}
-- Avoid recent titles: [${recentTitles || 'None'}]
+EXCLUDED PREVIOUS TOPICS (DO NOT REPEAT):
+[${recentTitles || 'None'}]
 
 OUTPUT FORMAT: Return strictly a valid JSON object matching this schema:
 CRITICAL: Output EXACTLY 6 slides (slideIndex 0 to 5).
 
 {
-  "title": "Curiosity-Driven Title Under 55 Chars #Shorts",
+  "title": "Complete High-Impact Hook Title (around 35-50 chars) #Shorts #viral #trending",
   "category": "${archetype.category}",
   "theme": "${archetype.theme}",
   "angle": "${archetype.angle}",
-  "hook": "${archetype.hookPatterns[slotIndex % archetype.hookPatterns.length]}",
-  "description": "Practical breakdown of ${archetype.theme}.\\n\\n#Shorts #PersonalFinance #SmallBusiness #MoneyTips #SideHustle #FinancialLiteracy",
-  "tags": ["#Shorts", "#PersonalFinance", "#SmallBusiness", "#MoneyTips", "#SideHustle", "#FinancialLiteracy"],
   "estimatedBudget": "${archetype.targetBudget}",
+  "description": "Practical money breakdown on ${archetype.theme}.\\n\\n#Shorts #viral #trending #PersonalFinance #SmallBusiness #MoneyTips #SideHustle #FinancialLiteracy #Wealth #fyp",
+  "tags": ["#Shorts", "#viral", "#trending", "#PersonalFinance", "#SmallBusiness", "#MoneyTips", "#SideHustle", "#FinancialLiteracy", "#Wealth", "#fyp"],
   "slides": [
     {
       "slideIndex": 0,
-      "text": "Shocking hook or burning question with zero greetings (18-22 words)...",
-      "visual": "Cinematic 9:16 vertical 8k scene, modern minimalist workspace, emerald and gold ambient rim light..."
+      "text": "Intense pattern-interrupt hook matching ${chosenHookFormat.name} (18-22 words)...",
+      "visual": "Cinematic 9:16 vertical 8k scene, ${archetype.visualAesthetic}"
     },
     {
       "slideIndex": 1,
-      "text": "The hidden mistake beginners make explained simply (18-22 words)...",
-      "visual": "Matching 9:16 vertical 8k shot with consistent emerald/gold color palette and sharp depth of field..."
+      "text": "The hidden cost or beginner mistake explained plainly (18-22 words)...",
+      "visual": "Cinematic 9:16 vertical 8k scene matching ${archetype.visualAesthetic}"
     },
     {
       "slideIndex": 2,
-      "text": "The core financial solution in plain English (18-22 words)...",
-      "visual": "Matching 9:16 vertical shot, clean financial interface or business supply setup..."
+      "text": "The core simple mechanism or strategy (18-22 words)...",
+      "visual": "Cinematic 9:16 vertical 8k scene matching ${archetype.visualAesthetic}"
     },
     {
       "slideIndex": 3,
-      "text": "Exact costs and profit math in dual USD and Naira (18-22 words)...",
-      "visual": "Matching 9:16 vertical shot, clear visual breakdown chart with high-contrast text..."
+      "text": "The exact dual-currency math (e.g. ₦10,000 / $7 USD) breakdown (18-22 words)...",
+      "visual": "Cinematic 9:16 vertical 8k scene matching ${archetype.visualAesthetic}"
     },
     {
       "slideIndex": 4,
-      "text": "Step-by-step action to execute today without equipment (18-22 words)...",
-      "visual": "Matching 9:16 vertical shot, close-up hands demonstrating practical setup..."
+      "text": "Step-by-step immediate execution roadmap (18-22 words)...",
+      "visual": "Cinematic 9:16 vertical 8k scene matching ${archetype.visualAesthetic}"
     },
     {
       "slideIndex": 5,
-      "text": "Golden rule + follow ${cleanHandle} + seamless bridge back to slide 0 (18-22 words)...",
-      "visual": "Matching 9:16 vertical shot, clean modern studio resolution with subtle gold accents..."
+      "text": "Golden takeaway rule + ${chosenOutro} (18-22 words)...",
+      "visual": "Cinematic 9:16 vertical 8k scene matching ${archetype.visualAesthetic}"
     }
   ]
 }`;
 
-  const userPrompt = `Generate a fresh, viral, high-retention 6-slide YouTube Shorts script for Slot ${slotIndex + 1}.
+  const userPrompt = `Generate a fresh, unique, viral 6-slide YouTube Shorts script for Slot ${slotIndex + 1}.
 Theme: "${archetype.theme}". Angle: "${archetype.angle}". Target Budget: "${archetype.targetBudget}".
-MANDATE: Output EXACTLY 6 slides (slideIndex 0 to 5) with 18-25 words per slide (32-42s runtime). Include realistic dual-currency calculations ($ and ₦). Output strictly valid JSON.`;
+Hook Format: "${chosenHookFormat.name}".
+MANDATE: Output EXACTLY 6 slides (slideIndex 0 to 5) with 18-25 words per slide (32-42s runtime). Include realistic dual-currency calculations ($ and ₦). Connect Slide 5 seamlessly into Slide 0. Output strictly valid JSON.`;
 
-  return { systemPrompt, userPrompt };
+  return { systemPrompt, userPrompt, chosenHookFormat, chosenOutro };
 }
 
 /**
- * Deterministic fallback storyboard synthesis if AI providers are unreachable.
- * Dynamically synthesizes topic-specific, highly tailored 8-slide storyboards
- * with unique scripts, dual-currency math, and matching visual prompts for every category (60s+ runtime).
+ * Deterministic fallback storyboard synthesis for 6-Slide YouTube Shorts (32-42s runtime)
  */
-function synthesizeDeterministicFinStoryboard(archetype, topicTitle, channelHandle = '@bones_ceo') {
+function synthesizeDeterministicFinStoryboard(archetype, topicTitle, channelHandle = '@bones_ceo', slotIndex = 0) {
   const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
-  const resolvedOutro = resolveFinOutro(cleanHandle);
   const arch = archetype || FIN_ARCHETYPES[0];
   const cleanTopic = sanitizeFinString(topicTitle || arch.angle);
-  const topicLower = (cleanTopic + ' ' + (arch.theme || '') + ' ' + (arch.angle || '')).toLowerCase();
+  const chosenHookFormat = selectFinHookFormat(slotIndex, 0);
+  const resolvedOutro = resolveFinOutro(cleanHandle, slotIndex * 19 + Date.now());
 
-  // 1. LOAN APPS / HIGH INTEREST / DEBT TRAP
-  if (topicLower.includes('loan') || topicLower.includes('borrow') || topicLower.includes('apr') || topicLower.includes('debt') || topicLower.includes('interest')) {
-    return {
-      title: `${cleanTopic.slice(0, 60)} #Shorts`,
-      category: FIN_CATEGORIES.FINANCIAL_EDUCATION,
-      theme: 'Financial Education: Quick Loan Apps & High Borrowing Fees Explained',
-      angle: 'How High-Interest Quick Loan Apps Trap Borrowers in Endless Debt',
-      hook: 'Have you ever wondered why quick loan apps give you instant cash in 5 minutes with no collateral?',
-      description: `Comprehensive breakdown of quick loan apps and how high interest rates trap borrowers in endless debt cycles.\n\n#Shorts #PersonalFinance #LoanApps #DebtFree #MoneyTips #FinancialLiteracy`,
-      tags: ["#Shorts", "#PersonalFinance", "#LoanApps", "#DebtFree", "#MoneyTips", "#FinancialLiteracy"],
-      estimatedBudget: 'Financial Protection ($0)',
-      slides: [
-        {
-          slideIndex: 0,
-          text: `Have you ever wondered why quick mobile loan apps are willing to give you instant money in five minutes without asking for any collateral, salary slip, or guarantor?`,
-          visual: `Cinematic 9:16 vertical 8k shot, smartphone screen displaying instant loan approved notification with warning glowing amber highlights`
-        },
-        {
-          slideIndex: 1,
-          text: `Here is the hidden trap they never advertise: If you borrow ₦10,000 (about $7 USD) and they deduct a ₦3,500 ($2.30) fee for a two-week period, that is a staggering 35 percent interest every fourteen days.`,
-          visual: `Cinematic 9:16 vertical 8k visual breakdown chart showing small loan amount overshadowed by huge red repayment penalties`
-        },
-        {
-          slideIndex: 2,
-          text: `Annualized, that rate equals over nine hundred percent per year. When you cannot repay on time, they slap on extra daily penalties that quickly double your original debt.`,
-          visual: `Cinematic 9:16 vertical 8k shot, financial graph showing compounding exponential debt spike in warning crimson`
-        },
-        {
-          slideIndex: 3,
-          text: `Worst of all, during installation, these apps demand full access to your phone contacts and photo gallery. If you miss one deadline, predatory agents start sending shameful broadcast messages to your family and coworkers.`,
-          visual: `Cinematic 9:16 vertical 8k shot, cyber security shield on modern mobile interface alerting user to unauthorized phone permissions`
-        },
-        {
-          slideIndex: 4,
-          text: `Before you ever click accept on any mobile loan app, always inspect the exact repayment schedule and total fees. If the interest exceeds five percent per month, delete the app immediately.`,
-          visual: `Cinematic 9:16 vertical 8k close-up, sharp financial checklist on clean desk with calculator and emerald approval checkmark`
-        },
-        {
-          slideIndex: 5,
-          text: `Never borrow money to pay for daily food, phone data, or transport fares. Borrowing for consumption only digs a deeper hole that destroys your peace of mind and credit history.`,
-          visual: `Cinematic 9:16 vertical 8k shot, clean transparent savings jar with neatly organized dollar and naira bills on dark slate desk`
-        },
-        {
-          slideIndex: 6,
-          text: `Instead, build a tiny emergency buffer of ₦5,000 to ₦10,000 (about $3.50 to $7 USD) locked away in a separate bank account so you never have to depend on loan sharks to survive.`,
-          visual: `Cinematic 9:16 vertical 8k shot, secure digital bank vault interface glowing with emerald green protective shields`
-        },
-        {
-          slideIndex: 7,
-          text: `Protect your peace of mind, avoid predatory debt traps, and ${resolvedOutro}`,
-          visual: `Cinematic 9:16 vertical 8k shot, confident disciplined entrepreneur working at modern desk in emerald and gold ambient studio glow`
-        }
-      ]
-    };
-  }
-
-  // 2. PHONE SKILLS & REMOTE INCOME ($0 / ₦0)
-  if (topicLower.includes('skill') || topicLower.includes('phone') || topicLower.includes('remote') || topicLower.includes('online income') || topicLower.includes('laptop') || topicLower.includes('canva') || topicLower.includes('capcut')) {
-    return {
-      title: `${cleanTopic.slice(0, 60)} #Shorts`,
-      category: FIN_CATEGORIES.SKILLS_TO_INCOME,
-      theme: 'Phone-Only Digital Skills & Remote Income',
-      angle: '3 Free Digital Skills You Can Learn On Just Your Smartphone',
-      hook: 'You do not need an expensive laptop to make honest money online in 2026 — your phone is enough.',
-      description: `Comprehensive breakdown of 3 valuable digital skills you can learn and offer with just a smartphone and internet connection.\n\n#Shorts #DigitalSkills #MakeMoneyOnline #SideHustle #PhoneIncome #Freelancing`,
-      tags: ["#Shorts", "#DigitalSkills", "#MakeMoneyOnline", "#SideHustle", "#PhoneIncome", "#Freelancing"],
-      estimatedBudget: '$0 (Phone & Internet Only)',
-      slides: [
-        {
-          slideIndex: 0,
-          text: `You do not need an expensive laptop, a college degree, or millions in starting cash to earn honest income online in 2026. If you have a working smartphone, you already have the tool.`,
-          visual: `Cinematic 9:16 vertical 8k scene, hands holding a sleek smartphone displaying a video editing timeline with emerald and gold ambient light`
-        },
-        {
-          slideIndex: 1,
-          text: `The first high-demand skill is vertical video editing using free mobile apps like CapCut. Local businesses, online coaches, and content creators desperately need short-form video editors to grow their reach.`,
-          visual: `Cinematic 9:16 vertical 8k shot, clean screen recording view of mobile video cutting and dynamic captions on modern smartphone`
-        },
-        {
-          slideIndex: 2,
-          text: `You can easily charge $10 to $15, or about ₦15,000 to ₦20,000, to edit a batch of clean vertical videos with subtitles and smooth transitions for busy entrepreneurs.`,
-          visual: `Cinematic 9:16 vertical 8k shot, sleek pricing rate card displayed on modern digital tablet with gold accents`
-        },
-        {
-          slideIndex: 3,
-          text: `The second valuable skill is promotional flyer design using Canva on your phone. Small shop owners need daily product banners, discount posters, and WhatsApp status graphics to attract paying buyers.`,
-          visual: `Cinematic 9:16 vertical 8k shot, colorful modern promotional product flyer template being customized on mobile canvas`
-        },
-        {
-          slideIndex: 4,
-          text: `The third skill is writing short sales captions. Help local merchants write clear, persuasive WhatsApp broadcast messages and product descriptions that answer customer questions and close sales faster.`,
-          visual: `Cinematic 9:16 vertical 8k shot, clean messaging interface showing customer orders coming in through clear promotional text`
-        },
-        {
-          slideIndex: 5,
-          text: `To start, spend forty-five minutes every evening watching free step-by-step tutorials on YouTube. Practice making three sample flyers and two sample videos to build a simple portfolio.`,
-          visual: `Cinematic 9:16 vertical 8k shot, organized student workspace with notebook, phone on tripod, and warm ambient lighting`
-        },
-        {
-          slideIndex: 6,
-          text: `Directly message five local store owners or online vendors on WhatsApp and offer to design their first promo flyer for free. Once they see the quality, they will happily pay for weekly work.`,
-          visual: `Cinematic 9:16 vertical 8k shot, friendly business conversation handshake in modern minimalist cafe setting`
-        },
-        {
-          slideIndex: 7,
-          text: `Turn your daily screen time into steady income, and ${resolvedOutro}`,
-          visual: `Cinematic 9:16 vertical 8k shot, young creator smiling confidently in modern workspace with emerald green rim lighting`
-        }
-      ]
-    };
-  }
-
-  // 3. SCAM AWARENESS & FRAUD PREVENTION
-  if (topicLower.includes('scam') || topicLower.includes('ponzi') || topicLower.includes('trap') || topicLower.includes('fake') || topicLower.includes('fraud') || topicLower.includes('giveaway')) {
-    return {
-      title: `${cleanTopic.slice(0, 60)} #Shorts`,
-      category: FIN_CATEGORIES.SCAM_AWARENESS,
-      theme: 'Scam & Fraud Prevention: Exposing Ponzi & Fake Investment Traps',
-      angle: '5 Simple Signs of a Fake Investment Scam Before You Lose Your Money',
-      hook: 'If anyone promises you guaranteed 30% weekly profit with zero risk, run away immediately.',
-      description: `Comprehensive breakdown of how to spot fake investment schemes and protect your hard-earned money from Ponzi traps.\n\n#Shorts #ScamAlert #ProtectYourMoney #FinancialLiteracy #PersonalFinance`,
-      tags: ["#Shorts", "#ScamAlert", "#ProtectYourMoney", "#FinancialLiteracy", "#PersonalFinance"],
-      estimatedBudget: 'Capital Protection ($0)',
-      slides: [
-        {
-          slideIndex: 0,
-          text: `If anyone messages you on WhatsApp or Telegram promising guaranteed thirty percent weekly returns with zero risk, block them immediately. It is one hundred percent a financial scam.`,
-          visual: `Cinematic 9:16 vertical 8k scene, high-contrast security warning aesthetic with glowing red-amber caution icon and dark slate background`
-        },
-        {
-          slideIndex: 1,
-          text: `Let us look at basic financial reality: The largest global banks and legitimate investment funds only generate eight to fifteen percent profit in a whole year. No real business can double your money in seven days.`,
-          visual: `Cinematic 9:16 vertical 8k shot, comparison chart showing realistic bank interest versus fake unrealistic scam spike`
-        },
-        {
-          slideIndex: 2,
-          text: `Here is how Ponzi schemes work: They take money from new investors to pay small fake profits to earlier members, creating an illusion of success until the operators suddenly shut down and run away with everything.`,
-          visual: `Cinematic 9:16 vertical 8k shot, digital pyramid diagram collapsing in red warnings with security lock engaging`
-        },
-        {
-          slideIndex: 3,
-          text: `The second warning sign is referral lock-in. If an app tells you that you must recruit three new friends or pay an extra verification fee before you can withdraw your own money, your funds are already trapped.`,
-          visual: `Cinematic 9:16 vertical 8k shot, locked withdrawal button on fraudulent mobile interface with warning amber glow`
-        },
-        {
-          slideIndex: 4,
-          text: `Never transfer your money to any company that lacks verified government registration, has no physical verifiable office address, and only accepts anonymous crypto wallets or gift card codes.`,
-          visual: `Cinematic 9:16 vertical 8k shot, official financial regulatory license and padlock verification badge on clean digital tablet`
-        },
-        {
-          slideIndex: 5,
-          text: `Always remember: Honest wealth is built steadily through valuable skills, useful products, and patience. Greed and impatience are the exact emotional triggers that scammers exploit to rob unsuspecting victims.`,
-          visual: `Cinematic 9:16 vertical 8k shot, disciplined professional reviewing legitimate financial documents on dark mahogany desk`
-        },
-        {
-          slideIndex: 6,
-          text: `It is infinitely better to keep your ₦10,000 or $7 USD safely in your pocket than to gamble it away on fraudulent schemes that promise overnight riches.`,
-          visual: `Cinematic 9:16 vertical 8k shot, secure digital bank vault interface glowing with emerald green protective shields`
-        },
-        {
-          slideIndex: 7,
-          text: `Stay vigilant, protect your hard-earned money, and ${resolvedOutro}`,
-          visual: `Cinematic 9:16 vertical 8k shot, modern professional standing with confidence in sleek office with gold and slate tones`
-        }
-      ]
-    };
-  }
-
-  // 4. INFLATION & PURCHASING POWER
-  if (topicLower.includes('inflation') || topicLower.includes('purchasing power') || topicLower.includes('prices') || topicLower.includes('devaluation') || topicLower.includes('market')) {
-    return {
-      title: `${cleanTopic.slice(0, 60)} #Shorts`,
-      category: FIN_CATEGORIES.FINANCIAL_EDUCATION,
-      theme: 'Financial Education: Inflation & Rising Market Prices Explained Simply',
-      angle: 'What Inflation Actually Means For Your ₦50,000 ($35 USD) Savings',
-      hook: 'Keeping idle cash under your mattress quietly steals your money every single year.',
-      description: `Comprehensive explanation of inflation in simple language and how to protect your savings from losing real purchasing power.\n\n#Shorts #Inflation #FinancialEducation #MoneyTips #Economics #Savings`,
-      tags: ["#Shorts", "#Inflation", "#FinancialEducation", "#MoneyTips", "#Economics", "#Savings"],
-      estimatedBudget: '₦50,000 (~$35 USD)',
-      slides: [
-        {
-          slideIndex: 0,
-          text: `Leaving extra cash sitting idle in a zero-interest savings account quietly steals your purchasing power every single year. Here is why your bank balance is actually shrinking in real value.`,
-          visual: `Cinematic 9:16 vertical 8k scene, visual comparison of a full grocery basket in 2020 versus half-empty basket today on dark slate counter`
-        },
-        {
-          slideIndex: 1,
-          text: `Inflation simply means that market prices of essential goods rise over time while your paper notes stay the exact same number. If ₦5,000 bought two bags of rice previously, today it might only buy one.`,
-          visual: `Cinematic 9:16 vertical 8k shot, sleek price comparison chart with clean typography showing purchasing power trend over time`
-        },
-        {
-          slideIndex: 2,
-          text: `Your bank account might still show fifty thousand Naira or thirty-five dollars, but the actual quantity of food, clothing, fuel, and healthcare that cash can purchase has been cut significantly.`,
-          visual: `Cinematic 9:16 vertical 8k shot, clean smartphone banking screen showing balance beside real-world commodity costs`
-        },
-        {
-          slideIndex: 3,
-          text: `When local currency devalues against the US Dollar, imported goods like smartphones, electronics, and cooking oil instantly become more expensive for everyone in the market.`,
-          visual: `Cinematic 9:16 vertical 8k shot, currency exchange rate display showing FX conversion with emerald and gold accents`
-        },
-        {
-          slideIndex: 4,
-          text: `To protect your wealth from being eaten away by inflation, you must never keep all your long-term funds in idle local currency. Put your savings into income-producing assets or high-demand skills.`,
-          visual: `Cinematic 9:16 vertical 8k shot, glowing emerald growth asset allocation diagram with gold accents on obsidian background`
-        },
-        {
-          slideIndex: 5,
-          text: `Saving a portion of your long-term money in digital dollar stablecoins like USDT can help protect your purchasing power if your local currency is depreciating rapidly.`,
-          visual: `Cinematic 9:16 vertical 8k shot, secure digital dollar stablecoin wallet on modern smartphone screen`
-        },
-        {
-          slideIndex: 6,
-          text: `Most importantly, invest in learning skills that allow you to earn in foreign currencies online, creating an income stream that automatically rises whenever exchange rates change.`,
-          visual: `Cinematic 9:16 vertical 8k shot, modern freelancer working at laptop with dual currency balance graphs`
-        },
-        {
-          slideIndex: 7,
-          text: `Stay ahead of rising prices, protect your purchasing power, and ${resolvedOutro}`,
-          visual: `Cinematic 9:16 vertical 8k shot, confident young entrepreneur analyzing financial growth charts in modern studio lighting`
-        }
-      ]
-    };
-  }
-
-  // 5. BUDGETING 50/30/20 & EXPENSE LEAKS
-  if (topicLower.includes('budget') || topicLower.includes('salary') || topicLower.includes('50/30/20') || topicLower.includes('broke') || topicLower.includes('spending') || topicLower.includes('save money')) {
-    return {
-      title: `${cleanTopic.slice(0, 60)} #Shorts`,
-      category: FIN_CATEGORIES.SAVING_PERSONAL_FINANCE,
-      theme: 'Personal Finance: Zero-Based Realistic Budgeting',
-      angle: 'How to Budget ₦20,000 ($13.50 USD) So Your Money Lasts All Month',
-      hook: 'Why does your money disappear three days after payday? Here is the simple 50-30-20 rule.',
-      description: `Comprehensive step-by-step guide to budgeting small income so it lasts all month without running broke before the next payday.\n\n#Shorts #Budgeting #MoneyManagement #PersonalFinance #SavingMoney #SalaryTips`,
-      tags: ["#Shorts", "#Budgeting", "#MoneyManagement", "#PersonalFinance", "#SavingMoney", "#SalaryTips"],
-      estimatedBudget: '₦20,000 (~$13.50 USD)',
-      slides: [
-        {
-          slideIndex: 0,
-          text: `Why does your money always disappear three days after getting paid? The real issue is rarely how much you earn — it is having zero budget structure to guide your daily cash flow.`,
-          visual: `Cinematic 9:16 vertical 8k scene, young adult reviewing monthly expense spreadsheet on smartphone with dark emerald ambient glow`
-        },
-        {
-          slideIndex: 1,
-          text: `Here is the realistic 50-30-20 budgeting framework: Allocate fifty percent of your income strictly for survival essentials like basic groceries, housing rent, utility bills, and daily transit fares.`,
-          visual: `Cinematic 9:16 vertical 8k shot, clean pie chart visual breakdown showing fifty percent allocated to essentials in gold and emerald`
-        },
-        {
-          slideIndex: 2,
-          text: `If you earn ₦20,000 (about $13.50 USD), that means exactly ₦10,000 ($6.75) is set aside for absolute non-negotiable living expenses so you never go hungry or miss rent.`,
-          visual: `Cinematic 9:16 vertical 8k shot, clear expense tracking breakdown on clean modern tablet with gold highlights`
-        },
-        {
-          slideIndex: 3,
-          text: `Allocate thirty percent, which is ₦6,000 ($4.00), for your personal lifestyle and small wants. This gives you guilt-free freedom to buy airtime, meet a friend, or enjoy a treat without blowing your budget.`,
-          visual: `Cinematic 9:16 vertical 8k shot, thirty percent lifestyle allocation section highlighted clearly on clean budget app interface`
-        },
-        {
-          slideIndex: 4,
-          text: `Most critically, immediately lock away the remaining twenty percent — ₦4,000 or $2.70 — into a locked savings account or emergency vault before you spend a single dime on anything else.`,
-          visual: `Cinematic 9:16 vertical 8k shot, locked digital vault icon representing twenty percent emergency savings growing steadily`
-        },
-        {
-          slideIndex: 5,
-          text: `Saving first rather than saving whatever is left over changes everything. If you wait until the end of the month to save, random impulse purchases will always consume every single coin.`,
-          visual: `Cinematic 9:16 vertical 8k shot, clear cash allocation envelopes neatly labeled Needs, Wants, and Savings on wooden desk`
-        },
-        {
-          slideIndex: 6,
-          text: `Consistently saving ₦4,000 every single month builds a reliable safety cushion of nearly ₦50,000 in a year, protecting you from sudden medical emergencies or unexpected repairs.`,
-          visual: `Cinematic 9:16 vertical 8k shot, visual annual compounding growth chart showing small monthly deposits turning into solid security`
-        },
-        {
-          slideIndex: 7,
-          text: `Take control of your cash flow today, build your financial armor, and ${resolvedOutro}`,
-          visual: `Cinematic 9:16 vertical 8k shot, relaxed smiling young adult holding phone showing a balanced budget with gold rim lighting`
-        }
-      ]
-    };
-  }
-
-  // 6. THRIFT / SECOND-HAND CLOTHES RESELLING
-  if (topicLower.includes('thrift') || topicLower.includes('cloth') || topicLower.includes('wear') || topicLower.includes('okrika') || topicLower.includes('fashion')) {
-    return {
-      title: `${cleanTopic.slice(0, 60)} #Shorts`,
-      category: FIN_CATEGORIES.SMALL_CAPITAL_BUSINESS,
-      theme: 'Small-Capital Business: Buying and Reselling Clean Second-Hand Clothes',
-      angle: 'How to Start a Clothing Reselling Hustle With Under ₦15,000 ($10 USD)',
-      hook: 'Buying neat second-hand clothes and selling them online is one of the easiest businesses to start with $10.',
-      description: `Comprehensive step-by-step breakdown of how to start a thrift clothing reselling business with minimal starting capital.\n\n#Shorts #ThriftReselling #SmallBusiness #SideHustle #FashionHustle #MakeMoney`,
-      tags: ["#Shorts", "#ThriftReselling", "#SmallBusiness", "#SideHustle", "#FashionHustle", "#MakeMoney"],
-      estimatedBudget: '₦15,000 (~$10 USD)',
-      slides: [
-        {
-          slideIndex: 0,
-          text: `Curating and reselling clean vintage clothes online is one of the most accessible micro-businesses you can launch today with under ₦15,000 or approximately $10 USD.`,
-          visual: `Cinematic 9:16 vertical 8k scene, aesthetic curated clothing rack with trendy vintage jackets in warm studio lighting`
-        },
-        {
-          slideIndex: 1,
-          text: `Head to your local wholesale thrift market early on market opening morning. Carefully inspect and handpick ten quality vintage shirts or graphic tees for about ₦800 to ₦1,000 ($0.60) each.`,
-          visual: `Cinematic 9:16 vertical 8k shot, close-up of quality fabric selection with sharp focus and warm natural sunlight`
-        },
-        {
-          slideIndex: 2,
-          text: `Wash each item thoroughly with quality fragrant detergent, soften the fabric, and iron every collar crisply. Superior presentation is what transforms a regular thrift item into a premium vintage piece.`,
-          visual: `Cinematic 9:16 vertical 8k shot, beautifully ironed stylish shirt hanging against a clean minimalist backdrop with soft shadows`
-        },
-        {
-          slideIndex: 3,
-          text: `Take clean, bright photos using natural morning sunlight against a plain neutral wall. Measure the exact chest and length dimensions so buyers know it fits perfectly without guessing.`,
-          visual: `Cinematic 9:16 vertical 8k shot, smartphone camera screen snapping an aesthetic product photo with clean studio lighting`
-        },
-        {
-          slideIndex: 4,
-          text: `Post your photos on WhatsApp Status, Instagram, and TikTok with clear prices, setting each curated shirt at ₦2,500 to ₦3,000 (about $1.70 to $2.00 USD).`,
-          visual: `Cinematic 9:16 vertical 8k shot, clean social media product showcase post with customer inquiries appearing in notifications`
-        },
-        {
-          slideIndex: 5,
-          text: `Selling all ten curated shirts brings in ₦25,000 to ₦30,000 ($17 to $20 USD). After subtracting your ₦10,000 inventory cost and detergent, your estimated gross profit is ₦15,000 ($10 USD).`,
-          visual: `Cinematic 9:16 vertical 8k shot, clean financial balance calculation showing startup costs versus gross profit margins`
-        },
-        {
-          slideIndex: 6,
-          text: `Do not spend your initial profit on personal items. Reinvest the entire ₦25,000 into buying twenty-five quality shirts on your next wholesale trip to systematically scale your inventory.`,
-          visual: `Cinematic 9:16 vertical 8k shot, young fashion entrepreneur packing stylish orders into neat kraft paper bags with gold seal`
-        },
-        {
-          slideIndex: 7,
-          text: `Start with what you have, build your client base patiently, and ${resolvedOutro}`,
-          visual: `Cinematic 9:16 vertical 8k shot, thriving small fashion studio with packaged orders ready for dispatch in golden ambient light`
-        }
-      ]
-    };
-  }
-
-  // 7. DEFAULT PRACTICAL BUSINESS BLUEPRINT (SNACK RESELLING / MICRO-STARTUP)
   return {
-    title: `${cleanTopic.slice(0, 60)} #Shorts`,
+    title: formatViralShortsTitle(cleanTopic, 'fin', false),
     category: arch.category,
     theme: arch.theme,
     angle: arch.angle,
-    hook: arch.hookPatterns[0],
-    description: `Comprehensive step-by-step practical breakdown of ${arch.theme}.\n\n#Shorts #PersonalFinance #SmallBusiness #MoneyTips #SideHustle #FinancialLiteracy`,
-    tags: ["#Shorts", "#PersonalFinance", "#SmallBusiness", "#MoneyTips", "#SideHustle", "#FinancialLiteracy"],
+    hook: arch.angle,
+    description: `Comprehensive practical breakdown of ${arch.theme}.\n\n#Shorts #viral #trending #PersonalFinance #SmallBusiness #MoneyTips #SideHustle #FinancialLiteracy #Wealth #fyp`,
+    tags: ["#Shorts", "#viral", "#trending", "#PersonalFinance", "#SmallBusiness", "#MoneyTips", "#SideHustle", "#FinancialLiteracy", "#Wealth", "#fyp"],
     estimatedBudget: arch.targetBudget,
     slides: [
       {
         slideIndex: 0,
-        text: `If you have ${arch.targetBudget} in your pocket today, you do not need millions in venture funding or complicated equipment to start generating honest daily cash flow.`,
+        text: `If you have only ${arch.targetBudget} in your pocket today, you do not need millions in starting cash to generate real, honest daily profits.`,
         visual: `Cinematic 9:16 vertical 8k photorealistic scene, modern minimalist desk, emerald and gold rim lighting, dark obsidian slate backdrop`
       },
       {
         slideIndex: 1,
-        text: `The biggest mistake aspiring entrepreneurs make is waiting months for massive capital instead of testing simple, high-demand products or local services that solve immediate everyday problems.`,
+        text: `The biggest mistake ninety percent of beginners make is waiting months for massive capital instead of solving immediate everyday problems in their local area.`,
         visual: `Cinematic 9:16 vertical 8k shot, entrepreneur evaluating budget options on mobile phone screen, crisp depth of field`
       },
       {
         slideIndex: 2,
-        text: `Always monitor your cash velocity. Cash velocity means how fast your starting money goes out to buy supplies and comes back into your hands with added profit attached.`,
+        text: `Focus on cash velocity. Moving five dollars or seven thousand naira three times a week creates more income than holding idle cash waiting for a miracle.`,
         visual: `Cinematic 9:16 vertical 8k shot, clean financial calculator diagram with glowing emerald growth curves`
       },
       {
         slideIndex: 3,
-        text: `Calculate your unit margins precisely before launching. Profit margin is the extra money remaining after deducting wholesale inventory costs, packaging, and delivery expenses.`,
+        text: `With ${arch.targetBudget}, calculate your gross margins first. Keep packaging near zero, deliver locally on foot, and retain eighty percent of every profit.`,
         visual: `Cinematic 9:16 vertical 8k shot, practical micro-business supply inventory in high-contrast studio setting`
       },
       {
         slideIndex: 4,
-        text: `Keep your business operating costs as close to zero as possible. Use your existing smartphone, reach local customers through free social media groups, and deliver orders personally to save fees.`,
-        visual: `Cinematic 9:16 vertical 8k shot, modern entrepreneur fulfilling local customer orders efficiently`
-      },
-      {
-        slideIndex: 5,
-        text: `Strictly separate your business cash from your personal living expenses. Opening a dedicated digital account prevents personal emergencies from draining your working startup capital.`,
+        text: `Separate your business cash box from personal feeding money immediately so unexpected daily expenses never drain your working startup float.`,
         visual: `Cinematic 9:16 vertical 8k shot, modern disciplined entrepreneur managing separated business and personal digital accounts`
       },
       {
-        slideIndex: 6,
-        text: `Reinvest eighty percent of your profits back into growing your inventory each week. Compounding small daily profits is how a micro-hustle expands into a durable enterprise.`,
-        visual: `Cinematic 9:16 vertical 8k shot, visual compounding chart showing small daily profits reinvested into business expansion`
-      },
-      {
-        slideIndex: 7,
-        text: `Start small, stay disciplined, manage your cash flow carefully, and ${resolvedOutro}`,
+        slideIndex: 5,
+        text: `Compound your daily profits patiently, stay disciplined, and ${resolvedOutro}`,
         visual: `Cinematic 9:16 vertical 8k shot, inspiring modern city office background with amber and emerald bokeh glow`
       }
     ]
@@ -832,7 +820,7 @@ function synthesizeDeterministicFinStoryboard(archetype, topicTitle, channelHand
  */
 function buildFinDeepDivePrompt(archetype, recentHistory = [], channelHandle = '@bones_ceo') {
   const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
-  const recentTitles = (recentHistory || []).slice(0, 15).map(h => `"${h.topic || h.title}"`).join(', ');
+  const recentTitles = (recentHistory || []).slice(0, 20).map(h => `"${h.topic || h.title}"`).join(', ');
   const resolvedOutro = resolveFinOutro(cleanHandle);
 
   const systemPrompt = `You are a world-class financial educator and long-form documentary scriptwriter for the Fin Blueprint channel (${cleanHandle}).
@@ -847,9 +835,8 @@ LONG-FORM DEEP-DIVE REQUIREMENTS (15-20 MINUTE MASTERCLASS WITH 15 CHAPTERS):
 2. NON-GURU, PRACTICAL, HIGH-PROFIT VALUE:
    - Do NOT promise or guarantee income, profit, or instant wealth.
    - ALWAYS use honest, measured language: "potential revenue", "estimated margins", "results vary", "possible startup costs".
-   - The teaching must be intensely actionable, breakdown real supply costs, pricing formulas, and downside risks.
 3. GLOBAL DUAL-CURRENCY FORMAT (MANDATORY):
-   - Whenever mentioning currency, budgets, costs, or revenues, include BOTH Nigerian Naira (₦) and US Dollar ($) equivalents (e.g. "₦5,000 (about $3.50 USD)", "₦20,000 (around $13.50 USD)", "$10 (approx. ₦15,000)").
+   - Whenever mentioning currency, budgets, costs, or revenues, include BOTH Nigerian Naira (₦) and US Dollar ($) equivalents.
 4. 15-CHAPTER PROGRESSIVE CURRICULUM:
    - Slide 0: Executive Hook & The Landscape
    - Slide 1: The Core Problem & Common Financial Leaks
@@ -866,8 +853,6 @@ LONG-FORM DEEP-DIVE REQUIREMENTS (15-20 MINUTE MASTERCLASS WITH 15 CHAPTERS):
    - Slide 12: Scaling from ₦5,000 ($3.50) to ₦50,000 ($35) Reinvestment Rules
    - Slide 13: Free Certifications, Tools & Legitimate Grants Directory
    - Slide 14: 30-Day Step-by-Step Action Checklist & Channel Outro (${resolvedOutro})
-5. MULTI-SOURCE VISUAL PLANNING:
-   - Detail a crisp, widescreen 16:9 cinematic photorealistic scene for each slide.
 
 OUTPUT FORMAT: Return strictly valid JSON matching this schema:
 {
@@ -876,7 +861,7 @@ OUTPUT FORMAT: Return strictly valid JSON matching this schema:
   "theme": "${archetype.theme}",
   "angle": "${archetype.angle}",
   "estimatedBudget": "${archetype.targetBudget}",
-  "description": "Full 15-chapter masterclass on ${archetype.theme}.\\n\\nTimestamps:\\n00:00 Introduction & Overview\\n...\\n\\n#PersonalFinance #SmallBusiness #MoneySkills #FinancialEducation",
+  "description": "Full 15-chapter masterclass on ${archetype.theme}.\\n\\n#PersonalFinance #SmallBusiness #MoneySkills #FinancialEducation",
   "tags": ["#PersonalFinance", "#SmallBusiness", "#MoneySkills", "#FinancialEducation", "#BusinessBreakdown"],
   "slides": [
     {
@@ -885,7 +870,6 @@ OUTPUT FORMAT: Return strictly valid JSON matching this schema:
       "text": "Detailed 110-140 words spoken narration covering the overview and opportunity...",
       "visual": "16:9 widescreen 8k photorealistic modern financial studio workspace with emerald green and gold ambient lighting..."
     }
-    // ... exactly 15 slides total (index 0 to 14)
   ]
 }`;
 
@@ -895,10 +879,9 @@ OUTPUT FORMAT: Return strictly valid JSON matching this schema:
 }
 
 /**
- * Deterministic Fallback for 15-Chapter 15-20 Minute Masterclass
+ * Deterministic Fallback for 15-Chapter Masterclass
  */
 function synthesizeDeterministicFinDeepDiveStoryboard(archetype, topicTitle, channelHandle = '@bones_ceo') {
-  throw new Error('[FATAL] Fallback scripts are disabled. Pure dynamic AI storyboard generation is required. Please check your AI API keys.');
   const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
   const resolvedOutro = resolveFinOutro(cleanHandle);
   const arch = archetype || FIN_ARCHETYPES[0];
@@ -944,14 +927,18 @@ function synthesizeDeterministicFinDeepDiveStoryboard(archetype, topicTitle, cha
 module.exports = {
   FIN_CATEGORIES,
   FIN_ARCHETYPES,
+  ROTATING_FIN_HOOK_TEMPLATES,
   ROTATING_FIN_OUTROS,
+  formatViralShortsTitle,
   auditFinancialScriptSafety,
   sanitizeFinString,
   resolveFinOutro,
-  selectDiverseArchetype,
+  selectFinHookFormat,
+  fetchRecentFinHistoryFromFirestore,
+  isFinTopicSimilarToHistory,
+  selectDiverseFinArchetype,
   buildFinPromptForSlot,
   buildFinDeepDivePrompt,
   synthesizeDeterministicFinStoryboard,
   synthesizeDeterministicFinDeepDiveStoryboard
 };
-
