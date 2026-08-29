@@ -722,14 +722,12 @@ function selectDailyDiverseSlots(recentHistory, slotCount = 4) {
 }
 
 const ROTATING_VIRAL_OUTROS = [
-  "Follow @TheStoicArchitect to build unshakeable mental armor every single day.",
-  "You may never see this channel again — follow now for daily discipline and mental clarity.",
-  "Tap follow on @TheStoicArchitect to master your mind and conquer daily chaos.",
-  "Don't lose this wisdom — follow this channel to elevate your mindset every morning.",
-  "Follow @TheStoicArchitect today for daily Stoic focus and personal mastery.",
-  "You might never see this channel again — follow for daily fortitude and resilience.",
-  "Follow @TheStoicArchitect if you are committed to becoming 1% stronger every day.",
-  "Join @TheStoicArchitect today and become indestructible against life's chaos."
+  "Follow @TheStoicArchitect to build unshakeable mental armor every day, because the real secret to self-control is...",
+  "You may never see this channel again — follow @TheStoicArchitect now for daily fortitude, and remember that conquering your mind starts with...",
+  "Tap follow on @TheStoicArchitect to master daily chaos, because whenever life tests your patience, you must remember...",
+  "Don't lose this wisdom — follow @TheStoicArchitect for daily resilience, and never forget that mental toughness is simply...",
+  "Follow @TheStoicArchitect today for unshakeable focus, because the only thing you truly control in this world is...",
+  "Join @TheStoicArchitect to become indestructible against life's chaos, and always remember that real power begins by..."
 ];
 
 /**

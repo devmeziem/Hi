@@ -172,7 +172,7 @@ function cleanAndParseLlmJson(rawText) {
 async function callLlmForScript(channelId, promptPayload) {
   // 1. Try Groq (Ultra-Fast LPU)
   if (GROQ_API_KEY) {
-    const groqModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'];
+    const groqModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'deepseek-r1-distill-llama-70b', 'gemma2-9b-it', 'qwen-2.5-32b'];
     for (const gModel of groqModels) {
       try {
         console.log(`[AI Synthesizer] Querying Groq LPU (${gModel})...`);

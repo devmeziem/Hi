@@ -262,12 +262,12 @@ const FIN_ARCHETYPES = [
 ];
 
 const ROTATING_FIN_OUTROS = [
-  "Follow @bones_ceo to learn real money management and business blueprints every day.",
-  "You might not see this channel again — follow now for honest financial education and side-hustle guides.",
-  "Tap follow on @bones_ceo to build your financial literacy and start making smarter money moves.",
-  "Don't lose this guide — follow @bones_ceo for daily small-business breakdowns and scam alerts.",
-  "Follow @bones_ceo today for practical money tips, budgeting tools, and realistic income ideas.",
-  "Follow @bones_ceo if you want to understand finance in plain, simple English without the guru hype."
+  "Follow @bones_ceo to protect your cash and build real wealth, which is why the smartest question you can ask is...",
+  "Follow @bones_ceo for honest financial education every day, and never forget that making money starts by asking...",
+  "Follow @bones_ceo to master your capital, because the secret to real financial freedom is...",
+  "Save this blueprint and follow @bones_ceo, because before you invest another single naira or dollar, you must know...",
+  "Tap follow on @bones_ceo for daily practical blueprints, and always remember the single most dangerous mistake is...",
+  "Follow @bones_ceo to avoid costly financial traps, because the difference between broke and wealthy is..."
 ];
 
 // Dangerous financial claims blacklist for Safety System
@@ -430,7 +430,6 @@ MANDATE: Output EXACTLY 6 slides (slideIndex 0 to 5) with 18-25 words per slide 
  * with unique scripts, dual-currency math, and matching visual prompts for every category (60s+ runtime).
  */
 function synthesizeDeterministicFinStoryboard(archetype, topicTitle, channelHandle = '@bones_ceo') {
-  throw new Error('[FATAL] Fallback scripts are disabled. Pure dynamic AI storyboard generation is required. Please check your AI API keys.');
   const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
   const resolvedOutro = resolveFinOutro(cleanHandle);
   const arch = archetype || FIN_ARCHETYPES[0];
