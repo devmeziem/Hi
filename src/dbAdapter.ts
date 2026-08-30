@@ -304,11 +304,31 @@ export const dbAdapter = {
 
   // Get Approved Users
   async getApprovedUsers(): Promise<string[]> {
+    try {
+      const user = (typeof window !== 'undefined' ? localStorage.getItem('voxam_current_user') : null) || 'devmeziem@gmail.com';
+      const res = await fetch('/api/approved-users', {
+        headers: {
+          'X-User-Email': user,
+          'Authorization': `Bearer ${user}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.approvedUsers)) {
+          const list = Array.from(new Set(['devmeziem@gmail.com', ...data.approvedUsers.map((e: string) => String(e).toLowerCase().trim())]));
+          setLocalData('voxam_approved_users', list);
+          return list;
+        }
+      }
+    } catch {}
+
     if (isFirebaseEnabled && db) {
       try {
         const snap = await getDocs(collection(db, 'approved_users'));
         if (snap.docs.length > 0) {
-          return snap.docs.map(d => d.id);
+          const list = Array.from(new Set(['devmeziem@gmail.com', ...snap.docs.map(d => d.id.toLowerCase().trim())]));
+          setLocalData('voxam_approved_users', list);
+          return list;
         }
       } catch (e) {
         console.warn("Firebase getApprovedUsers fallback to local:", e);
@@ -319,14 +339,29 @@ export const dbAdapter = {
 
   // Approve User
   async approveUser(email: string): Promise<void> {
+    const cleanEmail = email.toLowerCase().trim();
     const users = getLocalData<string[]>('voxam_approved_users', ['devmeziem@gmail.com']);
-    if (!users.includes(email)) {
-      users.push(email);
+    if (!users.includes(cleanEmail)) {
+      users.push(cleanEmail);
       setLocalData('voxam_approved_users', users);
     }
+
+    try {
+      const user = (typeof window !== 'undefined' ? localStorage.getItem('voxam_current_user') : null) || 'devmeziem@gmail.com';
+      await fetch('/api/approved-users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Email': user,
+          'Authorization': `Bearer ${user}`
+        },
+        body: JSON.stringify({ users })
+      });
+    } catch {}
+
     if (isFirebaseEnabled && db) {
       try {
-        await setDoc(doc(db, 'approved_users', email), cleanForFirestore({ email, approvedAt: new Date().toISOString() }));
+        await setDoc(doc(db, 'approved_users', cleanEmail), cleanForFirestore({ email: cleanEmail, approvedAt: new Date().toISOString() }));
       } catch (e) {
         console.warn("Firebase approveUser failed:", e);
       }

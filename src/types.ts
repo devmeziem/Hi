@@ -1,4 +1,81 @@
-export type NicheType = 'finance_saas' | 'motivation_stoicism' | 'tech_ai';
+export type NicheType = 'finance_saas' | 'motivation_stoicism' | 'tech_ai' | 'cartoon_factory' | 'science_cartoon';
+
+export type MouthShape = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'X';
+
+export type CharacterAction =
+  | 'idle'
+  | 'talking'
+  | 'walking'
+  | 'point_right'
+  | 'point_left'
+  | 'thinking'
+  | 'laughing'
+  | 'surprise'
+  | 'excitement'
+  | 'looking_left'
+  | 'looking_right';
+
+export type CharacterEmotion =
+  | 'neutral'
+  | 'happy'
+  | 'surprised'
+  | 'curious'
+  | 'excited'
+  | 'thinking'
+  | 'concerned'
+  | 'laughing';
+
+export interface MouthCue {
+  start: number;
+  end: number;
+  value: MouthShape;
+}
+
+export interface CartoonScene {
+  scene: number;
+  duration: number;
+  dialogue: string;
+  character_action: CharacterAction;
+  emotion: CharacterEmotion;
+  camera: 'wide' | 'medium' | 'close_up' | 'medium_to_close' | 'pan_left' | 'pan_right';
+  objects: string[];
+  background_style?: string;
+  effects?: string[];
+  sfx_cue?: string;
+  audioLocalPath?: string;
+  mouthCues?: MouthCue[];
+  renderedVideoPath?: string;
+}
+
+export interface CartoonEpisode {
+  topic: string;
+  title: string;
+  character_name: string;
+  target_duration_seconds: number;
+  category?: 'science' | 'technology' | 'money_business' | 'history' | 'everyday_explanations' | 'what_if';
+  scenes: CartoonScene[];
+  modelUsed?: string;
+  finalVideoUrl?: string;
+  status?: 'planned' | 'voiced' | 'animated' | 'rendered' | 'validated' | 'failed';
+}
+
+export interface ValidationReport {
+  valid: boolean;
+  checks: {
+    schemaValid: boolean;
+    mp4Exists: boolean;
+    fileSizeOk: boolean;
+    durationMatches: boolean;
+    audioStreamOk: boolean;
+    resolutionOk: boolean;
+    fpsOk: boolean;
+    mouthCuesPresent: boolean;
+    blenderSuccess: boolean;
+    ffmpegSuccess: boolean;
+  };
+  errors: string[];
+  details: Record<string, any>;
+}
 
 export interface IntegrationKeys {
   cloudinaryCloudName?: string;

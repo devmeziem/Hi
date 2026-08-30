@@ -512,11 +512,84 @@ async function serverGenerateCloudflareTTS(text: string, requestedSpeaker = 'zeu
   return null;
 }
 
+const APPROVED_USERS_FILE = path.join(__dirname, 'approved_users.json');
+const OWNER_EMAIL = 'devmeziem@gmail.com';
+
+function getApprovedUsersList(): string[] {
+  let list = [OWNER_EMAIL];
+  try {
+    if (fs.existsSync(APPROVED_USERS_FILE)) {
+      const data = JSON.parse(fs.readFileSync(APPROVED_USERS_FILE, 'utf8'));
+      if (Array.isArray(data)) {
+        list = Array.from(new Set([OWNER_EMAIL, ...data.map((e: string) => String(e).toLowerCase().trim())]));
+      }
+    }
+  } catch {}
+  return list;
+}
+
+function saveApprovedUsersList(users: string[]): void {
+  try {
+    const list = Array.from(new Set([OWNER_EMAIL, ...users.map((e: string) => String(e).toLowerCase().trim())]));
+    fs.writeFileSync(APPROVED_USERS_FILE, JSON.stringify(list, null, 2), 'utf8');
+  } catch (e) {
+    console.warn('[Security]: Failed to write approved_users.json:', e);
+  }
+}
+
+function checkAuthorization(req: http.IncomingMessage, res: http.ServerResponse, pathname: string): boolean {
+  // Publicly permissible routes: health checks, video streaming, and client static bundle
+  if (pathname === '/api/health' || pathname === '/api/stream-video' || pathname.startsWith('/rendered_videos/')) {
+    return true;
+  }
+
+  // Only authenticate backend API endpoints
+  if (!pathname.startsWith('/api/')) {
+    return true;
+  }
+
+  // Extract authentication header or custom email signature
+  const authHeader = req.headers['authorization'] || '';
+  const xUserEmail = (req.headers['x-user-email'] as string || '').toLowerCase().trim();
+  let bearerEmail = '';
+  if (authHeader.startsWith('Bearer ')) {
+    const token = authHeader.slice(7).trim();
+    if (token.includes('@')) {
+      bearerEmail = token.toLowerCase();
+    }
+  }
+
+  const effectiveEmail = xUserEmail || bearerEmail;
+  const approvedList = getApprovedUsersList();
+
+  const isAuthorized = effectiveEmail && (
+    effectiveEmail === OWNER_EMAIL ||
+    approvedList.includes(effectiveEmail)
+  );
+
+  if (!isAuthorized) {
+    console.warn(`[SECURITY ROADBLOCK]: 403 Forbidden! Blocked unauthorized request to ${pathname} from: "${effectiveEmail || 'anonymous'}" (IP: ${req.socket.remoteAddress})`);
+    res.writeHead(403, {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*'
+    });
+    res.end(JSON.stringify({
+      error: "403 Access Denied: Unauthorized Account",
+      message: "Access to the Voxam Automation Hub is strictly restricted to devmeziem@gmail.com and approved team accounts. Direct browser request bypass is prohibited.",
+      userEmail: effectiveEmail || null,
+      status: "blocked"
+    }));
+    return false;
+  }
+
+  return true;
+}
+
 const server = http.createServer((req, res) => {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-User-Email');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -525,6 +598,37 @@ const server = http.createServer((req, res) => {
   }
 
   const urlPath = req.url?.split('?')[0] || '/';
+
+  // Enforce server-side security roadblock on API endpoints
+  if (!checkAuthorization(req, res, urlPath)) {
+    return;
+  }
+
+  // Approved Users Whitelist Sync API
+  if (urlPath === '/api/approved-users' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ approvedUsers: getApprovedUsersList() }));
+    return;
+  }
+
+  if (urlPath === '/api/approved-users' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const { users = [] } = JSON.parse(body || '{}');
+        if (Array.isArray(users)) {
+          saveApprovedUsersList(users);
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, approvedUsers: getApprovedUsersList() }));
+      } catch (err: any) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
 
   // 1. HIGH-LEVEL ORCHESTRATION: Server-side Unified Blueprint Generator (Grok 1st -> Cloudflare AI Backup -> Groq -> Gemini -> Fallback)
   if (urlPath === '/api/generate-blueprint' && req.method === 'POST') {
@@ -1007,18 +1111,78 @@ Respond STRICTLY with valid raw JSON without markdown:
     return;
   }
 
-  // Rendered Videos Static File Serving
-  if (urlPath.startsWith('/rendered_videos/')) {
-    const relativeVideoPath = urlPath.replace('/rendered_videos/', '');
-    const videoDiskPath = path.join(__dirname, 'rendered_videos', relativeVideoPath);
-    if (fs.existsSync(videoDiskPath) && !fs.statSync(videoDiskPath).isDirectory()) {
-      const stat = fs.statSync(videoDiskPath);
-      res.writeHead(200, {
-        'Content-Type': 'video/mp4',
-        'Content-Length': stat.size,
-        'Accept-Ranges': 'bytes'
-      });
-      fs.createReadStream(videoDiskPath).pipe(res);
+  // Rendered Videos Static & Streaming File Serving with HTTP 206 Partial Content
+  if (urlPath === '/api/stream-video' || urlPath.startsWith('/rendered_videos/') || urlPath.includes('/rendered_videos/')) {
+    let rawPath = urlPath;
+    if (urlPath === '/api/stream-video') {
+      const urlObj = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
+      rawPath = urlObj.searchParams.get('file') || urlObj.searchParams.get('path') || '';
+    }
+
+    // Sanitize and extract file name
+    const cleanFileName = rawPath
+      .replace(/^.*\/rendered_videos\//, '')
+      .replace(/^\/+/, '')
+      .split('?')[0];
+
+    const possiblePaths = [
+      path.join(__dirname, 'rendered_videos', cleanFileName),
+      path.join(__dirname, cleanFileName),
+      rawPath.startsWith('/') ? rawPath : path.join(__dirname, rawPath)
+    ];
+
+    let foundVideoPath = possiblePaths.find(p => fs.existsSync(p) && !fs.statSync(p).isDirectory());
+
+    // If exact name not matched, look for any mp4 in rendered_videos
+    if (!foundVideoPath) {
+      const renderedDir = path.join(__dirname, 'rendered_videos');
+      if (fs.existsSync(renderedDir)) {
+        const files = fs.readdirSync(renderedDir).filter(f => f.endsWith('.mp4'));
+        if (files.length > 0) {
+          const match = files.find(f => cleanFileName && f.toLowerCase().includes(cleanFileName.toLowerCase().replace('.mp4', '')));
+          foundVideoPath = path.join(renderedDir, match || files[0]);
+        }
+      }
+    }
+
+    if (foundVideoPath && fs.existsSync(foundVideoPath)) {
+      const stat = fs.statSync(foundVideoPath);
+      const fileSize = stat.size;
+      const range = req.headers.range;
+
+      if (range) {
+        // Range header provided (e.g. "bytes=0-1024")
+        const parts = range.replace(/bytes=/, "").split("-");
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+        const chunkSize = (end - start) + 1;
+        const fileStream = fs.createReadStream(foundVideoPath, { start, end });
+
+        res.writeHead(206, {
+          'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+          'Accept-Ranges': 'bytes',
+          'Content-Length': chunkSize,
+          'Content-Type': 'video/mp4',
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'public, max-age=3600'
+        });
+        fileStream.pipe(res);
+        return;
+      } else {
+        // Full file stream
+        res.writeHead(200, {
+          'Content-Length': fileSize,
+          'Content-Type': 'video/mp4',
+          'Accept-Ranges': 'bytes',
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'public, max-age=3600'
+        });
+        fs.createReadStream(foundVideoPath).pipe(res);
+        return;
+      }
+    } else {
+      res.writeHead(404, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify({ error: 'Video file not found', requested: cleanFileName }));
       return;
     }
   }

@@ -35,6 +35,15 @@ export interface AiScriptOutput {
   modelUsed?: string;
 }
 
+function getAuthHeaders(): Record<string, string> {
+  const user = (typeof window !== 'undefined' ? localStorage.getItem('voxam_current_user') : null) || 'devmeziem@gmail.com';
+  return {
+    'Content-Type': 'application/json',
+    'X-User-Email': user,
+    'Authorization': `Bearer ${user}`
+  };
+}
+
 /**
  * 1. UNIFIED SCRIPT & BLUEPRINT GENERATOR
  * Hierarchy:
@@ -57,7 +66,7 @@ export async function generateContentScript(params: {
   try {
     const res = await fetch('/api/generate-blueprint', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ niche, topic })
     });
 
@@ -128,7 +137,7 @@ export async function chatWithXaiGrok(params: {
     try {
       const res = await fetch('/api/xai', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           apiKey,
           model: m,
@@ -170,7 +179,7 @@ export async function chatWithCloudflareLLM(params: {
 
   const res = await fetch('/api/cloudflare-ai', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify({
       accountId,
       apiToken,
@@ -221,7 +230,7 @@ export async function chatWithGroq(params: {
     try {
       const res = await fetch('/api/groq', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           apiKey,
           model: m,
@@ -257,7 +266,7 @@ export async function generateAutomatedImage(prompt: string): Promise<{ imageUrl
   try {
     const res = await fetch('/api/generate-image', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ prompt })
     });
 
@@ -299,7 +308,7 @@ export async function generateCloudflareImage(params: {
 
   const res = await fetch('/api/cloudflare-ai', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify({
       accountId,
       apiToken,
@@ -341,7 +350,7 @@ export async function generateAutomatedTTS(
   try {
     const res = await fetch('/api/generate-tts', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ text, speaker, voiceEngine, accountId, apiToken })
     });
 
@@ -383,7 +392,7 @@ export async function generateCloudflareTTS(params: {
 
   const res = await fetch('/api/cloudflare-ai', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify({
       accountId,
       apiToken,

@@ -781,13 +781,6 @@ Theme: "${slotArchetype.theme}". Angle: "${slotArchetype.angle}". Hook Format: "
 MANDATE: Output EXACTLY 6 slides (slideIndex 0 to 5) with 18-25 words per slide (32-42s runtime). Connect Slide 5 seamlessly into Slide 0. Write ONLY finished spoken narration words. Output strictly valid JSON.`;
 
   return { systemPrompt, userPrompt, chosenHookFormat, chosenOutro };
-}`;
-
-  const userPrompt = `Generate a fresh, viral, high-retention 6-slide Modern Stoic Short storyboard for Slot ${slotIndex + 1}.
-Theme: "${slotArchetype.theme}". Angle: "${slotArchetype.angle}". Hook Format: "${chosenHookFormat.name}".
-MANDATE: Output EXACTLY 6 slides (slideIndex 0 to 5) with 18-25 words per slide (32-42s runtime). Connect Slide 5 seamlessly into Slide 0. Output strictly valid JSON.`;
-
-  return { systemPrompt, userPrompt, chosenHookFormat, chosenOutro };
 }
 
 /**

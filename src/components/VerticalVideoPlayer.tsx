@@ -72,10 +72,50 @@ export const VerticalVideoPlayer: React.FC<VerticalVideoPlayerProps> = ({
         }
       ];
 
-  // If a real MP4 video exists on the campaign, default to true MP4 video mode
-  const initialVideoUrl = (campaign as any).videoUrl || null;
-  const [videoSrc, setVideoSrc] = useState<string | null>(initialVideoUrl);
-  const [playerMode, setPlayerMode] = useState<'video' | 'storyboard'>(initialVideoUrl ? 'video' : 'storyboard');
+  // Resolve and sanitize Video URL (handling local rendered paths, relative paths, YouTube URLs, and CDNs)
+  const initialRawVideoUrl = (campaign as any).videoUrl || (campaign as any).youtubeUrl || (campaign as any).payload?.youtubeVideoId || null;
+
+  const getYouTubeEmbedUrl = (urlOrId?: string | null): string | null => {
+    if (!urlOrId) return null;
+    const str = String(urlOrId).trim();
+    if (/^[a-zA-Z0-9_-]{11}$/.test(str)) {
+      return `https://www.youtube-nocookie.com/embed/${str}?autoplay=1&loop=1&playlist=${str}&modestbranding=1&rel=0`;
+    }
+    const match = str.match(/(?:shorts\/|v=|\/v\/|youtu\.be\/|\/embed\/)([a-zA-Z0-9_-]{11})/);
+    if (match && match[1]) {
+      return `https://www.youtube-nocookie.com/embed/${match[1]}?autoplay=1&loop=1&playlist=${match[1]}&modestbranding=1&rel=0`;
+    }
+    return null;
+  };
+
+  const sanitizeVideoSrc = (raw?: string | null): string | null => {
+    if (!raw) return null;
+    const str = raw.trim();
+    if (!str) return null;
+    if (str.includes('youtube.com/') || str.includes('youtu.be/')) {
+      return str;
+    }
+    if (str.includes('/rendered_videos/')) {
+      const fileName = str.split('/rendered_videos/')[1]?.split('?')[0];
+      return `/rendered_videos/${fileName}`;
+    }
+    if (str.startsWith('rendered_videos/')) {
+      return `/${str}`;
+    }
+    if (str.startsWith('/') || str.startsWith('http://') || str.startsWith('https://')) {
+      return str;
+    }
+    return `/rendered_videos/${str}`;
+  };
+
+  const youtubeEmbedUrl = useMemo(() => getYouTubeEmbedUrl(initialRawVideoUrl), [initialRawVideoUrl]);
+  const resolvedVideoSrc = useMemo(() => sanitizeVideoSrc(initialRawVideoUrl), [initialRawVideoUrl]);
+
+  const [videoSrc, setVideoSrc] = useState<string | null>(resolvedVideoSrc);
+  const [playerMode, setPlayerMode] = useState<'video' | 'youtube' | 'storyboard'>(
+    youtubeEmbedUrl ? 'youtube' : resolvedVideoSrc ? 'video' : 'storyboard'
+  );
+  const [videoLoadError, setVideoLoadError] = useState(false);
 
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -318,18 +358,49 @@ export const VerticalVideoPlayer: React.FC<VerticalVideoPlayerProps> = ({
             <div className="flex items-center gap-1.5">
               <span className="px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-[10px] font-mono text-slate-200 font-medium flex items-center gap-1.5 shadow-md">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                {playerMode === 'video' ? 'Full Rendered MP4' : 'Storyboard View'}
+                {playerMode === 'youtube' ? 'YouTube Short' : playerMode === 'video' ? 'Full Rendered MP4' : 'Dynamic Storyboard'}
               </span>
+
+              {youtubeEmbedUrl && (
+                <button
+                  onClick={() => setPlayerMode('youtube')}
+                  className={`px-2 py-1 rounded-full border text-[10px] font-mono transition-colors cursor-pointer flex items-center gap-1 ${
+                    playerMode === 'youtube'
+                      ? 'bg-rose-950/90 border-rose-500 text-rose-300'
+                      : 'bg-black/60 border-white/10 text-slate-300 hover:bg-black/80'
+                  }`}
+                >
+                  <span>YouTube</span>
+                </button>
+              )}
 
               {videoSrc && (
                 <button
-                  onClick={() => setPlayerMode(m => m === 'video' ? 'storyboard' : 'video')}
-                  className="px-2 py-1 rounded-full bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-500/40 text-[10px] font-mono text-indigo-300 transition-colors cursor-pointer flex items-center gap-1"
+                  onClick={() => {
+                    setVideoLoadError(false);
+                    setPlayerMode('video');
+                  }}
+                  className={`px-2 py-1 rounded-full border text-[10px] font-mono transition-colors cursor-pointer flex items-center gap-1 ${
+                    playerMode === 'video'
+                      ? 'bg-indigo-950/90 border-indigo-500 text-indigo-300'
+                      : 'bg-black/60 border-white/10 text-slate-300 hover:bg-black/80'
+                  }`}
                 >
                   <Layers className="w-3 h-3" />
-                  {playerMode === 'video' ? 'Storyboard' : 'Watch MP4'}
+                  <span>MP4</span>
                 </button>
               )}
+
+              <button
+                onClick={() => setPlayerMode('storyboard')}
+                className={`px-2 py-1 rounded-full border text-[10px] font-mono transition-colors cursor-pointer flex items-center gap-1 ${
+                  playerMode === 'storyboard'
+                    ? 'bg-amber-950/90 border-amber-500 text-amber-300'
+                    : 'bg-black/60 border-white/10 text-slate-300 hover:bg-black/80'
+                }`}
+              >
+                <span>Storyboard</span>
+              </button>
             </div>
 
             <div className="flex items-center gap-1.5">
@@ -351,10 +422,21 @@ export const VerticalVideoPlayer: React.FC<VerticalVideoPlayerProps> = ({
             </div>
           </div>
 
-          {/* 9:16 Aspect Video Stage (Authentic Full MP4 / Ken Burns Stitched Player) */}
+          {/* 9:16 Aspect Video Stage (Authentic Full MP4 / YouTube Shorts / Dynamic Storyboard) */}
           <div className="relative w-full max-w-[340px] aspect-[9/16] rounded-2xl overflow-hidden shadow-2xl border border-slate-800 bg-slate-950 flex flex-col justify-between group">
             
-            {playerMode === 'video' && videoSrc ? (
+            {playerMode === 'youtube' && youtubeEmbedUrl ? (
+              /* YOUTUBE EMBED PLAYER */
+              <div className="absolute inset-0 bg-black flex items-center justify-center">
+                <iframe
+                  src={youtubeEmbedUrl}
+                  title={safeTitle}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  className="w-full h-full border-0"
+                />
+              </div>
+            ) : playerMode === 'video' && videoSrc && !videoLoadError ? (
               /* REAL STITCHED MP4 VIDEO WITH BURNED-IN CAPTIONS & AUDIO */
               <div 
                 onClick={() => setIsPlaying(!isPlaying)}
@@ -367,6 +449,11 @@ export const VerticalVideoPlayer: React.FC<VerticalVideoPlayerProps> = ({
                   playsInline
                   autoPlay
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    console.warn("Video failed to play, switching to dynamic storyboard mode:", e);
+                    setVideoLoadError(true);
+                    setPlayerMode('storyboard');
+                  }}
                   onTimeUpdate={(e) => {
                     const v = e.currentTarget;
                     if (v.duration > 0) {
