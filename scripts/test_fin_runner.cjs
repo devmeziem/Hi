@@ -26,6 +26,7 @@ const {
   sanitizeFinString,
   buildFinPromptForSlot,
   buildFinDeepDivePrompt,
+  validateFinStoryboardQuality,
   synthesizeDeterministicFinStoryboard,
   synthesizeDeterministicFinDeepDiveStoryboard,
   fetchRecentFinHistoryFromFirestore,
@@ -240,15 +241,13 @@ function cleanLlmJson(rawContent) {
 
 function validateFinStoryboard(storyboard) {
   if (!storyboard || !Array.isArray(storyboard.slides) || storyboard.slides.length < 3) return false;
-  const isDiagnosticLeak = storyboard.slides.some(slide => {
-    const txt = (slide.text || '').toLowerCase();
-    return txt.includes('[internal_plan]') || txt.includes('diagnostic report') ||
-           txt.includes('[placeholder]') || txt.length < 8;
-  });
-  if (isDiagnosticLeak) {
-    logWarning('[Storyboard Engine] Rejected storyboard containing internal diagnostic leak text.');
+  
+  const qualityCheck = validateFinStoryboardQuality(storyboard);
+  if (!qualityCheck.valid) {
+    logWarning(`[Storyboard Engine] Quality check failed: ${qualityCheck.reason}`);
     return false;
   }
+
   storyboard.slides.forEach(slide => {
     slide.text = prepareTextForSpeech(slide.text);
   });
@@ -867,14 +866,21 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
   }
 
   // 7. DIVERSITY ENGINE SYNTHESIS: Deterministic safety net with dynamic hook & outro loop
+  const chosenArch = selectDiverseFinArchetype(recentHistory, 0);
   if (!scriptData || !Array.isArray(scriptData.slides) || scriptData.slides.length < 3) {
     logWarning('[Storyboard Engine] Remote LLM endpoints unavailable or rate-limited. Synthesizing rich Fin Blueprint Archetype from Diversity Engine...');
-    const chosenArch = selectDiverseFinArchetype(recentHistory, 0);
     const activeTopic = topicInput || chosenArch.angle;
     scriptData = isDeepDive
       ? synthesizeDeterministicFinDeepDiveStoryboard(chosenArch, activeTopic, CHANNEL_HANDLE)
       : synthesizeDeterministicFinStoryboard(chosenArch, activeTopic, CHANNEL_HANDLE);
     if (!isDeepDive && scriptData.slides.length > 6) scriptData.slides = scriptData.slides.slice(0, 6);
+  }
+
+  // Final Quality Check to prevent any blueprint leakage
+  const qualityCheck = validateFinStoryboardQuality(scriptData);
+  if (!qualityCheck.valid) {
+    logError(`[FATAL QUALITY CHECK] Fin storyboard validation failed: ${qualityCheck.reason}`);
+    throw new Error(`ABORTING: Generated storyboard failed quality check (${qualityCheck.reason}). Refusing to publish invalid content.`);
   }
 
   // Ensure title is complete, un-truncated, and equipped with viral & trending hashtags
@@ -1485,6 +1491,13 @@ async function handleYouTubePublish(storyboard, renderResult) {
   }
 
   if (accessToken && renderResult.videoFilePath && fs.existsSync(renderResult.videoFilePath)) {
+    // Mandatory Pre-Flight Content Quality & Anti-Leak Check
+    const preFlight = validateFinStoryboardQuality(storyboard);
+    if (!preFlight.valid) {
+      logError(`[FATAL PRE-FLIGHT] Storyboard failed quality check: ${preFlight.reason}`);
+      throw new Error(`ABORTING YOUTUBE UPLOAD: Storyboard contains unacceptable content or template artifacts (${preFlight.reason}). Pipeline refusing to publish.`);
+    }
+
     logInfo(`Initiating YouTube Data API v3 Resumable Upload to ${CHANNEL_HANDLE}...`);
     try {
       const fileSize = fs.statSync(renderResult.videoFilePath).size;

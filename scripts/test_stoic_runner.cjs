@@ -24,6 +24,7 @@ const {
   buildStoicPromptForSlot,
   buildStoicDeepDivePrompt,
   isTopicSimilarToHistory,
+  validateStoicStoryboardQuality,
   synthesizeDeterministicStoryboard,
   synthesizeDeterministicStoicDeepDiveStoryboard,
   formatViralShortsTitle
@@ -322,17 +323,10 @@ function trimAudioSilence(filePath) {
 function validateStoicStoryboard(storyboard) {
   if (!storyboard || !Array.isArray(storyboard.slides) || storyboard.slides.length < 3) return false;
   
-  // Reject internal planning notes or diagnostic logs
-  const isPlanOrLog = storyboard.slides.some(slide => {
-    const txt = (slide.text || '').toLowerCase();
-    return txt.includes('step 1:') || txt.includes('phase 1:') || txt.includes('plan:') ||
-           txt.includes('logs:') || txt.includes('execution plan') || txt.includes('diagnostic:') ||
-           txt.includes('placeholder') || txt.includes('scene style') || txt.includes('todo:') ||
-           txt.length < 10;
-  });
-
-  if (isPlanOrLog) {
-    logWarning('[Storyboard Engine] Rejected storyboard containing plan / diagnostic log text.');
+  // Enforce zero-leakage quality validator
+  const qualityCheck = validateStoicStoryboardQuality(storyboard);
+  if (!qualityCheck.valid) {
+    logWarning(`[Storyboard Quality] Rejected invalid storyboard: ${qualityCheck.reason}`);
     return false;
   }
 
@@ -2039,6 +2033,13 @@ async function handleYouTubePublish(storyboard, renderResult) {
   }
 
   if (accessToken && renderResult.videoFilePath && fs.existsSync(renderResult.videoFilePath)) {
+    // MANDATORY QUALITY PRE-FLIGHT CHECK BEFORE YOUTUBE UPLOAD
+    const preFlight = validateStoicStoryboardQuality(storyboard);
+    if (!preFlight.valid) {
+      logError(`[FATAL PRE-FLIGHT] Aborting YouTube upload! Storyboard failed quality check: ${preFlight.reason}`);
+      throw new Error(`CRITICAL QUALITY FAILURE: Aborting YouTube upload due to: ${preFlight.reason}`);
+    }
+
     logInfo('Initiating YouTube Data API v3 Resumable Upload to @thestoicarchitect-n4b...');
     try {
       const fileSize = fs.statSync(renderResult.videoFilePath).size;

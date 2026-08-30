@@ -89,24 +89,24 @@ function formatViralShortsTitle(rawHeadline, nicheOrCategory = 'stoic', isDeepDi
   const extraTags = tagPool.filter(t => !coreTags.includes(t));
 
   // If headline is too long, find the best natural semantic breaking point
-  if (headline.length > 60) {
+  if (headline.length > 75) {
     const parts = headline.split(/[\-–—:]+/);
-    if (parts.length > 1 && parts[0].trim().length >= 20 && parts[0].trim().length <= 60) {
+    if (parts.length > 1 && parts[0].trim().length >= 25 && parts[0].trim().length <= 75) {
       headline = parts[0].trim();
     } else {
       const clauseMatches = [...headline.matchAll(/\b(with|using|so\s+that|so\s+your|when|before|to\s+pass|for\s+busy|for\s+under|to\s+turn|to\s+start|to\s+build|to\s+master|to\s+conquer)\b/gi)];
       let bestCut = -1;
       for (const m of clauseMatches) {
-        if (m.index && m.index >= 22 && m.index <= 60) {
+        if (m.index && m.index >= 30 && m.index <= 75) {
           bestCut = m.index;
         }
       }
       if (bestCut > 0) {
         headline = headline.slice(0, bestCut).trim();
       } else {
-        const trimmed = headline.slice(0, 58);
+        const trimmed = headline.slice(0, 72);
         const lastSpace = trimmed.lastIndexOf(' ');
-        headline = (lastSpace > 20 ? trimmed.slice(0, lastSpace) : trimmed).trim();
+        headline = (lastSpace > 30 ? trimmed.slice(0, lastSpace) : trimmed).trim();
       }
     }
   }
@@ -619,6 +619,82 @@ function selectDailyDiverseSlots(arg1 = 4, arg2 = []) {
 }
 
 /**
+ * Anti-Blueprint / Anti-Placeholder / Anti-Prompt-Leak Validator
+ * Strictly rejects any storyboard containing raw prompts, word-count hints, or template artifacts
+ */
+function validateStoicStoryboardQuality(storyboard) {
+  if (!storyboard || typeof storyboard !== 'object') return { valid: false, reason: 'Storyboard is not an object' };
+  if (!Array.isArray(storyboard.slides) || storyboard.slides.length < 3) {
+    return { valid: false, reason: `Slide count is invalid (${storyboard.slides?.length || 0})` };
+  }
+
+  // Banned blueprint / template leakage patterns
+  const bannedPatterns = [
+    /\(\s*\d+[-–]\d+\s*words?\s*\)/i,          // e.g. "(18-22 words)"
+    /\(\s*around\s*\d+[-–]\d+\s*chars?\s*\)/i,  // e.g. "(around 35-50 chars)"
+    /\(\s*32[-–]42s\s*runtime\s*\)/i,
+    /\(\s*110[-–]140\s*words\s*total\s*\)/i,
+    /\b(shocking\s+hook\s+matching|pattern-interrupt\s+hook\s+following)\b/i,
+    /\b(matching\s+(contrarian|paradox|iron|law|curiosity|brutal|under|scenario|realistic|challenge))\b/i,
+    /\b(the\s+psychological\s+trap\s+beginners?\s+fall\s+into\s+explained\s+simply)\b/i,
+    /\b(the\s+core\s+stoic\s+mental\s+shift\s+in\s+plain\s+modern\s+english)\b/i,
+    /\b(the\s+tactical\s+step-by-step\s+action\s+to\s+take\s+right\s+now)\b/i,
+    /\b(why\s+this\s+makes\s+your\s+character\s+and\s+peace\s+untouchable)\b/i,
+    /\b(golden\s+rule\s*\+)\b/i,
+    /\b(following\s+[a-z_]+\s+formula)\b/i,
+    /\b(use\s+the\s+'[^']+'\s+format)\b/i,
+    /\b(slideIndex|slideSteps|flowGuide|slotArchetype|chosenHookFormat|chosenOutro)\b/i,
+    /\b(cinematic\s+9:16|vertical\s+8k\s+scene|obsidian\s+slate\s+backdrop|warm\s+amber\s+rim\s+lighting)\b/i,
+    /\b(systemPrompt|userPrompt|json\s+schema|here\s+is\s+the\s+6-slide)\b/i,
+    /\b(internal_plan|placeholder|blueprint\s+leak|diagnostic\s+report)\b/i,
+    /^\s*\[slide\s*\d+/i,
+    /^\s*(narration|voiceover|host|speaker)\s*[:\-]/i
+  ];
+
+  const textsSeen = new Set();
+
+  for (let i = 0; i < storyboard.slides.length; i++) {
+    const slide = storyboard.slides[i];
+    const text = String(slide?.text || '').trim();
+
+    if (!text || text.length < 25) {
+      return { valid: false, reason: `Slide ${i} text is too short or empty (${text.length} chars)` };
+    }
+
+    const wordCount = text.split(/\s+/).filter(Boolean).length;
+    if (wordCount < 8) {
+      return { valid: false, reason: `Slide ${i} word count too low (${wordCount} words)` };
+    }
+
+    for (const pattern of bannedPatterns) {
+      if (pattern.test(text)) {
+        return { valid: false, reason: `Slide ${i} matched banned blueprint/template pattern: ${pattern}` };
+      }
+    }
+
+    // Check for identical slides (LLM looping)
+    const normalized = text.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (textsSeen.has(normalized)) {
+      return { valid: false, reason: `Slide ${i} is an exact duplicate of a previous slide` };
+    }
+    textsSeen.add(normalized);
+  }
+
+  // Check title
+  const title = String(storyboard.title || '').trim();
+  if (!title || title.length < 10) {
+    return { valid: false, reason: `Title is missing or too short: "${title}"` };
+  }
+  for (const pattern of bannedPatterns) {
+    if (pattern.test(title)) {
+      return { valid: false, reason: `Title contains blueprint/template leak: ${pattern}` };
+    }
+  }
+
+  return { valid: true };
+}
+
+/**
  * Build rich system and user prompts for multi-model AI generators with rotating hooks and loops
  */
 function buildStoicPromptForSlot(slotArchetype, recentHistory, slotIndex = 0, channelHandle = '@thestoicarchitect-n4b') {
@@ -640,6 +716,11 @@ CRITICAL YOUTUBE SHORTS ALGORITHM RETENTION RULES (32-42 SECONDS TOTAL):
 5. SLIDE 3 (THE TACTICAL DAILY PROTOCOL): Concrete physical/mental action to execute immediately.
 6. SLIDE 4 (SOVEREIGN BENEFIT): Why this response makes you completely untouchable.
 7. SLIDE 5 (INFINITE RETENTION LOOP & OUTRO): Golden law + short CTA + this exact seamless bridge: "${chosenOutro}" that connects grammatically right back into Slide 0!
+
+CRITICAL ANTI-PROMPT-LEAK MANDATE:
+- NEVER write prompt instructions, bracketed notes, or word-count guides like "(18-22 words)" in any slide text.
+- Every slide's "text" field MUST contain 100% finished, natural, spoken conversational English that a human narrator speaks directly aloud.
+- NEVER include visual descriptions inside the "text" field.
 
 UNIFIED VISUAL IDENTITY (9:16 Vertical 8k Cinematic):
 - All 6 visual prompts MUST share the same aesthetic: ${slotArchetype.visualStyle}
@@ -664,35 +745,42 @@ CRITICAL: Output EXACTLY 6 slides (slideIndex 0 to 5).
   "slides": [
     {
       "slideIndex": 0,
-      "text": "Shocking hook matching ${chosenHookFormat.name} (18-22 words)...",
+      "text": "Complete spoken hook narration sentence here without any placeholders or brackets.",
       "visual": "Cinematic 9:16 vertical 8k scene, ${slotArchetype.visualStyle}"
     },
     {
       "slideIndex": 1,
-      "text": "The psychological trap beginners fall into explained simply (18-22 words)...",
+      "text": "Complete spoken explanation of the psychological trap here.",
       "visual": "Cinematic 9:16 vertical 8k scene matching ${slotArchetype.visualStyle}"
     },
     {
       "slideIndex": 2,
-      "text": "The core Stoic mental shift in plain modern English (18-22 words)...",
+      "text": "Complete spoken Stoic mindset shift explanation here.",
       "visual": "Cinematic 9:16 vertical 8k scene matching ${slotArchetype.visualStyle}"
     },
     {
       "slideIndex": 3,
-      "text": "The tactical step-by-step action to take right now (18-22 words)...",
+      "text": "Complete spoken tactical step-by-step protocol here.",
       "visual": "Cinematic 9:16 vertical 8k scene matching ${slotArchetype.visualStyle}"
     },
     {
       "slideIndex": 4,
-      "text": "Why this makes your character and peace untouchable (18-22 words)...",
+      "text": "Complete spoken explanation of why this gives you unshakeable peace here.",
       "visual": "Cinematic 9:16 vertical 8k scene matching ${slotArchetype.visualStyle}"
     },
     {
       "slideIndex": 5,
-      "text": "Golden rule + ${chosenOutro} (18-22 words)...",
+      "text": "Complete golden rule ending with: ${chosenOutro}",
       "visual": "Cinematic 9:16 vertical 8k scene matching ${slotArchetype.visualStyle}"
     }
   ]
+}`;
+
+  const userPrompt = `Generate a fresh, viral, high-retention 6-slide Modern Stoic Short storyboard for Slot ${slotIndex + 1}.
+Theme: "${slotArchetype.theme}". Angle: "${slotArchetype.angle}". Hook Format: "${chosenHookFormat.name}".
+MANDATE: Output EXACTLY 6 slides (slideIndex 0 to 5) with 18-25 words per slide (32-42s runtime). Connect Slide 5 seamlessly into Slide 0. Write ONLY finished spoken narration words. Output strictly valid JSON.`;
+
+  return { systemPrompt, userPrompt, chosenHookFormat, chosenOutro };
 }`;
 
   const userPrompt = `Generate a fresh, viral, high-retention 6-slide Modern Stoic Short storyboard for Slot ${slotIndex + 1}.
@@ -866,6 +954,7 @@ module.exports = {
   selectDailyDiverseSlots,
   buildStoicPromptForSlot,
   buildStoicDeepDivePrompt,
+  validateStoicStoryboardQuality,
   synthesizeDeterministicStoryboard,
   synthesizeDeterministicDeepDiveStoryboard
 };

@@ -96,24 +96,24 @@ function formatViralShortsTitle(rawHeadline, nicheOrCategory = 'fin', isDeepDive
   const extraTags = tagPool.filter(t => !coreTags.includes(t));
 
   // If headline is too long, find the best natural semantic breaking point
-  if (headline.length > 60) {
+  if (headline.length > 75) {
     const parts = headline.split(/[\-–—:]+/);
-    if (parts.length > 1 && parts[0].trim().length >= 20 && parts[0].trim().length <= 60) {
+    if (parts.length > 1 && parts[0].trim().length >= 25 && parts[0].trim().length <= 75) {
       headline = parts[0].trim();
     } else {
       const clauseMatches = [...headline.matchAll(/\b(with|using|so\s+that|so\s+your|when|before|to\s+pass|for\s+busy|for\s+under|to\s+turn|to\s+start|to\s+build|to\s+earn)\b/gi)];
       let bestCut = -1;
       for (const m of clauseMatches) {
-        if (m.index && m.index >= 22 && m.index <= 60) {
+        if (m.index && m.index >= 30 && m.index <= 75) {
           bestCut = m.index;
         }
       }
       if (bestCut > 0) {
         headline = headline.slice(0, bestCut).trim();
       } else {
-        const trimmed = headline.slice(0, 58);
+        const trimmed = headline.slice(0, 72);
         const lastSpace = trimmed.lastIndexOf(' ');
-        headline = (lastSpace > 20 ? trimmed.slice(0, lastSpace) : trimmed).trim();
+        headline = (lastSpace > 30 ? trimmed.slice(0, lastSpace) : trimmed).trim();
       }
     }
   }
@@ -263,139 +263,208 @@ const ROTATING_FIN_OUTROS = [
   }
 ];
 
-// Category-Specific Flow Schemas for High-Impact Narrative Execution
+// Category-Specific Flow Schemas for High-Impact Narrative Execution (Conceptual & Minimalist Clarity)
 const CATEGORY_FLOW_GUIDES = {
   [FIN_CATEGORIES.SMALL_CAPITAL_BUSINESS]: {
     name: 'Small-Capital Business Flow',
     series: FIN_SERIES.FIVE_K_CHALLENGE,
     slideSteps: [
-      'Hook & Budget Anchor (e.g. What I would do with ₦5,000 / $3.50 USD)',
-      'The Opportunity & Who it is for (Zero inventory, local demand)',
-      'Step-by-Step Launch Execution & Supplies Needed',
-      'Cost and Gross Margin Breakdown (Realistic Estimates)',
-      'Common Rookie Mistakes When Starting Small',
-      'Golden Action Takeaway & Community Question'
+      'High-Curiosity Opportunity Hook (Starting with small capital)',
+      'The Simple Mechanism (Why local people happily pay for this service or item)',
+      'Minimalist Setup (How to start today using everyday items and zero expensive gear)',
+      'Practical Daily Execution (How to find your first 5 customers on foot or WhatsApp)',
+      'The Fatal Beginner Trap (The exact mistake that drains your working float)',
+      'Golden Rule & Infinite Loop Outro Bridge'
     ],
-    communityQuestion: 'What business should we break down next with a ₦5,000 budget?'
+    communityQuestion: 'What business idea would you like us to explain in simple terms next?'
   },
   [FIN_CATEGORIES.SAVING_PERSONAL_FINANCE]: {
     name: 'Saving & Personal Finance Flow',
     series: FIN_SERIES.MONEY_BASICS,
     slideSteps: [
-      'The Silent Money Leak / Reality Check Hook',
-      'Why Traditional Advice Fails on Small Incomes',
-      'The 3-Step Low-Income Budgeting Rule (with exact ₦/$ split)',
-      'Building the First Emergency Buffer (₦10,000 / $7 USD)',
-      'Expense Cutting & Daily Tracking Execution',
-      'Golden Savings Takeaway & Infinite Loop Bridge'
+      'Relatable Spending Trap Hook',
+      'The Root Cause (Why willpower alone fails when managing cash)',
+      'The Minimalist Solution (The simple rule that automatically protects your money)',
+      'Practical Implementation (Separating your safety buffer from daily spending)',
+      'The Costly Mistake Beginners Make with Idle Money',
+      'Golden Savings Rule & Retention Loop Bridge'
     ],
-    communityQuestion: 'What is the biggest unnecessary expense you cut this month?'
+    communityQuestion: 'What is the single best money habit that helped you save consistently?'
   },
   [FIN_CATEGORIES.FINANCIAL_EDUCATION]: {
-    name: 'Financial Education 5-Step Flow',
+    name: 'Financial Education Flow',
     series: FIN_SERIES.FINANCE_EXPLAINED,
     slideSteps: [
-      'Simple Definition (Plain English, No Jargon)',
-      'Real-World Nigerian & Global Example with Numbers',
-      'Why It Matters Directly to Your Pocket Today',
-      'The Costly Mistake 90% of People Make Here',
-      'Practical Takeaway to Protect Your Purchasing Power',
-      'Core Lesson Loop & Channel Subscription Bridge'
+      'Crystal-Clear Concept Hook (No financial jargon)',
+      'Simple Real-World Analogy (Making the concept instantly obvious)',
+      'Why This Directly Impacts Your Everyday Wallet',
+      'The Hidden Trap 90% of People Fall Into',
+      'The Minimalist Action to Protect Your Purchasing Power',
+      'Core Lesson Takeaway & Channel Loop Bridge'
     ],
-    communityQuestion: 'Which finance concept should we explain in simple terms next?'
+    communityQuestion: 'Which financial term would you like us to break down next?'
   },
   [FIN_CATEGORIES.SKILLS_TO_INCOME]: {
     name: 'Skills to Income Flow',
     series: FIN_SERIES.PHONE_TO_INCOME,
     slideSteps: [
-      'Phone-Only High-Demand Skill Hook',
-      'Why Local Businesses / Online Clients Need This Right Now',
-      'Exact Free Tools & How to Practice (Zero Software Cost)',
-      'First Client Acquisition Protocol (WhatsApp/DM Outreach)',
-      'The Fatal Beginner Blunder to Avoid',
-      'Immediate 24-Hour Action Step & Outro Bridge'
+      'Phone-Only High-Value Skill Hook',
+      'The Market Need (Why busy shop owners and creators need this right now)',
+      'Free Tools & Practice Method (Zero software cost)',
+      'First Client Outreach Protocol (Simple message template to get paying work)',
+      'The Beginner Fear That Stops Most People From Starting',
+      'Immediate 24-Hour Execution Step & Outro Bridge'
     ],
-    communityQuestion: 'Which high-income digital skill are you learning this week?'
+    communityQuestion: 'Which digital skill are you focusing on mastering this month?'
   },
   [FIN_CATEGORIES.FREE_OPPORTUNITIES]: {
     name: 'Free & Low-Cost Opportunity Flow',
     series: FIN_SERIES.FREE_OPPORTUNITY_FRIDAY,
     slideSteps: [
-      'Verified Opportunity Announcement & Eligibility Hook',
-      'What is Included & Practical Value/Certification Gained',
-      'Trusted Official Portal / Platform Guidance',
-      'Step-by-Step Mobile Application Protocol',
-      'Scam Alert & Warning Against Anyone Charging Fees',
-      'Action Takeaway & Share Bridge'
+      'Verified Free Opportunity Announcement & Eligibility',
+      'What You Actually Gain (Skills, certificates, or career growth)',
+      'Official Direct Access Channel (Zero third-party agents)',
+      'Simple Mobile Application Walkthrough',
+      'Scam Warning (Never pay anyone charging an application fee)',
+      'Action Step & Community Share Bridge'
     ],
-    communityQuestion: 'Have you completed any free certifications on your phone yet?'
+    communityQuestion: 'Have you taken advantage of any free online learning platforms yet?'
   },
   [FIN_CATEGORIES.SCAM_AWARENESS]: {
     name: 'Scam & Fraud Awareness Flow',
     series: FIN_SERIES.SCAM_ALERT,
     slideSteps: [
-      'Urgent Warning Hook & The Fake Promise Bait',
-      'The Exact Psychological Trap & Ponzi Mechanics',
-      '3-4 Instant Red Flags to Check Immediately',
-      'Real-World Local Case Pattern & Money Recovery Reality',
-      'Capital Protection Protocol (What to do right now)',
+      'Urgent Warning Hook & The Unrealistic Bait',
+      'The Hidden Trick (How fraudsters manipulate human emotion)',
+      '3 Instant Red Flags to Spot Before Sending a Single Penny',
+      'What Actually Happens Behind the Scenes (The Ponzi breakdown)',
+      'The Golden Safety Rule for Your Hard-Earned Money',
       'Warning Takeaway & Infinite Protection Loop'
     ],
-    communityQuestion: 'Have you ever spotted a suspicious high-yield investment scheme?'
+    communityQuestion: 'What is the most common suspicious money scheme you have seen online?'
   },
   [FIN_CATEGORIES.BUSINESS_BREAKDOWNS]: {
-    name: 'Business Unit Economics Breakdown Flow',
+    name: 'Business Concept Breakdown Flow',
     series: FIN_SERIES.BUSINESS_BREAKDOWN,
     slideSteps: [
-      'The Big Question Hook (Can ₦5,000 Really Start This Business?)',
-      'Estimated Startup Costs & Equipment/Supplies List',
-      'Pricing Strategy & Realistic Revenue Potential',
-      'Gross Profit Margins & Hidden Operational Costs',
-      'Real Risks & Break-Even Calculation',
-      'Honest Verdict (Clearly Labeled Estimates) & CTA'
+      'The Big Question Hook (How this business actually makes sustainable income)',
+      'The Business Model Explained in 2 Simple Sentences',
+      'Minimalist Equipment & Low-Cost Sourcing Strategy',
+      'Customer Acquisition Without Spending on Paid Ads',
+      'The Common Failure Point to Avoid at All Costs',
+      'Actionable Verdict & Channel Outro Bridge'
     ],
-    communityQuestion: 'Which everyday business should we break down the unit economics for next?'
+    communityQuestion: 'Which popular business model should we explain simply next?'
   },
   [FIN_CATEGORIES.BEGINNER_INVESTING_CRYPTO]: {
-    name: 'Beginner Investing & Crypto Education Flow',
+    name: 'Beginner Investing & Inflation Defense Flow',
     series: FIN_SERIES.CRYPTO_FOR_BEGINNERS,
     slideSteps: [
-      'Simple Concept Hook (What is a Stablecoin / Digital Dollar?)',
-      'Why Everyday People Use It to Hedge Inflation',
-      'Self-Custody Basics & Safe Wallet Protection Rules',
-      'Critical Risk Warning & Volatility Realities (No Guarantees)',
-      'The 3 Golden Rules for Beginners',
-      'Takeaway Summary & Follow Bridge'
+      'Simple Concept Hook (Protecting savings against currency loss)',
+      'How Everyday People Use Stable Digital Value to Protect Cash',
+      'Basic Safety Rules & Avoiding Unregulated Speculation',
+      'The Difference Between Investing and Gambling',
+      'The 3 Golden Rules for Beginners Starting Small',
+      'Takeaway Summary & Follow Loop Bridge'
     ],
-    communityQuestion: 'Do you use digital stablecoins to protect your savings against inflation?'
+    communityQuestion: 'How do you currently protect your savings against rising prices?'
   },
   [FIN_CATEGORIES.FINANCIAL_CALCULATORS]: {
-    name: 'Financial Calculator & Compounding Flow',
+    name: 'Compounding & Growth Concept Flow',
     series: FIN_SERIES.MONEY_BASICS,
     slideSteps: [
-      'Shocking Compounding Math Hook ($1 or ₦1,500 Daily)',
-      'Year 1 vs Year 5 Mathematical Comparison',
-      'The Velocity of Daily Cash Flow vs Idle Savings',
-      'The 70/30 Business Reinvestment Formula',
-      'Execution Habit That Compounds Quietly',
-      'Mathematical Truth Loop & CTA'
+      'Eye-Opening Compounding Principle Hook',
+      'The Power of Small Consistent Habits over Time',
+      'Why Steady Daily Progress Beats Sudden Windfalls',
+      'The Reinvestment Habit of Disciplined Builders',
+      'The Mistake of Expecting Overnight Results',
+      'Compounding Mindset Loop & Outro Bridge'
     ],
-    communityQuestion: 'How much are you able to save or reinvest every single day?'
+    communityQuestion: 'What small daily habit has made the biggest difference in your life?'
   },
   [FIN_CATEGORIES.CHALLENGES_EXPERIMENTS]: {
     name: '30-Day Money Challenge Flow',
     series: FIN_SERIES.THIRTY_DAY_CHALLENGE,
     slideSteps: [
-      'The 30-Day Zero Impulse Spending Challenge Hook',
-      'The Rule: Tracking Every Single ₦500 / $0.35 Spent',
-      'Week 1 Behavioral Friction & Overcoming Urges',
-      'The Total Cash Saved at Day 30 Breakdown',
-      'What to Do With the Accumulated Safety Buffer',
+      'The 30-Day Minimalist Money Challenge Hook',
+      'The Single Core Rule to Follow Daily',
+      'How to Handle Urges and Temptations in Week One',
+      'The Clear Difference You Notice After 30 Days',
+      'What to Do With Your Newly Built Safety Buffer',
       'Challenge Invitation & Community Outro'
     ],
-    communityQuestion: 'Are you ready to try the 30-day zero impulse spending challenge?'
+    communityQuestion: 'Are you ready to join this month’s 30-day money challenge?'
   }
 };
+
+/**
+ * Anti-Blueprint / Anti-Placeholder / Anti-Prompt-Leak Validator for Fin Channel
+ * Strictly rejects any storyboard containing raw prompts, word-count hints, repetitive math, or template artifacts
+ */
+function validateFinStoryboardQuality(storyboard) {
+  if (!storyboard || typeof storyboard !== 'object') return { valid: false, reason: 'Storyboard is not an object' };
+  if (!Array.isArray(storyboard.slides) || storyboard.slides.length < 3) {
+    return { valid: false, reason: `Slide count is invalid (${storyboard.slides?.length || 0})` };
+  }
+
+  const bannedPatterns = [
+    /\(\s*\d+[-–]\d+\s*words?\s*\)/i,
+    /\(\s*around\s*\d+[-–]\d+\s*chars?\s*\)/i,
+    /\(\s*110[-–]140\s*words\s*total\s*\)/i,
+    /\b(shocking\s+hook|pattern-interrupt\s+hook|anti-swipe\s+hook)\b/i,
+    /\b(matching\s+(contrarian|paradox|iron|law|curiosity|brutal|under|scenario|realistic|challenge))\b/i,
+    /\b(following\s+[a-z_]+\s+formula)\b/i,
+    /\b(use\s+the\s+'[^']+'\s+format)\b/i,
+    /\b(slideIndex|slideSteps|flowGuide|slotArchetype|chosenHookFormat|chosenOutro)\b/i,
+    /\b(communityQuestion|estimatedBudget|targetBudget)\b/i,
+    /\b(dual\s+currency\s+numbers|dual-currency\s+format|realistic\s+dual\s+currency)\b/i,
+    /\b(cinematic\s+9:16|vertical\s+8k\s+scene|obsidian\s+slate\s+backdrop|rim\s+lighting)\b/i,
+    /\b(systemPrompt|userPrompt|json\s+schema|here\s+is\s+the\s+6-slide)\b/i,
+    /\b(internal_plan|placeholder|blueprint\s+leak|diagnostic\s+report)\b/i,
+    /^\s*\[slide\s*\d+/i,
+    /^\s*(narration|voiceover|host|speaker)\s*[:\-]/i
+  ];
+
+  const textsSeen = new Set();
+
+  for (let i = 0; i < storyboard.slides.length; i++) {
+    const slide = storyboard.slides[i];
+    const text = String(slide?.text || '').trim();
+
+    if (!text || text.length < 25) {
+      return { valid: false, reason: `Slide ${i} text is too short or empty (${text.length} chars)` };
+    }
+
+    const wordCount = text.split(/\s+/).filter(Boolean).length;
+    if (wordCount < 8) {
+      return { valid: false, reason: `Slide ${i} word count too low (${wordCount} words)` };
+    }
+
+    for (const pattern of bannedPatterns) {
+      if (pattern.test(text)) {
+        return { valid: false, reason: `Slide ${i} matched banned blueprint/template pattern: ${pattern}` };
+      }
+    }
+
+    const normalized = text.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (textsSeen.has(normalized)) {
+      return { valid: false, reason: `Slide ${i} is an exact duplicate of a previous slide` };
+    }
+    textsSeen.add(normalized);
+  }
+
+  const title = String(storyboard.title || '').trim();
+  if (!title || title.length < 10) {
+    return { valid: false, reason: `Title is missing or too short: "${title}"` };
+  }
+  for (const pattern of bannedPatterns) {
+    if (pattern.test(title)) {
+      return { valid: false, reason: `Title contains blueprint/template leak: ${pattern}` };
+    }
+  }
+
+  return { valid: true };
+}
 
 // 30+ Comprehensive Diverse Financial Archetypes
 const FIN_ARCHETYPES = [
@@ -997,27 +1066,31 @@ CHANNEL CORE POSITIONING:
 "Learn how to manage money, start small businesses, develop valuable skills, find legitimate opportunities, and understand finance in simple language."
 TARGET AUDIENCE: Everyday young people, students, beginners, low-income earners, and aspiring entrepreneurs starting with little or no capital ($0 to $50 / ₦0 to ₦50,000).
 
-CRITICAL CATEGORY FLOW MANDATE (${flowGuide.name} - Series: "${flowGuide.series}"):
-You MUST structure the 6 slides (slideIndex 0 to 5) to strictly follow this exact 6-step flow:
-- Slide 0: ${flowGuide.slideSteps[0]} -> (Hook: Use '${chosenHookFormat.name}' formula: "${chosenHookFormat.formula}")
+CRITICAL PEDAGOGY MANDATES:
+1. CONVERSATIONAL & MINIMALIST EXPLANATIONS: Explain concepts clearly and simply so even a 12-year-old understands. NO boring mathematical equations, NO repetitive algebra formulas, and NO spreadsheet arithmetic. Break it down to its simplest everyday reality.
+2. VARIED, ENGAGING VOCABULARY: When changing topics, do NOT repeat the same phrases over and over. Use rich, distinct language tailored to "${archetype.theme}".
+3. SEAMLESS INFINITE LOOP: The last sentence of Slide 5 MUST naturally bridge back into the opening hook of Slide 0 to maximize viewer retention loops.
+4. ZERO BLUEPRINT / PLACEHOLDER LEAKAGE: Never output template words, word-count markers like "(18-22 words)", or internal variable names. Output clean spoken narration text ONLY.
+
+CRITICAL 6-STEP NARRATIVE FLOW (${flowGuide.name} - Series: "${flowGuide.series}"):
+- Slide 0: ${flowGuide.slideSteps[0]} -> (Hook: Use the '${chosenHookFormat.name}' approach: "${chosenHookFormat.formula}")
 - Slide 1: ${flowGuide.slideSteps[1]}
 - Slide 2: ${flowGuide.slideSteps[2]}
-- Slide 3: ${flowGuide.slideSteps[3]} (Include concrete dual currency numbers, e.g. ₦5,000 / $3.50 USD)
+- Slide 3: ${flowGuide.slideSteps[3]}
 - Slide 4: ${flowGuide.slideSteps[4]}
-- Slide 5: ${flowGuide.slideSteps[5]} -> (End seamlessly with: "${chosenOutro}")
+- Slide 5: ${flowGuide.slideSteps[5]} -> (End seamlessly with this exact outro phrase: "${chosenOutro}")
 
-CRITICAL RULES:
-1. RUNTIME & PACING: Exactly 6 high-impact slides (slideIndex 0 to 5). Each slide MUST have 18 to 24 punchy spoken words (110-135 words total).
-2. NO GUARANTEED PROFITS: Never promise instant riches. Use realistic language ("potential revenue", "estimated margins", "results vary").
-3. DUAL-CURRENCY FORMAT: Always include both Nigerian Naira (₦) and US Dollar ($) equivalents.
-4. COMMUNITY ENGAGEMENT: Integrate this question in the description: "${flowGuide.communityQuestion}".
+RULES:
+- Exactly 6 slides (slideIndex 0 to 5). Each slide must have 18 to 24 punchy, spoken words (110-135 words total).
+- No unrealistic promises. Use realistic, practical language.
+- Integrate this community question in description: "${flowGuide.communityQuestion}".
 
-EXCLUDED PREVIOUS TOPICS (DO NOT REPEAT):
+EXCLUDED RECENT TOPICS (DO NOT REPEAT):
 [${recentTitles || 'None'}]
 
-OUTPUT FORMAT: Return strictly a valid JSON object matching this schema:
+OUTPUT FORMAT: Return strictly valid JSON:
 {
-  "title": "Complete High-Impact Hook Title (around 35-50 chars) #Shorts #viral #trending",
+  "title": "High-Impact Viral Title #Shorts #viral #trending #finance",
   "category": "${archetype.category}",
   "series": "${flowGuide.series}",
   "theme": "${archetype.theme}",
@@ -1029,48 +1102,40 @@ OUTPUT FORMAT: Return strictly a valid JSON object matching this schema:
   "slides": [
     {
       "slideIndex": 0,
-      "text": "Pattern-interrupt hook following ${chosenHookFormat.name} (18-22 words)...",
-      "visual": "Cinematic 9:16 vertical 8k scene, ${archetype.visualAesthetic}"
+      "text": "Complete spoken hook text with zero placeholder words or numbers in brackets...",
+      "visual": "Cinematic 9:16 vertical 8k photorealistic scene, ${archetype.visualAesthetic}"
     },
     {
       "slideIndex": 1,
-      "text": "${flowGuide.slideSteps[1]} (18-22 words)...",
-      "visual": "Cinematic 9:16 vertical 8k scene matching ${archetype.visualAesthetic}"
+      "text": "Complete spoken explanation text...",
+      "visual": "Cinematic 9:16 vertical 8k photorealistic scene matching ${archetype.visualAesthetic}"
     },
     {
       "slideIndex": 2,
-      "text": "${flowGuide.slideSteps[2]} (18-22 words)...",
-      "visual": "Cinematic 9:16 vertical 8k scene matching ${archetype.visualAesthetic}"
+      "text": "Complete spoken practical mechanism...",
+      "visual": "Cinematic 9:16 vertical 8k photorealistic scene matching ${archetype.visualAesthetic}"
     },
     {
       "slideIndex": 3,
-      "text": "${flowGuide.slideSteps[3]} (18-22 words)...",
-      "visual": "Cinematic 9:16 vertical 8k scene matching ${archetype.visualAesthetic}"
+      "text": "Complete spoken action takeaway...",
+      "visual": "Cinematic 9:16 vertical 8k photorealistic scene matching ${archetype.visualAesthetic}"
     },
     {
       "slideIndex": 4,
-      "text": "${flowGuide.slideSteps[4]} (18-22 words)...",
-      "visual": "Cinematic 9:16 vertical 8k scene matching ${archetype.visualAesthetic}"
+      "text": "Complete spoken mistake warning...",
+      "visual": "Cinematic 9:16 vertical 8k photorealistic scene matching ${archetype.visualAesthetic}"
     },
     {
       "slideIndex": 5,
-      "text": "${flowGuide.slideSteps[5]} + ${chosenOutro} (18-22 words)...",
-      "visual": "Cinematic 9:16 vertical 8k scene matching ${archetype.visualAesthetic}"
+      "text": "Complete spoken golden rule ending with: ${chosenOutro}",
+      "visual": "Cinematic 9:16 vertical 8k photorealistic scene matching ${archetype.visualAesthetic}"
     }
   ]
 }`;
 
   const userPrompt = `Generate a unique, viral 6-slide YouTube Shorts script for ${flowGuide.series}.
-Theme: "${archetype.theme}". Angle: "${archetype.angle}". Target Budget: "${archetype.targetBudget}".
-Category: "${archetype.category}".
-Flow to Follow:
-0: ${flowGuide.slideSteps[0]}
-1: ${flowGuide.slideSteps[1]}
-2: ${flowGuide.slideSteps[2]}
-3: ${flowGuide.slideSteps[3]}
-4: ${flowGuide.slideSteps[4]}
-5: ${flowGuide.slideSteps[5]}
-MANDATE: Output EXACTLY 6 slides (slideIndex 0 to 5) with 18-24 words per slide. Include realistic dual-currency calculations ($ and ₦). Connect Slide 5 seamlessly into Slide 0. Return strictly valid JSON.`;
+Topic Theme: "${archetype.theme}". Angle: "${archetype.angle}". Target Budget: "${archetype.targetBudget}".
+MANDATE: Output EXACTLY 6 slides (slideIndex 0 to 5) with 18-24 words per slide. Focus on crystal-clear explanations without tedious math. Connect Slide 5 seamlessly into Slide 0. Return strictly valid JSON.`;
 
   return { systemPrompt, userPrompt, chosenHookFormat, chosenOutro, flowGuide };
 }
@@ -1086,53 +1151,61 @@ function synthesizeDeterministicFinStoryboard(archetype, topicTitle, channelHand
   const resolvedOutro = resolveFinOutro(cleanHandle, slotIndex * 19 + Date.now());
   const flowGuide = CATEGORY_FLOW_GUIDES[arch.category] || CATEGORY_FLOW_GUIDES[FIN_CATEGORIES.SMALL_CAPITAL_BUSINESS];
 
-  // Specific slide scripts based on category
   let slideTexts = [];
   if (arch.category === FIN_CATEGORIES.FINANCIAL_EDUCATION) {
     slideTexts = [
-      `If you do not understand ${arch.theme.toLowerCase()}, your hard-earned money will lose ten to thirty percent of its value silently.`,
-      `In simple terms, when prices double, your fifty thousand naira or thirty-five dollars buys half of what it bought last year.`,
-      `Traditional bank accounts pay less than one percent interest, while real living costs rise fifteen percent every single year.`,
-      `The costly mistake beginners make is keeping emergency cash idle in low-interest accounts instead of inflation-resistant digital savings vaults.`,
-      `Keep three months of living expenses safe, and put extra cash into high-yield fintech vaults that match current inflation rates.`,
-      `Protect your hard-earned purchasing power starting today, stay disciplined, and ${resolvedOutro}`
+      `If you leave your money idle in a basic savings account, rising prices silently steal twenty percent of your purchasing power each year.`,
+      `Think of inflation like a slow tyre puncture. The number in your account looks unchanged, but each dollar or naira buys less food daily.`,
+      `When prices climb rapidly, your hard work gets devalued unless you park savings in tools that earn competitive yield.`,
+      `The costly trap most people fall into is holding large sums in cash instead of utilizing secure, high-yield digital vaults.`,
+      `Protect your money by keeping an emergency reserve in accounts that pay realistic interest to offset everyday inflation.`,
+      `Master your financial fundamentals early so your savings never get left behind, stay focused, and ${resolvedOutro}`
     ];
   } else if (arch.category === FIN_CATEGORIES.BUSINESS_BREAKDOWNS) {
     slideTexts = [
-      `Can you really start a profitable ${arch.theme.toLowerCase()} hustle with only ${arch.targetBudget}? Here is the exact unit economics breakdown.`,
-      `Your estimated startup supplies cost around ${arch.targetBudget}, with packaging and ingredients taking sixty percent of your initial float.`,
-      `Sell each unit for one thousand naira or seventy cents, keeping direct cost per unit at four hundred naira for fifty percent gross margin.`,
-      `Selling twenty units daily yields eight thousand naira in gross profit, or over two hundred thousand naira monthly before minor transport.`,
-      `The biggest hidden risk is product spoilage or bad debts from credit customers, so enforce cash-only transactions from day one.`,
-      `Master your unit margins before spending on expensive branding, and ${resolvedOutro}`
+      `How does a small ${arch.theme.toLowerCase()} hustle generate consistent daily cash flow with just ${arch.targetBudget}? Here is the real blueprint.`,
+      `This business succeeds because it provides instant convenience to busy everyday customers who want fast, reliable service in their neighborhood.`,
+      `You do not need an expensive shop or heavy machinery. Start from home using basic supplies and free messaging apps.`,
+      `Reach your first twenty customers directly through WhatsApp groups and local word-of-mouth rather than wasting money on paid advertisements.`,
+      `The critical failure point is spending initial earnings on personal wants instead of rolling seventy percent back into supplies.`,
+      `Build your cash float step by step before worrying about fancy branding, and ${resolvedOutro}`
     ];
   } else if (arch.category === FIN_CATEGORIES.SKILLS_TO_INCOME) {
     slideTexts = [
-      `You do not need a laptop or expensive camera to earn your first twenty thousand naira or fifteen dollars with your phone.`,
-      `Thousands of busy local businesses and creators need short video edits and marketing flyers but lack time to make them.`,
-      `Download free mobile apps like CapCut and Canva, and practice by redesigning three ugly local business flyers today.`,
-      `Send direct messages offering two free sample designs to five local vendors, then charge five thousand naira per future flyer.`,
-      `The rookie mistake is waiting until you are an expert before reaching out to real paying clients in your area.`,
-      `Build your first mobile portfolio within forty-eight hours, stay consistent, and ${resolvedOutro}`
+      `You do not need a fancy computer or camera to earn extra income when you have a smartphone in your pocket.`,
+      `Local business owners and online creators are constantly searching for people who can edit short clips and design clean graphics.`,
+      `Install free tools like CapCut and Canva, and practice by creating three sample marketing flyers for neighborhood shops today.`,
+      `Send polite direct messages offering two free draft designs, then charge a fair fee once they see your quality.`,
+      `The biggest barrier is self-doubt and waiting until you feel like an expert before contacting your first potential client.`,
+      `Take simple action today to build your confidence and income, and ${resolvedOutro}`
     ];
   } else if (arch.category === FIN_CATEGORIES.SCAM_AWARENESS) {
     slideTexts = [
-      `Urgent scam alert: If anyone promises you fifty percent guaranteed returns in twenty-four hours, it is a mathematical Ponzi trap.`,
-      `These fake schemes use money from new victims to pay initial users before shutting down websites and disappearing with your funds.`,
-      `Three instant red flags: Guaranteed profits with zero risk, anonymous admin Telegram channels, and pressure to recruit three friends.`,
-      `Never deposit your hard-earned school fees or startup capital into unregulated apps promising overnight doubled money.`,
-      `Real wealth takes patience and daily skill. If an investment seems too good to be true, walk away immediately.`,
-      `Protect your family and friends by sharing this breakdown, and ${resolvedOutro}`
+      `Urgent money alert: If any platform promises to double your cash in twenty-four hours, walk away immediately.`,
+      `Fraudulent schemes prey on people's desire for quick wealth by using funds from new depositors to pay earlier participants.`,
+      `Look out for three major red flags: Guaranteed high returns, unknown anonymous operators, and constant pressure to invite your contacts.`,
+      `Once new signups slow down, these platforms freeze all withdrawals and vanish with everyone's hard-earned savings.`,
+      `Protect your capital by remembering that legitimate investments always carry measured risk and require realistic patience.`,
+      `Share this warning with friends to keep your community safe, and ${resolvedOutro}`
+    ];
+  } else if (arch.category === FIN_CATEGORIES.SAVING_PERSONAL_FINANCE) {
+    slideTexts = [
+      `Why do so many hardworking people finish each month with zero savings? It usually comes down to small unmonitored leaks.`,
+      `Relying on willpower alone does not work when temptation is everywhere. You need a simple system that saves automatically.`,
+      `The most effective strategy is the twenty-four-hour rule: pause for one full day before making any non-essential purchase.`,
+      `Keep your emergency cash buffer completely separate from your daily spending card so you never tap it on impulse.`,
+      `A common pitfall is treating every unexpected wind-fall as bonus spending cash rather than boosting your financial safety net.`,
+      `Small consistent habits build immense peace of mind over time, so start today and ${resolvedOutro}`
     ];
   } else {
-    // Default Small-Capital Business / Saving
+    // Default Small-Capital Business
     slideTexts = [
-      `If you have only ${arch.targetBudget} in your pocket today, you do not need millions in starting cash to generate real daily profits.`,
-      `The biggest mistake ninety percent of beginners make is waiting months for massive capital instead of solving immediate everyday local problems.`,
-      `Focus on cash velocity. Moving five dollars or seven thousand naira three times a week creates more income than holding idle cash.`,
-      `With ${arch.targetBudget}, calculate your gross margins first. Keep packaging near zero, deliver locally on foot, and retain high margins.`,
-      `Separate your business cash box from personal feeding money immediately so unexpected daily expenses never drain your working startup float.`,
-      `Compound your daily profits patiently, stay disciplined, and ${resolvedOutro}`
+      `If you have only ${arch.targetBudget} to your name, you have enough to begin building a dependable income stream today.`,
+      `Most people stay stuck waiting for millions in startup capital instead of solving simple, everyday problems for local customers.`,
+      `Focus on speed and utility. Offering a needed service with zero inventory allows you to start earning without borrowing money.`,
+      `Keep your startup overhead minimal by operating on foot, delivering value personally, and collecting payment upon completion.`,
+      `Never mix your personal living money with your business funds, or daily household needs will quietly consume your float.`,
+      `Grow your working capital patiently with steady discipline, and ${resolvedOutro}`
     ];
   }
 
@@ -1144,7 +1217,7 @@ function synthesizeDeterministicFinStoryboard(archetype, topicTitle, channelHand
     angle: arch.angle,
     hook: arch.angle,
     communityQuestion: flowGuide.communityQuestion,
-    description: `Comprehensive practical breakdown of ${arch.theme}.\n\nSeries: ${flowGuide.series}\nQuestion: ${flowGuide.communityQuestion}\n\n#Shorts #viral #trending #PersonalFinance #SmallBusiness #MoneyTips #SideHustle #FinancialLiteracy #Wealth #fyp`,
+    description: `Practical money breakdown on ${arch.theme}.\n\nSeries: ${flowGuide.series}\nQuestion: ${flowGuide.communityQuestion}\n\n#Shorts #viral #trending #PersonalFinance #SmallBusiness #MoneyTips #SideHustle #FinancialLiteracy #Wealth #fyp`,
     tags: ["#Shorts", "#viral", "#trending", "#PersonalFinance", "#SmallBusiness", "#MoneyTips", "#SideHustle", "#FinancialLiteracy", "#Wealth", "#fyp"],
     estimatedBudget: arch.targetBudget,
     slides: slideTexts.map((text, idx) => ({
@@ -1286,6 +1359,7 @@ module.exports = {
   fetchRecentFinHistoryFromFirestore,
   isFinTopicSimilarToHistory,
   selectDiverseFinArchetype,
+  validateFinStoryboardQuality,
   buildFinPromptForSlot,
   buildFinDeepDivePrompt,
   synthesizeDeterministicFinStoryboard,
