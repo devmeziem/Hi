@@ -70,10 +70,15 @@ async function runCartoonPipelineDiagnostic() {
     const svgContent = generateCharacterFrameSvg(scene.character_action, scene.emotion, dominantMouth);
     fs.writeFileSync(frameSvgPath, svgContent);
 
-    // D. Render Single Scene MP4
+    // D. Render Single Scene MP4 via Blender 2.5D Animated Engine
     const sceneMp4Path = path.join(ARTIFACTS_DIR, `scene_${sceneIndex}.mp4`);
     try {
-      renderSingleSceneVideo(frameSvgPath, audioWavPath, sceneMp4Path, ttsResult.duration);
+      renderSingleSceneVideo(frameSvgPath, audioWavPath, sceneMp4Path, ttsResult.duration, {
+        mouthCuesJson: lipsyncResult.jsonPath,
+        action: scene.character_action,
+        emotion: scene.emotion,
+        camera: scene.camera
+      });
       renderedScenes.push({
         sceneIndex,
         videoPath: sceneMp4Path,

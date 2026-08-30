@@ -98,37 +98,57 @@ function assembleFinalCartoonVideo(sceneFiles, outputMp4Path, srtPath) {
 }
 
 /**
- * Render a single 2D cartoon scene directly using SVG frames and WAV audio via FFmpeg
+ * Render a single 2D/2.5D cartoon scene with Blender (or FFmpeg fallback)
  */
-function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0) {
+function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0, options = {}) {
   const dir = path.dirname(outputSceneMp4);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-  console.log(`[Audio/Media Engine] Rendering scene: ${path.basename(outputSceneMp4)} (${duration}s)`);
+  const { mouthCuesJson, action = 'talking', emotion = 'curious', camera = 'medium' } = options;
+  console.log(`[Media Engine] Rendering scene: ${path.basename(outputSceneMp4)} (${duration}s)`);
 
   let rendered = false;
 
-  // Attempt 1: Direct SVG rendering if librsvg is enabled in FFmpeg
+  // Attempt 1: Execute Headless Blender 2.5D Engine (Highest Fidelity & Animated Lip-Sync)
   try {
-    const ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${svgPath}" -i "${wavPath}" -c:v libx264 -tune stillimage -pix_fmt yuv420p -r 30 -s 1080x1920 -c:a aac -b:a 192k -shortest "${outputSceneMp4}" 2>/dev/null`;
-    execSync(ffmpegCmd);
+    const blenderScript = path.join(process.cwd(), 'scripts', 'blender_cartoon_renderer.py');
+    const assetsDir = path.join(process.cwd(), 'cartoon_character_assets');
+    const mouthArg = (mouthCuesJson && fs.existsSync(mouthCuesJson)) ? `--mouth_cues "${mouthCuesJson}"` : '';
+
+    const blenderCmd = `blender -b -P "${blenderScript}" -- --assets_dir "${assetsDir}" ${mouthArg} --action "${action}" --emotion "${emotion}" --duration ${duration} --camera "${camera}" --audio_wav "${wavPath}" --output_mp4 "${outputSceneMp4}"`;
+    
+    console.log(`[Media Engine] Executing Headless Blender CLI...`);
+    execSync(blenderCmd, { stdio: 'pipe', timeout: 60000 });
+
     if (fs.existsSync(outputSceneMp4) && fs.statSync(outputSceneMp4).size > 1000) {
+      console.log(`[Media Engine] Blender render succeeded: ${path.basename(outputSceneMp4)}`);
       rendered = true;
     }
-  } catch {}
+  } catch (blenderErr) {
+    console.warn(`[Media Engine] Blender CLI execution skipped or unavailable: ${blenderErr.message}`);
+  }
 
-  // Attempt 2: High-contrast 1080x1920 animation frame generator
+  // Attempt 2: Direct SVG + WAV rendering if librsvg is enabled in FFmpeg
   if (!rendered) {
     try {
-      const pngTempPath = svgPath.replace('.svg', '.png');
-      // Generate frame using lavfi
+      const ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${svgPath}" -i "${wavPath}" -c:v libx264 -tune stillimage -pix_fmt yuv420p -r 30 -s 1080x1920 -c:a aac -b:a 192k -shortest "${outputSceneMp4}" 2>/dev/null`;
+      execSync(ffmpegCmd);
+      if (fs.existsSync(outputSceneMp4) && fs.statSync(outputSceneMp4).size > 1000) {
+        rendered = true;
+      }
+    } catch {}
+  }
+
+  // Attempt 3: High-contrast vertical animation frame generator
+  if (!rendered) {
+    try {
       const fallbackCmd = `ffmpeg -y -f lavfi -i "color=c=0x0f172a:s=1080x1920:d=${duration}" -i "${wavPath}" -c:v libx264 -pix_fmt yuv420p -r 30 -c:a aac -b:a 192k -shortest "${outputSceneMp4}" 2>/dev/null`;
       execSync(fallbackCmd);
       if (fs.existsSync(outputSceneMp4) && fs.statSync(outputSceneMp4).size > 1000) {
         rendered = true;
       }
     } catch (e) {
-      console.warn('[Audio/Media Engine] Fallback scene render error:', e.message);
+      console.warn('[Media Engine] Fallback scene render error:', e.message);
     }
   }
 
