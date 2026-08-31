@@ -7,12 +7,11 @@
  *
  * Required environment:
  *   BUFFER_API_KEY
+ *   BUFFER_TIKTOK_CHANNEL_ID
  *   CLOUDINARY_CLOUD_NAME
  *   CLOUDINARY_UPLOAD_PRESET
  *
  * Optional:
- *   BUFFER_ORGANIZATION_ID
- *   BUFFER_TIKTOK_CHANNEL_ID
  *   BUFFER_POST_TEXT
  *   BUFFER_THUMBNAIL_OFFSET_MS
  */
@@ -22,7 +21,6 @@ const path = require('path');
 
 const BUFFER_API_URL = 'https://api.buffer.com';
 const BUFFER_API_KEY = String(process.env.BUFFER_API_KEY || '').trim();
-const BUFFER_ORGANIZATION_ID = String(process.env.BUFFER_ORGANIZATION_ID || '').trim();
 const BUFFER_TIKTOK_CHANNEL_ID = String(process.env.BUFFER_TIKTOK_CHANNEL_ID || '').trim();
 const CLOUDINARY_CLOUD_NAME = String(process.env.CLOUDINARY_CLOUD_NAME || '').trim();
 const CLOUDINARY_UPLOAD_PRESET = String(process.env.CLOUDINARY_UPLOAD_PRESET || '').trim();
@@ -72,9 +70,7 @@ function findLatestVideo() {
     if (!fs.existsSync(root)) continue;
     for (const name of fs.readdirSync(root)) {
       const full = path.join(root, name);
-      if (fs.statSync(full).isFile() && /\.mp4$/i.test(name)) {
-        files.push(full);
-      }
+      if (fs.statSync(full).isFile() && /\.mp4$/i.test(name)) files.push(full);
     }
   }
 
@@ -85,7 +81,7 @@ function findLatestVideo() {
 
 async function uploadToCloudinary(videoPath) {
   if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
-    fail('CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET are required because Buffer requires a public, stable media URL.');
+    fail('CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET are required because Buffer needs a public media URL.');
   }
 
   console.log(`[Buffer/TikTok] Uploading ${path.basename(videoPath)} to Cloudinary...`);
@@ -112,46 +108,34 @@ async function uploadToCloudinary(videoPath) {
 }
 
 async function resolveTikTokChannel() {
-  if (BUFFER_TIKTOK_CHANNEL_ID) {
-    const data = await bufferRequest(`query GetChannel($id: ChannelId!) {
-      channel(input: { id: $id }) { id name displayName service isDisconnected isLocked allowedActions }
-    }`, { id: BUFFER_TIKTOK_CHANNEL_ID });
-    const channel = data?.channel;
-    if (!channel) fail('BUFFER_TIKTOK_CHANNEL_ID was supplied but Buffer returned no channel.');
-    if (channel.service !== 'tiktok') fail(`Configured Buffer channel is '${channel.service}', not TikTok.`);
-    if (channel.isDisconnected || channel.isLocked) fail('Configured TikTok channel is disconnected or locked in Buffer.');
-    return channel;
+  if (!BUFFER_TIKTOK_CHANNEL_ID) {
+    fail('BUFFER_TIKTOK_CHANNEL_ID is required. Get the ID of your connected TikTok channel from Buffer and add it as a GitHub Actions secret.');
   }
 
-  let organizationId = BUFFER_ORGANIZATION_ID;
-  if (!organizationId) {
-    const data = await bufferRequest(`query GetAccount { account { organizations { id name } } }`);
-    const orgs = data?.account?.organizations || [];
-    if (orgs.length !== 1) {
-      fail('Set BUFFER_ORGANIZATION_ID when your Buffer account has more than one organization.');
+  const data = await bufferRequest(`query GetChannel($id: ChannelId!) {
+    channel(input: { id: $id }) {
+      id
+      name
+      displayName
+      service
+      isDisconnected
+      isLocked
     }
-    organizationId = orgs[0]?.id;
-  }
+  }`, { id: BUFFER_TIKTOK_CHANNEL_ID });
 
-  const data = await bufferRequest(`query GetChannels($organizationId: OrganizationId!) {
-    channels(input: { organizationId: $organizationId }) {
-      id name displayName service isDisconnected isLocked allowedActions
-    }
-  }`, { organizationId });
-
-  const tiktoks = (data?.channels || []).filter(c => c.service === 'tiktok' && !c.isDisconnected && !c.isLocked);
-  if (!tiktoks.length) fail('No usable TikTok channel was found in the selected Buffer organization.');
-  if (tiktoks.length > 1) {
-    fail(`Found ${tiktoks.length} usable TikTok channels. Set BUFFER_TIKTOK_CHANNEL_ID to choose one.`);
-  }
-  return tiktoks[0];
+  const channel = data?.channel;
+  if (!channel) fail('Buffer returned no channel for BUFFER_TIKTOK_CHANNEL_ID.');
+  if (channel.service !== 'tiktok') fail(`Configured Buffer channel is '${channel.service}', not TikTok.`);
+  if (channel.isDisconnected) fail('The configured TikTok channel is disconnected from Buffer.');
+  if (channel.isLocked) fail('The configured TikTok channel is locked in Buffer.');
+  return channel;
 }
 
 async function createBufferPost(channel, mediaUrl) {
-  const query = `mutation CreateTikTokVideo($input: CreatePostInput!) {
+  const query = `mutation CreateVideoPost($input: CreatePostInput!) {
     createPost(input: $input) {
       ... on PostActionSuccess {
-        post { id status dueAt channelService channelId text }
+        post { id status dueAt channelId text }
       }
       ... on MutationError { message }
     }
@@ -162,8 +146,12 @@ async function createBufferPost(channel, mediaUrl) {
     channelId: channel.id,
     schedulingType: 'automatic',
     mode: 'addToQueue',
-    assets: [{ video: { url: mediaUrl, metadata: { thumbnailOffset: Number.isFinite(THUMBNAIL_OFFSET_MS) ? THUMBNAIL_OFFSET_MS : 2000 } } }],
-    metadata: { tiktok: { isAiGenerated: true } }
+    assets: [{
+      video: {
+        url: mediaUrl,
+        metadata: { thumbnailOffset: Number.isFinite(THUMBNAIL_OFFSET_MS) ? THUMBNAIL_OFFSET_MS : 2000 }
+      }
+    }]
   };
 
   const data = await bufferRequest(query, { input });
