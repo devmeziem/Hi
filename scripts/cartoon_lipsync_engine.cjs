@@ -20,16 +20,27 @@ const fs = require('fs');
 const path = require('path');
 const { execSync, spawnSync } = require('child_process');
 
+function getRhubarbBinPath() {
+  const possiblePaths = [
+    'rhubarb',
+    '/usr/local/bin/rhubarb',
+    '/tmp/bin/rhubarb',
+    '/tmp/rhubarb_bin/Rhubarb-Lip-Sync-1.13.0-Linux/rhubarb'
+  ];
+  for (const p of possiblePaths) {
+    try {
+      const res = spawnSync(p, ['--version'], { encoding: 'utf8' });
+      if (res.status === 0) return p;
+    } catch {}
+  }
+  return null;
+}
+
 /**
  * Check if rhubarb binary is available on the system
  */
 function isRhubarbAvailable() {
-  try {
-    const res = spawnSync('rhubarb', ['--version'], { encoding: 'utf8' });
-    return res.status === 0;
-  } catch {
-    return false;
-  }
+  return getRhubarbBinPath() !== null;
 }
 
 /**
@@ -40,7 +51,8 @@ function runRhubarb(wavPath, outputPathJson) {
     throw new Error(`Audio file not found: ${wavPath}`);
   }
 
-  const rhubarbCmd = `rhubarb -f json -r phonetic "${wavPath}" -o "${outputPathJson}"`;
+  const binPath = getRhubarbBinPath() || 'rhubarb';
+  const rhubarbCmd = `"${binPath}" -f json -r phonetic "${wavPath}" -o "${outputPathJson}"`;
   console.log(`[LipSync Engine] Running Rhubarb: ${rhubarbCmd}`);
   execSync(rhubarbCmd, { stdio: 'pipe', timeout: 30000 });
 

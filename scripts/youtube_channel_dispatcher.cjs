@@ -49,6 +49,14 @@ const CHANNEL_CONFIG = {
   }
 };
 
+// Aliases for multi-channel routing
+CHANNEL_CONFIG.tech = CHANNEL_CONFIG.cartoon_factory;
+CHANNEL_CONFIG.tech_channel = CHANNEL_CONFIG.cartoon_factory;
+CHANNEL_CONFIG.cartoon = CHANNEL_CONFIG.cartoon_factory;
+CHANNEL_CONFIG.cartoons = CHANNEL_CONFIG.cartoon_factory;
+CHANNEL_CONFIG.stoic = CHANNEL_CONFIG.motivation_stoicism;
+CHANNEL_CONFIG.fin = CHANNEL_CONFIG.finance_saas;
+
 /**
  * Exchange OAuth Refresh Token for a fresh Google API Access Token
  */

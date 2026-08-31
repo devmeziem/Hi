@@ -60,35 +60,28 @@ async function runCartoonPipelineDiagnostic() {
 
     // B. Extract Lip-Sync Mouth Cues (Rhubarb Standard A-X)
     const lipsyncResult = extractMouthCues(audioWavPath, scene.dialogue, ttsResult.duration, ARTIFACTS_DIR);
-    console.log(`   👄 Lip-Sync Track: Extracted ${lipsyncResult.cues.length} mouth cues`);
+    console.log(`   👄 Lip-Sync Track: Extracted ${lipsyncResult.cues.length} mouth cues for continuous animation`);
 
-    // Pick dominant mouth shape or talking action frame
-    const dominantMouth = lipsyncResult.cues.find(c => c.value !== 'X')?.value || 'B';
-
-    // C. Generate 2D Vector Frame for this scene
+    // C. Generate 2D Vector Frame Reference for this scene
     const frameSvgPath = path.join(ARTIFACTS_DIR, `scene_${sceneIndex}_frame.svg`);
-    const svgContent = generateCharacterFrameSvg(scene.character_action, scene.emotion, dominantMouth);
+    const svgContent = generateCharacterFrameSvg(scene.character_action, scene.emotion, 'B');
     fs.writeFileSync(frameSvgPath, svgContent);
 
-    // D. Render Single Scene MP4 via Blender 2.5D Animated Engine
+    // D. Render Single Scene MP4 via Blender 2.5D Animated Engine (Continuous Lip-Sync & Motion)
     const sceneMp4Path = path.join(ARTIFACTS_DIR, `scene_${sceneIndex}.mp4`);
-    try {
-      renderSingleSceneVideo(frameSvgPath, audioWavPath, sceneMp4Path, ttsResult.duration, {
-        mouthCuesJson: lipsyncResult.jsonPath,
-        action: scene.character_action,
-        emotion: scene.emotion,
-        camera: scene.camera
-      });
-      renderedScenes.push({
-        sceneIndex,
-        videoPath: sceneMp4Path,
-        audioPath: audioWavPath,
-        duration: ttsResult.duration,
-        mouthCues: lipsyncResult.cues
-      });
-    } catch (err) {
-      console.warn(`   ⚠️ Scene ${sceneIndex} render warning:`, err.message);
-    }
+    renderSingleSceneVideo(frameSvgPath, audioWavPath, sceneMp4Path, ttsResult.duration, {
+      mouthCuesJson: lipsyncResult.jsonPath,
+      action: scene.character_action,
+      emotion: scene.emotion,
+      camera: scene.camera
+    });
+    renderedScenes.push({
+      sceneIndex,
+      videoPath: sceneMp4Path,
+      audioPath: audioWavPath,
+      duration: ttsResult.duration,
+      mouthCues: lipsyncResult.cues
+    });
   }
 
   // STEP 4: Subtitles Generation

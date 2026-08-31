@@ -63,10 +63,11 @@ jobs:
         run: |
           curl -sL "https://github.com/DanielSWolf/rhubarb-lip-sync/releases/download/v1.13.0/Rhubarb-Lip-Sync-1.13.0-Linux.zip" -o rhubarb.zip
           unzip -q rhubarb.zip -d rhubarb_bin || true
-          if [ -f rhubarb_bin/rhubarb ]; then
-            sudo cp -r rhubarb_bin/* /usr/local/bin/ || true
+          RHUBARB_PATH=$(find rhubarb_bin -name rhubarb -type f | head -n 1)
+          if [ -n "$RHUBARB_PATH" ]; then
+            sudo cp "$RHUBARB_PATH" /usr/local/bin/rhubarb
             sudo chmod +x /usr/local/bin/rhubarb
-            echo "Rhubarb Lip Sync installed successfully."
+            echo "Rhubarb Lip Sync installed successfully to /usr/local/bin/rhubarb."
           fi
           rm -rf rhubarb.zip rhubarb_bin
 

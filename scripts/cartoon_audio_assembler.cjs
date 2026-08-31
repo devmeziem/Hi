@@ -62,16 +62,30 @@ function generateSrtSubtitles(scenes, outputSrtPath) {
 }
 
 /**
+ * Find Blender executable on system
+ */
+function getBlenderBinPath() {
+  const { spawnSync } = require('child_process');
+  const possiblePaths = [
+    'blender',
+    '/usr/local/bin/blender',
+    '/tmp/bin/blender',
+    '/tmp/blender_app/blender-3.3.1-linux-x64/blender'
+  ];
+  for (const p of possiblePaths) {
+    try {
+      const res = spawnSync(p, ['-v'], { encoding: 'utf8' });
+      if (res.status === 0) return p;
+    } catch {}
+  }
+  return null;
+}
+
+/**
  * Check if blender is available on system
  */
 function isBlenderAvailable() {
-  try {
-    const { spawnSync } = require('child_process');
-    const res = spawnSync('blender', ['-v'], { encoding: 'utf8' });
-    return res.status === 0;
-  } catch {
-    return false;
-  }
+  return getBlenderBinPath() !== null;
 }
 
 /**
@@ -124,90 +138,43 @@ function assembleFinalCartoonVideo(sceneFiles, outputMp4Path, srtPath) {
 }
 
 /**
- * Render a single 2D/2.5D cartoon scene with Blender (or FFmpeg fallback)
+ * Render a single 2D/2.5D cartoon scene with Blender.
+ * Note: Static video fallbacks have been removed. If Blender rendering fails, this function throws an error.
  */
 function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0, options = {}) {
   const dir = path.dirname(outputSceneMp4);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
   const { mouthCuesJson, action = 'talking', emotion = 'curious', camera = 'medium' } = options;
-  console.log(`[Media Engine] Rendering scene: ${path.basename(outputSceneMp4)} (${duration}s)`);
+  console.log(`[Media Engine] Rendering animated 2.5D scene with Blender: ${path.basename(outputSceneMp4)} (${duration}s)`);
 
   // Remove stale incomplete output if present
   try { if (fs.existsSync(outputSceneMp4)) fs.unlinkSync(outputSceneMp4); } catch {}
 
-  let rendered = false;
-
-  // Attempt 1: Execute Headless Blender 2.5D Engine (if blender binary is present)
-  if (isBlenderAvailable()) {
-    try {
-      const blenderScript = path.join(process.cwd(), 'scripts', 'blender_cartoon_renderer.py');
-      const assetsDir = path.join(process.cwd(), 'cartoon_character_assets');
-      const mouthArg = (mouthCuesJson && fs.existsSync(mouthCuesJson)) ? `--mouth_cues "${mouthCuesJson}"` : '';
-
-      const blenderCmd = `blender -b -P "${blenderScript}" -- --assets_dir "${assetsDir}" ${mouthArg} --action "${action}" --emotion "${emotion}" --duration ${duration} --camera "${camera}" --audio_wav "${wavPath}" --output_mp4 "${outputSceneMp4}"`;
-      
-      console.log(`[Media Engine] Executing Headless Blender CLI...`);
-      execSync(blenderCmd, { stdio: 'pipe', timeout: 60000 });
-
-      if (fs.existsSync(outputSceneMp4) && fs.statSync(outputSceneMp4).size > 10000) {
-        console.log(`[Media Engine] Blender render succeeded: ${path.basename(outputSceneMp4)}`);
-        rendered = true;
-      }
-    } catch (blenderErr) {
-      console.warn(`[Media Engine] Blender CLI execution notice: ${blenderErr.message}`);
-    }
+  const blenderBin = getBlenderBinPath();
+  if (!blenderBin) {
+    throw new Error('Blender binary is required for cartoon animation rendering but was not found in PATH or standard directories.');
   }
 
-  // Attempt 2: Rasterize SVG Frame to PNG then encode MP4 with Audio
-  if (!rendered) {
-    const tempPng = path.join(dir, `${path.basename(outputSceneMp4, '.mp4')}_frame.png`);
-    try {
-      // 2A. Rasterize SVG to high-res vertical 1080x1920 PNG
-      execSync(`ffmpeg -y -i "${svgPath}" -vf "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=0x0f172a,setsar=1" "${tempPng}" 2>/dev/null`);
+  const blenderScript = path.join(process.cwd(), 'scripts', 'blender_cartoon_renderer.py');
+  const assetsDir = path.join(process.cwd(), 'cartoon_character_assets');
+  const mouthArg = (mouthCuesJson && fs.existsSync(mouthCuesJson)) ? `--mouth_cues "${mouthCuesJson}"` : '';
 
-      if (fs.existsSync(tempPng) && fs.statSync(tempPng).size > 500) {
-        // 2B. Encode static 1080x1920 video at 30fps with audio
-        const ffmpegCmd = `ffmpeg -y -loop 1 -framerate 30 -t ${duration} -i "${tempPng}" -i "${wavPath}" -c:v libx264 -preset fast -pix_fmt yuv420p -r 30 -c:a aac -b:a 192k -ar 44100 -shortest "${outputSceneMp4}" 2>/dev/null`;
-        execSync(ffmpegCmd);
-        try { fs.unlinkSync(tempPng); } catch {}
-        if (fs.existsSync(outputSceneMp4) && fs.statSync(outputSceneMp4).size > 10000) {
-          rendered = true;
-        }
-      }
-    } catch (e) {
-      console.warn('[Media Engine] SVG raster render notice:', e.message);
-    }
-  }
-
-  // Attempt 3: Direct SVG Stream if available
-  if (!rendered) {
-    try {
-      const ffmpegCmd = `ffmpeg -y -loop 1 -framerate 30 -t ${duration} -i "${svgPath}" -i "${wavPath}" -c:v libx264 -preset fast -pix_fmt yuv420p -r 30 -s 1080x1920 -c:a aac -b:a 192k -ar 44100 -shortest "${outputSceneMp4}" 2>/dev/null`;
-      execSync(ffmpegCmd);
-      if (fs.existsSync(outputSceneMp4) && fs.statSync(outputSceneMp4).size > 10000) {
-        rendered = true;
-      }
-    } catch {}
-  }
-
-  // Attempt 4: High-contrast stylized color canvas with animated subtitle pulse
-  if (!rendered) {
-    try {
-      const fallbackCmd = `ffmpeg -y -f lavfi -i "color=c=0x0f172a:s=1080x1920:r=30:d=${duration}" -i "${wavPath}" -c:v libx264 -preset fast -pix_fmt yuv420p -r 30 -c:a aac -b:a 192k -ar 44100 -shortest "${outputSceneMp4}" 2>/dev/null`;
-      execSync(fallbackCmd);
-      if (fs.existsSync(outputSceneMp4) && fs.statSync(outputSceneMp4).size > 10000) {
-        rendered = true;
-      }
-    } catch (e) {
-      console.warn('[Media Engine] Fallback scene render error:', e.message);
-    }
+  const blenderCmd = `"${blenderBin}" -b -P "${blenderScript}" -- --assets_dir "${assetsDir}" ${mouthArg} --action "${action}" --emotion "${emotion}" --duration ${duration} --camera "${camera}" --audio_wav "${wavPath}" --output_mp4 "${outputSceneMp4}"`;
+  
+  console.log(`[Media Engine] Executing Headless Blender CLI command...`);
+  try {
+    execSync(blenderCmd, { stdio: 'inherit', timeout: 180000 });
+  } catch (err) {
+    throw new Error(`Blender rendering execution failed: ${err.message}`);
   }
 
   if (fs.existsSync(outputSceneMp4) && fs.statSync(outputSceneMp4).size > 10000) {
+    console.log(`[Media Engine] ✅ Blender scene render succeeded: ${path.basename(outputSceneMp4)} (${fs.statSync(outputSceneMp4).size} bytes)`);
     return outputSceneMp4;
   }
-  throw new Error(`Failed to render scene: ${outputSceneMp4}`);
+
+  throw new Error(`Blender scene render failed: Output file ${outputSceneMp4} was not produced or is too small.`);
 }
 
 module.exports = {
