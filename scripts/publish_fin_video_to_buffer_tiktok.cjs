@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Publish the latest Fin Blueprint MP4 through Buffer to a connected TikTok channel.
- * Cloudinary uses an UNSIGNED upload preset: no Cloudinary API key or secret is required.
+ * Cloudinary uses an UNSIGNED upload preset: no Cloudinary API key or API secret is used.
  */
 const fs = require('fs');
 const path = require('path');
@@ -14,6 +14,21 @@ const CLOUDINARY_UPLOAD_PRESET = String(process.env.CLOUDINARY_UPLOAD_PRESET || 
 const POST_TEXT = String(process.env.BUFFER_POST_TEXT || process.env.TEST_TOPIC || 'Fin Blueprint').trim();
 
 function fail(message) { console.error(`\n[Buffer/TikTok] ERROR: ${message}`); process.exit(1); }
+
+function validateCloudinaryConfig() {
+  if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
+    fail('Missing CLOUDINARY_CLOUD_NAME or CLOUDINARY_UPLOAD_PRESET. For unsigned uploads, Cloudinary requires the cloud name and an UNSIGNED upload preset; it does not require an API key or API secret.');
+  }
+
+  // A Cloudinary API key is not a cloud name. Catch the common mistake without printing secrets.
+  if (/^\d{6,15}$/.test(CLOUDINARY_CLOUD_NAME)) {
+    fail('CLOUDINARY_CLOUD_NAME appears to contain a numeric API key. Replace that GitHub secret with the Cloudinary CLOUD NAME from your Cloudinary dashboard. Do NOT add an API key or API secret to this workflow.');
+  }
+
+  console.log(`[Cloudinary] Using cloud name: ${CLOUDINARY_CLOUD_NAME}`);
+  console.log(`[Cloudinary] Using upload preset: ${CLOUDINARY_UPLOAD_PRESET}`);
+  console.log('[Cloudinary] Authentication mode: UNSIGNED (no API key/secret).');
+}
 
 async function bufferRequest(query, variables = {}) {
   const response = await fetch(BUFFER_API_URL, {
@@ -45,10 +60,7 @@ function findLatestVideo() {
 }
 
 async function uploadToCloudinary(videoPath) {
-  if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
-    fail('CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET are required. The upload preset must be configured as UNSIGNED. No Cloudinary API key or API secret is required.');
-  }
-
+  validateCloudinaryConfig();
   console.log(`[Buffer/TikTok] Unsigned-uploading ${path.basename(videoPath)} to Cloudinary...`);
   const form = new FormData();
   form.append('file', new Blob([fs.readFileSync(videoPath)], { type: 'video/mp4' }), path.basename(videoPath));
@@ -58,7 +70,10 @@ async function uploadToCloudinary(videoPath) {
   const text = await response.text();
   let payload;
   try { payload = JSON.parse(text); } catch { throw new Error(`Cloudinary returned HTTP ${response.status}: ${text.slice(0, 500)}`); }
-  if (!response.ok || !payload.secure_url) throw new Error(`Cloudinary unsigned upload failed (HTTP ${response.status}): ${JSON.stringify(payload)}`);
+  if (!response.ok || !payload.secure_url) {
+    const cloudError = payload?.error?.message || response.headers.get('x-cld-error') || `HTTP ${response.status}`;
+    throw new Error(`Cloudinary unsigned upload failed: ${cloudError}. If this says "Unknown API key", the CLOUDINARY_CLOUD_NAME GitHub secret is almost certainly set to the API key instead of the cloud name, because this request sends no api_key field.`);
+  }
   console.log(`[Buffer/TikTok] Public media URL ready: ${payload.secure_url}`);
   return payload.secure_url;
 }
