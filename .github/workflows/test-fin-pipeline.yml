@@ -6,7 +6,7 @@ on:
       - main
       - master
   schedule:
-    - cron: '0 2,7,12,17,22 * * *' # Automated 5x daily posts: 4x Shorts (07:00, 12:00, 17:00, 22:00 UTC) + 1x Deep Dive (02:00 UTC)
+    - cron: '0 2,7,12,17,22 * * *' # Automated 5x daily posts: 4x Shorts + 1x Deep Dive (UTC)
   workflow_dispatch:
     inputs:
       topic:
@@ -24,7 +24,7 @@ on:
           - short_form
           - deep_dive
       dry_run:
-        description: 'Dry Run Mode (Uncheck for live YouTube upload)'
+        description: 'Dry Run Mode (Uncheck for live Buffer/TikTok queue)'
         required: true
         default: false
         type: boolean
@@ -43,8 +43,7 @@ jobs:
           node-version: 20
 
       - name: Install Dependencies
-        run: |
-          npm install --legacy-peer-deps --no-audit --no-fund || npm install --force || true
+        run: npm install --legacy-peer-deps --no-audit --no-fund
 
       - name: Install FFmpeg Media Engine
         run: |
@@ -83,6 +82,18 @@ jobs:
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
           FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
         run: node scripts/test_fin_runner.cjs
+
+      - name: Queue Generated Video to TikTok through Buffer
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          TEST_TOPIC: ${{ github.event.inputs.topic }}
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          BUFFER_TIKTOK_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_CHANNEL_ID }}
+          BUFFER_POST_TEXT: ${{ github.event.inputs.topic }}
+          BUFFER_THUMBNAIL_OFFSET_MS: '2000'
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
+        run: node scripts/publish_fin_video_to_buffer_tiktok.cjs
 
       - name: Commit & Push Daily Blueprint Manifest to Repository
         if: always()
