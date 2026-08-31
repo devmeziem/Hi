@@ -36,16 +36,16 @@ const CHANNEL_CONFIG = {
     pinnedComment: '📌 "No person is free who is not master of himself." Which of these Stoic rules resonates most with you today? Subscribe to @TheStoicArchitect for daily fortitude.',
     tags: ['#Shorts', '#viral', '#trending', '#Stoicism', '#MarcusAurelius', '#Discipline', '#Motivation', '#Mindset', '#Wisdom', '#DailyStoic', '#fyp']
   },
-  tech_ai: {
-    handle: '@bonesceo',
-    name: 'Godswill Isaac',
+  cartoon_factory: {
+    handle: '@voxam_cartoons',
+    name: 'Voxam Animated Shorts',
     isPrimary: false,
     clientId: process.env.YOUTUBE_CLIENT_ID_CH3 || DEFAULT_CLIENT_ID,
     clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH3 || DEFAULT_CLIENT_SECRET,
     refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH3 || process.env.YOUTUBE_REFRESH_TOKEN || '',
-    affiliateCta: '⚡ Access Full Stack AI Automation Repos: https://selar.co/m/voxam-tech',
-    pinnedComment: '📌 Fork the autonomous multi-agent GitHub Actions repo: https://github.com/devmeziem/Voxam',
-    tags: ['#Shorts', '#viral', '#trending', '#AI', '#Coding', '#Cloudflare', '#DeepSeek', '#OpenSource', '#fyp']
+    affiliateCta: '🎬 Subscribe to Voxam Animated Shorts for daily fun visual science, tech & curious facts!',
+    pinnedComment: '📌 What curious cartoon topic should we animate next? Drop your ideas in the comments below!',
+    tags: ['#Shorts', '#viral', '#trending', '#Cartoon', '#Animation', '#ScienceShorts', '#Curiosity', '#Blender', '#2DAnimation', '#fyp']
   }
 };
 

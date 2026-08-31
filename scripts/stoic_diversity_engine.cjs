@@ -619,8 +619,34 @@ function selectDailyDiverseSlots(arg1 = 4, arg2 = []) {
 }
 
 /**
+ * Clean formatting markers, prefixes, and markdown tags from slide narration text
+ */
+function cleanSlideNarrationText(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .replace(/<think>[\s\S]*/gi, '')
+    .replace(/Thinking Process:[\s\S]*?(?=\n\n|\n[A-Z0-9"']|$)/gi, '')
+    .replace(/```[\s\S]*?```/gi, '')
+    .replace(/```/g, '')
+    .replace(/^\s*\[\s*slide\s*\d+[^\]]*\]\s*[:\-–—]?\s*/i, '')
+    .replace(/^\s*\(\s*slide\s*\d+[^)]*\)\s*[:\-–—]?\s*/i, '')
+    .replace(/^\s*slide\s*\d+\s*[:\-–—]\s*/i, '')
+    .replace(/^\s*scene\s*\d+\s*[:\-–—]\s*/i, '')
+    .replace(/^\s*(narration|voiceover|voice\s*over|host|speaker|audio|script)\s*[:\-–—]\s*/i, '')
+    .replace(/\(\s*\d+[-–]\d+\s*words?\s*\)/gi, '')
+    .replace(/\[\s*\d+[-–]\d+\s*words?\s*\]/gi, '')
+    .replace(/\(\s*around\s*\d+[-–]\d+\s*chars?\s*\)/gi, '')
+    .replace(/\(\s*\d+\s*words?\s*\)/gi, '')
+    .replace(/^["'`]|["'`]$/g, '')
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
  * Anti-Blueprint / Anti-Placeholder / Anti-Prompt-Leak Validator
- * Strictly rejects any storyboard containing raw prompts, word-count hints, or template artifacts
+ * Automatically cleans formatting markers from LLM outputs without rejecting valid scripts
  */
 function validateStoicStoryboardQuality(storyboard) {
   if (!storyboard || typeof storyboard !== 'object') return { valid: false, reason: 'Storyboard is not an object' };
@@ -646,15 +672,16 @@ function validateStoicStoryboardQuality(storyboard) {
     /\b(slideIndex|slideSteps|flowGuide|slotArchetype|chosenHookFormat|chosenOutro)\b/i,
     /\b(cinematic\s+9:16|vertical\s+8k\s+scene|obsidian\s+slate\s+backdrop|warm\s+amber\s+rim\s+lighting)\b/i,
     /\b(systemPrompt|userPrompt|json\s+schema|here\s+is\s+the\s+6-slide)\b/i,
-    /\b(internal_plan|placeholder|blueprint\s+leak|diagnostic\s+report)\b/i,
-    /^\s*\[slide\s*\d+/i,
-    /^\s*(narration|voiceover|host|speaker)\s*[:\-]/i
+    /\b(internal_plan|placeholder|blueprint\s+leak|diagnostic\s+report)\b/i
   ];
 
   const textsSeen = new Set();
 
   for (let i = 0; i < storyboard.slides.length; i++) {
     const slide = storyboard.slides[i];
+    if (slide && typeof slide.text === 'string') {
+      slide.text = cleanSlideNarrationText(slide.text);
+    }
     const text = String(slide?.text || '').trim();
 
     if (!text || text.length < 25) {
@@ -785,6 +812,7 @@ MANDATE: Output EXACTLY 6 slides (slideIndex 0 to 5) with 18-25 words per slide 
 
 /**
  * Deterministic fallback storyboard generator strictly outputting 6 slides (32-42s runtime)
+ * 100% topic-aware and context-aligned.
  */
 function synthesizeDeterministicStoryboard(slotArchetype, topicTitle, channelHandle = '@thestoicarchitect-n4b', slotIndex = 0) {
   const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
@@ -792,46 +820,101 @@ function synthesizeDeterministicStoryboard(slotArchetype, topicTitle, channelHan
   const arch = slotArchetype || STOIC_ARCHETYPES[0];
   const rawTitle = (topicTitle && topicTitle.length > 5) ? topicTitle : `${arch.theme} - The Stoic Rule for Mental Strength`;
   const title = formatViralShortsTitle(rawTitle, 'stoic', false);
+  const visualAesthetic = arch.visualStyle || 'Moody obsidian marble bust in dramatic cinematic chiaroscuro, warm amber side rim lighting, 9:16 vertical 8k';
+
+  let slideTexts = [];
+  const hasCustomTitle = Boolean(topicTitle && topicTitle.trim().length > 5);
+  const titleLower = (rawTitle || '').toLowerCase();
+  const archLower = ((arch.theme || '') + ' ' + (arch.angle || '')).toLowerCase();
+  const topicLower = hasCustomTitle ? titleLower : (titleLower + ' ' + archLower);
+
+  if (topicLower.includes('silence') || topicLower.includes('disrespect') || topicLower.includes('insult') || topicLower.includes('provoke') || topicLower.includes('argument')) {
+    slideTexts = [
+      `When someone disrespects you or tries to provoke an argument, the most dangerous response is not anger—it is complete, icy silence.`,
+      `Most people immediately react with defensive fury, which hands full emotional control of their peace directly to their attacker.`,
+      `Marcus Aurelius realized that an insult has zero power over your character unless your own mind chooses to validate it.`,
+      `Institute a ten-second tactical pause: hold unblinking eye contact, take one slow breath, and say absolutely nothing.`,
+      `Your calm silence dismantles their ego, exposes their insecurity to everyone in the room, and preserves your inner sovereignty.`,
+      `Silence the noise, master your emotional boundaries, and ${resolvedOutro}`
+    ];
+  } else if (topicLower.includes('overthink') || topicLower.includes('anxiety') || topicLower.includes('2 am') || topicLower.includes('worry') || topicLower.includes('paralysis') || topicLower.includes('mind')) {
+    slideTexts = [
+      `Why do you stay awake overthinking conversations from three years ago? It is not anxiety—it is the illusion that worry gives you control.`,
+      `The human brain replays past mistakes and invents catastrophic futures because it is terrified of uncertain outcomes.`,
+      `Seneca warned that we suffer far more in our private imagination than we ever do in objective reality.`,
+      `Cut the loop instantly with physical momentum: write down the worst-case scenario, circle what you can act on now, and discard the rest.`,
+      `When you replace endless contemplation with one immediate constructive action, mental dread evaporates in under sixty seconds.`,
+      `Master your present attention, eliminate imaginary catastrophes, and ${resolvedOutro}`
+    ];
+  } else if (topicLower.includes('solitude') || topicLower.includes('lone') || topicLower.includes('alone') || topicLower.includes('support') || topicLower.includes('isolated')) {
+    slideTexts = [
+      `When nobody supports your vision and you must walk alone, the most formidable person in the room is the one who needs zero applause.`,
+      `Most people abandon their highest ambitions the exact moment their social circle offers doubt instead of praise.`,
+      `Epictetus taught that self-mastery is forged in the dark when nobody is watching, clapping, or validating your daily effort.`,
+      `Embrace voluntary solitude: treat this quiet season as an intense crucible to build undeniable skill and mental armor.`,
+      `When you derive confidence from private discipline rather than public validation, you become impossible to discourage or manipulate.`,
+      `Build your fortress in private, trust the compounding process, and ${resolvedOutro}`
+    ];
+  } else if (topicLower.includes('dopamine') || topicLower.includes('scroll') || topicLower.includes('phone') || topicLower.includes('addiction') || topicLower.includes('impulse') || topicLower.includes('procrastinat')) {
+    slideTexts = [
+      `The first law of mental toughness is simple: if you cannot control your impulses, modern algorithms and cheap dopamine will control you.`,
+      `Endless short-form scrolling and instant gratification drain your baseline dopamine, leaving you exhausted, unfocused, and unmotivated for real work.`,
+      `The ancient Stoics practiced temperance: placing reason firmly above bodily cravings to protect mental clarity and purpose.`,
+      `Implement a strict twenty-four-hour delay rule on impulsive purchases and put your smartphone face down in another room during deep work.`,
+      `Reclaiming your attention from digital noise restores sharp focus, emotional equilibrium, and deep personal sovereignty.`,
+      `Rule your own impulses, guard your daily attention, and ${resolvedOutro}`
+    ];
+  } else if (topicLower.includes('rejection') || topicLower.includes('criticism') || topicLower.includes('opinion') || topicLower.includes('judgment') || topicLower.includes('foolish')) {
+    slideTexts = [
+      `Give me forty seconds to give you the psychological armor that makes you completely immune to rejection and other people's opinions.`,
+      `Most people live in constant fear of being judged, unconsciously shrinking their dreams to appease strangers who do not even care.`,
+      `Remember the spotlight fallacy: other people are completely consumed by their own private anxieties and barely think about your mistakes.`,
+      `Categorize external criticism immediately: if it offers actionable truth, use it; if it is envy or malice, treat it as worthless noise.`,
+      `When you anchor your self-worth to your personal character rather than social approval, rejection loses all power to wound you.`,
+      `Stand unshakeable against external judgments, protect your peace, and ${resolvedOutro}`
+    ];
+  } else if (topicLower.includes('fail') || topicLower.includes('restart') || topicLower.includes('amor fati') || topicLower.includes('rebuild') || topicLower.includes('setback') || topicLower.includes('adversity') || topicLower.includes('obstacle')) {
+    slideTexts = [
+      `Nobody is coming to save you. The day you stop waiting for external rescue is the day your real strength awakens.`,
+      `When plans collapse and severe friction hits, weak minds complain about unfairness while disciplined minds ask what this obstacle demands.`,
+      `The core Stoic doctrine of Amor Fati demands that you do not merely tolerate difficulty, but actively love it as essential fuel.`,
+      `Take a ten-second tactical pause, accept the current reality completely without resentment, and identify your single next controllable step.`,
+      `Every crushing setback is an opportunity to forge resilience, sharpen your judgment, and rebuild with higher standards.`,
+      `Turn every obstacle into raw fuel for growth, stay relentless, and ${resolvedOutro}`
+    ];
+  } else if (topicLower.includes('memento mori') || topicLower.includes('death') || topicLower.includes('urgency') || topicLower.includes('time') || topicLower.includes('waste')) {
+    slideTexts = [
+      `You could leave life right now. Let that determine what you do, what you say, and what you think every single day.`,
+      `Most people live as if they have infinite time, wasting precious years on trivial arguments, petty grievances, and delayed dreams.`,
+      `Marcus Aurelius kept Memento Mori at the center of his mind: remembering mortality eliminates fake urgency and restores absolute clarity.`,
+      `When facing difficult decisions, ask yourself: will this petty dispute or fear matter on the final day of my life?`,
+      `Using the certainty of death as a razor-sharp filter cuts through laziness, dissolves social anxiety, and ignites purpose.`,
+      `Live with fierce intentionality, eliminate meaningless distractions, and ${resolvedOutro}`
+    ];
+  } else {
+    // Dynamic topic synthesis
+    slideTexts = [
+      `When life tests your character and throws chaos in your path, your immediate reaction is the only thing in this world you truly own.`,
+      `Most people operate on automatic pilot, reacting to sudden friction and stressful circumstances with panic, anger, and frustration.`,
+      `The foundational Stoic principle is clear: external events cannot harm you until your own mind judges them as humiliating or catastrophic.`,
+      `Institute a strict ten-second tactical pause before speaking or acting, evaluating if this challenge lies within your direct control.`,
+      `Pour all of your focus into your next controllable decision: your calm composure, your disciplined effort, and your uncompromising standards.`,
+      `Silence the noise, master your internal dialogue, and ${resolvedOutro}`
+    ];
+  }
 
   return {
     title: title,
     theme: arch.theme,
     angle: arch.angle,
-    hook: arch.angle,
-    description: `Comprehensive modern breakdown of ${arch.theme} and mental strength.\n\n#Shorts #viral #trending #Discipline #Motivation #MentalStrength #SelfControl #Stoicism #Mindset #PersonalGrowth #Confidence #fyp`,
+    hook: rawTitle,
+    description: `Comprehensive practical breakdown of ${rawTitle} and mental strength.\n\n#Shorts #viral #trending #Discipline #Motivation #MentalStrength #SelfControl #Stoicism #Mindset #PersonalGrowth #Confidence #fyp`,
     tags: ["#Shorts", "#viral", "#trending", "#Discipline", "#Motivation", "#MentalStrength", "#SelfControl", "#Stoicism", "#Mindset", "#PersonalGrowth", "#fyp"],
-    slides: [
-      {
-        slideIndex: 0,
-        text: `When life tests your character and throws chaos in your path, your immediate reaction is the only thing in this world you truly own.`,
-        visual: `Cinematic vertical 9:16 shot, ${arch.visualStyle}, atmospheric cinematic lighting, dark slate and amber color tone, 8k resolution`
-      },
-      {
-        slideIndex: 1,
-        text: `Most people operate on automatic pilot. When provoked or facing sudden friction, they immediately react with panic, anger, and helpless frustration.`,
-        visual: `Cinematic vertical 9:16 shot matching ${arch.visualStyle}, close angle, rich slate gray shadows with warm amber rim light, 8k`
-      },
-      {
-        slideIndex: 2,
-        text: `The core Stoic principle is simple: external events have zero power to hurt you until your mind judges them as harmful or humiliating.`,
-        visual: `Cinematic vertical 9:16 shot matching ${arch.visualStyle}, solitary contemplative figure in sharp focus, slate stone texture and golden highlights, 8k`
-      },
-      {
-        slideIndex: 3,
-        text: `Institute a strict ten-second tactical pause. Do not speak, do not react with anger, and evaluate if this obstacle is within your control.`,
-        visual: `Cinematic vertical 9:16 shot matching ${arch.visualStyle}, intense focused perspective, atmospheric depth, cinematic slate and golden amber tones, 8k`
-      },
-      {
-        slideIndex: 4,
-        text: `Redirect every drop of your energy into your next controllable action: your effort, your calm, and your private commitment to excellence.`,
-        visual: `Cinematic vertical 9:16 shot matching ${arch.visualStyle}, powerful solid architectural composition, deep slate and warm amber illumination, 8k`
-      },
-      {
-        slideIndex: 5,
-        text: `Silence the noise, master your internal dialogue, and ${resolvedOutro}`,
-        visual: `Cinematic vertical 9:16 shot matching ${arch.visualStyle}, confident thinker looking towards horizon at dawn, warm amber and obsidian tones, 8k`
-      }
-    ]
+    slides: slideTexts.map((text, idx) => ({
+      slideIndex: idx,
+      text: text,
+      visual: `Cinematic vertical 9:16 shot, ${visualAesthetic}, atmospheric cinematic lighting, dark slate and amber color tone, 8k resolution`
+    }))
   };
 }
 

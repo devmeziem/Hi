@@ -78,6 +78,7 @@ const currentUtcHour = new Date().getUTCHours();
 const contentDepth = process.env.CONTENT_DEPTH || (currentUtcHour === 1 ? 'deep_dive' : 'short_form'); // 'short_form' or 'deep_dive'
 
 // API Credentials
+const OPENROUTER_API_KEY = (process.env.OPENROUTER_API_KEY || '').trim();
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim();
 const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || '').trim();
 const DEEPSEEK_API_KEY = (process.env.DEEPSEEK_API_KEY || '').trim();
@@ -120,6 +121,7 @@ function sanitizeForFfmpegDrawtext(str) {
 console.log(`\n${colors.bright}${colors.cyan}══════════════════════════════════════════════════════════════════════${colors.reset}`);
 console.log(`${colors.bright}${colors.bgBlue} VOXAM RUNNER ENVIRONMENT & CREDENTIAL STATUS ${colors.reset}`);
 console.log(`${colors.cyan}══════════════════════════════════════════════════════════════════════${colors.reset}`);
+console.log(`  OpenRouter Gateway    : ${OPENROUTER_API_KEY ? colors.green + '✔ PRESENT (' + OPENROUTER_API_KEY.slice(0, 8) + '...)' + colors.reset : colors.yellow + '✖ MISSING (Optional fallback)' + colors.reset}`);
 console.log(`  OpenAI API Key        : ${OPENAI_API_KEY ? colors.green + '✔ PRESENT (' + OPENAI_API_KEY.slice(0, 7) + '...)' + colors.reset : colors.yellow + '✖ MISSING (Optional)' + colors.reset}`);
 console.log(`  Google Gemini API Key : ${GEMINI_API_KEY ? colors.green + '✔ PRESENT' + colors.reset : colors.yellow + '✖ MISSING' + colors.reset}`);
 console.log(`  xAI Grok API Keys     : ${XAI_API_KEYS.length > 0 ? colors.green + `✔ PRESENT (${XAI_API_KEYS.length} key(s))` + colors.reset : colors.yellow + '✖ MISSING' + colors.reset}`);
@@ -359,7 +361,83 @@ async function resolveTopic(activeGrok, backupEngines) {
   logInfo('No manual topic provided. Discovering a fresh, viral Stoic topic via AI Brain...');
   const recentExclusions = (recentContentHistory || []).slice(0, 10).map(h => `"${h.topic || h.title || ''}"`).filter(s => s !== '""').join(', ');
 
-  // 1. Try Gemini (gemini-2.5-flash, gemini-2.0-flash, gemini-1.5-flash-latest, etc.)
+  // 1. Try OpenRouter Gateway (Top Reliability & Broad Model Availability)
+  if (OPENROUTER_API_KEY) {
+    const openRouterModels = [
+      'google/gemini-2.0-flash-001',
+      'meta-llama/llama-3.3-70b-instruct',
+      'deepseek/deepseek-chat',
+      'mistralai/mistral-small-24b-instruct-2501'
+    ];
+    for (const model of openRouterModels) {
+      try {
+        logInfo(`[Topic Discovery] Requesting topic from OpenRouter (${model})...`);
+        const prompt = `Suggest 1 viral, complete, high-retention YouTube Shorts title (around 35-50 characters) for "${liveChannelName}" (${liveChannelHandle}).
+CHANNEL FOCUS: MODERN STOICISM + MOTIVATION + MENTAL STRENGTH (real modern struggles: discipline, self-control, rejection, failure, overthinking, disrespect).
+THEME: "${resolvedArchetype.theme}"
+ANGLE: "${resolvedArchetype.angle}"
+DO NOT USE BIOGRAPHIES OR QUOTES LISTS.
+DO NOT USE OR DUPLICATE RECENT TITLES: [${recentExclusions || 'None'}]
+Return ONLY the single title text in plain text as a complete, grammatically whole thought without quotes, markdown, or cut-offs.`;
+
+        const res = await new Promise((resolve) => {
+          const postData = JSON.stringify({
+            model: model,
+            messages: [
+              { role: 'system', content: 'You are a viral YouTube Shorts strategist for Stoicism and high-performance psychology. Return ONLY the single title.' },
+              { role: 'user', content: prompt }
+            ],
+            temperature: 0.9,
+            max_tokens: 60
+          });
+          const req = https.request('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+              'HTTP-Referer': 'https://voxam.app',
+              'X-Title': 'Voxam Stoic Engine',
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 9000
+          }, (resp) => {
+            let data = '';
+            resp.on('data', c => data += c);
+            resp.on('end', () => {
+              if (resp.statusCode === 200) {
+                try {
+                  const j = JSON.parse(data);
+                  resolve({ success: true, text: j.choices?.[0]?.message?.content?.trim() });
+                } catch (e) {
+                  resolve({ success: false, error: 'JSON parse error: ' + e.message });
+                }
+              } else {
+                resolve({ success: false, error: `HTTP ${resp.statusCode}: ${data.slice(0, 120)}` });
+              }
+            });
+          });
+          req.on('error', (err) => resolve({ success: false, error: err.message }));
+          req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Request timeout (9s)' }); });
+          req.write(postData);
+          req.end();
+        });
+
+        if (res.success && res.text) {
+          const cleanTopic = sanitizeDiscoveryTopic(res.text);
+          if (cleanTopic.length > 5 && !isTopicSimilarToHistory(cleanTopic, resolvedArchetype.theme, recentContentHistory)) {
+            logSuccess(`[Topic Discovery] Generated via OpenRouter (${model}): "${cleanTopic}"`);
+            return cleanTopic;
+          }
+        } else {
+          logInfo(`[Topic Discovery] OpenRouter (${model}) notice: ${res.error || 'Empty response'}`);
+        }
+      } catch (err) {
+        logInfo(`[Topic Discovery] OpenRouter (${model}) notice: ${err.message}`);
+      }
+    }
+  }
+
+  // 2. Try Gemini (gemini-2.5-flash, gemini-2.0-flash, gemini-1.5-flash-latest, etc.)
   if (GEMINI_API_KEY) {
     const geminiModels = ['gemini-2.5-flash', 'gemini-2.0-flash-exp', 'gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash'];
     for (const model of geminiModels) {
@@ -745,10 +823,82 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
 
   let scriptData = null;
 
-  // 1. PRIMARY: Groq LPU (Least Costly / Highest Speed / 0 Cold-start)
-  if (backupEngines && backupEngines.groqWorkingModel) {
+  // 1. PRIMARY: OpenRouter Gateway (Highest Reliability, Broad Model Fallbacks)
+  if (OPENROUTER_API_KEY) {
+    const openRouterModels = [
+      'google/gemini-2.0-flash-001',
+      'meta-llama/llama-3.3-70b-instruct',
+      'deepseek/deepseek-chat',
+      'mistralai/mistral-small-24b-instruct-2501'
+    ];
+    for (const model of openRouterModels) {
+      try {
+        logInfo(`[Storyboard Engine] 1. Requesting storyboard from OpenRouter (${model})...`);
+        const raw = await new Promise((resolve) => {
+          const postData = JSON.stringify({
+            model: model,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: `${userPrompt} Topic title: "${topic}". Ensure complete sentences on every slide. Return strictly valid JSON.` }
+            ],
+            response_format: { type: 'json_object' },
+            temperature: 0.7,
+            max_tokens: 2200
+          });
+
+          const req = https.request('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+              'HTTP-Referer': 'https://voxam.app',
+              'X-Title': 'Voxam Stoic Engine',
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 16000
+          }, (res) => {
+            let data = '';
+            res.on('data', c => { data += c; });
+            res.on('end', () => {
+              if (res.statusCode === 200) {
+                try {
+                  const j = JSON.parse(data);
+                  resolve({ success: true, content: j.choices?.[0]?.message?.content });
+                } catch (e) {
+                  resolve({ success: false, error: 'JSON parse error: ' + e.message });
+                }
+              } else {
+                resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 150)}` });
+              }
+            });
+          });
+          req.on('error', (err) => resolve({ success: false, error: err.message }));
+          req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Request timeout' }); });
+          req.write(postData);
+          req.end();
+        });
+
+        if (raw.success && raw.content) {
+          const parsed = cleanLlmJson(raw.content);
+          if (parsed && validateStoicStoryboard(parsed)) {
+            if (!isDeepDive && parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
+            scriptData = parsed;
+            logSuccess(`[Storyboard Engine] OpenRouter (${model}) generated complete ${scriptData.slides.length}-slide package!`);
+            break;
+          }
+        } else {
+          logInfo(`[Storyboard Engine] OpenRouter (${model}) notice: ${raw.error || 'Empty response'}`);
+        }
+      } catch (e) {
+        logInfo(`[Storyboard Engine] OpenRouter (${model}) notice: ${e.message}`);
+      }
+    }
+  }
+
+  // 2. SECONDARY: Groq LPU (Least Costly / Highest Speed / 0 Cold-start)
+  if (!scriptData && backupEngines && backupEngines.groqWorkingModel) {
     try {
-      logInfo(`[Storyboard Engine] 1. Requesting storyboard from Groq LPU (${backupEngines.groqWorkingModel})...`);
+      logInfo(`[Storyboard Engine] 2. Requesting storyboard from Groq LPU (${backupEngines.groqWorkingModel})...`);
       const raw = await new Promise((resolve) => {
         const postData = JSON.stringify({
           model: backupEngines.groqWorkingModel,

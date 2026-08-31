@@ -398,8 +398,34 @@ const CATEGORY_FLOW_GUIDES = {
 };
 
 /**
+ * Clean formatting markers, prefixes, and markdown tags from slide narration text
+ */
+function cleanSlideNarrationText(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .replace(/<think>[\s\S]*/gi, '')
+    .replace(/Thinking Process:[\s\S]*?(?=\n\n|\n[A-Z0-9"']|$)/gi, '')
+    .replace(/```[\s\S]*?```/gi, '')
+    .replace(/```/g, '')
+    .replace(/^\s*\[\s*slide\s*\d+[^\]]*\]\s*[:\-–—]?\s*/i, '')
+    .replace(/^\s*\(\s*slide\s*\d+[^)]*\)\s*[:\-–—]?\s*/i, '')
+    .replace(/^\s*slide\s*\d+\s*[:\-–—]\s*/i, '')
+    .replace(/^\s*scene\s*\d+\s*[:\-–—]\s*/i, '')
+    .replace(/^\s*(narration|voiceover|voice\s*over|host|speaker|audio|script)\s*[:\-–—]\s*/i, '')
+    .replace(/\(\s*\d+[-–]\d+\s*words?\s*\)/gi, '')
+    .replace(/\[\s*\d+[-–]\d+\s*words?\s*\]/gi, '')
+    .replace(/\(\s*around\s*\d+[-–]\d+\s*chars?\s*\)/gi, '')
+    .replace(/\(\s*\d+\s*words?\s*\)/gi, '')
+    .replace(/^["'`]|["'`]$/g, '')
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
  * Anti-Blueprint / Anti-Placeholder / Anti-Prompt-Leak Validator for Fin Channel
- * Strictly rejects any storyboard containing raw prompts, word-count hints, repetitive math, or template artifacts
+ * Automatically cleans formatting markers from LLM outputs without rejecting valid scripts
  */
 function validateFinStoryboardQuality(storyboard) {
   if (!storyboard || typeof storyboard !== 'object') return { valid: false, reason: 'Storyboard is not an object' };
@@ -420,15 +446,16 @@ function validateFinStoryboardQuality(storyboard) {
     /\b(dual\s+currency\s+numbers|dual-currency\s+format|realistic\s+dual\s+currency)\b/i,
     /\b(cinematic\s+9:16|vertical\s+8k\s+scene|obsidian\s+slate\s+backdrop|rim\s+lighting)\b/i,
     /\b(systemPrompt|userPrompt|json\s+schema|here\s+is\s+the\s+6-slide)\b/i,
-    /\b(internal_plan|placeholder|blueprint\s+leak|diagnostic\s+report)\b/i,
-    /^\s*\[slide\s*\d+/i,
-    /^\s*(narration|voiceover|host|speaker)\s*[:\-]/i
+    /\b(internal_plan|placeholder|blueprint\s+leak|diagnostic\s+report)\b/i
   ];
 
   const textsSeen = new Set();
 
   for (let i = 0; i < storyboard.slides.length; i++) {
     const slide = storyboard.slides[i];
+    if (slide && typeof slide.text === 'string') {
+      slide.text = cleanSlideNarrationText(slide.text);
+    }
     const text = String(slide?.text || '').trim();
 
     if (!text || text.length < 25) {
@@ -1141,71 +1168,132 @@ MANDATE: Output EXACTLY 6 slides (slideIndex 0 to 5) with 18-24 words per slide.
 }
 
 /**
- * Deterministic fallback storyboard synthesis for 6-Slide YouTube Shorts strictly adhering to category flow
+ * Topic-Aware deterministic synthesis for 6-Slide YouTube Shorts strictly adhering to category flow and specific subject matter
  */
 function synthesizeDeterministicFinStoryboard(archetype, topicTitle, channelHandle = '@bones_ceo', slotIndex = 0) {
   const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
   const arch = archetype || FIN_ARCHETYPES[0];
-  const cleanTopic = sanitizeFinString(topicTitle || arch.angle);
-  const chosenHookFormat = selectFinHookFormat(slotIndex, 0);
+  const rawTopic = topicTitle || arch.angle || arch.theme;
+  const cleanTopic = sanitizeFinString(rawTopic);
   const resolvedOutro = resolveFinOutro(cleanHandle, slotIndex * 19 + Date.now());
   const flowGuide = CATEGORY_FLOW_GUIDES[arch.category] || CATEGORY_FLOW_GUIDES[FIN_CATEGORIES.SMALL_CAPITAL_BUSINESS];
+  const theme = arch.theme || 'Practical Finance';
+  const budget = arch.targetBudget || '$10 (₦15,000)';
 
+  // Build 100% topic-specific script tailored to the exact topic and category
   let slideTexts = [];
-  if (arch.category === FIN_CATEGORIES.FINANCIAL_EDUCATION) {
+  const topicLower = cleanTopic.toLowerCase();
+
+  if (topicLower.includes('crypto') || topicLower.includes('bitcoin') || topicLower.includes('usdt') || topicLower.includes('blockchain') || topicLower.includes('token') || topicLower.includes('wallet') || topicLower.includes('seed phrase') || arch.category === FIN_CATEGORIES.BEGINNER_INVESTING_CRYPTO) {
+    if (topicLower.includes('seed') || topicLower.includes('phrase') || topicLower.includes('security') || topicLower.includes('hack') || topicLower.includes('loss')) {
+      slideTexts = [
+        `The absolute golden rule of crypto security is simple: anyone who asks for your twelve-word seed phrase is attempting to steal your funds.`,
+        `Your recovery seed is the master cryptographic key that unlocks complete access to every coin in your non-custodial wallet.`,
+        `Legitimate crypto wallets, exchanges, and customer support representatives will never ask you to disclose or type your seed phrase online.`,
+        `Write your seed phrase down on paper or stamp it into metal, store it in a secure location offline, and never save it in cloud notes.`,
+        `The fatal mistake is taking a screenshot or pasting your seed phrase into unverified web forms or telegram support bots.`,
+        `Keep your private keys strictly offline, safeguard your financial sovereignty, and ${resolvedOutro}`
+      ];
+    } else {
+      slideTexts = [
+        `Why are millions of everyday savers using digital dollars like USDT to protect their funds against severe currency inflation?`,
+        `When local currency loses purchasing power each month, holding verified dollar-backed stablecoins preserves your real labor value.`,
+        `Understand the mechanism: one USDT is backed by equivalent cash reserves and short-term US treasury bills, maintaining a stable one-dollar peg.`,
+        `You can convert spare cash into digital dollars on licensed exchanges, transfer them into self-custodial wallets, and earn transparent yield.`,
+        `The dangerous pitfall is chasing unverified high-yield meme tokens instead of using digital dollars strictly as an inflation defense buffer.`,
+        `Master safe digital dollar self-custody to protect your savings, stay disciplined, and ${resolvedOutro}`
+      ];
+    }
+  } else if (topicLower.includes('cert') || topicLower.includes('free opportunity') || topicLower.includes('grant') || topicLower.includes('scholarship') || topicLower.includes('google') || topicLower.includes('microsoft') || arch.category === FIN_CATEGORIES.FREE_OPPORTUNITIES) {
     slideTexts = [
-      `If you leave your money idle in a basic savings account, rising prices silently steal twenty percent of your purchasing power each year.`,
-      `Think of inflation like a slow tyre puncture. The number in your account looks unchanged, but each dollar or naira buys less food daily.`,
-      `When prices climb rapidly, your hard work gets devalued unless you park savings in tools that earn competitive yield.`,
-      `The costly trap most people fall into is holding large sums in cash instead of utilizing secure, high-yield digital vaults.`,
-      `Protect your money by keeping an emergency reserve in accounts that pay realistic interest to offset everyday inflation.`,
-      `Master your financial fundamentals early so your savings never get left behind, stay focused, and ${resolvedOutro}`
+      `Did you know global tech giants offer verified career certifications that qualify you for high-paying remote roles completely for free?`,
+      `Companies like Google, Microsoft, and IBM offer fully funded scholarship programs in data analytics, IT support, and cybersecurity.`,
+      `You can apply directly through official portal links or request financial aid waivers on verified international educational platforms.`,
+      `Complete each hands-on module, build a public portfolio demonstrating your practical skills, and add your credential to your resume and LinkedIn.`,
+      `The costly trap is paying hundreds of dollars for unaccredited crash courses before exploring legitimate zero-cost corporate certification pathways.`,
+      `Claim your free verified career certifications today, build in-demand digital value, and ${resolvedOutro}`
     ];
-  } else if (arch.category === FIN_CATEGORIES.BUSINESS_BREAKDOWNS) {
+  } else if (topicLower.includes('compound') || topicLower.includes('dollar a day') || topicLower.includes('1/day') || topicLower.includes('calculator') || topicLower.includes('math') || arch.category === FIN_CATEGORIES.FINANCIAL_CALCULATORS) {
     slideTexts = [
-      `How does a small ${arch.theme.toLowerCase()} hustle generate consistent daily cash flow with just ${arch.targetBudget}? Here is the real blueprint.`,
-      `This business succeeds because it provides instant convenience to busy everyday customers who want fast, reliable service in their neighborhood.`,
-      `You do not need an expensive shop or heavy machinery. Start from home using basic supplies and free messaging apps.`,
-      `Reach your first twenty customers directly through WhatsApp groups and local word-of-mouth rather than wasting money on paid advertisements.`,
-      `The critical failure point is spending initial earnings on personal wants instead of rolling seventy percent back into supplies.`,
-      `Build your cash float step by step before worrying about fancy branding, and ${resolvedOutro}`
+      `What actually happens to your financial future when you save and invest just one dollar or fifteen hundred naira every single day?`,
+      `At first glance, saving small change feels insignificant, but the mathematical law of compound interest turns micro-habits into substantial wealth.`,
+      `Investing one dollar daily at an average ten percent annual return compounds into over fifteen thousand dollars in twenty years.`,
+      `The real driver of wealth is not sporadic big windfalls, but unbreakable daily consistency and reinvesting your annual returns.`,
+      `The fatal mindset trap is believing you need huge capital to begin investing, while everyday inflation quietly destroys your idle cash.`,
+      `Start your daily micro-compounding habit with whatever change you have right now, stay patient, and ${resolvedOutro}`
     ];
-  } else if (arch.category === FIN_CATEGORIES.SKILLS_TO_INCOME) {
+  } else if (topicLower.includes('30-day') || topicLower.includes('challenge') || topicLower.includes('no spend') || topicLower.includes('impulse') || arch.category === FIN_CATEGORIES.CHALLENGES_EXPERIMENTS) {
     slideTexts = [
-      `You do not need a fancy computer or camera to earn extra income when you have a smartphone in your pocket.`,
-      `Local business owners and online creators are constantly searching for people who can edit short clips and design clean graphics.`,
-      `Install free tools like CapCut and Canva, and practice by creating three sample marketing flyers for neighborhood shops today.`,
-      `Send polite direct messages offering two free draft designs, then charge a fair fee once they see your quality.`,
-      `The biggest barrier is self-doubt and waiting until you feel like an expert before contacting your first potential client.`,
-      `Take simple action today to build your confidence and income, and ${resolvedOutro}`
+      `What happens when you commit to a strict thirty-day zero impulse spending challenge? The financial clarity will amaze you.`,
+      `Most people remain financially stressed not because of low earnings, but because unmonitored micro-purchases drain twenty percent of their cash.`,
+      `For thirty consecutive days, freeze all non-essential retail buys and write down every single dollar or naira spent in a pocket notebook.`,
+      `Transfer every saved dollar into a separate emergency account that is locked and disconnected from your daily debit card.`,
+      `The common mistake is giving up after a minor slip-up instead of resetting your discipline and completing the full thirty days.`,
+      `Take total control of your money habits with this thirty-day challenge starting today, stay focused, and ${resolvedOutro}`
     ];
-  } else if (arch.category === FIN_CATEGORIES.SCAM_AWARENESS) {
+  } else if (topicLower.includes('pos') || topicLower.includes('terminal') || topicLower.includes('unit economic') || topicLower.includes('margin') || topicLower.includes('agency banking') || arch.category === FIN_CATEGORIES.BUSINESS_BREAKDOWNS) {
     slideTexts = [
-      `Urgent money alert: If any platform promises to double your cash in twenty-four hours, walk away immediately.`,
-      `Fraudulent schemes prey on people's desire for quick wealth by using funds from new depositors to pay earlier participants.`,
-      `Look out for three major red flags: Guaranteed high returns, unknown anonymous operators, and constant pressure to invite your contacts.`,
-      `Once new signups slow down, these platforms freeze all withdrawals and vanish with everyone's hard-earned savings.`,
-      `Protect your capital by remembering that legitimate investments always carry measured risk and require realistic patience.`,
-      `Share this warning with friends to keep your community safe, and ${resolvedOutro}`
+      `How much net profit does a busy neighborhood POS cash withdrawal terminal actually generate in thirty days? Here is the exact breakdown.`,
+      `Agency banking operators generate recurring daily income by charging convenience fees on cash withdrawals, deposits, and bill payments.`,
+      `A terminal processing sixty transactions daily at a hundred naira average fee generates one hundred and eighty thousand naira in gross monthly fees.`,
+      `Your main success requirements are securing a high-foot-traffic location, maintaining adequate cash float, and pairing with reliable banking networks.`,
+      `The critical hazard is running out of cash during peak trading hours or failing to record and reconcile daily terminal settlement receipts.`,
+      `Master your micro-business unit economics with strict ledger discipline, track every transaction, and ${resolvedOutro}`
+    ];
+  } else if (topicLower.includes('vault') || topicLower.includes('bank') || topicLower.includes('interest') || topicLower.includes('apy') || topicLower.includes('fintech') || topicLower.includes('inflation') || arch.category === FIN_CATEGORIES.FINANCIAL_EDUCATION) {
+    slideTexts = [
+      `Why do commercial banks pay you less than two percent while verified fintech vaults offer up to fifteen percent yearly interest?`,
+      `Traditional banks carry massive overhead costs from physical branches and staff, while lean fintech platforms pass digital efficiencies to savers.`,
+      `Digital vaults generate safe yield by lending to verified institutions and investing in risk-free government treasury bills.`,
+      `To protect your money, ensure your chosen platform is legally licensed by central banking authorities and insured by deposit insurance corporations.`,
+      `The silent danger is leaving emergency cash sitting idle in low-interest accounts while everyday inflation destroys your purchasing power.`,
+      `Move your emergency savings into high-yield insured vaults, stay proactive with your cash, and ${resolvedOutro}`
+    ];
+  } else if (topicLower.includes('soap') || topicLower.includes('clean') || topicLower.includes('detergent') || topicLower.includes('bottle') || topicLower.includes('formulation')) {
+    slideTexts = [
+      `How can you produce and bottle twenty liters of multi-purpose liquid soap for under ${budget}? Here is the exact breakdown.`,
+      `Every household, restaurant, and car wash buys cleaning chemicals weekly, creating constant, non-stop local demand.`,
+      `Source your basic chemicals from certified wholesale markets, mix following standard safety proportions, and package in clean recycled gallon containers.`,
+      `Market directly to local laundry operators, food canteens, and residential neighbors with free initial sample bottles.`,
+      `The critical mistake is using low-grade foaming agents that dilute quality, or spending working capital before restocking raw materials.`,
+      `Maintain strict formulation standards, keep your production costs low, and ${resolvedOutro}`
+    ];
+  } else if (topicLower.includes('video') || topicLower.includes('edit') || topicLower.includes('capcut') || topicLower.includes('canva') || topicLower.includes('graphic') || topicLower.includes('phone') || topicLower.includes('skill') || arch.category === FIN_CATEGORIES.SKILLS_TO_INCOME) {
+    slideTexts = [
+      `You do not need a five-thousand-dollar laptop to earn your first income when you have a smartphone in your pocket.`,
+      `Local business owners and creators desperately need fast vertical video editing and social media graphics to promote their products.`,
+      `Download free mobile apps like CapCut and Canva, practice clean pacing and kinetic captions, and build a three-video portfolio.`,
+      `Reach out to five local brand owners with a free sample draft of their content, then pitch a monthly retainer.`,
+      `The biggest trap is waiting for perfection or buying expensive courses before reaching out to real paying clients.`,
+      `Master one practical digital skill on your phone today, stay consistent, and ${resolvedOutro}`
+    ];
+  } else if (topicLower.includes('scam') || topicLower.includes('ponzi') || topicLower.includes('fake') || topicLower.includes('alert') || topicLower.includes('pyramid') || arch.category === FIN_CATEGORIES.SCAM_AWARENESS) {
+    slideTexts = [
+      `Urgent money alert: If any platform promises to double your capital in twenty-four hours without real work, it is a scam.`,
+      `Fraudulent platforms use deposits from eager newcomers to pay fake daily profits to early promoters before shutting down.`,
+      `Always check for three major warning signs: guaranteed high returns, pressure to recruit friends, and unregistered offshore operators.`,
+      `Verify every financial institution through official regulatory databases before transferring a single dollar or naira of your savings.`,
+      `Never let emotional greed bypass your common sense when strangers promise easy, risk-free returns on the internet.`,
+      `Protect your hard-earned capital with strict due diligence, share this warning with friends, and ${resolvedOutro}`
     ];
   } else if (arch.category === FIN_CATEGORIES.SAVING_PERSONAL_FINANCE) {
     slideTexts = [
-      `Why do so many hardworking people finish each month with zero savings? It usually comes down to small unmonitored leaks.`,
-      `Relying on willpower alone does not work when temptation is everywhere. You need a simple system that saves automatically.`,
-      `The most effective strategy is the twenty-four-hour rule: pause for one full day before making any non-essential purchase.`,
-      `Keep your emergency cash buffer completely separate from your daily spending card so you never tap it on impulse.`,
-      `A common pitfall is treating every unexpected wind-fall as bonus spending cash rather than boosting your financial safety net.`,
-      `Small consistent habits build immense peace of mind over time, so start today and ${resolvedOutro}`
+      `Why do hardworking individuals find themselves broke days after payday? It usually comes down to unmonitored financial leaks.`,
+      `Relying on sheer willpower fails when modern marketing is designed to trigger impulsive spending around the clock.`,
+      `Implement the forty-eight-hour rule: wait two full days before buying non-essential items to clear emotional impulse.`,
+      `Automate your savings the exact moment your income arrives, routing a fixed percentage straight into a separate locked reserve.`,
+      `The costly pitfall is treating every bonus or unexpected gift as instant spending money rather than strengthening your safety buffer.`,
+      `Build resilient financial discipline one intentional choice at a time, stay focused, and ${resolvedOutro}`
     ];
   } else {
-    // Default Small-Capital Business
+    // Dynamic topic breakdown
     slideTexts = [
-      `If you have only ${arch.targetBudget} to your name, you have enough to begin building a dependable income stream today.`,
-      `Most people stay stuck waiting for millions in startup capital instead of solving simple, everyday problems for local customers.`,
-      `Focus on speed and utility. Offering a needed service with zero inventory allows you to start earning without borrowing money.`,
-      `Keep your startup overhead minimal by operating on foot, delivering value personally, and collecting payment upon completion.`,
-      `Never mix your personal living money with your business funds, or daily household needs will quietly consume your float.`,
-      `Grow your working capital patiently with steady discipline, and ${resolvedOutro}`
+      `Here is the practical financial breakdown on ${cleanTopic} with a target startup budget of ${budget}.`,
+      `This model succeeds because it directly solves an everyday problem for real customers with immediate utility and clear value.`,
+      `Start lean from your current location with zero debt, focusing entirely on high execution speed and direct customer service.`,
+      `Acquire your first ten clients through direct outreach, local networking, and free digital channels without paid advertising.`,
+      `Avoid the fatal error of consuming initial revenue as personal profit before reinvesting seventy percent back into your operations.`,
+      `Build your cash flow step by step with relentless consistency, protect your working capital, and ${resolvedOutro}`
     ];
   }
 
@@ -1215,15 +1303,15 @@ function synthesizeDeterministicFinStoryboard(archetype, topicTitle, channelHand
     series: flowGuide.series,
     theme: arch.theme,
     angle: arch.angle,
-    hook: arch.angle,
+    hook: cleanTopic,
     communityQuestion: flowGuide.communityQuestion,
-    description: `Practical money breakdown on ${arch.theme}.\n\nSeries: ${flowGuide.series}\nQuestion: ${flowGuide.communityQuestion}\n\n#Shorts #viral #trending #PersonalFinance #SmallBusiness #MoneyTips #SideHustle #FinancialLiteracy #Wealth #fyp`,
+    description: `Practical breakdown on ${cleanTopic}.\n\nSeries: ${flowGuide.series}\nQuestion: ${flowGuide.communityQuestion}\n\n#Shorts #viral #trending #PersonalFinance #SmallBusiness #MoneyTips #SideHustle #FinancialLiteracy #Wealth #fyp`,
     tags: ["#Shorts", "#viral", "#trending", "#PersonalFinance", "#SmallBusiness", "#MoneyTips", "#SideHustle", "#FinancialLiteracy", "#Wealth", "#fyp"],
-    estimatedBudget: arch.targetBudget,
+    estimatedBudget: budget,
     slides: slideTexts.map((text, idx) => ({
       slideIndex: idx,
       text: text,
-      visual: `Cinematic 9:16 vertical 8k photorealistic scene, ${arch.visualAesthetic}`
+      visual: `Cinematic 9:16 vertical 8k photorealistic scene, ${arch.visualAesthetic || 'high quality modern studio setting with sharp lighting and crisp depth of field'}`
     }))
   };
 }

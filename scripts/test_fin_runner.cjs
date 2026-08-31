@@ -140,6 +140,7 @@ const currentUtcHour = new Date().getUTCHours();
 const contentDepth = process.env.CONTENT_DEPTH || (currentUtcHour === 2 ? 'deep_dive' : 'short_form');
 
 // API Credentials
+const OPENROUTER_API_KEY = (process.env.OPENROUTER_API_KEY || '').trim();
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim();
 const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || '').trim();
 const DEEPSEEK_API_KEY = (process.env.DEEPSEEK_API_KEY || '').trim();
@@ -402,7 +403,115 @@ async function discoverDynamicFinanceTopic(resolvedArchetype, activeGrok, recent
   logInfo(`[Topic Discovery] Discovering fresh, high-CTR viral topic for Pillar: "${resolvedArchetype.theme}"...`);
   const recentExclusions = recentHistory.slice(0, 25).map(h => `"${h.topic || h.title}"`).join(', ');
 
-  // 1. Try Google Gemini
+  // 1. Try OpenRouter
+  if (OPENROUTER_API_KEY) {
+    const openRouterModels = ['google/gemini-2.0-flash-001', 'meta-llama/llama-3.3-70b-instruct', 'deepseek/deepseek-chat', 'mistralai/mistral-small-3'];
+    for (const model of openRouterModels) {
+      try {
+        const postData = JSON.stringify({
+          model: model,
+          messages: [
+            { role: 'system', content: 'You are a viral YouTube Shorts strategist for practical finance and micro-business.' },
+            { role: 'user', content: `Generate 1 fresh, complete, high-retention title (around 35-50 characters) for 'Fin Blueprint' on Theme: "${resolvedArchetype.theme}" (Angle: "${resolvedArchetype.angle}"). Target Budget: "${resolvedArchetype.targetBudget}". EXCLUDED PREVIOUS TITLES: [${recentExclusions || 'None'}]. Return ONLY the single title in plain text without quotes.` }
+          ],
+          temperature: 0.85,
+          max_tokens: 60
+        });
+
+        const res = await new Promise((resolve) => {
+          const req = https.request('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+              'HTTP-Referer': 'https://voxam.ai',
+              'X-Title': 'Voxam Topic Discovery',
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 10000
+          }, (resp) => {
+            let data = '';
+            resp.on('data', c => data += c);
+            resp.on('end', () => {
+              if (resp.statusCode === 200) {
+                try {
+                  const j = JSON.parse(data);
+                  resolve({ success: true, text: j.choices?.[0]?.message?.content?.trim() });
+                } catch { resolve({ success: false }); }
+              } else { resolve({ success: false }); }
+            });
+          });
+          req.on('error', () => resolve({ success: false }));
+          req.on('timeout', () => { req.destroy(); resolve({ success: false }); });
+          req.write(postData);
+          req.end();
+        });
+
+        if (res.success && res.text) {
+          const cleanTopic = sanitizeFinString(res.text).replace(/^#+/, '').replace(/^Title:\s*/i, '').trim();
+          if (cleanTopic.length > 8 && !isFinTopicSimilarToHistory(cleanTopic, resolvedArchetype.theme, recentHistory)) {
+            logSuccess(`[Topic Discovery] Discovered via OpenRouter (${model}): "${cleanTopic}"`);
+            return cleanTopic;
+          }
+        }
+      } catch {}
+    }
+  }
+
+  // 2. Try Groq LPU
+  if (GROQ_API_KEY) {
+    const groqModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-70b-8192'];
+    for (const model of groqModels) {
+      try {
+        const postData = JSON.stringify({
+          model: model,
+          messages: [
+            { role: 'system', content: 'You are a viral YouTube Shorts strategist for practical finance and micro-business.' },
+            { role: 'user', content: `Generate 1 fresh, complete, high-retention title (around 35-50 characters) for 'Fin Blueprint' on Theme: "${resolvedArchetype.theme}" (Angle: "${resolvedArchetype.angle}"). Target Budget: "${resolvedArchetype.targetBudget}". EXCLUDED PREVIOUS TITLES: [${recentExclusions || 'None'}]. Return ONLY the single title in plain text without quotes.` }
+          ],
+          temperature: 0.85,
+          max_tokens: 60
+        });
+
+        const res = await new Promise((resolve) => {
+          const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${GROQ_API_KEY}`,
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 10000
+          }, (resp) => {
+            let data = '';
+            resp.on('data', c => data += c);
+            resp.on('end', () => {
+              if (resp.statusCode === 200) {
+                try {
+                  const j = JSON.parse(data);
+                  resolve({ success: true, text: j.choices?.[0]?.message?.content?.trim() });
+                } catch { resolve({ success: false }); }
+              } else { resolve({ success: false }); }
+            });
+          });
+          req.on('error', () => resolve({ success: false }));
+          req.on('timeout', () => { req.destroy(); resolve({ success: false }); });
+          req.write(postData);
+          req.end();
+        });
+
+        if (res.success && res.text) {
+          const cleanTopic = sanitizeFinString(res.text).replace(/^#+/, '').replace(/^Title:\s*/i, '').trim();
+          if (cleanTopic.length > 8 && !isFinTopicSimilarToHistory(cleanTopic, resolvedArchetype.theme, recentHistory)) {
+            logSuccess(`[Topic Discovery] Discovered via Groq (${model}): "${cleanTopic}"`);
+            return cleanTopic;
+          }
+        }
+      } catch {}
+    }
+  }
+
+  // 3. Try Google Gemini
   if (GEMINI_API_KEY) {
     const geminiModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
     for (const model of geminiModels) {
@@ -454,7 +563,7 @@ EXCLUDED PREVIOUS TITLES: [${recentExclusions || 'None'}]`
     }
   }
 
-  // 2. Try Grok (xAI)
+  // 4. Try Grok (xAI)
   if (activeGrok && activeGrok.key) {
     try {
       const postData = JSON.stringify({
@@ -500,7 +609,7 @@ EXCLUDED PREVIOUS TITLES: [${recentExclusions || 'None'}]`
     } catch {}
   }
 
-  // 3. Fallback: Archetype angle with clean title formatting
+  // 5. Curated Archetype Angle with clean title formatting
   return resolvedArchetype.angle;
 }
 
@@ -516,6 +625,8 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
 
   const isDeepDive = contentDepth === 'deep_dive';
   let scriptData = null;
+  let chosenTopicForPipeline = null;
+  let chosenArchetypeForPipeline = null;
   const maxAttempts = 3;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -524,6 +635,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
 
     // Pick diverse, non-recent archetype to prevent repetitive themes
     const archetype = selectDiverseFinArchetype(recentHistory, attempt - 1);
+    chosenArchetypeForPipeline = archetype;
     logInfo(`[Archetype] Selected Pillar: "${archetype.theme}" (Target Budget: ${archetype.targetBudget})`);
 
     // Dynamically resolve topic if not explicitly passed
@@ -531,21 +643,84 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
     if (!activeTopic || activeTopic.trim().length < 4) {
       activeTopic = await discoverDynamicFinanceTopic(archetype, grokObj, recentHistory);
     }
+    chosenTopicForPipeline = activeTopic;
     logInfo(`[Topic Selected] "${activeTopic}"`);
 
     const { systemPrompt, userPrompt, chosenHookFormat, chosenOutro } = isDeepDive
       ? buildFinDeepDivePrompt(archetype, recentHistory, CHANNEL_HANDLE)
       : buildFinPromptForSlot(archetype, recentHistory, attempt - 1, CHANNEL_HANDLE);
 
-    logInfo(`[Hook & Loop Rotation] Intro Hook: "${chosenHookFormat.name}" | Outro Loop Bridge: "${chosenOutro.slice(0, 45)}..."`);
+    logInfo(`[Hook & Loop Rotation] Intro Hook: "${chosenHookFormat?.name || 'Curiosity'}" | Outro Loop Bridge: "${(chosenOutro || '').slice(0, 45)}..."`);
 
-    // 1. PRIMARY: Groq LPU Models
+    // 1. PRIMARY: OpenRouter AI (High-Reliability Multi-Provider Gateway)
+    if (!scriptData && OPENROUTER_API_KEY) {
+      const openRouterModels = ['google/gemini-2.0-flash-001', 'meta-llama/llama-3.3-70b-instruct', 'deepseek/deepseek-chat', 'mistralai/mistral-small-3'];
+      for (const orModel of openRouterModels) {
+        if (scriptData) break;
+        try {
+          logInfo(`[Storyboard Engine] 1. Requesting storyboard from OpenRouter (${orModel})...`);
+          const raw = await new Promise((resolve) => {
+            const postData = JSON.stringify({
+              model: orModel,
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: `${userPrompt} Topic Title: "${activeTopic}". Return strictly valid JSON.` }
+              ],
+              temperature: 0.7,
+              max_tokens: 2200
+            });
+            const req = https.request('https://openrouter.ai/api/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+                'HTTP-Referer': 'https://voxam.ai',
+                'X-Title': 'Voxam Fin Engine',
+                'Content-Length': Buffer.byteLength(postData)
+              },
+              timeout: 20000
+            }, (res) => {
+              let data = '';
+              res.on('data', c => data += c);
+              res.on('end', () => {
+                if (res.statusCode >= 200 && res.statusCode < 300) {
+                  try {
+                    const j = JSON.parse(data);
+                    resolve({ success: true, content: j.choices?.[0]?.message?.content });
+                  } catch (e) { resolve({ success: false, error: e.message }); }
+                } else { resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 100)}` }); }
+              });
+            });
+            req.on('error', err => resolve({ success: false, error: err.message }));
+            req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
+            req.write(postData);
+            req.end();
+          });
+
+          if (raw.success && raw.content) {
+            const parsed = cleanLlmJson(raw.content);
+            if (parsed && validateFinStoryboard(parsed)) {
+              if (!isDeepDive && parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
+              scriptData = parsed;
+              logSuccess(`[Storyboard Engine] OpenRouter (${orModel}) generated complete ${scriptData.slides.length}-slide storyboard!`);
+              break;
+            }
+          } else {
+            logInfo(`[Storyboard Engine] OpenRouter (${orModel}) notice: ${raw.error || 'Failed parsing'}`);
+          }
+        } catch (e) {
+          logInfo(`[Storyboard Engine] OpenRouter (${orModel}) error: ${e.message}`);
+        }
+      }
+    }
+
+    // 2. SECONDARY: Groq LPU Models
     if (!scriptData && GROQ_API_KEY) {
-      const groqModels = [groqModel, 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'deepseek-r1-distill-llama-70b', 'gemma2-9b-it', 'qwen-2.5-32b'].filter(Boolean);
+      const groqModels = [groqModel, 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-70b-8192', 'llama3-8b-8192'].filter(Boolean);
       for (const gModel of groqModels) {
         if (scriptData) break;
         try {
-          logInfo(`[Storyboard Engine] 1. Requesting storyboard from Groq LPU (${gModel})...`);
+          logInfo(`[Storyboard Engine] 2. Requesting storyboard from Groq LPU (${gModel})...`);
           const raw = await new Promise((resolve) => {
             const postData = JSON.stringify({
               model: gModel,
@@ -554,8 +729,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
                 { role: 'user', content: `${userPrompt} Topic Title: "${activeTopic}". Return strictly valid JSON.` }
               ],
               temperature: 0.7,
-              max_tokens: 2200,
-              response_format: { type: 'json_object' }
+              max_tokens: 2200
             });
             const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
               method: 'POST',
@@ -574,7 +748,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
                     const j = JSON.parse(data);
                     resolve({ success: true, content: j.choices?.[0]?.message?.content });
                   } catch (e) { resolve({ success: false, error: e.message }); }
-                } else { resolve({ success: false, error: `HTTP ${res.statusCode}` }); }
+                } else { resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 100)}` }); }
               });
             });
             req.on('error', err => resolve({ success: false, error: err.message }));
@@ -591,18 +765,22 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
               logSuccess(`[Storyboard Engine] Groq (${gModel}) generated complete ${scriptData.slides.length}-slide storyboard!`);
               break;
             }
+          } else {
+            logInfo(`[Storyboard Engine] Groq (${gModel}) notice: ${raw.error || 'Failed parsing'}`);
           }
-        } catch {}
+        } catch (e) {
+          logInfo(`[Storyboard Engine] Groq (${gModel}) error: ${e.message}`);
+        }
       }
     }
 
-    // 2. SECONDARY: Google Gemini Models
+    // 3. TERTIARY: Google Gemini Models
     if (!scriptData && GEMINI_API_KEY) {
       const geminiModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
       for (const gModel of geminiModels) {
         if (scriptData) break;
         try {
-          logInfo(`[Storyboard Engine] 2. Requesting storyboard from Google Gemini (${gModel})...`);
+          logInfo(`[Storyboard Engine] 3. Requesting storyboard from Google Gemini (${gModel})...`);
           const raw = await new Promise((resolve) => {
             const postData = JSON.stringify({
               contents: [{ parts: [{ text: `${systemPrompt}\n\nTask: ${userPrompt} Topic Title: "${activeTopic}". Return strictly raw JSON matching the schema.` }] }],
@@ -643,13 +821,13 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
       }
     }
 
-    // 3. TERTIARY: OpenAI
+    // 4. QUATERNARY: OpenAI
     if (!scriptData && OPENAI_API_KEY) {
       const openaiModels = ['gpt-4o-mini', 'gpt-4o'];
       for (const oModel of openaiModels) {
         if (scriptData) break;
         try {
-          logInfo(`[Storyboard Engine] 3. Requesting storyboard from OpenAI (${oModel})...`);
+          logInfo(`[Storyboard Engine] 4. Requesting storyboard from OpenAI (${oModel})...`);
           const raw = await new Promise((resolve) => {
             const postData = JSON.stringify({
               model: oModel,
@@ -657,7 +835,6 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: `${userPrompt} Topic Title: "${activeTopic}". Return strictly valid JSON.` }
               ],
-              response_format: { type: 'json_object' },
               temperature: 0.75,
               max_tokens: 2200
             });
@@ -700,10 +877,10 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
       }
     }
 
-    // 4. QUATERNARY: DeepSeek
+    // 5. QUINARY: DeepSeek
     if (!scriptData && DEEPSEEK_API_KEY) {
       try {
-        logInfo(`[Storyboard Engine] 4. Requesting storyboard from DeepSeek (deepseek-chat)...`);
+        logInfo(`[Storyboard Engine] 5. Requesting storyboard from DeepSeek (deepseek-chat)...`);
         const raw = await new Promise((resolve) => {
           const postData = JSON.stringify({
             model: 'deepseek-chat',
@@ -711,7 +888,6 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
               { role: 'system', content: systemPrompt },
               { role: 'user', content: `${userPrompt} Topic Title: "${activeTopic}". Return strictly valid JSON.` }
             ],
-            response_format: { type: 'json_object' },
             temperature: 0.7,
             max_tokens: 2000
           });
@@ -752,10 +928,10 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
       } catch {}
     }
 
-    // 5. QUINARY: Grok (xAI)
+    // 6. SENARY: Grok (xAI)
     if (!scriptData && grokObj && grokObj.key) {
       try {
-        logInfo(`[Storyboard Engine] 5. Requesting storyboard from Grok (${grokObj.model})...`);
+        logInfo(`[Storyboard Engine] 6. Requesting storyboard from Grok (${grokObj.model})...`);
         const raw = await new Promise((resolve) => {
           const postData = JSON.stringify({
             model: grokObj.model || 'grok-2-latest',
@@ -804,23 +980,24 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
       } catch {}
     }
 
-    // 6. SENARY: Cloudflare Workers AI
+    // 7. SEPTENARY: Cloudflare Workers AI
     if (!scriptData && CLOUDFLARE_ACCOUNT_ID && CLOUDFLARE_API_TOKEN && !cloudflareAuthFailed) {
       const cfModels = [
         '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
-        '@cf/meta/llama-3.2-3b-instruct',
-        '@cf/meta/llama-3.1-8b-instruct'
+        '@cf/meta/llama-3.1-8b-instruct',
+        '@cf/meta/llama-3.2-3b-instruct'
       ];
       for (const cModel of cfModels) {
         if (scriptData || cloudflareAuthFailed) break;
         try {
-          logInfo(`[Storyboard Engine] 6. Requesting storyboard from Cloudflare AI (${cModel})...`);
+          logInfo(`[Storyboard Engine] 7. Requesting storyboard from Cloudflare AI (${cModel})...`);
           const raw = await new Promise((resolve) => {
             const postData = JSON.stringify({
               messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: `${userPrompt} Topic Title: "${activeTopic}". Output STRICT JSON.` }
-              ]
+              ],
+              max_tokens: 2048
             });
             const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${cModel}`, {
               method: 'POST',
@@ -841,7 +1018,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
                   } catch { resolve({ success: true, content: data }); }
                 } else {
                   if (res.statusCode === 401) cloudflareAuthFailed = true;
-                  resolve({ success: false, error: `HTTP ${res.statusCode}` });
+                  resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 80)}` });
                 }
               });
             });
@@ -865,14 +1042,14 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
     }
   }
 
-  // 7. DIVERSITY ENGINE SYNTHESIS: Deterministic safety net with dynamic hook & outro loop
-  const chosenArch = selectDiverseFinArchetype(recentHistory, 0);
+  // 8. DIVERSITY ENGINE SYNTHESIS: 100% Topic-Specific Fallback strictly matching chosen topic
+  const fallbackArch = chosenArchetypeForPipeline || selectDiverseFinArchetype(recentHistory, 0);
+  const fallbackTopic = topicInput || chosenTopicForPipeline || fallbackArch.angle || fallbackArch.theme;
   if (!scriptData || !Array.isArray(scriptData.slides) || scriptData.slides.length < 3) {
-    logWarning('[Storyboard Engine] Remote LLM endpoints unavailable or rate-limited. Synthesizing rich Fin Blueprint Archetype from Diversity Engine...');
-    const activeTopic = topicInput || chosenArch.angle;
+    logWarning(`[Storyboard Engine] Remote LLM endpoints unavailable or rate-limited. Synthesizing topic-matched script for "${fallbackTopic}"...`);
     scriptData = isDeepDive
-      ? synthesizeDeterministicFinDeepDiveStoryboard(chosenArch, activeTopic, CHANNEL_HANDLE)
-      : synthesizeDeterministicFinStoryboard(chosenArch, activeTopic, CHANNEL_HANDLE);
+      ? synthesizeDeterministicFinDeepDiveStoryboard(fallbackArch, fallbackTopic, CHANNEL_HANDLE)
+      : synthesizeDeterministicFinStoryboard(fallbackArch, fallbackTopic, CHANNEL_HANDLE);
     if (!isDeepDive && scriptData.slides.length > 6) scriptData.slides = scriptData.slides.slice(0, 6);
   }
 
@@ -884,7 +1061,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
   }
 
   // Ensure title is complete, un-truncated, and equipped with viral & trending hashtags
-  scriptData.title = formatViralShortsTitle(scriptData.title || scriptData.topic || chosenArch.angle, 'fin', isDeepDive);
+  scriptData.title = formatViralShortsTitle(scriptData.title || fallbackTopic, 'fin', isDeepDive);
 
   // Safety & Dual Currency Compliance Audit
   const audit = auditFinancialScriptSafety(scriptData);

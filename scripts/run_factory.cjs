@@ -19,11 +19,11 @@ const NICHE_TOPICS = {
     'Why Virtue Knows No Gender: Ancient Stoic Philosophy on Mutual Respect & Equality',
     'Seneca on Time: How to Stop Procrastinating and Take Immediate Action'
   ],
-  tech_ai: [
-    'DeepSeek-R1 vs Gemini 2.5: Real World Coding Speed Benchmark',
-    'Top 4 Open-Source AI Developer Tools You Must Run Locally',
-    'How to Build Autonomous AI Agents with Zero Hosting Costs',
-    'The Best AI Tools for Automated YouTube Creators in 2026'
+  cartoon_factory: [
+    'Why Do Onions Make You Cry? 2D Science Explained',
+    'How Electricity Actually Travels at Near Light Speed',
+    'Why Do We Dream? Cartoon Brain Science Breakdown',
+    'What Happens When an Asteroid Hits Jupiter?'
   ]
 };
 
@@ -31,7 +31,7 @@ async function main() {
   console.log("=== VOXAM AUTONOMOUS FACTORY DISPATCHER ===");
   console.log(`Timestamp: ${new Date().toISOString()}`);
 
-  const channels = ['finance_saas', 'motivation_stoicism', 'tech_ai'];
+  const channels = ['finance_saas', 'motivation_stoicism', 'cartoon_factory'];
   for (const channel of channels) {
     const topics = NICHE_TOPICS[channel];
     console.log(`\n[Channel: ${channel}] Producing daily 4-post automation batch...`);
