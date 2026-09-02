@@ -60,9 +60,9 @@ function getMouthSvg(shape) {
 }
 
 /**
- * Generate full SVG for Character Archie in a specific action and mouth shape
+ * Generate full SVG for Character Archie in a specific action, mouth shape, and topic-specific background
  */
-function generateCharacterFrameSvg(action = 'talking', emotion = 'curious', mouthShape = 'B', width = 1080, height = 1920) {
+function generateCharacterFrameSvg(action = 'talking', emotion = 'curious', mouthShape = 'B', width = 1080, height = 1920, backgroundStyle = 'tech_studio', topic = '', objects = []) {
   const mouthSvgContent = getMouthSvg(mouthShape);
 
   let leftPupilX = 510;
@@ -108,21 +108,14 @@ function generateCharacterFrameSvg(action = 'talking', emotion = 'curious', mout
                    <circle cx="770" cy="670" r="28" fill="#fbcfe8" stroke="#1e293b" stroke-width="4" />`;
   }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
-  <defs>
-    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#0f172a" />
-      <stop offset="100%" stop-color="#1e1b4b" />
-    </linearGradient>
-    <radialGradient id="charGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.25" />
-      <stop offset="100%" stop-color="#0f172a" stop-opacity="0" />
-    </radialGradient>
-  </defs>
+  // Generate dynamic thematic background according to the scene's topic
+  const rawBgSvg = generateSceneBackgroundSvg(backgroundStyle, topic, objects, width, height);
+  // Extract inner defs and elements
+  const bgInner = rawBgSvg.replace(/<svg[^>]*>/, '').replace(/<\/svg>/, '');
 
-  <!-- Background Layer -->
-  <rect width="${width}" height="${height}" fill="url(#bgGrad)" />
-  <circle cx="540" cy="900" r="600" fill="url(#charGlow)" />
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+  <!-- Dynamic Topic-Tailored Background Layer -->
+  ${bgInner}
 
   <!-- Shadow Floor -->
   <ellipse cx="540" cy="1580" rx="320" ry="45" fill="#020617" opacity="0.6" />
@@ -487,7 +480,104 @@ function generateSceneBackgroundSvg(backgroundStyle = 'tech_studio', topic = '',
     </svg>`;
   }
 
-  // 5. Default Clean Explainer Studio
+  // 5. Biology / Neuroscience / Dreams / Brain / Cells
+  if (style.includes('brain') || style.includes('dream') || style.includes('bio') || style.includes('cell') || style.includes('neuron') || style.includes('sleep')) {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+      <defs>
+        <linearGradient id="brainBg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#1e1b4b" />
+          <stop offset="50%" stop-color="#311042" />
+          <stop offset="100%" stop-color="#090514" />
+        </linearGradient>
+        <radialGradient id="synapseGlow" cx="50%" cy="35%" r="60%">
+          <stop offset="0%" stop-color="#c084fc" stop-opacity="0.35" />
+          <stop offset="100%" stop-color="#1e1b4b" stop-opacity="0" />
+        </radialGradient>
+      </defs>
+      <rect width="${width}" height="${height}" fill="url(#brainBg)" />
+      <circle cx="540" cy="700" r="500" fill="url(#synapseGlow)" />
+      <!-- Neural Synapse network nodes & connections -->
+      <g stroke="#a855f7" stroke-width="3" opacity="0.35" fill="none">
+        <path d="M 200 400 Q 350 500 540 450 T 880 350" />
+        <path d="M 150 700 Q 300 600 540 750 T 920 680" />
+        <path d="M 250 950 Q 540 850 820 980" />
+      </g>
+      <g fill="#e9d5ff">
+        <circle cx="200" cy="400" r="10" opacity="0.7" /><circle cx="540" cy="450" r="14" opacity="0.8" /><circle cx="880" cy="350" r="10" opacity="0.7" />
+        <circle cx="150" cy="700" r="8" opacity="0.6" /><circle cx="540" cy="750" r="12" opacity="0.7" /><circle cx="920" cy="680" r="9" opacity="0.6" />
+      </g>
+    </svg>`;
+  }
+
+  // 6. Food / Chemistry / Onions / Plants / Kitchen
+  if (style.includes('onion') || style.includes('food') || style.includes('chem') || style.includes('kitchen') || style.includes('plant')) {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+      <defs>
+        <linearGradient id="chemBg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#14532d" />
+          <stop offset="50%" stop-color="#1e293b" />
+          <stop offset="100%" stop-color="#020617" />
+        </linearGradient>
+      </defs>
+      <rect width="${width}" height="${height}" fill="url(#chemBg)" />
+      <!-- Floating Molecular Hexagons and Chemical Bonds -->
+      <g stroke="#4ade80" stroke-width="2.5" fill="none" opacity="0.3">
+        <polygon points="200,300 240,280 280,300 280,340 240,360 200,340" />
+        <polygon points="800,450 840,430 880,450 880,490 840,510 800,490" />
+        <polygon points="150,750 190,730 230,750 230,790 190,810 150,790" />
+        <polygon points="850,850 890,830 930,850 930,890 890,910 850,890" />
+        <line x1="280" y1="320" x2="340" y2="320" stroke-dasharray="4" />
+        <line x1="800" y1="470" x2="740" y2="470" stroke-dasharray="4" />
+      </g>
+      <!-- Steam / Gas Vapor Particles -->
+      <g fill="#86efac" opacity="0.25">
+        <circle cx="480" cy="500" r="18" /><circle cx="580" cy="460" r="24" /><circle cx="520" cy="400" r="30" />
+      </g>
+    </svg>`;
+  }
+
+  // 7. Physics / Lightning / Electricity / Quantum
+  if (style.includes('electric') || style.includes('light') || style.includes('quantum') || style.includes('energy') || style.includes('particle')) {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+      <defs>
+        <linearGradient id="energyBg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#0f172a" />
+          <stop offset="50%" stop-color="#172554" />
+          <stop offset="100%" stop-color="#020617" />
+        </linearGradient>
+      </defs>
+      <rect width="${width}" height="${height}" fill="url(#energyBg)" />
+      <!-- High-Voltage Lightning Arc & Particle Orbits -->
+      <path d="M 540 200 L 510 450 L 580 470 L 480 800 L 590 820 L 530 1200" stroke="#fde047" stroke-width="8" fill="none" opacity="0.4" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M 540 200 L 510 450 L 580 470 L 480 800 L 590 820 L 530 1200" stroke="#38bdf8" stroke-width="3" fill="none" opacity="0.8" stroke-linecap="round" stroke-linejoin="round" />
+      <ellipse cx="540" cy="700" rx="360" ry="140" stroke="#38bdf8" stroke-width="2" fill="none" opacity="0.25" transform="rotate(-15 540 700)" />
+      <ellipse cx="540" cy="700" rx="360" ry="140" stroke="#60a5fa" stroke-width="2" fill="none" opacity="0.25" transform="rotate(25 540 700)" />
+    </svg>`;
+  }
+
+  // 8. Ancient History / Roman Architecture / Philosophy
+  if (style.includes('history') || style.includes('stoic') || style.includes('ancient') || style.includes('rome') || style.includes('greek')) {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+      <defs>
+        <linearGradient id="historyBg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#1c1917" />
+          <stop offset="50%" stop-color="#292524" />
+          <stop offset="100%" stop-color="#0c0a09" />
+        </linearGradient>
+      </defs>
+      <rect width="${width}" height="${height}" fill="url(#historyBg)" />
+      <!-- Roman Doric Marble Columns Silhouettes in background -->
+      <g fill="#78716c" opacity="0.2">
+        <rect x="120" y="350" width="90" height="1100" rx="6" />
+        <rect x="90" y="320" width="150" height="35" rx="4" />
+        <rect x="870" y="350" width="90" height="1100" rx="6" />
+        <rect x="840" y="320" width="150" height="35" rx="4" />
+      </g>
+      <circle cx="540" cy="500" r="180" fill="#f59e0b" opacity="0.15" />
+    </svg>`;
+  }
+
+  // 9. Default Clean Explainer Studio
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
     <defs>
       <linearGradient id="studioBg" x1="0" y1="0" x2="0" y2="1">

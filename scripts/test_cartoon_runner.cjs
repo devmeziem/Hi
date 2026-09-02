@@ -14,6 +14,7 @@ const { ensureCharacterRigAssets, generateCharacterFrameSvg, generateSceneBackgr
 const { generateSrtSubtitles, assembleFinalCartoonVideo, renderSingleSceneVideo } = require('./cartoon_audio_assembler.cjs');
 const { validateCartoonOutput } = require('./cartoon_validator.cjs');
 const { publisher } = require('./cartoon_publishing_adapter.cjs');
+const { discoverAndSelectTopicViaActiveAi } = require('./topic_discovery_engine.cjs');
 
 const ARTIFACTS_DIR = path.join(process.cwd(), 'test_artifacts');
 const RENDERED_DIR = path.join(process.cwd(), 'rendered_videos');
@@ -24,7 +25,21 @@ if (!fs.existsSync(PUBLIC_RENDERED_DIR)) fs.mkdirSync(PUBLIC_RENDERED_DIR, { rec
 
 async function runCartoonPipelineDiagnostic() {
   const isDryRun = process.env.DRY_RUN === 'false' ? false : true;
-  const inputTopic = process.env.TEST_TOPIC || 'How Undersea Cables Connect the Internet Across Continents';
+  let inputTopic = process.env.TEST_TOPIC || '';
+
+  if (!inputTopic || inputTopic.trim().length < 4) {
+    console.log('🔎 No manual topic supplied. Launching DuckDuckGo + Active AI Topic Discovery Engine for Cartoon Channel...');
+    try {
+      const discovery = await discoverAndSelectTopicViaActiveAi('cartoon');
+      if (discovery && discovery.chosenTopic) {
+        inputTopic = discovery.chosenTopic.title;
+        console.log(`🏆 Active AI (${discovery.modelUsed}) Selected Winning Cartoon Topic: "${inputTopic}"`);
+      }
+    } catch (err) {
+      console.warn(`[Topic Discovery Warning] ${err.message}. Using default.`);
+      inputTopic = 'How Undersea Cables Connect the Internet Across Continents';
+    }
+  }
 
   console.log('====================================================');
   console.log('🎨 STARTING AUTOMATED CARTOON FACTORY (WORKFLOW 3)');
@@ -74,7 +89,7 @@ async function runCartoonPipelineDiagnostic() {
 
     // D. Generate 2D Vector Frame Reference for this scene
     const frameSvgPath = path.join(ARTIFACTS_DIR, `scene_${sceneIndex}_frame.svg`);
-    const svgContent = generateCharacterFrameSvg(scene.character_action, scene.emotion, 'B');
+    const svgContent = generateCharacterFrameSvg(scene.character_action, scene.emotion, 'B', 1080, 1920, scene.background_style, inputTopic, scene.objects);
     fs.writeFileSync(frameSvgPath, svgContent);
 
     // E. Render Single Scene MP4 via Blender 2.5D Animated Engine
@@ -158,7 +173,7 @@ async function runCartoonPipelineDiagnostic() {
       null,
       {
         title: episodePlan.title,
-        description: `${episodePlan.title}\n\nJoin Archie for fast explanations of science, tech, and everyday mysteries!\n\n#Shorts #Cartoon #Animation #Science #Explained`,
+        description: `${episodePlan.title}\n\nJoin Archie for fast explanations of science, tech, and everyday mysteries!\n\n🤖 AI Script Architecture: ${episodePlan.modelUsed || 'AI Core'}\n\n#Shorts #Cartoon #Animation #Science #Explained`,
         tags: ['Shorts', 'Cartoon', 'Science', 'Animation', 'Explained', 'Archie']
       }
     );

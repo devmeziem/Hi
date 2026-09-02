@@ -16,6 +16,7 @@ const {
   isTopicSimilarToHistory,
   formatViralShortsTitle
 } = require('./stoic_diversity_engine.cjs');
+const { discoverAndSelectTopicViaActiveAi } = require('./topic_discovery_engine.cjs');
 
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim();
 const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || '').trim();
@@ -704,8 +705,20 @@ async function generateDailyBlueprints() {
 
     for (let slotIdx = 0; slotIdx < effectiveSlots.length; slotIdx++) {
       const slot = effectiveSlots[slotIdx];
-      const stoicArch = stoicArchetypes[slotIdx] || null;
+      let stoicArch = stoicArchetypes[slotIdx] || null;
       const jobId = `job_${Date.now()}_${niche.id}_${slotIdx + 1}`;
+
+      // Dynamically discover and select fresh viral topic via DuckDuckGo + Active AI
+      let resolvedSlotTopic = slot.topic;
+      try {
+        const discovery = await discoverAndSelectTopicViaActiveAi(niche.id === 'motivation_stoicism' ? 'stoic' : (niche.id === 'fin_blueprint' ? 'fin' : 'cartoon'));
+        if (discovery && discovery.chosenTopic) {
+          resolvedSlotTopic = discovery.chosenTopic.title;
+          console.log(`[Topic Engine] Active AI (${discovery.modelUsed}) selected: "${resolvedSlotTopic}"`);
+        }
+      } catch (err) {
+        console.warn(`[Topic Engine Warning] ${err.message}. Using default.`);
+      }
 
       let scriptText = '';
       let visualPrompt = '';
@@ -750,7 +763,7 @@ Respond strictly in raw JSON format:
     { "text": "Slide 6 narration...", "visual": "Photorealistic 9:16 vertical prompt 6..." }
   ]
 }`;
-        userPrompt = `Create a professional YouTube Short script for topic: "${slot.topic}". Focus details: ${JSON.stringify(slot)}. Channel: "${channelName}". Do not duplicate recent topics: ${Array.from(generatedTopicHistory).slice(-6).join(', ')}`;
+        userPrompt = `Create a professional YouTube Short script for topic: "${resolvedSlotTopic}". Focus details: ${JSON.stringify(slot)}. Channel: "${channelName}". Do not duplicate recent topics: ${Array.from(generatedTopicHistory).slice(-6).join(', ')}`;
       }
 
       // 1. Primary Attempt: Groq LPU (Highest speed, lowest cost)

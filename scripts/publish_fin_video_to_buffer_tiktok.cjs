@@ -17,10 +17,40 @@ const BUFFER_API_KEY = String(process.env.BUFFER_API_KEY || '').trim();
 const BUFFER_TIKTOK_CHANNEL_ID = String(process.env.BUFFER_TIKTOK_CHANNEL_ID || '').trim();
 const CLOUDINARY_CLOUD_NAME = String(process.env.CLOUDINARY_CLOUD_NAME || '').trim();
 const CLOUDINARY_UPLOAD_PRESET = String(process.env.CLOUDINARY_UPLOAD_PRESET || '').trim();
+const STRICT_BUFFER_FAIL = process.env.STRICT_BUFFER_FAIL === 'true';
 
-function fail(message) {
-  console.error(`\n[Buffer/TikTok] ❌ ERROR: ${message}`);
-  process.exit(1);
+function logWarn(message) {
+  console.warn(`\n[Buffer/TikTok] ⚠️ WARNING: ${message}`);
+}
+
+function printDiagnosticBanner(title, whatFailed, whyFailed, fixes) {
+  console.error(`\n\x1b[31m\x1b[1m════════════════════════════════════════════════════════════════════════════════\x1b[0m`);
+  console.error(`\x1b[31m\x1b[1m ❌ [BUFFER / TIKTOK DISPATCHER: ${title.toUpperCase()}]\x1b[0m`);
+  console.error(`\x1b[31m\x1b[1m════════════════════════════════════════════════════════════════════════════════\x1b[0m`);
+  console.error(`\n\x1b[1m📋 WHAT FAILED:\x1b[0m\n ${whatFailed}\n`);
+  console.error(`\x1b[1m🔍 WHY IT FAILED:\x1b[0m\n ${whyFailed}\n`);
+  console.error(`\x1b[1m🛠️ HOW TO FIX IT:\x1b[0m`);
+  fixes.forEach((fix, idx) => console.error(` ${idx + 1}. ${fix}`));
+  console.error(`\x1b[31m\x1b[1m════════════════════════════════════════════════════════════════════════════════\n\x1b[0m`);
+}
+
+function fail(message, details = {}) {
+  const whatFailed = details.what || message;
+  const whyFailed = details.why || 'An unhandled exception or API rejection occurred during Buffer/TikTok relay.';
+  const fixes = details.fixes || [
+    'Verify that BUFFER_API_KEY is active and authorized on https://publish.buffer.com',
+    'Verify that CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET are set to an "Unsigned" preset on https://cloudinary.com',
+    'Ensure your TikTok channel is connected and active in Buffer.'
+  ];
+
+  printDiagnosticBanner('Pipeline Error', whatFailed, whyFailed, fixes);
+
+  if (STRICT_BUFFER_FAIL) {
+    process.exit(1);
+  } else {
+    console.log(`[Buffer/TikTok] Continuing pipeline (non-blocking mode). Set STRICT_BUFFER_FAIL=true in your environment to enforce exit code 1.`);
+    process.exit(0);
+  }
 }
 
 /**
@@ -28,25 +58,35 @@ function fail(message) {
  */
 function validateCloudinaryConfig() {
   if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
-    fail(
-      'Missing CLOUDINARY_CLOUD_NAME or CLOUDINARY_UPLOAD_PRESET.\n' +
-      'To enable automatic TikTok posting:\n' +
-      '1. Create a free Cloudinary account at https://cloudinary.com\n' +
-      '2. Go to Settings > Upload > Upload presets > Add upload preset > Signing Mode: "Unsigned"\n' +
-      '3. Add CLOUDINARY_CLOUD_NAME (your cloud name string) and CLOUDINARY_UPLOAD_PRESET (preset name) to GitHub Secrets.'
-    );
+    fail('Cloudinary configuration is missing required environment variables.', {
+      what: 'Cloudinary media hosting upload initiation',
+      why: `CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME ? 'Present' : 'MISSING'}, CLOUDINARY_UPLOAD_PRESET=${CLOUDINARY_UPLOAD_PRESET ? 'Present' : 'MISSING'}`,
+      fixes: [
+        'Create a free Cloudinary account at https://cloudinary.com',
+        'Go to Settings > Upload > Upload presets > Add upload preset > set Signing Mode to "Unsigned"',
+        'Add CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET into your GitHub Repository Secrets'
+      ]
+    });
+    return false;
   }
 
   // Catch the common mistake where user pastes numeric API key into cloud name
   if (/^\d{6,15}$/.test(CLOUDINARY_CLOUD_NAME)) {
-    fail(
-      'CLOUDINARY_CLOUD_NAME appears to contain a numeric API key instead of your Cloud Name.\n' +
-      'Please check your Cloudinary dashboard and set CLOUDINARY_CLOUD_NAME to your alphanumeric cloud name (e.g. "djx123abc").'
-    );
+    fail('CLOUDINARY_CLOUD_NAME appears to contain a numeric API key instead of your Cloud Name.', {
+      what: 'Cloudinary Cloud Name validation',
+      why: `Configured CLOUDINARY_CLOUD_NAME is purely numeric ("${CLOUDINARY_CLOUD_NAME}"), which is an API key rather than your cloud identifier string.`,
+      fixes: [
+        'Visit your Cloudinary Dashboard at https://console.cloudinary.com/pm',
+        'Locate your Cloud Name string (e.g. "dx9abc123" or your custom account name)',
+        'Update CLOUDINARY_CLOUD_NAME in GitHub Secrets to that alphanumeric name.'
+      ]
+    });
+    return false;
   }
 
   console.log(`[Cloudinary] Cloud Name: ${CLOUDINARY_CLOUD_NAME}`);
   console.log(`[Cloudinary] Upload Preset: ${CLOUDINARY_UPLOAD_PRESET} (Unsigned Mode)`);
+  return true;
 }
 
 /**
@@ -87,7 +127,8 @@ async function bufferRequest(query, variables = {}) {
 function findLatestVideo() {
   const roots = [
     path.join(process.cwd(), 'rendered_videos'),
-    path.join(process.cwd(), 'test_artifacts')
+    path.join(process.cwd(), 'test_artifacts'),
+    path.join(process.cwd(), 'output')
   ];
 
   const files = [];
@@ -95,14 +136,21 @@ function findLatestVideo() {
     if (!fs.existsSync(root)) continue;
     for (const name of fs.readdirSync(root)) {
       const full = path.join(root, name);
-      if (fs.statSync(full).isFile() && /\.mp4$/i.test(name) && !name.includes('slide_')) {
+      if (fs.statSync(full).isFile() && /\.mp4$/i.test(name) && !name.includes('slide_') && !name.includes('temp_')) {
         files.push(full);
       }
     }
   }
 
   if (!files.length) {
-    fail('No final rendered MP4 video found in rendered_videos/ or test_artifacts/.');
+    fail('No final rendered MP4 video found to upload.', {
+      what: 'Locating rendered output MP4 video file',
+      why: `Searched in directories [${roots.join(', ')}], but found no complete MP4 render.`,
+      fixes: [
+        'Ensure the video rendering step (e.g. test_fin_runner.cjs) ran successfully before this step.',
+        'Check earlier workflow logs for FFmpeg rendering or audio synthesis errors.'
+      ]
+    });
   }
 
   files.sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
@@ -232,10 +280,16 @@ async function resolveTikTokChannel() {
   }
 
   if (!foundTikTok) {
-    fail(
-      'Could not find an active TikTok channel in your Buffer account.\n' +
-      'Please ensure your TikTok account is connected inside Buffer (https://publish.buffer.com/channels).'
-    );
+    fail('Could not find an active TikTok channel in your Buffer account.', {
+      what: 'Buffer account channel discovery for TikTok',
+      why: 'No connected, non-locked TikTok channels were returned by the Buffer GraphQL API.',
+      fixes: [
+        'Visit Buffer Channels settings: https://publish.buffer.com/channels',
+        'Click "Connect Channel" -> Select "TikTok"',
+        'Authorize Buffer to publish videos to your TikTok account',
+        'Optionally set BUFFER_TIKTOK_CHANNEL_ID directly in your environment/secrets to skip auto-discovery.'
+      ]
+    });
   }
 
   console.log(`[Buffer/TikTok] Auto-selected TikTok channel: "${foundTikTok.displayName || foundTikTok.name}" (ID: ${foundTikTok.id})`);
@@ -276,9 +330,36 @@ async function createBufferPost(channel, mediaUrl, caption) {
   const data = await bufferRequest(query, { input });
   const result = data?.createPost;
 
-  if (!result) fail('Buffer returned no createPost result.');
-  if (result.message) fail(`Buffer post creation failed: ${result.message}`);
-  if (!result.post?.id) fail(`Buffer did not return a post ID: ${JSON.stringify(result)}`);
+  if (!result) {
+    fail('Buffer returned no createPost result.', {
+      what: 'Buffer CreateVideoPost GraphQL mutation',
+      why: 'Empty response payload received from Buffer API endpoint.',
+      fixes: [
+        'Check Buffer API service status at https://status.buffer.com/',
+        'Verify your BUFFER_API_KEY rate limits and permissions.'
+      ]
+    });
+  }
+
+  if (result.message) {
+    fail(`Buffer post creation failed: ${result.message}`, {
+      what: 'Buffer post mutation validation',
+      why: `Buffer GraphQL mutation error: "${result.message}"`,
+      fixes: [
+        'Verify your video URL is accessible without auth: ' + mediaUrl,
+        'Ensure the video duration is under TikTok upload limits (typically < 10 mins)',
+        'Check if your Buffer queue for this channel is full.'
+      ]
+    });
+  }
+
+  if (!result.post?.id) {
+    fail('Buffer did not return a valid post ID.', {
+      what: 'Buffer post response parsing',
+      why: `Post object was missing from response: ${JSON.stringify(result)}`,
+      fixes: ['Check Buffer dashboard at https://publish.buffer.com/ to inspect queue status manually.']
+    });
+  }
 
   console.log(`\n==================================================`);
   console.log(`🚀 [Buffer/TikTok] SUCCESS! Video added to Buffer queue!`);

@@ -38,6 +38,7 @@ const {
   expandFinStoryboardIfNeeded
 } = require('./fin_diversity_engine.cjs');
 const { verifyFinancialTopic } = require('./fin_fact_checker.cjs');
+const { discoverAndSelectTopicViaActiveAi } = require('./topic_discovery_engine.cjs');
 
 // ANSI Color helper for clean terminal outputs
 const colors = {
@@ -402,7 +403,18 @@ async function probeBackupEngines() {
 // DYNAMIC FINANCE TOPIC DISCOVERY & ROTATION ENGINE
 // ----------------------------------------------------
 async function discoverDynamicFinanceTopic(resolvedArchetype, activeGrok, recentHistory = []) {
-  logInfo(`[Topic Discovery] Discovering fresh, high-CTR viral topic for Pillar: "${resolvedArchetype.theme}"...`);
+  logInfo(`[Topic Discovery] Initiating automated DuckDuckGo + Active AI Topic Selection Engine for Fin Blueprint...`);
+
+  try {
+    const discovery = await discoverAndSelectTopicViaActiveAi('fin');
+    if (discovery && discovery.chosenTopic) {
+      logSuccess(`[Topic Discovery Engine] Active AI (${discovery.modelUsed}) selected winning topic: "${discovery.chosenTopic.title}"`);
+      return discovery.chosenTopic.title;
+    }
+  } catch (err) {
+    logWarning(`[Topic Discovery Notice] ${err.message}. Engaging backup resolver.`);
+  }
+
   const recentExclusions = recentHistory.slice(0, 25).map(h => `"${h.topic || h.title}"`).join(', ');
 
   // 1. Try OpenRouter
@@ -616,6 +628,69 @@ EXCLUDED PREVIOUS TITLES: [${recentExclusions || 'None'}]`
 }
 
 // ----------------------------------------------------
+// LOCAL OPEN-SOURCE ZERO-KEY FALLBACK (OLLAMA / LLAMA.CPP)
+// ----------------------------------------------------
+async function callLocalOllamaFin(systemPrompt, userPrompt, activeTopic) {
+  return new Promise((resolve) => {
+    const checkReq = http.request('http://127.0.0.1:11434/api/tags', { method: 'GET', timeout: 2500 }, (res) => {
+      let d = '';
+      res.on('data', c => d += c);
+      res.on('end', () => {
+        let chosenModel = 'qwen2.5:1.5b';
+        try {
+          const tags = JSON.parse(d);
+          if (tags.models && tags.models.length > 0) {
+            chosenModel = tags.models[0].name;
+          }
+        } catch {}
+
+        const postData = JSON.stringify({
+          model: chosenModel,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: `${userPrompt} Topic Title: "${activeTopic}". Return strictly valid JSON.` }
+          ],
+          format: 'json',
+          stream: false,
+          options: {
+            temperature: 0.7,
+            num_ctx: 4096
+          }
+        });
+
+        const genReq = http.request('http://127.0.0.1:11434/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(postData)
+          },
+          timeout: 75000
+        }, (genRes) => {
+          let genData = '';
+          genRes.on('data', c => genData += c);
+          genRes.on('end', () => {
+            try {
+              const j = JSON.parse(genData);
+              const content = j.message?.content || j.response;
+              resolve({ success: true, modelName: `Local Open-Source (${chosenModel} via Ollama)`, content });
+            } catch (e) {
+              resolve({ success: false, error: e.message });
+            }
+          });
+        });
+        genReq.on('error', err => resolve({ success: false, error: err.message }));
+        genReq.on('timeout', () => { genReq.destroy(); resolve({ success: false, error: 'Local Ollama timeout' }); });
+        genReq.write(postData);
+        genReq.end();
+      });
+    });
+    checkReq.on('error', err => resolve({ success: false, error: `Local Ollama unavailable: ${err.message}` }));
+    checkReq.on('timeout', () => { checkReq.destroy(); resolve({ success: false, error: 'Ollama check timeout' }); });
+    checkReq.end();
+  });
+}
+
+// ----------------------------------------------------
 // STEP 3: GENERATE 6-SLIDE SINGLE-CURRENCY (USD) STORYBOARD (WITH DEDUPLICATION & ROTATION)
 // ----------------------------------------------------
 async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
@@ -716,6 +791,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
             const parsed = cleanLlmJson(raw.content);
             if (parsed && validateFinStoryboard(parsed)) {
               if (!isDeepDive && parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
+              parsed.modelUsed = `OpenRouter (${orModel})`;
               scriptData = parsed;
               logSuccess(`[Storyboard Engine] OpenRouter (${orModel}) generated complete ${scriptData.slides.length}-slide storyboard!`);
               break;
@@ -776,6 +852,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
             const parsed = cleanLlmJson(raw.content);
             if (parsed && validateFinStoryboard(parsed)) {
               if (!isDeepDive && parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
+              parsed.modelUsed = `Groq LPU (${gModel})`;
               scriptData = parsed;
               logSuccess(`[Storyboard Engine] Groq (${gModel}) generated complete ${scriptData.slides.length}-slide storyboard!`);
               break;
@@ -791,7 +868,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
 
     // 3. TERTIARY: Google Gemini Models
     if (!scriptData && GEMINI_API_KEY) {
-      const geminiModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+      const geminiModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.5-flash-8b'];
       for (const gModel of geminiModels) {
         if (scriptData) break;
         try {
@@ -814,7 +891,9 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
                     const j = JSON.parse(d);
                     resolve({ success: true, content: j.candidates?.[0]?.content?.parts?.[0]?.text });
                   } catch (e) { resolve({ success: false, error: e.message }); }
-                } else { resolve({ success: false, error: `HTTP ${res.statusCode}` }); }
+                } else {
+                  resolve({ success: false, error: `HTTP ${res.statusCode}` });
+                }
               });
             });
             req.on('error', err => resolve({ success: false, error: err.message }));
@@ -826,13 +905,18 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
           if (raw.success && raw.content) {
             const parsed = cleanLlmJson(raw.content);
             if (parsed && validateFinStoryboard(parsed)) {
-              if (!isDeepDive && parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
+              if (!isDeepDive && parsed.slides.length > 8) parsed.slides = parsed.slides.slice(0, 8);
+              parsed.modelUsed = `Google Gemini (${gModel})`;
               scriptData = parsed;
               logSuccess(`[Storyboard Engine] Gemini (${gModel}) generated complete ${scriptData.slides.length}-slide storyboard!`);
               break;
             }
+          } else {
+            logInfo(`[Storyboard Engine] Gemini (${gModel}) notice: ${raw.error || 'Failed parsing'}`);
           }
-        } catch {}
+        } catch (e) {
+          logInfo(`[Storyboard Engine] Gemini (${gModel}) error: ${e.message}`);
+        }
       }
     }
 
@@ -883,6 +967,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
             const parsed = cleanLlmJson(raw.content);
             if (parsed && validateFinStoryboard(parsed)) {
               if (!isDeepDive && parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
+              parsed.modelUsed = `OpenAI (${oModel})`;
               scriptData = parsed;
               logSuccess(`[Storyboard Engine] OpenAI (${oModel}) generated complete ${scriptData.slides.length}-slide storyboard!`);
               break;
@@ -936,6 +1021,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
           const parsed = cleanLlmJson(raw.content);
           if (parsed && validateFinStoryboard(parsed)) {
             if (!isDeepDive && parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
+            parsed.modelUsed = 'DeepSeek (deepseek-chat)';
             scriptData = parsed;
             logSuccess(`[Storyboard Engine] DeepSeek generated complete ${scriptData.slides.length}-slide storyboard!`);
           }
@@ -988,6 +1074,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
           const parsed = cleanLlmJson(raw.content);
           if (parsed && validateFinStoryboard(parsed)) {
             if (!isDeepDive && parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
+            parsed.modelUsed = `xAI Grok (${grokObj.model || 'grok-2-latest'})`;
             scriptData = parsed;
             logSuccess(`[Storyboard Engine] Grok (${grokObj.model}) generated complete ${scriptData.slides.length}-slide storyboard!`);
           }
@@ -1047,6 +1134,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
             const parsed = cleanLlmJson(raw.content);
             if (parsed && validateFinStoryboard(parsed)) {
               if (!isDeepDive && parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
+              parsed.modelUsed = `Cloudflare Workers AI (${cModel})`;
               scriptData = parsed;
               logSuccess(`[Storyboard Engine] Cloudflare (${cModel}) generated complete ${scriptData.slides.length}-slide storyboard!`);
               break;
@@ -1055,13 +1143,63 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
         } catch {}
       }
     }
+
+    // 8. OCTONARY: Local Open-Source AI (Ollama Zero-Key Localhost Fallback)
+    if (!scriptData) {
+      try {
+        logInfo(`[Storyboard Engine] 8. Requesting storyboard from Local Open-Source AI (Ollama on 127.0.0.1:11434)...`);
+        const rawLocal = await callLocalOllamaFin(systemPrompt, userPrompt, activeTopic);
+        if (rawLocal && rawLocal.success && rawLocal.content) {
+          const parsed = cleanLlmJson(rawLocal.content);
+          if (parsed && validateFinStoryboard(parsed)) {
+            if (!isDeepDive && parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
+            parsed.modelUsed = rawLocal.modelName || 'Local Open-Source (Qwen 2.5 1.5B via Ollama)';
+            scriptData = parsed;
+            logSuccess(`[Storyboard Engine] ${parsed.modelUsed} generated complete ${scriptData.slides.length}-slide storyboard!`);
+          }
+        }
+      } catch (e) {
+        logInfo(`[Storyboard Engine] Local Ollama fallback notice: ${e.message}`);
+      }
+    }
   }
 
-  // 8. STRICT AI-ONLY VALIDATION: Throw error if all AI providers fail (No deterministic fallback allowed)
+  // 9. STRICT AI GENERATION ENFORCEMENT & COMPREHENSIVE DIAGNOSTIC LOGS
   if (!scriptData || !Array.isArray(scriptData.slides) || scriptData.slides.length < 3) {
-    const errorMsg = `[Storyboard Engine FATAL] All remote LLM inference providers failed to generate a valid storyboard for topic "${chosenTopicForPipeline || topicInput}". Deterministic fallbacks are strictly disabled. Please verify API keys and network access.`;
-    logError(errorMsg);
-    throw new Error(errorMsg);
+    const targetTopicLabel = chosenTopicForPipeline || topicInput || 'Finance Education Episode';
+    
+    console.error(`\n${colors.red}${colors.bright}════════════════════════════════════════════════════════════════════════════════${colors.reset}`);
+    console.error(`${colors.red}${colors.bright} ❌ [FINANCE STORYBOARD AI GENERATION FAILED]${colors.reset}`);
+    console.error(`${colors.red}${colors.bright}════════════════════════════════════════════════════════════════════════════════${colors.reset}`);
+    console.error(`\n${colors.bright}📋 WHAT FAILED:${colors.reset}`);
+    console.error(` • Task: AI script generation for Fin Blueprint (${CHANNEL_HANDLE})`);
+    console.error(` • Topic: "${targetTopicLabel}"`);
+    console.error(` • Mode: ${isDeepDive ? '15-Chapter Masterclass' : '7-8 Slide Short (>1.5 min duration)'}`);
+    console.error(` • Status: All configured AI inference providers failed to return a valid storyboard.`);
+    console.error(` • Policy: Hardcoded fallback scripts are STRICTLY REMOVED per user directive.\n`);
+
+    console.error(`${colors.bright}🔍 AI PROVIDERS ATTEMPTED & STATUS:${colors.reset}`);
+    console.error(` 1. OpenRouter (${OPENROUTER_API_KEY ? 'Key Present' : 'No Key'}) -> gemini-2.0-flash, llama-3.3-70b, deepseek-chat, mistral-small`);
+    console.error(` 2. Groq LPU (${GROQ_API_KEY ? 'Key Present' : 'No Key'}) -> ${groqModel || 'llama-3.3-70b-versatile'}, llama-3.1-8b-instant`);
+    console.error(` 3. Google Gemini (${GEMINI_API_KEY ? 'Key Present' : 'No Key'}) -> gemini-2.5-flash, gemini-2.0-flash, gemini-1.5-flash`);
+    console.error(` 4. OpenAI (${OPENAI_API_KEY ? 'Key Present' : 'No Key'}) -> gpt-4o-mini, gpt-4o`);
+    console.error(` 5. DeepSeek (${DEEPSEEK_API_KEY ? 'Key Present' : 'No Key'}) -> deepseek-chat`);
+    console.error(` 6. xAI Grok (${grokObj && grokObj.key ? 'Key Present' : 'No Key'}) -> ${grokObj?.model || 'grok-2-latest'}`);
+    console.error(` 7. Cloudflare Workers AI (${CLOUDFLARE_API_TOKEN ? 'Token Present' : 'No Token'}) -> llama-3.3-70b-instruct`);
+    console.error(` 8. Local Open-Source AI Engine -> Ollama (localhost:11434 / qwen2.5:1.5b)\n`);
+
+    console.error(`${colors.bright}🛠️ WHY IT FAILED & HOW TO FIX IT:${colors.reset}`);
+    console.error(` 1. ${colors.cyan}Rate Limits / Quota Exhaustion:${colors.reset}`);
+    console.error(`    • Google Gemini: If error is 429 (Resource Exhausted), check your daily quota or enable pay-as-you-go at https://aistudio.google.com/`);
+    console.error(` 2. ${colors.cyan}Missing API Keys:${colors.reset}`);
+    console.error(`    • Recommended free backup: Add GROQ_API_KEY in your GitHub Repository Secrets (https://console.groq.com/keys)`);
+    console.error(`    • OpenRouter backup: Add OPENROUTER_API_KEY with high rate limit models (https://openrouter.ai/keys)`);
+    console.error(`    • xAI Grok backup: Add GROK_API_KEY in GitHub Secrets (https://console.x.ai/)`);
+    console.error(` 3. ${colors.cyan}Zero-Key CI/CD Fallback:${colors.reset}`);
+    console.error(`    • Ensure GitHub Actions workflow runs the "Setup Local Open-Source AI Engine" step with Ollama.`);
+    console.error(`${colors.red}${colors.bright}════════════════════════════════════════════════════════════════════════════════\n${colors.reset}`);
+
+    throw new Error(`[AI Generation Fatal] All LLM inference providers failed for topic "${targetTopicLabel}". Preset fallback scripts are strictly disabled. Please configure at least one active AI provider key or local Ollama engine.`);
   }
 
   // Final Quality Check to prevent any blueprint leakage
@@ -1078,6 +1216,14 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
 
   // Ensure title is complete, un-truncated, and equipped with viral & trending hashtags
   scriptData.title = formatViralShortsTitle(scriptData.title || fallbackTopic, 'fin', isDeepDive);
+
+  // Append exact AI engine disclosure to video description
+  const aiDisclosure = `🤖 AI Script Architecture: ${scriptData.modelUsed || 'AI Core'}`;
+  if (scriptData.description && !scriptData.description.includes('AI Script Architecture')) {
+    scriptData.description = `${scriptData.description.trim()}\n\n${aiDisclosure}`;
+  } else if (!scriptData.description) {
+    scriptData.description = `${scriptData.title}\n\n${aiDisclosure}`;
+  }
 
   // Safety & Single Currency Compliance Audit
   const audit = auditFinancialScriptSafety(scriptData);
@@ -1097,14 +1243,16 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
       communityQuestion: scriptData.communityQuestion,
       tags: scriptData.tags,
       description: scriptData.description,
-      slides: scriptData.slides
+      slides: scriptData.slides,
+      modelUsed: scriptData.modelUsed || 'AI Core'
     }, null, 2));
   } catch {}
 
   console.log(`\n  ${colors.bright}Generated Financial Masterclass:${colors.reset}`);
-  console.log(`  Title  : ${colors.green}${scriptData.title}${colors.reset}`);
-  console.log(`  Budget : ${colors.yellow}${scriptData.estimatedBudget || 'Standard'}${colors.reset}`);
-  console.log(`  Slides : ${colors.cyan}${scriptData.slides.length} slides (${isDeepDive ? 'Full Long-Form Deep Dive' : 'High-Retention Short with Infinite Loop'})${colors.reset}`);
+  console.log(`  Title     : ${colors.green}${scriptData.title}${colors.reset}`);
+  console.log(`  AI Engine : ${colors.bright}${colors.green}${scriptData.modelUsed || 'AI Core'}${colors.reset}`);
+  console.log(`  Budget    : ${colors.yellow}${scriptData.estimatedBudget || 'Standard'}${colors.reset}`);
+  console.log(`  Slides    : ${colors.cyan}${scriptData.slides.length} slides (${isDeepDive ? 'Full Long-Form Deep Dive' : 'High-Retention Short with Infinite Loop'})${colors.reset}`);
 
   return scriptData;
 }

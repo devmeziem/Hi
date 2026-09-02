@@ -53,6 +53,15 @@ jobs:
       - name: Verify FFmpeg Installation
         run: ffmpeg -version
 
+      - name: Setup Local Open-Source AI Engine (Ollama Zero-Key Fallback)
+        run: |
+          echo "Installing Ollama for zero-key local inference fallback..."
+          curl -fsSL https://ollama.com/install.sh | sh
+          ollama serve > /tmp/ollama.log 2>&1 &
+          sleep 4
+          ollama pull qwen2.5:1.5b || ollama pull qwen2.5:0.5b || true
+          curl -s http://127.0.0.1:11434/api/tags || true
+
       - name: Execute Fin Blueprint Pipeline Diagnostic
         env:
           TEST_TOPIC: ${{ github.event.inputs.topic }}
