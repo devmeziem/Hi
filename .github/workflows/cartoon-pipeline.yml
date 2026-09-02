@@ -1,17 +1,19 @@
 name: Automated Cartoon Factory (Workflow 3)
 
 on:
+  schedule:
+    - cron: '0 8,14,20 * * *' # Automated 3x daily Cartoon / Tech Animated Shorts (08:00, 14:00, 20:00 UTC)
   workflow_dispatch:
     inputs:
       topic:
-        description: 'Cartoon Topic / Wonder (e.g., "How Wi-Fi Works", "Why the Ocean is Blue")'
+        description: 'Cartoon Topic / Wonder (e.g., "How Undersea Cables Connect the Internet", "How GPUs Render Games")'
         required: false
         default: ''
         type: string
       dry_run:
-        description: 'Dry Run Mode (True = Validate and preserve artifacts only; False = Dispatch to publisher)'
+        description: 'Dry Run Mode (Uncheck for live YouTube Tech Channel upload)'
         required: true
-        default: true
+        default: false
         type: boolean
 
 jobs:
@@ -92,6 +94,9 @@ jobs:
         env:
           TEST_TOPIC: ${{ github.event.inputs.topic }}
           DRY_RUN: ${{ github.event.inputs.dry_run }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
+          GROK_API_KEY_2: ${{ secrets.GROK_API_KEY_2 }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -99,6 +104,12 @@ jobs:
           YOUTUBE_CLIENT_ID_CH3: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 }}
           YOUTUBE_CLIENT_SECRET_CH3: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 }}
           YOUTUBE_REFRESH_TOKEN_CH3: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 }}
+          YOUTUBE_CLIENT_ID_TECH: ${{ secrets.YOUTUBE_CLIENT_ID_TECH }}
+          YOUTUBE_CLIENT_SECRET_TECH: ${{ secrets.YOUTUBE_CLIENT_SECRET_TECH }}
+          YOUTUBE_REFRESH_TOKEN_TECH: ${{ secrets.YOUTUBE_REFRESH_TOKEN_TECH }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
         run: node scripts/test_cartoon_runner.cjs
 
       - name: Upload Production Video & Diagnostics Artifacts

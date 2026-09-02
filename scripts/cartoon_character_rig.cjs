@@ -381,6 +381,132 @@ function rasterizeSvgToPng(svgPath, pngPath, width = 1080, height = 1920) {
 }
 
 /**
+ * Generate Dynamic Background Environment SVG based on scene theme & objects
+ */
+function generateSceneBackgroundSvg(backgroundStyle = 'tech_studio', topic = '', objects = [], width = 1080, height = 1920) {
+  const style = String(backgroundStyle || '').toLowerCase();
+  
+  // 1. Modern Tech Lab / Server Room / Cyber
+  if (style.includes('tech') || style.includes('lab') || style.includes('server') || style.includes('internet') || style.includes('cable')) {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+      <defs>
+        <linearGradient id="techBg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#020617" />
+          <stop offset="60%" stop-color="#0f172a" />
+          <stop offset="100%" stop-color="#1e1b4b" />
+        </linearGradient>
+        <pattern id="gridPattern" width="60" height="60" patternUnits="userSpaceOnUse">
+          <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#38bdf8" stroke-width="0.75" opacity="0.18" />
+        </pattern>
+        <radialGradient id="techGlow" cx="50%" cy="40%" r="50%">
+          <stop offset="0%" stop-color="#0284c7" stop-opacity="0.35" />
+          <stop offset="100%" stop-color="#020617" stop-opacity="0" />
+        </radialGradient>
+      </defs>
+      <rect width="${width}" height="${height}" fill="url(#techBg)" />
+      <rect width="${width}" height="${height}" fill="url(#gridPattern)" />
+      <circle cx="540" cy="800" r="550" fill="url(#techGlow)" />
+      <!-- Server Racks / Digital Nodes in background -->
+      <g opacity="0.4" stroke="#38bdf8" stroke-width="2" fill="none">
+        <rect x="80" y="300" width="160" height="900" rx="10" stroke="#0284c7" stroke-width="3" />
+        <line x1="100" y1="360" x2="220" y2="360" /><line x1="100" y1="420" x2="220" y2="420" /><line x1="100" y1="480" x2="220" y2="480" />
+        <rect x="840" y="300" width="160" height="900" rx="10" stroke="#0284c7" stroke-width="3" />
+        <line x1="860" y1="360" x2="980" y2="360" /><line x1="860" y1="420" x2="980" y2="420" /><line x1="860" y1="480" x2="980" y2="480" />
+        <!-- Glowing Data Stream Lines -->
+        <path d="M 0 1400 Q 540 1200 1080 1400" stroke="#06b6d4" stroke-width="4" />
+        <path d="M 0 1480 Q 540 1320 1080 1480" stroke="#3b82f6" stroke-width="3" />
+      </g>
+    </svg>`;
+  }
+
+  // 2. Deep Space / Astronomy / Cosmic / Physics
+  if (style.includes('space') || style.includes('cosmic') || style.includes('star') || style.includes('universe')) {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+      <defs>
+        <radialGradient id="spaceBg" cx="50%" cy="30%" r="70%">
+          <stop offset="0%" stop-color="#311042" />
+          <stop offset="50%" stop-color="#0f0728" />
+          <stop offset="100%" stop-color="#02000a" />
+        </radialGradient>
+      </defs>
+      <rect width="${width}" height="${height}" fill="url(#spaceBg)" />
+      <!-- Distant Stars & Constellations -->
+      <g fill="#ffffff">
+        <circle cx="120" cy="180" r="2.5" opacity="0.9" /><circle cx="280" cy="320" r="1.8" opacity="0.7" />
+        <circle cx="820" cy="220" r="3.0" opacity="0.9" /><circle cx="940" cy="400" r="2.0" opacity="0.8" />
+        <circle cx="200" cy="650" r="2.0" opacity="0.6" /><circle cx="900" cy="750" r="2.5" opacity="0.8" />
+        <circle cx="450" cy="200" r="1.5" opacity="0.7" /><circle cx="650" cy="150" r="2.2" opacity="0.8" />
+      </g>
+      <!-- Glowing Planet Silhouette -->
+      <circle cx="880" cy="350" r="120" fill="#6366f1" opacity="0.25" />
+      <circle cx="880" cy="350" r="110" fill="#4338ca" opacity="0.4" />
+    </svg>`;
+  }
+
+  // 3. Ocean / Underwater / Undersea Cables / Nature
+  if (style.includes('ocean') || style.includes('water') || style.includes('sea') || style.includes('marine') || style.includes('nature')) {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+      <defs>
+        <linearGradient id="oceanBg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#083344" />
+          <stop offset="40%" stop-color="#0c4a6e" />
+          <stop offset="100%" stop-color="#021a28" />
+        </linearGradient>
+      </defs>
+      <rect width="${width}" height="${height}" fill="url(#oceanBg)" />
+      <!-- Light Caustics / Sun Rays penetrating water -->
+      <path d="M 100 0 L 250 1200 L 150 1200 Z" fill="#38bdf8" opacity="0.08" />
+      <path d="M 600 0 L 850 1200 L 750 1200 Z" fill="#38bdf8" opacity="0.09" />
+      <!-- Sea Bed Floor & Glowing Undersea Cable -->
+      <path d="M 0 1550 Q 540 1480 1080 1560 L 1080 1920 L 0 1920 Z" fill="#032b43" opacity="0.8" />
+      <path d="M 0 1620 Q 540 1540 1080 1630" stroke="#f59e0b" stroke-width="12" stroke-linecap="round" fill="none" />
+      <path d="M 0 1620 Q 540 1540 1080 1630" stroke="#38bdf8" stroke-width="4" stroke-linecap="round" fill="none" />
+    </svg>`;
+  }
+
+  // 4. Finance / Stock Market / Wealth / Business
+  if (style.includes('money') || style.includes('market') || style.includes('finance') || style.includes('business') || style.includes('stock')) {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+      <defs>
+        <linearGradient id="finBg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#064e3b" />
+          <stop offset="50%" stop-color="#022c22" />
+          <stop offset="100%" stop-color="#02140d" />
+        </linearGradient>
+      </defs>
+      <rect width="${width}" height="${height}" fill="url(#finBg)" />
+      <!-- Candlestick chart silhouettes in background -->
+      <g opacity="0.25" stroke="#10b981" fill="#10b981">
+        <line x1="150" y1="600" x2="150" y2="900" stroke-width="2" /><rect x="140" y="660" width="20" height="180" />
+        <line x1="280" y1="520" x2="280" y2="850" stroke-width="2" /><rect x="270" y="580" width="20" height="200" />
+        <line x1="800" y1="450" x2="800" y2="780" stroke-width="2" /><rect x="790" y="490" width="20" height="210" />
+        <line x1="930" y1="380" x2="930" y2="720" stroke-width="2" /><rect x="920" y="420" width="20" height="230" />
+      </g>
+      <!-- Glowing Uptrend Line -->
+      <path d="M 0 1100 Q 400 950 600 700 T 1080 400" stroke="#34d399" stroke-width="6" fill="none" opacity="0.4" />
+    </svg>`;
+  }
+
+  // 5. Default Clean Explainer Studio
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+    <defs>
+      <linearGradient id="studioBg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0f172a" />
+        <stop offset="100%" stop-color="#1e1b4b" />
+      </linearGradient>
+      <radialGradient id="spotlight" cx="50%" cy="40%" r="55%">
+        <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.30" />
+        <stop offset="100%" stop-color="#0f172a" stop-opacity="0" />
+      </radialGradient>
+    </defs>
+    <rect width="${width}" height="${height}" fill="url(#studioBg)" />
+    <circle cx="540" cy="850" r="600" fill="url(#spotlight)" />
+    <!-- Studio floor line -->
+    <ellipse cx="540" cy="1600" rx="480" ry="120" fill="#020617" opacity="0.5" />
+  </svg>`;
+}
+
+/**
  * Ensure character base SVG assets and rendered PNG textures exist for Blender
  */
 function ensureCharacterRigAssets() {
@@ -432,6 +558,8 @@ module.exports = {
   getMouthSvg,
   generateCharacterFrameSvg,
   generateCharacterBodySvg,
+  generateSceneBackgroundSvg,
+  rasterizeSvgToPng,
   getComponentSvgs,
   ensureCharacterRigAssets,
   ASSETS_DIR

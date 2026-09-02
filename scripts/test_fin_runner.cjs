@@ -34,8 +34,10 @@ const {
   selectDiverseFinArchetype,
   selectFinHookFormat,
   resolveFinOutro,
-  formatViralShortsTitle
+  formatViralShortsTitle,
+  expandFinStoryboardIfNeeded
 } = require('./fin_diversity_engine.cjs');
+const { verifyFinancialTopic } = require('./fin_fact_checker.cjs');
 
 // ANSI Color helper for clean terminal outputs
 const colors = {
@@ -614,7 +616,7 @@ EXCLUDED PREVIOUS TITLES: [${recentExclusions || 'None'}]`
 }
 
 // ----------------------------------------------------
-// STEP 3: GENERATE 6-SLIDE DUAL-CURRENCY STORYBOARD (WITH DEDUPLICATION & ROTATION)
+// STEP 3: GENERATE 6-SLIDE SINGLE-CURRENCY (USD) STORYBOARD (WITH DEDUPLICATION & ROTATION)
 // ----------------------------------------------------
 async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
   logStep(3, `Synthesizing High-Retention Finance Storyboard`);
@@ -646,9 +648,22 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
     chosenTopicForPipeline = activeTopic;
     logInfo(`[Topic Selected] "${activeTopic}"`);
 
-    const { systemPrompt, userPrompt, chosenHookFormat, chosenOutro } = isDeepDive
+    // Search Engine Grounding: Query DuckDuckGo & macro finance facts
+    let factSheet = null;
+    try {
+      factSheet = await verifyFinancialTopic(activeTopic, archetype);
+    } catch (err) {
+      logWarning(`[Fact-Checker] Grounding notice: ${err.message}`);
+    }
+
+    const { systemPrompt, userPrompt: baseUserPrompt, chosenHookFormat, chosenOutro } = isDeepDive
       ? buildFinDeepDivePrompt(archetype, recentHistory, CHANNEL_HANDLE)
       : buildFinPromptForSlot(archetype, recentHistory, attempt - 1, CHANNEL_HANDLE);
+
+    const factContext = factSheet && factSheet.verifiedDataPoints?.length
+      ? `\nVERIFIED REAL-WORLD SEARCH FACTS (Incorporate these realistic numbers):\n- ${factSheet.verifiedDataPoints.join('\n- ')}\n`
+      : '';
+    const userPrompt = `${baseUserPrompt}${factContext}`;
 
     logInfo(`[Hook & Loop Rotation] Intro Hook: "${chosenHookFormat?.name || 'Curiosity'}" | Outro Loop Bridge: "${(chosenOutro || '').slice(0, 45)}..."`);
 
@@ -1042,15 +1057,11 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
     }
   }
 
-  // 8. DIVERSITY ENGINE SYNTHESIS: 100% Topic-Specific Fallback strictly matching chosen topic
-  const fallbackArch = chosenArchetypeForPipeline || selectDiverseFinArchetype(recentHistory, 0);
-  const fallbackTopic = topicInput || chosenTopicForPipeline || fallbackArch.angle || fallbackArch.theme;
+  // 8. STRICT AI-ONLY VALIDATION: Throw error if all AI providers fail (No deterministic fallback allowed)
   if (!scriptData || !Array.isArray(scriptData.slides) || scriptData.slides.length < 3) {
-    logWarning(`[Storyboard Engine] Remote LLM endpoints unavailable or rate-limited. Synthesizing topic-matched script for "${fallbackTopic}"...`);
-    scriptData = isDeepDive
-      ? synthesizeDeterministicFinDeepDiveStoryboard(fallbackArch, fallbackTopic, CHANNEL_HANDLE)
-      : synthesizeDeterministicFinStoryboard(fallbackArch, fallbackTopic, CHANNEL_HANDLE);
-    if (!isDeepDive && scriptData.slides.length > 6) scriptData.slides = scriptData.slides.slice(0, 6);
+    const errorMsg = `[Storyboard Engine FATAL] All remote LLM inference providers failed to generate a valid storyboard for topic "${chosenTopicForPipeline || topicInput}". Deterministic fallbacks are strictly disabled. Please verify API keys and network access.`;
+    logError(errorMsg);
+    throw new Error(errorMsg);
   }
 
   // Final Quality Check to prevent any blueprint leakage
@@ -1060,16 +1071,35 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
     throw new Error(`ABORTING: Generated storyboard failed quality check (${qualityCheck.reason}). Refusing to publish invalid content.`);
   }
 
+  // Enforce YouTube Shorts duration mandate (> 1.5 minutes / 90+ seconds) without restarting from scratch
+  if (!isDeepDive) {
+    scriptData = expandFinStoryboardIfNeeded(scriptData, 92.0, CHANNEL_HANDLE);
+  }
+
   // Ensure title is complete, un-truncated, and equipped with viral & trending hashtags
   scriptData.title = formatViralShortsTitle(scriptData.title || fallbackTopic, 'fin', isDeepDive);
 
-  // Safety & Dual Currency Compliance Audit
+  // Safety & Single Currency Compliance Audit
   const audit = auditFinancialScriptSafety(scriptData);
   if (!audit.passed) {
     logWarning(`Safety audit notes: ${(audit.flags || []).map(f => f.reason).join(', ')}`);
   } else {
-    logSuccess('Compliance & Anti-Hype Safety Audit: 100% PASSED (Dual Currency & Non-Guru phrasing verified)');
+    logSuccess('Compliance & Anti-Hype Safety Audit: 100% PASSED (Single Standard USD & Non-Guru phrasing verified)');
   }
+
+  // Save episode plan for downstream dispatchers (Buffer / TikTok / Cross-poster)
+  try {
+    fs.writeFileSync(path.join(artifactsDir, 'fin_episode_plan.json'), JSON.stringify({
+      title: scriptData.title,
+      category: scriptData.category,
+      series: scriptData.series,
+      theme: scriptData.theme,
+      communityQuestion: scriptData.communityQuestion,
+      tags: scriptData.tags,
+      description: scriptData.description,
+      slides: scriptData.slides
+    }, null, 2));
+  } catch {}
 
   console.log(`\n  ${colors.bright}Generated Financial Masterclass:${colors.reset}`);
   console.log(`  Title  : ${colors.green}${scriptData.title}${colors.reset}`);
@@ -1686,7 +1716,8 @@ async function handleYouTubePublish(storyboard, renderResult) {
         .filter(t => t.length > 0 && t.length < 50)
         .slice(0, 15);
 
-      const fullDescription = `${storyboard.description || uploadTitle}\n\nPractical money management and small-business strategies with @bones_ceo.\n\n#FinBlueprint #Shorts #viral #trending #PersonalFinance #SmallBusiness #Wealth #Entrepreneurship #fyp`;
+      const MANDATORY_FINANCIAL_DISCLAIMER = '⚠️ DISCLAIMER: This video and description are for educational and informational purposes only and do not constitute financial, investment, legal, or tax advice. Always conduct independent research and consult a licensed financial professional before making financial decisions.';
+      const fullDescription = `${storyboard.description || uploadTitle}\n\nPractical money management and small-business strategies with @bones_ceo.\n\n${MANDATORY_FINANCIAL_DISCLAIMER}\n\n#FinBlueprint #Shorts #viral #trending #PersonalFinance #SmallBusiness #Wealth #Entrepreneurship #fyp`;
 
       const metadata = JSON.stringify({
         snippet: {

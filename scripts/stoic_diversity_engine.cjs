@@ -735,14 +735,16 @@ function buildStoicPromptForSlot(slotArchetype, recentHistory, slotIndex = 0, ch
 CHANNEL GOAL: Deliver practical, high-impact modern stoicism, emotional discipline, and mental fortitude in clear, spoken-conversational English.
 AUDIENCE: Everyday normal people dealing with stress, difficult people, self-doubt, burnout, and daily distractions.
 
-CRITICAL YOUTUBE SHORTS ALGORITHM RETENTION RULES (32-42 SECONDS TOTAL):
-1. RUNTIME & PACING: Exactly 6 high-impact slides (slideIndex 0 to 5). Each slide MUST have 18 to 25 punchy spoken words (110-140 words total).
+CRITICAL YOUTUBE SHORTS ALGORITHM RETENTION RULES (OVER 1.5 MINUTES / 90+ SECONDS TOTAL):
+1. RUNTIME & PACING: Exactly 7 to 8 high-impact slides (slideIndex 0 to 7). Each slide MUST have 32 to 42 punchy spoken words (240-300 words total = 95-115s runtime).
 2. SLIDE 0 (ANTI-SWIPE HOOK): Use the '${chosenHookFormat.name}' format! Formula: "${chosenHookFormat.formula}". Start directly with an intense pattern-interrupt question or shocking statement in under 12 words.
 3. SLIDE 1 (THE PSYCHOLOGICAL TRAP): Why most people react impulsively and hand over their power.
-4. SLIDE 2 (THE STOIC MINDSET SHIFT): The core mental principle in plain modern language.
-5. SLIDE 3 (THE TACTICAL DAILY PROTOCOL): Concrete physical/mental action to execute immediately.
-6. SLIDE 4 (SOVEREIGN BENEFIT): Why this response makes you completely untouchable.
-7. SLIDE 5 (INFINITE RETENTION LOOP & OUTRO): Golden law + short CTA + this exact seamless bridge: "${chosenOutro}" that connects grammatically right back into Slide 0!
+4. SLIDE 2 (THE ANCIENT PERSPECTIVE): What Seneca or Marcus Aurelius realized about this exact situation.
+5. SLIDE 3 (THE COGNITIVE REFRAME): The core Stoic principle in clear modern language.
+6. SLIDE 4 (THE TACTICAL DAILY PROTOCOL): Concrete physical/mental action to execute immediately when triggered.
+7. SLIDE 5 (SOVEREIGN BENEFIT): Why this disciplined response makes your peace of mind completely untouchable.
+8. SLIDE 6 (THE DAILY PRACTICE HABIT): How to cement this mental fortitude into your subconscious each morning.
+9. SLIDE 7 (INFINITE RETENTION LOOP & OUTRO): Golden law + short CTA + this exact seamless bridge: "${chosenOutro}" that connects grammatically right back into Slide 0!
 
 CRITICAL ANTI-PROMPT-LEAK MANDATE:
 - NEVER write prompt instructions, bracketed notes, or word-count guides like "(18-22 words)" in any slide text.
@@ -750,7 +752,7 @@ CRITICAL ANTI-PROMPT-LEAK MANDATE:
 - NEVER include visual descriptions inside the "text" field.
 
 UNIFIED VISUAL IDENTITY (9:16 Vertical 8k Cinematic):
-- All 6 visual prompts MUST share the same aesthetic: ${slotArchetype.visualStyle}
+- All visual prompts MUST share the same aesthetic: ${slotArchetype.visualStyle}
 - Lighting: Warm amber rim lighting, dark moody obsidian slate background, sharp 35mm anamorphic portrait depth of field.
 
 EXCLUDED PREVIOUS TOPICS (DO NOT REPEAT):
@@ -761,7 +763,7 @@ TARGET THEME & ANGLE:
 - Angle: ${slotArchetype.angle}
 
 OUTPUT FORMAT: Return strictly a valid JSON object matching the schema below.
-CRITICAL: Output EXACTLY 6 slides (slideIndex 0 to 5).
+CRITICAL: Output EXACTLY 7 to 8 slides (slideIndex 0 to 7).
 
 {
   "title": "Complete High-Impact Hook Title (around 35-50 chars) #Shorts #viral #trending",
@@ -772,40 +774,50 @@ CRITICAL: Output EXACTLY 6 slides (slideIndex 0 to 5).
   "slides": [
     {
       "slideIndex": 0,
-      "text": "Complete spoken hook narration sentence here without any placeholders or brackets.",
+      "text": "Complete spoken hook narration sentence here without any placeholders (32-42 words).",
       "visual": "Cinematic 9:16 vertical 8k scene, ${slotArchetype.visualStyle}"
     },
     {
       "slideIndex": 1,
-      "text": "Complete spoken explanation of the psychological trap here.",
+      "text": "Complete spoken explanation of the psychological trap here (32-42 words).",
       "visual": "Cinematic 9:16 vertical 8k scene matching ${slotArchetype.visualStyle}"
     },
     {
       "slideIndex": 2,
-      "text": "Complete spoken Stoic mindset shift explanation here.",
+      "text": "Complete spoken ancient perspective here (32-42 words).",
       "visual": "Cinematic 9:16 vertical 8k scene matching ${slotArchetype.visualStyle}"
     },
     {
       "slideIndex": 3,
-      "text": "Complete spoken tactical step-by-step protocol here.",
+      "text": "Complete spoken Stoic mindset shift explanation here (32-42 words).",
       "visual": "Cinematic 9:16 vertical 8k scene matching ${slotArchetype.visualStyle}"
     },
     {
       "slideIndex": 4,
-      "text": "Complete spoken explanation of why this gives you unshakeable peace here.",
+      "text": "Complete spoken tactical step-by-step protocol here (32-42 words).",
       "visual": "Cinematic 9:16 vertical 8k scene matching ${slotArchetype.visualStyle}"
     },
     {
       "slideIndex": 5,
-      "text": "Complete golden rule ending with: ${chosenOutro}",
+      "text": "Complete spoken explanation of why this gives you unshakeable peace here (32-42 words).",
+      "visual": "Cinematic 9:16 vertical 8k scene matching ${slotArchetype.visualStyle}"
+    },
+    {
+      "slideIndex": 6,
+      "text": "Complete spoken daily practice habit here (32-42 words).",
+      "visual": "Cinematic 9:16 vertical 8k scene matching ${slotArchetype.visualStyle}"
+    },
+    {
+      "slideIndex": 7,
+      "text": "Complete golden rule ending with: ${chosenOutro} (32-42 words)",
       "visual": "Cinematic 9:16 vertical 8k scene matching ${slotArchetype.visualStyle}"
     }
   ]
 }`;
 
-  const userPrompt = `Generate a fresh, viral, high-retention 6-slide Modern Stoic Short storyboard for Slot ${slotIndex + 1}.
+  const userPrompt = `Generate a fresh, viral, high-retention 7-8 slide Modern Stoic Short storyboard for Slot ${slotIndex + 1}.
 Theme: "${slotArchetype.theme}". Angle: "${slotArchetype.angle}". Hook Format: "${chosenHookFormat.name}".
-MANDATE: Output EXACTLY 6 slides (slideIndex 0 to 5) with 18-25 words per slide (32-42s runtime). Connect Slide 5 seamlessly into Slide 0. Write ONLY finished spoken narration words. Output strictly valid JSON.`;
+MANDATE: Output EXACTLY 7 to 8 slides (slideIndex 0 to 7) with 32-42 words per slide (240-300 words total = ABOVE 1.5 MINUTES / 90+ SECONDS). Connect Slide 7 seamlessly into Slide 0. Write ONLY finished spoken narration words. Output strictly valid JSON.`;
 
   return { systemPrompt, userPrompt, chosenHookFormat, chosenOutro };
 }
@@ -828,94 +840,12 @@ function synthesizeDeterministicStoryboard(slotArchetype, topicTitle, channelHan
   const archLower = ((arch.theme || '') + ' ' + (arch.angle || '')).toLowerCase();
   const topicLower = hasCustomTitle ? titleLower : (titleLower + ' ' + archLower);
 
-  if (topicLower.includes('silence') || topicLower.includes('disrespect') || topicLower.includes('insult') || topicLower.includes('provoke') || topicLower.includes('argument')) {
-    slideTexts = [
-      `When someone disrespects you or tries to provoke an argument, the most dangerous response is not anger—it is complete, icy silence.`,
-      `Most people immediately react with defensive fury, which hands full emotional control of their peace directly to their attacker.`,
-      `Marcus Aurelius realized that an insult has zero power over your character unless your own mind chooses to validate it.`,
-      `Institute a ten-second tactical pause: hold unblinking eye contact, take one slow breath, and say absolutely nothing.`,
-      `Your calm silence dismantles their ego, exposes their insecurity to everyone in the room, and preserves your inner sovereignty.`,
-      `Silence the noise, master your emotional boundaries, and ${resolvedOutro}`
-    ];
-  } else if (topicLower.includes('overthink') || topicLower.includes('anxiety') || topicLower.includes('2 am') || topicLower.includes('worry') || topicLower.includes('paralysis') || topicLower.includes('mind')) {
-    slideTexts = [
-      `Why do you stay awake overthinking conversations from three years ago? It is not anxiety—it is the illusion that worry gives you control.`,
-      `The human brain replays past mistakes and invents catastrophic futures because it is terrified of uncertain outcomes.`,
-      `Seneca warned that we suffer far more in our private imagination than we ever do in objective reality.`,
-      `Cut the loop instantly with physical momentum: write down the worst-case scenario, circle what you can act on now, and discard the rest.`,
-      `When you replace endless contemplation with one immediate constructive action, mental dread evaporates in under sixty seconds.`,
-      `Master your present attention, eliminate imaginary catastrophes, and ${resolvedOutro}`
-    ];
-  } else if (topicLower.includes('solitude') || topicLower.includes('lone') || topicLower.includes('alone') || topicLower.includes('support') || topicLower.includes('isolated')) {
-    slideTexts = [
-      `When nobody supports your vision and you must walk alone, the most formidable person in the room is the one who needs zero applause.`,
-      `Most people abandon their highest ambitions the exact moment their social circle offers doubt instead of praise.`,
-      `Epictetus taught that self-mastery is forged in the dark when nobody is watching, clapping, or validating your daily effort.`,
-      `Embrace voluntary solitude: treat this quiet season as an intense crucible to build undeniable skill and mental armor.`,
-      `When you derive confidence from private discipline rather than public validation, you become impossible to discourage or manipulate.`,
-      `Build your fortress in private, trust the compounding process, and ${resolvedOutro}`
-    ];
-  } else if (topicLower.includes('dopamine') || topicLower.includes('scroll') || topicLower.includes('phone') || topicLower.includes('addiction') || topicLower.includes('impulse') || topicLower.includes('procrastinat')) {
-    slideTexts = [
-      `The first law of mental toughness is simple: if you cannot control your impulses, modern algorithms and cheap dopamine will control you.`,
-      `Endless short-form scrolling and instant gratification drain your baseline dopamine, leaving you exhausted, unfocused, and unmotivated for real work.`,
-      `The ancient Stoics practiced temperance: placing reason firmly above bodily cravings to protect mental clarity and purpose.`,
-      `Implement a strict twenty-four-hour delay rule on impulsive purchases and put your smartphone face down in another room during deep work.`,
-      `Reclaiming your attention from digital noise restores sharp focus, emotional equilibrium, and deep personal sovereignty.`,
-      `Rule your own impulses, guard your daily attention, and ${resolvedOutro}`
-    ];
-  } else if (topicLower.includes('rejection') || topicLower.includes('criticism') || topicLower.includes('opinion') || topicLower.includes('judgment') || topicLower.includes('foolish')) {
-    slideTexts = [
-      `Give me forty seconds to give you the psychological armor that makes you completely immune to rejection and other people's opinions.`,
-      `Most people live in constant fear of being judged, unconsciously shrinking their dreams to appease strangers who do not even care.`,
-      `Remember the spotlight fallacy: other people are completely consumed by their own private anxieties and barely think about your mistakes.`,
-      `Categorize external criticism immediately: if it offers actionable truth, use it; if it is envy or malice, treat it as worthless noise.`,
-      `When you anchor your self-worth to your personal character rather than social approval, rejection loses all power to wound you.`,
-      `Stand unshakeable against external judgments, protect your peace, and ${resolvedOutro}`
-    ];
-  } else if (topicLower.includes('fail') || topicLower.includes('restart') || topicLower.includes('amor fati') || topicLower.includes('rebuild') || topicLower.includes('setback') || topicLower.includes('adversity') || topicLower.includes('obstacle')) {
-    slideTexts = [
-      `Nobody is coming to save you. The day you stop waiting for external rescue is the day your real strength awakens.`,
-      `When plans collapse and severe friction hits, weak minds complain about unfairness while disciplined minds ask what this obstacle demands.`,
-      `The core Stoic doctrine of Amor Fati demands that you do not merely tolerate difficulty, but actively love it as essential fuel.`,
-      `Take a ten-second tactical pause, accept the current reality completely without resentment, and identify your single next controllable step.`,
-      `Every crushing setback is an opportunity to forge resilience, sharpen your judgment, and rebuild with higher standards.`,
-      `Turn every obstacle into raw fuel for growth, stay relentless, and ${resolvedOutro}`
-    ];
-  } else if (topicLower.includes('memento mori') || topicLower.includes('death') || topicLower.includes('urgency') || topicLower.includes('time') || topicLower.includes('waste')) {
-    slideTexts = [
-      `You could leave life right now. Let that determine what you do, what you say, and what you think every single day.`,
-      `Most people live as if they have infinite time, wasting precious years on trivial arguments, petty grievances, and delayed dreams.`,
-      `Marcus Aurelius kept Memento Mori at the center of his mind: remembering mortality eliminates fake urgency and restores absolute clarity.`,
-      `When facing difficult decisions, ask yourself: will this petty dispute or fear matter on the final day of my life?`,
-      `Using the certainty of death as a razor-sharp filter cuts through laziness, dissolves social anxiety, and ignites purpose.`,
-      `Live with fierce intentionality, eliminate meaningless distractions, and ${resolvedOutro}`
-    ];
-  } else {
-    // Dynamic topic synthesis
-    slideTexts = [
-      `When life tests your character and throws chaos in your path, your immediate reaction is the only thing in this world you truly own.`,
-      `Most people operate on automatic pilot, reacting to sudden friction and stressful circumstances with panic, anger, and frustration.`,
-      `The foundational Stoic principle is clear: external events cannot harm you until your own mind judges them as humiliating or catastrophic.`,
-      `Institute a strict ten-second tactical pause before speaking or acting, evaluating if this challenge lies within your direct control.`,
-      `Pour all of your focus into your next controllable decision: your calm composure, your disciplined effort, and your uncompromising standards.`,
-      `Silence the noise, master your internal dialogue, and ${resolvedOutro}`
-    ];
-  }
-
-  return {
-    title: title,
-    theme: arch.theme,
-    angle: arch.angle,
-    hook: rawTitle,
-    description: `Comprehensive practical breakdown of ${rawTitle} and mental strength.\n\n#Shorts #viral #trending #Discipline #Motivation #MentalStrength #SelfControl #Stoicism #Mindset #PersonalGrowth #Confidence #fyp`,
-    tags: ["#Shorts", "#viral", "#trending", "#Discipline", "#Motivation", "#MentalStrength", "#SelfControl", "#Stoicism", "#Mindset", "#PersonalGrowth", "#fyp"],
-    slides: slideTexts.map((text, idx) => ({
-      slideIndex: idx,
-      text: text,
-      visual: `Cinematic vertical 9:16 shot, ${visualAesthetic}, atmospheric cinematic lighting, dark slate and amber color tone, 8k resolution`
-    }))
-  };
+/**
+ * Deterministic synthesis has been DEPRECATED & REMOVED.
+ * All Stoic storyboards must be freshly generated by AI models.
+ */
+function synthesizeDeterministicStoryboard(archetype, topicTitle, channelHandle = '@thestoicarchitect-n4b', slotIndex = 0) {
+  throw new Error('Deterministic fallback is disabled. All stoic storyboards must be freshly generated by AI models.');
 }
 
 /**
@@ -975,46 +905,84 @@ OUTPUT FORMAT: Return strictly valid JSON matching:
 }
 
 /**
- * Deterministic Fallback for 15-Chapter Masterclass
+ * Deterministic Fallback for 15-Chapter Masterclass has been DEPRECATED & REMOVED.
  */
 function synthesizeDeterministicDeepDiveStoryboard(archetype, topicTitle, channelHandle = '@thestoicarchitect-n4b') {
-  const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
-  const resolvedOutro = resolveStoicOutro(cleanHandle);
-  const arch = archetype || STOIC_ARCHETYPES[0];
-  const cleanTopic = (topicTitle && topicTitle.length > 5) ? topicTitle : arch.theme;
+  throw new Error('Deterministic deep dive fallback is disabled. All stoic masterclasses must be freshly generated by AI models.');
+}
 
-  const chapters = [
-    { title: 'The Modern Mental Crisis', focus: 'Why 99% of people are overwhelmed by constant digital noise, emotional reactivity, and loss of sovereignty.' },
-    { title: 'The Core Question: Why Do We Lose Our Peace?', focus: 'Examining the hidden belief that external situations owe us comfort, ease, and praise.' },
-    { title: 'The Dichotomy of Control', focus: 'Drawing an absolute, impenetrable line between what is strictly up to us and what is completely outside our power.' },
-    { title: 'The 10-Second Tactical Pause', focus: 'How to halt the fight-or-flight nervous response before speaking, emailing, or reacting under fire.' },
-    { title: 'Freedom from Other People’s Opinions', focus: 'Recognizing the spotlight fallacy and realizing that other people’s praise or criticism has zero bearing on your true virtue.' },
-    { title: 'Amor Fati: Loving Adversity as Fuel', focus: 'How to stop wishing for an easier life and treat every obstacle as the exact training ground you need.' },
-    { title: 'The Daily Contract: Discipline Over Mood', focus: 'Why motivation is a weak, unreliable emotion, and why keeping private daily commitments builds real self-respect.' },
-    { title: 'Strategic Silence: Disarming Disrespect', focus: 'Why reacting with fury surrenders your power, and why calm silence dismantles manipulative behavior.' },
-    { title: 'The Solitude Fortress', focus: 'Learning to sit alone in a quiet room without needing digital dopamine or superficial social validation.' },
-    { title: 'Conquering Impulsive Desires', focus: 'How delaying gratification for 24 hours rewires your dopamine baseline and restores mental clarity.' },
-    { title: 'Evidence-Based Self-Trust', focus: 'Why real confidence is not positive affirmations, but a mountain of undeniable proof that you keep your word.' },
-    { title: 'Real-Life Scenario Walkthrough', focus: 'A step-by-step breakdown of how a Stoic handles betrayal, economic hardship, or severe career setbacks.' },
-    { title: 'Morning & Evening Mental Audits', focus: 'The exact two-minute journaling questions Marcus Aurelius and Seneca used to begin and end each day.' },
-    { title: 'Memento Mori: The Ultimate Clarity', focus: 'Using the certainty of death to dissolve petty grievances, social anxiety, and foolish procrastination.' },
-    { title: 'The 30-Day Stoic Reset Blueprint', focus: `Your complete daily implementation protocol. Rule your mind, conquer your desires, and ${resolvedOutro}` }
+/**
+ * INCREMENTAL STOIC DURATION EXPANSION ENGINE
+ * If a generated Stoic YouTube Short has less than 92 seconds duration (under 1.5 minutes),
+ * this function enriches and adds tactical philosophical depth WITHOUT starting afresh.
+ */
+function expandStoicStoryboardIfNeeded(storyboard, minDurationSeconds = 92.0, channelHandle = '@thestoicarchitect-n4b') {
+  if (!storyboard || !Array.isArray(storyboard.slides) || storyboard.slides.length === 0) {
+    return storyboard;
+  }
+
+  const totalWords = storyboard.slides.reduce((acc, s) => acc + (s.text || '').split(/\s+/).filter(Boolean).length, 0);
+  const estimatedSeconds = (totalWords / 2.35) + (storyboard.slides.length * 0.4);
+
+  if (estimatedSeconds >= minDurationSeconds) {
+    return storyboard;
+  }
+
+  console.log(`[Stoic Duration Expansion] Current script is ~${estimatedSeconds.toFixed(1)}s (${totalWords} words, ${storyboard.slides.length} slides). Expanding to >1.5 minutes without restarting...`);
+
+  const originalSlides = [...storyboard.slides];
+  const lastIndex = originalSlides.length - 1;
+  const outroSlide = originalSlides[lastIndex];
+  const bodySlides = originalSlides.slice(1, lastIndex);
+
+  const expandedBodySlides = bodySlides.map((slide, idx) => {
+    let text = slide.text.trim();
+    const wordsInSlide = text.split(/\s+/).filter(Boolean).length;
+    if (wordsInSlide < 35) {
+      if (idx === 0) {
+        text += ` Understand that reacting in haste is the greatest surrender of your inner autonomy; when you pause, you master your destiny.`;
+      } else if (idx === 1) {
+        text += ` As Marcus Aurelius reminded himself, you have power over your mind, not outside events. Realize this, and you will find instant strength.`;
+      } else if (idx === 2) {
+        text += ` Take three measured, grounding breaths and mentally detach from the noise before taking any external action.`;
+      } else {
+        text += ` True mental fortitude is not the absence of chaos, but an unyielding, tranquil anchor within your own soul.`;
+      }
+    }
+    return { ...slide, text };
+  });
+
+  const supplementalSlides = [
+    {
+      text: `Practice the Stoic premeditatio malorum each morning: anticipate difficult personalities and friction before they happen, so nothing can disturb your tranquil equilibrium.`,
+      visual: `Cinematic 9:16 vertical 8k scene, philosopher meditating at sunrise with warm amber illumination on dark obsidian marble`
+    },
+    {
+      text: `When others attempt to bait your anger or trigger self-doubt, view their words as mere wind against a fortress stone. Silence is your supreme shield.`,
+      visual: `Cinematic 9:16 vertical 8k scene, majestic ancient stone fortress standing calm amidst stormy elements, 35mm anamorphic`
+    }
   ];
 
+  const newSlidesList = [
+    originalSlides[0],
+    ...expandedBodySlides,
+    ...supplementalSlides,
+    outroSlide
+  ];
+
+  const reindexedSlides = newSlidesList.map((s, i) => ({
+    ...s,
+    slideIndex: i
+  }));
+
+  const newTotalWords = reindexedSlides.reduce((acc, s) => acc + (s.text || '').split(/\s+/).filter(Boolean).length, 0);
+  const newEstimatedSeconds = (newTotalWords / 2.35) + (reindexedSlides.length * 0.4);
+
+  console.log(`[Stoic Duration Expansion] ✅ Script successfully expanded to ~${newEstimatedSeconds.toFixed(1)}s (${newTotalWords} words, ${reindexedSlides.length} slides) with intact loop!`);
+
   return {
-    title: `${cleanTopic} - Complete Stoic Masterclass Documentary`,
-    theme: arch.theme,
-    angle: arch.angle,
-    description: `Full 15-Chapter Masterclass on ${arch.theme}.\n\nTimestamps:\n` +
-      chapters.map((c, i) => `${String(Math.floor(i * 1.2)).padStart(2, '0')}:00 Chapter ${i + 1}: ${c.title}`).join('\n') +
-      `\n\n#Stoicism #Mindset #Discipline #MentalStrength #Philosophy`,
-    tags: ["#Stoicism", "#Mindset", "#Discipline", "#MentalStrength", "#Philosophy", "#SelfControl"],
-    slides: chapters.map((c, idx) => ({
-      slideIndex: idx,
-      chapterTitle: c.title,
-      text: `In this chapter of our masterclass on ${arch.theme}, we analyze ${c.title.toLowerCase()}. ${c.focus} When Marcus Aurelius and Epictetus taught these principles in ancient Rome, human nature was identical to today. You will face arrogant people, unexpected delays, and sudden loss. Your fortress is not built with stone walls, but with an unshakeable mind that refuses to surrender its peace to external events.`,
-      visual: `16:9 widescreen 8k cinematic scene, atmospheric dark slate architecture with warm golden amber rim lighting, ultra-high resolution, documentary depth`
-    }))
+    ...storyboard,
+    slides: reindexedSlides
   };
 }
 
@@ -1030,6 +998,7 @@ module.exports = {
   selectDailyDiverseSlots,
   buildStoicPromptForSlot,
   buildStoicDeepDivePrompt,
+  expandStoicStoryboardIfNeeded,
   validateStoicStoryboardQuality,
   synthesizeDeterministicStoryboard,
   synthesizeDeterministicDeepDiveStoryboard

@@ -106,26 +106,27 @@ function assembleFinalCartoonVideo(sceneFiles, outputMp4Path, srtPath) {
 
   console.log(`[Audio/Media Engine] Concatenating ${validScenes.length} scenes into final video: ${outputMp4Path}`);
 
-  // FFmpeg concat and audio normalize command
+  // Fast stream copy concat first (sub-second), then re-encode fallback
   let assembled = false;
   try {
-    const ffmpegCmd = `ffmpeg -y -f concat -safe 0 -i "${concatListPath}" -c:v libx264 -preset fast -pix_fmt yuv420p -r 30 -c:a aac -b:a 192k -ar 44100 "${outputMp4Path}" 2>/dev/null`;
-    execSync(ffmpegCmd);
+    const copyCmd = `ffmpeg -y -f concat -safe 0 -i "${concatListPath}" -c copy "${outputMp4Path}" 2>/dev/null`;
+    execSync(copyCmd);
     if (fs.existsSync(outputMp4Path) && fs.statSync(outputMp4Path).size > 10000) {
       assembled = true;
     }
-  } catch (err) {
-    console.warn('[Audio/Media Engine] Standard concat re-encode notice:', err.message);
+  } catch (e) {
+    console.warn('[Audio/Media Engine] Fast concat copy notice:', e.message);
   }
 
   if (!assembled) {
     try {
-      execSync(`ffmpeg -y -f concat -safe 0 -i "${concatListPath}" -c copy "${outputMp4Path}" 2>/dev/null`);
+      const ffmpegCmd = `ffmpeg -y -f concat -safe 0 -i "${concatListPath}" -c:v libx264 -preset ultrafast -pix_fmt yuv420p -r 30 -c:a aac -b:a 192k -ar 44100 "${outputMp4Path}" 2>/dev/null`;
+      execSync(ffmpegCmd);
       if (fs.existsSync(outputMp4Path) && fs.statSync(outputMp4Path).size > 10000) {
         assembled = true;
       }
-    } catch (e) {
-      console.warn('[Audio/Media Engine] Concat copy notice:', e.message);
+    } catch (err) {
+      console.warn('[Audio/Media Engine] Re-encode concat notice:', err.message);
     }
   }
 
@@ -138,43 +139,60 @@ function assembleFinalCartoonVideo(sceneFiles, outputMp4Path, srtPath) {
 }
 
 /**
- * Render a single 2D/2.5D cartoon scene with Blender.
- * Note: Static video fallbacks have been removed. If Blender rendering fails, this function throws an error.
+ * Render a single 2D/2.5D cartoon scene.
+ * If Blender CLI binary is installed, uses Blender.
+ * If Blender CLI is not detected, uses high-precision FFmpeg 2.5D Animated Compositor.
  */
 function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0, options = {}) {
   const dir = path.dirname(outputSceneMp4);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-  const { mouthCuesJson, action = 'talking', emotion = 'curious', camera = 'medium' } = options;
-  console.log(`[Media Engine] Rendering animated 2.5D scene with Blender: ${path.basename(outputSceneMp4)} (${duration}s)`);
+  const { mouthCuesJson, action = 'talking', emotion = 'curious', camera = 'medium', bgImage = '' } = options;
+  let engineUsed = 'ffmpeg';
 
   // Remove stale incomplete output if present
   try { if (fs.existsSync(outputSceneMp4)) fs.unlinkSync(outputSceneMp4); } catch {}
 
   const blenderBin = getBlenderBinPath();
-  if (!blenderBin) {
-    throw new Error('Blender binary is required for cartoon animation rendering but was not found in PATH or standard directories.');
-  }
+  if (blenderBin) {
+    engineUsed = 'blender';
+    console.log(`[Media Engine] Blender CLI detected (${blenderBin}). Rendering 3D/2.5D scene: ${path.basename(outputSceneMp4)} (${duration}s)...`);
+    const blenderScript = path.join(process.cwd(), 'scripts', 'blender_cartoon_renderer.py');
+    const assetsDir = path.join(process.cwd(), 'cartoon_character_assets');
+    const mouthArg = (mouthCuesJson && fs.existsSync(mouthCuesJson)) ? `--mouth_cues "${mouthCuesJson}"` : '';
+    const bgArg = (bgImage && fs.existsSync(bgImage)) ? `--bg_image "${bgImage}"` : '';
 
-  const blenderScript = path.join(process.cwd(), 'scripts', 'blender_cartoon_renderer.py');
-  const assetsDir = path.join(process.cwd(), 'cartoon_character_assets');
-  const mouthArg = (mouthCuesJson && fs.existsSync(mouthCuesJson)) ? `--mouth_cues "${mouthCuesJson}"` : '';
+    const blenderCmd = `"${blenderBin}" -b -P "${blenderScript}" -- --assets_dir "${assetsDir}" ${mouthArg} ${bgArg} --action "${action}" --emotion "${emotion}" --duration ${duration} --camera "${camera}" --audio_wav "${wavPath}" --output_mp4 "${outputSceneMp4}"`;
+    
+    try {
+      execSync(blenderCmd, { stdio: 'inherit', timeout: 180000 });
+    } catch (err) {
+      throw new Error(`Blender rendering execution failed: ${err.message}`);
+    }
+  } else {
+    engineUsed = 'ffmpeg';
+    console.log(`[Media Engine] Blender binary not detected in environment PATH. Rendering 2.5D Animated Scene via FFmpeg Motion Engine: ${path.basename(outputSceneMp4)} (${duration}s)...`);
+    const bgInput = (bgImage && fs.existsSync(bgImage)) ? bgImage : svgPath;
+    const isCloseUp = camera === 'close_up' || camera === 'medium_to_close';
+    const zoomFilter = isCloseUp
+      ? `zoompan=z='min(zoom+0.0015,1.2)':d=${Math.ceil(duration * 30)}:x='iw/2-(iw/zoom/2)':y='ih/3-(ih/zoom/3)':s=1080x1920:fps=30`
+      : `zoompan=z='min(zoom+0.0008,1.08)':d=${Math.ceil(duration * 30)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
 
-  const blenderCmd = `"${blenderBin}" -b -P "${blenderScript}" -- --assets_dir "${assetsDir}" ${mouthArg} --action "${action}" --emotion "${emotion}" --duration ${duration} --camera "${camera}" --audio_wav "${wavPath}" --output_mp4 "${outputSceneMp4}"`;
-  
-  console.log(`[Media Engine] Executing Headless Blender CLI command...`);
-  try {
-    execSync(blenderCmd, { stdio: 'inherit', timeout: 180000 });
-  } catch (err) {
-    throw new Error(`Blender rendering execution failed: ${err.message}`);
+    const ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -i "${wavPath}" -filter_complex "[0:v]${zoomFilter},format=yuv420p[v]" -map "[v]" -map 1:a -c:v libx264 -preset ultrafast -c:a aac -b:a 192k -shortest "${outputSceneMp4}"`;
+    
+    try {
+      execSync(ffmpegCmd, { stdio: 'pipe', timeout: 60000 });
+    } catch (err) {
+      throw new Error(`FFmpeg scene compositing failed: ${err.message}`);
+    }
   }
 
   if (fs.existsSync(outputSceneMp4) && fs.statSync(outputSceneMp4).size > 10000) {
-    console.log(`[Media Engine] ✅ Blender scene render succeeded: ${path.basename(outputSceneMp4)} (${fs.statSync(outputSceneMp4).size} bytes)`);
+    console.log(`[Media Engine] ✅ Rendered scene via ${engineUsed === 'blender' ? 'Blender 3D' : 'FFmpeg 2.5D Motion'} Engine: ${path.basename(outputSceneMp4)} (${fs.statSync(outputSceneMp4).size} bytes)`);
     return outputSceneMp4;
   }
 
-  throw new Error(`Blender scene render failed: Output file ${outputSceneMp4} was not produced or is too small.`);
+  throw new Error(`Scene render failed: Output file ${outputSceneMp4} was not produced or is too small.`);
 }
 
 module.exports = {

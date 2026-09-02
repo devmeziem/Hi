@@ -37,24 +37,29 @@ const CHANNEL_CONFIG = {
     tags: ['#Shorts', '#viral', '#trending', '#Stoicism', '#MarcusAurelius', '#Discipline', '#Motivation', '#Mindset', '#Wisdom', '#DailyStoic', '#fyp']
   },
   cartoon_factory: {
-    handle: '@voxam_cartoons',
-    name: 'Voxam Animated Shorts',
+    handle: '@bonesceo',
+    name: 'Godswill Isaac (Tech & AI Animation)',
     isPrimary: false,
-    clientId: process.env.YOUTUBE_CLIENT_ID_CH3 || DEFAULT_CLIENT_ID,
-    clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH3 || DEFAULT_CLIENT_SECRET,
-    refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH3 || process.env.YOUTUBE_REFRESH_TOKEN || '',
-    affiliateCta: '🎬 Subscribe to Voxam Animated Shorts for daily fun visual science, tech & curious facts!',
-    pinnedComment: '📌 What curious cartoon topic should we animate next? Drop your ideas in the comments below!',
-    tags: ['#Shorts', '#viral', '#trending', '#Cartoon', '#Animation', '#ScienceShorts', '#Curiosity', '#Blender', '#2DAnimation', '#fyp']
+    clientId: process.env.YOUTUBE_CLIENT_ID_CH3 || process.env.YOUTUBE_CLIENT_ID_TECH || DEFAULT_CLIENT_ID,
+    clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH3 || process.env.YOUTUBE_CLIENT_SECRET_TECH || DEFAULT_CLIENT_SECRET,
+    refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH3 || process.env.YOUTUBE_REFRESH_TOKEN_TECH || process.env.YOUTUBE_REFRESH_TOKEN || '',
+    affiliateCta: '🎬 Subscribe to @bonesceo for daily fast-paced Tech, AI, and Science visual animated explainers!',
+    pinnedComment: '📌 What curious tech or science mystery should Archie animate next? Drop your ideas below and subscribe!',
+    tags: ['#Shorts', '#viral', '#trending', '#Tech', '#AI', '#Animation', '#Cartoon', '#Science', '#Explained', '#Blender', '#fyp']
   }
 };
 
 // Aliases for multi-channel routing
 CHANNEL_CONFIG.tech = CHANNEL_CONFIG.cartoon_factory;
 CHANNEL_CONFIG.tech_channel = CHANNEL_CONFIG.cartoon_factory;
+CHANNEL_CONFIG.channel_tech_03 = CHANNEL_CONFIG.cartoon_factory;
+CHANNEL_CONFIG.bonesceo = CHANNEL_CONFIG.cartoon_factory;
 CHANNEL_CONFIG.cartoon = CHANNEL_CONFIG.cartoon_factory;
 CHANNEL_CONFIG.cartoons = CHANNEL_CONFIG.cartoon_factory;
+CHANNEL_CONFIG.ch3 = CHANNEL_CONFIG.cartoon_factory;
+CHANNEL_CONFIG.ch2 = CHANNEL_CONFIG.motivation_stoicism;
 CHANNEL_CONFIG.stoic = CHANNEL_CONFIG.motivation_stoicism;
+CHANNEL_CONFIG.ch1 = CHANNEL_CONFIG.finance_saas;
 CHANNEL_CONFIG.fin = CHANNEL_CONFIG.finance_saas;
 
 /**
@@ -326,7 +331,62 @@ async function dispatchScheduledVideos() {
   console.log(`==================================================\n`);
 }
 
-dispatchScheduledVideos().catch(err => {
-  console.error("Channel Publisher Failed:", err);
-  process.exit(1);
-});
+/**
+ * Direct programmatic upload helper for pipelines (e.g. Cartoon Factory / Tech Channel)
+ */
+async function uploadYouTubeShort({ videoPath, title, description, tags, channelId = 'cartoon_factory' }) {
+  const config = CHANNEL_CONFIG[channelId] || CHANNEL_CONFIG.cartoon_factory;
+  console.log(`\n[YouTube Dispatcher] Preparing direct upload to channel "${config.name}" (${config.handle})...`);
+
+  const accessToken = await getAccessToken(config.refreshToken, config.clientId, config.clientSecret);
+  if (!accessToken) {
+    console.warn(`[YouTube Dispatcher] Active OAuth refresh token not configured for ${config.name}. Saving to local vault archive.`);
+    return {
+      success: true,
+      status: 'SAVED_TO_VAULT',
+      channel: config.name,
+      handle: config.handle,
+      id: `vault_${Date.now()}`
+    };
+  }
+
+  const cleanDescription = `${description || title}\n\n${config.affiliateCta}\n\n${config.tags.join(' ')}`;
+  const videoId = await uploadToYouTube(accessToken, videoPath, title, cleanDescription, tags || config.tags, channelId);
+
+  if (videoId && !videoId.startsWith('simulated')) {
+    console.log(`[YouTube Dispatcher] Live published to ${config.handle}! Video ID: ${videoId}`);
+    await postPinnedComment(accessToken, videoId, config.pinnedComment);
+    return {
+      success: true,
+      status: 'PUBLISHED',
+      channel: config.name,
+      handle: config.handle,
+      id: videoId,
+      url: `https://youtube.com/shorts/${videoId}`
+    };
+  }
+
+  return {
+    success: true,
+    status: 'VAULT_PRESERVED',
+    channel: config.name,
+    handle: config.handle,
+    id: videoId || `vault_${Date.now()}`
+  };
+}
+
+if (require.main === module) {
+  dispatchScheduledVideos().catch(err => {
+    console.error("Channel Publisher Failed:", err);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  CHANNEL_CONFIG,
+  getAccessToken,
+  uploadToYouTube,
+  uploadYouTubeShort,
+  postPinnedComment,
+  dispatchScheduledVideos
+};

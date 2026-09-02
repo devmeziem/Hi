@@ -150,11 +150,11 @@ def create_plane_layer(name, image_path, location=(0, 0, 0), scale=(1, 1, 1), z_
         
     return plane
 
-def build_cartoon_character_rig(assets_dir, mouth_cues, action='talking', emotion='curious', duration=5.0, fps=30, camera_mode='medium'):
+def build_cartoon_character_rig(assets_dir, mouth_cues, action='talking', emotion='curious', duration=5.0, fps=30, camera_mode='medium', bg_image=None):
     total_frames = max(1, int(round(duration * fps)))
-    print(f"[Blender Rig] Building 2.5D Archie Rig ({total_frames} frames @ {fps} FPS)...")
+    print(f"[Blender Rig] Building 2.5D Archie Rig ({total_frames} frames @ {fps} FPS, Action: {action}, Camera: {camera_mode})...")
 
-    # 1. Setup Ortho/Perspective Camera
+    # 1. Setup Ortho/Perspective Camera with Dynamic Panning & Framing
     cam_data = bpy.data.cameras.new(name="MainCamera")
     cam_data.type = 'PERSP'
     cam_data.lens = 50
@@ -162,27 +162,46 @@ def build_cartoon_character_rig(assets_dir, mouth_cues, action='talking', emotio
     bpy.context.scene.collection.objects.link(cam_obj)
     bpy.context.scene.camera = cam_obj
     
-    # Camera Base Position
+    # Camera Base Position & Panning
+    cam_start_x = 0.0
+    cam_end_x = 0.0
     cam_start_y = -4.8
+    cam_end_y = -4.6
     cam_start_z = 0.0
+    cam_end_z = 0.05
+
     if camera_mode == 'close_up':
         cam_start_y = -3.7
+        cam_end_y = -3.55
         cam_start_z = 0.35
+        cam_end_z = 0.38
     elif camera_mode == 'medium_to_close':
         cam_start_y = -4.2
+        cam_end_y = -3.85
         cam_start_z = 0.15
+        cam_end_z = 0.22
+    elif camera_mode == 'pan_left':
+        cam_start_x = 0.35
+        cam_end_x = -0.25
+        cam_start_y = -4.5
+        cam_end_y = -4.35
+    elif camera_mode == 'pan_right':
+        cam_start_x = -0.35
+        cam_end_x = 0.25
+        cam_start_y = -4.5
+        cam_end_y = -4.35
+    elif camera_mode == 'wide':
+        cam_start_y = -5.4
+        cam_end_y = -5.15
+        cam_start_z = -0.1
+        cam_end_z = -0.05
         
-    cam_obj.location = (0, cam_start_y, cam_start_z)
+    cam_obj.location = (cam_start_x, cam_start_y, cam_start_z)
     cam_obj.rotation_euler = (math.radians(90), 0, 0)
     
-    # Subtle smooth push-in camera zoom over duration
+    # Smooth Camera Motion
     cam_obj.keyframe_insert(data_path="location", frame=1)
-    if camera_mode == 'medium_to_close':
-        cam_obj.location = (0, cam_start_y + 0.35, cam_start_z + 0.08)
-    elif camera_mode == 'wide':
-        cam_obj.location = (0, cam_start_y + 0.15, cam_start_z)
-    else:
-        cam_obj.location = (0, cam_start_y + 0.20, cam_start_z + 0.05)
+    cam_obj.location = (cam_end_x, cam_end_y, cam_end_z)
     cam_obj.keyframe_insert(data_path="location", frame=total_frames)
 
     # 2. Key Lighting
@@ -193,11 +212,11 @@ def build_cartoon_character_rig(assets_dir, mouth_cues, action='talking', emotio
     light_obj.location = (1.5, -4, 4)
     light_obj.rotation_euler = (math.radians(45), math.radians(15), 0)
 
-    # 3. Layer 0: Background Canvas (z = 0.5)
-    bg_png = os.path.join(assets_dir, "background.png")
+    # 3. Layer 0: Background Canvas (z = 0.5) - Supports Dynamic Scene Environments
+    bg_png = bg_image if (bg_image and os.path.exists(bg_image)) else os.path.join(assets_dir, "background.png")
     if not os.path.exists(bg_png):
         bg_png = os.path.join(assets_dir, "background.svg")
-    bg_plane = create_plane_layer("BackgroundLayer", bg_png, location=(0, 0.5, 0), scale=(1.25, 2.2, 1), z_index=0.0)
+    bg_plane = create_plane_layer("BackgroundLayer", bg_png, location=(0, 0.5, 0), scale=(1.35, 2.3, 1), z_index=0.0)
 
     # 4. Layer 1: Legs & Floor Shadow (z = 0.15)
     legs_png = os.path.join(assets_dir, "legs.png")
@@ -247,35 +266,60 @@ def build_cartoon_character_rig(assets_dir, mouth_cues, action='talking', emotio
         pupils_plane = create_plane_layer("PupilsLayer", pupils_png, location=(0, -0.06, 0), scale=(1.0, 1.78, 1), z_index=0.0)
 
     # -------------------------------------------------------------
-    # 10. ANIMATION: Subtle Idle Breathing & Body Sway (Requirement F)
+    # 10. ANIMATION: Character Locomotion / Walking & Breathing Sway
     # -------------------------------------------------------------
-    for f in range(1, total_frames + 1, 10):
-        # Sine wave breathing
-        sway_z = math.sin(f / 12.0) * 0.012
-        sway_rot = math.sin(f / 24.0) * 0.015
-        
-        torso_plane.location.z = sway_z
-        torso_plane.keyframe_insert(data_path="location", frame=f)
+    is_walking = (action == 'walking')
+    walk_start_x = -0.45 if is_walking else 0.0
+    walk_end_x = 0.35 if is_walking else 0.0
+
+    all_rig_planes = [torso_plane, head_plane, eyebrows_plane, eyes_open_plane, eyes_closed_plane, pupils_plane, legs_plane]
+
+    for f in range(1, total_frames + 1, 6):
+        progress = (f - 1) / max(1, total_frames - 1)
+        walk_x = walk_start_x + (walk_end_x - walk_start_x) * progress
+
+        # Walking step bounce vs idle breathing
+        if is_walking:
+            step_bounce = abs(math.sin(f / 4.0)) * 0.025
+            sway_z = step_bounce
+            sway_rot = math.sin(f / 4.0) * 0.04
+        else:
+            sway_z = math.sin(f / 12.0) * 0.012
+            sway_rot = math.sin(f / 24.0) * 0.015
+
+        if torso_plane:
+            torso_plane.location.x = walk_x
+            torso_plane.location.z = sway_z
+            torso_plane.keyframe_insert(data_path="location", frame=f)
+
+        if legs_plane:
+            legs_plane.location.x = walk_x
+            legs_plane.keyframe_insert(data_path="location", frame=f)
         
         if head_plane:
+            head_plane.location.x = walk_x
             head_plane.location.z = sway_z * 1.15
             head_plane.rotation_euler.y = sway_rot
             head_plane.keyframe_insert(data_path="location", frame=f)
             head_plane.keyframe_insert(data_path="rotation_euler", frame=f)
             
         if eyebrows_plane:
+            eyebrows_plane.location.x = walk_x
             eyebrows_plane.location.z = sway_z * 1.15
             eyebrows_plane.keyframe_insert(data_path="location", frame=f)
             
         if eyes_open_plane:
+            eyes_open_plane.location.x = walk_x
             eyes_open_plane.location.z = sway_z * 1.15
             eyes_open_plane.keyframe_insert(data_path="location", frame=f)
             
         if eyes_closed_plane:
+            eyes_closed_plane.location.x = walk_x
             eyes_closed_plane.location.z = sway_z * 1.15
             eyes_closed_plane.keyframe_insert(data_path="location", frame=f)
             
         if pupils_plane:
+            pupils_plane.location.x = walk_x
             pupils_plane.location.z = sway_z * 1.15
             pupils_plane.keyframe_insert(data_path="location", frame=f)
 
@@ -349,16 +393,21 @@ def build_cartoon_character_rig(assets_dir, mouth_cues, action='talking', emotio
         last_active = None
         for f in range(1, total_frames + 1):
             curr_active = frame_shape_map.get(f, 'X')
+            progress = (f - 1) / max(1, total_frames - 1)
+            walk_x = walk_start_x + (walk_end_x - walk_start_x) * progress
             
-            # Breathing sway on mouth planes as well
-            sway_z = math.sin(f / 12.0) * 0.012
+            if is_walking:
+                sway_z = abs(math.sin(f / 4.0)) * 0.025 * 1.15
+            else:
+                sway_z = math.sin(f / 12.0) * 0.012 * 1.15
             
-            if curr_active != last_active or f == 1:
+            if curr_active != last_active or f == 1 or is_walking:
                 mouth_switches_count += 1
                 for s, plane in mouth_planes.items():
                     is_active = (s == curr_active)
                     plane.hide_render = not is_active
                     plane.hide_viewport = not is_active
+                    plane.location.x = mouth_pos[0] + walk_x
                     plane.location.z = mouth_pos[2] + sway_z
                     plane.keyframe_insert(data_path="hide_render", frame=f)
                     plane.keyframe_insert(data_path="hide_viewport", frame=f)
@@ -389,6 +438,7 @@ def main():
     emotion = args.get('emotion', 'curious')
     duration = float(args.get('duration', 5.0))
     camera_mode = args.get('camera', 'medium')
+    bg_image = args.get('bg_image', None)
     output_mp4 = args.get('output_mp4', 'blender_scene_out.mp4')
     audio_wav = args.get('audio_wav', '')
     
@@ -396,6 +446,8 @@ def main():
     print(f"🎬 [Blender Headless Engine] 2.5D Animated Character Render")
     print(f"⏱️  Duration: {duration:.2f}s @ 30 FPS")
     print(f"🎭 Action: {action} | Emotion: {emotion} | Camera: {camera_mode}")
+    if bg_image:
+        print(f"🌆 Environment Background: {bg_image}")
     print(f"🎯 Output: {output_mp4}")
     print("====================================================")
 
@@ -424,7 +476,8 @@ def main():
         emotion=emotion,
         duration=duration,
         fps=30,
-        camera_mode=camera_mode
+        camera_mode=camera_mode,
+        bg_image=bg_image
     )
 
     # 5. Add Dialogue Audio Track to Sequencer

@@ -23,6 +23,7 @@ const {
   selectDailyDiverseSlots,
   buildStoicPromptForSlot,
   buildStoicDeepDivePrompt,
+  expandStoicStoryboardIfNeeded,
   isTopicSimilarToHistory,
   validateStoicStoryboardQuality,
   synthesizeDeterministicStoryboard,
@@ -1311,7 +1312,7 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
       if (raw.success && raw.content) {
         const parsed = cleanLlmJson(raw.content);
         if (parsed && validateStoicStoryboard(parsed)) {
-          if (parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
+          if (!isDeepDive && parsed.slides.length > 8) parsed.slides = parsed.slides.slice(0, 8);
           scriptData = parsed;
           logSuccess(`[Storyboard Engine] Grok (${activeGrok.model}) generated full ${scriptData.slides.length}-slide package!`);
         }
@@ -1319,14 +1320,11 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
     } catch {}
   }
 
-  // 8. DIVERSITY ENGINE SYNTHESIS: If remote LLMs are offline or rate-limited, synthesize archetype slot
+  // 8. STRICT AI-ONLY VALIDATION: Throw error if all AI providers fail (No deterministic fallback allowed)
   if (!scriptData || !Array.isArray(scriptData.slides) || scriptData.slides.length < 3) {
-    logWarning('[Storyboard Engine] Remote LLM endpoints unavailable or rate-limited. Synthesizing rich Stoic Archetype Slot from Diversity Engine...');
-    scriptData = isDeepDive
-      ? synthesizeDeterministicStoicDeepDiveStoryboard(activeArch, topic, liveChannelHandle)
-      : synthesizeDeterministicStoryboard(activeArch, topic, liveChannelHandle);
-    if (!isDeepDive && scriptData.slides.length > 6) scriptData.slides = scriptData.slides.slice(0, 6);
-    logSuccess(`[Storyboard Engine] Diversity Engine synthesized authentic ${scriptData.slides.length}-slide Stoic package with dynamic outro!`);
+    const errorMsg = `[Storyboard Engine FATAL] All remote LLM inference providers failed to generate a valid stoic storyboard for topic "${topic}". Deterministic fallbacks are strictly disabled. Please verify API keys and network access.`;
+    logError(errorMsg);
+    throw new Error(errorMsg);
   }
 
   // Sanitize sentence completeness for all slides (no cutoffs or unfinished sentences)
@@ -1343,6 +1341,11 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
         slide.text = text;
       }
     });
+  }
+
+  // Enforce YouTube Shorts duration mandate (> 1.5 minutes / 90+ seconds) without restarting from scratch
+  if (!isDeepDive) {
+    scriptData = expandStoicStoryboardIfNeeded(scriptData, 92.0, CHANNEL_HANDLE);
   }
 
   // Enforce strict YouTube title formatting with complete viral and trending hashtags
