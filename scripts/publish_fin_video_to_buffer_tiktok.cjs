@@ -44,13 +44,7 @@ function fail(message, details = {}) {
   ];
 
   printDiagnosticBanner('Pipeline Error', whatFailed, whyFailed, fixes);
-
-  if (STRICT_BUFFER_FAIL) {
-    process.exit(1);
-  } else {
-    console.log(`[Buffer/TikTok] Continuing pipeline (non-blocking mode). Set STRICT_BUFFER_FAIL=true in your environment to enforce exit code 1.`);
-    process.exit(0);
-  }
+  process.exit(1);
 }
 
 /**
@@ -465,7 +459,14 @@ async function createBufferPost(channel, mediaUrl, caption) {
 
 async function main() {
   if (!BUFFER_API_KEY) {
-    console.log('[Buffer/TikTok] BUFFER_API_KEY is not configured. Skipping Buffer TikTok publication.');
+    fail('BUFFER_API_KEY environment variable is not configured.', {
+      what: 'Buffer Authentication & Access',
+      why: 'BUFFER_API_KEY was empty or not supplied to this step.',
+      fixes: [
+        'Add BUFFER_API_KEY to your GitHub repository secrets at Settings > Secrets and variables > Actions',
+        'Verify that the workflow step passes BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}'
+      ]
+    });
     return;
   }
 

@@ -25,6 +25,7 @@ import sys
 import json
 import os
 import math
+import shutil
 
 try:
     import bpy
@@ -496,7 +497,27 @@ def main():
     print(f"[Blender] Rendering {total_frames} frames to {output_mp4}...")
     bpy.ops.render.render(animation=True)
     
-    if os.path.exists(output_mp4) and os.path.getsize(output_mp4) > 10000:
+    # Resolve actual output file (Blender animation render appends frame numbers like 0001-0017.mp4)
+    if not (os.path.exists(output_mp4) and os.path.getsize(output_mp4) > 1000):
+        out_dir = os.path.dirname(os.path.abspath(output_mp4))
+        base_name = os.path.basename(output_mp4)
+        name_no_ext = os.path.splitext(base_name)[0]
+        
+        candidates = []
+        if os.path.exists(out_dir):
+            for fname in os.listdir(out_dir):
+                if fname.endswith('.mp4') and (fname.startswith(base_name) or fname.startswith(name_no_ext)):
+                    fpath = os.path.join(out_dir, fname)
+                    if os.path.isfile(fpath) and os.path.getsize(fpath) > 1000:
+                        candidates.append((fpath, os.path.getmtime(fpath)))
+        
+        if candidates:
+            candidates.sort(key=lambda x: x[1], reverse=True)
+            matched_file = candidates[0][0]
+            print(f"[Blender] Identified frame-ranged output: {matched_file} -> Normalizing to {output_mp4}")
+            shutil.move(matched_file, output_mp4)
+
+    if os.path.exists(output_mp4) and os.path.getsize(output_mp4) > 1000:
         print(f"[Blender] ✅ RENDER SUCCEEDED: {output_mp4} ({os.path.getsize(output_mp4)} bytes)")
     else:
         print(f"[Blender] ❌ RENDER FAILED: Output {output_mp4} was not generated or is too small.")

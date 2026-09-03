@@ -163,7 +163,7 @@ jobs:
           fi
           
           if [ -f daily_blueprint_manifest.json ]; then
-            git add daily_blueprint_manifest.json
+            git add -f daily_blueprint_manifest.json
           fi
           
           if git diff --staged --quiet; then

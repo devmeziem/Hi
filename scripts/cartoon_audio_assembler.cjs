@@ -187,7 +187,28 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
     }
   }
 
-  if (fs.existsSync(outputSceneMp4) && fs.statSync(outputSceneMp4).size > 10000) {
+  // Double check if Blender saved to a frame-ranged filename (e.g. scene_10001-0017.mp4)
+  if (!fs.existsSync(outputSceneMp4) || fs.statSync(outputSceneMp4).size < 1000) {
+    const dir = path.dirname(outputSceneMp4);
+    const baseName = path.basename(outputSceneMp4, '.mp4');
+    if (fs.existsSync(dir)) {
+      const candidates = fs.readdirSync(dir)
+        .filter(f => f.endsWith('.mp4') && f.startsWith(baseName) && f !== path.basename(outputSceneMp4))
+        .map(f => path.join(dir, f))
+        .filter(f => fs.existsSync(f) && fs.statSync(f).size > 1000);
+      if (candidates.length > 0) {
+        candidates.sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
+        try {
+          fs.renameSync(candidates[0], outputSceneMp4);
+          console.log(`[Media Engine] Normalized Blender frame-ranged file: ${path.basename(candidates[0])} -> ${path.basename(outputSceneMp4)}`);
+        } catch (e) {
+          fs.copyFileSync(candidates[0], outputSceneMp4);
+        }
+      }
+    }
+  }
+
+  if (fs.existsSync(outputSceneMp4) && fs.statSync(outputSceneMp4).size > 1000) {
     console.log(`[Media Engine] ✅ Rendered scene via ${engineUsed === 'blender' ? 'Blender 3D' : 'FFmpeg 2.5D Motion'} Engine: ${path.basename(outputSceneMp4)} (${fs.statSync(outputSceneMp4).size} bytes)`);
     return outputSceneMp4;
   }

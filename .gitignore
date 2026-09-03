@@ -20,6 +20,5 @@ rendered_videos/
 *.tmp
 *.temp
 /tmp/
-daily_blueprint_manifest.json
 coverage/
 .vite/

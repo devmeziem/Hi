@@ -1181,6 +1181,67 @@ MANDATE: Output EXACTLY 7 to 8 slides (slideIndex 0 to 7) with 32-42 words per s
   return { systemPrompt, userPrompt, chosenHookFormat, chosenOutro, flowGuide };
 }
 
+/**
+ * Build rich prompt for 15-chapter 15-20 min Fin Masterclass / Deep Dive video
+ */
+function buildFinDeepDivePrompt(archetype, recentHistory = [], channelHandle = '@bones_ceo') {
+  const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
+  const chosenOutro = resolveFinOutro(cleanHandle, Date.now());
+  const chosenHookFormat = selectFinHookFormat(0, recentHistory.length);
+
+  const systemPrompt = `You are the lead financial educator and master documentary scriptwriter for the Fin Blueprint channel (${cleanHandle}).
+CHANNEL CORE POSITIONING:
+"Learn how to manage money, start small businesses, develop valuable skills, find legitimate opportunities, and understand finance in simple language."
+TARGET AUDIENCE: Everyday young people, beginners, low-income earners, and aspiring entrepreneurs starting with little or no capital ($0 to $50 USD).
+
+LONG-FORM MASTERCLASS REQUIREMENTS (15 CHAPTERS / 15-20 MINUTES):
+1. EXACTLY 15 COMPREHENSIVE CHAPTERS (SLIDES 0 TO 14):
+   - Each slide represents an in-depth practical lesson (~110-140 words of conversational, clear spoken narration).
+   - Clear, low-level English (5th-7th grade readability) that answers real human questions without boring math or confusing jargon.
+   - Use standard US Dollars ($ USD) for all financial amounts ($5, $10, $50, $100, $500).
+2. 15-CHAPTER PROGRESSIVE FINANCIAL BLUEPRINT:
+   - Slide 0: Executive Hook & The Reality of Modern Money Traps
+   - Slide 1: The Core Foundation: Protecting Your Baseline Capital
+   - Slide 2: Uncovering High-Value Everyday Skills You Can Monetize for Free
+   - Slide 3: The $0 to $50 Starting Capital Framework: Realistic Small Steps
+   - Slide 4: Real-Life Unit Economics & Margin Safety (Plain English Breakdown)
+   - Slide 5: Finding Your First 10 Paying Customers Without Ad Spend
+   - Slide 6: The #1 Fatal Mistake Beginners Make with Operating Cash
+   - Slide 7: Zero-Cost Tools and Digital Platforms to Automate Your Workflow
+   - Slide 8: The Separation Rule: Business Funds vs Personal Survival Money
+   - Slide 9: Pricing Your Services and Overcoming Imposter Syndrome
+   - Slide 10: Building Reinvestment Velocity (Turning $50 into $250)
+   - Slide 11: Real-Life Case Study & Step-by-Step Execution Walkthrough
+   - Slide 12: Daily Operational Protocol: The 3 Tasks You Must Do Each Morning
+   - Slide 13: Emergency Cash Buffer: Bulletproofing Yourself Against Bad Weeks
+   - Slide 14: The 30-Day Action Roadmap & Outro (${chosenOutro})
+3. VISUALS: 16:9 widescreen 8k cinematic modern clean studio aesthetic, high-contrast dark slate with emerald green and gold accents.
+
+OUTPUT FORMAT: Return strictly valid JSON:
+{
+  "title": "Clear High-Impact Documentary Title (No #Shorts)",
+  "category": "${archetype.category}",
+  "theme": "${archetype.theme}",
+  "angle": "${archetype.angle}",
+  "description": "Full 15-chapter financial masterclass on ${archetype.theme}.\\n\\n#PersonalFinance #SmallBusiness #MoneyTips #FinancialLiteracy",
+  "tags": ["#PersonalFinance", "#SmallBusiness", "#MoneyTips", "#FinancialLiteracy", "#Wealth"],
+  "slides": [
+    {
+      "slideIndex": 0,
+      "chapterTitle": "Executive Hook & Modern Money Traps",
+      "text": "Detailed 110-140 words spoken narration...",
+      "visual": "Cinematic 16:9 widescreen 8k photorealistic scene, ${archetype.visualAesthetic}"
+    }
+  ]
+}`;
+
+  const userPrompt = `Generate a complete 15-chapter Masterclass documentary script on "${archetype.theme}".
+Angle: "${archetype.angle}". Target Budget: "${archetype.targetBudget}".
+MANDATE: Output EXACTLY 15 chapters (slides 0 to 14) with 110-140 words per slide. Clear, actionable spoken guidance for beginners. Return strictly valid JSON.`;
+
+  return { systemPrompt, userPrompt, chosenHookFormat, chosenOutro };
+}
+
 const MANDATORY_FINANCIAL_DISCLAIMER = '⚠️ DISCLAIMER: This video and description are for educational and informational purposes only and do not constitute financial, investment, legal, or tax advice. Always conduct independent research and consult a licensed financial professional before making financial decisions.';
 
 /**
