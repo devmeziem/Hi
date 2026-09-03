@@ -59,10 +59,24 @@ const NICHE_SPHERES = {
     channelName: 'Fin Blueprint',
     targetAudience: 'Everyday young people, students, beginners, and aspiring entrepreneurs starting with little or no capital ($0 to $50 USD). Single standard currency is US Dollars ($ USD).',
     searchQueries: [
-      'personal finance small business startup tips 2026',
-      'low capital side hustle ideas beginners make money',
-      'financial literacy saving emergency fund compound interest',
-      'smart money habits avoid financial traps scams'
+      'how to start a business with under 50 dollars for beginners',
+      'what are the biggest financial traps keeping young people broke in their 20s',
+      'how to build a 500 dollar emergency fund fast on low income',
+      'what high income skills can you learn completely free in 30 days',
+      'how does compound interest actually make regular people wealthy over time',
+      'what small business can you start today with less than 50 dollars capital',
+      'how to stop living paycheck to paycheck and eliminate hidden expense leaks',
+      'how to tell if an online business or crypto investment is a scam or ponzi',
+      'how do small businesses calculate profit margins and unit economics',
+      'what is the smartest way to invest your first 100 dollars as a beginner',
+      'how do successful entrepreneurs test and validate an idea in 24 hours',
+      'how to negotiate freelance pricing and charge for value instead of hours',
+      'why do most people stay poor even when working 60 hours a week',
+      'how to create and sell a digital product on your phone with zero budget',
+      'how does inflation erode your savings and how do you protect purchasing power',
+      'what is the difference between cash flow and profit in a small business',
+      'how do students budget money and make daily income on campus',
+      'how to pay off debt fast using the debt snowball method step by step'
     ],
     spheres: [
       { id: 'small_biz_low_cap', name: 'Small Capital Business ($0-$5-$50)', desc: 'Micro-retail, digital services, zero-inventory agency, local distribution' },
@@ -94,10 +108,25 @@ const NICHE_SPHERES = {
     channelName: 'The Stoic Architect',
     targetAudience: 'Everyday people seeking practical emotional discipline, unshakeable mental fortitude, and psychological resilience amidst modern chaos.',
     searchQueries: [
-      'Marcus Aurelius stoic rules modern life habits 2026',
-      'stoicism mental toughness emotional control resilience',
-      'how to stop overthinking stoic philosophy discipline',
-      'stoic wisdom handling disrespect adversity failure'
+      'how to respond to disrespect with strategic silence and calm',
+      'how did Marcus Aurelius handle severe anxiety stress and betrayal',
+      'how to stop overthinking and start taking immediate disciplined action',
+      'why is discipline more powerful than motivation according to Stoics',
+      'how to stop caring what other people think about your life choices',
+      'how to build ice cold mental composure under extreme pressure',
+      'what should you do when everything is falling apart in your personal life',
+      'how to overcome imposter syndrome and self doubt using Stoic virtue',
+      'how to set unbreakable emotional boundaries with toxic people',
+      'why did Seneca say we suffer more often in imagination than reality',
+      'how did Marcus Aurelius conquer morning discipline and wake up with purpose',
+      'how to recover from mental burnout and exhaustion without quitting',
+      'how to deal with betrayal and broken trust without seeking revenge',
+      'why does remembering your mortality Memento Mori destroy fear and procrastination',
+      'how to stop being a people pleaser and say no without feeling guilty',
+      'how to apply the Dichotomy of Control to things outside your power',
+      'why is solitude and self reliance essential for building strong character',
+      'how to conquer cheap dopamine addiction and build delayed gratification',
+      'what is the Stoic secret to turning any obstacle into the way forward'
     ],
     spheres: [
       { id: 'disrespect_silence', name: 'Responding to Disrespect with Strategic Silence', desc: 'Inner Citadel — silence as the ultimate weapon against provocation' },
@@ -131,10 +160,25 @@ const NICHE_SPHERES = {
     channelName: 'Archie Explains',
     targetAudience: 'Curious minds of all ages who love fast, visual, entertaining explanations of science, technology, and everyday mysteries.',
     searchQueries: [
-      'science mysteries how things work explained simply 2026',
-      'fascinating physics tech everyday science questions',
-      'quantum biology space technology explained animated',
-      'cool science facts everyday mysteries why does'
+      'why does time slow down near a massive black hole',
+      'how does the internet travel under oceans through giant glass cables',
+      'why do we dream when we sleep and where do dreams come from',
+      'how do artificial intelligence neural networks actually learn and think',
+      'why dont giant 500 ton airplanes fall out of the sky',
+      'how does the human brain store and recall memories across neurons',
+      'how do white blood cells and antibodies hunt viruses in your body',
+      'what bizarre creatures survive at the bottom of the Mariana Trench',
+      'how do noise cancelling headphones cancel sound waves in real time',
+      'how do lithium ion batteries store energy and why do they catch fire',
+      'what would happen to the human body in the vacuum of deep space',
+      'how does CRISPR gene editing find and cut specific strands of DNA',
+      'why can quantum particles exist in two places at the same time',
+      'what would happen if the Earth suddenly stopped spinning for 5 seconds',
+      'how does a smartphone camera take clear photos in total darkness',
+      'why do optical illusions fool our brain even when we know it is a trick',
+      'how do maglev bullet trains float on air without touching the tracks',
+      'how does lightning form and why is thunder so loud',
+      'why can tardigrades survive in outer space radiation and boiling water'
     ],
     spheres: [
       { id: 'quantum_physics_simple', name: 'Quantum Physics in Plain English', desc: 'Wave-particle duality, quantum superposition, Schrödinger\'s cat' },
@@ -163,88 +207,148 @@ const NICHE_SPHERES = {
 };
 
 // ----------------------------------------------------
-// DUCKDUCKGO REAL-TIME SEARCH QUERY ENGINE
+// DUCKDUCKGO REAL-TIME SEARCH QUERY ENGINE (100% REAL - NO FALLBACKS)
 // ----------------------------------------------------
 async function queryDuckDuckGo(searchQuery, maxResults = 6) {
-  return new Promise((resolve) => {
+  // Primary attempt: DuckDuckGo HTML search endpoint
+  const attemptEndpoint = (hostname, pathEndpoint) => new Promise((resolve) => {
     const postData = querystring.stringify({ q: searchQuery, kl: 'wt-wt' });
-    const req = https.request('https://lite.duckduckgo.com/lite/', {
+    const req = https.request({
+      hostname,
+      path: pathEndpoint,
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
         'Content-Length': Buffer.byteLength(postData),
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
       },
-      timeout: 10000
+      timeout: 12000
     }, (res) => {
       let html = '';
       res.on('data', chunk => html += chunk);
       res.on('end', () => {
         const results = [];
-        const linkRegex = /<a[^>]*class=['\"]result-link['\"][^>]*>([\s\S]*?)<\/a>/g;
-        const snippetRegex = /<td[^>]*class=['\"]result-snippet['\"][^>]*>([\s\S]*?)<\/td>/g;
-        
         const titles = [];
-        let m;
-        while ((m = linkRegex.exec(html)) !== null) {
-          const t = m[1].replace(/<[^>]+>/g, '').replace(/&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').trim();
-          titles.push(t);
-        }
-        
         const snippets = [];
-        while ((m = snippetRegex.exec(html)) !== null) {
-          const s = m[1].replace(/<[^>]+>/g, '').replace(/&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').trim();
-          snippets.push(s);
+        let m;
+
+        // Pattern 1: standard html.duckduckgo.com layout
+        const titleExtractRegex = /<h2 class=["']result__title["']>([\s\S]*?)<\/h2>/gi;
+        const snippetExtractRegex = /<a class=["']result__snippet["'][^>]*>([\s\S]*?)<\/a>/gi;
+
+        while ((m = titleExtractRegex.exec(html)) !== null) {
+          const t = m[1].replace(/<[^>]+>/g, '').replace(/&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').trim();
+          if (t) titles.push(t);
         }
-        
-        if (results.length > 0) {
-          resolve(results);
-          return;
+        while ((m = snippetExtractRegex.exec(html)) !== null) {
+          const s = m[1].replace(/<[^>]+>/g, '').replace(/&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').trim();
+          if (s) snippets.push(s);
         }
 
-        // Real-time live fallback via Wikipedia Knowledge API if DuckDuckGo returns empty HTML
-        queryWikipediaSearch(searchQuery, maxResults).then(resolve);
+        // Pattern 2: lite.duckduckgo.com fallback layout
+        if (titles.length === 0) {
+          const linkRegex = /<a[^>]*class=['"]result-link['"][^>]*>([\s\S]*?)<\/a>/gi;
+          while ((m = linkRegex.exec(html)) !== null) {
+            const t = m[1].replace(/<[^>]+>/g, '').replace(/&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').trim();
+            if (t) titles.push(t);
+          }
+        }
+        if (snippets.length === 0) {
+          const snippetRegex = /<td[^>]*class=['"]result-snippet['"][^>]*>([\s\S]*?)<\/td>/gi;
+          while ((m = snippetRegex.exec(html)) !== null) {
+            const s = m[1].replace(/<[^>]+>/g, '').replace(/&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').trim();
+            if (s) snippets.push(s);
+          }
+        }
+
+        for (let i = 0; i < titles.length; i++) {
+          const t = titles[i] || '';
+          const s = snippets[i] || '';
+          if (
+            t.toLowerCase().includes('viewing ads is privacy protected') ||
+            s.toLowerCase().includes('viewing ads is privacy protected') ||
+            /\bAd\b/.test(t) ||
+            t.includes('Ad clicks are managed')
+          ) {
+            continue;
+          }
+          if (t.length > 5) {
+            results.push({
+              title: t,
+              snippet: s
+            });
+          }
+          if (results.length >= maxResults) break;
+        }
+
+        resolve(results);
       });
     });
     req.on('error', (err) => {
-      console.warn(`[DuckDuckGo Search Notice] ${err.message}`);
-      queryWikipediaSearch(searchQuery, maxResults).then(resolve);
+      console.warn(`[DuckDuckGo Query Notice] (${hostname}): ${err.message}`);
+      resolve([]);
     });
     req.on('timeout', () => {
       req.destroy();
-      queryWikipediaSearch(searchQuery, maxResults).then(resolve);
+      console.warn(`[DuckDuckGo Query Notice] (${hostname}): Timed out`);
+      resolve([]);
     });
     req.write(postData);
     req.end();
   });
+
+  // 1. Try html.duckduckgo.com/html/
+  let results = await attemptEndpoint('html.duckduckgo.com', '/html/');
+  if (results && results.length > 0) return results;
+
+  // 2. Try lite.duckduckgo.com/lite/
+  results = await attemptEndpoint('lite.duckduckgo.com', '/lite/');
+  return results || [];
 }
 
 /**
- * Real live encyclopedic search query fallback
+ * Real-Time Google News RSS Search
+ * Fetches live organic headlines and current developments per channel query (no keys, no rate limits, zero mock data).
  */
-function queryWikipediaSearch(searchQuery, maxResults = 6) {
+async function queryGoogleNewsRss(queryStr, maxResults = 5) {
   return new Promise((resolve) => {
-    const cleanQuery = encodeURIComponent(searchQuery.replace(/["']/g, ''));
-    const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${cleanQuery}&format=json&utf8=`;
-    const req = https.get(url, { headers: { 'User-Agent': 'VoxamProductionBot/2.0' }, timeout: 8000 }, (res) => {
-      let data = '';
-      res.on('data', c => data += c);
+    const encoded = encodeURIComponent(queryStr);
+    const url = `https://news.google.com/rss/search?q=${encoded}&hl=en-US&gl=US&ceid=US:en`;
+    const req = https.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      },
+      timeout: 8000
+    }, (res) => {
+      let xml = '';
+      res.on('data', c => xml += c);
       res.on('end', () => {
-        try {
-          const parsed = JSON.parse(data);
-          const hits = parsed.query?.search || [];
-          const results = hits.slice(0, maxResults).map(h => ({
-            title: h.title,
-            snippet: (h.snippet || '').replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/&#x27;/g, "'")
-          }));
-          resolve(results);
-        } catch {
-          resolve([]);
+        const results = [];
+        const itemRegex = /<item>[\s\S]*?<title>(.*?)<\/title>[\s\S]*?<description>(.*?)<\/description>[\s\S]*?<pubDate>(.*?)<\/pubDate>/gi;
+        let m;
+        while ((m = itemRegex.exec(xml)) !== null && results.length < maxResults) {
+          const rawTitle = m[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1').replace(/<[^>]+>/g, '').trim();
+          const rawSnippet = m[2].replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1').replace(/<[^>]+>/g, '').trim();
+          if (rawTitle && rawTitle.length > 8) {
+            results.push({
+              title: rawTitle,
+              snippet: rawSnippet || rawTitle,
+              pubDate: m[3] || ''
+            });
+          }
         }
+        resolve(results);
       });
     });
-    req.on('error', () => resolve([]));
-    req.on('timeout', () => { req.destroy(); resolve([]); });
+    req.on('error', (err) => {
+      console.warn(`[Google News RSS Notice] ${err.message}`);
+      resolve([]);
+    });
+    req.on('timeout', () => {
+      req.destroy();
+      console.warn(`[Google News RSS Notice] Request timed out`);
+      resolve([]);
+    });
   });
 }
 
@@ -457,8 +561,95 @@ function cleanJsonText(rawText) {
 }
 
 // Generic multi-provider LLM caller for JSON tasks
-async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null) {
-  // 1. Google Gemini (Priority if key present)
+async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, options = {}) {
+  const preferLocalAi = options.preferLocalAi === true || options.nicheKey === 'fin';
+
+  // Helper for Local Open-Source Ollama (localhost:11434)
+  const tryLocalOllama = async () => {
+    try {
+      return await new Promise((resolve) => {
+        const checkReq = http.request('http://127.0.0.1:11434/api/tags', { method: 'GET', timeout: 2000 }, (res) => {
+          let d = '';
+          res.on('data', c => d += c);
+          res.on('end', () => {
+            let chosenModel = 'qwen2.5:1.5b';
+            try {
+              const tags = JSON.parse(d);
+              if (tags.models && tags.models.length > 0) chosenModel = tags.models[0].name;
+            } catch {}
+
+            const postData = JSON.stringify({
+              model: chosenModel,
+              messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
+              format: 'json',
+              stream: false,
+              options: { temperature: 0.7, num_ctx: 4096 }
+            });
+
+            console.log(`[AI Inference] Probing Local Open-Source (${chosenModel} via Ollama on 127.0.0.1:11434)...`);
+            const genReq = http.request('http://127.0.0.1:11434/api/chat', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) },
+              timeout: 60000
+            }, (genRes) => {
+              let genData = '';
+              genRes.on('data', c => genData += c);
+              genRes.on('end', () => {
+                try {
+                  const j = JSON.parse(genData);
+                  const content = j.message?.content || j.response;
+                  const parsed = cleanJsonText(content);
+                  if (parsed) {
+                    resolve({ success: true, modelUsed: `Local Open-Source (${chosenModel} via Ollama)`, data: parsed });
+                  } else {
+                    console.warn(`[AI Inference Notice] Local Ollama returned text but JSON parsing failed.`);
+                    resolve(null);
+                  }
+                } catch (err) {
+                  console.warn(`[AI Inference Notice] Local Ollama response parsing failed: ${err.message}`);
+                  resolve(null);
+                }
+              });
+            });
+            genReq.on('error', (err) => {
+              console.warn(`[AI Inference Notice] Local Ollama inference connection failed: ${err.message}`);
+              resolve(null);
+            });
+            genReq.on('timeout', () => {
+              genReq.destroy();
+              console.warn(`[AI Inference Notice] Local Ollama inference timed out (60s).`);
+              resolve(null);
+            });
+            genReq.write(postData);
+            genReq.end();
+          });
+        });
+        checkReq.on('error', (err) => {
+          console.log(`[AI Inference] Local Ollama daemon not running or unreachable (${err.message})`);
+          resolve(null);
+        });
+        checkReq.on('timeout', () => {
+          checkReq.destroy();
+          console.log(`[AI Inference] Local Ollama daemon check timed out`);
+          resolve(null);
+        });
+        checkReq.end();
+      });
+    } catch (e) {
+      console.warn(`[AI Inference Notice] Local Ollama error: ${e.message}`);
+      return null;
+    }
+  };
+
+  // 1. OPTION 1 FOR FIN: Local Open-Source AI first if preferred
+  if (preferLocalAi) {
+    console.log(`[AI Inference] 🎯 Preference active: Evaluating Local AI model as Option 1...`);
+    const localRes = await tryLocalOllama();
+    if (localRes && localRes.success) return localRes;
+    console.log(`[AI Inference] Local AI unavailable or yielded no result. Proceeding to cloud inference ladder...`);
+  }
+
+  // 2. Google Gemini
   if (GEMINI_API_KEY) {
     const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
     for (const model of models) {
@@ -471,14 +662,14 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null) 
           const req = https.request(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) },
-            timeout: 5000
+            timeout: 8000
           }, (r) => {
             let d = '';
             r.on('data', c => d += c);
             r.on('end', () => resolve({ status: r.statusCode, data: d }));
           });
           req.on('error', reject);
-          req.on('timeout', () => { req.destroy(); reject(new Error('Timeout')); });
+          req.on('timeout', () => { req.destroy(); reject(new Error('Gemini request timeout')); });
           req.write(postData);
           req.end();
         });
@@ -487,14 +678,16 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null) 
           const raw = json.candidates?.[0]?.content?.parts?.[0]?.text;
           const parsed = cleanJsonText(raw);
           if (parsed) return { success: true, modelUsed: `Google Gemini (${model})`, data: parsed };
+        } else {
+          console.warn(`[AI Inference Notice] Gemini (${model}) HTTP ${res.status}: ${res.data.slice(0, 100)}`);
         }
       } catch (err) {
-        // Try next model
+        console.warn(`[AI Inference Notice] Gemini (${model}) error: ${err.message}`);
       }
     }
   }
 
-  // 2. OpenRouter
+  // 3. OpenRouter
   if (OPENROUTER_API_KEY) {
     const models = ['google/gemini-2.0-flash-001', 'meta-llama/llama-3.3-70b-instruct', 'deepseek/deepseek-chat', 'mistralai/mistral-small-24b-instruct-2501'];
     for (const model of models) {
@@ -520,7 +713,7 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null) 
             r.on('end', () => resolve({ status: r.statusCode, data: d }));
           });
           req.on('error', reject);
-          req.on('timeout', () => { req.destroy(); reject(new Error('Timeout')); });
+          req.on('timeout', () => { req.destroy(); reject(new Error('OpenRouter timeout')); });
           req.write(postData);
           req.end();
         });
@@ -528,14 +721,18 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null) 
           const json = JSON.parse(res.data);
           const parsed = cleanJsonText(json.choices?.[0]?.message?.content);
           if (parsed) return { success: true, modelUsed: `OpenRouter (${model})`, data: parsed };
+        } else {
+          console.warn(`[AI Inference Notice] OpenRouter (${model}) HTTP ${res.status}: ${res.data.slice(0, 100)}`);
         }
-      } catch {}
+      } catch (err) {
+        console.warn(`[AI Inference Notice] OpenRouter (${model}) error: ${err.message}`);
+      }
     }
   }
 
-  // 3. Groq LPU
+  // 4. Groq LPU (Removed decommissioned mixtral-8x7b-32768, kept active production models)
   if (GROQ_API_KEY) {
-    const models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'];
+    const models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'gemma2-9b-it'];
     for (const model of models) {
       try {
         const postData = JSON.stringify({
@@ -552,14 +749,14 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null) 
               'Content-Type': 'application/json',
               'Content-Length': Buffer.byteLength(postData)
             },
-            timeout: 15000
+            timeout: 12000
           }, (r) => {
             let d = '';
             r.on('data', c => d += c);
             r.on('end', () => resolve({ status: r.statusCode, data: d }));
           });
           req.on('error', reject);
-          req.on('timeout', () => { req.destroy(); reject(new Error('Timeout')); });
+          req.on('timeout', () => { req.destroy(); reject(new Error('Groq timeout')); });
           req.write(postData);
           req.end();
         });
@@ -567,12 +764,16 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null) 
           const json = JSON.parse(res.data);
           const parsed = cleanJsonText(json.choices?.[0]?.message?.content);
           if (parsed) return { success: true, modelUsed: `Groq LPU (${model})`, data: parsed };
+        } else {
+          console.warn(`[AI Inference Notice] Groq (${model}) HTTP ${res.status}: ${res.data.slice(0, 100)}`);
         }
-      } catch {}
+      } catch (err) {
+        console.warn(`[AI Inference Notice] Groq (${model}) error: ${err.message}`);
+      }
     }
   }
 
-  // 4. OpenAI
+  // 5. OpenAI
   if (OPENAI_API_KEY) {
     const models = ['gpt-4o-mini', 'gpt-4o'];
     for (const model of models) {
@@ -598,7 +799,7 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null) 
             r.on('end', () => resolve({ status: r.statusCode, data: d }));
           });
           req.on('error', reject);
-          req.on('timeout', () => { req.destroy(); reject(new Error('Timeout')); });
+          req.on('timeout', () => { req.destroy(); reject(new Error('OpenAI timeout')); });
           req.write(postData);
           req.end();
         });
@@ -606,14 +807,18 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null) 
           const json = JSON.parse(res.data);
           const parsed = cleanJsonText(json.choices?.[0]?.message?.content);
           if (parsed) return { success: true, modelUsed: `OpenAI (${model})`, data: parsed };
+        } else {
+          console.warn(`[AI Inference Notice] OpenAI (${model}) HTTP ${res.status}: ${res.data.slice(0, 100)}`);
         }
-      } catch {}
+      } catch (err) {
+        console.warn(`[AI Inference Notice] OpenAI (${model}) error: ${err.message}`);
+      }
     }
   }
 
-  // 5. Cloudflare Workers AI
+  // 6. Cloudflare Workers AI
   if (CLOUDFLARE_ACCOUNT_ID && CLOUDFLARE_API_TOKEN) {
-    const models = ['@cf/meta/llama-3.2-3b-instruct', '@cf/meta/llama-3.1-8b-instruct'];
+    const models = ['@cf/meta/llama-3.1-8b-instruct', '@cf/meta/llama-3.2-3b-instruct'];
     for (const model of models) {
       try {
         const postData = JSON.stringify({
@@ -634,7 +839,7 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null) 
             r.on('end', () => resolve({ status: r.statusCode, data: d }));
           });
           req.on('error', reject);
-          req.on('timeout', () => { req.destroy(); reject(new Error('Timeout')); });
+          req.on('timeout', () => { req.destroy(); reject(new Error('Cloudflare timeout')); });
           req.write(postData);
           req.end();
         });
@@ -643,65 +848,20 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null) 
           const responseText = json.result?.response || (typeof json.result === 'string' ? json.result : null);
           const parsed = cleanJsonText(responseText);
           if (parsed) return { success: true, modelUsed: `Cloudflare Workers AI (${model})`, data: parsed };
+        } else {
+          console.warn(`[AI Inference Notice] Cloudflare (${model}) HTTP ${res.status}: ${res.data.slice(0, 100)}`);
         }
-      } catch {}
+      } catch (err) {
+        console.warn(`[AI Inference Notice] Cloudflare (${model}) error: ${err.message}`);
+      }
     }
   }
 
-  // 6. Local Open-Source Ollama (localhost:11434)
-  try {
-    const localRes = await new Promise((resolve) => {
-      const checkReq = http.request('http://127.0.0.1:11434/api/tags', { method: 'GET', timeout: 1500 }, (res) => {
-        let d = '';
-        res.on('data', c => d += c);
-        res.on('end', () => {
-          let chosenModel = 'qwen2.5:1.5b';
-          try {
-            const tags = JSON.parse(d);
-            if (tags.models && tags.models.length > 0) chosenModel = tags.models[0].name;
-          } catch {}
-
-          const postData = JSON.stringify({
-            model: chosenModel,
-            messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: `${userPrompt}\nReturn valid JSON object.` }],
-            format: 'json',
-            stream: false,
-            options: { temperature: 0.7, num_ctx: 4096 }
-          });
-
-          const genReq = http.request('http://127.0.0.1:11434/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) },
-            timeout: 60000
-          }, (genRes) => {
-            let genData = '';
-            genRes.on('data', c => genData += c);
-            genRes.on('end', () => {
-              try {
-                const j = JSON.parse(genData);
-                const content = j.message?.content || j.response;
-                const parsed = cleanJsonText(content);
-                if (parsed) {
-                  resolve({ success: true, modelUsed: `Local Open-Source (${chosenModel} via Ollama)`, data: parsed });
-                } else {
-                  resolve(null);
-                }
-              } catch { resolve(null); }
-            });
-          });
-          genReq.on('error', () => resolve(null));
-          genReq.on('timeout', () => { genReq.destroy(); resolve(null); });
-          genReq.write(postData);
-          genReq.end();
-        });
-      });
-      checkReq.on('error', () => resolve(null));
-      checkReq.on('timeout', () => { checkReq.destroy(); resolve(null); });
-      checkReq.end();
-    });
-
+  // 7. Local Open-Source Ollama (if not already tried at start)
+  if (!preferLocalAi) {
+    const localRes = await tryLocalOllama();
     if (localRes && localRes.success) return localRes;
-  } catch {}
+  }
 
   // 8. Error reporting - All AI inference engines failed
   throw new Error('All active AI inference models failed to execute topic discovery & selection.');
@@ -726,16 +886,21 @@ async function discoverAndSelectTopicViaActiveAi(nicheKey = 'fin', options = {})
   console.log(` • Thematic Spheres: ${colors.green}${nicheConfig.spheres.length} core archetype scopes loaded${colors.reset}`);
 
   // ----------------------------------------------------
-  // STEP 1: QUERY DUCKDUCKGO FOR REAL-TIME TRENDS & SEARCHES
+  // STEP 1: QUERY DUCKDUCKGO & GOOGLE NEWS RSS FOR REAL-TIME TRENDS & QUESTIONS
   // ----------------------------------------------------
-  console.log(`\n${colors.bright}🔎 Step 1: Querying DuckDuckGo for top trending topics and queries today...${colors.reset}`);
+  console.log(`\n${colors.bright}🔎 Step 1: Performing Live Multi-Source Search (DuckDuckGo + Google News)...${colors.reset}`);
   const randomSearchQuery = nicheConfig.searchQueries[Math.floor(Math.random() * nicheConfig.searchQueries.length)];
-  console.log(`   Query: "${colors.cyan}${randomSearchQuery}${colors.reset}"`);
+  console.log(`   Target Query: "${colors.cyan}${randomSearchQuery}${colors.reset}"`);
   
-  const ddgResults = await queryDuckDuckGo(randomSearchQuery, 6);
-  if (ddgResults.length > 0) {
-    console.log(`   ${colors.green}✓ Web research engine retrieved ${ddgResults.length} live organic trend snippets:${colors.reset}`);
-    ddgResults.slice(0, 3).forEach((r, idx) => {
+  const [ddgResults, newsResults] = await Promise.all([
+    queryDuckDuckGo(randomSearchQuery, 5),
+    queryGoogleNewsRss(randomSearchQuery, 4)
+  ]);
+
+  const allSearchResults = [...ddgResults, ...newsResults];
+  if (allSearchResults.length > 0) {
+    console.log(`   ${colors.green}✓ Retrieved ${allSearchResults.length} live organic snippets (${ddgResults.length} DDG, ${newsResults.length} News):${colors.reset}`);
+    allSearchResults.slice(0, 4).forEach((r, idx) => {
       console.log(`     ${idx + 1}. ${colors.bright}${r.title}${colors.reset}`);
       console.log(`        "${r.snippet.slice(0, 110)}..."`);
     });
@@ -758,13 +923,13 @@ async function discoverAndSelectTopicViaActiveAi(nicheKey = 'fin', options = {})
   console.log(`\n${colors.bright}🤖 Step 3: Active AI generating 5 distinct candidate topics across 21+ spheres...${colors.reset}`);
   
   const spheresJsonStr = JSON.stringify(nicheConfig.spheres, null, 2);
-  const ddgContextStr = ddgResults.map(r => `Title: ${r.title} | Context: ${r.snippet}`).join('\n');
+  const searchContextStr = allSearchResults.map(r => `Title: ${r.title} | Details: ${r.snippet}`).join('\n');
 
   const systemPrompt = `You are the Lead Creative Director and Topic Architect for YouTube Shorts channel "${nicheConfig.channelName}" (${nicheConfig.channelHandle}).
 Target Audience: ${nicheConfig.targetAudience}
 
 YOUR MANDATE:
-1. DUCKDUCKGO SEARCH INSIGHTS: Analyze the real-time search topics, questions, and insights discovered from DuckDuckGo today.
+1. REAL-TIME SEARCH INSIGHTS: Analyze the real-time search topics, questions, and insights discovered from live web search (DuckDuckGo & Google News) today.
 2. 21+ THEMATIC ARCHETYPE SPHERES: Connect the trending search signals with relevant sphere archetypes.
 3. CANDIDATE FORMULATION: Formulate candidate topics based on the trending search details.
 4. AI DATABASE SIMILARITY & DEDUPLICATION VERIFICATION:
@@ -775,7 +940,7 @@ YOUR MANDATE:
 5. LOOPY RETENTION DESIGN:
    Design the chosen topic and its core angle to be loopy where possible (the ending line of the video seamlessly loops back into the opening hook line).
 6. SELECTION RATIONALE:
-   Explain why the chosen topic is verified unique against the database and how the DuckDuckGo search details will be used to build the script.
+   Explain why the chosen topic is verified unique against the database and how the search details will be used to build the script.
 
 Return strictly valid JSON with this exact schema:
 {
@@ -787,7 +952,7 @@ Return strictly valid JSON with this exact schema:
       "title": "High-Impact Topic Headline #Shorts #viral",
       "angle": "Unique tactical breakdown angle",
       "coreHook": "Opening spoken hook sentence",
-      "searchDetailsUsed": "Specific insight or trend details from DuckDuckGo used here",
+      "searchDetailsUsed": "Specific insight or trend details from live search used here",
       "similarityCheck": "Verified non-similar to past database topics",
       "isUnique": true,
       "loopyHookConcept": "How the ending loops back into the opening hook"
@@ -801,8 +966,8 @@ Return strictly valid JSON with this exact schema:
   ]
 }`;
 
-  const userPrompt = `TODAY'S LIVE DUCKDUCKGO SEARCH TRENDS & INSIGHTS:
-${ddgContextStr || 'General trending search interest in small business, practical mindset, and financial resilience.'}
+  const userPrompt = `TODAY'S LIVE MULTI-SOURCE SEARCH TRENDS & INSIGHTS:
+${searchContextStr || 'General trending search interest in small business, practical mindset, and financial resilience.'}
 
 21+ THEMATIC SCOPES & SPHERES:
 ${spheresJsonStr}
@@ -812,7 +977,7 @@ ${pastTopicsListStr || 'None yet.'}
 
 Formulate candidate topics from DuckDuckGo trends, check for similarities against the past database, ensure zero similarity, choose 1 winning unique topic, and return strictly valid JSON.`;
 
-  const aiResult = await callActiveAiForJson(systemPrompt, userPrompt);
+  const aiResult = await callActiveAiForJson(systemPrompt, userPrompt, null, { preferLocalAi: nicheKey === 'fin', nicheKey });
   let parsedData = aiResult.data;
   const modelUsed = aiResult.modelUsed;
 
@@ -894,6 +1059,7 @@ Formulate candidate topics from DuckDuckGo trends, check for similarities agains
 module.exports = {
   NICHE_SPHERES,
   queryDuckDuckGo,
+  queryGoogleNewsRss,
   fetchPastTopicsDatabase,
   saveChosenTopicToDatabase,
   discoverAndSelectTopicViaActiveAi

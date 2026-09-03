@@ -28,16 +28,33 @@ async function runCartoonPipelineDiagnostic() {
   let inputTopic = process.env.TEST_TOPIC || '';
 
   if (!inputTopic || inputTopic.trim().length < 4) {
-    console.log('🔎 No manual topic supplied. Launching DuckDuckGo + Active AI Topic Discovery Engine for Cartoon Channel...');
+    console.log('🔎 No manual topic supplied. Launching DuckDuckGo + Google News + Active AI Topic Discovery Engine for Cartoon Channel...');
     try {
       const discovery = await discoverAndSelectTopicViaActiveAi('cartoon');
       if (discovery && discovery.chosenTopic) {
         inputTopic = discovery.chosenTopic.title;
         console.log(`🏆 Active AI (${discovery.modelUsed}) Selected Winning Cartoon Topic: "${inputTopic}"`);
+      } else {
+        throw new Error('Topic discovery engine returned no chosen topic object');
       }
     } catch (err) {
-      console.warn(`[Topic Discovery Warning] ${err.message}. Using default.`);
-      inputTopic = 'How Undersea Cables Connect the Internet Across Continents';
+      console.error('\n\x1b[31m\x1b[1m════════════════════════════════════════════════════════════════════════════════\x1b[0m');
+      console.error('\x1b[31m\x1b[1m ❌ [CARTOON WORKFLOW: TOPIC DISCOVERY FAILED]\x1b[0m');
+      console.error('\x1b[31m\x1b[1m════════════════════════════════════════════════════════════════════════════════\x1b[0m');
+      console.error('\n\x1b[1m📋 WHAT HAPPENED:\x1b[0m');
+      console.error(' • Cartoon topic discovery pipeline was executed because no manual topic was provided.');
+      console.error(' • Web trend search and active AI candidate generation failed to select a topic.');
+      console.error('\n\x1b[1m🔍 WHAT FAILED:\x1b[0m');
+      console.error(` • Component: discoverAndSelectTopicViaActiveAi('cartoon')`);
+      console.error(` • Failure Details: ${err.message}`);
+      console.error('\n\x1b[1m⚙️  HOW & WHY IT FAILED:\x1b[0m');
+      console.error(' • How: The multi-provider inference chain (Local Ollama, Gemini, Groq, OpenRouter, Cloudflare) could not return candidates.');
+      console.error(' • Why: No active provider key was valid or local Ollama engine was unreachable on http://127.0.0.1:11434.');
+      console.error('\n\x1b[1m⚠️  WHAT PART DIDN\'T DO WELL:\x1b[0m');
+      console.error(' • LLM Inference / Candidate JSON parsing step.');
+      console.error(' • Per strict user instructions, synthetic fallback scripts are disabled.');
+      console.error('\x1b[31m\x1b[1m════════════════════════════════════════════════════════════════════════════════\n\x1b[0m');
+      throw new Error(`[Cartoon Workflow Fatal] Topic discovery failed: ${err.message}. Set TEST_TOPIC="Your topic" or provide active AI keys.`);
     }
   }
 
@@ -179,7 +196,18 @@ async function runCartoonPipelineDiagnostic() {
     );
     console.log('[Runner Result]:', pubResult);
   } else {
-    console.warn('⚠️ Video validation failed: Dispatch to publishing aborted. Review validation_report.json');
+    console.error('\n\x1b[31m\x1b[1m════════════════════════════════════════════════════════════════════════════════\x1b[0m');
+    console.error('\x1b[31m\x1b[1m ❌ [CARTOON WORKFLOW: VIDEO VALIDATION FAILED]\x1b[0m');
+    console.error('\x1b[31m\x1b[1m════════════════════════════════════════════════════════════════════════════════\x1b[0m');
+    console.error('\n\x1b[1m📋 WHAT HAPPENED:\x1b[0m');
+    console.error(' • Video was rendered, but did not meet production criteria.');
+    console.error('\n\x1b[1m🔍 WHAT FAILED & WHY:\x1b[0m');
+    validationReport.errors.forEach((err, idx) => console.error(` ${idx + 1}. ${err}`));
+    console.error('\n\x1b[1m📊 SPECIFIC CHECK RESULTS:\x1b[0m');
+    Object.entries(validationReport.checks).forEach(([k, passed]) => {
+      console.error(` • ${k.padEnd(22)}: ${passed ? '\x1b[32mPASS\x1b[0m' : '\x1b[31mFAIL\x1b[0m'}`);
+    });
+    console.error('\x1b[31m\x1b[1m════════════════════════════════════════════════════════════════════════════════\n\x1b[0m');
   }
 
   console.log('\n====================================================');

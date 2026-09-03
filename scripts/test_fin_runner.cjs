@@ -742,13 +742,36 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
 
     logInfo(`[Hook & Loop Rotation] Intro Hook: "${chosenHookFormat?.name || 'Curiosity'}" | Outro Loop Bridge: "${(chosenOutro || '').slice(0, 45)}..."`);
 
-    // 1. PRIMARY: OpenRouter AI (High-Reliability Multi-Provider Gateway)
+    // 1. PRIMARY (OPTION 1): Local Open-Source AI (Ollama on 127.0.0.1:11434)
+    if (!scriptData) {
+      try {
+        logInfo(`[Storyboard Engine] 1. PRIMARY OPTION: Requesting storyboard from Local Open-Source AI (Ollama on 127.0.0.1:11434)...`);
+        const rawLocal = await callLocalOllamaFin(systemPrompt, userPrompt, activeTopic);
+        if (rawLocal && rawLocal.success && rawLocal.content) {
+          const parsed = cleanLlmJson(rawLocal.content);
+          if (parsed && validateFinStoryboard(parsed)) {
+            if (!isDeepDive && parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
+            parsed.modelUsed = rawLocal.modelName || 'Local Open-Source (Qwen 2.5 1.5B via Ollama)';
+            scriptData = parsed;
+            logSuccess(`[Storyboard Engine] ✅ PRIMARY Local AI (${parsed.modelUsed}) successfully generated ${scriptData.slides.length}-slide storyboard!`);
+          } else {
+            logInfo(`[Storyboard Engine] Local Ollama returned content but schema validation failed -> advancing to cloud providers.`);
+          }
+        } else {
+          logInfo(`[Storyboard Engine] Local Ollama primary check notice: ${rawLocal?.error || 'No active local daemon'} -> advancing to cloud providers.`);
+        }
+      } catch (e) {
+        logInfo(`[Storyboard Engine] Local Ollama primary attempt error: ${e.message} -> advancing to cloud providers.`);
+      }
+    }
+
+    // 2. SECONDARY: OpenRouter AI (High-Reliability Multi-Provider Gateway)
     if (!scriptData && OPENROUTER_API_KEY) {
-      const openRouterModels = ['google/gemini-2.0-flash-001', 'meta-llama/llama-3.3-70b-instruct', 'deepseek/deepseek-chat', 'mistralai/mistral-small-3'];
+      const openRouterModels = ['google/gemini-2.0-flash-001', 'meta-llama/llama-3.3-70b-instruct', 'deepseek/deepseek-chat', 'mistralai/mistral-small-24b-instruct-2501'];
       for (const orModel of openRouterModels) {
         if (scriptData) break;
         try {
-          logInfo(`[Storyboard Engine] 1. Requesting storyboard from OpenRouter (${orModel})...`);
+          logInfo(`[Storyboard Engine] 2. Requesting storyboard from OpenRouter (${orModel})...`);
           const raw = await new Promise((resolve) => {
             const postData = JSON.stringify({
               model: orModel,
@@ -805,13 +828,13 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
       }
     }
 
-    // 2. SECONDARY: Groq LPU Models
+    // 3. TERTIARY: Groq LPU Models (Active Production Models Only - Deprecated Models Removed)
     if (!scriptData && GROQ_API_KEY) {
-      const groqModels = [groqModel, 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-70b-8192', 'llama3-8b-8192'].filter(Boolean);
+      const groqModels = [groqModel, 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'gemma2-9b-it'].filter(Boolean);
       for (const gModel of groqModels) {
         if (scriptData) break;
         try {
-          logInfo(`[Storyboard Engine] 2. Requesting storyboard from Groq LPU (${gModel})...`);
+          logInfo(`[Storyboard Engine] 3. Requesting storyboard from Groq LPU (${gModel})...`);
           const raw = await new Promise((resolve) => {
             const postData = JSON.stringify({
               model: gModel,
@@ -1141,25 +1164,6 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
             }
           }
         } catch {}
-      }
-    }
-
-    // 8. OCTONARY: Local Open-Source AI (Ollama Zero-Key Localhost Fallback)
-    if (!scriptData) {
-      try {
-        logInfo(`[Storyboard Engine] 8. Requesting storyboard from Local Open-Source AI (Ollama on 127.0.0.1:11434)...`);
-        const rawLocal = await callLocalOllamaFin(systemPrompt, userPrompt, activeTopic);
-        if (rawLocal && rawLocal.success && rawLocal.content) {
-          const parsed = cleanLlmJson(rawLocal.content);
-          if (parsed && validateFinStoryboard(parsed)) {
-            if (!isDeepDive && parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
-            parsed.modelUsed = rawLocal.modelName || 'Local Open-Source (Qwen 2.5 1.5B via Ollama)';
-            scriptData = parsed;
-            logSuccess(`[Storyboard Engine] ${parsed.modelUsed} generated complete ${scriptData.slides.length}-slide storyboard!`);
-          }
-        }
-      } catch (e) {
-        logInfo(`[Storyboard Engine] Local Ollama fallback notice: ${e.message}`);
       }
     }
   }

@@ -203,7 +203,7 @@ async function callGemini(topic) {
 async function callGroq(topic) {
   if (!GROQ_API_KEY) throw new Error('GROQ_API_KEY not configured');
 
-  const models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'];
+  const models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'gemma2-9b-it'];
 
   for (const model of models) {
     try {
@@ -227,7 +227,7 @@ async function callGroq(topic) {
             'Content-Type': 'application/json',
             'Content-Length': Buffer.byteLength(body)
           },
-          timeout: 6000
+          timeout: 15000
         }, (res) => {
           let data = '';
           res.on('data', c => data += c);
@@ -245,7 +245,7 @@ async function callGroq(topic) {
           });
         });
         req.on('error', reject);
-        req.on('timeout', () => { req.destroy(); reject(new Error('Groq request timed out (6s)')); });
+        req.on('timeout', () => { req.destroy(); reject(new Error('Groq request timed out (15s)')); });
         req.write(body);
         req.end();
       });
@@ -331,7 +331,7 @@ async function callOpenAI(topic) {
 async function callOpenRouter(topic) {
   if (!OPENROUTER_API_KEY) throw new Error('OPENROUTER_API_KEY not configured');
 
-  const models = ['google/gemini-2.0-flash-001', 'meta-llama/llama-3.3-70b-instruct', 'deepseek/deepseek-chat', 'mistralai/mistral-small-3'];
+  const models = ['google/gemini-2.0-flash-001', 'meta-llama/llama-3.3-70b-instruct', 'deepseek/deepseek-chat', 'mistralai/mistral-small-24b-instruct-2501'];
 
   for (const model of models) {
     try {
@@ -356,7 +356,7 @@ async function callOpenRouter(topic) {
             'X-Title': 'Voxam Cartoon Factory',
             'Content-Length': Buffer.byteLength(body)
           },
-          timeout: 6000
+          timeout: 15000
         }, (res) => {
           let data = '';
           res.on('data', c => data += c);
@@ -374,7 +374,7 @@ async function callOpenRouter(topic) {
           });
         });
         req.on('error', reject);
-        req.on('timeout', () => { req.destroy(); reject(new Error('OpenRouter timed out (6s)')); });
+        req.on('timeout', () => { req.destroy(); reject(new Error('OpenRouter timed out (15s)')); });
         req.write(body);
         req.end();
       });
@@ -399,9 +399,9 @@ async function callCloudflareAI(topic) {
   }
 
   const models = [
-    '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
     '@cf/meta/llama-3.1-8b-instruct',
-    '@cf/mistral/mistral-7b-instruct-v0.1'
+    '@cf/meta/llama-3.2-3b-instruct',
+    '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
   ];
 
   for (const model of models) {
@@ -424,7 +424,7 @@ async function callCloudflareAI(topic) {
             'Content-Type': 'application/json',
             'Content-Length': Buffer.byteLength(body)
           },
-          timeout: 6000
+          timeout: 15000
         }, (res) => {
           let data = '';
           res.on('data', c => data += c);
@@ -443,7 +443,7 @@ async function callCloudflareAI(topic) {
           });
         });
         req.on('error', reject);
-        req.on('timeout', () => { req.destroy(); reject(new Error('Cloudflare request timed out (6s)')); });
+        req.on('timeout', () => { req.destroy(); reject(new Error('Cloudflare request timed out (15s)')); });
         req.write(body);
         req.end();
       });
