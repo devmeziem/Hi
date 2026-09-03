@@ -20,6 +20,8 @@ jobs:
   cartoon_factory_pipeline:
     name: Build & Validate Cartoon Episode
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -40,8 +42,7 @@ jobs:
           sudo apt-get install -y ffmpeg libespeak-ng1 libsndfile1
 
       - name: Install Node Dependencies
-        run: |
-          npm install --legacy-peer-deps --no-audit --no-fund || npm install --force || true
+        run: npm install --legacy-peer-deps --no-audit --no-fund
 
       - name: Install Python Neural Audio Packages
         run: |
@@ -64,7 +65,7 @@ jobs:
       - name: Install Rhubarb Lip Sync 1.13.0
         run: |
           curl -sL "https://github.com/DanielSWolf/rhubarb-lip-sync/releases/download/v1.13.0/Rhubarb-Lip-Sync-1.13.0-Linux.zip" -o rhubarb.zip
-          unzip -q rhubarb.zip -d rhubarb_bin || true
+          unzip -q rhubarb.zip -d rhubarb_bin
           RHUBARB_PATH=$(find rhubarb_bin -name rhubarb -type f | head -n 1)
           if [ -n "$RHUBARB_PATH" ]; then
             sudo cp "$RHUBARB_PATH" /usr/local/bin/rhubarb
@@ -92,12 +93,18 @@ jobs:
 
       - name: Setup Local Open-Source AI Engine (Ollama Zero-Key Fallback)
         run: |
-          echo "Installing Ollama for zero-key local inference fallback..."
+          echo "=== Setting up Ollama for Local AI Inference ==="
           curl -fsSL https://ollama.com/install.sh | sh
           ollama serve > /tmp/ollama.log 2>&1 &
-          sleep 4
-          ollama pull qwen2.5:1.5b || ollama pull qwen2.5:0.5b || true
-          curl -s http://127.0.0.1:11434/api/tags || true
+          sleep 5
+          if curl -s -f http://127.0.0.1:11434/api/tags; then
+            echo "Ollama service started. Pulling model..."
+            ollama pull qwen2.5:1.5b || ollama pull qwen2.5:0.5b
+          else
+            echo "::error::Ollama daemon failed to initialize on port 11434. Logs below:"
+            cat /tmp/ollama.log
+            exit 1
+          fi
 
       - name: Execute Cartoon Factory Pipeline
         env:
@@ -132,6 +139,39 @@ jobs:
             test_artifacts/validation_report.json
             test_artifacts/subtitles.srt
           retention-days: 14
+
+      - name: Commit & Push Daily Blueprint Manifest & Weekly Keep-Alive
+        if: always()
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          mkdir -p .github/activity_logs
+          LOG_FILE=".github/activity_logs/weekly_keepalive.md"
+          
+          # Perform weekly commit to keep GitHub Actions active
+          LAST_COMMIT_DATE=$(git log -1 --format=%ct)
+          NOW=$(date +%s)
+          DIFF_DAYS=$(( (NOW - LAST_COMMIT_DATE) / 86400 ))
+          DAY_OF_WEEK=$(date -u +%u) # 7 = Sunday
+          
+          if [ "$DIFF_DAYS" -ge 6 ] || [ "$DAY_OF_WEEK" -eq 7 ]; then
+            echo "Weekly keepalive commit triggered (diff: $DIFF_DAYS days, day: $DAY_OF_WEEK)..."
+            echo "# GitHub Actions Weekly Keepalive Log" > "$LOG_FILE"
+            echo "Keepalive Heartbeat: $(date -u)" >> "$LOG_FILE"
+            echo "Workflow: Cartoon Animation Factory (${{ github.run_number }})" >> "$LOG_FILE"
+            git add "$LOG_FILE"
+          fi
+          
+          if [ -f daily_blueprint_manifest.json ]; then
+            git add daily_blueprint_manifest.json
+          fi
+          
+          if git diff --staged --quiet; then
+            echo "No changes staged for commit."
+          else
+            git commit -m "chore(sync): automated cartoon manifest and weekly keepalive [skip ci]"
+            git push origin HEAD:${{ github.ref_name }}
+          fi
 
       - name: Cleanup Local Temporary Blobs
         if: always()

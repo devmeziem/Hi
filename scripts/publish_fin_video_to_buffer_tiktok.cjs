@@ -163,41 +163,70 @@ const MANDATORY_FINANCIAL_DISCLAIMER = '⚠️ Educational only. Not financial a
  * Resolve caption text & hashtags from latest video manifest or episode plan
  */
 function resolvePostCaption() {
+  let rawCaption = '';
+
   if (process.env.BUFFER_POST_TEXT && process.env.BUFFER_POST_TEXT.trim().length > 5) {
-    return `${process.env.BUFFER_POST_TEXT.trim()}\n\n${MANDATORY_FINANCIAL_DISCLAIMER}`;
-  }
+    rawCaption = process.env.BUFFER_POST_TEXT.trim();
+  } else {
+    // 1. Check test_artifacts/fin_episode_plan.json
+    const episodePlanPath = path.join(process.cwd(), 'test_artifacts', 'fin_episode_plan.json');
+    if (fs.existsSync(episodePlanPath)) {
+      try {
+        const plan = JSON.parse(fs.readFileSync(episodePlanPath, 'utf8'));
+        if (plan?.title) {
+          const tags = (plan.tags || ['#Shorts', '#finance', '#moneytips', '#business', '#wealth', '#fyp']).join(' ');
+          rawCaption = `${plan.title}\n\n${plan.communityQuestion ? '💡 ' + plan.communityQuestion + '\n\n' : ''}${tags}`;
+        }
+      } catch {}
+    }
 
-  // 1. Check test_artifacts/fin_episode_plan.json
-  const episodePlanPath = path.join(process.cwd(), 'test_artifacts', 'fin_episode_plan.json');
-  if (fs.existsSync(episodePlanPath)) {
-    try {
-      const plan = JSON.parse(fs.readFileSync(episodePlanPath, 'utf8'));
-      if (plan?.title) {
-        const tags = (plan.tags || ['#Shorts', '#finance', '#moneytips', '#business', '#wealth', '#fyp']).join(' ');
-        return `${plan.title}\n\n${plan.communityQuestion ? '💡 ' + plan.communityQuestion + '\n\n' : ''}${MANDATORY_FINANCIAL_DISCLAIMER}\n\n${tags}`;
+    if (!rawCaption) {
+      // 2. Check daily_blueprint_manifest.json
+      const manifestPath = path.join(process.cwd(), 'daily_blueprint_manifest.json');
+      if (fs.existsSync(manifestPath)) {
+        try {
+          const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+          const last = Array.isArray(manifest) ? manifest[manifest.length - 1] : manifest;
+          if (last?.title) {
+            rawCaption = `${last.title}\n\n#Shorts #finance #moneytips #business #sidehustle #fyp`;
+          }
+        } catch {}
       }
-    } catch {}
+    }
+
+    if (!rawCaption) {
+      rawCaption = `${process.env.TEST_TOPIC || 'How to Build Cash Flow with Small Capital'}\n\n#Shorts #finance #moneytips #fyp`;
+    }
   }
 
-  // 2. Check daily_blueprint_manifest.json
-  const manifestPath = path.join(process.cwd(), 'daily_blueprint_manifest.json');
-  if (fs.existsSync(manifestPath)) {
-    try {
-      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-      const last = Array.isArray(manifest) ? manifest[manifest.length - 1] : manifest;
-      if (last?.title) {
-        return `${last.title}\n\n${MANDATORY_FINANCIAL_DISCLAIMER}\n\n#Shorts #finance #moneytips #business #sidehustle #fyp`;
-      }
-    } catch {}
+  // Strictly strip any AI engine disclosure or model references from TikTok caption
+  rawCaption = rawCaption.replace(/🤖.*AI (?:Script )?Architecture.*$/gim, '').trim();
+  rawCaption = rawCaption.replace(/AI Engine.*$/gim, '').trim();
+
+  // Enforce TikTok caption character limit (under 2,000 chars)
+  if (rawCaption.length > 1800) {
+    rawCaption = rawCaption.slice(0, 1780) + '...';
   }
 
-  return `${process.env.TEST_TOPIC || 'How to Build Cash Flow with Small Capital'}\n\n${MANDATORY_FINANCIAL_DISCLAIMER}\n\n#Shorts #finance #moneytips #fyp`;
+  return `${rawCaption}\n\n${MANDATORY_FINANCIAL_DISCLAIMER}`;
 }
 
 /**
  * Upload local video file to Cloudinary unsigned endpoint
  */
 async function uploadToCloudinary(videoPath) {
+  // Check if an existing public Cloudinary URL is already present in artifacts
+  const episodePlanPath = path.join(process.cwd(), 'test_artifacts', 'fin_episode_plan.json');
+  if (fs.existsSync(episodePlanPath)) {
+    try {
+      const plan = JSON.parse(fs.readFileSync(episodePlanPath, 'utf8'));
+      if (plan?.renderedVideoUrl && /^https:\/\/res\.cloudinary\.com\//.test(plan.renderedVideoUrl)) {
+        console.log(`[Buffer/TikTok] Reusing verified Cloudinary video URL from episode plan: ${plan.renderedVideoUrl}`);
+        return plan.renderedVideoUrl;
+      }
+    } catch {}
+  }
+
   validateCloudinaryConfig();
   console.log(`\n[Buffer/TikTok] 📤 Uploading ${path.basename(videoPath)} (${Math.round(fs.statSync(videoPath).size / 1024)} KB) to Cloudinary...`);
 
@@ -237,41 +266,57 @@ async function uploadToCloudinary(videoPath) {
  */
 async function resolveTikTokChannel() {
   if (BUFFER_TIKTOK_CHANNEL_ID) {
-    const data = await bufferRequest(`query GetChannel($id: ChannelId!) {
-      channel(input: { id: $id }) { id name displayName service isDisconnected isLocked }
-    }`, { id: BUFFER_TIKTOK_CHANNEL_ID });
+    try {
+      const data = await bufferRequest(`query GetChannel($id: ChannelId!) {
+        channel(input: { id: $id }) { id name displayName service isDisconnected isLocked }
+      }`, { id: BUFFER_TIKTOK_CHANNEL_ID });
 
-    const channel = data?.channel;
-    if (channel) {
-      if (channel.isDisconnected) fail(`The configured TikTok channel (${channel.displayName || channel.name}) is disconnected from Buffer.`);
-      if (channel.isLocked) fail(`The configured TikTok channel (${channel.displayName || channel.name}) is locked in Buffer.`);
-      return channel;
+      const channel = data?.channel;
+      if (channel) {
+        if (channel.isDisconnected) fail(`The configured TikTok channel (${channel.displayName || channel.name}) is disconnected from Buffer.`);
+        if (channel.isLocked) fail(`The configured TikTok channel (${channel.displayName || channel.name}) is locked in Buffer.`);
+        console.log(`[Buffer/TikTok] Verified target channel by ID: "${channel.displayName || channel.name}" (${channel.service || 'TikTok'}, ID: ${channel.id})`);
+        return channel;
+      }
+    } catch (err) {
+      logWarn(`Direct channel lookup with ID ${BUFFER_TIKTOK_CHANNEL_ID} failed: ${err.message}. Proceeding to auto-discovery...`);
     }
   }
 
-  // Auto-discover TikTok channels from account
+  // Auto-discover TikTok channels from account organizations
   console.log('[Buffer/TikTok] Querying Buffer account for connected channels...');
-  const accountData = await bufferRequest(`query GetAccountChannels {
-    account {
-      organizations {
-        channels {
+  let orgs = [];
+  try {
+    const accountData = await bufferRequest(`query GetAccountChannels {
+      account {
+        organizations {
           id
           name
-          displayName
-          service
-          isDisconnected
-          isLocked
+          channels {
+            id
+            name
+            displayName
+            service
+            isDisconnected
+            isLocked
+          }
         }
       }
-    }
-  }`);
+    }`);
+    orgs = accountData?.account?.organizations || [];
+  } catch (err) {
+    logWarn(`Buffer account query notice: ${err.message}`);
+  }
 
-  const orgs = accountData?.account?.organizations || [];
+  const allDiscoveredChannels = [];
   let foundTikTok = null;
 
   for (const org of orgs) {
     for (const ch of (org.channels || [])) {
-      if (ch.service === 'tiktok' && !ch.isDisconnected && !ch.isLocked) {
+      allDiscoveredChannels.push(ch);
+      const svc = String(ch.service || '').toLowerCase();
+      const name = String(ch.displayName || ch.name || '').toLowerCase();
+      if ((svc === 'tiktok' || svc.includes('tiktok') || name.includes('tiktok')) && !ch.isDisconnected && !ch.isLocked) {
         foundTikTok = ch;
         break;
       }
@@ -280,9 +325,13 @@ async function resolveTikTokChannel() {
   }
 
   if (!foundTikTok) {
+    const channelSummary = allDiscoveredChannels.length > 0
+      ? allDiscoveredChannels.map(c => `[${c.service || 'unknown'}: "${c.displayName || c.name}" (ID: ${c.id})]`).join(', ')
+      : 'None found';
+
     fail('Could not find an active TikTok channel in your Buffer account.', {
       what: 'Buffer account channel discovery for TikTok',
-      why: 'No connected, non-locked TikTok channels were returned by the Buffer GraphQL API.',
+      why: `No connected, non-locked TikTok channels were found. Available channels in Buffer: ${channelSummary}`,
       fixes: [
         'Visit Buffer Channels settings: https://publish.buffer.com/channels',
         'Click "Connect Channel" -> Select "TikTok"',
@@ -300,7 +349,10 @@ async function resolveTikTokChannel() {
  * Create video post queue item on Buffer
  */
 async function createBufferPost(channel, mediaUrl, caption) {
-  console.log(`\n[Buffer/TikTok] 📝 Queuing post with caption:\n"${caption.slice(0, 120)}..."`);
+  console.log(`\n[Buffer/TikTok] 📝 Queuing post to TikTok with caption:\n"${caption.slice(0, 120)}..."`);
+
+  const mode = process.env.BUFFER_SHARE_NOW === 'true' ? 'shareNow' : 'addToQueue';
+  const thumbnailOffsetMs = parseInt(process.env.BUFFER_THUMBNAIL_OFFSET_MS || '2000', 10);
 
   const query = `mutation CreateVideoPost($input: CreatePostInput!) {
     createPost(input: $input) {
@@ -319,15 +371,39 @@ async function createBufferPost(channel, mediaUrl, caption) {
     }
   }`;
 
-  const input = {
+  // Attempt with recommended TikTok thumbnailOffset metadata
+  let input = {
     text: caption,
     channelId: channel.id,
     schedulingType: 'automatic',
-    mode: 'addToQueue',
-    assets: [{ video: { url: mediaUrl } }]
+    mode: mode,
+    assets: [
+      {
+        video: {
+          url: mediaUrl,
+          metadata: {
+            thumbnailOffset: thumbnailOffsetMs
+          }
+        }
+      }
+    ]
   };
 
-  const data = await bufferRequest(query, { input });
+  let data;
+  try {
+    data = await bufferRequest(query, { input });
+  } catch (err) {
+    logWarn(`Initial VideoAssetInput with metadata returned error: ${err.message}. Retrying with direct video asset payload...`);
+    input = {
+      text: caption,
+      channelId: channel.id,
+      schedulingType: 'automatic',
+      mode: mode,
+      assets: [{ video: { url: mediaUrl } }]
+    };
+    data = await bufferRequest(query, { input });
+  }
+
   const result = data?.createPost;
 
   if (!result) {
@@ -361,11 +437,29 @@ async function createBufferPost(channel, mediaUrl, caption) {
     });
   }
 
+  // Record Buffer TikTok status into manifest
+  try {
+    const manifestPath = path.join(process.cwd(), 'daily_blueprint_manifest.json');
+    if (fs.existsSync(manifestPath)) {
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+      if (Array.isArray(manifest) && manifest.length > 0) {
+        manifest[manifest.length - 1].bufferTiktokPostId = result.post.id;
+        manifest[manifest.length - 1].bufferTiktokStatus = result.post.status;
+        manifest[manifest.length - 1].bufferTiktokChannel = channel.displayName || channel.name;
+        manifest[manifest.length - 1].bufferTiktokPublishedAt = new Date().toISOString();
+        fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+      }
+    }
+  } catch (e) {
+    logWarn(`Could not update manifest with Buffer TikTok post ID: ${e.message}`);
+  }
+
   console.log(`\n==================================================`);
   console.log(`🚀 [Buffer/TikTok] SUCCESS! Video added to Buffer queue!`);
   console.log(`📌 Post ID: ${result.post.id}`);
   console.log(`📅 Status:  ${result.post.status}`);
   console.log(`🎯 Channel: ${channel.displayName || channel.name} (TikTok)`);
+  console.log(`🌐 Media:   ${mediaUrl}`);
   console.log(`==================================================\n`);
 }
 

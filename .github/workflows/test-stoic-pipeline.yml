@@ -33,6 +33,8 @@ jobs:
   test_pipeline:
     name: Run Stoic Pipeline Diagnostic
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -43,8 +45,7 @@ jobs:
           node-version: 20
 
       - name: Install Dependencies
-        run: |
-          npm install --legacy-peer-deps --no-audit --no-fund || npm install --force || true
+        run: npm install --legacy-peer-deps --no-audit --no-fund
 
       - name: Install FFmpeg Media Engine
         run: |
@@ -56,12 +57,18 @@ jobs:
 
       - name: Setup Local Open-Source AI Engine (Ollama Zero-Key Fallback)
         run: |
-          echo "Installing Ollama for zero-key local inference fallback..."
+          echo "=== Setting up Ollama for Local AI Inference ==="
           curl -fsSL https://ollama.com/install.sh | sh
           ollama serve > /tmp/ollama.log 2>&1 &
-          sleep 4
-          ollama pull qwen2.5:1.5b || ollama pull qwen2.5:0.5b || true
-          curl -s http://127.0.0.1:11434/api/tags || true
+          sleep 5
+          if curl -s -f http://127.0.0.1:11434/api/tags; then
+            echo "Ollama service started. Pulling model..."
+            ollama pull qwen2.5:1.5b || ollama pull qwen2.5:0.5b
+          else
+            echo "::error::Ollama daemon failed to initialize on port 11434. Logs below:"
+            cat /tmp/ollama.log
+            exit 1
+          fi
 
       - name: Execute Stoic & Motivation Pipeline Diagnostic
         env:
@@ -91,17 +98,37 @@ jobs:
           FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
         run: node scripts/test_stoic_runner.cjs
 
-      - name: Commit & Push Daily Blueprint Manifest to Repository
+      - name: Commit & Push Daily Blueprint Manifest & Weekly Keep-Alive
         if: always()
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add daily_blueprint_manifest.json 2>/dev/null || true
+          mkdir -p .github/activity_logs
+          LOG_FILE=".github/activity_logs/weekly_keepalive.md"
+          
+          # Perform weekly commit to keep GitHub Actions active
+          LAST_COMMIT_DATE=$(git log -1 --format=%ct)
+          NOW=$(date +%s)
+          DIFF_DAYS=$(( (NOW - LAST_COMMIT_DATE) / 86400 ))
+          DAY_OF_WEEK=$(date -u +%u) # 7 = Sunday
+          
+          if [ "$DIFF_DAYS" -ge 6 ] || [ "$DAY_OF_WEEK" -eq 7 ]; then
+            echo "Weekly keepalive commit triggered (diff: $DIFF_DAYS days, day: $DAY_OF_WEEK)..."
+            echo "# GitHub Actions Weekly Keepalive Log" > "$LOG_FILE"
+            echo "Keepalive Heartbeat: $(date -u)" >> "$LOG_FILE"
+            echo "Workflow: Stoic & Motivation (${{ github.run_number }})" >> "$LOG_FILE"
+            git add "$LOG_FILE"
+          fi
+          
+          if [ -f daily_blueprint_manifest.json ]; then
+            git add daily_blueprint_manifest.json
+          fi
+          
           if git diff --staged --quiet; then
-            echo "No changes to daily_blueprint_manifest.json."
+            echo "No changes staged for commit."
           else
-            git commit -m "chore(manifest): sync stoic posted video metadata [skip ci]"
-            git push origin HEAD:${{ github.ref_name }} || echo "Auto-commit push skipped or branch protected."
+            git commit -m "chore(sync): automated stoic manifest and weekly keepalive [skip ci]"
+            git push origin HEAD:${{ github.ref_name }}
           fi
 
       - name: Cleanup Local Temporary Media & Blobs

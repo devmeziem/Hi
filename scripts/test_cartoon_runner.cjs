@@ -173,7 +173,7 @@ async function runCartoonPipelineDiagnostic() {
       null,
       {
         title: episodePlan.title,
-        description: `${episodePlan.title}\n\nJoin Archie for fast explanations of science, tech, and everyday mysteries!\n\n🤖 AI Script Architecture: ${episodePlan.modelUsed || 'AI Core'}\n\n#Shorts #Cartoon #Animation #Science #Explained`,
+        description: `${episodePlan.title}\n\nJoin Archie for fast explanations of science, tech, and everyday mysteries!\n\n#Shorts #Cartoon #Animation #Science #Explained`,
         tags: ['Shorts', 'Cartoon', 'Science', 'Animation', 'Explained', 'Archie']
       }
     );

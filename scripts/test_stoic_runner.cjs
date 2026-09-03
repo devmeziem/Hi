@@ -1161,50 +1161,7 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
     }
   }
 
-  // 9. NONARY: DuckDuckGo Semantic AI Script Engine (Zero-Key Real-Time Semantic Fallback)
-  if (!scriptData) {
-    try {
-      logInfo(`[Storyboard Engine] 9. Requesting dynamic storyboard from DuckDuckGo Semantic AI Engine...`);
-      const cleanTopic = topic.replace(/#\w+/g, '').trim();
-      const dynamicStoicPlan = {
-        title: `${cleanTopic} | Stoic Wisdom #Shorts`,
-        theme: activeArch.theme || 'Inner Mastery & Emotional Fortitude',
-        angle: activeArch.angle || 'Applying Stoic philosophy in high-pressure modern situations',
-        script: `When chaos strikes, the undisciplined react with panic, but the master pauses and observes. Marcus Aurelius taught that external events have zero power over your inner citadel unless you surrender it. Train your perception to separate what you control from what you cannot. What you control is your discipline, your response, and your relentless pursuit of virtue. Practice strategic silence when provoked; your composure is your strongest armor. Today, choose to turn every obstacle into fuel for your personal growth.`,
-        slides: [
-          {
-            text: `When chaos strikes, the undisciplined react with panic, but the master pauses and observes.`,
-            visual: `Photorealistic 9:16 vertical cinematic shot of an ancient marble statue of Marcus Aurelius under dramatic side lighting in a rain-swept courtyard, hyper-detailed, 8k resolution, Unreal Engine 5 cinematic render.`
-          },
-          {
-            text: `Marcus Aurelius taught that external events have zero power over your inner citadel unless you surrender it.`,
-            visual: `Photorealistic 9:16 vertical close-up of a stoic philosopher deep in thought inside an ancient stone rotunda, golden hour rim light, volumetric fog, photorealistic skin textures.`
-          },
-          {
-            text: `Train your perception daily to separate what you control from what lies completely outside your power.`,
-            visual: `Cinematic 9:16 vertical visual of glowing scales of justice balancing chaos and calm, dark bronze aesthetic, shallow depth of field, 8k render.`
-          },
-          {
-            text: `What you control is your discipline, your focus, and your relentless pursuit of virtue.`,
-            visual: `Photorealistic 9:16 vertical shot of a lone warrior standing firmly atop a misty mountain ridge at dawn, wind blowing cape, high contrast cinematic lighting.`
-          },
-          {
-            text: `Practice strategic silence when provoked; your composure is your greatest psychological weapon.`,
-            visual: `Dramatic 9:16 vertical macro shot of an ancient Roman signet ring pressing hot sealing wax onto parchment, warm candlelight reflections, hyper-detailed.`
-          },
-          {
-            text: `Today, remember: the obstacle is never in your way—the obstacle becomes the way.`,
-            visual: `Photorealistic 9:16 vertical epic scene of golden sunrise breaking through dark stormy clouds over an ancient Roman colosseum, cinematic god rays, 8k.`
-          }
-        ]
-      };
-      dynamicStoicPlan.modelUsed = 'DuckDuckGo Semantic AI Script Engine';
-      scriptData = dynamicStoicPlan;
-      logSuccess(`[Storyboard Engine] DuckDuckGo Semantic AI Engine generated full ${scriptData.slides.length}-slide storyboard!`);
-    } catch {}
-  }
-
-  // 10. STRICT AI GENERATION ENFORCEMENT & COMPREHENSIVE DIAGNOSTIC LOGS
+  // STRICT AI GENERATION ENFORCEMENT & COMPREHENSIVE DIAGNOSTIC LOGS
   if (!scriptData || !Array.isArray(scriptData.slides) || scriptData.slides.length < 3) {
     const targetTopicLabel = topic || 'Stoic Philosophy & Mindset';
     
@@ -1267,12 +1224,8 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
   // Enforce strict YouTube title formatting with complete viral and trending hashtags
   scriptData.title = formatViralShortsTitle(scriptData.title || activeTopic || 'Stoic Rule for Mental Strength', 'stoic', isDeepDive);
 
-  // Append exact AI engine disclosure to video description
-  const aiDisclosure = `🤖 AI Script Architecture: ${scriptData.modelUsed || 'AI Core'}`;
-  if (scriptData.description && !scriptData.description.includes('AI Script Architecture')) {
-    scriptData.description = `${scriptData.description.trim()}\n\n${aiDisclosure}`;
-  } else if (!scriptData.description) {
-    scriptData.description = `${scriptData.title}\n\n${aiDisclosure}`;
+  if (!scriptData.description) {
+    scriptData.description = `${scriptData.title}\n\nDaily timeless wisdom and stoic mindset strategies with The Stoic Architect (@thestoicarchitect-n4b).\n\n#Stoic #Shorts #viral #trending #MarcusAurelius #Discipline #Mindset #Philosophy #fyp`;
   }
 
   console.log(`\n  ${colors.bright}Generated Complete Storyboard Breakdown:${colors.reset}`);
@@ -2139,6 +2092,7 @@ async function handleYouTubePublish(storyboard, renderResult) {
         status: {
           privacyStatus: 'public',
           selfDeclaredMadeForKids: false,
+          containsSyntheticMedia: true,
           embeddable: true
         }
       });

@@ -1217,12 +1217,8 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
   // Ensure title is complete, un-truncated, and equipped with viral & trending hashtags
   scriptData.title = formatViralShortsTitle(scriptData.title || fallbackTopic, 'fin', isDeepDive);
 
-  // Append exact AI engine disclosure to video description
-  const aiDisclosure = `🤖 AI Script Architecture: ${scriptData.modelUsed || 'AI Core'}`;
-  if (scriptData.description && !scriptData.description.includes('AI Script Architecture')) {
-    scriptData.description = `${scriptData.description.trim()}\n\n${aiDisclosure}`;
-  } else if (!scriptData.description) {
-    scriptData.description = `${scriptData.title}\n\n${aiDisclosure}`;
+  if (!scriptData.description) {
+    scriptData.description = `${scriptData.title}\n\nPractical money management and small-business strategies with @bones_ceo.\n\n#FinBlueprint #Shorts #viral #trending #PersonalFinance #SmallBusiness #Wealth #Entrepreneurship #fyp`;
   }
 
   // Safety & Single Currency Compliance Audit

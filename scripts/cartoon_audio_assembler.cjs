@@ -175,10 +175,10 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
     const bgInput = (bgImage && fs.existsSync(bgImage)) ? bgImage : svgPath;
     const isCloseUp = camera === 'close_up' || camera === 'medium_to_close';
     const zoomFilter = isCloseUp
-      ? `zoompan=z='min(zoom+0.0015,1.2)':d=${Math.ceil(duration * 30)}:x='iw/2-(iw/zoom/2)':y='ih/3-(ih/zoom/3)':s=1080x1920:fps=30`
-      : `zoompan=z='min(zoom+0.0008,1.08)':d=${Math.ceil(duration * 30)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
+      ? `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0015,1.2)':d=${Math.ceil(duration * 30)}:x='iw/2-(iw/zoom/2)':y='ih/3-(ih/zoom/3)':s=1080x1920:fps=30`
+      : `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0008,1.08)':d=${Math.ceil(duration * 30)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
 
-    const ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -i "${wavPath}" -filter_complex "[0:v]${zoomFilter},format=yuv420p[v]" -map "[v]" -map 1:a -c:v libx264 -preset ultrafast -c:a aac -b:a 192k -shortest "${outputSceneMp4}"`;
+    const ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -i "${wavPath}" -filter_complex "[0:v]${zoomFilter},format=yuv420p[v]" -map "[v]" -map 1:a -c:v libx264 -preset medium -crf 20 -c:a aac -b:a 192k -shortest "${outputSceneMp4}"`;
     
     try {
       execSync(ffmpegCmd, { stdio: 'pipe', timeout: 60000 });

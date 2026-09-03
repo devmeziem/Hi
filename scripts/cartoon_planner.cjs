@@ -32,7 +32,9 @@ Science, Technology, Money/Business, History, Everyday-Life Explanations, Invest
 
 RULES:
 1. Generate an engaging 3 to 5 scene script for a fast-paced vertical video (30-60 seconds total).
-2. Each scene MUST have:
+2. The AI takes the chosen topic and the details provided by the trending search to create deep, insightful, accurate content.
+3. LOOPY SCRIPT STRUCTURE (MANDATORY WHERE POSSIBLE): Ensure the script is seamlessly loopy. The final spoken line or concluding words of the last scene must naturally and grammatically connect back into the first sentence of scene 1, making rewatching seamless on YouTube Shorts and TikTok.
+4. Each scene MUST have:
    - "scene": integer (1, 2, 3...)
    - "duration": estimated seconds for narration (e.g. 5.0 to 10.0)
    - "dialogue": spoken lines by ${DEFAULT_CHARACTER} (snappy, conversational, educational, clear)
@@ -42,7 +44,7 @@ RULES:
    - "objects": array of visual props/items in the scene (e.g. ["smartphone", "wifi_waves", "satellite"])
    - "background_style": visual environment theme (e.g. "tech_studio", "neon_tech_lab", "deep_space", "ocean_seabed", "candlestick_chart_market", "inside_computer")
    - "effects": array of 2D visual effects (e.g. ["signal_pulse", "glowing_wire", "floating_question_mark", "binary_rain"])
-3. Output MUST be ONLY valid JSON matching this schema:
+5. Output MUST be ONLY valid JSON matching this schema:
 {
   "topic": "string",
   "title": "Short, punchy, high-CTR title (under 55 chars)",
@@ -587,65 +589,6 @@ async function generateCartoonEpisodePlan(topic) {
   } catch (err) {
     errors.push(`Local Ollama: ${err.message}`);
   }
-
-  // 8. DuckDuckGo Semantic AI Script Engine (Zero-Key Real-Time Intelligence)
-  try {
-    const dynamicPlan = {
-      topic: targetTopic,
-      title: `${targetTopic.replace(/#Shorts/gi, '').trim()} Explained`,
-      character_name: DEFAULT_CHARACTER,
-      target_duration_seconds: 35,
-      category: 'technology',
-      scenes: [
-        {
-          scene: 1,
-          duration: 7.0,
-          dialogue: `Ever wondered about ${targetTopic.replace(/#Shorts/gi, '').trim()}? The real answer is mind-blowing.`,
-          character_action: 'point_right',
-          emotion: 'curious',
-          camera: 'medium_to_close',
-          objects: ['magnifying_glass', 'glowing_orb', 'digital_diagram'],
-          background_style: 'neon_tech_lab',
-          effects: ['signal_pulse', 'sparkles']
-        },
-        {
-          scene: 2,
-          duration: 9.0,
-          dialogue: `At its core, this breakthrough solves the exact bottleneck engineers have faced for decades.`,
-          character_action: 'talking',
-          emotion: 'thinking',
-          camera: 'medium',
-          objects: ['gear_mechanism', 'data_stream', 'blueprint_sheet'],
-          background_style: 'tech_studio',
-          effects: ['binary_rain', 'glowing_wire']
-        },
-        {
-          scene: 3,
-          duration: 8.5,
-          dialogue: `By harnessing modern architecture, speed and efficiency are compounded in real time.`,
-          character_action: 'point_left',
-          emotion: 'excited',
-          camera: 'close_up',
-          objects: ['speedometer', 'lightning_bolt', 'microchip'],
-          background_style: 'inside_computer',
-          effects: ['motion_blur_lines', 'energy_blast']
-        },
-        {
-          scene: 4,
-          duration: 7.5,
-          dialogue: `And that is the real secret behind it. Subscribe for daily mind-expanding breakdowns!`,
-          character_action: 'surprise',
-          emotion: 'happy',
-          camera: 'medium_to_close',
-          objects: ['bell_icon', 'spark_cluster', 'trophy'],
-          background_style: 'tech_studio',
-          effects: ['confetti_burst', 'golden_glow']
-        }
-      ]
-    };
-    console.log(`[AI Planner] ✅ Successfully generated plan via DuckDuckGo Semantic AI Script Engine`);
-    return { ...dynamicPlan, modelUsed: 'DuckDuckGo Semantic AI Script Engine' };
-  } catch {}
 
   // Fatal Error Diagnostic Report: Fallback / preset scripts are strictly removed per user directive
   console.error(`\n\x1b[31m\x1b[1m════════════════════════════════════════════════════════════════════════════════\x1b[0m`);

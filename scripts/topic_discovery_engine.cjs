@@ -333,6 +333,7 @@ async function saveChosenTopicToDatabase(winningTopic, niche = 'fin', modelUsed 
     if (!Array.isArray(existing)) existing = [];
     existing.unshift(record);
     fs.writeFileSync(cacheFile, JSON.stringify(existing.slice(0, 100), null, 2), 'utf8');
+    console.log(`[Topic DB] Successfully saved chosen topic to local cache (${path.basename(cacheFile)}). Total cached: ${existing.length}`);
   } catch (err) {
     console.warn(`[Topic DB] Local cache write warning: ${err.message}`);
   }
@@ -366,16 +367,33 @@ async function saveChosenTopicToDatabase(winningTopic, niche = 'fin', modelUsed 
         const req = https.request(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postBody) },
-          timeout: 6000
+          timeout: 8000
         }, (res) => {
-          res.on('data', () => {});
-          res.on('end', resolve);
+          let resBody = '';
+          res.on('data', c => resBody += c);
+          res.on('end', () => {
+            if (res.statusCode >= 200 && res.statusCode < 300) {
+              console.log(`[Topic DB] ✅ Successfully saved chosen topic to Firestore database (/chosen_topics/${docId})`);
+            } else {
+              console.warn(`[Topic DB] ⚠️ Firestore write responded with HTTP ${res.statusCode}: ${resBody.slice(0, 150)}`);
+            }
+            resolve();
+          });
         });
-        req.on('error', resolve);
-        req.on('timeout', () => { req.destroy(); resolve(); });
+        req.on('error', (err) => {
+          console.warn(`[Topic DB] ⚠️ Firestore connection error: ${err.message}`);
+          resolve();
+        });
+        req.on('timeout', () => {
+          req.destroy();
+          console.warn('[Topic DB] ⚠️ Firestore request timed out after 8s');
+          resolve();
+        });
         req.write(postBody);
         req.end();
       });
+    } else {
+      console.log('[Topic DB] Note: Firestore Project ID / API Key not configured; persisted to local database cache.');
     }
   } catch (err) {
     console.warn(`[Topic DB] Firestore write notice: ${err.message}`);
@@ -656,17 +674,8 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null) 
     if (localRes && localRes.success) return localRes;
   } catch {}
 
-  // 8. Live DuckDuckGo Semantic AI Trend Engine (Zero-Key Real-Time Intelligence)
-  try {
-    // Generate 5 intelligent candidates based on prompt context
-    return {
-      success: true,
-      modelUsed: 'DuckDuckGo Live AI Trend Engine',
-      data: null // Will trigger intelligent semantic generation from live DDG trends & spheres
-    };
-  } catch {}
-
-  throw new Error('All active AI models failed to execute JSON topic discovery & selection.');
+  // 8. Error reporting - All AI inference engines failed
+  throw new Error('All active AI inference models failed to execute topic discovery & selection.');
 }
 
 // ----------------------------------------------------
@@ -726,11 +735,18 @@ async function discoverAndSelectTopicViaActiveAi(nicheKey = 'fin', options = {})
 Target Audience: ${nicheConfig.targetAudience}
 
 YOUR MANDATE:
-1. Review the real-time DuckDuckGo search context from today and the 21+ thematic spheres.
-2. Formulate EXACTLY 5 distinct, high-CTR, highly actionable candidate topics.
-3. Review the database of previously posted topics to guarantee ZERO repetitive duplicates.
-4. From the 5 candidates, select EXACTLY 1 winning topic for immediate production.
-5. Provide clear rationale for why the winner won, and explicitly note why the other 4 candidates are eliminated/deleted.
+1. DUCKDUCKGO SEARCH INSIGHTS: Analyze the real-time search topics, questions, and insights discovered from DuckDuckGo today.
+2. 21+ THEMATIC ARCHETYPE SPHERES: Connect the trending search signals with relevant sphere archetypes.
+3. CANDIDATE FORMULATION: Formulate candidate topics based on the trending search details.
+4. AI DATABASE SIMILARITY & DEDUPLICATION VERIFICATION:
+   Compare each candidate topic against EVERY single previously saved topic in our database.
+   Verify if there are any conceptual, thematic, or keyword similarities with past videos.
+   If a candidate is similar to any previous database topic, mark it as duplicate and eliminate it.
+   ONLY select a topic if it is 100% NEW and verified to have ZERO similarities with past database records.
+5. LOOPY RETENTION DESIGN:
+   Design the chosen topic and its core angle to be loopy where possible (the ending line of the video seamlessly loops back into the opening hook line).
+6. SELECTION RATIONALE:
+   Explain why the chosen topic is verified unique against the database and how the DuckDuckGo search details will be used to build the script.
 
 Return strictly valid JSON with this exact schema:
 {
@@ -742,87 +758,45 @@ Return strictly valid JSON with this exact schema:
       "title": "High-Impact Topic Headline #Shorts #viral",
       "angle": "Unique tactical breakdown angle",
       "coreHook": "Opening spoken hook sentence",
-      "estimatedBudget": "$5",
-      "targetAudienceFit": "Why this resonates with beginners"
-    },
-    ... (total 5 distinct candidates)
+      "searchDetailsUsed": "Specific insight or trend details from DuckDuckGo used here",
+      "similarityCheck": "Verified non-similar to past database topics",
+      "isUnique": true,
+      "loopyHookConcept": "How the ending loops back into the opening hook"
+    }
   ],
-  "deduplicationAnalysis": "Brief 1-2 sentence confirmation that candidates avoid overlap with past database topics",
   "chosenWinnerId": 1,
-  "selectionRationale": "Why this specific topic is the #1 highest-CTR and most actionable pick for today",
+  "deduplicationAnalysis": "Detailed verification report proving zero similarity to previously saved database topics",
+  "selectionRationale": "Why this specific topic is chosen based on search trends, search insights, and verified uniqueness",
   "discardedNotes": [
-    { "candidateId": 2, "reason": "Reason candidate 2 was deleted/discarded" },
-    { "candidateId": 3, "reason": "Reason candidate 3 was deleted/discarded" },
-    { "candidateId": 4, "reason": "Reason candidate 4 was deleted/discarded" },
-    { "candidateId": 5, "reason": "Reason candidate 5 was deleted/discarded" }
+    { "candidateId": 2, "reason": "Reason candidate 2 was eliminated (e.g. similarity or weaker angle)" }
   ]
 }`;
 
-  const userPrompt = `TODAY'S LIVE DUCKDUCKGO SEARCH CONTEXT:
+  const userPrompt = `TODAY'S LIVE DUCKDUCKGO SEARCH TRENDS & INSIGHTS:
 ${ddgContextStr || 'General trending search interest in small business, practical mindset, and financial resilience.'}
 
 21+ THEMATIC SCOPES & SPHERES:
 ${spheresJsonStr}
 
-DATABASE OF PREVIOUSLY POSTED TOPICS (MUST DEDUPLICATE & AVOID REPEATING):
+DATABASE OF PREVIOUSLY SAVED TOPICS (CHECK FOR SIMILARITIES - REJECT ANY DUPLICATES):
 ${pastTopicsListStr || 'None yet.'}
 
-Generate 5 fresh candidate topics across different spheres, evaluate against database history, choose the 1 winning topic, and discard the other 4. Return valid JSON only.`;
+Formulate candidate topics from DuckDuckGo trends, check for similarities against the past database, ensure zero similarity, choose 1 winning unique topic, and return strictly valid JSON.`;
 
   const aiResult = await callActiveAiForJson(systemPrompt, userPrompt);
   let parsedData = aiResult.data;
   const modelUsed = aiResult.modelUsed;
 
-  // If external LLM returned raw or null, synthesize 5 intelligent candidates from live DDG results & 21+ spheres
+  // Strict enforcement: Do NOT generate synthetic/preset scripts if AI fails!
   if (!parsedData || !Array.isArray(parsedData.candidates) || parsedData.candidates.length === 0) {
-    // Select 5 distinct random spheres from the 21+ spheres
-    const shuffledSpheres = [...nicheConfig.spheres].sort(() => 0.5 - Math.random());
-    const selectedSpheres = shuffledSpheres.slice(0, 5);
-
-    const candidates = selectedSpheres.map((s, idx) => {
-      const ddgSnippet = ddgResults[idx] ? ddgResults[idx].title : '';
-      let title = '';
-      let hook = '';
-      let angle = s.desc;
-
-      if (nicheKey === 'fin') {
-        title = `${s.name}: $5 to Cashflow Strategy #Shorts`;
-        hook = `If you have five dollars and a smartphone, this exact protocol generates cashflow.`;
-      } else if (nicheKey === 'stoic') {
-        title = `Marcus Aurelius on ${s.name} #Shorts`;
-        hook = `The next time you face chaos, apply this ancient Stoic law immediately.`;
-      } else {
-        title = `The Hidden Science of ${s.name} #Shorts`;
-        hook = `Here is the mind-blowing physics behind what actually happens.`;
-      }
-
-      return {
-        id: idx + 1,
-        sphereId: s.id,
-        sphereName: s.name,
-        title: title,
-        angle: angle,
-        coreHook: hook,
-        estimatedBudget: '$5',
-        targetAudienceFit: `High-retention focus on ${s.name.toLowerCase()}`
-      };
-    });
-
-    // Deduplicate against past database topics
-    const pastTitles = new Set(pastTopics.map(p => (p.topic || p.title || '').toLowerCase()));
-    const validCandidates = candidates.filter(c => !pastTitles.has(c.title.toLowerCase()));
-    const finalCandidates = validCandidates.length > 0 ? validCandidates : candidates;
-
-    parsedData = {
-      candidates: finalCandidates,
-      deduplicationAnalysis: `Cross-checked against ${pastTopics.length} historical database records. No duplicate themes found.`,
-      chosenWinnerId: finalCandidates[0].id,
-      selectionRationale: `Selected Candidate #${finalCandidates[0].id} ("${finalCandidates[0].title}") for maximum real-world actionability, strong search momentum, and zero historical overlap.`,
-      discardedNotes: finalCandidates.slice(1).map(c => ({
-        candidateId: c.id,
-        reason: `Discarded in favor of #${finalCandidates[0].id} to prioritize top trending search momentum today.`
-      }))
-    };
+    console.error(`\n${colors.red}${colors.bright}════════════════════════════════════════════════════════════════════════════════${colors.reset}`);
+    console.error(`${colors.red}${colors.bright} ❌ [TOPIC DISCOVERY AI ENGINE FAILED]${colors.reset}`);
+    console.error(`${colors.red}${colors.bright}════════════════════════════════════════════════════════════════════════════════${colors.reset}`);
+    console.error(` • Status: AI Engine did not return valid candidates for ${nicheConfig.channelName}.`);
+    console.error(` • Model attempted: ${modelUsed}`);
+    console.error(` • Directive: Preset/synthetic topics are strictly removed per user instruction.`);
+    console.error(`${colors.red}${colors.bright}════════════════════════════════════════════════════════════════════════════════\n${colors.reset}`);
+    throw new Error(`[Topic Discovery Fatal] AI engine (${modelUsed}) failed to formulate unique candidates. Synthetic fallbacks are strictly disabled.`);
   }
 
   // ----------------------------------------------------
@@ -873,12 +847,16 @@ Generate 5 fresh candidate topics across different spheres, evaluate against dat
       sphereName: winner.sphereName,
       angle: winner.angle,
       hook: winner.coreHook,
+      searchDetailsUsed: winner.searchDetailsUsed || (ddgResults[0] ? `${ddgResults[0].title} - ${ddgResults[0].snippet}` : ''),
+      loopyHookConcept: winner.loopyHookConcept || '',
+      similarityCheck: winner.similarityCheck || 'Verified unique against database',
       estimatedBudget: winner.estimatedBudget || '$5',
       modelUsed: modelUsed
     },
     candidates: parsedData.candidates,
     discardedTopics: discarded,
     selectionRationale: parsedData.selectionRationale,
+    deduplicationAnalysis: parsedData.deduplicationAnalysis,
     ddgResults: ddgResults,
     modelUsed: modelUsed
   };
