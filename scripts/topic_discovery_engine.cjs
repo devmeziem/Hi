@@ -215,8 +215,83 @@ const NICHE_SPHERES = {
 };
 
 // ----------------------------------------------------
-// DUCKDUCKGO REAL-TIME SEARCH QUERY ENGINE (100% REAL - NO FALLBACKS)
+// DUCKDUCKGO REAL-TIME SEARCH QUERY ENGINE WITH WIKIPEDIA FALLBACK
 // ----------------------------------------------------
+/**
+ * Wikipedia Search & Knowledge Retrieval (Zero-Key High-Reliability Fallback)
+ * Engaged automatically when DuckDuckGo yields low, blocked, or empty results.
+ */
+async function queryWikipedia(searchQuery, maxResults = 5) {
+  return new Promise((resolve) => {
+    const cleanSearch = encodeURIComponent(searchQuery.replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim());
+    const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${cleanSearch}&utf8=&format=json&srlimit=${maxResults}`;
+
+    const req = https.get(url, {
+      headers: {
+        'User-Agent': 'VoxamBot/1.0 (https://ai.studio; automated-research@voxam.app)',
+        'Accept': 'application/json'
+      },
+      timeout: 9000
+    }, (res) => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          const rawItems = json?.query?.search || [];
+          const results = [];
+
+          for (const item of rawItems) {
+            const cleanTitle = (item.title || '')
+              .replace(/&#039;|&#39;/g, "'")
+              .replace(/&quot;/g, '"')
+              .replace(/&amp;/g, '&')
+              .trim();
+
+            const cleanSnippet = (item.snippet || '')
+              .replace(/<[^>]+>/g, '')
+              .replace(/&#039;|&#39;/g, "'")
+              .replace(/&quot;/g, '"')
+              .replace(/&amp;/g, '&')
+              .replace(/&ndash;/g, '–')
+              .replace(/&mdash;/g, '—')
+              .replace(/\s+/g, ' ')
+              .trim();
+
+            if (cleanTitle.length > 2 && cleanSnippet.length > 10) {
+              results.push({
+                title: cleanTitle,
+                snippet: cleanSnippet,
+                source: 'Wikipedia'
+              });
+            }
+            if (results.length >= maxResults) break;
+          }
+
+          if (results.length > 0) {
+            console.log(`[Search Grounding] 📚 Retrieved ${results.length} live topic snippets from Wikipedia knowledge base.`);
+          }
+          resolve(results);
+        } catch (e) {
+          console.warn(`[Wikipedia Search Notice] Parse error: ${e.message}`);
+          resolve([]);
+        }
+      });
+    });
+
+    req.on('error', (err) => {
+      console.warn(`[Wikipedia Search Notice] Request failed: ${err.message}`);
+      resolve([]);
+    });
+
+    req.on('timeout', () => {
+      req.destroy();
+      console.warn(`[Wikipedia Search Notice] Request timed out (9s)`);
+      resolve([]);
+    });
+  });
+}
+
 async function queryDuckDuckGo(searchQuery, maxResults = 6) {
   // Primary attempt: DuckDuckGo HTML search endpoint
   const attemptEndpoint = (hostname, pathEndpoint) => new Promise((resolve) => {
@@ -283,7 +358,8 @@ async function queryDuckDuckGo(searchQuery, maxResults = 6) {
           if (t.length > 5) {
             results.push({
               title: t,
-              snippet: s
+              snippet: s,
+              source: 'DuckDuckGo'
             });
           }
           if (results.length >= maxResults) break;
@@ -307,10 +383,21 @@ async function queryDuckDuckGo(searchQuery, maxResults = 6) {
 
   // 1. Try html.duckduckgo.com/html/
   let results = await attemptEndpoint('html.duckduckgo.com', '/html/');
-  if (results && results.length > 0) return results;
+  if (results && results.length >= 2) return results;
 
   // 2. Try lite.duckduckgo.com/lite/
-  results = await attemptEndpoint('lite.duckduckgo.com', '/lite/');
+  const liteResults = await attemptEndpoint('lite.duckduckgo.com', '/lite/');
+  if (liteResults && liteResults.length > 0) {
+    results = [...(results || []), ...liteResults];
+  }
+
+  // 3. Wikipedia Fallback (mandated when DuckDuckGo doesn't return sufficient results)
+  if (!results || results.length < 2) {
+    console.log(`[Search Grounding] DuckDuckGo yielded ${results ? results.length : 0} results for "${searchQuery}". Engaging Wikipedia knowledge search fallback...`);
+    const wikiResults = await queryWikipedia(searchQuery, maxResults);
+    results = [...(results || []), ...wikiResults];
+  }
+
   return results || [];
 }
 
@@ -946,11 +1033,17 @@ async function discoverAndSelectTopicViaActiveAi(nicheKey = 'fin', options = {})
     queryGoogleNewsRss(randomSearchQuery, 4)
   ]);
 
-  const allSearchResults = [...ddgResults, ...newsResults];
+  let allSearchResults = [...ddgResults, ...newsResults];
+  if (allSearchResults.length < 2) {
+    console.log(`   ${colors.yellow}⚠️  Search yield low (${allSearchResults.length} snippets). Engaging Wikipedia knowledge fallback...${colors.reset}`);
+    const wikiSnippets = await queryWikipedia(randomSearchQuery, 5);
+    allSearchResults = [...allSearchResults, ...wikiSnippets];
+  }
+
   if (allSearchResults.length > 0) {
-    console.log(`   ${colors.green}✓ Retrieved ${allSearchResults.length} live organic snippets (${ddgResults.length} DDG, ${newsResults.length} News):${colors.reset}`);
+    console.log(`   ${colors.green}✓ Retrieved ${allSearchResults.length} live organic snippets (${ddgResults.length} DDG, ${newsResults.length} News, ${allSearchResults.filter(s => s.source === 'Wikipedia').length} Wikipedia):${colors.reset}`);
     allSearchResults.slice(0, 4).forEach((r, idx) => {
-      console.log(`     ${idx + 1}. ${colors.bright}${r.title}${colors.reset}`);
+      console.log(`     ${idx + 1}. [${r.source || 'Live Search'}] ${colors.bright}${r.title}${colors.reset}`);
       console.log(`        "${r.snippet.slice(0, 110)}..."`);
     });
   } else {

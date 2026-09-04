@@ -100,6 +100,33 @@ async function searchDuckDuckGoWeb(query) {
 }
 
 /**
+ * Query Wikipedia Search API for verified factual summary (fallback when DuckDuckGo yields low results)
+ */
+async function searchWikipediaFacts(query) {
+  const cleanQuery = encodeURIComponent(query.replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim());
+  const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${cleanQuery}&utf8=&format=json&srlimit=4`;
+  const res = await fetchUrl(url);
+  if (!res.ok || !res.data) return [];
+
+  const snippets = [];
+  try {
+    const json = JSON.parse(res.data);
+    const items = json?.query?.search || [];
+    for (const item of items) {
+      const clean = (item.snippet || '')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&#039;|&#39;/g, "'")
+        .replace(/&quot;/g, '"')
+        .replace(/&amp;/g, '&')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (clean.length > 25) snippets.push(`${item.title}: ${clean}`);
+    }
+  } catch {}
+  return snippets;
+}
+
+/**
  * Fetch live macro benchmark rates (e.g. Treasury Yields, Inflation benchmark, or BTC quote)
  */
 async function fetchMacroBenchmarks() {
@@ -130,16 +157,22 @@ async function fetchMacroBenchmarks() {
 async function verifyFinancialTopic(topic, archetype = {}, audience = 'global_usd') {
   console.log(`\n[Fact-Checker] 🔍 Grounding topic via DuckDuckGo Search: "${topic}" (${audience})...`);
   
-  const [instantResult, webSnippets, macro] = await Promise.all([
+  let [instantResult, webSnippets, macro] = await Promise.all([
     queryDuckDuckGoInstant(topic),
     searchDuckDuckGoWeb(topic),
     fetchMacroBenchmarks()
   ]);
 
+  if ((!webSnippets || webSnippets.length < 2) && !instantResult?.summary) {
+    console.log(`[Fact-Checker] 📚 DuckDuckGo yielded low results. Engaging Wikipedia knowledge fallback...`);
+    const wikiSnippets = await searchWikipediaFacts(topic);
+    webSnippets = [...(webSnippets || []), ...wikiSnippets];
+  }
+
   const verifiedFacts = [];
   if (instantResult?.summary) verifiedFacts.push(instantResult.summary);
   if (instantResult?.relatedPoints) verifiedFacts.push(...instantResult.relatedPoints);
-  verifiedFacts.push(...webSnippets);
+  verifiedFacts.push(...(webSnippets || []));
 
   const cleanFacts = verifiedFacts
     .filter(f => typeof f === 'string' && f.trim().length > 15)
