@@ -39,6 +39,7 @@ const {
 } = require('./fin_diversity_engine.cjs');
 const { verifyFinancialTopic } = require('./fin_fact_checker.cjs');
 const { discoverAndSelectTopicViaActiveAi } = require('./topic_discovery_engine.cjs');
+const { getCachedResponse, setCachedResponse } = require('./local_model_cache.cjs');
 
 // ANSI Color helper for clean terminal outputs
 const colors = {
@@ -233,12 +234,26 @@ function cleanLlmJson(rawContent) {
   const lastBrace = text.lastIndexOf('}');
   if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
     text = text.substring(firstBrace, lastBrace + 1);
+  } else if (firstBrace !== -1) {
+    text = text.substring(firstBrace);
   }
-  // Strip trailing commas before closing braces
+  // Strip trailing commas before closing braces/brackets
   text = text.replace(/,\s*([\}\]])/g, '$1');
   try {
     return JSON.parse(text);
   } catch {
+    // Attempt bracket/brace auto-closure for slightly truncated outputs
+    let openB = 0, openC = 0;
+    for (const ch of text) {
+      if (ch === '{') openC++;
+      else if (ch === '}') openC = Math.max(0, openC - 1);
+      else if (ch === '[') openB++;
+      else if (ch === ']') openB = Math.max(0, openB - 1);
+    }
+    const repaired = text + ']'.repeat(openB) + '}'.repeat(openC);
+    try {
+      return JSON.parse(repaired);
+    } catch {}
     return null;
   }
 }
@@ -628,66 +643,111 @@ EXCLUDED PREVIOUS TITLES: [${recentExclusions || 'None'}]`
 }
 
 // ----------------------------------------------------
-// LOCAL OPEN-SOURCE ZERO-KEY FALLBACK (OLLAMA / LLAMA.CPP)
+// LOCAL OPEN-SOURCE ZERO-KEY FALLBACK (OLLAMA / TINYLLAMA)
 // ----------------------------------------------------
 async function callLocalOllamaFin(systemPrompt, userPrompt, activeTopic) {
-  return new Promise((resolve) => {
-    const checkReq = http.request('http://127.0.0.1:11434/api/tags', { method: 'GET', timeout: 2500 }, (res) => {
-      let d = '';
-      res.on('data', c => d += c);
-      res.on('end', () => {
-        let chosenModel = 'qwen2.5:1.5b';
-        try {
-          const tags = JSON.parse(d);
-          if (tags.models && tags.models.length > 0) {
-            chosenModel = tags.models[0].name;
-          }
-        } catch {}
+  const cached = getCachedResponse('fin_storyboard', activeTopic);
+  if (cached) {
+    logSuccess(`⚡ Loaded 6-slide Fin storyboard from Local AI Cache for "${activeTopic}"`);
+    return { success: true, modelName: 'Local AI Model (Cached)', content: JSON.stringify(cached) };
+  }
 
-        const postData = JSON.stringify({
-          model: chosenModel,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: `${userPrompt} Topic Title: "${activeTopic}". Return strictly valid JSON.` }
-          ],
-          format: 'json',
-          stream: false,
-          options: {
-            temperature: 0.7,
-            num_ctx: 4096
-          }
-        });
+  const candidateHosts = [
+    process.env.OLLAMA_HOST ? process.env.OLLAMA_HOST.replace(/^https?:\/\//, '') : null,
+    '127.0.0.1:11434',
+    'localhost:11434'
+  ].filter(Boolean);
 
-        const genReq = http.request('http://127.0.0.1:11434/api/chat', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(postData)
-          },
-          timeout: 75000
-        }, (genRes) => {
-          let genData = '';
-          genRes.on('data', c => genData += c);
-          genRes.on('end', () => {
+  for (const hostStr of candidateHosts) {
+    const [host, port] = hostStr.includes(':') ? hostStr.split(':') : [hostStr, '11434'];
+    try {
+      const result = await new Promise((resolve) => {
+        const checkReq = http.request({ host, port: Number(port), path: '/api/tags', method: 'GET', timeout: 2500 }, (res) => {
+          let d = '';
+          res.on('data', c => d += c);
+          res.on('end', async () => {
+            let availableModels = ['tinyllama', 'tinyllama:latest', 'qwen2.5:1.5b', 'llama3.2:1b', 'qwen2.5:0.5b'];
             try {
-              const j = JSON.parse(genData);
-              const content = j.message?.content || j.response;
-              resolve({ success: true, modelName: `Local Open-Source (${chosenModel} via Ollama)`, content });
-            } catch (e) {
-              resolve({ success: false, error: e.message });
+              const tags = JSON.parse(d);
+              if (Array.isArray(tags.models) && tags.models.length > 0) {
+                availableModels = [...tags.models.map(m => m.name || m.model).filter(Boolean), ...availableModels];
+              }
+            } catch {}
+
+            for (const model of availableModels) {
+              try {
+                const postData = JSON.stringify({
+                  model,
+                  messages: [
+                    { role: 'system', content: `${systemPrompt}\nIMPORTANT: Respond ONLY with a valid, closed JSON object. No conversational preamble, no markdown fences, and no thinking traces.` },
+                    { role: 'user', content: `${userPrompt} Topic Title: "${activeTopic}". Return strictly valid JSON with exactly 6 slides.` }
+                  ],
+                  format: 'json',
+                  stream: false,
+                  options: {
+                    temperature: 0.2,
+                    num_ctx: 4096,
+                    num_predict: 2048
+                  }
+                });
+
+                const chatRes = await new Promise((chatResolve) => {
+                  const genReq = http.request({
+                    host,
+                    port: Number(port),
+                    path: '/api/chat',
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Content-Length': Buffer.byteLength(postData)
+                    },
+                    timeout: 75000
+                  }, (genRes) => {
+                    let genData = '';
+                    genRes.on('data', c => genData += c);
+                    genRes.on('end', () => {
+                      try {
+                        const j = JSON.parse(genData);
+                        const content = j.message?.content || j.response;
+                        if (!content) {
+                          chatResolve({ success: false, error: 'Ollama returned empty response' });
+                        } else {
+                          chatResolve({ success: true, modelName: `Local Open-Source (${model} via Ollama on ${host}:${port})`, content });
+                        }
+                      } catch (e) {
+                        chatResolve({ success: false, error: `Failed to parse Ollama JSON wrapper: ${e.message}` });
+                      }
+                    });
+                  });
+                  genReq.on('error', err => chatResolve({ success: false, error: `Socket error: ${err.message}` }));
+                  genReq.on('timeout', () => { genReq.destroy(); chatResolve({ success: false, error: 'Inference timed out after 75s' }); });
+                  genReq.write(postData);
+                  genReq.end();
+                });
+
+                if (chatRes.success && chatRes.content) {
+                  const validated = cleanLlmJson(chatRes.content);
+                  if (validated && validateFinStoryboard(validated)) {
+                    logSuccess(`[Local AI] ✅ Local model "${model}" generated a fully validated 6-slide storyboard!`);
+                    setCachedResponse('fin_storyboard', activeTopic, '', validated);
+                    return resolve(chatRes);
+                  }
+                }
+              } catch {}
             }
+            resolve({ success: false, error: 'All local Ollama models exhausted without valid output' });
           });
         });
-        genReq.on('error', err => resolve({ success: false, error: err.message }));
-        genReq.on('timeout', () => { genReq.destroy(); resolve({ success: false, error: 'Local Ollama timeout' }); });
-        genReq.write(postData);
-        genReq.end();
+        checkReq.on('error', err => resolve({ success: false, error: `Local Ollama daemon not reachable: ${err.message}` }));
+        checkReq.on('timeout', () => { checkReq.destroy(); resolve({ success: false, error: 'Ollama check timeout' }); });
+        checkReq.end();
       });
-    });
-    checkReq.on('error', err => resolve({ success: false, error: `Local Ollama unavailable: ${err.message}` }));
-    checkReq.on('timeout', () => { checkReq.destroy(); resolve({ success: false, error: 'Ollama check timeout' }); });
-    checkReq.end();
-  });
+
+      if (result && result.success) return result;
+    } catch {}
+  }
+
+  return { success: false, error: 'All local Ollama hosts unreachable' };
 }
 
 // ----------------------------------------------------
@@ -830,7 +890,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
 
     // 3. TERTIARY: Groq LPU Models (Active Production Models Only - Deprecated Models Removed)
     if (!scriptData && GROQ_API_KEY) {
-      const groqModels = [groqModel, 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'gemma2-9b-it'].filter(Boolean);
+      const groqModels = [groqModel, 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'deepseek-r1-distill-llama-70b', 'openai/gpt-oss-20b'].filter(Boolean);
       for (const gModel of groqModels) {
         if (scriptData) break;
         try {
@@ -928,7 +988,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
           if (raw.success && raw.content) {
             const parsed = cleanLlmJson(raw.content);
             if (parsed && validateFinStoryboard(parsed)) {
-              if (!isDeepDive && parsed.slides.length > 8) parsed.slides = parsed.slides.slice(0, 8);
+              if (!isDeepDive && parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
               parsed.modelUsed = `Google Gemini (${gModel})`;
               scriptData = parsed;
               logSuccess(`[Storyboard Engine] Gemini (${gModel}) generated complete ${scriptData.slides.length}-slide storyboard!`);
@@ -1577,6 +1637,12 @@ async function synthesizeEnrichedSlides(storyboard) {
   }
 
   const enrichedSlides = [];
+
+  // Strict Quota Guard: Cap storyboard at exactly 6 slides for Shorts (zero over-creation, zero wasted Cloudflare image quota)
+  if (!isDeepDive && storyboard.slides && storyboard.slides.length > 6) {
+    logInfo(`[Image Quota Protection] Enforcing strict 6-slide limit (${storyboard.slides.length} -> 6). Exactly 6 images will be generated on Cloudflare.`);
+    storyboard.slides = storyboard.slides.slice(0, 6);
+  }
 
   for (let i = 0; i < storyboard.slides.length; i++) {
     const slide = storyboard.slides[i];

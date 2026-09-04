@@ -48,33 +48,17 @@ function fail(message, details = {}) {
 }
 
 /**
- * Validate Cloudinary Configuration for unsigned uploads
+ * Validate Cloudinary Configuration for unsigned uploads (Optional)
  */
 function validateCloudinaryConfig() {
   if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
-    fail('Cloudinary configuration is missing required environment variables.', {
-      what: 'Cloudinary media hosting upload initiation',
-      why: `CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME ? 'Present' : 'MISSING'}, CLOUDINARY_UPLOAD_PRESET=${CLOUDINARY_UPLOAD_PRESET ? 'Present' : 'MISSING'}`,
-      fixes: [
-        'Create a free Cloudinary account at https://cloudinary.com',
-        'Go to Settings > Upload > Upload presets > Add upload preset > set Signing Mode to "Unsigned"',
-        'Add CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET into your GitHub Repository Secrets'
-      ]
-    });
+    console.log('[Buffer/TikTok] Cloudinary not configured. Proceeding with direct media hosting straight to Buffer TikTok (no Cloudinary needed).');
     return false;
   }
 
   // Catch the common mistake where user pastes numeric API key into cloud name
   if (/^\d{6,15}$/.test(CLOUDINARY_CLOUD_NAME)) {
-    fail('CLOUDINARY_CLOUD_NAME appears to contain a numeric API key instead of your Cloud Name.', {
-      what: 'Cloudinary Cloud Name validation',
-      why: `Configured CLOUDINARY_CLOUD_NAME is purely numeric ("${CLOUDINARY_CLOUD_NAME}"), which is an API key rather than your cloud identifier string.`,
-      fixes: [
-        'Visit your Cloudinary Dashboard at https://console.cloudinary.com/pm',
-        'Locate your Cloud Name string (e.g. "dx9abc123" or your custom account name)',
-        'Update CLOUDINARY_CLOUD_NAME in GitHub Secrets to that alphanumeric name.'
-      ]
-    });
+    console.warn('[Buffer/TikTok] CLOUDINARY_CLOUD_NAME appears to contain a numeric API key. Falling back to direct media hosting.');
     return false;
   }
 
@@ -206,22 +190,37 @@ function resolvePostCaption() {
 }
 
 /**
- * Upload local video file to Cloudinary unsigned endpoint
+ * Upload local video file to direct media relay (Litterbox zero-config, no credentials required)
+ */
+async function uploadToDirectRelay(videoPath) {
+  console.log(`\n[Buffer/TikTok] 🚀 Uploading ${path.basename(videoPath)} (${Math.round(fs.statSync(videoPath).size / 1024)} KB) straight to direct media relay (no Cloudinary needed)...`);
+
+  const fileBuffer = fs.readFileSync(videoPath);
+  const formData = new FormData();
+  formData.append('reqtype', 'fileupload');
+  formData.append('time', '24h');
+  formData.append('fileToUpload', new Blob([fileBuffer], { type: 'video/mp4' }), path.basename(videoPath));
+
+  const res = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+    method: 'POST',
+    body: formData
+  });
+
+  const text = (await res.text()).trim();
+  if (res.ok && text.startsWith('http')) {
+    console.log(`[Buffer/TikTok] ✅ Direct public video URL generated: ${text}`);
+    return text;
+  }
+  throw new Error(`Direct media relay upload failed: ${text || res.statusText}`);
+}
+
+/**
+ * Upload local video file to Cloudinary unsigned endpoint (if configured)
  */
 async function uploadToCloudinary(videoPath) {
-  // Check if an existing public Cloudinary URL is already present in artifacts
-  const episodePlanPath = path.join(process.cwd(), 'test_artifacts', 'fin_episode_plan.json');
-  if (fs.existsSync(episodePlanPath)) {
-    try {
-      const plan = JSON.parse(fs.readFileSync(episodePlanPath, 'utf8'));
-      if (plan?.renderedVideoUrl && /^https:\/\/res\.cloudinary\.com\//.test(plan.renderedVideoUrl)) {
-        console.log(`[Buffer/TikTok] Reusing verified Cloudinary video URL from episode plan: ${plan.renderedVideoUrl}`);
-        return plan.renderedVideoUrl;
-      }
-    } catch {}
-  }
+  const isCldReady = validateCloudinaryConfig();
+  if (!isCldReady) return null;
 
-  validateCloudinaryConfig();
   console.log(`\n[Buffer/TikTok] 📤 Uploading ${path.basename(videoPath)} (${Math.round(fs.statSync(videoPath).size / 1024)} KB) to Cloudinary...`);
 
   const form = new FormData();
@@ -245,14 +244,47 @@ async function uploadToCloudinary(videoPath) {
 
   if (!response.ok || !payload.secure_url) {
     const cloudError = payload?.error?.message || response.headers.get('x-cld-error') || `HTTP ${response.status}`;
-    throw new Error(
-      `Cloudinary unsigned upload failed: ${cloudError}.\n` +
-      `Ensure your upload preset "${CLOUDINARY_UPLOAD_PRESET}" is set to "Unsigned" in Cloudinary Settings > Upload.`
-    );
+    throw new Error(`Cloudinary unsigned upload failed: ${cloudError}`);
   }
 
-  console.log(`[Buffer/TikTok] ✅ Public Video URL generated: ${payload.secure_url}`);
+  console.log(`[Buffer/TikTok] ✅ Cloudinary Video URL generated: ${payload.secure_url}`);
   return payload.secure_url;
+}
+
+/**
+ * Resolve public video URL for Buffer (No Cloudinary Required)
+ */
+async function resolvePublicVideoUrl(videoPath) {
+  // 1. Check if public URL is passed directly in env
+  if (process.env.BUFFER_VIDEO_URL && process.env.BUFFER_VIDEO_URL.startsWith('http')) {
+    console.log(`[Buffer/TikTok] Using provided BUFFER_VIDEO_URL: ${process.env.BUFFER_VIDEO_URL}`);
+    return process.env.BUFFER_VIDEO_URL;
+  }
+
+  // 2. Check if an existing verified public video URL is already present in artifacts
+  const episodePlanPath = path.join(process.cwd(), 'test_artifacts', 'fin_episode_plan.json');
+  if (fs.existsSync(episodePlanPath)) {
+    try {
+      const plan = JSON.parse(fs.readFileSync(episodePlanPath, 'utf8'));
+      if (plan?.renderedVideoUrl && /^https?:\/\//.test(plan.renderedVideoUrl)) {
+        console.log(`[Buffer/TikTok] Reusing verified public video URL from episode plan: ${plan.renderedVideoUrl}`);
+        return plan.renderedVideoUrl;
+      }
+    } catch {}
+  }
+
+  // 3. Try Cloudinary if user specifically provided credentials
+  if (CLOUDINARY_CLOUD_NAME && CLOUDINARY_UPLOAD_PRESET) {
+    try {
+      const cldUrl = await uploadToCloudinary(videoPath);
+      if (cldUrl) return cldUrl;
+    } catch (e) {
+      console.warn(`[Buffer/TikTok] Cloudinary upload attempted but encountered error: ${e.message}. Falling back to direct media relay...`);
+    }
+  }
+
+  // 4. Straight direct media hosting relay (No Cloudinary needed!)
+  return await uploadToDirectRelay(videoPath);
 }
 
 /**
@@ -472,9 +504,20 @@ async function main() {
 
   const videoPath = findLatestVideo();
   const caption = resolvePostCaption();
-  const mediaUrl = await uploadToCloudinary(videoPath);
+  const mediaUrl = await resolvePublicVideoUrl(videoPath);
   const channel = await resolveTikTokChannel();
-  await createBufferPost(channel, mediaUrl, caption);
+  return await createBufferPost(channel, mediaUrl, caption);
 }
 
-main().catch(error => fail(error?.stack || error?.message || String(error)));
+module.exports = {
+  uploadToDirectRelay,
+  uploadToCloudinary,
+  resolvePublicVideoUrl,
+  resolveTikTokChannel,
+  createBufferPost,
+  main
+};
+
+if (require.main === module) {
+  main().catch(error => fail(error?.stack || error?.message || String(error)));
+}

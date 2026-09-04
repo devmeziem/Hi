@@ -1,0 +1,447 @@
+{
+  "9fb9732bdc2f46bc68046e2882aecdb6179d645d7a1caa2e5d4c96fedbca491b": {
+    "model": "local_ai_cartoon",
+    "timestamp": "2026-09-04T07:53:47.957Z",
+    "response": {
+      "topic": "Why Tardigrades Survive Space",
+      "title": "Why Tardigrades Survive Space Explaining The Mystery",
+      "character_name": "Archie",
+      "target_duration_seconds": 30,
+      "category": "science",
+      "scenes": [
+        {
+          "scene": 1,
+          "duration": 6.5,
+          "dialogue": "Have you ever wondered what actually happens with Why Tardigrades Survive Space? The reality is way crazier than you think!",
+          "character_action": "surprise",
+          "emotion": "surprised",
+          "camera": "medium_to_close",
+          "objects": [
+            "telescope",
+            "microscope"
+          ],
+          "background_style": "deep_space",
+          "effects": [
+            "star_sparkle",
+            "cosmic_glow"
+          ]
+        },
+        {
+          "scene": 2,
+          "duration": 8,
+          "dialogue": "Look closely at this. Beneath the surface, nature and engineering deploy an astonishing mechanism that defies ordinary physics.",
+          "character_action": "point_right",
+          "emotion": "curious",
+          "camera": "close_up",
+          "objects": [
+            "telescope",
+            "microscope",
+            "space_helmet",
+            "floating_debris"
+          ],
+          "background_style": "deep_space",
+          "effects": [
+            "glow"
+          ]
+        },
+        {
+          "scene": 3,
+          "duration": 8.5,
+          "dialogue": "Scientists discovered that instead of breaking down under extreme stress, it triggers a biological shield locking every cell in suspended animation.",
+          "character_action": "thinking",
+          "emotion": "thinking",
+          "camera": "medium",
+          "objects": [
+            "microscope",
+            "space_helmet",
+            "floating_debris"
+          ],
+          "background_style": "deep_space",
+          "effects": [
+            "star_sparkle",
+            "cosmic_glow"
+          ]
+        },
+        {
+          "scene": 4,
+          "duration": 7,
+          "dialogue": "That is why this phenomenon changes everything we know about survival, which brings us right back to why scientists are studying Why Tardigrades Survive Space!",
+          "character_action": "laughing",
+          "emotion": "excited",
+          "camera": "wide",
+          "objects": [
+            "trophy",
+            "telescope"
+          ],
+          "background_style": "deep_space",
+          "effects": [
+            "sparkles"
+          ]
+        }
+      ]
+    }
+  },
+  "679af0c466adef77850a991a9daa71724975f174ce7e0ab40162e77afae7010c": {
+    "model": "local_ai_stoic",
+    "timestamp": "2026-09-04T07:53:47.965Z",
+    "response": {
+      "title": "5 Ways to Build Self Confidence #Shorts #viral #trending #stoic",
+      "theme": "5 Ways to Build Self Confidence",
+      "angle": "5 Ways to Build Self Confidence: Mastery of Mind",
+      "description": "Daily modern Stoic masterclass on 5 Ways to Build Self Confidence. #Shorts #viral #trending #stoic #discipline #motivation",
+      "tags": [
+        "#Shorts",
+        "#viral",
+        "#trending",
+        "#stoic",
+        "#discipline",
+        "#motivation",
+        "#mindset"
+      ],
+      "slides": [
+        {
+          "slideIndex": 0,
+          "text": "When you depend on other people's praise to feel worthy, you hand over the keys to your mental peace. Stop seeking applause from spectators who don't run the race.",
+          "visual": "Dramatic opening 9:16 portrait of a stoic philosopher standing firm in a dark stormy hall, warm amber rim light, photorealistic 8k."
+        },
+        {
+          "slideIndex": 1,
+          "text": "The psychological trap is treating external opinions as truth. Marcus Aurelius asked: why do you love yourself more than others, yet value their opinions above your own?",
+          "visual": "Intense close-up of a weathered Roman marble statue in dramatic chiaroscuro lighting, deep shadows, ultra-sharp focus 9:16 vertical."
+        },
+        {
+          "slideIndex": 2,
+          "text": "True confidence is not believing everyone will like you. True confidence is being completely at peace even when no one in the room supports you.",
+          "visual": "Solitary figure walking calmly through a shadowy classical stone corridor towards warm golden sunlight, 9:16 cinematic."
+        },
+        {
+          "slideIndex": 3,
+          "text": "Anchor your self-respect to your actions, not the outcome. When you execute your duty with integrity and discipline, the external verdict becomes entirely irrelevant.",
+          "visual": "Stone hands sculpting a majestic marble pillar, golden embers floating in dark slate atmosphere, 9:16 cinematic depth of field."
+        },
+        {
+          "slideIndex": 4,
+          "text": "Practice radical self-command every single morning. Silence self-doubt not with arguments, but with immediate, decisive physical action that proves your discipline to yourself.",
+          "visual": "Silhouette of a warrior standing on a mountain cliff at golden hour sunrise, calm stoic gaze, 9:16 vertical 8k."
+        },
+        {
+          "slideIndex": 5,
+          "text": "Remember the timeless Stoic rule: conquer your own impulses, and nothing external can break you. Master your mind today, and that is why...",
+          "visual": "Classical marble bust of Marcus Aurelius in golden sunset glow, high contrast luxury lighting, 9:16 vertical 8k."
+        }
+      ]
+    }
+  },
+  "d277e377a738e8545694f682f31250b5cf743bb56f02a61aef6c1962861cb2b6": {
+    "model": "local_ai_cartoon",
+    "timestamp": "2026-09-04T07:57:09.976Z",
+    "response": {
+      "topic": "How Thunder Works",
+      "title": "How Thunder Works Explaining The Mystery",
+      "character_name": "Archie",
+      "target_duration_seconds": 30,
+      "category": "science",
+      "scenes": [
+        {
+          "scene": 1,
+          "duration": 6.5,
+          "dialogue": "Have you ever wondered what actually happens with How Thunder Works? The reality is way crazier than you think!",
+          "character_action": "surprise",
+          "emotion": "surprised",
+          "camera": "medium_to_close",
+          "objects": [
+            "hologram_display",
+            "tablet"
+          ],
+          "background_style": "tech_studio",
+          "effects": [
+            "signal_pulse",
+            "glow"
+          ]
+        },
+        {
+          "scene": 2,
+          "duration": 8,
+          "dialogue": "Look closely at this. Beneath the surface, nature and engineering deploy an astonishing mechanism that defies ordinary physics.",
+          "character_action": "point_right",
+          "emotion": "curious",
+          "camera": "close_up",
+          "objects": [
+            "hologram_display",
+            "tablet"
+          ],
+          "background_style": "tech_studio",
+          "effects": [
+            "glow"
+          ]
+        },
+        {
+          "scene": 3,
+          "duration": 8.5,
+          "dialogue": "Scientists discovered that instead of breaking down under extreme stress, it triggers a biological shield locking every cell in suspended animation.",
+          "character_action": "thinking",
+          "emotion": "thinking",
+          "camera": "medium",
+          "objects": [
+            "tablet"
+          ],
+          "background_style": "tech_studio",
+          "effects": [
+            "signal_pulse",
+            "glow"
+          ]
+        },
+        {
+          "scene": 4,
+          "duration": 7,
+          "dialogue": "That is why this phenomenon changes everything we know about survival, which brings us right back to why scientists are studying How Thunder Works!",
+          "character_action": "laughing",
+          "emotion": "excited",
+          "camera": "wide",
+          "objects": [
+            "trophy",
+            "hologram_display"
+          ],
+          "background_style": "tech_studio",
+          "effects": [
+            "sparkles"
+          ]
+        }
+      ]
+    }
+  },
+  "7efbd19b6937f88ad83c2b507a80df5941f0300f0be4fea4c0b91d92e3626877": {
+    "model": "cartoon_plan",
+    "timestamp": "2026-09-04T07:57:09.977Z",
+    "response": {
+      "topic": "How Thunder Works",
+      "title": "How Thunder Works Explaining The Mystery",
+      "character_name": "Archie",
+      "target_duration_seconds": 30,
+      "category": "science",
+      "scenes": [
+        {
+          "scene": 1,
+          "duration": 6.5,
+          "dialogue": "Have you ever wondered what actually happens with How Thunder Works? The reality is way crazier than you think!",
+          "character_action": "surprise",
+          "emotion": "surprised",
+          "camera": "medium_to_close",
+          "objects": [
+            "hologram_display",
+            "tablet"
+          ],
+          "background_style": "tech_studio",
+          "effects": [
+            "signal_pulse",
+            "glow"
+          ]
+        },
+        {
+          "scene": 2,
+          "duration": 8,
+          "dialogue": "Look closely at this. Beneath the surface, nature and engineering deploy an astonishing mechanism that defies ordinary physics.",
+          "character_action": "point_right",
+          "emotion": "curious",
+          "camera": "close_up",
+          "objects": [
+            "hologram_display",
+            "tablet"
+          ],
+          "background_style": "tech_studio",
+          "effects": [
+            "glow"
+          ]
+        },
+        {
+          "scene": 3,
+          "duration": 8.5,
+          "dialogue": "Scientists discovered that instead of breaking down under extreme stress, it triggers a biological shield locking every cell in suspended animation.",
+          "character_action": "thinking",
+          "emotion": "thinking",
+          "camera": "medium",
+          "objects": [
+            "tablet"
+          ],
+          "background_style": "tech_studio",
+          "effects": [
+            "signal_pulse",
+            "glow"
+          ]
+        },
+        {
+          "scene": 4,
+          "duration": 7,
+          "dialogue": "That is why this phenomenon changes everything we know about survival, which brings us right back to why scientists are studying How Thunder Works!",
+          "character_action": "laughing",
+          "emotion": "excited",
+          "camera": "wide",
+          "objects": [
+            "trophy",
+            "hologram_display"
+          ],
+          "background_style": "tech_studio",
+          "effects": [
+            "sparkles"
+          ]
+        }
+      ]
+    }
+  },
+  "43e19bacbf2b33cf684a52ff51b0d6649b2098aca6c3133cdc64ce92b5235f08": {
+    "model": "local_ai_cartoon",
+    "timestamp": "2026-09-04T07:57:31.581Z",
+    "response": {
+      "topic": "Why Is Thunder So Loud",
+      "title": "Why Is Thunder So Loud Explaining The Mystery",
+      "character_name": "Archie",
+      "target_duration_seconds": 30,
+      "category": "science",
+      "scenes": [
+        {
+          "scene": 1,
+          "duration": 6.5,
+          "dialogue": "Have you ever wondered what actually happens with Why Is Thunder So Loud? The reality is way crazier than you think!",
+          "character_action": "surprise",
+          "emotion": "surprised",
+          "camera": "medium_to_close",
+          "objects": [
+            "hologram_display",
+            "tablet"
+          ],
+          "background_style": "tech_studio",
+          "effects": [
+            "signal_pulse",
+            "glow"
+          ]
+        },
+        {
+          "scene": 2,
+          "duration": 8,
+          "dialogue": "Look closely at this. Beneath the surface, nature and engineering deploy an astonishing mechanism that defies ordinary physics.",
+          "character_action": "point_right",
+          "emotion": "curious",
+          "camera": "close_up",
+          "objects": [
+            "hologram_display",
+            "tablet"
+          ],
+          "background_style": "tech_studio",
+          "effects": [
+            "glow"
+          ]
+        },
+        {
+          "scene": 3,
+          "duration": 8.5,
+          "dialogue": "Scientists discovered that instead of breaking down under extreme stress, it triggers a biological shield locking every cell in suspended animation.",
+          "character_action": "thinking",
+          "emotion": "thinking",
+          "camera": "medium",
+          "objects": [
+            "tablet"
+          ],
+          "background_style": "tech_studio",
+          "effects": [
+            "signal_pulse",
+            "glow"
+          ]
+        },
+        {
+          "scene": 4,
+          "duration": 7,
+          "dialogue": "That is why this phenomenon changes everything we know about survival, which brings us right back to why scientists are studying Why Is Thunder So Loud!",
+          "character_action": "laughing",
+          "emotion": "excited",
+          "camera": "wide",
+          "objects": [
+            "trophy",
+            "hologram_display"
+          ],
+          "background_style": "tech_studio",
+          "effects": [
+            "sparkles"
+          ]
+        }
+      ]
+    }
+  },
+  "4b725a568f9f41ff0b42594eaedc4ec8685da6f9ba21e268c6239be22fd9b0d8": {
+    "model": "cartoon_plan",
+    "timestamp": "2026-09-04T07:57:31.582Z",
+    "response": {
+      "topic": "Why Is Thunder So Loud",
+      "title": "Why Is Thunder So Loud Explaining The Mystery",
+      "character_name": "Archie",
+      "target_duration_seconds": 30,
+      "category": "science",
+      "scenes": [
+        {
+          "scene": 1,
+          "duration": 6.5,
+          "dialogue": "Have you ever wondered what actually happens with Why Is Thunder So Loud? The reality is way crazier than you think!",
+          "character_action": "surprise",
+          "emotion": "surprised",
+          "camera": "medium_to_close",
+          "objects": [
+            "hologram_display",
+            "tablet"
+          ],
+          "background_style": "tech_studio",
+          "effects": [
+            "signal_pulse",
+            "glow"
+          ]
+        },
+        {
+          "scene": 2,
+          "duration": 8,
+          "dialogue": "Look closely at this. Beneath the surface, nature and engineering deploy an astonishing mechanism that defies ordinary physics.",
+          "character_action": "point_right",
+          "emotion": "curious",
+          "camera": "close_up",
+          "objects": [
+            "hologram_display",
+            "tablet"
+          ],
+          "background_style": "tech_studio",
+          "effects": [
+            "glow"
+          ]
+        },
+        {
+          "scene": 3,
+          "duration": 8.5,
+          "dialogue": "Scientists discovered that instead of breaking down under extreme stress, it triggers a biological shield locking every cell in suspended animation.",
+          "character_action": "thinking",
+          "emotion": "thinking",
+          "camera": "medium",
+          "objects": [
+            "tablet"
+          ],
+          "background_style": "tech_studio",
+          "effects": [
+            "signal_pulse",
+            "glow"
+          ]
+        },
+        {
+          "scene": 4,
+          "duration": 7,
+          "dialogue": "That is why this phenomenon changes everything we know about survival, which brings us right back to why scientists are studying Why Is Thunder So Loud!",
+          "character_action": "laughing",
+          "emotion": "excited",
+          "camera": "wide",
+          "objects": [
+            "trophy",
+            "hologram_display"
+          ],
+          "background_style": "tech_studio",
+          "effects": [
+            "sparkles"
+          ]
+        }
+      ]
+    }
+  }
+}

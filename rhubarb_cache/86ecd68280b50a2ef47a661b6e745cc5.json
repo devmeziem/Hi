@@ -1,0 +1,269 @@
+{
+  "metadata": {
+    "duration": 4.008,
+    "text": "Hello, this is a test of edge tts and rhubarb cache.",
+    "hash": "86ecd68280b50a2ef47a661b6e745cc5"
+  },
+  "mouthCues": [
+    {
+      "start": 0,
+      "end": 0.1,
+      "value": "X"
+    },
+    {
+      "start": 0.1,
+      "end": 0.162,
+      "value": "B"
+    },
+    {
+      "start": 0.162,
+      "end": 0.224,
+      "value": "D"
+    },
+    {
+      "start": 0.224,
+      "end": 0.286,
+      "value": "G"
+    },
+    {
+      "start": 0.286,
+      "end": 0.348,
+      "value": "G"
+    },
+    {
+      "start": 0.348,
+      "end": 0.41,
+      "value": "C"
+    },
+    {
+      "start": 0.41,
+      "end": 0.464,
+      "value": "B"
+    },
+    {
+      "start": 0.464,
+      "end": 0.542,
+      "value": "B"
+    },
+    {
+      "start": 0.542,
+      "end": 0.619,
+      "value": "B"
+    },
+    {
+      "start": 0.619,
+      "end": 0.697,
+      "value": "D"
+    },
+    {
+      "start": 0.697,
+      "end": 0.774,
+      "value": "B"
+    },
+    {
+      "start": 0.774,
+      "end": 0.829,
+      "value": "B"
+    },
+    {
+      "start": 0.829,
+      "end": 0.984,
+      "value": "D"
+    },
+    {
+      "start": 0.984,
+      "end": 1.138,
+      "value": "B"
+    },
+    {
+      "start": 1.138,
+      "end": 1.193,
+      "value": "B"
+    },
+    {
+      "start": 1.193,
+      "end": 1.503,
+      "value": "C"
+    },
+    {
+      "start": 1.503,
+      "end": 1.557,
+      "value": "B"
+    },
+    {
+      "start": 1.557,
+      "end": 1.635,
+      "value": "B"
+    },
+    {
+      "start": 1.635,
+      "end": 1.712,
+      "value": "D"
+    },
+    {
+      "start": 1.712,
+      "end": 1.79,
+      "value": "B"
+    },
+    {
+      "start": 1.79,
+      "end": 1.867,
+      "value": "B"
+    },
+    {
+      "start": 1.867,
+      "end": 1.922,
+      "value": "B"
+    },
+    {
+      "start": 1.922,
+      "end": 2.077,
+      "value": "C"
+    },
+    {
+      "start": 2.077,
+      "end": 2.232,
+      "value": "F"
+    },
+    {
+      "start": 2.232,
+      "end": 2.286,
+      "value": "B"
+    },
+    {
+      "start": 2.286,
+      "end": 2.364,
+      "value": "D"
+    },
+    {
+      "start": 2.364,
+      "end": 2.441,
+      "value": "B"
+    },
+    {
+      "start": 2.441,
+      "end": 2.518,
+      "value": "B"
+    },
+    {
+      "start": 2.518,
+      "end": 2.596,
+      "value": "D"
+    },
+    {
+      "start": 2.596,
+      "end": 2.651,
+      "value": "B"
+    },
+    {
+      "start": 2.651,
+      "end": 2.754,
+      "value": "B"
+    },
+    {
+      "start": 2.754,
+      "end": 2.857,
+      "value": "B"
+    },
+    {
+      "start": 2.857,
+      "end": 2.96,
+      "value": "B"
+    },
+    {
+      "start": 2.96,
+      "end": 3.015,
+      "value": "B"
+    },
+    {
+      "start": 3.015,
+      "end": 3.118,
+      "value": "C"
+    },
+    {
+      "start": 3.118,
+      "end": 3.221,
+      "value": "B"
+    },
+    {
+      "start": 3.221,
+      "end": 3.325,
+      "value": "B"
+    },
+    {
+      "start": 3.325,
+      "end": 3.379,
+      "value": "B"
+    },
+    {
+      "start": 3.379,
+      "end": 3.424,
+      "value": "G"
+    },
+    {
+      "start": 3.424,
+      "end": 3.468,
+      "value": "B"
+    },
+    {
+      "start": 3.468,
+      "end": 3.512,
+      "value": "E"
+    },
+    {
+      "start": 3.512,
+      "end": 3.556,
+      "value": "A"
+    },
+    {
+      "start": 3.556,
+      "end": 3.6,
+      "value": "C"
+    },
+    {
+      "start": 3.6,
+      "end": 3.645,
+      "value": "G"
+    },
+    {
+      "start": 3.645,
+      "end": 3.689,
+      "value": "A"
+    },
+    {
+      "start": 3.689,
+      "end": 3.744,
+      "value": "B"
+    },
+    {
+      "start": 3.744,
+      "end": 3.806,
+      "value": "B"
+    },
+    {
+      "start": 3.806,
+      "end": 3.868,
+      "value": "C"
+    },
+    {
+      "start": 3.868,
+      "end": 3.929,
+      "value": "B"
+    },
+    {
+      "start": 3.929,
+      "end": 3.991,
+      "value": "B"
+    },
+    {
+      "start": 3.991,
+      "end": 4.053,
+      "value": "D"
+    },
+    {
+      "start": 4.053,
+      "end": 4.108,
+      "value": "B"
+    }
+  ]
+}

@@ -1,0 +1,209 @@
+{
+  "metadata": {
+    "duration": 2.5,
+    "text": "Hello, this is Archie exploring science!",
+    "hash": "1c7cc7be89c6440104620849698a31f1"
+  },
+  "mouthCues": [
+    {
+      "start": 0,
+      "end": 0.1,
+      "value": "X"
+    },
+    {
+      "start": 0.1,
+      "end": 0.171,
+      "value": "B"
+    },
+    {
+      "start": 0.171,
+      "end": 0.242,
+      "value": "D"
+    },
+    {
+      "start": 0.242,
+      "end": 0.313,
+      "value": "G"
+    },
+    {
+      "start": 0.313,
+      "end": 0.383,
+      "value": "G"
+    },
+    {
+      "start": 0.383,
+      "end": 0.454,
+      "value": "C"
+    },
+    {
+      "start": 0.454,
+      "end": 0.517,
+      "value": "B"
+    },
+    {
+      "start": 0.517,
+      "end": 0.605,
+      "value": "B"
+    },
+    {
+      "start": 0.605,
+      "end": 0.694,
+      "value": "B"
+    },
+    {
+      "start": 0.694,
+      "end": 0.782,
+      "value": "D"
+    },
+    {
+      "start": 0.782,
+      "end": 0.871,
+      "value": "B"
+    },
+    {
+      "start": 0.871,
+      "end": 0.933,
+      "value": "B"
+    },
+    {
+      "start": 0.933,
+      "end": 1.11,
+      "value": "D"
+    },
+    {
+      "start": 1.11,
+      "end": 1.287,
+      "value": "B"
+    },
+    {
+      "start": 1.287,
+      "end": 1.35,
+      "value": "B"
+    },
+    {
+      "start": 1.35,
+      "end": 1.409,
+      "value": "C"
+    },
+    {
+      "start": 1.409,
+      "end": 1.468,
+      "value": "G"
+    },
+    {
+      "start": 1.468,
+      "end": 1.527,
+      "value": "B"
+    },
+    {
+      "start": 1.527,
+      "end": 1.586,
+      "value": "B"
+    },
+    {
+      "start": 1.586,
+      "end": 1.645,
+      "value": "D"
+    },
+    {
+      "start": 1.645,
+      "end": 1.704,
+      "value": "D"
+    },
+    {
+      "start": 1.704,
+      "end": 1.767,
+      "value": "B"
+    },
+    {
+      "start": 1.767,
+      "end": 1.806,
+      "value": "D"
+    },
+    {
+      "start": 1.806,
+      "end": 1.845,
+      "value": "B"
+    },
+    {
+      "start": 1.845,
+      "end": 1.885,
+      "value": "A"
+    },
+    {
+      "start": 1.885,
+      "end": 1.924,
+      "value": "G"
+    },
+    {
+      "start": 1.924,
+      "end": 1.963,
+      "value": "C"
+    },
+    {
+      "start": 1.963,
+      "end": 2.003,
+      "value": "G"
+    },
+    {
+      "start": 2.003,
+      "end": 2.042,
+      "value": "D"
+    },
+    {
+      "start": 2.042,
+      "end": 2.081,
+      "value": "B"
+    },
+    {
+      "start": 2.081,
+      "end": 2.121,
+      "value": "B"
+    },
+    {
+      "start": 2.121,
+      "end": 2.183,
+      "value": "B"
+    },
+    {
+      "start": 2.183,
+      "end": 2.234,
+      "value": "B"
+    },
+    {
+      "start": 2.234,
+      "end": 2.285,
+      "value": "B"
+    },
+    {
+      "start": 2.285,
+      "end": 2.335,
+      "value": "D"
+    },
+    {
+      "start": 2.335,
+      "end": 2.386,
+      "value": "D"
+    },
+    {
+      "start": 2.386,
+      "end": 2.436,
+      "value": "B"
+    },
+    {
+      "start": 2.436,
+      "end": 2.487,
+      "value": "B"
+    },
+    {
+      "start": 2.487,
+      "end": 2.537,
+      "value": "D"
+    },
+    {
+      "start": 2.537,
+      "end": 2.6,
+      "value": "B"
+    }
+  ]
+}

@@ -232,6 +232,15 @@ const ROTATING_STOIC_OUTROS = [
 // 25+ Comprehensive Stoic Archetypes
 const STOIC_ARCHETYPES = [
   {
+    lessonId: 'stoic_self_confidence',
+    theme: '5 Ways to Build Unshakeable Self Confidence',
+    angle: '5 Ways to Build Unshakeable Self Confidence: Why Real Confidence Comes From Self-Command, Not Applause',
+    philosophicalPrinciple: 'Epictetus Virtue Anchoring — authentic confidence is trust in your own principles, not dependent on external approval.',
+    hookArchetypeId: 'brutal_truth',
+    modernScenario: 'Entering high-stakes rooms or confronting self-doubt without needing to impress or validate yourself to anyone.',
+    visualStyle: 'Majestic classical marble statue of stoic philosopher standing firm in a torrential thunderstorm, calm confident gaze, warm golden light, 9:16 vertical 8k'
+  },
+  {
     lessonId: 'disrespect_silence',
     theme: 'Responding to Disrespect with Silence',
     angle: 'The Psychology of Strategic Silence: Why Silence Is the Ultimate Weapon Against Provocation',
@@ -735,16 +744,14 @@ function buildStoicPromptForSlot(slotArchetype, recentHistory, slotIndex = 0, ch
 CHANNEL GOAL: Deliver practical, high-impact modern stoicism, emotional discipline, and mental fortitude in clear, spoken-conversational English.
 AUDIENCE: Everyday normal people dealing with stress, difficult people, self-doubt, burnout, and daily distractions.
 
-CRITICAL YOUTUBE SHORTS ALGORITHM RETENTION RULES (OVER 1.5 MINUTES / 90+ SECONDS TOTAL):
-1. RUNTIME & PACING: Exactly 7 to 8 high-impact slides (slideIndex 0 to 7). Each slide MUST have 32 to 42 punchy spoken words (240-300 words total = 95-115s runtime).
+CRITICAL YOUTUBE SHORTS ALGORITHM RETENTION RULES (EXACTLY 6 SLIDES / ~60 SECONDS TOTAL):
+1. RUNTIME & PACING: Exactly 6 high-impact slides (slideIndex 0 to 5). Each slide MUST have 22 to 30 punchy spoken words (130-160 words total = ~50-60s runtime).
 2. SLIDE 0 (ANTI-SWIPE HOOK): Use the '${chosenHookFormat.name}' format! Formula: "${chosenHookFormat.formula}". Start directly with an intense pattern-interrupt question or shocking statement in under 12 words.
 3. SLIDE 1 (THE PSYCHOLOGICAL TRAP): Why most people react impulsively and hand over their power.
 4. SLIDE 2 (THE ANCIENT PERSPECTIVE): What Seneca or Marcus Aurelius realized about this exact situation.
-5. SLIDE 3 (THE COGNITIVE REFRAME): The core Stoic principle in clear modern language.
-6. SLIDE 4 (THE TACTICAL DAILY PROTOCOL): Concrete physical/mental action to execute immediately when triggered.
-7. SLIDE 5 (SOVEREIGN BENEFIT): Why this disciplined response makes your peace of mind completely untouchable.
-8. SLIDE 6 (THE DAILY PRACTICE HABIT): How to cement this mental fortitude into your subconscious each morning.
-9. SLIDE 7 (INFINITE RETENTION LOOP & OUTRO): Golden law + short CTA + this exact seamless bridge: "${chosenOutro}" that connects grammatically right back into Slide 0!
+5. SLIDE 3 (THE TACTICAL DAILY PROTOCOL): Concrete physical/mental action to execute immediately when triggered.
+6. SLIDE 4 (SOVEREIGN BENEFIT): Why this disciplined response makes your peace of mind completely untouchable.
+7. SLIDE 5 (INFINITE RETENTION LOOP & OUTRO): Golden law + short CTA + this exact seamless bridge: "${chosenOutro}" that connects grammatically right back into Slide 0!
 
 CRITICAL ANTI-PROMPT-LEAK MANDATE:
 - NEVER write prompt instructions, bracketed notes, or word-count guides like "(18-22 words)" in any slide text.
@@ -763,7 +770,7 @@ TARGET THEME & ANGLE:
 - Angle: ${slotArchetype.angle}
 
 OUTPUT FORMAT: Return strictly a valid JSON object matching the schema below.
-CRITICAL: Output EXACTLY 7 to 8 slides (slideIndex 0 to 7).
+CRITICAL: Output EXACTLY 6 slides (slideIndex 0 to 5). Do NOT output 7 or 8 slides.
 
 {
   "title": "Complete High-Impact Hook Title (around 35-50 chars) #Shorts #viral #trending",
@@ -774,50 +781,40 @@ CRITICAL: Output EXACTLY 7 to 8 slides (slideIndex 0 to 7).
   "slides": [
     {
       "slideIndex": 0,
-      "text": "Complete spoken hook narration sentence here without any placeholders (32-42 words).",
+      "text": "Complete spoken hook narration sentence here without any placeholders (22-30 words).",
       "visual": "Cinematic 9:16 vertical 8k scene, ${slotArchetype.visualStyle}"
     },
     {
       "slideIndex": 1,
-      "text": "Complete spoken explanation of the psychological trap here (32-42 words).",
+      "text": "Complete spoken explanation of the psychological trap here (22-30 words).",
       "visual": "Cinematic 9:16 vertical 8k scene matching ${slotArchetype.visualStyle}"
     },
     {
       "slideIndex": 2,
-      "text": "Complete spoken ancient perspective here (32-42 words).",
+      "text": "Complete spoken ancient perspective here (22-30 words).",
       "visual": "Cinematic 9:16 vertical 8k scene matching ${slotArchetype.visualStyle}"
     },
     {
       "slideIndex": 3,
-      "text": "Complete spoken Stoic mindset shift explanation here (32-42 words).",
+      "text": "Complete spoken tactical step-by-step protocol here (22-30 words).",
       "visual": "Cinematic 9:16 vertical 8k scene matching ${slotArchetype.visualStyle}"
     },
     {
       "slideIndex": 4,
-      "text": "Complete spoken tactical step-by-step protocol here (32-42 words).",
+      "text": "Complete spoken explanation of why this gives you unshakeable peace here (22-30 words).",
       "visual": "Cinematic 9:16 vertical 8k scene matching ${slotArchetype.visualStyle}"
     },
     {
       "slideIndex": 5,
-      "text": "Complete spoken explanation of why this gives you unshakeable peace here (32-42 words).",
-      "visual": "Cinematic 9:16 vertical 8k scene matching ${slotArchetype.visualStyle}"
-    },
-    {
-      "slideIndex": 6,
-      "text": "Complete spoken daily practice habit here (32-42 words).",
-      "visual": "Cinematic 9:16 vertical 8k scene matching ${slotArchetype.visualStyle}"
-    },
-    {
-      "slideIndex": 7,
-      "text": "Complete golden rule ending with: ${chosenOutro} (32-42 words)",
+      "text": "Complete golden rule ending with: ${chosenOutro} (22-30 words)",
       "visual": "Cinematic 9:16 vertical 8k scene matching ${slotArchetype.visualStyle}"
     }
   ]
 }`;
 
-  const userPrompt = `Generate a fresh, viral, high-retention 7-8 slide Modern Stoic Short storyboard for Slot ${slotIndex + 1}.
+  const userPrompt = `Generate a fresh, viral, high-retention 6-slide Modern Stoic Short storyboard for Slot ${slotIndex + 1}.
 Theme: "${slotArchetype.theme}". Angle: "${slotArchetype.angle}". Hook Format: "${chosenHookFormat.name}".
-MANDATE: Output EXACTLY 7 to 8 slides (slideIndex 0 to 7) with 32-42 words per slide (240-300 words total = ABOVE 1.5 MINUTES / 90+ SECONDS). Connect Slide 7 seamlessly into Slide 0. Write ONLY finished spoken narration words. Output strictly valid JSON.`;
+MANDATE: Output EXACTLY 6 slides (slideIndex 0 to 5) with 22-30 words per slide (~50-60s total). Connect Slide 5 seamlessly into Slide 0. Write ONLY finished spoken narration words. Output strictly valid JSON.`;
 
   return { systemPrompt, userPrompt, chosenHookFormat, chosenOutro };
 }

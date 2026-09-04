@@ -18,7 +18,23 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { execSync, spawnSync } = require('child_process');
+
+const RHUBARB_CACHE_DIR = path.join(process.cwd(), 'rhubarb_cache');
+if (!fs.existsSync(RHUBARB_CACHE_DIR)) {
+  try { fs.mkdirSync(RHUBARB_CACHE_DIR, { recursive: true }); } catch {}
+}
+
+function getAudioHash(filePath, fallbackText = '') {
+  try {
+    if (fs.existsSync(filePath)) {
+      const buffer = fs.readFileSync(filePath);
+      return crypto.createHash('md5').update(buffer).digest('hex');
+    }
+  } catch {}
+  return crypto.createHash('md5').update(String(fallbackText || '')).digest('hex');
+}
 
 function getRhubarbBinPath() {
   const possiblePaths = [
@@ -129,11 +145,38 @@ function generateFallbackMouthCues(text, durationSeconds = 5.0) {
 }
 
 /**
- * Generate mouth cues for an audio clip + dialogue
+ * Generate mouth cues for an audio clip + dialogue with persistent caching
  */
 function extractMouthCues(wavPath, dialogueText, durationSeconds = 5.0, outputDir) {
   const jsonPath = path.join(outputDir || path.dirname(wavPath), `${path.basename(wavPath, '.wav')}_mouth.json`);
   const tsvPath = path.join(outputDir || path.dirname(wavPath), `${path.basename(wavPath, '.wav')}_mouth.tsv`);
+
+  // 1. Check local target output file first
+  if (fs.existsSync(jsonPath)) {
+    try {
+      const parsed = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+      if (Array.isArray(parsed.mouthCues) && parsed.mouthCues.length > 0) {
+        console.log(`[LipSync Engine] ⚡ Target mouth cue artifact found! Loaded ${parsed.mouthCues.length} cues.`);
+        return { cues: parsed.mouthCues, jsonPath, tsvPath };
+      }
+    } catch {}
+  }
+
+  // 2. Check global Rhubarb cache by audio hash
+  const hash = getAudioHash(wavPath, `${dialogueText}_${durationSeconds}`);
+  const cachedJsonPath = path.join(RHUBARB_CACHE_DIR, `${hash}.json`);
+  if (fs.existsSync(cachedJsonPath)) {
+    try {
+      const cached = JSON.parse(fs.readFileSync(cachedJsonPath, 'utf8'));
+      if (Array.isArray(cached.mouthCues) && cached.mouthCues.length > 0) {
+        console.log(`[LipSync Engine] ⚡ Rhubarb cache hit! Loaded ${cached.mouthCues.length} mouth cues from cache.`);
+        fs.copyFileSync(cachedJsonPath, jsonPath);
+        const tsvLines = cached.mouthCues.map(c => `${c.start.toFixed(3)}\t${c.end.toFixed(3)}\t${c.value}`);
+        fs.writeFileSync(tsvPath, tsvLines.join('\n'));
+        return { cues: cached.mouthCues, jsonPath, tsvPath };
+      }
+    } catch {}
+  }
 
   let cues = [];
 
@@ -151,7 +194,14 @@ function extractMouthCues(wavPath, dialogueText, durationSeconds = 5.0, outputDi
   }
 
   // Write JSON
-  fs.writeFileSync(jsonPath, JSON.stringify({ metadata: { duration: durationSeconds, text: dialogueText }, mouthCues: cues }, null, 2));
+  const payload = { metadata: { duration: durationSeconds, text: dialogueText, hash }, mouthCues: cues };
+  fs.writeFileSync(jsonPath, JSON.stringify(payload, null, 2));
+
+  // Save to persistent global Rhubarb cache
+  try {
+    fs.writeFileSync(cachedJsonPath, JSON.stringify(payload, null, 2));
+    console.log(`[LipSync Engine] 💾 Saved Rhubarb lip-sync output to cache (${hash.slice(0, 10)}...).`);
+  } catch {}
 
   // Write TSV
   const tsvLines = cues.map(c => `${c.start.toFixed(3)}\t${c.end.toFixed(3)}\t${c.value}`);

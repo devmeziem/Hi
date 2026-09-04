@@ -32,6 +32,8 @@ const {
   formatViralShortsTitle
 } = require('./stoic_diversity_engine.cjs');
 const { discoverAndSelectTopicViaActiveAi } = require('./topic_discovery_engine.cjs');
+const { getCachedResponse, setCachedResponse } = require('./local_model_cache.cjs');
+const { generateLocalStoicStoryboard } = require('./integrated_local_ai_model.cjs');
 
 // ANSI Color helper for terminal logs
 const colors = {
@@ -558,66 +560,122 @@ async function testBackupEngines() {
 }
 
 // ----------------------------------------------------
-// LOCAL OPEN-SOURCE ZERO-KEY FALLBACK (OLLAMA / LLAMA.CPP)
+// LOCAL OPEN-SOURCE ZERO-KEY FALLBACK (OLLAMA / TINYLLAMA / INTEGRATED MODEL)
 // ----------------------------------------------------
 async function callLocalOllamaStoic(systemPrompt, userPrompt, activeTopic) {
-  return new Promise((resolve) => {
-    const checkReq = http.request('http://127.0.0.1:11434/api/tags', { method: 'GET', timeout: 2500 }, (res) => {
-      let d = '';
-      res.on('data', c => d += c);
-      res.on('end', () => {
-        let chosenModel = 'qwen2.5:1.5b';
-        try {
-          const tags = JSON.parse(d);
-          if (tags.models && tags.models.length > 0) {
-            chosenModel = tags.models[0].name;
-          }
-        } catch {}
+  const cached = getCachedResponse('stoic_storyboard', activeTopic);
+  if (cached) {
+    logSuccess(`⚡ Loaded 6-slide Stoic storyboard from Local AI Cache for "${activeTopic}"`);
+    return { success: true, modelName: 'Local AI Model (Cached)', content: JSON.stringify(cached) };
+  }
 
-        const postData = JSON.stringify({
-          model: chosenModel,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: `${userPrompt} Topic title: "${activeTopic}". Return strictly valid JSON.` }
-          ],
-          format: 'json',
-          stream: false,
-          options: {
-            temperature: 0.7,
-            num_ctx: 4096
-          }
-        });
+  const candidateHosts = [
+    process.env.OLLAMA_HOST ? process.env.OLLAMA_HOST.replace(/^https?:\/\//, '') : null,
+    '127.0.0.1:11434',
+    'localhost:11434'
+  ].filter(Boolean);
 
-        const genReq = http.request('http://127.0.0.1:11434/api/chat', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(postData)
-          },
-          timeout: 75000
-        }, (genRes) => {
-          let genData = '';
-          genRes.on('data', c => genData += c);
-          genRes.on('end', () => {
+  for (const hostStr of candidateHosts) {
+    const [host, port] = hostStr.includes(':') ? hostStr.split(':') : [hostStr, '11434'];
+    try {
+      const result = await new Promise((resolve) => {
+        const checkReq = http.request({ host, port: Number(port), path: '/api/tags', method: 'GET', timeout: 2500 }, (res) => {
+          let d = '';
+          res.on('data', c => d += c);
+          res.on('end', async () => {
+            let availableModels = ['tinyllama', 'tinyllama:latest', 'qwen2.5:1.5b', 'llama3.2:1b', 'qwen2.5:0.5b'];
             try {
-              const j = JSON.parse(genData);
-              const content = j.message?.content || j.response;
-              resolve({ success: true, modelName: `Local Open-Source (${chosenModel} via Ollama)`, content });
-            } catch (e) {
-              resolve({ success: false, error: e.message });
+              const tags = JSON.parse(d);
+              if (Array.isArray(tags.models) && tags.models.length > 0) {
+                availableModels = [...tags.models.map(m => m.name || m.model).filter(Boolean), ...availableModels];
+              }
+            } catch {}
+
+            for (const model of availableModels) {
+              try {
+                const postData = JSON.stringify({
+                  model,
+                  messages: [
+                    { role: 'system', content: `${systemPrompt}\nIMPORTANT: Return ONLY a valid JSON object matching the requested schema. No markdown fences, no conversational text.` },
+                    { role: 'user', content: `${userPrompt} Topic title: "${activeTopic}". Return strictly valid JSON with exactly 6 slides.` }
+                  ],
+                  format: 'json',
+                  stream: false,
+                  options: {
+                    temperature: 0.2,
+                    num_ctx: 4096,
+                    num_predict: 2048
+                  }
+                });
+
+                const chatRes = await new Promise((chatResolve) => {
+                  const genReq = http.request({
+                    host,
+                    port: Number(port),
+                    path: '/api/chat',
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Content-Length': Buffer.byteLength(postData)
+                    },
+                    timeout: 75000
+                  }, (genRes) => {
+                    let genData = '';
+                    genRes.on('data', c => genData += c);
+                    genRes.on('end', () => {
+                      try {
+                        const j = JSON.parse(genData);
+                        const content = j.message?.content || j.response;
+                        chatResolve({ success: true, modelName: `Local Open-Source (${model} via Ollama on ${host}:${port})`, content });
+                      } catch (e) {
+                        chatResolve({ success: false, error: e.message });
+                      }
+                    });
+                  });
+                  genReq.on('error', err => chatResolve({ success: false, error: err.message }));
+                  genReq.on('timeout', () => { genReq.destroy(); chatResolve({ success: false, error: 'Timeout' }); });
+                  genReq.write(postData);
+                  genReq.end();
+                });
+
+                if (chatRes.success && chatRes.content) {
+                  const parsed = cleanLlmJson(chatRes.content);
+                  if (parsed && validateStoicStoryboard(parsed)) {
+                    setCachedResponse('stoic_storyboard', activeTopic, '', parsed);
+                    return resolve(chatRes);
+                  }
+                }
+              } catch {}
             }
+            resolve({ success: false, error: 'All local models exhausted on host' });
           });
         });
-        genReq.on('error', err => resolve({ success: false, error: err.message }));
-        genReq.on('timeout', () => { genReq.destroy(); resolve({ success: false, error: 'Local Ollama timeout' }); });
-        genReq.write(postData);
-        genReq.end();
+        checkReq.on('error', err => resolve({ success: false, error: `Local Ollama unavailable: ${err.message}` }));
+        checkReq.on('timeout', () => { checkReq.destroy(); resolve({ success: false, error: 'Ollama check timeout' }); });
+        checkReq.end();
       });
-    });
-    checkReq.on('error', err => resolve({ success: false, error: `Local Ollama unavailable: ${err.message}` }));
-    checkReq.on('timeout', () => { checkReq.destroy(); resolve({ success: false, error: 'Ollama check timeout' }); });
-    checkReq.end();
-  });
+
+      if (result && result.success) return result;
+    } catch {}
+  }
+
+  // Integrated Local AI Model Fallback (TinyLlama-Engine)
+  try {
+    logInfo(`🤖 Engaging Integrated Local AI Model (TinyLlama-Engine) for Stoic Storyboard: "${activeTopic}"...`);
+    const localRes = generateLocalStoicStoryboard(activeTopic, resolvedArchetype);
+    if (localRes && localRes.storyboard) {
+      setCachedResponse('stoic_storyboard', activeTopic, '', localRes.storyboard);
+      return {
+        success: true,
+        modelName: localRes.provider,
+        content: JSON.stringify(localRes.storyboard)
+      };
+    }
+  } catch (e) {
+    logWarning(`[Local AI] Integrated model error: ${e.message}`);
+  }
+
+  return { success: false, error: 'All local models exhausted' };
 }
 
 // ----------------------------------------------------
@@ -1133,7 +1191,7 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
       if (raw.success && raw.content) {
         const parsed = cleanLlmJson(raw.content);
         if (parsed && validateStoicStoryboard(parsed)) {
-          if (!isDeepDive && parsed.slides.length > 8) parsed.slides = parsed.slides.slice(0, 8);
+          if (!isDeepDive && parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
           parsed.modelUsed = `xAI Grok (${activeGrok.model || 'grok-2-latest'})`;
           scriptData = parsed;
           logSuccess(`[Storyboard Engine] Grok (${activeGrok.model}) generated full ${scriptData.slides.length}-slide package!`);

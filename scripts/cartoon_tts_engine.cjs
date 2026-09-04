@@ -119,8 +119,11 @@ async function synthesizeCloudflareTTS(text, outputPathWav) {
  */
 async function synthesizeEdgeTTS(text, outputPathWav, voice = 'en-US-GuyNeural') {
   try {
+    const dir = path.dirname(outputPathWav);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
     const { EdgeTTS } = require('node-edge-tts');
-    const tempMp3 = path.join(path.dirname(outputPathWav), `temp_edge_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.mp3`);
+    const tempMp3 = path.join(dir, `temp_edge_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.mp3`);
     const tts = new EdgeTTS({
       voice: voice,
       lang: 'en-US',
@@ -179,13 +182,17 @@ async function synthesizeGoogleDspTTS(text, outputPathWav) {
 
 /**
  * Main TTS Generation Entry Point
+ * Prioritizes Microsoft Edge Neural TTS for ultra-expressive, zero-download cartoon character voice,
+ * with local Kokoro-82M and Cloudflare Workers AI backups.
  */
 async function generateSceneVoice(text, outputPathWav, targetDuration = 6.0) {
   const dir = path.dirname(outputPathWav);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-  // 1. Try Kokoro-82M locally first (High priority real TTS if models available)
-  if (isKokoroAvailable()) {
+  const forceKokoro = process.env.FORCE_KOKORO === 'true';
+
+  // 1. If explicitly requested, try Kokoro-82M locally first
+  if (forceKokoro && isKokoroAvailable()) {
     try {
       synthesizeKokoro(text, outputPathWav);
       const duration = getWavDuration(outputPathWav);
@@ -193,11 +200,9 @@ async function generateSceneVoice(text, outputPathWav, targetDuration = 6.0) {
     } catch (e) {
       console.warn('[TTS Engine] Kokoro local synthesis failed:', e.message);
     }
-  } else {
-    console.log('[TTS Engine] Kokoro neural local models not present, using Microsoft Edge Neural Engine.');
   }
 
-  // 2. Try Microsoft Edge Neural TTS (Fast, zero-cost, hyper-expressive for Archie)
+  // 2. Primary for Cartoon Workflow: Microsoft Edge Neural TTS (Fast, zero-download, hyper-expressive Archie voice)
   try {
     const edgeResult = await synthesizeEdgeTTS(text, outputPathWav, 'en-US-GuyNeural');
     if (edgeResult) {
@@ -206,14 +211,36 @@ async function generateSceneVoice(text, outputPathWav, targetDuration = 6.0) {
     }
   } catch (e) {
     console.warn('[TTS Engine] Edge GuyNeural failed, trying ChristopherNeural...', e.message);
-    const edgeBackup = await synthesizeEdgeTTS(text, outputPathWav, 'en-US-ChristopherNeural');
-    if (edgeBackup) {
-      const duration = getWavDuration(outputPathWav);
-      return { audioPath: outputPathWav, duration, engine: 'edge-neural-christopher' };
+    try {
+      const edgeBackup = await synthesizeEdgeTTS(text, outputPathWav, 'en-US-ChristopherNeural');
+      if (edgeBackup) {
+        const duration = getWavDuration(outputPathWav);
+        return { audioPath: outputPathWav, duration, engine: 'edge-neural-christopher' };
+      }
+    } catch (e2) {
+      console.warn('[TTS Engine] Edge ChristopherNeural failed, trying AndrewNeural...', e2.message);
+      try {
+        const edgeBackup2 = await synthesizeEdgeTTS(text, outputPathWav, 'en-US-AndrewNeural');
+        if (edgeBackup2) {
+          const duration = getWavDuration(outputPathWav);
+          return { audioPath: outputPathWav, duration, engine: 'edge-neural-andrew' };
+        }
+      } catch {}
     }
   }
 
-  // 3. Try Cloudflare Workers AI TTS if configured
+  // 3. Try Kokoro-82M locally if available and not yet tried
+  if (!forceKokoro && isKokoroAvailable()) {
+    try {
+      synthesizeKokoro(text, outputPathWav);
+      const duration = getWavDuration(outputPathWav);
+      return { audioPath: outputPathWav, duration, engine: 'kokoro-82m-neural' };
+    } catch (e) {
+      console.warn('[TTS Engine] Kokoro local synthesis failed:', e.message);
+    }
+  }
+
+  // 4. Try Cloudflare Workers AI TTS if configured
   if (CLOUDFLARE_ACCOUNT_ID && CLOUDFLARE_API_TOKEN) {
     try {
       console.log('[TTS Engine] Attempting Cloudflare Workers AI TTS fallback...');
@@ -225,7 +252,7 @@ async function generateSceneVoice(text, outputPathWav, targetDuration = 6.0) {
     }
   }
 
-  // 4. Try Google Speech DSP
+  // 5. Try Google Speech DSP
   try {
     const gResult = await synthesizeGoogleDspTTS(text, outputPathWav);
     if (gResult) {
@@ -234,7 +261,7 @@ async function generateSceneVoice(text, outputPathWav, targetDuration = 6.0) {
     }
   } catch (e) {}
 
-  // 5. Ultimate Fallback (Tone Synthesizer) so pipeline never crashes
+  // 6. Ultimate Fallback (Tone Synthesizer) so pipeline never crashes
   try {
     console.warn('[TTS Engine] Generating procedural narration tone for scene timing...');
     execSync(`ffmpeg -y -f lavfi -i "sine=frequency=440:duration=${targetDuration}" -ar 24000 -ac 1 "${outputPathWav}" 2>/dev/null`);
@@ -260,6 +287,8 @@ function getWavDuration(wavPath) {
 module.exports = {
   isKokoroAvailable,
   synthesizeKokoro,
+  synthesizeEdgeTTS,
+  synthesizeCloudflareTTS,
   generateSceneVoice,
   getWavDuration
 };

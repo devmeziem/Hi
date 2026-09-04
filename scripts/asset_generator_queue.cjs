@@ -317,6 +317,11 @@ async function processAssetQueue() {
       ];
     }
 
+    if (Array.isArray(slides) && slides.length > 6) {
+      console.log(`  ⚠ [Quota Guard] Storyboard has ${slides.length} slides. Capping to strictly 6 slides to preserve image quota.`);
+      slides = slides.slice(0, 6);
+    }
+
     const processedSlides = [];
     console.log(`  -> Processing ${slides.length} slides for storyboard asset generation...`);
 

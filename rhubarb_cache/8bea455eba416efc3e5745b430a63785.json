@@ -1,0 +1,639 @@
+{
+  "metadata": {
+    "duration": 8.208,
+    "text": "Look closely at this. Beneath the surface, nature and engineering deploy an astonishing mechanism that defies ordinary physics.",
+    "hash": "8bea455eba416efc3e5745b430a63785"
+  },
+  "mouthCues": [
+    {
+      "start": 0,
+      "end": 0.1,
+      "value": "X"
+    },
+    {
+      "start": 0.1,
+      "end": 0.197,
+      "value": "G"
+    },
+    {
+      "start": 0.197,
+      "end": 0.294,
+      "value": "C"
+    },
+    {
+      "start": 0.294,
+      "end": 0.391,
+      "value": "C"
+    },
+    {
+      "start": 0.391,
+      "end": 0.488,
+      "value": "B"
+    },
+    {
+      "start": 0.488,
+      "end": 0.556,
+      "value": "B"
+    },
+    {
+      "start": 0.556,
+      "end": 0.611,
+      "value": "B"
+    },
+    {
+      "start": 0.611,
+      "end": 0.667,
+      "value": "G"
+    },
+    {
+      "start": 0.667,
+      "end": 0.722,
+      "value": "C"
+    },
+    {
+      "start": 0.722,
+      "end": 0.777,
+      "value": "B"
+    },
+    {
+      "start": 0.777,
+      "end": 0.833,
+      "value": "D"
+    },
+    {
+      "start": 0.833,
+      "end": 0.888,
+      "value": "G"
+    },
+    {
+      "start": 0.888,
+      "end": 0.944,
+      "value": "D"
+    },
+    {
+      "start": 0.944,
+      "end": 1.012,
+      "value": "B"
+    },
+    {
+      "start": 1.012,
+      "end": 1.206,
+      "value": "C"
+    },
+    {
+      "start": 1.206,
+      "end": 1.4,
+      "value": "B"
+    },
+    {
+      "start": 1.4,
+      "end": 1.468,
+      "value": "B"
+    },
+    {
+      "start": 1.468,
+      "end": 1.565,
+      "value": "B"
+    },
+    {
+      "start": 1.565,
+      "end": 1.662,
+      "value": "B"
+    },
+    {
+      "start": 1.662,
+      "end": 1.759,
+      "value": "D"
+    },
+    {
+      "start": 1.759,
+      "end": 1.856,
+      "value": "B"
+    },
+    {
+      "start": 1.856,
+      "end": 1.924,
+      "value": "B"
+    },
+    {
+      "start": 1.924,
+      "end": 1.979,
+      "value": "A"
+    },
+    {
+      "start": 1.979,
+      "end": 2.035,
+      "value": "D"
+    },
+    {
+      "start": 2.035,
+      "end": 2.09,
+      "value": "B"
+    },
+    {
+      "start": 2.09,
+      "end": 2.145,
+      "value": "D"
+    },
+    {
+      "start": 2.145,
+      "end": 2.201,
+      "value": "C"
+    },
+    {
+      "start": 2.201,
+      "end": 2.256,
+      "value": "B"
+    },
+    {
+      "start": 2.256,
+      "end": 2.312,
+      "value": "B"
+    },
+    {
+      "start": 2.312,
+      "end": 2.38,
+      "value": "B"
+    },
+    {
+      "start": 2.38,
+      "end": 2.509,
+      "value": "B"
+    },
+    {
+      "start": 2.509,
+      "end": 2.638,
+      "value": "B"
+    },
+    {
+      "start": 2.638,
+      "end": 2.768,
+      "value": "D"
+    },
+    {
+      "start": 2.768,
+      "end": 2.836,
+      "value": "B"
+    },
+    {
+      "start": 2.836,
+      "end": 2.891,
+      "value": "B"
+    },
+    {
+      "start": 2.891,
+      "end": 2.947,
+      "value": "E"
+    },
+    {
+      "start": 2.947,
+      "end": 3.002,
+      "value": "G"
+    },
+    {
+      "start": 3.002,
+      "end": 3.057,
+      "value": "F"
+    },
+    {
+      "start": 3.057,
+      "end": 3.113,
+      "value": "C"
+    },
+    {
+      "start": 3.113,
+      "end": 3.168,
+      "value": "B"
+    },
+    {
+      "start": 3.168,
+      "end": 3.224,
+      "value": "D"
+    },
+    {
+      "start": 3.224,
+      "end": 3.292,
+      "value": "B"
+    },
+    {
+      "start": 3.292,
+      "end": 3.357,
+      "value": "B"
+    },
+    {
+      "start": 3.357,
+      "end": 3.421,
+      "value": "C"
+    },
+    {
+      "start": 3.421,
+      "end": 3.486,
+      "value": "B"
+    },
+    {
+      "start": 3.486,
+      "end": 3.55,
+      "value": "E"
+    },
+    {
+      "start": 3.55,
+      "end": 3.615,
+      "value": "G"
+    },
+    {
+      "start": 3.615,
+      "end": 3.68,
+      "value": "D"
+    },
+    {
+      "start": 3.68,
+      "end": 3.748,
+      "value": "B"
+    },
+    {
+      "start": 3.748,
+      "end": 3.877,
+      "value": "C"
+    },
+    {
+      "start": 3.877,
+      "end": 4.006,
+      "value": "B"
+    },
+    {
+      "start": 4.006,
+      "end": 4.136,
+      "value": "B"
+    },
+    {
+      "start": 4.136,
+      "end": 4.204,
+      "value": "B"
+    },
+    {
+      "start": 4.204,
+      "end": 4.239,
+      "value": "D"
+    },
+    {
+      "start": 4.239,
+      "end": 4.274,
+      "value": "B"
+    },
+    {
+      "start": 4.274,
+      "end": 4.31,
+      "value": "B"
+    },
+    {
+      "start": 4.31,
+      "end": 4.345,
+      "value": "D"
+    },
+    {
+      "start": 4.345,
+      "end": 4.38,
+      "value": "B"
+    },
+    {
+      "start": 4.38,
+      "end": 4.415,
+      "value": "D"
+    },
+    {
+      "start": 4.415,
+      "end": 4.451,
+      "value": "D"
+    },
+    {
+      "start": 4.451,
+      "end": 4.486,
+      "value": "G"
+    },
+    {
+      "start": 4.486,
+      "end": 4.521,
+      "value": "D"
+    },
+    {
+      "start": 4.521,
+      "end": 4.556,
+      "value": "B"
+    },
+    {
+      "start": 4.556,
+      "end": 4.592,
+      "value": "B"
+    },
+    {
+      "start": 4.592,
+      "end": 4.66,
+      "value": "B"
+    },
+    {
+      "start": 4.66,
+      "end": 4.725,
+      "value": "B"
+    },
+    {
+      "start": 4.725,
+      "end": 4.789,
+      "value": "D"
+    },
+    {
+      "start": 4.789,
+      "end": 4.854,
+      "value": "A"
+    },
+    {
+      "start": 4.854,
+      "end": 4.918,
+      "value": "G"
+    },
+    {
+      "start": 4.918,
+      "end": 4.983,
+      "value": "C"
+    },
+    {
+      "start": 4.983,
+      "end": 5.048,
+      "value": "D"
+    },
+    {
+      "start": 5.048,
+      "end": 5.116,
+      "value": "B"
+    },
+    {
+      "start": 5.116,
+      "end": 5.31,
+      "value": "C"
+    },
+    {
+      "start": 5.31,
+      "end": 5.504,
+      "value": "B"
+    },
+    {
+      "start": 5.504,
+      "end": 5.572,
+      "value": "B"
+    },
+    {
+      "start": 5.572,
+      "end": 5.607,
+      "value": "C"
+    },
+    {
+      "start": 5.607,
+      "end": 5.642,
+      "value": "B"
+    },
+    {
+      "start": 5.642,
+      "end": 5.678,
+      "value": "B"
+    },
+    {
+      "start": 5.678,
+      "end": 5.713,
+      "value": "C"
+    },
+    {
+      "start": 5.713,
+      "end": 5.748,
+      "value": "B"
+    },
+    {
+      "start": 5.748,
+      "end": 5.783,
+      "value": "D"
+    },
+    {
+      "start": 5.783,
+      "end": 5.819,
+      "value": "B"
+    },
+    {
+      "start": 5.819,
+      "end": 5.854,
+      "value": "B"
+    },
+    {
+      "start": 5.854,
+      "end": 5.889,
+      "value": "D"
+    },
+    {
+      "start": 5.889,
+      "end": 5.924,
+      "value": "B"
+    },
+    {
+      "start": 5.924,
+      "end": 5.96,
+      "value": "B"
+    },
+    {
+      "start": 5.96,
+      "end": 6.028,
+      "value": "B"
+    },
+    {
+      "start": 6.028,
+      "end": 6.071,
+      "value": "A"
+    },
+    {
+      "start": 6.071,
+      "end": 6.114,
+      "value": "D"
+    },
+    {
+      "start": 6.114,
+      "end": 6.157,
+      "value": "B"
+    },
+    {
+      "start": 6.157,
+      "end": 6.2,
+      "value": "B"
+    },
+    {
+      "start": 6.2,
+      "end": 6.243,
+      "value": "C"
+    },
+    {
+      "start": 6.243,
+      "end": 6.286,
+      "value": "B"
+    },
+    {
+      "start": 6.286,
+      "end": 6.329,
+      "value": "D"
+    },
+    {
+      "start": 6.329,
+      "end": 6.373,
+      "value": "B"
+    },
+    {
+      "start": 6.373,
+      "end": 6.416,
+      "value": "A"
+    },
+    {
+      "start": 6.416,
+      "end": 6.484,
+      "value": "B"
+    },
+    {
+      "start": 6.484,
+      "end": 6.581,
+      "value": "B"
+    },
+    {
+      "start": 6.581,
+      "end": 6.678,
+      "value": "B"
+    },
+    {
+      "start": 6.678,
+      "end": 6.775,
+      "value": "C"
+    },
+    {
+      "start": 6.775,
+      "end": 6.872,
+      "value": "B"
+    },
+    {
+      "start": 6.872,
+      "end": 6.94,
+      "value": "B"
+    },
+    {
+      "start": 6.94,
+      "end": 7.005,
+      "value": "B"
+    },
+    {
+      "start": 7.005,
+      "end": 7.069,
+      "value": "D"
+    },
+    {
+      "start": 7.069,
+      "end": 7.134,
+      "value": "F"
+    },
+    {
+      "start": 7.134,
+      "end": 7.198,
+      "value": "D"
+    },
+    {
+      "start": 7.198,
+      "end": 7.263,
+      "value": "D"
+    },
+    {
+      "start": 7.263,
+      "end": 7.328,
+      "value": "B"
+    },
+    {
+      "start": 7.328,
+      "end": 7.396,
+      "value": "B"
+    },
+    {
+      "start": 7.396,
+      "end": 7.444,
+      "value": "C"
+    },
+    {
+      "start": 7.444,
+      "end": 7.493,
+      "value": "G"
+    },
+    {
+      "start": 7.493,
+      "end": 7.541,
+      "value": "B"
+    },
+    {
+      "start": 7.541,
+      "end": 7.59,
+      "value": "D"
+    },
+    {
+      "start": 7.59,
+      "end": 7.638,
+      "value": "B"
+    },
+    {
+      "start": 7.638,
+      "end": 7.687,
+      "value": "C"
+    },
+    {
+      "start": 7.687,
+      "end": 7.735,
+      "value": "G"
+    },
+    {
+      "start": 7.735,
+      "end": 7.784,
+      "value": "D"
+    },
+    {
+      "start": 7.784,
+      "end": 7.852,
+      "value": "B"
+    },
+    {
+      "start": 7.852,
+      "end": 7.907,
+      "value": "A"
+    },
+    {
+      "start": 7.907,
+      "end": 7.963,
+      "value": "B"
+    },
+    {
+      "start": 7.963,
+      "end": 8.018,
+      "value": "D"
+    },
+    {
+      "start": 8.018,
+      "end": 8.073,
+      "value": "B"
+    },
+    {
+      "start": 8.073,
+      "end": 8.129,
+      "value": "D"
+    },
+    {
+      "start": 8.129,
+      "end": 8.184,
+      "value": "B"
+    },
+    {
+      "start": 8.184,
+      "end": 8.24,
+      "value": "B"
+    },
+    {
+      "start": 8.24,
+      "end": 8.308,
+      "value": "B"
+    }
+  ]
+}

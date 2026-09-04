@@ -1094,25 +1094,23 @@ CHANNEL CORE POSITIONING:
 TARGET AUDIENCE: Everyday young people, students, beginners, low-income earners, and aspiring entrepreneurs starting with little or no capital ($0 to $50 USD).
 
 CRITICAL PEDAGOGY MANDATES:
-1. STRICT MINIMUM DURATION: All YouTube Shorts MUST BE OVER 1.5 MINUTES (90+ SECONDS, TARGET 95-115 SECONDS). To achieve this, output 7 to 8 detailed slides with 32 to 42 spoken, conversational words per slide (~240 to 300 words total).
+1. STRICT SLIDE COUNT: Output EXACTLY 6 SLIDES (slideIndex 0 to 5) — NEVER MORE, NEVER LESS. Exactly 6 images will be generated, preserving quota with zero waste. Each slide must contain 30 to 40 punchy spoken words (~180 to 240 words total).
 2. SINGLE STANDARD CURRENCY: Use standard US Dollars ($ USD) for all financial numbers, budgets, costs, revenues, and savings (e.g., "$5", "$10", "$50", "$100", "$500"). Do NOT mix or mention multiple currencies in the narration to keep algorithms and global viewers focused.
 3. CONVERSATIONAL & MINIMALIST EXPLANATIONS: Explain concepts clearly and simply so even a 12-year-old understands. NO boring mathematical equations, NO repetitive algebra formulas, and NO spreadsheet arithmetic. Break it down to its simplest everyday reality.
 4. VARIED, ENGAGING VOCABULARY: When changing topics, do NOT repeat the same phrases over and over. Use rich, distinct language tailored to "${archetype.theme}".
-5. SEAMLESS INFINITE LOOP: The last sentence of the final slide MUST naturally bridge back into the opening hook of Slide 0 to maximize viewer retention loops.
+5. SEAMLESS INFINITE LOOP: The last sentence of the final slide (Slide 5) MUST naturally bridge back into the opening hook of Slide 0 to maximize viewer retention loops.
 6. ZERO BLUEPRINT / PLACEHOLDER LEAKAGE: Never output template words, word-count markers like "(18-22 words)", or internal variable names. Output clean spoken narration text ONLY.
 
-PROGRESSIVE 7-STEP NARRATIVE FLOW (${flowGuide.name} - Series: "${flowGuide.series}"):
+PROGRESSIVE 6-STEP NARRATIVE FLOW (${flowGuide.name} - Series: "${flowGuide.series}"):
 - Slide 0: ${flowGuide.slideSteps[0]} -> (Hook: Use the '${chosenHookFormat.name}' approach: "${chosenHookFormat.formula}")
 - Slide 1: ${flowGuide.slideSteps[1]} (The Hidden Friction / Reality Check)
 - Slide 2: ${flowGuide.slideSteps[2]} (The Core Practical Setup & Startup Budget)
 - Slide 3: ${flowGuide.slideSteps[3]} (The Step-by-Step Customer / Revenue Mechanism)
-- Slide 4: Detailed Unit Economics, Pricing & Margin Breakdown in Plain English
-- Slide 5: ${flowGuide.slideSteps[4]} (The #1 Fatal Beginner Mistake to Avoid)
-- Slide 6: The Daily Scaling Protocol & Risk Mitigation Rule
-- Slide 7: ${flowGuide.slideSteps[5]} -> (End seamlessly with this exact outro phrase connecting back to Slide 0: "${chosenOutro}")
+- Slide 4: ${flowGuide.slideSteps[4]} (The #1 Fatal Beginner Mistake to Avoid)
+- Slide 5: ${flowGuide.slideSteps[5]} -> (End seamlessly with this exact outro phrase connecting back to Slide 0: "${chosenOutro}")
 
 RULES:
-- Exactly 7 to 8 slides (slideIndex 0 to 6 or 7). Each slide must have 32 to 42 punchy, spoken words (240-300 words total = 95-115 seconds).
+- EXACTLY 6 slides (slideIndex 0 to 5). Each slide must have 30 to 40 punchy, spoken words.
 - No unrealistic promises. Use realistic, practical language.
 - Integrate this community question in description: "${flowGuide.communityQuestion}".
 
@@ -1133,50 +1131,40 @@ OUTPUT FORMAT: Return strictly valid JSON:
   "slides": [
     {
       "slideIndex": 0,
-      "text": "Complete spoken hook text with zero placeholder words (32-42 words)...",
+      "text": "Complete spoken hook text with zero placeholder words (30-40 words)...",
       "visual": "Cinematic 9:16 vertical 8k photorealistic scene, ${archetype.visualAesthetic}"
     },
     {
       "slideIndex": 1,
-      "text": "Complete spoken explanation text (32-42 words)...",
+      "text": "Complete spoken explanation text (30-40 words)...",
       "visual": "Cinematic 9:16 vertical 8k photorealistic scene matching ${archetype.visualAesthetic}"
     },
     {
       "slideIndex": 2,
-      "text": "Complete spoken practical mechanism (32-42 words)...",
+      "text": "Complete spoken practical mechanism (30-40 words)...",
       "visual": "Cinematic 9:16 vertical 8k photorealistic scene matching ${archetype.visualAesthetic}"
     },
     {
       "slideIndex": 3,
-      "text": "Complete spoken action takeaway (32-42 words)...",
+      "text": "Complete spoken action takeaway (30-40 words)...",
       "visual": "Cinematic 9:16 vertical 8k photorealistic scene matching ${archetype.visualAesthetic}"
     },
     {
       "slideIndex": 4,
-      "text": "Complete spoken unit economics and margin breakdown (32-42 words)...",
+      "text": "Complete spoken mistake warning (30-40 words)...",
       "visual": "Cinematic 9:16 vertical 8k photorealistic scene matching ${archetype.visualAesthetic}"
     },
     {
       "slideIndex": 5,
-      "text": "Complete spoken mistake warning (32-42 words)...",
-      "visual": "Cinematic 9:16 vertical 8k photorealistic scene matching ${archetype.visualAesthetic}"
-    },
-    {
-      "slideIndex": 6,
-      "text": "Complete spoken daily protocol and scaling rule (32-42 words)...",
-      "visual": "Cinematic 9:16 vertical 8k photorealistic scene matching ${archetype.visualAesthetic}"
-    },
-    {
-      "slideIndex": 7,
-      "text": "Complete spoken golden rule ending with: ${chosenOutro} (32-42 words)",
+      "text": "Complete spoken golden rule ending with: ${chosenOutro} (30-40 words)",
       "visual": "Cinematic 9:16 vertical 8k photorealistic scene matching ${archetype.visualAesthetic}"
     }
   ]
 }`;
 
-  const userPrompt = `Generate a unique, viral 7-8 slide YouTube Shorts script for ${flowGuide.series}.
+  const userPrompt = `Generate a unique, viral 6-slide YouTube Shorts script for ${flowGuide.series}.
 Topic Theme: "${archetype.theme}". Angle: "${archetype.angle}". Target Budget: "${archetype.targetBudget}".
-MANDATE: Output EXACTLY 7 to 8 slides (slideIndex 0 to 7) with 32-42 words per slide (total 240-300 words to guarantee runtime is ABOVE 1.5 MINUTES / 90+ SECONDS). Focus on crystal-clear explanations without tedious math. Connect Slide 7 seamlessly into Slide 0. Return strictly valid JSON.`;
+MANDATE: Output EXACTLY 6 slides (slideIndex 0 to 5) with 30-40 words per slide (~180-240 words total). Focus on crystal-clear explanations without tedious math. Connect Slide 5 seamlessly into Slide 0. Return strictly valid JSON.`;
 
   return { systemPrompt, userPrompt, chosenHookFormat, chosenOutro, flowGuide };
 }

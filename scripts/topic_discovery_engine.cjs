@@ -15,6 +15,8 @@ const path = require('path');
 const https = require('https');
 const http = require('http');
 const querystring = require('querystring');
+const { getCachedResponse, setCachedResponse } = require('./local_model_cache.cjs');
+const { selectLocalTopicFromTrends } = require('./integrated_local_ai_model.cjs');
 
 // ANSI Terminal Colors
 const colors = {
@@ -108,6 +110,11 @@ const NICHE_SPHERES = {
     channelName: 'The Stoic Architect',
     targetAudience: 'Everyday people seeking practical emotional discipline, unshakeable mental fortitude, and psychological resilience amidst modern chaos.',
     searchQueries: [
+      '5 ways to get self confidence and stop doubting yourself',
+      '5 ways to build unshakeable self confidence according to Stoicism',
+      '5 Stoic rules to get unstoppable quiet self confidence',
+      'how to build quiet self confidence without seeking validation',
+      '5 daily Stoic habits that build genuine self confidence from within',
       'how to respond to disrespect with strategic silence and calm',
       'how did Marcus Aurelius handle severe anxiety stress and betrayal',
       'how to stop overthinking and start taking immediate disciplined action',
@@ -129,6 +136,7 @@ const NICHE_SPHERES = {
       'what is the Stoic secret to turning any obstacle into the way forward'
     ],
     spheres: [
+      { id: 'stoic_self_confidence', name: '5 Ways to Build Unshakeable Self Confidence', desc: 'Internal validation, virtue-anchored self-respect, silencing self-doubt, mastering self-command' },
       { id: 'disrespect_silence', name: 'Responding to Disrespect with Strategic Silence', desc: 'Inner Citadel — silence as the ultimate weapon against provocation' },
       { id: 'failure_rebuild', name: 'Rebuilding from Failure (Amor Fati)', desc: 'Using adversity as fuel, rising from total career or personal collapse' },
       { id: 'overthinking_action', name: 'Killing Overthinking with Immediate Action', desc: 'Physical momentum curing mental anxiety, breaking analysis paralysis' },
@@ -564,81 +572,104 @@ function cleanJsonText(rawText) {
 async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, options = {}) {
   const preferLocalAi = options.preferLocalAi === true || options.nicheKey === 'fin';
 
-  // Helper for Local Open-Source Ollama (localhost:11434)
+  // Helper for Local Open-Source Ollama (localhost:11434 / candidate hosts)
   const tryLocalOllama = async () => {
-    try {
-      return await new Promise((resolve) => {
-        const checkReq = http.request('http://127.0.0.1:11434/api/tags', { method: 'GET', timeout: 2000 }, (res) => {
-          let d = '';
-          res.on('data', c => d += c);
-          res.on('end', () => {
-            let chosenModel = 'qwen2.5:1.5b';
-            try {
-              const tags = JSON.parse(d);
-              if (tags.models && tags.models.length > 0) chosenModel = tags.models[0].name;
-            } catch {}
+    const cacheKey = `${options.nicheKey || 'topic'}_${userPrompt.slice(0, 100)}`;
+    const cached = getCachedResponse('topic_ollama', cacheKey);
+    if (cached) {
+      return { success: true, modelUsed: 'Local Ollama Model (Cached)', data: cached };
+    }
 
-            const postData = JSON.stringify({
-              model: chosenModel,
-              messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
-              format: 'json',
-              stream: false,
-              options: { temperature: 0.7, num_ctx: 4096 }
-            });
+    const candidateHosts = [
+      process.env.OLLAMA_HOST ? process.env.OLLAMA_HOST.replace(/^https?:\/\//, '') : null,
+      '127.0.0.1:11434',
+      'localhost:11434'
+    ].filter(Boolean);
 
-            console.log(`[AI Inference] Probing Local Open-Source (${chosenModel} via Ollama on 127.0.0.1:11434)...`);
-            const genReq = http.request('http://127.0.0.1:11434/api/chat', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) },
-              timeout: 60000
-            }, (genRes) => {
-              let genData = '';
-              genRes.on('data', c => genData += c);
-              genRes.on('end', () => {
-                try {
-                  const j = JSON.parse(genData);
-                  const content = j.message?.content || j.response;
-                  const parsed = cleanJsonText(content);
-                  if (parsed) {
-                    resolve({ success: true, modelUsed: `Local Open-Source (${chosenModel} via Ollama)`, data: parsed });
-                  } else {
-                    console.warn(`[AI Inference Notice] Local Ollama returned text but JSON parsing failed.`);
+    for (const hostStr of candidateHosts) {
+      const [host, port] = hostStr.includes(':') ? hostStr.split(':') : [hostStr, '11434'];
+      try {
+        const res = await new Promise((resolve) => {
+          const checkReq = http.request({ host, port: Number(port), path: '/api/tags', method: 'GET', timeout: 2000 }, (res) => {
+            let d = '';
+            res.on('data', c => d += c);
+            res.on('end', () => {
+              let availableModels = ['tinyllama', 'tinyllama:latest', 'qwen2.5:1.5b', 'llama3.2:1b'];
+              try {
+                const tags = JSON.parse(d);
+                if (Array.isArray(tags.models) && tags.models.length > 0) {
+                  availableModels = [...tags.models.map(m => m.name || m.model).filter(Boolean), ...availableModels];
+                }
+              } catch {}
+
+              const chosenModel = availableModels[0] || 'tinyllama';
+              const postData = JSON.stringify({
+                model: chosenModel,
+                messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
+                format: 'json',
+                stream: false,
+                options: { temperature: 0.7, num_ctx: 4096 }
+              });
+
+              console.log(`[AI Inference] Probing Local Open-Source (${chosenModel} via Ollama on ${host}:${port})...`);
+              const genReq = http.request({
+                host,
+                port: Number(port),
+                path: '/api/chat',
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) },
+                timeout: 60000
+              }, (genRes) => {
+                let genData = '';
+                genRes.on('data', c => genData += c);
+                genRes.on('end', () => {
+                  try {
+                    const j = JSON.parse(genData);
+                    const content = j.message?.content || j.response;
+                    const parsed = cleanJsonText(content);
+                    if (parsed) {
+                      setCachedResponse('topic_ollama', cacheKey, '', parsed);
+                      resolve({ success: true, modelUsed: `Local Open-Source (${chosenModel} via Ollama)`, data: parsed });
+                    } else {
+                      console.warn(`[AI Inference Notice] Local Ollama returned text but JSON parsing failed.`);
+                      resolve(null);
+                    }
+                  } catch (err) {
+                    console.warn(`[AI Inference Notice] Local Ollama response parsing failed: ${err.message}`);
                     resolve(null);
                   }
-                } catch (err) {
-                  console.warn(`[AI Inference Notice] Local Ollama response parsing failed: ${err.message}`);
-                  resolve(null);
-                }
+                });
               });
+              genReq.on('error', (err) => {
+                console.warn(`[AI Inference Notice] Local Ollama inference connection failed: ${err.message}`);
+                resolve(null);
+              });
+              genReq.on('timeout', () => {
+                genReq.destroy();
+                console.warn(`[AI Inference Notice] Local Ollama inference timed out (60s).`);
+                resolve(null);
+              });
+              genReq.write(postData);
+              genReq.end();
             });
-            genReq.on('error', (err) => {
-              console.warn(`[AI Inference Notice] Local Ollama inference connection failed: ${err.message}`);
-              resolve(null);
-            });
-            genReq.on('timeout', () => {
-              genReq.destroy();
-              console.warn(`[AI Inference Notice] Local Ollama inference timed out (60s).`);
-              resolve(null);
-            });
-            genReq.write(postData);
-            genReq.end();
           });
+          checkReq.on('error', (err) => {
+            console.log(`[AI Inference] Local Ollama daemon not running or unreachable (${err.message})`);
+            resolve(null);
+          });
+          checkReq.on('timeout', () => {
+            checkReq.destroy();
+            console.log(`[AI Inference] Local Ollama daemon check timed out`);
+            resolve(null);
+          });
+          checkReq.end();
         });
-        checkReq.on('error', (err) => {
-          console.log(`[AI Inference] Local Ollama daemon not running or unreachable (${err.message})`);
-          resolve(null);
-        });
-        checkReq.on('timeout', () => {
-          checkReq.destroy();
-          console.log(`[AI Inference] Local Ollama daemon check timed out`);
-          resolve(null);
-        });
-        checkReq.end();
-      });
-    } catch (e) {
-      console.warn(`[AI Inference Notice] Local Ollama error: ${e.message}`);
-      return null;
+        if (res && res.success) return res;
+      } catch (e) {
+        console.warn(`[AI Inference Notice] Local Ollama error: ${e.message}`);
+      }
     }
+    return null;
   };
 
   // 1. OPTION 1 FOR FIN: Local Open-Source AI first if preferred
@@ -863,7 +894,25 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
     if (localRes && localRes.success) return localRes;
   }
 
-  // 8. Error reporting - All AI inference engines failed
+  // 8. Integrated Local AI Model Engine (TinyLlama-Engine) - Self-contained zero-external-dependency local model
+  if (options.nicheKey && options.nicheConfig) {
+    try {
+      console.log(`[AI Inference] 🤖 Engaging Integrated Local AI Model (TinyLlama-Engine) for ${options.nicheKey}...`);
+      const localResult = selectLocalTopicFromTrends(
+        options.nicheKey,
+        options.searchSnippets || [],
+        options.pastTopics || [],
+        options.nicheConfig
+      );
+      if (localResult && localResult.data) {
+        return localResult;
+      }
+    } catch (e) {
+      console.warn(`[AI Inference Notice] Integrated Local Model error: ${e.message}`);
+    }
+  }
+
+  // 9. Error reporting - All AI inference engines failed
   throw new Error('All active AI inference models failed to execute topic discovery & selection.');
 }
 
@@ -977,7 +1026,13 @@ ${pastTopicsListStr || 'None yet.'}
 
 Formulate candidate topics from DuckDuckGo trends, check for similarities against the past database, ensure zero similarity, choose 1 winning unique topic, and return strictly valid JSON.`;
 
-  const aiResult = await callActiveAiForJson(systemPrompt, userPrompt, null, { preferLocalAi: nicheKey === 'fin', nicheKey });
+  const aiResult = await callActiveAiForJson(systemPrompt, userPrompt, null, {
+    preferLocalAi: nicheKey === 'fin',
+    nicheKey,
+    nicheConfig,
+    searchSnippets: allSearchResults,
+    pastTopics
+  });
   let parsedData = aiResult.data;
   const modelUsed = aiResult.modelUsed;
 
