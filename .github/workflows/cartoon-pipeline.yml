@@ -11,17 +11,18 @@ on:
         default: ''
         type: string
       engine:
-        description: 'Rendering Engine (ffmpeg for ultra-fast reliable 2.5D animation, blender for 3D cutout)'
+        description: 'Rendering Engine (moviepy for exact puppet character animation, ffmpeg for ultra-fast 2.5D, blender for 3D cutout)'
         required: false
-        default: 'ffmpeg'
+        default: 'moviepy'
         type: choice
         options:
+          - moviepy
           - ffmpeg
           - blender
       dry_run:
-        description: 'Dry Run Mode (Uncheck for live YouTube Tech Channel upload)'
+        description: 'Dry Run Mode (Render & validate for artifact download only, skips live YouTube upload)'
         required: true
-        default: false
+        default: true
         type: boolean
 
 jobs:
@@ -52,9 +53,9 @@ jobs:
       - name: Install Node Dependencies
         run: npm install --legacy-peer-deps --no-audit --no-fund
 
-      - name: Install Python Neural Audio Packages
+      - name: Install Python Neural Audio & Video Packages
         run: |
-          pip install --no-cache-dir kokoro-onnx soundfile
+          pip install --no-cache-dir kokoro-onnx soundfile moviepy pillow numpy
 
       - name: Cache & Download Kokoro-82M ONNX Models
         run: |
@@ -117,8 +118,8 @@ jobs:
       - name: Execute Cartoon Factory Pipeline
         env:
           TEST_TOPIC: ${{ github.event.inputs.topic }}
-          CARTOON_ENGINE: ${{ github.event.inputs.engine || 'ffmpeg' }}
-          DRY_RUN: ${{ github.event.inputs.dry_run }}
+          CARTOON_ENGINE: ${{ github.event.inputs.engine || 'moviepy' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run != '' && github.event.inputs.dry_run || 'true' }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
           GROK_API_KEY_2: ${{ secrets.GROK_API_KEY_2 }}
@@ -144,9 +145,11 @@ jobs:
           name: cartoon-episode-output-${{ github.run_id }}
           path: |
             rendered_videos/*.mp4
+            public/rendered_videos/*.mp4
             test_artifacts/cartoon_episode_plan.json
             test_artifacts/validation_report.json
             test_artifacts/subtitles.srt
+            test_artifacts/factory_job_record.json
           retention-days: 14
 
       - name: Commit & Push Daily Blueprint Manifest & Weekly Keep-Alive

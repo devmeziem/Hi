@@ -148,16 +148,40 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
   const { mouthCuesJson, action = 'talking', emotion = 'curious', camera = 'medium', bgImage = '' } = options;
-  let engineUsed = 'ffmpeg';
+  let engineUsed = 'moviepy';
 
   // Remove stale incomplete output if present
   try { if (fs.existsSync(outputSceneMp4)) fs.unlinkSync(outputSceneMp4); } catch {}
 
-  const forceFfmpeg = process.env.CARTOON_ENGINE === 'ffmpeg' || process.env.USE_BLENDER === 'false';
-  const blenderBin = !forceFfmpeg ? getBlenderBinPath() : null;
-  let blenderSucceeded = false;
+  const bgInput = (bgImage && fs.existsSync(bgImage)) ? bgImage : svgPath;
+  let renderSucceeded = false;
 
-  if (blenderBin) {
+  // 1. PRIMARY ENGINE: MoviePy Exact Puppet Animator
+  const moviepyScript = path.join(process.cwd(), 'scripts', 'character_moviepy_animator.py');
+  const preferMoviepy = process.env.CARTOON_ENGINE !== 'ffmpeg' && process.env.CARTOON_ENGINE !== 'blender';
+
+  if (preferMoviepy && fs.existsSync(moviepyScript)) {
+    console.log(`[Media Engine] 🎬 Invoking Python MoviePy Exact Puppet Engine: ${path.basename(outputSceneMp4)} (${duration}s, action: ${action})...`);
+    const bgArg = (bgInput && fs.existsSync(bgInput)) ? `--bg_image "${bgInput}"` : '';
+    const moviepyCmd = `python3 "${moviepyScript}" ${bgArg} --audio_wav "${wavPath}" --output_mp4 "${outputSceneMp4}" --duration ${duration} --action "${action}"`;
+    try {
+      execSync(moviepyCmd, { stdio: 'inherit', timeout: 120000 });
+      renderSucceeded = fs.existsSync(outputSceneMp4) && fs.statSync(outputSceneMp4).size > 1000;
+      if (renderSucceeded) {
+        engineUsed = 'moviepy';
+        console.log(`[Media Engine] ✅ MoviePy Exact Puppet rendered scene cleanly: ${path.basename(outputSceneMp4)}`);
+      }
+    } catch (err) {
+      console.warn(`[Media Engine] ⚠️ MoviePy encountered a notice: ${err.message}. Engaging resilient FFmpeg Exact Puppet compositor...`);
+      renderSucceeded = false;
+    }
+  }
+
+  // 2. BLENDER ENGINE (Optional / Headless)
+  const forceFfmpeg = process.env.CARTOON_ENGINE === 'ffmpeg' || process.env.USE_BLENDER === 'false';
+  const blenderBin = (!renderSucceeded && !forceFfmpeg && process.env.CARTOON_ENGINE === 'blender') ? getBlenderBinPath() : null;
+
+  if (!renderSucceeded && blenderBin) {
     engineUsed = 'blender';
     console.log(`[Media Engine] Blender CLI detected (${blenderBin}). Attempting 3D/2.5D render: ${path.basename(outputSceneMp4)} (${duration}s)...`);
     const blenderScript = path.join(process.cwd(), 'scripts', 'blender_cartoon_renderer.py');
@@ -169,97 +193,89 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
     
     try {
       execSync(blenderCmd, { stdio: 'inherit', timeout: 180000 });
-      blenderSucceeded = fs.existsSync(outputSceneMp4) && fs.statSync(outputSceneMp4).size > 1000;
+      renderSucceeded = fs.existsSync(outputSceneMp4) && fs.statSync(outputSceneMp4).size > 1000;
     } catch (err) {
-      console.warn(`[Media Engine] ⚠️ Blender headless execution encountered an error: ${err.message}`);
-      console.log(`[Media Engine] 🔄 Seamlessly engaging resilient fallback: High-Precision FFmpeg 2.5D Animated Motion Engine...`);
-      blenderSucceeded = false;
+      console.warn(`[Media Engine] ⚠️ Blender headless execution notice: ${err.message}`);
+      renderSucceeded = false;
     }
   }
 
-  // If Blender was not present, was disabled, or failed to render cleanly, use High-Precision 3D/2.5D Puppet Compositor in FFmpeg
-  if (!blenderSucceeded) {
+  // 3. HIGH-PRECISION FFMPEG COMPOSITOR (Guarantees the exact character is ALWAYS in frame)
+  if (!renderSucceeded) {
     engineUsed = 'ffmpeg';
-    console.log(`[Media Engine] Rendering 3D Comparison Puppet Scene via FFmpeg Engine: ${path.basename(outputSceneMp4)} (${duration}s)...`);
+    console.log(`[Media Engine] Rendering Exact Puppet Scene via High-Precision FFmpeg Engine: ${path.basename(outputSceneMp4)} (${duration}s)...`);
 
-    const puppetDir = path.join(process.cwd(), 'cartoon_character_assets', 'comparison_puppet');
-    const hasPuppet = fs.existsSync(puppetDir) && fs.existsSync(path.join(puppetDir, 'puppet_idle.png'));
+    // Priority to exact_puppet directory
+    let puppetDir = path.join(process.cwd(), 'cartoon_character_assets', 'exact_puppet');
+    if (!fs.existsSync(puppetDir) || !fs.existsSync(path.join(puppetDir, 'puppet_idle.png'))) {
+      puppetDir = path.join(process.cwd(), 'cartoon_character_assets', 'comparison_puppet');
+    }
 
-    const bgInput = (bgImage && fs.existsSync(bgImage)) ? bgImage : svgPath;
-    const isCloseUp = camera === 'close_up' || camera === 'medium_to_close';
+    const puppetWalk = path.join(puppetDir, 'puppet_walking.png');
+    const puppetIdle = path.join(puppetDir, 'puppet_idle.png');
+    const puppetPointLeft = path.join(puppetDir, 'puppet_point_left.png');
+    const puppetPointRight = path.join(puppetDir, 'puppet_point_right.png');
+    const puppetCompare = path.join(puppetDir, 'puppet_explain_both.png');
+    const puppetTalk = path.join(puppetDir, 'puppet_talking.png');
+    const puppetEyes = path.join(puppetDir, 'puppet_blink.png');
 
-    if (hasPuppet) {
-      // 3D Comparison Puppet Compositing
-      const puppetWalk = path.join(puppetDir, 'puppet_walking.png');
-      const puppetIdle = path.join(puppetDir, 'puppet_idle.png');
-      const puppetPointLeft = path.join(puppetDir, 'puppet_point_left.png');
-      const puppetPointRight = path.join(puppetDir, 'puppet_point_right.png');
-      const puppetCompare = path.join(puppetDir, 'puppet_compare_both.png');
-      const puppetEyes = path.join(puppetDir, 'puppet_eyes_closed.png');
+    // Decide main pose based on action
+    let mainPuppet = fs.existsSync(puppetCompare) ? puppetCompare : puppetIdle;
+    let puppetX = 260;
+    if (action === 'point_left') {
+      mainPuppet = fs.existsSync(puppetPointLeft) ? puppetPointLeft : puppetIdle;
+      puppetX = 310;
+    } else if (action === 'point_right') {
+      mainPuppet = fs.existsSync(puppetPointRight) ? puppetPointRight : puppetIdle;
+      puppetX = 210;
+    } else if (action === 'walk_in') {
+      mainPuppet = fs.existsSync(puppetWalk) ? puppetWalk : puppetIdle;
+    } else if (action === 'talking' || action === 'idle') {
+      mainPuppet = fs.existsSync(puppetTalk) ? puppetTalk : puppetIdle;
+    }
 
-      // Decide main pose based on action
-      let mainPuppet = puppetCompare;
-      let puppetX = 260;
-      if (action === 'point_left') {
-        mainPuppet = puppetPointLeft;
-        puppetX = 300;
-      } else if (action === 'point_right') {
-        mainPuppet = puppetPointRight;
-        puppetX = 220;
-      } else if (action === 'walk_in') {
-        mainPuppet = puppetWalk;
-      } else if (action === 'talking' || action === 'idle') {
-        mainPuppet = fs.existsSync(puppetIdle) ? puppetIdle : puppetCompare;
-      }
+    const walkAsset = fs.existsSync(puppetWalk) ? puppetWalk : mainPuppet;
+    const standAsset = fs.existsSync(puppetIdle) ? puppetIdle : mainPuppet;
+    const blinkAsset = fs.existsSync(puppetEyes) ? puppetEyes : mainPuppet;
 
-      // Build animation graph
-      let filterComplex = '';
-      let ffmpegCmd = '';
+    let filterComplex = '';
+    let ffmpegCmd = '';
 
-      if (action === 'walk_in') {
-        // Walk in from left, then stand
-        filterComplex = [
-          `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
-          `[1:v]scale=-1:1020[walk]`,
-          `[2:v]scale=-1:1020[stand]`,
-          `[3:v]scale=-1:1020[eyes]`,
-          `[bg][walk]overlay=x='if(lte(t,1.2), -350 + t*510, -9999)':y='820 + 10*abs(sin(t*12))':enable='lte(t,1.2)'[s1]`,
-          `[s1][stand]overlay=x=260:y='820 + 4*sin(t*3)':enable='between(t,1.2,2.4)+between(t,2.58,${duration})'[s2]`,
-          `[s2][eyes]overlay=x=300:y='820 + 4*sin(t*3)':enable='between(t,2.4,2.58)'[v]`
-        ].join(';');
+    if (action === 'walk_in') {
+      // Walk in from left with stepping bounce, then settle into speaking stance
+      filterComplex = [
+        `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
+        `[1:v]scale=-1:1100[walk]`,
+        `[2:v]scale=-1:1100[stand]`,
+        `[3:v]scale=-1:1100[eyes]`,
+        `[bg][walk]overlay=x='if(lte(t,1.2), -380 + t*530, -9999)':y='760 + 12*abs(sin(t*12))':enable='lte(t,1.2)'[s1]`,
+        `[s1][stand]overlay=x=260:y='760 + 5*sin(t*3)':enable='between(t,1.2,2.3)+between(t,2.46,${duration})'[s2]`,
+        `[s2][eyes]overlay=x=260:y='760 + 5*sin(t*3)':enable='between(t,2.3,2.46)'[v]`
+      ].join(';');
 
-        ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${puppetWalk}" -loop 1 -t ${duration} -i "${puppetCompare}" -loop 1 -t ${duration} -i "${puppetEyes}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 4:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
-      } else {
-        // Dynamic pose with breathing and natural eye blink at 2.3s - 2.45s
-        filterComplex = [
-          `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
-          `[1:v]scale=-1:1020[pose]`,
-          `[2:v]scale=-1:1020[eyes]`,
-          `[bg][pose]overlay=x=${puppetX}:y='820 + 4*sin(t*3)':enable='between(t,0,2.3)+between(t,2.46,${duration})'[s1]`,
-          `[s1][eyes]overlay=x=300:y='820 + 4*sin(t*3)':enable='between(t,2.3,2.46)'[v]`
-        ].join(';');
-
-        ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${mainPuppet}" -loop 1 -t ${duration} -i "${puppetEyes}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 3:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
-      }
-
-      try {
-        execSync(ffmpegCmd, { stdio: 'pipe', timeout: 90000 });
-      } catch (err) {
-        console.warn(`[Media Engine] Puppet compositing notice: ${err.message}. Retrying with basic zoom...`);
-        const zoomFilter = isCloseUp
-          ? `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0015,1.2)':d=${Math.ceil(duration * 30)}:x='iw/2-(iw/zoom/2)':y='ih/3-(ih/zoom/3)':s=1080x1920:fps=30`
-          : `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0008,1.08)':d=${Math.ceil(duration * 30)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
-        const fallbackCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -i "${wavPath}" -filter_complex "[0:v]${zoomFilter},format=yuv420p[v]" -map "[v]" -map 1:a -c:v libx264 -preset fast -crf 20 -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
-        execSync(fallbackCmd, { stdio: 'pipe', timeout: 60000 });
-      }
+      ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${walkAsset}" -loop 1 -t ${duration} -i "${standAsset}" -loop 1 -t ${duration} -i "${blinkAsset}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 4:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
     } else {
-      // Standard zoom fallback if puppet assets are not found
-      const zoomFilter = isCloseUp
-        ? `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0015,1.2)':d=${Math.ceil(duration * 30)}:x='iw/2-(iw/zoom/2)':y='ih/3-(ih/zoom/3)':s=1080x1920:fps=30`
-        : `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0008,1.08)':d=${Math.ceil(duration * 30)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
+      // Dynamic host pose with breathing sway and periodic eye blinks
+      filterComplex = [
+        `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
+        `[1:v]scale=-1:1100[pose]`,
+        `[2:v]scale=-1:1100[eyes]`,
+        `[bg][pose]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='between(t,0,2.3)+between(t,2.46,${duration})'[s1]`,
+        `[s1][eyes]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='between(t,2.3,2.46)'[v]`
+      ].join(';');
 
-      const ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -i "${wavPath}" -filter_complex "[0:v]${zoomFilter},format=yuv420p[v]" -map "[v]" -map 1:a -c:v libx264 -preset medium -crf 20 -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
-      execSync(ffmpegCmd, { stdio: 'pipe', timeout: 60000 });
+      ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${mainPuppet}" -loop 1 -t ${duration} -i "${blinkAsset}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 3:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+    }
+
+    try {
+      execSync(ffmpegCmd, { stdio: 'pipe', timeout: 90000 });
+      renderSucceeded = true;
+    } catch (err) {
+      console.warn(`[Media Engine] Composite retry notice: ${err.message}. Rendering solid puppet overlay...`);
+      // Solid overlay fallback - ALWAYS keeps character on screen!
+      const robustCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${mainPuppet}" -i "${wavPath}" -filter_complex "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg];[1:v]scale=-1:1100[char];[bg][char]overlay=x=(W-w)/2:y=H-h-50[v]" -map "[v]" -map 2:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+      execSync(robustCmd, { stdio: 'pipe', timeout: 60000 });
+      renderSucceeded = true;
     }
   }
 

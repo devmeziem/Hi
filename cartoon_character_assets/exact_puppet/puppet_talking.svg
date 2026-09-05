@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 50 500 1000" width="500" height="1000">
+  <!-- Group for complete articulated mannequin puppet -->
+  <g id="puppet_root">
+    <!-- 1. Legs & Shoes -->
+    
+    <!-- Pelvis / Jeans Top -->
+    <polygon points="202,544 298,544 294,590 250,600 206,590" fill="#2563eb" stroke="#0f172a" stroke-width="2.5" />
+    <path d="M 250 544 L 250 590" stroke="#1e3a8a" stroke-width="2" />
+
+    <!-- Left Leg (Straight, long, lanky) -->
+    <polygon points="206,585 244,592 238,760 206,760" fill="#3b82f6" stroke="#0f172a" stroke-width="2.5" />
+    <!-- Left Knee Joint Sphere -->
+    <circle cx="222" cy="760" r="17" fill="#2563eb" stroke="#0f172a" stroke-width="2.5" />
+    <circle cx="222" cy="760" r="11" fill="#60a5fa" opacity="0.4" />
+    <!-- Left Lower Shin -->
+    <polygon points="208,760 236,760 230,950 204,950" fill="#3b82f6" stroke="#0f172a" stroke-width="2.5" />
+    <!-- Rolled Denim Cuff -->
+    <rect x="200" y="942" width="34" height="18" rx="4" fill="#93c5fd" stroke="#0f172a" stroke-width="2" />
+
+    <!-- Right Leg (Straight, long, lanky) -->
+    <polygon points="256,592 294,585 294,760 262,760" fill="#2563eb" stroke="#0f172a" stroke-width="2.5" />
+    <!-- Right Knee Joint Sphere -->
+    <circle cx="278" cy="760" r="17" fill="#1d4ed8" stroke="#0f172a" stroke-width="2.5" />
+    <circle cx="278" cy="760" r="11" fill="#60a5fa" opacity="0.4" />
+    <!-- Right Lower Shin -->
+    <polygon points="264,760 292,760 296,950 270,950" fill="#2563eb" stroke="#0f172a" stroke-width="2.5" />
+    <!-- Rolled Denim Cuff -->
+    <rect x="266" y="942" width="34" height="18" rx="4" fill="#93c5fd" stroke="#0f172a" stroke-width="2" />
+
+    <!-- Left Shoe (Converse Style: Black canvas, white toe cap, white rubber sole, white laces) -->
+    <path d="M 156 988 L 232 988 L 232 958 L 202 958 L 165 972 Z" fill="#18181b" stroke="#0f172a" stroke-width="2.5" />
+    <path d="M 152 988 L 178 988 L 178 972 L 158 974 Z" fill="#f4f4f5" stroke="#0f172a" stroke-width="2" />
+    <rect x="152" y="986" width="82" height="7" fill="#f4f4f5" stroke="#0f172a" stroke-width="1.5" />
+    <line x1="184" y1="966" x2="198" y2="966" stroke="#ffffff" stroke-width="2" />
+    <line x1="186" y1="972" x2="200" y2="972" stroke="#ffffff" stroke-width="2" />
+
+    <!-- Right Shoe (Converse Style) -->
+    <path d="M 268 988 L 344 988 L 335 972 L 298 958 L 268 958 Z" fill="#18181b" stroke="#0f172a" stroke-width="2.5" />
+    <path d="M 322 988 L 348 988 L 342 974 L 322 972 Z" fill="#f4f4f5" stroke="#0f172a" stroke-width="2" />
+    <rect x="266" y="986" width="84" height="7" fill="#f4f4f5" stroke="#0f172a" stroke-width="1.5" />
+    <line x1="302" y1="966" x2="316" y2="966" stroke="#ffffff" stroke-width="2" />
+    <line x1="300" y1="972" x2="314" y2="972" stroke="#ffffff" stroke-width="2" />
+  
+
+    <!-- 2. Arms (back/torso depth) -->
+    
+    <!-- Left Arm -->
+    <polygon points="166,450 186,450 178,570 162,570" fill="#f59e0b" stroke="#0f172a" stroke-width="2" />
+    <!-- Signature Red Elbow Joint Band -->
+    <rect x="158" y="565" width="24" height="16" rx="4" fill="#ef4444" stroke="#0f172a" stroke-width="2" />
+    <polygon points="162,580 178,580 175,700 161,700" fill="#f59e0b" stroke="#0f172a" stroke-width="2" />
+    <!-- Signature Red Wrist Joint Band -->
+    <rect x="157" y="695" width="22" height="14" rx="3" fill="#ef4444" stroke="#0f172a" stroke-width="2" />
+    <!-- Left Hand -->
+    <polygon points="161,710 175,710 178,765 160,765" fill="#fbbf24" stroke="#0f172a" stroke-width="2" />
+
+    <!-- Right Arm -->
+    <polygon points="314,450 334,450 338,570 322,570" fill="#f59e0b" stroke="#0f172a" stroke-width="2" />
+    <!-- Signature Red Elbow Joint Band -->
+    <rect x="318" y="565" width="24" height="16" rx="4" fill="#ef4444" stroke="#0f172a" stroke-width="2" />
+    <polygon points="322,580 338,580 339,700 325,700" fill="#f59e0b" stroke="#0f172a" stroke-width="2" />
+    <!-- Signature Red Wrist Joint Band -->
+    <rect x="321" y="695" width="22" height="14" rx="3" fill="#ef4444" stroke="#0f172a" stroke-width="2" />
+    <!-- Right Hand -->
+    <polygon points="325,710 339,710 340,765 322,765" fill="#fbbf24" stroke="#0f172a" stroke-width="2" />
+  
+
+    <!-- 3. Torso, T-Shirt, Belt -->
+    
+    <!-- Shoulder Ball Joints -->
+    <circle cx="178" cy="365" r="18" fill="#1e3a8a" stroke="#0f172a" stroke-width="2.5" />
+    <circle cx="322" cy="365" r="18" fill="#1e3a8a" stroke="#0f172a" stroke-width="2.5" />
+    <circle cx="178" cy="365" r="14" fill="#2563eb" opacity="0.3" />
+    <circle cx="322" cy="365" r="14" fill="#2563eb" opacity="0.3" />
+
+    <!-- Dark Indigo Navy Blue Crewneck T-Shirt -->
+    <path d="M 230 338 Q 250 348 270 338 L 330 355 L 340 450 L 305 460 L 298 520 L 202 520 L 195 460 L 160 450 L 170 355 Z" 
+          fill="#1e3a8a" stroke="#0f172a" stroke-width="3" stroke-linejoin="round" />
+    
+    <!-- T-Shirt Shading & Crewneck Collar -->
+    <path d="M 230 338 Q 250 350 270 338" fill="none" stroke="#60a5fa" stroke-width="3" />
+    <polygon points="250,344 330,355 340,450 305,460 298,520 250,520" fill="#0f172a" opacity="0.22" />
+
+    <!-- Brown Belt with Buckle -->
+    <rect x="200" y="520" width="100" height="24" rx="4" fill="#78350f" stroke="#0f172a" stroke-width="2.5" />
+    <rect x="238" y="523" width="24" height="18" rx="3" fill="#b45309" stroke="#fef3c7" stroke-width="2" />
+  
+
+    <!-- 4. Head, Hair, Face, Eyes, Red Nose -->
+    
+    <!-- Neck -->
+    <polygon points="238,300 262,300 265,340 235,340" fill="#f59e0b" stroke="#1f2937" stroke-width="2" />
+    <polygon points="235,335 265,335 263,342 237,342" fill="#d97706" />
+
+    <!-- Left Ear -->
+    <ellipse cx="188" cy="235" rx="14" ry="18" fill="#f59e0b" stroke="#1f2937" stroke-width="2.5" />
+    <ellipse cx="188" cy="235" rx="8" ry="11" fill="#ea580c" />
+
+    <!-- Right Ear -->
+    <ellipse cx="312" cy="235" rx="14" ry="18" fill="#f59e0b" stroke="#1f2937" stroke-width="2.5" />
+    <ellipse cx="312" cy="235" rx="8" ry="11" fill="#ea580c" />
+
+    <!-- Head Base / Face Polygon -->
+    <polygon points="198,160 302,160 292,280 250,305 208,280" fill="#fbbf24" stroke="#1f2937" stroke-width="3" stroke-linejoin="round" />
+    
+    <!-- Face Shading (Geometric facets) -->
+    <polygon points="250,160 302,160 292,280 250,305" fill="#f59e0b" opacity="0.45" />
+
+    <!-- Hair (Dark chocolate brown with 2 iconic sharp upward/forward spikes) -->
+    <path d="M 194 175 
+             L 194 150 
+             L 220 152 
+             L 235 90 
+             L 255 140 
+             L 282 85 
+             L 295 145 
+             L 306 175 
+             L 302 185 
+             L 296 160 
+             L 204 160 
+             L 194 185 Z" 
+          fill="#3b1d11" stroke="#1f2937" stroke-width="3" stroke-linejoin="round" />
+    <polygon points="235,90 255,140 248,155 228,145" fill="#2c140a" />
+    <polygon points="282,85 295,145 285,155 268,145" fill="#2c140a" />
+
+    <!-- Eyebrows (Thick, angular, expressive) -->
+    <polygon points="210,195 240,190 242,198 212,203" fill="#1f2937" />
+    <polygon points="260,190 290,195 288,203 258,198" fill="#1f2937" />
+
+    <!-- Eyes -->
+    <circle cx="223" cy="215" r="14" fill="#ffffff" stroke="#1f2937" stroke-width="2.5" />
+       <circle cx="223" cy="215" r="7" fill="#111827" />
+       <circle cx="221" cy="212" r="2.5" fill="#ffffff" />
+    <circle cx="277" cy="215" r="14" fill="#ffffff" stroke="#1f2937" stroke-width="2.5" />
+       <circle cx="277" cy="215" r="7" fill="#111827" />
+       <circle cx="275" cy="212" r="2.5" fill="#ffffff" />
+
+    <!-- Triangular Red Nose (Signature feature) -->
+    <polygon points="250,205 264,250 246,252" fill="#ef4444" stroke="#1f2937" stroke-width="2" stroke-linejoin="round" />
+    <polygon points="250,205 264,250 256,251" fill="#dc2626" />
+
+    <!-- Mouth -->
+    <path d="M 235 272 Q 250 288 265 272 Z" fill="#7f1d1d" stroke="#1f2937" stroke-width="2.5" />
+       <path d="M 240 274 Q 250 278 260 274" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" />
+  
+  </g>
+</svg>

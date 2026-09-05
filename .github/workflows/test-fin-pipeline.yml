@@ -1,10 +1,6 @@
 name: Test Fin Blueprint Pipeline
 
 on:
-  push:
-    branches:
-      - main
-      - master
   schedule:
     - cron: '0 2,7,12,17,22 * * *' # Automated 5x daily posts: 4x Shorts + 1x Deep Dive (UTC)
   workflow_dispatch:
