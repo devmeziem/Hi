@@ -179,6 +179,7 @@ jobs:
             echo "No changes staged for commit."
           else
             git commit -m "chore(sync): automated cartoon manifest and weekly keepalive [skip ci]"
+            git pull --rebase origin ${{ github.ref_name }} || true
             git push origin HEAD:${{ github.ref_name }}
           fi
 

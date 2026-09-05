@@ -177,22 +177,89 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
     }
   }
 
-  // If Blender was not present, was disabled, or failed to render cleanly, use FFmpeg
+  // If Blender was not present, was disabled, or failed to render cleanly, use High-Precision 3D/2.5D Puppet Compositor in FFmpeg
   if (!blenderSucceeded) {
     engineUsed = 'ffmpeg';
-    console.log(`[Media Engine] Rendering 2.5D Animated Scene via FFmpeg Motion Engine: ${path.basename(outputSceneMp4)} (${duration}s)...`);
+    console.log(`[Media Engine] Rendering 3D Comparison Puppet Scene via FFmpeg Engine: ${path.basename(outputSceneMp4)} (${duration}s)...`);
+
+    const puppetDir = path.join(process.cwd(), 'cartoon_character_assets', 'comparison_puppet');
+    const hasPuppet = fs.existsSync(puppetDir) && fs.existsSync(path.join(puppetDir, 'puppet_idle.png'));
+
     const bgInput = (bgImage && fs.existsSync(bgImage)) ? bgImage : svgPath;
     const isCloseUp = camera === 'close_up' || camera === 'medium_to_close';
-    const zoomFilter = isCloseUp
-      ? `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0015,1.2)':d=${Math.ceil(duration * 30)}:x='iw/2-(iw/zoom/2)':y='ih/3-(ih/zoom/3)':s=1080x1920:fps=30`
-      : `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0008,1.08)':d=${Math.ceil(duration * 30)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
 
-    const ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -i "${wavPath}" -filter_complex "[0:v]${zoomFilter},format=yuv420p[v]" -map "[v]" -map 1:a -c:v libx264 -preset medium -crf 20 -c:a aac -b:a 192k -shortest "${outputSceneMp4}"`;
-    
-    try {
+    if (hasPuppet) {
+      // 3D Comparison Puppet Compositing
+      const puppetWalk = path.join(puppetDir, 'puppet_walking.png');
+      const puppetIdle = path.join(puppetDir, 'puppet_idle.png');
+      const puppetPointLeft = path.join(puppetDir, 'puppet_point_left.png');
+      const puppetPointRight = path.join(puppetDir, 'puppet_point_right.png');
+      const puppetCompare = path.join(puppetDir, 'puppet_compare_both.png');
+      const puppetEyes = path.join(puppetDir, 'puppet_eyes_closed.png');
+
+      // Decide main pose based on action
+      let mainPuppet = puppetCompare;
+      let puppetX = 260;
+      if (action === 'point_left') {
+        mainPuppet = puppetPointLeft;
+        puppetX = 300;
+      } else if (action === 'point_right') {
+        mainPuppet = puppetPointRight;
+        puppetX = 220;
+      } else if (action === 'walk_in') {
+        mainPuppet = puppetWalk;
+      } else if (action === 'talking' || action === 'idle') {
+        mainPuppet = fs.existsSync(puppetIdle) ? puppetIdle : puppetCompare;
+      }
+
+      // Build animation graph
+      let filterComplex = '';
+      let ffmpegCmd = '';
+
+      if (action === 'walk_in') {
+        // Walk in from left, then stand
+        filterComplex = [
+          `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
+          `[1:v]scale=-1:1020[walk]`,
+          `[2:v]scale=-1:1020[stand]`,
+          `[3:v]scale=-1:1020[eyes]`,
+          `[bg][walk]overlay=x='if(lte(t,1.2), -350 + t*510, -9999)':y='820 + 10*abs(sin(t*12))':enable='lte(t,1.2)'[s1]`,
+          `[s1][stand]overlay=x=260:y='820 + 4*sin(t*3)':enable='between(t,1.2,2.4)+between(t,2.58,${duration})'[s2]`,
+          `[s2][eyes]overlay=x=300:y='820 + 4*sin(t*3)':enable='between(t,2.4,2.58)'[v]`
+        ].join(';');
+
+        ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${puppetWalk}" -loop 1 -t ${duration} -i "${puppetCompare}" -loop 1 -t ${duration} -i "${puppetEyes}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 4:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+      } else {
+        // Dynamic pose with breathing and natural eye blink at 2.3s - 2.45s
+        filterComplex = [
+          `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
+          `[1:v]scale=-1:1020[pose]`,
+          `[2:v]scale=-1:1020[eyes]`,
+          `[bg][pose]overlay=x=${puppetX}:y='820 + 4*sin(t*3)':enable='between(t,0,2.3)+between(t,2.46,${duration})'[s1]`,
+          `[s1][eyes]overlay=x=300:y='820 + 4*sin(t*3)':enable='between(t,2.3,2.46)'[v]`
+        ].join(';');
+
+        ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${mainPuppet}" -loop 1 -t ${duration} -i "${puppetEyes}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 3:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+      }
+
+      try {
+        execSync(ffmpegCmd, { stdio: 'pipe', timeout: 90000 });
+      } catch (err) {
+        console.warn(`[Media Engine] Puppet compositing notice: ${err.message}. Retrying with basic zoom...`);
+        const zoomFilter = isCloseUp
+          ? `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0015,1.2)':d=${Math.ceil(duration * 30)}:x='iw/2-(iw/zoom/2)':y='ih/3-(ih/zoom/3)':s=1080x1920:fps=30`
+          : `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0008,1.08)':d=${Math.ceil(duration * 30)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
+        const fallbackCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -i "${wavPath}" -filter_complex "[0:v]${zoomFilter},format=yuv420p[v]" -map "[v]" -map 1:a -c:v libx264 -preset fast -crf 20 -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+        execSync(fallbackCmd, { stdio: 'pipe', timeout: 60000 });
+      }
+    } else {
+      // Standard zoom fallback if puppet assets are not found
+      const zoomFilter = isCloseUp
+        ? `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0015,1.2)':d=${Math.ceil(duration * 30)}:x='iw/2-(iw/zoom/2)':y='ih/3-(ih/zoom/3)':s=1080x1920:fps=30`
+        : `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0008,1.08)':d=${Math.ceil(duration * 30)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
+
+      const ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -i "${wavPath}" -filter_complex "[0:v]${zoomFilter},format=yuv420p[v]" -map "[v]" -map 1:a -c:v libx264 -preset medium -crf 20 -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
       execSync(ffmpegCmd, { stdio: 'pipe', timeout: 60000 });
-    } catch (err) {
-      throw new Error(`FFmpeg scene compositing failed: ${err.message}`);
     }
   }
 

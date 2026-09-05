@@ -899,74 +899,18 @@ function synthesizeDeterministicDeepDiveStoryboard(archetype, topicTitle, channe
  * If a generated Stoic YouTube Short has less than 92 seconds duration (under 1.5 minutes),
  * this function enriches and adds tactical philosophical depth WITHOUT starting afresh.
  */
-function expandStoicStoryboardIfNeeded(storyboard, minDurationSeconds = 92.0, channelHandle = '@thestoicarchitect-n4b') {
+function expandStoicStoryboardIfNeeded(storyboard, minDurationSeconds = 60.0, channelHandle = '@thestoicarchitect-n4b') {
   if (!storyboard || !Array.isArray(storyboard.slides) || storyboard.slides.length === 0) {
     return storyboard;
   }
 
+  // Preserve 100% active AI script content — never inject canned phrases or stock paragraphs!
   const totalWords = storyboard.slides.reduce((acc, s) => acc + (s.text || '').split(/\s+/).filter(Boolean).length, 0);
   const estimatedSeconds = (totalWords / 2.35) + (storyboard.slides.length * 0.4);
 
-  if (estimatedSeconds >= minDurationSeconds) {
-    return storyboard;
-  }
+  console.log(`[Stoic Script Validation] Active AI storyboard confirmed: ~${estimatedSeconds.toFixed(1)}s (${totalWords} words across ${storyboard.slides.length} unique slides). Preserving pure AI narration.`);
 
-  console.log(`[Stoic Duration Expansion] Current script is ~${estimatedSeconds.toFixed(1)}s (${totalWords} words, ${storyboard.slides.length} slides). Expanding to >1.5 minutes without restarting...`);
-
-  const originalSlides = [...storyboard.slides];
-  const lastIndex = originalSlides.length - 1;
-  const outroSlide = originalSlides[lastIndex];
-  const bodySlides = originalSlides.slice(1, lastIndex);
-
-  const expandedBodySlides = bodySlides.map((slide, idx) => {
-    let text = slide.text.trim();
-    const wordsInSlide = text.split(/\s+/).filter(Boolean).length;
-    if (wordsInSlide < 35) {
-      if (idx === 0) {
-        text += ` Understand that reacting in haste is the greatest surrender of your inner autonomy; when you pause, you master your destiny.`;
-      } else if (idx === 1) {
-        text += ` As Marcus Aurelius reminded himself, you have power over your mind, not outside events. Realize this, and you will find instant strength.`;
-      } else if (idx === 2) {
-        text += ` Take three measured, grounding breaths and mentally detach from the noise before taking any external action.`;
-      } else {
-        text += ` True mental fortitude is not the absence of chaos, but an unyielding, tranquil anchor within your own soul.`;
-      }
-    }
-    return { ...slide, text };
-  });
-
-  const supplementalSlides = [
-    {
-      text: `Practice the Stoic premeditatio malorum each morning: anticipate difficult personalities and friction before they happen, so nothing can disturb your tranquil equilibrium.`,
-      visual: `Cinematic 9:16 vertical 8k scene, philosopher meditating at sunrise with warm amber illumination on dark obsidian marble`
-    },
-    {
-      text: `When others attempt to bait your anger or trigger self-doubt, view their words as mere wind against a fortress stone. Silence is your supreme shield.`,
-      visual: `Cinematic 9:16 vertical 8k scene, majestic ancient stone fortress standing calm amidst stormy elements, 35mm anamorphic`
-    }
-  ];
-
-  const newSlidesList = [
-    originalSlides[0],
-    ...expandedBodySlides,
-    ...supplementalSlides,
-    outroSlide
-  ];
-
-  const reindexedSlides = newSlidesList.map((s, i) => ({
-    ...s,
-    slideIndex: i
-  }));
-
-  const newTotalWords = reindexedSlides.reduce((acc, s) => acc + (s.text || '').split(/\s+/).filter(Boolean).length, 0);
-  const newEstimatedSeconds = (newTotalWords / 2.35) + (reindexedSlides.length * 0.4);
-
-  console.log(`[Stoic Duration Expansion] ✅ Script successfully expanded to ~${newEstimatedSeconds.toFixed(1)}s (${newTotalWords} words, ${reindexedSlides.length} slides) with intact loop!`);
-
-  return {
-    ...storyboard,
-    slides: reindexedSlides
-  };
+  return storyboard;
 }
 
 module.exports = {

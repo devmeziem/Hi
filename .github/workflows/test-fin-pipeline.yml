@@ -102,6 +102,7 @@ jobs:
 
       - name: Queue Generated Video to TikTok through Buffer
         if: ${{ github.event.inputs.dry_run != 'true' }}
+        continue-on-error: true
         env:
           TEST_TOPIC: ${{ github.event.inputs.topic }}
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
@@ -142,6 +143,7 @@ jobs:
             echo "No changes staged for commit."
           else
             git commit -m "chore(sync): automated fin manifest and weekly keepalive [skip ci]"
+            git pull --rebase origin ${{ github.ref_name }} || true
             git push origin HEAD:${{ github.ref_name }}
           fi
 

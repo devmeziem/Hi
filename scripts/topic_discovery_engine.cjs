@@ -61,24 +61,15 @@ const NICHE_SPHERES = {
     channelName: 'Fin Blueprint',
     targetAudience: 'Everyday young people, students, beginners, and aspiring entrepreneurs starting with little or no capital ($0 to $50 USD). Single standard currency is US Dollars ($ USD).',
     searchQueries: [
-      'how to start a business with under 50 dollars for beginners',
-      'what are the biggest financial traps keeping young people broke in their 20s',
-      'how to build a 500 dollar emergency fund fast on low income',
-      'what high income skills can you learn completely free in 30 days',
-      'how does compound interest actually make regular people wealthy over time',
-      'what small business can you start today with less than 50 dollars capital',
-      'how to stop living paycheck to paycheck and eliminate hidden expense leaks',
-      'how to tell if an online business or crypto investment is a scam or ponzi',
-      'how do small businesses calculate profit margins and unit economics',
-      'what is the smartest way to invest your first 100 dollars as a beginner',
-      'how do successful entrepreneurs test and validate an idea in 24 hours',
-      'how to negotiate freelance pricing and charge for value instead of hours',
-      'why do most people stay poor even when working 60 hours a week',
-      'how to create and sell a digital product on your phone with zero budget',
-      'how does inflation erode your savings and how do you protect purchasing power',
-      'what is the difference between cash flow and profit in a small business',
-      'how do students budget money and make daily income on campus',
-      'how to pay off debt fast using the debt snowball method step by step'
+      'unusual small business ideas under 50 dollars capital that actually work',
+      'hidden financial mistakes keeping smart people broke in their 20s',
+      'real ways everyday people make daily income with just a smartphone',
+      'psychological money tricks that stop impulse spending cold',
+      'compound interest real life comparison examples for beginners',
+      'how to calculate real profit margins and eliminate hidden costs in small business',
+      'how to build a fast 500 dollar emergency cash reserve with zero loans',
+      'high demand phone-only freelance skills you can learn in 14 days',
+      'how to detect online money scams pyramid schemes and fake gurus'
     ],
     spheres: [
       { id: 'small_biz_low_cap', name: 'Small Capital Business ($0-$5-$50)', desc: 'Micro-retail, digital services, zero-inventory agency, local distribution' },
@@ -110,33 +101,18 @@ const NICHE_SPHERES = {
     channelName: 'The Stoic Architect',
     targetAudience: 'Everyday people seeking practical emotional discipline, unshakeable mental fortitude, and psychological resilience amidst modern chaos.',
     searchQueries: [
-      '5 ways to get self confidence and stop doubting yourself',
-      '5 ways to build unshakeable self confidence according to Stoicism',
-      '5 Stoic rules to get unstoppable quiet self confidence',
-      'how to build quiet self confidence without seeking validation',
-      '5 daily Stoic habits that build genuine self confidence from within',
-      'how to respond to disrespect with strategic silence and calm',
-      'how did Marcus Aurelius handle severe anxiety stress and betrayal',
-      'how to stop overthinking and start taking immediate disciplined action',
-      'why is discipline more powerful than motivation according to Stoics',
-      'how to stop caring what other people think about your life choices',
-      'how to build ice cold mental composure under extreme pressure',
-      'what should you do when everything is falling apart in your personal life',
-      'how to overcome imposter syndrome and self doubt using Stoic virtue',
-      'how to set unbreakable emotional boundaries with toxic people',
-      'why did Seneca say we suffer more often in imagination than reality',
-      'how did Marcus Aurelius conquer morning discipline and wake up with purpose',
-      'how to recover from mental burnout and exhaustion without quitting',
-      'how to deal with betrayal and broken trust without seeking revenge',
-      'why does remembering your mortality Memento Mori destroy fear and procrastination',
-      'how to stop being a people pleaser and say no without feeling guilty',
-      'how to apply the Dichotomy of Control to things outside your power',
-      'why is solitude and self reliance essential for building strong character',
-      'how to conquer cheap dopamine addiction and build delayed gratification',
-      'what is the Stoic secret to turning any obstacle into the way forward'
+      'unexpected psychological tricks for quiet confidence and self respect',
+      'ancient stoic strategies for handling toxic disrespect and betrayal',
+      'unspoken laws of emotional armor and mental toughness in modern life',
+      'rare teachings of Epictetus and Seneca on self mastery and focus',
+      'fascinating psychology experiments on overcoming self doubt and fear',
+      'how ancient philosophers stayed ice cold under extreme provocation',
+      'the psychological secret to emotional detachment and zero reaction',
+      'dark psychology defense strategies using calm strategic silence',
+      'why the strongest people never explain themselves or seek validation'
     ],
     spheres: [
-      { id: 'stoic_self_confidence', name: '5 Ways to Build Unshakeable Self Confidence', desc: 'Internal validation, virtue-anchored self-respect, silencing self-doubt, mastering self-command' },
+      { id: 'stoic_self_confidence', name: 'Unshakeable Quiet Confidence & Self-Command', desc: 'Internal validation, virtue-anchored self-respect, silencing self-doubt, mastering self-command' },
       { id: 'disrespect_silence', name: 'Responding to Disrespect with Strategic Silence', desc: 'Inner Citadel — silence as the ultimate weapon against provocation' },
       { id: 'failure_rebuild', name: 'Rebuilding from Failure (Amor Fati)', desc: 'Using adversity as fuel, rising from total career or personal collapse' },
       { id: 'overthinking_action', name: 'Killing Overthinking with Immediate Action', desc: 'Physical momentum curing mental anxiety, breaking analysis paralysis' },
@@ -165,51 +141,26 @@ const NICHE_SPHERES = {
   },
   cartoon: {
     channelHandle: '@ArchieExplains',
-    channelName: 'Archie Explains',
-    targetAudience: 'Curious minds of all ages who love fast, visual, entertaining explanations of science, technology, and everyday mysteries.',
+    channelName: 'Archie Explains (Comparison & Science)',
+    targetAudience: 'Curious minds of all ages who love fast, visual, entertaining side-by-side comparisons, contrasts, and science mysteries.',
     searchQueries: [
-      'why does time slow down near a massive black hole',
-      'how does the internet travel under oceans through giant glass cables',
-      'why do we dream when we sleep and where do dreams come from',
-      'how do artificial intelligence neural networks actually learn and think',
-      'why dont giant 500 ton airplanes fall out of the sky',
-      'how does the human brain store and recall memories across neurons',
-      'how do white blood cells and antibodies hunt viruses in your body',
-      'what bizarre creatures survive at the bottom of the Mariana Trench',
-      'how do noise cancelling headphones cancel sound waves in real time',
-      'how do lithium ion batteries store energy and why do they catch fire',
-      'what would happen to the human body in the vacuum of deep space',
-      'how does CRISPR gene editing find and cut specific strands of DNA',
-      'why can quantum particles exist in two places at the same time',
-      'what would happen if the Earth suddenly stopped spinning for 5 seconds',
-      'how does a smartphone camera take clear photos in total darkness',
-      'why do optical illusions fool our brain even when we know it is a trick',
-      'how do maglev bullet trains float on air without touching the tracks',
-      'how does lightning form and why is thunder so loud',
-      'why can tardigrades survive in outer space radiation and boiling water'
+      'mind blowing side by side comparisons of everyday things',
+      'cheap vs expensive engineering and science comparisons',
+      'human body vs animal superpowers surprising comparison',
+      'earth vs other planets extreme conditions compared',
+      'myth vs reality science comparisons that surprise people',
+      'fastest animals vs fastest human machines comparison',
+      'deepest ocean vs highest mountain extreme comparison',
+      'ancient technology vs modern technology comparison breakdown'
     ],
     spheres: [
-      { id: 'quantum_physics_simple', name: 'Quantum Physics in Plain English', desc: 'Wave-particle duality, quantum superposition, Schrödinger\'s cat' },
-      { id: 'undersea_internet_cables', name: 'How the Internet Travels Under Oceans', desc: 'Subsea fiber-optic cables, glass strands carrying global data' },
-      { id: 'science_of_sleep_dreams', name: 'Why We Sleep and Where Dreams Come From', desc: 'REM cycles, brain memory sorting, evolutionary function of dreaming' },
-      { id: 'how_ai_actually_learns', name: 'How AI Neural Networks Actually Learn', desc: 'Weights, biases, gradient descent, training on trillions of words' },
-      { id: 'black_holes_event_horizon', name: 'Black Holes & Event Horizons', desc: 'Singularities, spaghettification, time dilation near extreme mass' },
-      { id: 'how_airplanes_fly', name: 'Why Giant Airplanes Don\'t Fall Out of the Sky', desc: 'Bernoulli principle, angle of attack, thrust overcoming drag' },
-      { id: 'brain_memory_wiring', name: 'How the Human Brain Stores Memories', desc: 'Synaptic plasticity, neurons firing together, retrieval circuits' },
-      { id: 'immune_system_wars', name: 'Immune System Wars vs Viruses', desc: 'T-cells, antibodies, phagocytes hunting pathogens in bloodstream' },
-      { id: 'deep_ocean_pressure', name: 'Deep Ocean Mysteries & Crushing Pressure', desc: 'Mariana Trench, bioluminescence, creatures adapted to 1,000 atm' },
-      { id: 'electric_car_batteries', name: 'How Lithium-Ion Batteries Actually Work', desc: 'Lithium ions hopping between cathode and anode, battery degradation' },
-      { id: 'fusion_vs_fission', name: 'Nuclear Fusion vs Fission Explained', desc: 'Splitting heavy atoms vs smashing hydrogen into helium (Sun\'s engine)' },
-      { id: 'crispr_gene_editing', name: 'How CRISPR Gene Editing Works', desc: 'Molecular scissors cutting viral DNA, rewriting genetic code' },
-      { id: 'relativity_time_dilation', name: 'Time Dilation & Einstein\'s Relativity', desc: 'Why time ticks slower on GPS satellites and near gravity wells' },
-      { id: 'noise_cancelling_headphones', name: 'How Noise-Cancelling Headphones Cancel Sound', desc: 'Destructive interference, anti-phase soundwaves neutralizing noise' },
-      { id: 'animal_evolution_wonders', name: 'Evolution & Weird Animal Superpowers', desc: 'Mantis shrimp vision, tardigrade survival, chameleon color cells' },
-      { id: 'hurricanes_lightning_weather', name: 'How Hurricanes & Lightning Bolts Form', desc: 'Thermal updrafts, electrostatic friction, low-pressure eye walls' },
-      { id: 'renewable_energy_tech', name: 'Solar Panels & Geothermal Power Explained', desc: 'Photovoltaic electron excitation, harnessing Earth\'s molten core' },
-      { id: '3d_graphics_rendering', name: 'How 3D Video Game Graphics Engines Render', desc: 'Ray tracing, polygon rasterization, GPU shader pipelines' },
-      { id: 'ocean_currents_climate', name: 'Ocean Currents & Global Climate Conveyor', desc: 'Thermohaline circulation, Gulf Stream warming northern continents' },
-      { id: 'optical_illusions_psychology', name: 'Why Optical Illusions Fool the Human Brain', desc: 'Visual cortex predictive processing, blind spot compensation' },
-      { id: 'maglev_superconductors', name: 'Maglev Trains & Superconductors', desc: 'Zero electrical resistance, Meissner effect magnetic levitation' }
+      { id: 'scale_and_size_comparisons', name: 'Mind-Blowing Size & Scale Comparisons', desc: 'Comparing human scale to atoms, mountains, planets, and black holes' },
+      { id: 'cheap_vs_expensive_science', name: 'Cheap vs Expensive Engineering Comparisons', desc: 'Budget materials vs luxury aerospace engineering breakdowns' },
+      { id: 'human_vs_animal_mechanics', name: 'Human Biology vs Animal Superpowers', desc: 'Comparing human vision, endurance, and strength to nature\'s extremes' },
+      { id: 'myth_vs_reality_contrasts', name: 'Popular Myths vs Real Science Contrasts', desc: 'Busting common assumptions with empirical physics side-by-side' },
+      { id: 'deep_ocean_vs_deep_space', name: 'Deep Ocean vs Outer Space Extreme Comparison', desc: 'Mariana Trench crushing pressure vs space vacuum survival comparison' },
+      { id: 'ai_vs_human_brain_speed', name: 'AI Supercomputers vs Human Brain Neural Comparison', desc: 'Comparing processing speed, power consumption, and memory retention' },
+      { id: 'speed_comparisons', name: 'Extreme Speed Comparisons (Cheetah to Light)', desc: 'Bullet trains, fighter jets, meteor re-entries compared' }
     ]
   }
 };
@@ -1071,9 +1022,13 @@ async function discoverAndSelectTopicViaActiveAi(nicheKey = 'fin', options = {})
 Target Audience: ${nicheConfig.targetAudience}
 
 YOUR MANDATE:
-1. REAL-TIME SEARCH INSIGHTS: Analyze the real-time search topics, questions, and insights discovered from live web search (DuckDuckGo & Google News) today.
+1. REAL-TIME SEARCH INSIGHTS: Analyze the real-time search topics, questions, and insights discovered from live web search (DuckDuckGo, Wikipedia & Google News) today.
 2. 21+ THEMATIC ARCHETYPE SPHERES: Connect the trending search signals with relevant sphere archetypes.
-3. CANDIDATE FORMULATION: Formulate candidate topics based on the trending search details.
+3. STRICT ANTI-CLICHÉ & ANTI-REPETITION MANDATE (USER DIRECTIVE):
+   - NEVER use "the reason you are tired is not because you are tired" or ANY variation of this formula.
+   - NEVER write vague, repetitive sermons about "inner autonomy" or "stop seeking applause".
+   - NEVER generate generic stock scripts or repeat topics from previous runs.
+   - Ground every topic in a concrete, actionable, and unexpected real-world reality, tactic, or comparison.
 4. AI DATABASE SIMILARITY & DEDUPLICATION VERIFICATION:
    Compare each candidate topic against EVERY single previously saved topic in our database.
    Verify if there are any conceptual, thematic, or keyword similarities with past videos.

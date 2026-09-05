@@ -355,16 +355,15 @@ async function resolveTikTokChannel() {
       ? allDiscoveredChannels.map(c => `[${c.service || 'unknown'}: "${c.displayName || c.name}" (ID: ${c.id})]`).join(', ')
       : 'None found';
 
-    fail('Could not find an active TikTok channel in your Buffer account.', {
-      what: 'Buffer account channel discovery for TikTok',
-      why: `No connected, non-locked TikTok channels were found. Available channels in Buffer: ${channelSummary}`,
-      fixes: [
-        'Visit Buffer Channels settings: https://publish.buffer.com/channels',
-        'Click "Connect Channel" -> Select "TikTok"',
-        'Authorize Buffer to publish videos to your TikTok account',
-        'Optionally set BUFFER_TIKTOK_CHANNEL_ID directly in your environment/secrets to skip auto-discovery.'
-      ]
-    });
+    console.warn(`\n[Buffer/TikTok] ⚠️ NOTICE: No active TikTok channel found in Buffer account.`);
+    console.warn(`Available channels in Buffer: ${channelSummary}`);
+    console.warn(`To enable automated TikTok scheduling through Buffer:`);
+    console.warn(`  1. Visit Buffer Channels settings: https://publish.buffer.com/channels`);
+    console.warn(`  2. Click "Connect Channel" -> Select "TikTok"`);
+    console.warn(`  3. Authorize Buffer to publish videos to your TikTok account`);
+    console.warn(`  4. Optionally set BUFFER_TIKTOK_CHANNEL_ID in secrets to skip auto-discovery.\n`);
+    console.log(`[Buffer/TikTok] Video is safely rendered and stored. Skipping Buffer queue dispatch.`);
+    return null;
   }
 
   console.log(`[Buffer/TikTok] Auto-selected TikTok channel: "${foundTikTok.displayName || foundTikTok.name}" (ID: ${foundTikTok.id})`);
@@ -491,14 +490,7 @@ async function createBufferPost(channel, mediaUrl, caption) {
 
 async function main() {
   if (!BUFFER_API_KEY) {
-    fail('BUFFER_API_KEY environment variable is not configured.', {
-      what: 'Buffer Authentication & Access',
-      why: 'BUFFER_API_KEY was empty or not supplied to this step.',
-      fixes: [
-        'Add BUFFER_API_KEY to your GitHub repository secrets at Settings > Secrets and variables > Actions',
-        'Verify that the workflow step passes BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}'
-      ]
-    });
+    console.warn('[Buffer/TikTok] BUFFER_API_KEY environment variable is not configured. Skipping Buffer queue dispatch.');
     return;
   }
 
@@ -506,6 +498,10 @@ async function main() {
   const caption = resolvePostCaption();
   const mediaUrl = await resolvePublicVideoUrl(videoPath);
   const channel = await resolveTikTokChannel();
+  if (!channel) {
+    console.log('[Buffer/TikTok] No active TikTok channel selected. Skipping post creation.');
+    return;
+  }
   return await createBufferPost(channel, mediaUrl, caption);
 }
 

@@ -98,6 +98,15 @@ jobs:
           FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
         run: node scripts/test_stoic_runner.cjs
 
+      - name: Generate 5th Daily Stoic Video (5s Cold Mystery Quote Reel)
+        if: always()
+        env:
+          FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
+          FIRESTORE_API_KEY: ${{ secrets.FIRESTORE_API_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/generate_stoic_quote_reel.cjs
+
       - name: Commit & Push Daily Blueprint Manifest & Weekly Keep-Alive
         if: always()
         run: |
@@ -128,6 +137,7 @@ jobs:
             echo "No changes staged for commit."
           else
             git commit -m "chore(sync): automated stoic manifest and weekly keepalive [skip ci]"
+            git pull --rebase origin ${{ github.ref_name }} || true
             git push origin HEAD:${{ github.ref_name }}
           fi
 

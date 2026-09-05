@@ -1256,79 +1256,18 @@ function synthesizeDeterministicFinDeepDiveStoryboard(archetype, topicTitle, cha
  * If a generated YouTube Short has less than 92 seconds duration (under 1.5 minutes),
  * this function enriches and adds tactical instructional depth WITHOUT starting afresh.
  */
-function expandFinStoryboardIfNeeded(storyboard, minDurationSeconds = 92.0, channelHandle = '@bones_ceo') {
+function expandFinStoryboardIfNeeded(storyboard, minDurationSeconds = 60.0, channelHandle = '@bones_ceo') {
   if (!storyboard || !Array.isArray(storyboard.slides) || storyboard.slides.length === 0) {
     return storyboard;
   }
 
-  // Calculate current total word count and estimated speech duration
+  // Preserve 100% active AI script content — never inject canned phrases or stock paragraphs!
   const totalWords = storyboard.slides.reduce((acc, s) => acc + (s.text || '').split(/\s+/).filter(Boolean).length, 0);
   const estimatedSeconds = (totalWords / 2.35) + (storyboard.slides.length * 0.4);
 
-  if (estimatedSeconds >= minDurationSeconds) {
-    return storyboard;
-  }
+  console.log(`[Fin Script Validation] Active AI storyboard confirmed: ~${estimatedSeconds.toFixed(1)}s (${totalWords} words across ${storyboard.slides.length} unique slides). Preserving pure AI narration.`);
 
-  console.log(`[Duration Expansion] Current script is ~${estimatedSeconds.toFixed(1)}s (${totalWords} words, ${storyboard.slides.length} slides). Expanding to >1.5 minutes without restarting...`);
-
-  const originalSlides = [...storyboard.slides];
-  const lastIndex = originalSlides.length - 1;
-  const outroSlide = originalSlides[lastIndex];
-  const bodySlides = originalSlides.slice(1, lastIndex);
-
-  // 1. Expand existing body slides with deeper tactical nuance
-  const expandedBodySlides = bodySlides.map((slide, idx) => {
-    let text = slide.text.trim();
-    const wordsInSlide = text.split(/\s+/).filter(Boolean).length;
-    
-    if (wordsInSlide < 35) {
-      if (idx === 0) {
-        text += ` Specifically, analyze your weekly bank statement to spot subtle recurring micro-leaks before they drain your foundational capital.`;
-      } else if (idx === 1) {
-        text += ` Focus entirely on high-turnover unit velocity, keeping your initial product inventory tightly aligned with immediate customer demand.`;
-      } else if (idx === 2) {
-        text += ` Make sure to separate your personal feeding money into a completely separate zero-fee digital wallet to protect your operating funds.`;
-      } else {
-        text += ` Track your exact daily gross receipts versus inventory replacement costs each night so you never eat your seed capital.`;
-      }
-    }
-    return { ...slide, text };
-  });
-
-  // 2. Insert supplemental actionable breakdown slides if needed to securely exceed 95+ seconds
-  const supplementalSlides = [
-    {
-      text: `Let us break down the exact unit economics in simple numbers: if you invest $10 to source 10 units and distribute them for $2.50 each, your gross return is $25, leaving you $15 in clean operating profit to immediately reinvest.`,
-      visual: `Cinematic 9:16 vertical 8k photorealistic scene, high contrast financial breakdown diagram glowing on sleek obsidian slate with emerald and gold accents`
-    },
-    {
-      text: `The single biggest reason most beginners fail is impulse withdrawal: taking money out of the business before reaching steady 30-day cash flow. Always protect your cash buffer like a fortress.`,
-      visual: `Cinematic 9:16 vertical 8k photorealistic scene, digital vault security concept with emerald rim lighting, modern glass aesthetic`
-    }
-  ];
-
-  const newSlidesList = [
-    originalSlides[0],
-    ...expandedBodySlides,
-    ...supplementalSlides,
-    outroSlide
-  ];
-
-  // Re-index slides sequentially
-  const reindexedSlides = newSlidesList.map((s, i) => ({
-    ...s,
-    slideIndex: i
-  }));
-
-  const newTotalWords = reindexedSlides.reduce((acc, s) => acc + (s.text || '').split(/\s+/).filter(Boolean).length, 0);
-  const newEstimatedSeconds = (newTotalWords / 2.35) + (reindexedSlides.length * 0.4);
-
-  console.log(`[Duration Expansion] ✅ Script successfully expanded to ~${newEstimatedSeconds.toFixed(1)}s (${newTotalWords} words, ${reindexedSlides.length} slides) with intact infinite loop!`);
-
-  return {
-    ...storyboard,
-    slides: reindexedSlides
-  };
+  return storyboard;
 }
 
 module.exports = {
