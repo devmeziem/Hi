@@ -15,7 +15,6 @@
 const https = require('https');
 const http = require('http');
 const { getCachedResponse, setCachedResponse } = require('./local_model_cache.cjs');
-const { generateLocalCartoonPlan } = require('./integrated_local_ai_model.cjs');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
@@ -633,19 +632,6 @@ async function generateCartoonEpisodePlan(topic) {
     return { ...res.plan, modelUsed: res.provider };
   } catch (err) {
     errors.push(`Local Ollama: ${err.message}`);
-  }
-
-  // 7. Integrated Local AI Model Engine (TinyLlama-Engine) - Self-contained zero-external-dependency local model
-  try {
-    console.log(`[AI Planner] 🤖 Engaging Integrated Local AI Model (TinyLlama-Engine) for: "${targetTopic}"...`);
-    const localRes = generateLocalCartoonPlan(targetTopic, DEFAULT_CHARACTER);
-    if (localRes && localRes.plan) {
-      console.log(`[AI Planner] ✅ Successfully generated plan via ${localRes.provider}`);
-      setCachedResponse('cartoon_plan', targetTopic, '', localRes.plan);
-      return { ...localRes.plan, modelUsed: localRes.provider };
-    }
-  } catch (err) {
-    errors.push(`Integrated Local Model: ${err.message}`);
   }
 
   // Fatal Error Diagnostic Report: Fallback / preset scripts are strictly removed per user directive

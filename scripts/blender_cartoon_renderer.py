@@ -76,19 +76,24 @@ def setup_render_settings(duration_seconds=5.0, fps=30, output_path="output.mp4"
     scene.frame_start = 1
     scene.frame_end = total_frames
     
-    # Configure render engine (Cycles Headless CPU for pure headless rendering)
-    scene.render.engine = 'CYCLES'
-    if hasattr(scene, 'cycles'):
-        scene.cycles.device = 'CPU'
-        scene.cycles.samples = 1
-        scene.cycles.preview_samples = 1
-        scene.cycles.use_adaptive_sampling = False
-        scene.cycles.max_bounces = 1
-        scene.cycles.diffuse_bounces = 0
-        scene.cycles.glossy_bounces = 0
-        scene.cycles.transparent_max_bounces = 8
-        scene.cycles.transmission_bounces = 0
-        scene.cycles.volume_bounces = 0
+    # Configure render engine (Workbench for lightning-fast 2.5D cutout rendering without headless Cycles crashes)
+    use_cycles = os.environ.get('BLENDER_ENGINE', '').upper() == 'CYCLES'
+    if use_cycles:
+        scene.render.engine = 'CYCLES'
+        if hasattr(scene, 'cycles'):
+            scene.cycles.device = 'CPU'
+            scene.cycles.samples = 1
+            scene.cycles.preview_samples = 1
+            scene.cycles.use_adaptive_sampling = False
+            scene.cycles.max_bounces = 1
+            scene.cycles.diffuse_bounces = 0
+            scene.cycles.glossy_bounces = 0
+            scene.cycles.transparent_max_bounces = 4
+    else:
+        scene.render.engine = 'BLENDER_WORKBENCH'
+        if hasattr(scene, 'display'):
+            scene.display.shading.light = 'FLAT'
+            scene.display.shading.color_type = 'TEXTURE'
     
     # Configure MP4 Video Output
     scene.render.image_settings.file_format = 'FFMPEG'

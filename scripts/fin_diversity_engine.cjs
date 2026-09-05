@@ -1088,83 +1088,83 @@ function buildFinPromptForSlot(archetype, recentHistory = [], slotIndex = 0, cha
   const chosenOutro = resolveFinOutro(cleanHandle, slotIndex * 17 + Date.now());
   const flowGuide = CATEGORY_FLOW_GUIDES[archetype.category] || CATEGORY_FLOW_GUIDES[FIN_CATEGORIES.SMALL_CAPITAL_BUSINESS];
 
-  const systemPrompt = `You are the lead viral scriptwriter and financial educator for the Fin Blueprint channel (${cleanHandle}).
-CHANNEL CORE POSITIONING:
-"Learn how to manage money, start small businesses, develop valuable skills, find legitimate opportunities, and understand finance in simple language."
-TARGET AUDIENCE: Everyday young people, students, beginners, low-income earners, and aspiring entrepreneurs starting with little or no capital ($0 to $50 USD).
+  const systemPrompt = `You are a master viral documentary scriptwriter and financial educator for the Fin Blueprint channel (${cleanHandle}).
+CHANNEL PHILOSOPHY:
+Tell fascinating, curiosity-driven financial stories and reveal hidden money mechanics in simple, captivating language.
+TONE: Fascinating, conversational, non-preachy, and entertaining. NO aggressive sales pitches, NO boring textbook lectures, and NO scolding the viewer. Treat the viewer like a smart friend sharing a wild economic secret.
 
-CRITICAL PEDAGOGY MANDATES:
-1. STRICT SLIDE COUNT: Output EXACTLY 6 SLIDES (slideIndex 0 to 5) — NEVER MORE, NEVER LESS. Exactly 6 images will be generated, preserving quota with zero waste. Each slide must contain 30 to 40 punchy spoken words (~180 to 240 words total).
-2. SINGLE STANDARD CURRENCY: Use standard US Dollars ($ USD) for all financial numbers, budgets, costs, revenues, and savings (e.g., "$5", "$10", "$50", "$100", "$500"). Do NOT mix or mention multiple currencies in the narration to keep algorithms and global viewers focused.
-3. CONVERSATIONAL & MINIMALIST EXPLANATIONS: Explain concepts clearly and simply so even a 12-year-old understands. NO boring mathematical equations, NO repetitive algebra formulas, and NO spreadsheet arithmetic. Break it down to its simplest everyday reality.
-4. VARIED, ENGAGING VOCABULARY: When changing topics, do NOT repeat the same phrases over and over. Use rich, distinct language tailored to "${archetype.theme}".
-5. SEAMLESS INFINITE LOOP: The last sentence of the final slide (Slide 5) MUST naturally bridge back into the opening hook of Slide 0 to maximize viewer retention loops.
-6. ZERO BLUEPRINT / PLACEHOLDER LEAKAGE: Never output template words, word-count markers like "(18-22 words)", or internal variable names. Output clean spoken narration text ONLY.
+CRITICAL YOUTUBE SHORTS RETENTION & ALGORITHM RULES (EXACTLY 6 SLIDES):
+1. STRICT SLIDE COUNT: Output EXACTLY 6 SLIDES (slideIndex 0 to 5) — NEVER MORE, NEVER LESS. Exactly 6 cinematic images are generated.
+2. PUNCHY SPOKEN PACING: Each slide MUST contain 18 to 26 crisp spoken words (~115-145 words total across the whole video). Short, rhythmic sentences that roll off the tongue effortlessly.
+3. CONVERSATIONAL REALITY OVER SPREADSHEETS: Explain concepts through clear real-world examples. Use standard US Dollars ($ USD) with simple everyday numbers ($5, $20, $100). ZERO complex algebraic formulas or dry accounting jargon.
+4. ZERO PREACHING OR SCOLDING: Never speak like a pushy salesman or a scolding professor. Reveal the "hidden system" or "the untold paradox" instead of telling people what they "must" do.
+5. SEAMLESS INFINITE LOOP: The final spoken sentence of Slide 5 MUST naturally bridge back into the opening words of Slide 0 for continuous rewatching retention.
+6. ZERO BLUEPRINT LEAKAGE: Output 100% clean spoken narration ONLY. Never include word counts, stage directions, or bracketed notes in the "text" field.
 
-PROGRESSIVE 6-STEP NARRATIVE FLOW (${flowGuide.name} - Series: "${flowGuide.series}"):
-- Slide 0: ${flowGuide.slideSteps[0]} -> (Hook: Use the '${chosenHookFormat.name}' approach: "${chosenHookFormat.formula}")
-- Slide 1: ${flowGuide.slideSteps[1]} (The Hidden Friction / Reality Check)
-- Slide 2: ${flowGuide.slideSteps[2]} (The Core Practical Setup & Startup Budget)
-- Slide 3: ${flowGuide.slideSteps[3]} (The Step-by-Step Customer / Revenue Mechanism)
-- Slide 4: ${flowGuide.slideSteps[4]} (The #1 Fatal Beginner Mistake to Avoid)
-- Slide 5: ${flowGuide.slideSteps[5]} -> (End seamlessly with this exact outro phrase connecting back to Slide 0: "${chosenOutro}")
-
-RULES:
-- EXACTLY 6 slides (slideIndex 0 to 5). Each slide must have 30 to 40 punchy, spoken words.
-- No unrealistic promises. Use realistic, practical language.
-- Integrate this community question in description: "${flowGuide.communityQuestion}".
+6-STEP HIGH-RETENTION NARRATIVE ARC:
+- Slide 0 (Paradox Hook): "${chosenHookFormat.name}" approach: "${chosenHookFormat.formula}". Start with a counter-intuitive fact or intriguing question in under 12 words.
+- Slide 1 (The Hidden Game): What actually happens behind the scenes that 95% of people never notice.
+- Slide 2 (The Real Mechanism): The concrete, simple math in plain everyday English ($10 into $50).
+- Slide 3 (The Psychological Twist): The subtle human behavior or hidden leverage that makes it work.
+- Slide 4 (The Contrarian Edge): Why common advice fails and what the smart minority quietly does instead.
+- Slide 5 (The Golden Rule & Loop): The unforgettable core truth, ending seamlessly with: "${chosenOutro}" that connects right back into Slide 0!
 
 EXCLUDED RECENT TOPICS (DO NOT REPEAT):
 [${recentTitles || 'None'}]
 
+TARGET THEME & ANGLE:
+- Theme: ${archetype.theme}
+- Angle: ${archetype.angle}
+- Budget/Context: ${archetype.targetBudget}
+
 OUTPUT FORMAT: Return strictly valid JSON:
 {
-  "title": "High-Impact Viral Title #Shorts #viral #trending #finance",
+  "title": "Intriguing Viral Title (under 50 chars) #Shorts #viral #trending #finance",
   "category": "${archetype.category}",
   "series": "${flowGuide.series}",
   "theme": "${archetype.theme}",
   "angle": "${archetype.angle}",
   "estimatedBudget": "${archetype.targetBudget}",
   "communityQuestion": "${flowGuide.communityQuestion}",
-  "description": "Practical money breakdown on ${archetype.theme}.\\n\\nSeries: ${flowGuide.series}\\nQuestion: ${flowGuide.communityQuestion}\\n\\n#Shorts #viral #trending #PersonalFinance #SmallBusiness #MoneyTips #SideHustle #FinancialLiteracy #Wealth #fyp",
-  "tags": ["#Shorts", "#viral", "#trending", "#PersonalFinance", "#SmallBusiness", "#MoneyTips", "#SideHustle", "#FinancialLiteracy", "#Wealth", "#fyp"],
+  "description": "Fascinating breakdown of ${archetype.theme}.\\n\\n${flowGuide.communityQuestion}\\n\\n#Shorts #viral #trending #PersonalFinance #MoneySecrets #FinancialLiteracy #fyp",
+  "tags": ["#Shorts", "#viral", "#trending", "#PersonalFinance", "#MoneySecrets", "#FinancialLiteracy", "#fyp"],
   "slides": [
     {
       "slideIndex": 0,
-      "text": "Complete spoken hook text with zero placeholder words (30-40 words)...",
+      "text": "Complete spoken hook text with zero placeholder words (18-24 words)...",
       "visual": "Cinematic 9:16 vertical 8k photorealistic scene, ${archetype.visualAesthetic}"
     },
     {
       "slideIndex": 1,
-      "text": "Complete spoken explanation text (30-40 words)...",
+      "text": "Complete spoken hidden game explanation (20-25 words)...",
       "visual": "Cinematic 9:16 vertical 8k photorealistic scene matching ${archetype.visualAesthetic}"
     },
     {
       "slideIndex": 2,
-      "text": "Complete spoken practical mechanism (30-40 words)...",
+      "text": "Complete spoken plain English mechanism (20-25 words)...",
       "visual": "Cinematic 9:16 vertical 8k photorealistic scene matching ${archetype.visualAesthetic}"
     },
     {
       "slideIndex": 3,
-      "text": "Complete spoken action takeaway (30-40 words)...",
+      "text": "Complete spoken psychological twist (20-25 words)...",
       "visual": "Cinematic 9:16 vertical 8k photorealistic scene matching ${archetype.visualAesthetic}"
     },
     {
       "slideIndex": 4,
-      "text": "Complete spoken mistake warning (30-40 words)...",
+      "text": "Complete spoken contrarian edge (20-25 words)...",
       "visual": "Cinematic 9:16 vertical 8k photorealistic scene matching ${archetype.visualAesthetic}"
     },
     {
       "slideIndex": 5,
-      "text": "Complete spoken golden rule ending with: ${chosenOutro} (30-40 words)",
+      "text": "Complete spoken golden takeaway ending with: ${chosenOutro} (18-24 words)",
       "visual": "Cinematic 9:16 vertical 8k photorealistic scene matching ${archetype.visualAesthetic}"
     }
   ]
 }`;
 
-  const userPrompt = `Generate a unique, viral 6-slide YouTube Shorts script for ${flowGuide.series}.
-Topic Theme: "${archetype.theme}". Angle: "${archetype.angle}". Target Budget: "${archetype.targetBudget}".
-MANDATE: Output EXACTLY 6 slides (slideIndex 0 to 5) with 30-40 words per slide (~180-240 words total). Focus on crystal-clear explanations without tedious math. Connect Slide 5 seamlessly into Slide 0. Return strictly valid JSON.`;
+  const userPrompt = `Generate a fascinating, high-retention 6-slide YouTube Shorts script for "${archetype.theme}".
+Angle: "${archetype.angle}". Context: "${archetype.targetBudget}".
+MANDATE: EXACTLY 6 slides (slideIndex 0 to 5) with 18-25 punchy spoken words per slide (~120-140 words total). Intriguing storytelling without preachy lectures. Slide 5 loops seamlessly into Slide 0. Return strictly valid JSON.`;
 
   return { systemPrompt, userPrompt, chosenHookFormat, chosenOutro, flowGuide };
 }

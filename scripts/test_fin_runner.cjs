@@ -27,8 +27,6 @@ const {
   buildFinPromptForSlot,
   buildFinDeepDivePrompt,
   validateFinStoryboardQuality,
-  synthesizeDeterministicFinStoryboard,
-  synthesizeDeterministicFinDeepDiveStoryboard,
   fetchRecentFinHistoryFromFirestore,
   isFinTopicSimilarToHistory,
   selectDiverseFinArchetype,
@@ -40,6 +38,7 @@ const {
 const { verifyFinancialTopic } = require('./fin_fact_checker.cjs');
 const { discoverAndSelectTopicViaActiveAi } = require('./topic_discovery_engine.cjs');
 const { getCachedResponse, setCachedResponse } = require('./local_model_cache.cjs');
+const { evaluateScriptWithAi } = require('./ai_script_deduplicator.cjs');
 
 // ANSI Color helper for clean terminal outputs
 const colors = {
@@ -1273,6 +1272,21 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
     throw new Error(`ABORTING: Generated storyboard failed quality check (${qualityCheck.reason}). Refusing to publish invalid content.`);
   }
 
+  // Multi-layered AI Script Deduplication Check against Channel History
+  try {
+    const dedupResult = await evaluateScriptWithAi(scriptData, recentFinHistory, {
+      accountId: CLOUDFLARE_ACCOUNT_ID,
+      apiToken: CLOUDFLARE_API_TOKEN
+    });
+    if (dedupResult.isDuplicate) {
+      logWarning(`[AI Deduplicator] Script similarity flag (${dedupResult.similarityScore}%): ${dedupResult.reason}`);
+    } else {
+      logSuccess(`[AI Deduplicator] Verified unique script (${dedupResult.similarityScore}% overlap - PASS): ${dedupResult.reason}`);
+    }
+  } catch (e) {
+    logInfo(`[AI Deduplicator] Deduplication check notice: ${e.message}`);
+  }
+
   // Enforce YouTube Shorts duration mandate (> 1.5 minutes / 90+ seconds) without restarting from scratch
   if (!isDeepDive) {
     scriptData = expandFinStoryboardIfNeeded(scriptData, 92.0, CHANNEL_HANDLE);
@@ -1637,6 +1651,7 @@ async function synthesizeEnrichedSlides(storyboard) {
   }
 
   const enrichedSlides = [];
+  const isDeepDive = Boolean(storyboard?.isDeepDive) || (storyboard?.slides && storyboard.slides.length > 8);
 
   // Strict Quota Guard: Cap storyboard at exactly 6 slides for Shorts (zero over-creation, zero wasted Cloudflare image quota)
   if (!isDeepDive && storyboard.slides && storyboard.slides.length > 6) {

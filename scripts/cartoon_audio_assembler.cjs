@@ -153,10 +153,13 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
   // Remove stale incomplete output if present
   try { if (fs.existsSync(outputSceneMp4)) fs.unlinkSync(outputSceneMp4); } catch {}
 
-  const blenderBin = getBlenderBinPath();
+  const forceFfmpeg = process.env.CARTOON_ENGINE === 'ffmpeg' || process.env.USE_BLENDER === 'false';
+  const blenderBin = !forceFfmpeg ? getBlenderBinPath() : null;
+  let blenderSucceeded = false;
+
   if (blenderBin) {
     engineUsed = 'blender';
-    console.log(`[Media Engine] Blender CLI detected (${blenderBin}). Rendering 3D/2.5D scene: ${path.basename(outputSceneMp4)} (${duration}s)...`);
+    console.log(`[Media Engine] Blender CLI detected (${blenderBin}). Attempting 3D/2.5D render: ${path.basename(outputSceneMp4)} (${duration}s)...`);
     const blenderScript = path.join(process.cwd(), 'scripts', 'blender_cartoon_renderer.py');
     const assetsDir = path.join(process.cwd(), 'cartoon_character_assets');
     const mouthArg = (mouthCuesJson && fs.existsSync(mouthCuesJson)) ? `--mouth_cues "${mouthCuesJson}"` : '';
@@ -166,12 +169,18 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
     
     try {
       execSync(blenderCmd, { stdio: 'inherit', timeout: 180000 });
+      blenderSucceeded = fs.existsSync(outputSceneMp4) && fs.statSync(outputSceneMp4).size > 1000;
     } catch (err) {
-      throw new Error(`Blender rendering execution failed: ${err.message}`);
+      console.warn(`[Media Engine] ⚠️ Blender headless execution encountered an error: ${err.message}`);
+      console.log(`[Media Engine] 🔄 Seamlessly engaging resilient fallback: High-Precision FFmpeg 2.5D Animated Motion Engine...`);
+      blenderSucceeded = false;
     }
-  } else {
+  }
+
+  // If Blender was not present, was disabled, or failed to render cleanly, use FFmpeg
+  if (!blenderSucceeded) {
     engineUsed = 'ffmpeg';
-    console.log(`[Media Engine] Blender binary not detected in environment PATH. Rendering 2.5D Animated Scene via FFmpeg Motion Engine: ${path.basename(outputSceneMp4)} (${duration}s)...`);
+    console.log(`[Media Engine] Rendering 2.5D Animated Scene via FFmpeg Motion Engine: ${path.basename(outputSceneMp4)} (${duration}s)...`);
     const bgInput = (bgImage && fs.existsSync(bgImage)) ? bgImage : svgPath;
     const isCloseUp = camera === 'close_up' || camera === 'medium_to_close';
     const zoomFilter = isCloseUp

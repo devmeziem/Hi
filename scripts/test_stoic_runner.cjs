@@ -27,13 +27,11 @@ const {
   expandStoicStoryboardIfNeeded,
   isTopicSimilarToHistory,
   validateStoicStoryboardQuality,
-  synthesizeDeterministicStoryboard,
-  synthesizeDeterministicStoicDeepDiveStoryboard,
   formatViralShortsTitle
 } = require('./stoic_diversity_engine.cjs');
 const { discoverAndSelectTopicViaActiveAi } = require('./topic_discovery_engine.cjs');
 const { getCachedResponse, setCachedResponse } = require('./local_model_cache.cjs');
-const { generateLocalStoicStoryboard } = require('./integrated_local_ai_model.cjs');
+const { evaluateScriptWithAi } = require('./ai_script_deduplicator.cjs');
 
 // ANSI Color helper for terminal logs
 const colors = {
@@ -659,23 +657,7 @@ async function callLocalOllamaStoic(systemPrompt, userPrompt, activeTopic) {
     } catch {}
   }
 
-  // Integrated Local AI Model Fallback (TinyLlama-Engine)
-  try {
-    logInfo(`🤖 Engaging Integrated Local AI Model (TinyLlama-Engine) for Stoic Storyboard: "${activeTopic}"...`);
-    const localRes = generateLocalStoicStoryboard(activeTopic, resolvedArchetype);
-    if (localRes && localRes.storyboard) {
-      setCachedResponse('stoic_storyboard', activeTopic, '', localRes.storyboard);
-      return {
-        success: true,
-        modelName: localRes.provider,
-        content: JSON.stringify(localRes.storyboard)
-      };
-    }
-  } catch (e) {
-    logWarning(`[Local AI] Integrated model error: ${e.message}`);
-  }
-
-  return { success: false, error: 'All local models exhausted' };
+  return { success: false, error: 'Local Ollama not active on host' };
 }
 
 // ----------------------------------------------------
@@ -1272,6 +1254,21 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
         slide.text = text;
       }
     });
+  }
+
+  // Multi-layered AI Script Deduplication Check against Channel History
+  try {
+    const dedupResult = await evaluateScriptWithAi(scriptData, recentStoicHistory, {
+      accountId: CLOUDFLARE_ACCOUNT_ID,
+      apiToken: CLOUDFLARE_API_TOKEN
+    });
+    if (dedupResult.isDuplicate) {
+      logWarning(`[AI Deduplicator] Script similarity flag (${dedupResult.similarityScore}%): ${dedupResult.reason}`);
+    } else {
+      logSuccess(`[AI Deduplicator] Verified unique script (${dedupResult.similarityScore}% overlap - PASS): ${dedupResult.reason}`);
+    }
+  } catch (e) {
+    logInfo(`[AI Deduplicator] Deduplication check notice: ${e.message}`);
   }
 
   // Enforce YouTube Shorts duration mandate (> 1.5 minutes / 90+ seconds) without restarting from scratch

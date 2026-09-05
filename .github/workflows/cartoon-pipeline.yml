@@ -10,6 +10,14 @@ on:
         required: false
         default: ''
         type: string
+      engine:
+        description: 'Rendering Engine (ffmpeg for ultra-fast reliable 2.5D animation, blender for 3D cutout)'
+        required: false
+        default: 'ffmpeg'
+        type: choice
+        options:
+          - ffmpeg
+          - blender
       dry_run:
         description: 'Dry Run Mode (Uncheck for live YouTube Tech Channel upload)'
         required: true
@@ -109,6 +117,7 @@ jobs:
       - name: Execute Cartoon Factory Pipeline
         env:
           TEST_TOPIC: ${{ github.event.inputs.topic }}
+          CARTOON_ENGINE: ${{ github.event.inputs.engine || 'ffmpeg' }}
           DRY_RUN: ${{ github.event.inputs.dry_run }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
