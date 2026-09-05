@@ -1,0 +1,659 @@
+{
+  "metadata": {
+    "duration": 8.064,
+    "text": "Ever wondered how stories of ancient gods shaped world history? Let us explore the surprising truth behind these timeless legends.",
+    "hash": "a52bb47b4010e59bd0c87b1b7ea1a2f1"
+  },
+  "mouthCues": [
+    {
+      "start": 0,
+      "end": 0.1,
+      "value": "X"
+    },
+    {
+      "start": 0.1,
+      "end": 0.186,
+      "value": "D"
+    },
+    {
+      "start": 0.186,
+      "end": 0.271,
+      "value": "F"
+    },
+    {
+      "start": 0.271,
+      "end": 0.357,
+      "value": "D"
+    },
+    {
+      "start": 0.357,
+      "end": 0.443,
+      "value": "G"
+    },
+    {
+      "start": 0.443,
+      "end": 0.503,
+      "value": "B"
+    },
+    {
+      "start": 0.503,
+      "end": 0.546,
+      "value": "E"
+    },
+    {
+      "start": 0.546,
+      "end": 0.589,
+      "value": "C"
+    },
+    {
+      "start": 0.589,
+      "end": 0.632,
+      "value": "B"
+    },
+    {
+      "start": 0.632,
+      "end": 0.675,
+      "value": "B"
+    },
+    {
+      "start": 0.675,
+      "end": 0.717,
+      "value": "D"
+    },
+    {
+      "start": 0.717,
+      "end": 0.76,
+      "value": "G"
+    },
+    {
+      "start": 0.76,
+      "end": 0.803,
+      "value": "D"
+    },
+    {
+      "start": 0.803,
+      "end": 0.846,
+      "value": "B"
+    },
+    {
+      "start": 0.846,
+      "end": 0.906,
+      "value": "B"
+    },
+    {
+      "start": 0.906,
+      "end": 1.021,
+      "value": "B"
+    },
+    {
+      "start": 1.021,
+      "end": 1.135,
+      "value": "C"
+    },
+    {
+      "start": 1.135,
+      "end": 1.249,
+      "value": "E"
+    },
+    {
+      "start": 1.249,
+      "end": 1.31,
+      "value": "B"
+    },
+    {
+      "start": 1.31,
+      "end": 1.359,
+      "value": "B"
+    },
+    {
+      "start": 1.359,
+      "end": 1.408,
+      "value": "B"
+    },
+    {
+      "start": 1.408,
+      "end": 1.456,
+      "value": "C"
+    },
+    {
+      "start": 1.456,
+      "end": 1.505,
+      "value": "G"
+    },
+    {
+      "start": 1.505,
+      "end": 1.554,
+      "value": "D"
+    },
+    {
+      "start": 1.554,
+      "end": 1.603,
+      "value": "D"
+    },
+    {
+      "start": 1.603,
+      "end": 1.652,
+      "value": "B"
+    },
+    {
+      "start": 1.652,
+      "end": 1.713,
+      "value": "B"
+    },
+    {
+      "start": 1.713,
+      "end": 1.884,
+      "value": "C"
+    },
+    {
+      "start": 1.884,
+      "end": 2.056,
+      "value": "F"
+    },
+    {
+      "start": 2.056,
+      "end": 2.116,
+      "value": "B"
+    },
+    {
+      "start": 2.116,
+      "end": 2.165,
+      "value": "C"
+    },
+    {
+      "start": 2.165,
+      "end": 2.214,
+      "value": "B"
+    },
+    {
+      "start": 2.214,
+      "end": 2.263,
+      "value": "B"
+    },
+    {
+      "start": 2.263,
+      "end": 2.312,
+      "value": "D"
+    },
+    {
+      "start": 2.312,
+      "end": 2.361,
+      "value": "D"
+    },
+    {
+      "start": 2.361,
+      "end": 2.41,
+      "value": "B"
+    },
+    {
+      "start": 2.41,
+      "end": 2.459,
+      "value": "B"
+    },
+    {
+      "start": 2.459,
+      "end": 2.519,
+      "value": "B"
+    },
+    {
+      "start": 2.519,
+      "end": 2.605,
+      "value": "B"
+    },
+    {
+      "start": 2.605,
+      "end": 2.691,
+      "value": "C"
+    },
+    {
+      "start": 2.691,
+      "end": 2.776,
+      "value": "B"
+    },
+    {
+      "start": 2.776,
+      "end": 2.862,
+      "value": "B"
+    },
+    {
+      "start": 2.862,
+      "end": 2.922,
+      "value": "B"
+    },
+    {
+      "start": 2.922,
+      "end": 2.98,
+      "value": "B"
+    },
+    {
+      "start": 2.98,
+      "end": 3.037,
+      "value": "B"
+    },
+    {
+      "start": 3.037,
+      "end": 3.094,
+      "value": "C"
+    },
+    {
+      "start": 3.094,
+      "end": 3.151,
+      "value": "A"
+    },
+    {
+      "start": 3.151,
+      "end": 3.208,
+      "value": "D"
+    },
+    {
+      "start": 3.208,
+      "end": 3.265,
+      "value": "B"
+    },
+    {
+      "start": 3.265,
+      "end": 3.326,
+      "value": "B"
+    },
+    {
+      "start": 3.326,
+      "end": 3.394,
+      "value": "E"
+    },
+    {
+      "start": 3.394,
+      "end": 3.463,
+      "value": "C"
+    },
+    {
+      "start": 3.463,
+      "end": 3.531,
+      "value": "G"
+    },
+    {
+      "start": 3.531,
+      "end": 3.6,
+      "value": "G"
+    },
+    {
+      "start": 3.6,
+      "end": 3.668,
+      "value": "B"
+    },
+    {
+      "start": 3.668,
+      "end": 3.729,
+      "value": "B"
+    },
+    {
+      "start": 3.729,
+      "end": 3.778,
+      "value": "B"
+    },
+    {
+      "start": 3.778,
+      "end": 3.827,
+      "value": "D"
+    },
+    {
+      "start": 3.827,
+      "end": 3.876,
+      "value": "B"
+    },
+    {
+      "start": 3.876,
+      "end": 3.925,
+      "value": "B"
+    },
+    {
+      "start": 3.925,
+      "end": 3.974,
+      "value": "C"
+    },
+    {
+      "start": 3.974,
+      "end": 4.023,
+      "value": "G"
+    },
+    {
+      "start": 4.023,
+      "end": 4.072,
+      "value": "D"
+    },
+    {
+      "start": 4.072,
+      "end": 4.132,
+      "value": "B"
+    },
+    {
+      "start": 4.132,
+      "end": 4.246,
+      "value": "G"
+    },
+    {
+      "start": 4.246,
+      "end": 4.36,
+      "value": "D"
+    },
+    {
+      "start": 4.36,
+      "end": 4.475,
+      "value": "B"
+    },
+    {
+      "start": 4.475,
+      "end": 4.535,
+      "value": "B"
+    },
+    {
+      "start": 4.535,
+      "end": 4.707,
+      "value": "E"
+    },
+    {
+      "start": 4.707,
+      "end": 4.878,
+      "value": "B"
+    },
+    {
+      "start": 4.878,
+      "end": 4.938,
+      "value": "B"
+    },
+    {
+      "start": 4.938,
+      "end": 4.987,
+      "value": "D"
+    },
+    {
+      "start": 4.987,
+      "end": 5.036,
+      "value": "B"
+    },
+    {
+      "start": 5.036,
+      "end": 5.085,
+      "value": "A"
+    },
+    {
+      "start": 5.085,
+      "end": 5.134,
+      "value": "G"
+    },
+    {
+      "start": 5.134,
+      "end": 5.183,
+      "value": "C"
+    },
+    {
+      "start": 5.183,
+      "end": 5.232,
+      "value": "G"
+    },
+    {
+      "start": 5.232,
+      "end": 5.281,
+      "value": "D"
+    },
+    {
+      "start": 5.281,
+      "end": 5.342,
+      "value": "B"
+    },
+    {
+      "start": 5.342,
+      "end": 5.456,
+      "value": "B"
+    },
+    {
+      "start": 5.456,
+      "end": 5.57,
+      "value": "B"
+    },
+    {
+      "start": 5.57,
+      "end": 5.684,
+      "value": "D"
+    },
+    {
+      "start": 5.684,
+      "end": 5.745,
+      "value": "B"
+    },
+    {
+      "start": 5.745,
+      "end": 5.779,
+      "value": "B"
+    },
+    {
+      "start": 5.779,
+      "end": 5.813,
+      "value": "E"
+    },
+    {
+      "start": 5.813,
+      "end": 5.848,
+      "value": "G"
+    },
+    {
+      "start": 5.848,
+      "end": 5.882,
+      "value": "A"
+    },
+    {
+      "start": 5.882,
+      "end": 5.916,
+      "value": "G"
+    },
+    {
+      "start": 5.916,
+      "end": 5.95,
+      "value": "D"
+    },
+    {
+      "start": 5.95,
+      "end": 5.985,
+      "value": "B"
+    },
+    {
+      "start": 5.985,
+      "end": 6.019,
+      "value": "D"
+    },
+    {
+      "start": 6.019,
+      "end": 6.053,
+      "value": "B"
+    },
+    {
+      "start": 6.053,
+      "end": 6.088,
+      "value": "B"
+    },
+    {
+      "start": 6.088,
+      "end": 6.148,
+      "value": "B"
+    },
+    {
+      "start": 6.148,
+      "end": 6.217,
+      "value": "B"
+    },
+    {
+      "start": 6.217,
+      "end": 6.285,
+      "value": "G"
+    },
+    {
+      "start": 6.285,
+      "end": 6.354,
+      "value": "E"
+    },
+    {
+      "start": 6.354,
+      "end": 6.422,
+      "value": "B"
+    },
+    {
+      "start": 6.422,
+      "end": 6.491,
+      "value": "B"
+    },
+    {
+      "start": 6.491,
+      "end": 6.551,
+      "value": "B"
+    },
+    {
+      "start": 6.551,
+      "end": 6.608,
+      "value": "A"
+    },
+    {
+      "start": 6.608,
+      "end": 6.665,
+      "value": "D"
+    },
+    {
+      "start": 6.665,
+      "end": 6.723,
+      "value": "B"
+    },
+    {
+      "start": 6.723,
+      "end": 6.78,
+      "value": "D"
+    },
+    {
+      "start": 6.78,
+      "end": 6.837,
+      "value": "B"
+    },
+    {
+      "start": 6.837,
+      "end": 6.894,
+      "value": "B"
+    },
+    {
+      "start": 6.894,
+      "end": 6.954,
+      "value": "B"
+    },
+    {
+      "start": 6.954,
+      "end": 7.023,
+      "value": "B"
+    },
+    {
+      "start": 7.023,
+      "end": 7.091,
+      "value": "B"
+    },
+    {
+      "start": 7.091,
+      "end": 7.16,
+      "value": "D"
+    },
+    {
+      "start": 7.16,
+      "end": 7.229,
+      "value": "B"
+    },
+    {
+      "start": 7.229,
+      "end": 7.297,
+      "value": "D"
+    },
+    {
+      "start": 7.297,
+      "end": 7.358,
+      "value": "B"
+    },
+    {
+      "start": 7.358,
+      "end": 7.4,
+      "value": "B"
+    },
+    {
+      "start": 7.4,
+      "end": 7.443,
+      "value": "D"
+    },
+    {
+      "start": 7.443,
+      "end": 7.486,
+      "value": "A"
+    },
+    {
+      "start": 7.486,
+      "end": 7.529,
+      "value": "D"
+    },
+    {
+      "start": 7.529,
+      "end": 7.572,
+      "value": "G"
+    },
+    {
+      "start": 7.572,
+      "end": 7.615,
+      "value": "D"
+    },
+    {
+      "start": 7.615,
+      "end": 7.657,
+      "value": "B"
+    },
+    {
+      "start": 7.657,
+      "end": 7.7,
+      "value": "B"
+    },
+    {
+      "start": 7.7,
+      "end": 7.761,
+      "value": "B"
+    },
+    {
+      "start": 7.761,
+      "end": 7.81,
+      "value": "G"
+    },
+    {
+      "start": 7.81,
+      "end": 7.859,
+      "value": "D"
+    },
+    {
+      "start": 7.859,
+      "end": 7.908,
+      "value": "B"
+    },
+    {
+      "start": 7.908,
+      "end": 7.957,
+      "value": "D"
+    },
+    {
+      "start": 7.957,
+      "end": 8.006,
+      "value": "B"
+    },
+    {
+      "start": 8.006,
+      "end": 8.055,
+      "value": "B"
+    },
+    {
+      "start": 8.055,
+      "end": 8.104,
+      "value": "B"
+    },
+    {
+      "start": 8.104,
+      "end": 8.164,
+      "value": "B"
+    }
+  ]
+}

@@ -19,7 +19,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 const OUT_DIR = path.join(process.cwd(), 'cartoon_character_assets', 'exact_puppet');
-if (!fs.existsSync(OUT_DIR)) fs.mkdirSync(OUT_DIR, { recursive: true });
+const COMP_DIR = path.join(process.cwd(), 'cartoon_character_assets', 'comparison_puppet');
 
 // Helper to render Head component
 function renderHead(pose = 'idle', blink = false, talking = false) {
@@ -330,34 +330,62 @@ const posesToGenerate = [
   { name: 'puppet_walking', pose: 'walking', options: { blink: false, talking: false } }
 ];
 
-console.log('🎨 [Exact Puppet Builder] Generating vector SVGs and high-res PNGs...');
+function ensureExactPuppetAssets(force = false) {
+  if (!fs.existsSync(OUT_DIR)) fs.mkdirSync(OUT_DIR, { recursive: true });
+  if (!fs.existsSync(COMP_DIR)) fs.mkdirSync(COMP_DIR, { recursive: true });
 
-posesToGenerate.forEach(p => {
-  const svgContent = buildCompleteCharacterSVG(p.pose, p.options);
-  const svgPath = path.join(OUT_DIR, `${p.name}.svg`);
-  const pngPath = path.join(OUT_DIR, `${p.name}.png`);
+  const idlePng = path.join(OUT_DIR, 'puppet_idle.png');
+  const compIdlePng = path.join(COMP_DIR, 'puppet_idle.png');
 
-  fs.writeFileSync(svgPath, svgContent, 'utf8');
-
-  // Convert SVG to crisp 32-bit transparent PNG using FFmpeg librsvg
-  try {
-    execSync(`ffmpeg -y -i "${svgPath}" "${pngPath}" 2>/dev/null`);
-    console.log(`✅ Generated: ${p.name}.png (${fs.statSync(pngPath).size} bytes)`);
-  } catch (err) {
-    console.error(`❌ Failed converting ${p.name}:`, err.message);
+  if (!force && fs.existsSync(idlePng) && fs.existsSync(compIdlePng)) {
+    return true;
   }
-});
 
-// Also copy or link into cartoon_character_assets/comparison_puppet for drop-in backward compatibility
-const compDir = path.join(process.cwd(), 'cartoon_character_assets', 'comparison_puppet');
-if (fs.existsSync(compDir)) {
-  fs.copyFileSync(path.join(OUT_DIR, 'puppet_idle.png'), path.join(compDir, 'puppet_idle.png'));
-  fs.copyFileSync(path.join(OUT_DIR, 'puppet_blink.png'), path.join(compDir, 'puppet_eyes_closed.png'));
-  fs.copyFileSync(path.join(OUT_DIR, 'puppet_point_left.png'), path.join(compDir, 'puppet_point_left.png'));
-  fs.copyFileSync(path.join(OUT_DIR, 'puppet_point_right.png'), path.join(compDir, 'puppet_point_right.png'));
-  fs.copyFileSync(path.join(OUT_DIR, 'puppet_explain_both.png'), path.join(compDir, 'puppet_compare_both.png'));
-  fs.copyFileSync(path.join(OUT_DIR, 'puppet_walking.png'), path.join(compDir, 'puppet_walking.png'));
-  console.log('🔄 Synced exact puppet assets to comparison_puppet directory!');
+  console.log('🎨 [Exact Puppet Builder] Generating vector SVGs and high-res PNGs...');
+
+  posesToGenerate.forEach(p => {
+    const svgContent = buildCompleteCharacterSVG(p.pose, p.options);
+    const svgPath = path.join(OUT_DIR, `${p.name}.svg`);
+    const pngPath = path.join(OUT_DIR, `${p.name}.png`);
+
+    fs.writeFileSync(svgPath, svgContent, 'utf8');
+
+    // Convert SVG to crisp 32-bit transparent PNG using FFmpeg librsvg
+    try {
+      execSync(`ffmpeg -y -i "${svgPath}" "${pngPath}" 2>/dev/null`);
+      console.log(`✅ Generated: ${p.name}.png (${fs.statSync(pngPath).size} bytes)`);
+    } catch (err) {
+      console.error(`❌ Failed converting ${p.name}:`, err.message);
+    }
+  });
+
+  // Also copy into cartoon_character_assets/comparison_puppet for drop-in backward compatibility
+  try {
+    fs.copyFileSync(path.join(OUT_DIR, 'puppet_idle.png'), path.join(COMP_DIR, 'puppet_idle.png'));
+    fs.copyFileSync(path.join(OUT_DIR, 'puppet_blink.png'), path.join(COMP_DIR, 'puppet_eyes_closed.png'));
+    fs.copyFileSync(path.join(OUT_DIR, 'puppet_blink.png'), path.join(COMP_DIR, 'puppet_blink.png'));
+    fs.copyFileSync(path.join(OUT_DIR, 'puppet_talking.png'), path.join(COMP_DIR, 'puppet_talking.png'));
+    fs.copyFileSync(path.join(OUT_DIR, 'puppet_point_left.png'), path.join(COMP_DIR, 'puppet_point_left.png'));
+    fs.copyFileSync(path.join(OUT_DIR, 'puppet_point_right.png'), path.join(COMP_DIR, 'puppet_point_right.png'));
+    fs.copyFileSync(path.join(OUT_DIR, 'puppet_explain_both.png'), path.join(COMP_DIR, 'puppet_compare_both.png'));
+    fs.copyFileSync(path.join(OUT_DIR, 'puppet_explain_both.png'), path.join(COMP_DIR, 'puppet_explain_both.png'));
+    fs.copyFileSync(path.join(OUT_DIR, 'puppet_walking.png'), path.join(COMP_DIR, 'puppet_walking.png'));
+    console.log('🔄 Synced exact puppet assets to comparison_puppet directory!');
+  } catch (syncErr) {
+    console.warn('Notice syncing comparison_puppet:', syncErr.message);
+  }
+
+  console.log('🚀 [Exact Puppet Builder] All shape assets rendered successfully!');
+  return true;
 }
 
-console.log('🚀 [Exact Puppet Builder] All shape assets rendered successfully!');
+if (require.main === module) {
+  ensureExactPuppetAssets(true);
+}
+
+module.exports = {
+  ensureExactPuppetAssets,
+  buildCompleteCharacterSVG,
+  OUT_DIR,
+  COMP_DIR
+};

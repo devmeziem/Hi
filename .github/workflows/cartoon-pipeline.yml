@@ -115,6 +115,12 @@ jobs:
             exit 1
           fi
 
+      - name: Pre-Compile Exact Puppet Character Rig Assets
+        run: |
+          echo "=== PRE-COMPILING EXACT PUPPET VECTOR & RASTER ASSETS ==="
+          node scripts/build_exact_puppet_shapes.cjs
+          ls -la cartoon_character_assets/exact_puppet/
+
       - name: Execute Cartoon Factory Pipeline
         env:
           TEST_TOPIC: ${{ github.event.inputs.topic }}

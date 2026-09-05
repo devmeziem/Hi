@@ -49,11 +49,40 @@ PUPPET_DIR = os.path.join(os.getcwd(), "cartoon_character_assets", "exact_puppet
 
 def get_puppet_asset(name):
     path = os.path.join(PUPPET_DIR, f"{name}.png")
+    if os.path.exists(path):
+        return path
+    
+    alt = os.path.join(os.getcwd(), "cartoon_character_assets", "comparison_puppet", f"{name}.png")
+    if os.path.exists(alt):
+        return alt
+
+    # If asset is missing, auto-trigger the exact puppet builder
+    try:
+        builder = os.path.join(os.getcwd(), "scripts", "build_exact_puppet_shapes.cjs")
+        if os.path.exists(builder):
+            print(f"[MoviePy] 🎨 Asset {name}.png missing. Running exact puppet builder...")
+            subprocess.run(["node", builder], check=False)
+            if os.path.exists(path):
+                return path
+            if os.path.exists(alt):
+                return alt
+    except Exception as e:
+        print(f"[MoviePy] Notice while auto-building puppet assets: {e}")
+
+    # Fallback to idle if specific pose is missing
+    idle_path = os.path.join(PUPPET_DIR, "puppet_idle.png")
+    if os.path.exists(idle_path):
+        return idle_path
+
+    # Emergency fallback to ensure no FileNotFoundError
     if not os.path.exists(path):
-        # Fallback to comparison_puppet if needed
-        alt = os.path.join(os.getcwd(), "cartoon_character_assets", "comparison_puppet", f"{name}.png")
-        if os.path.exists(alt):
-            return alt
+        os.makedirs(PUPPET_DIR, exist_ok=True)
+        try:
+            placeholder = Image.new("RGBA", (500, 1000), (251, 191, 36, 255))
+            placeholder.save(path)
+        except Exception:
+            pass
+
     return path
 
 

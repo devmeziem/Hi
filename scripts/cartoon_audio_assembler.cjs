@@ -11,6 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const { ensureExactPuppetAssets } = require('./build_exact_puppet_shapes.cjs');
 
 /**
  * Format seconds to SRT timestamp: 00:00:05,250
@@ -150,6 +151,13 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
   const { mouthCuesJson, action = 'talking', emotion = 'curious', camera = 'medium', bgImage = '' } = options;
   let engineUsed = 'moviepy';
 
+  // Ensure exact geometric character puppet assets are present on disk
+  try {
+    ensureExactPuppetAssets();
+  } catch (err) {
+    console.warn(`[Media Engine] Puppet asset initialization notice: ${err.message}`);
+  }
+
   // Remove stale incomplete output if present
   try { if (fs.existsSync(outputSceneMp4)) fs.unlinkSync(outputSceneMp4); } catch {}
 
@@ -268,14 +276,29 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
     }
 
     try {
-      execSync(ffmpegCmd, { stdio: 'pipe', timeout: 90000 });
-      renderSucceeded = true;
+      if (fs.existsSync(mainPuppet)) {
+        execSync(ffmpegCmd, { stdio: 'pipe', timeout: 90000 });
+        renderSucceeded = true;
+      } else {
+        throw new Error('Puppet asset not found on disk');
+      }
     } catch (err) {
-      console.warn(`[Media Engine] Composite retry notice: ${err.message}. Rendering solid puppet overlay...`);
-      // Solid overlay fallback - ALWAYS keeps character on screen!
-      const robustCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${mainPuppet}" -i "${wavPath}" -filter_complex "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg];[1:v]scale=-1:1100[char];[bg][char]overlay=x=(W-w)/2:y=H-h-50[v]" -map "[v]" -map 2:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
-      execSync(robustCmd, { stdio: 'pipe', timeout: 60000 });
-      renderSucceeded = true;
+      console.warn(`[Media Engine] Composite retry notice: ${err.message}. Rendering robust fallback compositor...`);
+      try {
+        if (fs.existsSync(mainPuppet)) {
+          // Solid overlay fallback - ALWAYS keeps character on screen!
+          const robustCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${mainPuppet}" -i "${wavPath}" -filter_complex "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg];[1:v]scale=-1:1100[char];[bg][char]overlay=x=(W-w)/2:y=H-h-50[v]" -map "[v]" -map 2:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+          execSync(robustCmd, { stdio: 'pipe', timeout: 60000 });
+          renderSucceeded = true;
+        } else {
+          // Pure scene background fallback if puppet cannot be loaded
+          const bgOnlyCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -i "${wavPath}" -filter_complex "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[v]" -map "[v]" -map 1:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+          execSync(bgOnlyCmd, { stdio: 'pipe', timeout: 60000 });
+          renderSucceeded = true;
+        }
+      } catch (fatalFallbackErr) {
+        console.error(`[Media Engine] Fatal fallback notice: ${fatalFallbackErr.message}`);
+      }
     }
   }
 

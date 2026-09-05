@@ -17,6 +17,8 @@ rendered_videos/
 *.jpeg
 *.png
 *.webp
+!cartoon_character_assets/**/*
+!src/assets/**/*
 *.tmp
 *.temp
 /tmp/

@@ -641,6 +641,14 @@ function ensureCharacterRigAssets() {
     rasterizeSvgToPng(bgSvgPath, bgPngPath, 1080, 1920);
   }
 
+  // 5. Ensure Exact Mannequin Puppet Assets
+  try {
+    const { ensureExactPuppetAssets } = require('./build_exact_puppet_shapes.cjs');
+    ensureExactPuppetAssets();
+  } catch (err) {
+    console.warn(`[Character Rig] Notice initializing exact puppet assets: ${err.message}`);
+  }
+
   console.log(`[Character Rig] Initialized Archie SVG & PNG character assets in ${ASSETS_DIR}`);
 }
 
