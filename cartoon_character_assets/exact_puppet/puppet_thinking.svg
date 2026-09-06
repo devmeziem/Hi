@@ -29,21 +29,22 @@
 
     <!-- 2. Arms, Hands & Smartwatch -->
     
-    <!-- Left Arm -->
-    <path d="M 165 375 L 185 375 L 178 520 L 160 520 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2" />
-    <path d="M 160 520 L 180 520 L 176 670 L 158 670 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-    
+      <!-- Left Arm (Folded across chest or resting) -->
+      <path d="M 165 375 L 185 375 L 210 490 L 190 495 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2" />
+      <path d="M 195 490 L 210 500 L 270 480 L 265 465 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      
     <rect x="156" y="660" width="22" height="16" rx="4" fill="#0f172a" stroke="#0f172a" stroke-width="1.5" />
     <circle cx="167" cy="668" r="8" fill="#0f172a" stroke="#06b6d4" stroke-width="2" />
     <circle cx="167" cy="668" r="4" fill="#06b6d4" opacity="0.8" />
   
-    <path d="M 158 675 L 176 675 L 178 720 L 156 720 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
 
-    <!-- Right Arm -->
-    <path d="M 315 375 L 335 375 L 338 520 L 318 520 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2" />
-    <path d="M 318 520 L 338 520 L 336 670 L 318 670 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-    <path d="M 318 675 L 336 675 L 338 720 L 316 720 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-  
+      <!-- Right Arm (Raised thoughtfully with hand at chin / temple) -->
+      <path d="M 320 375 L 340 375 L 350 490 L 330 495 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2" />
+      <path d="M 335 490 L 350 500 L 305 310 L 290 315 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Hand at chin / temple -->
+      <path d="M 285 310 Q 295 285 280 275 L 265 280 L 270 315 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <circle cx="275" cy="275" r="5" fill="#eab383" stroke="#0f172a" stroke-width="1.5" />
+    
 
     <!-- 3. Torso, Inner Tee & Modern Tech Overshirt -->
     
@@ -72,6 +73,18 @@
     <!-- 4. Sculpted Human Head, Face, Hair & Eyes -->
     
     
+    <!-- Floating AI Neural Nodes / Insight Sparkles -->
+    <g opacity="0.85">
+      <circle cx="310" cy="115" r="7" fill="#38bdf8" />
+      <circle cx="310" cy="115" r="14" fill="#38bdf8" opacity="0.25" />
+      <circle cx="335" cy="85" r="5" fill="#818cf8" />
+      <circle cx="285" cy="75" r="4" fill="#06b6d4" />
+      <line x1="310" y1="115" x2="335" y2="85" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="3,3" />
+      <line x1="310" y1="115" x2="285" y2="75" stroke="#06b6d4" stroke-width="1.5" stroke-dasharray="3,3" />
+      <!-- Subtle thought bubble connection -->
+      <circle cx="280" cy="135" r="4" fill="#38bdf8" opacity="0.6" />
+      <circle cx="265" cy="150" r="2.5" fill="#38bdf8" opacity="0.4" />
+    </g>
 
     <!-- Neck with Natural Trapezius Contours -->
     <path d="M 234 295 L 230 338 L 270 338 L 266 295 Z" fill="#eab383" stroke="#1e293b" stroke-width="2" />
@@ -117,12 +130,26 @@
     <path d="M 205 160 Q 215 145 230 155" stroke="#382a26" stroke-width="3.5" stroke-linecap="round" fill="none" />
 
     <!-- Eyebrows (Sculpted, naturally arched) -->
-    <path d="M 206 200 Q 225 190 245 196" stroke="#1f1917" stroke-width="4.5" stroke-linecap="round" fill="none" />
-    <path d="M 255 196 Q 275 190 294 200" stroke="#1f1917" stroke-width="4.5" stroke-linecap="round" fill="none" />
+    <path d="M 206 195 Q 225 188 245 198" stroke="#1f1917" stroke-width="4.5" stroke-linecap="round" fill="none" />
+    <path d="M 255 190 Q 275 180 294 188" stroke="#1f1917" stroke-width="4.5" stroke-linecap="round" fill="none" />
 
     <!-- Eyes (Sclera, Iris, Catchlight) -->
-    <path d="M 210 216 Q 225 222 240 216" stroke="#1f1917" stroke-width="3.5" stroke-linecap="round" fill="none" />
-    <path d="M 260 216 Q 275 222 290 216" stroke="#1f1917" stroke-width="3.5" stroke-linecap="round" fill="none" />
+    <ellipse cx="225" cy="215" rx="15" ry="13" fill="#ffffff" stroke="#1e293b" stroke-width="2" />
+       <!-- Iris -->
+       <circle cx="228" cy="210" r="8.5" fill="#382218" stroke="#1c1917" stroke-width="1.5" />
+       <!-- Pupil -->
+       <circle cx="228" cy="210" r="4.5" fill="#090706" />
+       <!-- Catchlight reflection -->
+       <circle cx="225" cy="207" r="2.5" fill="#ffffff" opacity="0.9" />
+       <circle cx="230" cy="212" r="1.2" fill="#ffffff" opacity="0.7" />
+    <ellipse cx="275" cy="215" rx="15" ry="13" fill="#ffffff" stroke="#1e293b" stroke-width="2" />
+       <!-- Iris -->
+       <circle cx="278" cy="210" r="8.5" fill="#382218" stroke="#1c1917" stroke-width="1.5" />
+       <!-- Pupil -->
+       <circle cx="278" cy="210" r="4.5" fill="#090706" />
+       <!-- Catchlight reflection -->
+       <circle cx="275" cy="207" r="2.5" fill="#ffffff" opacity="0.9" />
+       <circle cx="280" cy="212" r="1.2" fill="#ffffff" opacity="0.7" />
 
     <!-- Natural Sculpted Human Nose (Refined shading, no clown triangle!) -->
     <path d="M 248 214 L 246 244 Q 242 250 250 252 Q 258 250 254 244 L 252 214" fill="#d09564" opacity="0.35" />
@@ -131,7 +158,7 @@
     <circle cx="258" cy="249" r="1.5" fill="#451a03" />
 
     <!-- Mouth -->
-    <path d="M 236 270 Q 250 278 264 270" fill="none" stroke="#451a03" stroke-width="3" stroke-linecap="round" />
+    <path d="M 240 274 Q 252 273 262 271" stroke="#451a03" stroke-width="3" stroke-linecap="round" fill="none" />
   
   </g>
 </svg>

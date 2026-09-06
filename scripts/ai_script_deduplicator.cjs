@@ -6,6 +6,8 @@
  */
 
 const https = require('https');
+const fs = require('fs');
+const path = require('path');
 
 /**
  * Stop words for text normalization
@@ -49,6 +51,59 @@ function calculateJaccardSimilarity(setA, setB) {
 }
 
 /**
+ * Load all available history from local caches and manifests for a given niche
+ */
+function loadAllChannelHistory(niche = 'stoic') {
+  const historyList = [];
+  const seenTitles = new Set();
+
+  function addHistory(title, slides, theme) {
+    const cleanTitle = String(title || '').trim();
+    if (!cleanTitle || seenTitles.has(cleanTitle.toLowerCase())) return;
+    seenTitles.add(cleanTitle.toLowerCase());
+    historyList.push({
+      title: cleanTitle,
+      theme: theme || cleanTitle,
+      slides: Array.isArray(slides) ? slides : []
+    });
+  }
+
+  // 1. Daily blueprint manifest
+  const manifestPath = path.join(process.cwd(), 'daily_blueprint_manifest.json');
+  if (fs.existsSync(manifestPath)) {
+    try {
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+      const videos = Array.isArray(manifest) ? manifest : (manifest.videos || []);
+      for (const v of videos) {
+        addHistory(v.title || v.topic, v.slides, v.theme);
+      }
+    } catch {}
+  }
+
+  // 2. Specific niche cache
+  const cacheFile = niche.toLowerCase().includes('fin')
+    ? path.join(process.cwd(), 'daily_fin_history_cache.json')
+    : path.join(process.cwd(), 'daily_stoic_history_cache.json');
+
+  if (fs.existsSync(cacheFile)) {
+    try {
+      const cacheData = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
+      if (Array.isArray(cacheData)) {
+        for (const item of cacheData) {
+          if (typeof item === 'string') {
+            addHistory(item, [], '');
+          } else if (item) {
+            addHistory(item.title || item.topic, item.slides, item.theme);
+          }
+        }
+      }
+    } catch {}
+  }
+
+  return historyList;
+}
+
+/**
  * Fast local syntactic and semantic deduplication
  */
 function checkLocalSyntacticOverlap(candidateScriptText, recentScripts = []) {
@@ -80,20 +135,32 @@ function checkLocalSyntacticOverlap(candidateScriptText, recentScripts = []) {
   }
 
   for (const prev of recentScripts) {
-    const prevFullText = [
-      prev.title || prev.topic || '',
-      ...(Array.isArray(prev.slides) ? prev.slides.map(s => s.text || s.dialogue || '') : []),
-      prev.description || ''
-    ].join(' ');
+    let prevFullText = '';
+    let titleStr = '';
+
+    if (typeof prev === 'string') {
+      prevFullText = prev;
+      titleStr = prev.slice(0, 50);
+    } else if (prev && typeof prev === 'object') {
+      titleStr = prev.title || prev.topic || '';
+      prevFullText = [
+        titleStr,
+        prev.theme || '',
+        ...(Array.isArray(prev.slides) ? prev.slides.map(s => (typeof s === 'string' ? s : (s.text || s.dialogue || ''))) : []),
+        prev.description || ''
+      ].join(' ');
+    }
+
+    if (!prevFullText.trim()) continue;
 
     const prevAnalysis = extractSignificantShingles(prevFullText);
     const wordSim = calculateJaccardSimilarity(candidate.words, prevAnalysis.words);
     const shingleSim = calculateJaccardSimilarity(candidate.shingles, prevAnalysis.shingles);
-    const combinedScore = (wordSim * 0.4 + shingleSim * 0.6) * 100;
+    const combinedScore = (wordSim * 0.45 + shingleSim * 0.55) * 100;
 
     if (combinedScore > maxSimilarity) {
       maxSimilarity = combinedScore;
-      matchedTitle = prev.title || prev.topic || 'Previous video';
+      matchedTitle = titleStr || 'Previous script';
       matchReason = `Shares ${Math.round(combinedScore)}% phrase and shingle overlap with "${matchedTitle}"`;
     }
   }
@@ -229,5 +296,6 @@ Return strictly raw JSON:
 
 module.exports = {
   checkLocalSyntacticOverlap,
-  evaluateScriptWithAi
+  evaluateScriptWithAi,
+  loadAllChannelHistory
 };

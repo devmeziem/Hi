@@ -66,6 +66,17 @@ jobs:
             exit 1
           fi
 
+      - name: Auto-Discover and Cache Working AI Models (Grok & Groq)
+        env:
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
+          GROK_KEY: ${{ secrets.GROK_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          echo "=== Discovering Active Grok & Groq Models ==="
+          node scripts/grok_model_finder.cjs || true
+          node scripts/groq_model_finder.cjs || true
+
       - name: Execute Fin Blueprint Pipeline Diagnostic
         env:
           TEST_TOPIC: ${{ github.event.inputs.topic }}

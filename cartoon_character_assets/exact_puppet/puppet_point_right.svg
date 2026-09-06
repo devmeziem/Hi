@@ -1,149 +1,156 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 50 550 1000" width="550" height="1000">
-  <!-- Group for complete articulated mannequin puppet -->
-  <g id="puppet_root">
-    <!-- 1. Legs & Shoes -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 50 620 1000" width="620" height="1000">
+  <g id="modern_character_root">
+    <!-- 1. Legs, Trousers & Modern Designer Sneakers -->
     
-    <!-- Pelvis / Jeans Top -->
-    <polygon points="202,544 298,544 294,590 250,600 206,590" fill="#2563eb" stroke="#0f172a" stroke-width="2.5" />
-    <path d="M 250 544 L 250 590" stroke="#1e3a8a" stroke-width="2" />
+    <!-- Pelvis & Upper Pants -->
+    <path d="M 210 526 L 290 526 L 296 575 L 250 585 L 204 575 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2.5" />
 
-    <!-- Left Leg (Straight, long, lanky) -->
-    <polygon points="206,585 244,592 238,760 206,760" fill="#3b82f6" stroke="#0f172a" stroke-width="2.5" />
-    <!-- Left Knee Joint Sphere -->
-    <circle cx="222" cy="760" r="17" fill="#2563eb" stroke="#0f172a" stroke-width="2.5" />
-    <circle cx="222" cy="760" r="11" fill="#60a5fa" opacity="0.4" />
-    <!-- Left Lower Shin -->
-    <polygon points="208,760 236,760 230,950 204,950" fill="#3b82f6" stroke="#0f172a" stroke-width="2.5" />
-    <!-- Rolled Denim Cuff -->
-    <rect x="200" y="942" width="34" height="18" rx="4" fill="#93c5fd" stroke="#0f172a" stroke-width="2" />
+    <!-- Left Leg (Tailored modern slate tech chinos) -->
+    <path d="M 206 575 L 246 580 L 240 750 L 204 750 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2" />
+    <path d="M 204 750 L 240 750 L 235 915 L 202 915 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2" />
+    <rect x="198" y="908" width="40" height="16" rx="4" fill="#334155" />
 
-    <!-- Right Leg (Straight, long, lanky) -->
-    <polygon points="256,592 294,585 294,760 262,760" fill="#2563eb" stroke="#0f172a" stroke-width="2.5" />
-    <!-- Right Knee Joint Sphere -->
-    <circle cx="278" cy="760" r="17" fill="#1d4ed8" stroke="#0f172a" stroke-width="2.5" />
-    <circle cx="278" cy="760" r="11" fill="#60a5fa" opacity="0.4" />
-    <!-- Right Lower Shin -->
-    <polygon points="264,760 292,760 296,950 270,950" fill="#2563eb" stroke="#0f172a" stroke-width="2.5" />
-    <!-- Rolled Denim Cuff -->
-    <rect x="266" y="942" width="34" height="18" rx="4" fill="#93c5fd" stroke="#0f172a" stroke-width="2" />
+    <!-- Right Leg -->
+    <path d="M 254 580 L 294 575 L 296 750 L 260 750 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2" />
+    <path d="M 260 750 L 296 750 L 298 915 L 265 915 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2" />
+    <rect x="262" y="908" width="40" height="16" rx="4" fill="#334155" />
 
-    <!-- Left Shoe (Converse Style: Black canvas, white toe cap, white rubber sole, white laces) -->
-    <path d="M 156 988 L 232 988 L 232 958 L 202 958 L 165 972 Z" fill="#18181b" stroke="#0f172a" stroke-width="2.5" />
-    <path d="M 152 988 L 178 988 L 178 972 L 158 974 Z" fill="#f4f4f5" stroke="#0f172a" stroke-width="2" />
-    <rect x="152" y="986" width="82" height="7" fill="#f4f4f5" stroke="#0f172a" stroke-width="1.5" />
-    <line x1="184" y1="966" x2="198" y2="966" stroke="#ffffff" stroke-width="2" />
-    <line x1="186" y1="972" x2="200" y2="972" stroke="#ffffff" stroke-width="2" />
+    <!-- Left Modern Designer Sneaker -->
+    <path d="M 156 955 L 234 955 L 234 928 L 200 922 L 160 938 Z" fill="#ffffff" stroke="#0f172a" stroke-width="2" />
+    <rect x="152" y="952" width="85" height="10" rx="3" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.5" />
+    <line x1="178" y1="934" x2="204" y2="934" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" />
 
-    <!-- Right Shoe (Converse Style) -->
-    <path d="M 268 988 L 344 988 L 335 972 L 298 958 L 268 958 Z" fill="#18181b" stroke="#0f172a" stroke-width="2.5" />
-    <path d="M 322 988 L 348 988 L 342 974 L 322 972 Z" fill="#f4f4f5" stroke="#0f172a" stroke-width="2" />
-    <rect x="266" y="986" width="84" height="7" fill="#f4f4f5" stroke="#0f172a" stroke-width="1.5" />
-    <line x1="302" y1="966" x2="316" y2="966" stroke="#ffffff" stroke-width="2" />
-    <line x1="300" y1="972" x2="314" y2="972" stroke="#ffffff" stroke-width="2" />
+    <!-- Right Modern Designer Sneaker -->
+    <path d="M 266 955 L 344 955 L 340 938 L 300 922 L 266 928 Z" fill="#ffffff" stroke="#0f172a" stroke-width="2" />
+    <rect x="263" y="952" width="85" height="10" rx="3" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.5" />
+    <line x1="296" y1="934" x2="322" y2="934" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" />
   
 
-    <!-- 2. Arms (back/torso depth) -->
+    <!-- 2. Arms, Hands & Smartwatch -->
     
-      <!-- Left Arm (Resting idle at side with red bands) -->
-      <polygon points="166,450 186,450 178,570 162,570" fill="#f59e0b" stroke="#0f172a" stroke-width="2" />
-      <!-- Left Red Elbow Band -->
-      <rect x="158" y="565" width="24" height="16" rx="4" fill="#ef4444" stroke="#0f172a" stroke-width="2" />
-      <polygon points="162,580 178,580 175,700 161,700" fill="#f59e0b" stroke="#0f172a" stroke-width="2" />
-      <!-- Left Red Wrist Band -->
-      <rect x="157" y="695" width="22" height="14" rx="3" fill="#ef4444" stroke="#0f172a" stroke-width="2" />
+      <!-- Left Arm (Resting naturally with smartwatch) -->
+      <path d="M 165 375 L 185 375 L 180 520 L 160 520 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2" />
+      <path d="M 160 520 L 180 520 L 176 670 L 158 670 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      
+    <rect x="156" y="660" width="22" height="16" rx="4" fill="#0f172a" stroke="#0f172a" stroke-width="1.5" />
+    <circle cx="167" cy="668" r="8" fill="#0f172a" stroke="#06b6d4" stroke-width="2" />
+    <circle cx="167" cy="668" r="4" fill="#06b6d4" opacity="0.8" />
+  
       <!-- Left Hand -->
-      <polygon points="161,710 175,710 178,765 160,765" fill="#fbbf24" stroke="#0f172a" stroke-width="2" />
+      <path d="M 158 675 L 176 675 L 178 720 L 156 720 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
 
-      <!-- Right Arm (Raised pointing right!) -->
-      <polygon points="315,450 335,450 375,540 355,545" fill="#f59e0b" stroke="#0f172a" stroke-width="2" />
-      <!-- Right Red Elbow Band -->
-      <rect x="358" y="535" width="22" height="18" rx="4" fill="#ef4444" stroke="#0f172a" stroke-width="2" transform="rotate(30 365 545)" />
-      <!-- Right Forearm reaching out -->
-      <polygon points="370,545 385,555 460,510 452,495" fill="#f59e0b" stroke="#0f172a" stroke-width="2" />
-      <!-- Right Red Wrist Band -->
-      <rect x="450" y="495" width="16" height="20" rx="3" fill="#ef4444" stroke="#0f172a" stroke-width="2" transform="rotate(-30 460 505)" />
-      <!-- Right Hand (Pointing finger) -->
-      <path d="M 466 502 L 520 480 L 518 492 L 485 515 L 466 520 Z" fill="#fbbf24" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+      <!-- Right Arm (Pointing Dynamically to Right where UI HUD appears) -->
+      <path d="M 320 375 L 340 375 L 410 470 L 390 480 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2" />
+      <path d="M 400 475 L 415 485 L 500 440 L 490 425 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Right Pointing Hand with Extended Index Finger -->
+      <path d="M 495 432 L 565 410 L 563 424 L 525 448 L 495 452 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+      <line x1="565" y1="410" x2="575" y2="408" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" />
     
 
-    <!-- 3. Torso, T-Shirt, Belt -->
+    <!-- 3. Torso, Inner Tee & Modern Tech Overshirt -->
     
-    <!-- Shoulder Ball Joints -->
-    <circle cx="178" cy="365" r="18" fill="#1e3a8a" stroke="#0f172a" stroke-width="2.5" />
-    <circle cx="322" cy="365" r="18" fill="#1e3a8a" stroke="#0f172a" stroke-width="2.5" />
-    <circle cx="178" cy="365" r="14" fill="#2563eb" opacity="0.3" />
-    <circle cx="322" cy="365" r="14" fill="#2563eb" opacity="0.3" />
+    <!-- Minimalist Crewneck Inner Tee (Off-white / heather) -->
+    <path d="M 225 338 Q 250 355 275 338 L 285 410 L 215 410 Z" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" />
+    <path d="M 230 338 Q 250 354 270 338" stroke="#cbd5e1" stroke-width="2" fill="none" />
 
-    <!-- Dark Indigo Navy Blue Crewneck T-Shirt -->
-    <path d="M 230 338 Q 250 348 270 338 L 330 355 L 340 450 L 305 460 L 298 520 L 202 520 L 195 460 L 160 450 L 170 355 Z" 
-          fill="#1e3a8a" stroke="#0f172a" stroke-width="3" stroke-linejoin="round" />
+    <!-- Sleek Tech Creator Overshirt / Bomber Jacket -->
+    <!-- Left Collar & Lapel -->
+    <path d="M 210 340 L 160 375 L 175 510 L 235 510 L 230 400 L 225 340 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+    <!-- Right Collar & Lapel -->
+    <path d="M 290 340 L 340 375 L 325 510 L 265 510 L 270 400 L 275 340 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+
+    <!-- Front Center Zipper / Placket -->
+    <line x1="250" y1="395" x2="250" y2="510" stroke="#0284c7" stroke-width="2" stroke-linecap="round" />
     
-    <!-- T-Shirt Shading & Crewneck Collar -->
-    <path d="M 230 338 Q 250 350 270 338" fill="none" stroke="#60a5fa" stroke-width="3" />
-    <polygon points="250,344 330,355 340,450 305,460 298,520 250,520" fill="#0f172a" opacity="0.22" />
+    <!-- Minimalist Chest Pocket with Glowing Tech Accent Line -->
+    <rect x="185" y="415" width="38" height="42" rx="4" fill="#0f172a" stroke="#334155" stroke-width="1.5" />
+    <line x1="188" y1="422" x2="220" y2="422" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" />
 
-    <!-- Brown Belt with Buckle -->
-    <rect x="200" y="520" width="100" height="24" rx="4" fill="#78350f" stroke="#0f172a" stroke-width="2.5" />
-    <rect x="238" y="523" width="24" height="18" rx="3" fill="#b45309" stroke="#fef3c7" stroke-width="2" />
+    <!-- Belt & Waistline -->
+    <rect x="210" y="508" width="80" height="18" rx="3" fill="#0f172a" stroke="#0f172a" stroke-width="2" />
+    <rect x="242" y="511" width="16" height="12" rx="2" fill="#38bdf8" opacity="0.8" />
   
 
-    <!-- 4. Head, Hair, Face, Eyes, Red Nose -->
+    <!-- 4. Sculpted Human Head, Face, Hair & Eyes -->
     
-    <!-- Neck -->
-    <polygon points="238,300 262,300 265,340 235,340" fill="#f59e0b" stroke="#1f2937" stroke-width="2" />
-    <polygon points="235,335 265,335 263,342 237,342" fill="#d97706" />
-
-    <!-- Left Ear -->
-    <ellipse cx="188" cy="235" rx="14" ry="18" fill="#f59e0b" stroke="#1f2937" stroke-width="2.5" />
-    <ellipse cx="188" cy="235" rx="8" ry="11" fill="#ea580c" />
-
-    <!-- Right Ear -->
-    <ellipse cx="312" cy="235" rx="14" ry="18" fill="#f59e0b" stroke="#1f2937" stroke-width="2.5" />
-    <ellipse cx="312" cy="235" rx="8" ry="11" fill="#ea580c" />
-
-    <!-- Head Base / Face Polygon -->
-    <polygon points="198,160 302,160 292,280 250,305 208,280" fill="#fbbf24" stroke="#1f2937" stroke-width="3" stroke-linejoin="round" />
     
-    <!-- Face Shading (Geometric facets) -->
-    <polygon points="250,160 302,160 292,280 250,305" fill="#f59e0b" opacity="0.45" />
 
-    <!-- Hair (Dark chocolate brown with 2 iconic sharp upward/forward spikes) -->
-    <path d="M 194 175 
-             L 194 150 
-             L 220 152 
-             L 235 90 
-             L 255 140 
-             L 282 85 
-             L 295 145 
-             L 306 175 
-             L 302 185 
-             L 296 160 
-             L 204 160 
-             L 194 185 Z" 
-          fill="#3b1d11" stroke="#1f2937" stroke-width="3" stroke-linejoin="round" />
-    <polygon points="235,90 255,140 248,155 228,145" fill="#2c140a" />
-    <polygon points="282,85 295,145 285,155 268,145" fill="#2c140a" />
+    <!-- Neck with Natural Trapezius Contours -->
+    <path d="M 234 295 L 230 338 L 270 338 L 266 295 Z" fill="#eab383" stroke="#1e293b" stroke-width="2" />
+    <path d="M 245 295 L 230 338 L 270 338 Z" fill="#d09564" opacity="0.25" />
 
-    <!-- Eyebrows (Thick, angular, expressive) -->
-    <polygon points="210,195 240,190 242,198 212,203" fill="#1f2937" />
-    <polygon points="260,190 290,195 288,203 258,198" fill="#1f2937" />
+    <!-- Left Ear with Natural Helix -->
+    <ellipse cx="192" cy="225" rx="11" ry="16" fill="#eab383" stroke="#1e293b" stroke-width="2" />
+    <path d="M 194 216 Q 188 223 194 231" stroke="#d09564" stroke-width="2" fill="none" stroke-linecap="round" />
 
-    <!-- Eyes -->
-    <circle cx="223" cy="215" r="14" fill="#ffffff" stroke="#1f2937" stroke-width="2.5" />
-       <circle cx="229" cy="215" r="7" fill="#111827" />
-       <circle cx="227" cy="212" r="2.5" fill="#ffffff" />
-    <circle cx="277" cy="215" r="14" fill="#ffffff" stroke="#1f2937" stroke-width="2.5" />
-       <circle cx="283" cy="215" r="7" fill="#111827" />
-       <circle cx="281" cy="212" r="2.5" fill="#ffffff" />
+    <!-- Right Ear with Natural Helix -->
+    <ellipse cx="308" cy="225" rx="11" ry="16" fill="#eab383" stroke="#1e293b" stroke-width="2" />
+    <path d="M 306 216 Q 312 223 306 231" stroke="#d09564" stroke-width="2" fill="none" stroke-linecap="round" />
 
-    <!-- Triangular Red Nose (Signature feature) -->
-    <polygon points="250,205 264,250 246,252" fill="#ef4444" stroke="#1f2937" stroke-width="2" stroke-linejoin="round" />
-    <polygon points="250,205 264,250 256,251" fill="#dc2626" />
+    <!-- Human Head & Jaw Structure -->
+    <path d="M 198 175 
+             C 198 150, 302 150, 302 175 
+             C 302 210, 300 240, 285 272 
+             C 272 298, 258 304, 250 304 
+             C 242 304, 228 298, 215 272 
+             C 200 240, 198 210, 198 175 Z" 
+          fill="#eab383" stroke="#1e293b" stroke-width="2.5" />
+
+    <!-- Natural Jaw and Cheek Contour Shading -->
+    <path d="M 250 304 C 258 304, 272 298, 285 272 C 295 250, 298 225, 298 200 C 280 230, 260 280, 250 304 Z" fill="#d09564" opacity="0.3" />
+    
+    <!-- Subtle Cheek Health Glow -->
+    <ellipse cx="218" cy="238" rx="10" ry="6" fill="#e28878" opacity="0.35" />
+    <ellipse cx="282" cy="238" rx="10" ry="6" fill="#e28878" opacity="0.35" />
+
+    <!-- Modern Textured Creator Hairstyle (Clean textured crop / fade) -->
+    <path d="M 194 185
+             C 190 150, 210 120, 250 116
+             C 278 114, 304 130, 308 165
+             C 310 185, 306 195, 302 195
+             C 300 178, 294 152, 280 142
+             C 265 132, 235 134, 215 152
+             C 202 164, 196 178, 194 185 Z"
+          fill="#1f1917" stroke="#0f172a" stroke-width="2.5" />
+
+    <!-- Modern Textured Hair Locks & Highlights -->
+    <path d="M 220 142 Q 238 126 256 138" stroke="#382a26" stroke-width="4" stroke-linecap="round" fill="none" />
+    <path d="M 245 132 Q 262 122 280 134" stroke="#4e3b36" stroke-width="3" stroke-linecap="round" fill="none" />
+    <path d="M 205 160 Q 215 145 230 155" stroke="#382a26" stroke-width="3.5" stroke-linecap="round" fill="none" />
+
+    <!-- Eyebrows (Sculpted, naturally arched) -->
+    <path d="M 206 200 Q 225 190 245 196" stroke="#1f1917" stroke-width="4.5" stroke-linecap="round" fill="none" />
+    <path d="M 255 196 Q 275 190 294 200" stroke="#1f1917" stroke-width="4.5" stroke-linecap="round" fill="none" />
+
+    <!-- Eyes (Sclera, Iris, Catchlight) -->
+    <ellipse cx="225" cy="215" rx="15" ry="13" fill="#ffffff" stroke="#1e293b" stroke-width="2" />
+       <!-- Iris -->
+       <circle cx="231" cy="215" r="8.5" fill="#382218" stroke="#1c1917" stroke-width="1.5" />
+       <!-- Pupil -->
+       <circle cx="231" cy="215" r="4.5" fill="#090706" />
+       <!-- Catchlight reflection -->
+       <circle cx="228" cy="212" r="2.5" fill="#ffffff" opacity="0.9" />
+       <circle cx="233" cy="217" r="1.2" fill="#ffffff" opacity="0.7" />
+    <ellipse cx="275" cy="215" rx="15" ry="13" fill="#ffffff" stroke="#1e293b" stroke-width="2" />
+       <!-- Iris -->
+       <circle cx="281" cy="215" r="8.5" fill="#382218" stroke="#1c1917" stroke-width="1.5" />
+       <!-- Pupil -->
+       <circle cx="281" cy="215" r="4.5" fill="#090706" />
+       <!-- Catchlight reflection -->
+       <circle cx="278" cy="212" r="2.5" fill="#ffffff" opacity="0.9" />
+       <circle cx="283" cy="217" r="1.2" fill="#ffffff" opacity="0.7" />
+
+    <!-- Natural Sculpted Human Nose (Refined shading, no clown triangle!) -->
+    <path d="M 248 214 L 246 244 Q 242 250 250 252 Q 258 250 254 244 L 252 214" fill="#d09564" opacity="0.35" />
+    <path d="M 244 249 Q 250 254 256 249" stroke="#d09564" stroke-width="2.5" stroke-linecap="round" fill="none" />
+    <circle cx="242" cy="249" r="1.5" fill="#451a03" />
+    <circle cx="258" cy="249" r="1.5" fill="#451a03" />
 
     <!-- Mouth -->
-    <path d="M 235 272 Q 250 288 265 272 Z" fill="#7f1d1d" stroke="#1f2937" stroke-width="2.5" />
-       <path d="M 240 274 Q 250 278 260 274" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" />
+    <path d="M 235 268 Q 250 286 265 268 Z" fill="#581c1c" stroke="#1e293b" stroke-width="2.5" stroke-linejoin="round" />
+                 <path d="M 238 270 Q 250 275 262 270" stroke="#f8fafc" stroke-width="3" stroke-linecap="round" />
+                 <ellipse cx="250" cy="281" rx="6" ry="3" fill="#b91c1c" />
   
   </g>
 </svg>

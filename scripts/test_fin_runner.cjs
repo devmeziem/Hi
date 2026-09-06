@@ -365,48 +365,59 @@ async function probeBackupEngines() {
   let groqWorkingModel = null;
 
   if (GROQ_API_KEY) {
-    const candidateModels = [
-      'llama-3.3-70b-versatile',
-      'llama-3.1-8b-instant',
-      'gemma2-9b-it',
-      'deepseek-r1-distill-llama-70b',
-      'qwen-2.5-32b'
-    ];
+    try {
+      const { fetchAndVerifyGroqModels } = require('./groq_model_finder.cjs');
+      const verifiedModels = await fetchAndVerifyGroqModels();
+      if (verifiedModels && verifiedModels.length > 0) {
+        groqWorkingModel = verifiedModels[0];
+        logSuccess(`Groq High-Speed LPU auto-detected verified models: [${verifiedModels.join(', ')}] -> Selected: '${groqWorkingModel}'`);
+      }
+    } catch (e) {
+      logWarning(`Groq dynamic discovery error: ${e.message}. Using fallback.`);
+    }
 
-    for (const model of candidateModels) {
-      try {
-        const startTime = Date.now();
-        const res = await new Promise((resolve) => {
-          const postData = JSON.stringify({
-            model,
-            messages: [{ role: 'user', content: 'Ping' }],
-            max_tokens: 5
+    if (!groqWorkingModel) {
+      const candidateModels = [
+        'llama-3.3-70b-versatile',
+        'llama-3.1-8b-instant',
+        'gemma2-9b-it',
+        'deepseek-r1-distill-llama-70b'
+      ];
+      for (const model of candidateModels) {
+        try {
+          const startTime = Date.now();
+          const res = await new Promise((resolve) => {
+            const postData = JSON.stringify({
+              model,
+              messages: [{ role: 'user', content: 'Ping' }],
+              max_tokens: 5
+            });
+            const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${GROQ_API_KEY}`,
+                'Content-Length': Buffer.byteLength(postData)
+              },
+              timeout: 6000
+            }, (r) => {
+              let body = '';
+              r.on('data', c => body += c);
+              r.on('end', () => resolve({ status: r.statusCode, duration: Date.now() - startTime }));
+            });
+            req.on('error', () => resolve({ status: 500 }));
+            req.on('timeout', () => { req.destroy(); resolve({ status: 408 }); });
+            req.write(postData);
+            req.end();
           });
-          const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${GROQ_API_KEY}`,
-              'Content-Length': Buffer.byteLength(postData)
-            },
-            timeout: 6000
-          }, (r) => {
-            let body = '';
-            r.on('data', c => body += c);
-            r.on('end', () => resolve({ status: r.statusCode, duration: Date.now() - startTime }));
-          });
-          req.on('error', () => resolve({ status: 500 }));
-          req.on('timeout', () => { req.destroy(); resolve({ status: 408 }); });
-          req.write(postData);
-          req.end();
-        });
 
-        if (res.status === 200) {
-          logSuccess(`Groq High-Speed LPU ('${model}') is ONLINE & READY! Latency: ${res.duration}ms`);
-          groqWorkingModel = model;
-          break;
-        }
-      } catch {}
+          if (res.status === 200) {
+            logSuccess(`Groq High-Speed LPU ('${model}') is ONLINE & READY! Latency: ${res.duration}ms`);
+            groqWorkingModel = model;
+            break;
+          }
+        } catch {}
+      }
     }
   }
 

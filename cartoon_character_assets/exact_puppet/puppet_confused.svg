@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 50 500 1000" width="500" height="1000">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-100 50 700 1000" width="700" height="1000">
   <g id="modern_character_root">
     <!-- 1. Legs, Trousers & Modern Designer Sneakers -->
     
@@ -29,21 +29,19 @@
 
     <!-- 2. Arms, Hands & Smartwatch -->
     
-    <!-- Left Arm -->
-    <path d="M 165 375 L 185 375 L 178 520 L 160 520 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2" />
-    <path d="M 160 520 L 180 520 L 176 670 L 158 670 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-    
-    <rect x="156" y="660" width="22" height="16" rx="4" fill="#0f172a" stroke="#0f172a" stroke-width="1.5" />
-    <circle cx="167" cy="668" r="8" fill="#0f172a" stroke="#06b6d4" stroke-width="2" />
-    <circle cx="167" cy="668" r="4" fill="#06b6d4" opacity="0.8" />
-  
-    <path d="M 158 675 L 176 675 L 178 720 L 156 720 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Shrug Pose: Both hands raised, palms turned up quizzically -->
+      <!-- Left Arm -->
+      <path d="M 165 370 L 185 370 L 140 480 L 120 475 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2" />
+      <path d="M 125 475 L 140 485 L 85 460 L 95 445 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Left Hand (Open palm facing up) -->
+      <path d="M 85 450 L 55 435 L 58 450 L 85 470 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
 
-    <!-- Right Arm -->
-    <path d="M 315 375 L 335 375 L 338 520 L 318 520 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2" />
-    <path d="M 318 520 L 338 520 L 336 670 L 318 670 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-    <path d="M 318 675 L 336 675 L 338 720 L 316 720 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-  
+      <!-- Right Arm -->
+      <path d="M 315 370 L 335 370 L 380 480 L 360 475 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2" />
+      <path d="M 365 475 L 380 485 L 435 460 L 425 445 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Right Hand (Open palm facing up) -->
+      <path d="M 425 450 L 455 435 L 452 450 L 425 470 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+    
 
     <!-- 3. Torso, Inner Tee & Modern Tech Overshirt -->
     
@@ -117,12 +115,26 @@
     <path d="M 205 160 Q 215 145 230 155" stroke="#382a26" stroke-width="3.5" stroke-linecap="round" fill="none" />
 
     <!-- Eyebrows (Sculpted, naturally arched) -->
-    <path d="M 206 200 Q 225 190 245 196" stroke="#1f1917" stroke-width="4.5" stroke-linecap="round" fill="none" />
-    <path d="M 255 196 Q 275 190 294 200" stroke="#1f1917" stroke-width="4.5" stroke-linecap="round" fill="none" />
+    <path d="M 206 198 Q 225 204 245 200" stroke="#1f1917" stroke-width="4.5" stroke-linecap="round" fill="none" />
+    <path d="M 255 188 Q 275 178 294 186" stroke="#1f1917" stroke-width="4.5" stroke-linecap="round" fill="none" />
 
     <!-- Eyes (Sclera, Iris, Catchlight) -->
-    <path d="M 210 216 Q 225 222 240 216" stroke="#1f1917" stroke-width="3.5" stroke-linecap="round" fill="none" />
-    <path d="M 260 216 Q 275 222 290 216" stroke="#1f1917" stroke-width="3.5" stroke-linecap="round" fill="none" />
+    <ellipse cx="225" cy="215" rx="15" ry="13" fill="#ffffff" stroke="#1e293b" stroke-width="2" />
+       <!-- Iris -->
+       <circle cx="223" cy="215" r="8.5" fill="#382218" stroke="#1c1917" stroke-width="1.5" />
+       <!-- Pupil -->
+       <circle cx="223" cy="215" r="4.5" fill="#090706" />
+       <!-- Catchlight reflection -->
+       <circle cx="220" cy="212" r="2.5" fill="#ffffff" opacity="0.9" />
+       <circle cx="225" cy="217" r="1.2" fill="#ffffff" opacity="0.7" />
+    <ellipse cx="275" cy="215" rx="15" ry="13" fill="#ffffff" stroke="#1e293b" stroke-width="2" />
+       <!-- Iris -->
+       <circle cx="273" cy="215" r="8.5" fill="#382218" stroke="#1c1917" stroke-width="1.5" />
+       <!-- Pupil -->
+       <circle cx="273" cy="215" r="4.5" fill="#090706" />
+       <!-- Catchlight reflection -->
+       <circle cx="270" cy="212" r="2.5" fill="#ffffff" opacity="0.9" />
+       <circle cx="275" cy="217" r="1.2" fill="#ffffff" opacity="0.7" />
 
     <!-- Natural Sculpted Human Nose (Refined shading, no clown triangle!) -->
     <path d="M 248 214 L 246 244 Q 242 250 250 252 Q 258 250 254 244 L 252 214" fill="#d09564" opacity="0.35" />
@@ -131,7 +143,9 @@
     <circle cx="258" cy="249" r="1.5" fill="#451a03" />
 
     <!-- Mouth -->
-    <path d="M 236 270 Q 250 278 264 270" fill="none" stroke="#451a03" stroke-width="3" stroke-linecap="round" />
+    <path d="M 235 268 Q 250 286 265 268 Z" fill="#581c1c" stroke="#1e293b" stroke-width="2.5" stroke-linejoin="round" />
+                 <path d="M 238 270 Q 250 275 262 270" stroke="#f8fafc" stroke-width="3" stroke-linecap="round" />
+                 <ellipse cx="250" cy="281" rx="6" ry="3" fill="#b91c1c" />
   
   </g>
 </svg>

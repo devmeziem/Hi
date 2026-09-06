@@ -21,9 +21,9 @@ const CHANNEL_CONFIG = {
     clientId: process.env.YOUTUBE_CLIENT_ID_CH1 || DEFAULT_CLIENT_ID,
     clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH1 || DEFAULT_CLIENT_SECRET,
     refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH1 || process.env.YOUTUBE_REFRESH_TOKEN || '',
-    affiliateCta: '💰 Launch your AI Micro-SaaS: https://selar.co/m/bones-ceo (15k Naira Blueprint)',
-    pinnedComment: '📌 Get the exact Micro-SaaS order template + 15k Naira startup guide here: https://selar.co/m/bones-ceo',
-    tags: ['#Shorts', '#viral', '#trending', '#MicroSaaS', '#FinBlueprint', '#MakeMoneyOnline', '#SideHustle', '#Wealth', '#fyp']
+    affiliateCta: '📱 Start your phone-based media hustle: https://selar.co/m/bones-ceo (Creator Playbook)',
+    pinnedComment: '📌 Which phone hustle are you trying this week? Drop your thoughts below and subscribe to @bones_ceo for daily practical creator blueprints!',
+    tags: ['#Shorts', '#SideHustle', '#CreatorEconomy', '#MakeMoneyOnline', '#PhoneHustle', '#viral', '#trending', '#fyp']
   },
   motivation_stoicism: {
     handle: '@thestoicarchitect-n4b',

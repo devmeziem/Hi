@@ -144,7 +144,7 @@ const ROTATING_STOIC_HOOK_TEMPLATES = [
   {
     id: 'brutal_truth',
     name: 'Brutal Reality / Ancient Law',
-    formula: 'Nobody is coming to save you. Marcus Aurelius realized 2,000 years ago that your transformation begins when...',
+    formula: 'Nobody is coming to save you. Ancient masters and philosophers realized centuries ago that your transformation begins when...',
     generateHook: (theme) => `Nobody is coming to save you. The day you stop waiting for external rescue is the day your real power awakens.`
   },
   {
@@ -419,6 +419,78 @@ const STOIC_ARCHETYPES = [
     hookArchetypeId: 'iron_law_mindset',
     modernScenario: 'Experiencing early success and feeling tempted to brag, spend recklessly, or become complacent.',
     visualStyle: 'Sculptor quietly working on fine marble details, bathed in warm morning atelier light, 9:16 vertical 8k'
+  },
+  {
+    lessonId: 'lao_tzu_yielding_water',
+    theme: 'Lao Tzu: The Power of Yielding Like Water',
+    angle: 'Why the Calmest Person Controls Every Room: The Ancient Taoist Secret of Soft Power',
+    philosophicalPrinciple: 'Lao Tzu Wu Wei & Water Doctrine — nothing in the world is more yielding than water, yet nothing can overcome it. Calm composure wears down any hostile force.',
+    hookArchetypeId: 'contrarian_paradox',
+    modernScenario: 'De-escalating explosive workplace arguments or family drama without getting sucked into screaming matches.',
+    visualStyle: 'Smooth river stone bathed in rushing dark mountain water under glowing moonlight, 9:16 vertical 8k'
+  },
+  {
+    lessonId: 'musashi_dokkodo_solitude',
+    theme: 'Miyamoto Musashi: The Sovereign Solitary Mind',
+    angle: 'How to Conquer Loneliness and Turn Solitude into an Unfair Advantage',
+    philosophicalPrinciple: 'Miyamoto Musashi Dokkodo — accept everything just the way it is; do not seek pleasure for its own sake; think lightly of yourself and deeply of the world.',
+    hookArchetypeId: 'power_of_solitude',
+    modernScenario: 'Sitting alone on a weekend while friends party, choosing relentless self-mastery and craft over cheap distractions.',
+    visualStyle: 'Solitary ronin warrior standing quietly on a misty bamboo ridge at dawn, sharp katana reflection, 9:16 vertical 8k'
+  },
+  {
+    lessonId: 'sun_tzu_deliberate_calm',
+    theme: 'Sun Tzu: Winning Without Fighting',
+    angle: 'Never React in Anger: Why Controlling Your Temper Disarms Every Opponent',
+    philosophicalPrinciple: 'Sun Tzu Art of War — supreme excellence consists in subduing the enemy without fighting; when an opponent attempts to provoke you, deliberate before moving.',
+    hookArchetypeId: 'curiosity_gap_tactical',
+    modernScenario: 'A rival attempts to bait you into making a hasty public statement or impulsive reaction.',
+    visualStyle: 'Intricate dark slate strategic game board with glowing obsidian and amber stones, dramatic directional light, 9:16 vertical 8k'
+  },
+  {
+    lessonId: 'nietzsche_amor_fati_crucible',
+    theme: 'Friedrich Nietzsche: Becoming Who You Are',
+    angle: 'What Does Not Destroy You: Why Struggling Is the Price of Extraordinary Greatness',
+    philosophicalPrinciple: 'Friedrich Nietzsche Amor Fati & Self-Overcoming — do not merely endure hardship; love it as the essential fire that turns base metal into sovereign character.',
+    hookArchetypeId: 'brutal_truth',
+    modernScenario: 'Facing unexpected financial or emotional wreckage and refusing to play the helpless victim.',
+    visualStyle: 'Silhouette of determined climber standing atop sharp jagged alpine ridge against dramatic stormy sunset, 9:16 vertical 8k'
+  },
+  {
+    lessonId: 'schopenhauer_quiet_sovereignty',
+    theme: 'Arthur Schopenhauer: Independence from Crowds',
+    angle: 'Why Seeking Everyone’s Approval Is the Fastest Way to Lose Your Self-Respect',
+    philosophicalPrinciple: 'Arthur Schopenhauer Intellectual Sovereignty — a person of high character finds peace within himself and refuses to surrender his dignity to herd opinion.',
+    hookArchetypeId: 'iron_law_mindset',
+    modernScenario: 'Feeling pressured to follow trends, buy status symbols, or conform to social expectations you despise.',
+    visualStyle: 'Ancient grand dark mahogany library with dust motes drifting in single sunbeam, solitary scholar at work, 9:16 vertical 8k'
+  },
+  {
+    lessonId: 'frankl_last_freedom',
+    theme: 'Viktor Frankl: The Unconquerable Choice',
+    angle: 'Between Stimulus and Response: The 3-Second Gap Where Your True Power Lives',
+    philosophicalPrinciple: 'Viktor Frankl Logotherapy — everything can be taken from a person but one thing: the freedom to choose one\'s attitude in any given set of circumstances.',
+    hookArchetypeId: 'under_fire_scenario',
+    modernScenario: 'Stuck in an unfair, exhausting life situation where you cannot change the rules, but you control your dignified conduct.',
+    visualStyle: 'Unbroken ray of morning sunlight piercing through thick industrial stone wall, 9:16 vertical 8k'
+  },
+  {
+    lessonId: 'jung_shadow_and_strength',
+    theme: 'Carl Jung: Integrating Internal Power',
+    angle: 'Why Being Harmless Is Not Being Good: True Virtue Requires Dangerous Capability Under Control',
+    philosophicalPrinciple: 'Carl Jung Shadow Integration — a harmless person is not good; they are merely harmless. True virtue is having the power to inflict damage, yet keeping it under absolute moral command.',
+    hookArchetypeId: 'contrarian_paradox',
+    modernScenario: 'People-pleasers getting walked over until they realize establishing firm boundaries is a moral duty.',
+    visualStyle: 'Dramatic chiaroscuro portrait of warrior in shadows, piercing focused eyes lit by warm gold lantern, 9:16 vertical 8k'
+  },
+  {
+    lessonId: 'gracian_worldly_composure',
+    theme: 'Baltasar Gracián: The Art of Worldly Reserve',
+    angle: 'Never Reveal All Your Cards: The Strategic Value of Mystery and Composure',
+    philosophicalPrinciple: 'Baltasar Gracián Worldly Wisdom — keep people guessing; do not let everyone see the bottom of your capacity, for novelty commands respect where familiarity breeds contempt.',
+    hookArchetypeId: 'curiosity_gap_tactical',
+    modernScenario: 'Negotiating a salary, deal, or new partnership without showing desperation or nervous insecurity.',
+    visualStyle: 'Deep ebony architectural archway with a dignified silhouette standing composed in quiet golden light, 9:16 vertical 8k'
   }
 ];
 
@@ -567,9 +639,16 @@ async function fetchRecentHistoryFromFirestore(channelId = 'motivation_stoicism'
 /**
  * Strict check if candidate topic matches or is too similar to recent history
  */
-function isTopicSimilarToHistory(candidateTopic, candidateTheme, recentHistory = [], threshold = 0.50) {
+function isTopicSimilarToHistory(candidateTopic, candidateTheme, recentHistory = [], threshold = 0.40) {
   if (!candidateTopic) return true;
-  const historyArr = Array.isArray(recentHistory) ? recentHistory : [];
+  let historyArr = Array.isArray(recentHistory) ? recentHistory : [];
+  if (historyArr.length < 5) {
+    try {
+      const { loadAllChannelHistory } = require('./ai_script_deduplicator.cjs');
+      historyArr = loadAllChannelHistory('stoic');
+    } catch {}
+  }
+
   const normCandidate = candidateTopic.toLowerCase().replace(/[^a-z0-9]/g, ' ').trim();
   const stopWords = new Set(['how', 'the', 'what', 'when', 'with', 'your', 'from', 'this', 'that', 'they', 'will', 'stoic', 'stoicism', 'rule', 'rules', 'mind', 'mental', 'life', 'daily', 'shorts']);
 
@@ -577,7 +656,7 @@ function isTopicSimilarToHistory(candidateTopic, candidateTheme, recentHistory =
     normCandidate.split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w))
   );
 
-  const windowToCheck = historyArr.slice(0, 30);
+  const windowToCheck = historyArr.slice(0, 40);
 
   for (const item of windowToCheck) {
     const prevText = (((item && (item.topic || item.title)) || '') + ' ' + ((item && item.theme) || '')).toLowerCase().replace(/[^a-z0-9]/g, ' ').trim();
@@ -591,8 +670,9 @@ function isTopicSimilarToHistory(candidateTopic, candidateTheme, recentHistory =
       for (const w of wordsPrev) {
         if (wordsCandidate.has(w)) matches++;
       }
-      const overlap = matches / Math.min(wordsCandidate.size, wordsPrev.length);
-      if (overlap >= threshold) return true;
+      const union = wordsCandidate.size + wordsPrev.length - matches;
+      const jaccard = union > 0 ? (matches / union) : 0;
+      if (jaccard >= threshold) return true;
     }
   }
 
@@ -617,10 +697,30 @@ function selectDailyDiverseSlots(arg1 = 4, arg2 = []) {
     recentHistory = arg2;
   }
 
-  if (!Array.isArray(recentHistory)) recentHistory = [];
+  if (!Array.isArray(recentHistory) || recentHistory.length < 5) {
+    try {
+      const { loadAllChannelHistory } = require('./ai_script_deduplicator.cjs');
+      const loaded = loadAllChannelHistory('stoic');
+      recentHistory = [...(recentHistory || []), ...loaded];
+    } catch {}
+  }
 
-  const recentThemes = new Set(recentHistory.map(h => ((h && h.theme) || '').toLowerCase()));
-  const available = STOIC_ARCHETYPES.filter(a => !recentThemes.has(a.theme.toLowerCase()));
+  const recentHistoryTexts = (recentHistory || []).map(h => {
+    return [h.theme, h.topic, h.title, h.lessonId].filter(Boolean).join(' ').toLowerCase();
+  });
+
+  const available = STOIC_ARCHETYPES.filter(archetype => {
+    const aTheme = archetype.theme.toLowerCase();
+    const aId = (archetype.lessonId || '').toLowerCase();
+    for (const prevText of recentHistoryTexts) {
+      if (prevText.includes(aTheme) || aTheme.includes(prevText) || (aId && prevText.includes(aId))) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  console.log(`[Stoic Diversity] Available unused archetypes: ${available.length} of ${STOIC_ARCHETYPES.length}`);
   const pool = available.length >= count ? available : STOIC_ARCHETYPES;
 
   const shuffled = [...pool].sort(() => Math.random() - 0.5);
@@ -748,7 +848,7 @@ CRITICAL YOUTUBE SHORTS ALGORITHM RETENTION RULES (EXACTLY 6 SLIDES / ~60 SECOND
 1. RUNTIME & PACING: Exactly 6 high-impact slides (slideIndex 0 to 5). Each slide MUST have 22 to 30 punchy spoken words (130-160 words total = ~50-60s runtime).
 2. SLIDE 0 (ANTI-SWIPE HOOK): Use the '${chosenHookFormat.name}' format! Formula: "${chosenHookFormat.formula}". Start directly with an intense pattern-interrupt question or shocking statement in under 12 words.
 3. SLIDE 1 (THE PSYCHOLOGICAL TRAP): Why most people react impulsively and hand over their power.
-4. SLIDE 2 (THE ANCIENT PERSPECTIVE): What Seneca or Marcus Aurelius realized about this exact situation.
+4. SLIDE 2 (THE TIMELESS PHILOSOPHICAL FOUNDATION): The timeless principle behind this mastery (grounded directly in: "${slotArchetype.philosophicalPrinciple}").
 5. SLIDE 3 (THE TACTICAL DAILY PROTOCOL): Concrete physical/mental action to execute immediately when triggered.
 6. SLIDE 4 (SOVEREIGN BENEFIT): Why this disciplined response makes your peace of mind completely untouchable.
 7. SLIDE 5 (INFINITE RETENTION LOOP & OUTRO): Golden law + short CTA + this exact seamless bridge: "${chosenOutro}" that connects grammatically right back into Slide 0!

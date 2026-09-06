@@ -564,13 +564,17 @@ async function callPollinationsText(prompt, systemPrompt) {
  * Dynamically discover active Groq models or use verified active list
  */
 async function getActiveGroqModels() {
+  try {
+    const { fetchAndVerifyGroqModels } = require('./groq_model_finder.cjs');
+    const models = await fetchAndVerifyGroqModels();
+    if (models && models.length > 0) return models;
+  } catch {}
+
   const verifiedFallbacks = [
     'llama-3.1-8b-instant',           // Always active, 100% reliable
-    'llama-3.3-70b-specdec',          // Active Groq 70B Speculative Decoding
-    'qwen-2.5-32b',                   // Active high-IQ model
+    'llama-3.3-70b-versatile',
     'deepseek-r1-distill-llama-70b',  // Active reasoning model
-    'gemma2-9b-it',                   // Active Google Gemma on Groq
-    'llama-3.3-70b-versatile'         // Legacy fallback
+    'gemma2-9b-it'                    // Active Google Gemma on Groq
   ];
 
   if (!GROQ_API_KEY) return verifiedFallbacks;

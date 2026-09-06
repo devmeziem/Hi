@@ -468,85 +468,63 @@ async function testBackupEngines() {
   let groqWorkingModel = null;
 
   if (GROQ_API_KEY) {
-    // Verified fast, low-consumption working Groq models
-    let candidateModels = [
-      'llama-3.3-70b-versatile',
-      'llama-3.1-8b-instant',
-      'deepseek-r1-distill-llama-70b',
-      'gemma2-9b-it',
-      'qwen-2.5-32b'
-    ];
-
     try {
-      const activeList = await new Promise((resolve) => {
-        const req = https.get('https://api.groq.com/openai/v1/models', {
-          headers: { 'Authorization': `Bearer ${GROQ_API_KEY}` },
-          timeout: 4000
-        }, (res) => {
-          let d = '';
-          res.on('data', c => d += c);
-          res.on('end', () => {
-            if (res.statusCode === 200) {
-              try {
-                const j = JSON.parse(d);
-                if (Array.isArray(j.data)) {
-                  const textModels = j.data
-                    .map(m => m.id)
-                    .filter(id => !id.includes('whisper') && !id.includes('guard') && !id.includes('vision'));
-                  if (textModels.length > 0) return resolve(textModels);
-                }
-              } catch {}
-            }
-            resolve(null);
-          });
-        });
-        req.on('error', () => resolve(null));
-        req.on('timeout', () => { req.destroy(); resolve(null); });
-      });
-      if (activeList && activeList.length > 0) {
-        // Prioritize low-consumption instant models
-        candidateModels = [
-          ...activeList.filter(m => m === 'llama-3.1-8b-instant' || m === 'gemma2-9b-it' || m === 'llama-3.3-70b-versatile'),
-          ...activeList.filter(m => m !== 'llama-3.1-8b-instant' && m !== 'gemma2-9b-it' && m !== 'llama-3.3-70b-versatile')
-        ];
+      const { fetchAndVerifyGroqModels } = require('./groq_model_finder.cjs');
+      const verifiedModels = await fetchAndVerifyGroqModels();
+      if (verifiedModels && verifiedModels.length > 0) {
+        groqWorkingModel = verifiedModels[0];
+        logSuccess(`Groq High-Speed Engine auto-detected verified models: [${verifiedModels.join(', ')}] -> Selected: '${groqWorkingModel}'`);
       }
-    } catch {}
+    } catch (e) {
+      logWarning(`Groq dynamic discovery error: ${e.message}`);
+    }
 
-    for (const model of candidateModels) {
-      try {
-        const res = await new Promise((resolve) => {
-          const postData = JSON.stringify({
-            model: model,
-            messages: [{ role: 'user', content: 'Say OK' }],
-            max_tokens: 10
-          });
+    if (!groqWorkingModel) {
+      // Fallback candidate list
+      const candidateModels = [
+        'llama-3.3-70b-versatile',
+        'llama-3.1-8b-instant',
+        'deepseek-r1-distill-llama-70b',
+        'gemma2-9b-it'
+      ];
 
-          const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${GROQ_API_KEY}`,
-              'Content-Length': Buffer.byteLength(postData)
-            },
-            timeout: 8000
-          }, (resp) => {
-            let d = '';
-            resp.on('data', c => d += c);
-            resp.on('end', () => {
-              resolve({ statusCode: resp.statusCode, body: d, duration: Date.now() - startTime, model });
+      for (const model of candidateModels) {
+        try {
+          const startTime = Date.now();
+          const res = await new Promise((resolve) => {
+            const postData = JSON.stringify({
+              model: model,
+              messages: [{ role: 'user', content: 'Say OK' }],
+              max_tokens: 10
             });
-          });
-          req.on('error', e => resolve({ statusCode: 500, error: e.message }));
-          req.write(postData);
-          req.end();
-        });
 
-        if (res.statusCode === 200) {
-          logSuccess(`Groq High-Speed Engine ('${model}') is ONLINE & READY! Latency: ${res.duration}ms`);
-          groqWorkingModel = model;
-          break;
-        }
-      } catch {}
+            const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${GROQ_API_KEY}`,
+                'Content-Length': Buffer.byteLength(postData)
+              },
+              timeout: 8000
+            }, (resp) => {
+              let d = '';
+              resp.on('data', c => d += c);
+              resp.on('end', () => {
+                resolve({ statusCode: resp.statusCode, body: d, duration: Date.now() - startTime, model });
+              });
+            });
+            req.on('error', e => resolve({ statusCode: 500, error: e.message }));
+            req.write(postData);
+            req.end();
+          });
+
+          if (res.statusCode === 200) {
+            logSuccess(`Groq High-Speed Engine ('${model}') is ONLINE & READY! Latency: ${res.duration}ms`);
+            groqWorkingModel = model;
+            break;
+          }
+        } catch {}
+      }
     }
   }
 

@@ -226,17 +226,38 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
     const puppetCompare = path.join(puppetDir, 'puppet_explain_both.png');
     const puppetTalk = path.join(puppetDir, 'puppet_talking.png');
     const puppetEyes = path.join(puppetDir, 'puppet_blink.png');
+    const puppetSitting = path.join(puppetDir, 'puppet_sitting.png');
+    const puppetThinking = path.join(puppetDir, 'puppet_thinking.png');
+    const puppetConfused = path.join(puppetDir, 'puppet_confused.png');
+    const puppetSurprised = path.join(puppetDir, 'puppet_surprised.png');
+    const puppetQuestioning = path.join(puppetDir, 'puppet_questioning_users.png');
+    const hudCard = path.join(process.cwd(), 'cartoon_character_assets', 'ui_hud', 'hud_comparison_card.png');
 
     // Decide main pose based on action
     let mainPuppet = fs.existsSync(puppetCompare) ? puppetCompare : puppetIdle;
     let puppetX = 260;
     if (action === 'point_left') {
       mainPuppet = fs.existsSync(puppetPointLeft) ? puppetPointLeft : puppetIdle;
-      puppetX = 310;
+      puppetX = 360;
     } else if (action === 'point_right') {
       mainPuppet = fs.existsSync(puppetPointRight) ? puppetPointRight : puppetIdle;
-      puppetX = 210;
-    } else if (action === 'walk_in') {
+      puppetX = 160;
+    } else if (action === 'sitting') {
+      mainPuppet = fs.existsSync(puppetSitting) ? puppetSitting : puppetIdle;
+      puppetX = 260;
+    } else if (action === 'thinking') {
+      mainPuppet = fs.existsSync(puppetThinking) ? puppetThinking : puppetIdle;
+      puppetX = 260;
+    } else if (action === 'confused') {
+      mainPuppet = fs.existsSync(puppetConfused) ? puppetConfused : puppetIdle;
+      puppetX = 260;
+    } else if (action === 'surprised' || action === 'surprise') {
+      mainPuppet = fs.existsSync(puppetSurprised) ? puppetSurprised : puppetIdle;
+      puppetX = 260;
+    } else if (action === 'questioning_users') {
+      mainPuppet = fs.existsSync(puppetQuestioning) ? puppetQuestioning : puppetIdle;
+      puppetX = 260;
+    } else if (action === 'walk_in' || action === 'walking') {
       mainPuppet = fs.existsSync(puppetWalk) ? puppetWalk : puppetIdle;
     } else if (action === 'talking' || action === 'idle') {
       mainPuppet = fs.existsSync(puppetTalk) ? puppetTalk : puppetIdle;
@@ -262,6 +283,20 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
       ].join(';');
 
       ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${walkAsset}" -loop 1 -t ${duration} -i "${standAsset}" -loop 1 -t ${duration} -i "${blinkAsset}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 4:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+    } else if ((action === 'point_left' || action === 'point_right' || action === 'explain_both') && fs.existsSync(hudCard)) {
+      // Dynamic pointing with floating HUD card
+      const hudX = action === 'point_right' ? 530 : (action === 'point_left' ? 70 : 300);
+      filterComplex = [
+        `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
+        `[1:v]scale=-1:1100[pose]`,
+        `[2:v]scale=-1:1100[eyes]`,
+        `[3:v]scale=460:-1[hud]`,
+        `[bg][hud]overlay=x=${hudX}:y='430 + 6*sin(t*2.5)'[s0]`,
+        `[s0][pose]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='between(t,0,2.3)+between(t,2.46,${duration})'[s1]`,
+        `[s1][eyes]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='between(t,2.3,2.46)'[v]`
+      ].join(';');
+
+      ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${mainPuppet}" -loop 1 -t ${duration} -i "${blinkAsset}" -loop 1 -t ${duration} -i "${hudCard}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 4:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
     } else {
       // Dynamic host pose with breathing sway and periodic eye blinks
       filterComplex = [

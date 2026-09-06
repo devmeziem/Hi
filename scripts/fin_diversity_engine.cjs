@@ -82,7 +82,7 @@ function formatViralShortsTitle(rawHeadline, nicheOrCategory = 'fin', isDeepDive
   const lower = (nicheOrCategory || '').toLowerCase();
   let tagPool = [];
   if (lower.includes('fin') || lower.includes('money') || lower.includes('business') || lower.includes('wealth')) {
-    tagPool = ['#Shorts', '#viral', '#trending', '#money', '#finance', '#wealth', '#business', '#fyp'];
+    tagPool = ['#Shorts', '#SideHustle', '#CreatorEconomy', '#MakeMoneyOnline', '#PhoneHustle', '#viral', '#trending', '#fyp'];
   } else if (lower.includes('stoic') || lower.includes('mind') || lower.includes('discipline') || lower.includes('motivation')) {
     tagPool = ['#Shorts', '#viral', '#trending', '#stoic', '#mindset', '#discipline', '#motivation', '#fyp'];
   } else if (lower.includes('tech') || lower.includes('ai') || lower.includes('code') || lower.includes('developer')) {
@@ -140,31 +140,30 @@ function formatViralShortsTitle(rawHeadline, nicheOrCategory = 'fin', isDeepDive
   return finalTitle;
 }
 
-// 10 Core Content Pillars
+// 10 Core Content Pillars (Media-First & Engaging Focus)
 const FIN_CATEGORIES = {
-  SMALL_CAPITAL_BUSINESS: 'small_capital_business',       // ₦0 - ₦5k / $0 - $5 startup ideas
-  SAVING_PERSONAL_FINANCE: 'saving_personal_finance',     // Budgeting, expense leaks, emergency funds
-  FINANCIAL_EDUCATION: 'financial_education',             // Inflation, compound interest, loans, APR, ETFs in plain words
-  SKILLS_TO_INCOME: 'skills_to_income',                   // Phone-only skills, video editing, copy, AI tools
-  FREE_OPPORTUNITIES: 'free_opportunities',               // Verified free certs (Google/MS), grants, scholarships
-  SCAM_AWARENESS: 'scam_awareness',                       // Ponzi schemes, fake crypto giveaways, phishing red flags
-  BUSINESS_BREAKDOWNS: 'business_breakdowns',             // Unit economics, startup supplies, gross profit math
-  BEGINNER_INVESTING_CRYPTO: 'beginner_investing_crypto', // Bitcoin, USDT stablecoins, inflation hedging, self-custody
-  FINANCIAL_CALCULATORS: 'financial_calculators',         // Compounding $1/day, break-even math, purchasing power
-  CHALLENGES_EXPERIMENTS: 'challenges_experiments'        // Transparent 30-day budget & micro-business experiments
+  MEDIA_CREATOR_HUSTLES: 'media_creator_hustles',         // Faceless shorts, podcast clipping, audio cleanup
+  MEDIA_BASED_SERVICES: 'media_based_services',           // Canva flyers, product photography, UGC reviews
+  SMALL_CAPITAL_BUSINESS: 'small_capital_business',       // $0 - $15 micro startup ideas
+  SKILLS_TO_INCOME: 'skills_to_income',                   // Phone-only creator skills, video editing, templates
+  SAVING_PERSONAL_FINANCE: 'saving_personal_finance',     // Simple money rules, impulse buffers
+  DIGITAL_MEDIA_ASSETS: 'digital_media_assets',           // Notion templates, digital planners, Gumroad
+  FREE_OPPORTUNITIES: 'free_opportunities',               // Verified free creator tools, design certs
+  SCAM_AWARENESS: 'scam_awareness',                       // Spotting fake guru traps and Ponzi schemes
+  BEGINNER_INVESTING_CRYPTO: 'beginner_investing_crypto', // Protecting purchasing power simply
+  CHALLENGES_EXPERIMENTS: 'challenges_experiments'        // 7-day media creation challenges
 };
 
 // Recurring Channel Series
 const FIN_SERIES = {
-  FIVE_K_CHALLENGE: '₦5K Challenge',
+  MEDIA_HUSTLE: 'Media Hustle',
+  CREATOR_BLUEPRINT: 'Creator Blueprint',
+  PHONE_TO_INCOME: 'Phone-to-Income',
   MONEY_BASICS: 'Money Basics',
-  FINANCE_EXPLAINED: 'Finance Explained',
   BUSINESS_BREAKDOWN: 'Business Breakdown',
   SCAM_ALERT: 'Scam Alert',
-  PHONE_TO_INCOME: 'Phone-to-Income',
-  CRYPTO_FOR_BEGINNERS: 'Crypto for Beginners',
   FREE_OPPORTUNITY_FRIDAY: 'Free Opportunity Friday',
-  THIRTY_DAY_CHALLENGE: '30-Day Money Challenge'
+  THIRTY_DAY_CHALLENGE: '30-Day Creator Challenge'
 };
 
 // 8 Distinct Rotating Hook Frameworks (Intro formats)
@@ -263,11 +262,50 @@ const ROTATING_FIN_OUTROS = [
   }
 ];
 
-// Category-Specific Flow Schemas for High-Impact Narrative Execution (Conceptual & Minimalist Clarity)
+// Category-Specific Flow Schemas for High-Impact Narrative Execution (Media-First & Engaging Clarity)
 const CATEGORY_FLOW_GUIDES = {
+  [FIN_CATEGORIES.MEDIA_CREATOR_HUSTLES]: {
+    name: 'Media Creator Hustle Flow',
+    series: FIN_SERIES.MEDIA_HUSTLE,
+    slideSteps: [
+      'High-Curiosity Media Opportunity Hook (Zero-dollar startup with phone)',
+      'The Secret Mechanism (Why brands & creators happily pay for this content)',
+      'Phone Workflow (Free apps to use without expensive computers or cameras)',
+      'Practical Customer Acquisition (How to land your first client in 24 hours)',
+      'The Beginner Quality Trap (Common rookie mistake to avoid)',
+      'Golden Rule & Infinite Loop Outro Bridge'
+    ],
+    communityQuestion: 'Which media creation side hustle sounds most interesting to you?'
+  },
+  [FIN_CATEGORIES.MEDIA_BASED_SERVICES]: {
+    name: 'Media-Based Services Flow',
+    series: FIN_SERIES.CREATOR_BLUEPRINT,
+    slideSteps: [
+      'Visual Transformation Hook (Before vs After)',
+      'The Market Need (Why local shops desperately need better social visuals)',
+      'Simple 10-Minute Template (How to do it on Canva or CapCut for free)',
+      'Outreach Message Template (Direct message that gets immediate replies)',
+      'The Common Overcomplication Trap',
+      'Actionable Challenge & Loop Bridge'
+    ],
+    communityQuestion: 'Have you used your phone to design or edit content yet?'
+  },
+  [FIN_CATEGORIES.DIGITAL_MEDIA_ASSETS]: {
+    name: 'Digital Media Assets Flow',
+    series: FIN_SERIES.CREATOR_BLUEPRINT,
+    slideSteps: [
+      'Build Once, Sell Forever Hook',
+      'The Product Idea (Simple digital template or preset pack)',
+      'Free Creation Tools (Google Sheets, Notion, Canva)',
+      'Distribution Channel (Free Gumroad store or WhatsApp link in bio)',
+      'The Traffic Secret (How to get eyes without paying for ads)',
+      'Golden Takeaway & Channel Outro Bridge'
+    ],
+    communityQuestion: 'What kind of digital template would make your daily life easier?'
+  },
   [FIN_CATEGORIES.SMALL_CAPITAL_BUSINESS]: {
     name: 'Small-Capital Business Flow',
-    series: FIN_SERIES.FIVE_K_CHALLENGE,
+    series: FIN_SERIES.BUSINESS_BREAKDOWN,
     slideSteps: [
       'High-Curiosity Opportunity Hook (Starting with small capital)',
       'The Simple Mechanism (Why local people happily pay for this service or item)',
@@ -493,8 +531,89 @@ function validateFinStoryboardQuality(storyboard) {
   return { valid: true };
 }
 
-// 30+ Comprehensive Diverse Financial Archetypes
+// 30+ Comprehensive Diverse Financial Archetypes (Media-First & Engaging)
 const FIN_ARCHETYPES = [
+  // 0. SMALL ENGAGING MEDIA-BASED HUSTLES (PHONE-FIRST & CREATOR ECONOMY)
+  {
+    id: 'fin_media_01_faceless_shorts',
+    category: FIN_CATEGORIES.MEDIA_CREATOR_HUSTLES,
+    series: FIN_SERIES.MEDIA_HUSTLE,
+    theme: 'Faceless YouTube Shorts / TikTok Channels',
+    angle: 'How to Launch a Viral Faceless Media Channel Using Free Phone Editing Apps',
+    targetBudget: '$0 (Phone Only)',
+    hookArchetypeId: 'contrarian_myth_buster',
+    visualAesthetic: 'Cinematic smartphone timeline editing vertical video in CapCut, ambient neon blue and warm tungsten backlight, sleek studio desk'
+  },
+  {
+    id: 'fin_media_02_podcast_repurposing',
+    category: FIN_CATEGORIES.MEDIA_CREATOR_HUSTLES,
+    series: FIN_SERIES.MEDIA_HUSTLE,
+    theme: 'Podcast Repurposing into Viral Reels',
+    angle: 'How to Get Paid $20 Per Episode Repurposing Long-Form Podcasts into 30-Second Viral Clips',
+    targetBudget: '$0',
+    hookArchetypeId: 'step_by_step_challenge',
+    visualAesthetic: 'High-end studio microphone, waveform audio visualizer glowing on sleek tablet, dark moody creator aesthetics, 9:16 vertical 8k'
+  },
+  {
+    id: 'fin_media_03_local_canva_menus',
+    category: FIN_CATEGORIES.MEDIA_BASED_SERVICES,
+    series: FIN_SERIES.CREATOR_BLUEPRINT,
+    theme: 'Canva Social Media Menus & Flyers for Local Cafes',
+    angle: 'How to Charge Local Restaurants $15 to Design Modern Social Media Menus with Free Canva',
+    targetBudget: '$0 (Free Canva)',
+    hookArchetypeId: 'story_case_study',
+    visualAesthetic: 'Aesthetic artisan cafe counter with smartphone displaying vibrant Instagram food menu story, warm golden lighting'
+  },
+  {
+    id: 'fin_media_04_ai_product_staging',
+    category: FIN_CATEGORIES.MEDIA_BASED_SERVICES,
+    series: FIN_SERIES.CREATOR_BLUEPRINT,
+    theme: 'AI Product Photography for Instagram Sellers',
+    angle: 'How to Turn Blurry Smartphone Photos into Luxury Studio Ads for WhatsApp & Boutique Sellers',
+    targetBudget: '$0 (Free AI Staging)',
+    hookArchetypeId: 'step_by_step_challenge',
+    visualAesthetic: 'Dramatic split-screen: simple raw phone photo transforming into sleek luxury studio perfume ad, glossy reflection'
+  },
+  {
+    id: 'fin_media_05_audio_cleaning_subtitles',
+    category: FIN_CATEGORIES.MEDIA_CREATOR_HUSTLES,
+    series: FIN_SERIES.MEDIA_HUSTLE,
+    theme: 'Crisp Subtitles & Audio Noise Removal Service',
+    angle: 'Why Busy Creators Pay $10 Per Video Just for Word-by-Word Kinetic Subtitles and Noise Removal',
+    targetBudget: '$0 (Free Phone Apps)',
+    hookArchetypeId: 'curiosity_gap_trap',
+    visualAesthetic: 'Kinetic typography leaping onto phone screen with bright yellow captions and audio waves, dark cinematic background'
+  },
+  {
+    id: 'fin_media_06_digital_notion_templates',
+    category: FIN_CATEGORIES.DIGITAL_MEDIA_ASSETS,
+    series: FIN_SERIES.CREATOR_BLUEPRINT,
+    theme: 'Minimalist Notion & Budget Templates on Gumroad',
+    angle: 'How to Build and Sell a $5 Digital Habit Planner with Zero Inventory on Gumroad',
+    targetBudget: '$0 (Free Notion & Gumroad)',
+    hookArchetypeId: 'story_case_study',
+    visualAesthetic: 'Minimalist aesthetic Notion workspace dashboard with clean checklist icons on sleek laptop, warm sunlight'
+  },
+  {
+    id: 'fin_media_07_ugc_review_videos',
+    category: FIN_CATEGORIES.MEDIA_BASED_SERVICES,
+    series: FIN_SERIES.CREATOR_BLUEPRINT,
+    theme: 'UGC Smartphone Product Review Videos',
+    angle: 'How Everyday People Get Free Products and $35 Per Video Filming 20-Second Honest Phone Reviews',
+    targetBudget: '$0 (Phone & Ring Light)',
+    hookArchetypeId: 'step_by_step_challenge',
+    visualAesthetic: 'Hands unboxing aesthetic minimalist package in natural daylight, smartphone recording vertical 9:16 footage'
+  },
+  {
+    id: 'fin_media_08_newsletter_curation',
+    category: FIN_CATEGORIES.DIGITAL_MEDIA_ASSETS,
+    series: FIN_SERIES.MEDIA_HUSTLE,
+    theme: 'Curating Weekly Micro-Newsletters on Substack',
+    angle: 'How Curating 5 Free Useful Links a Week on Substack Turns into a Profitable Media Brand',
+    targetBudget: '$0 (Substack Free)',
+    hookArchetypeId: 'contrarian_myth_buster',
+    visualAesthetic: 'Clean typographic newsletter reader on modern tablet with aesthetic morning coffee, warm natural ambient light'
+  },
   // 1. SMALL CAPITAL BUSINESSES
   {
     id: 'fin_01_snack_reselling',
@@ -1048,23 +1167,48 @@ function isFinTopicSimilarToHistory(candidateTopic, candidateTheme, recentHistor
 
 /**
  * Rotates archetypes systematically across categories based on history
- * Guarantees consecutive slots/days cycle through different pillars
+ * Prioritizes engaging, media-based concepts and phone hustles, stopping dry economics calculations
  */
 function selectDiverseFinArchetype(recentHistory = [], attemptOffset = 0) {
-  const historyArr = Array.isArray(recentHistory) ? recentHistory : [];
+  let historyArr = Array.isArray(recentHistory) ? recentHistory : [];
+  if (historyArr.length < 5) {
+    try {
+      const { loadAllChannelHistory } = require('./ai_script_deduplicator.cjs');
+      const loaded = loadAllChannelHistory('finance_business');
+      historyArr = [...historyArr, ...loaded];
+    } catch {}
+  }
+
   const recentTitles = historyArr.map(h => (((h && (h.title || h.topic)) || '') + ' ' + ((h && h.theme) || '')).toLowerCase());
   const recentCategories = historyArr.slice(0, 5).map(h => (h.category || '').toLowerCase()).filter(Boolean);
 
-  // 1. First priority: Archetypes from categories NOT used in the last 3-5 posts
-  const unrepresentedCategories = Object.values(FIN_CATEGORIES).filter(cat => !recentCategories.includes(cat.toLowerCase()));
-  
+  // Priority categories: Media creator hustles, media based services, phone to income, digital media assets
+  const mediaCategories = [
+    FIN_CATEGORIES.MEDIA_CREATOR_HUSTLES,
+    FIN_CATEGORIES.MEDIA_BASED_SERVICES,
+    FIN_CATEGORIES.DIGITAL_MEDIA_ASSETS,
+    FIN_CATEGORIES.SKILLS_TO_INCOME,
+    FIN_CATEGORIES.SMALL_CAPITAL_BUSINESS
+  ];
+
+  // 1. First priority: Media archetypes not used recently
   let candidates = FIN_ARCHETYPES.filter(arch => {
-    const matchesCategory = unrepresentedCategories.length > 0 ? unrepresentedCategories.includes(arch.category) : true;
+    const isMedia = mediaCategories.includes(arch.category);
     const usedRecently = recentTitles.some(t => t.includes(arch.theme.toLowerCase()) || t.includes(arch.id.toLowerCase()) || t.includes(arch.angle.toLowerCase().slice(0, 20)));
-    return matchesCategory && !usedRecently;
+    return isMedia && !usedRecently;
   });
 
-  // 2. Secondary fallback: Any archetype not used recently
+  // 2. Secondary priority: Any unused archetype from non-recently used categories
+  if (candidates.length === 0) {
+    const unrepresentedCategories = Object.values(FIN_CATEGORIES).filter(cat => !recentCategories.includes(cat.toLowerCase()));
+    candidates = FIN_ARCHETYPES.filter(arch => {
+      const matchesCategory = unrepresentedCategories.length > 0 ? unrepresentedCategories.includes(arch.category) : true;
+      const usedRecently = recentTitles.some(t => t.includes(arch.theme.toLowerCase()) || t.includes(arch.id.toLowerCase()) || t.includes(arch.angle.toLowerCase().slice(0, 20)));
+      return matchesCategory && !usedRecently;
+    });
+  }
+
+  // 3. Fallback: Any archetype not used recently
   if (candidates.length === 0) {
     candidates = FIN_ARCHETYPES.filter(arch => {
       return !recentTitles.some(t => t.includes(arch.theme.toLowerCase()) || t.includes(arch.id.toLowerCase()) || t.includes(arch.angle.toLowerCase().slice(0, 20)));
@@ -1086,27 +1230,31 @@ function buildFinPromptForSlot(archetype, recentHistory = [], slotIndex = 0, cha
   
   const chosenHookFormat = selectFinHookFormat(slotIndex, recentHistory.length);
   const chosenOutro = resolveFinOutro(cleanHandle, slotIndex * 17 + Date.now());
-  const flowGuide = CATEGORY_FLOW_GUIDES[archetype.category] || CATEGORY_FLOW_GUIDES[FIN_CATEGORIES.SMALL_CAPITAL_BUSINESS];
+  const flowGuide = CATEGORY_FLOW_GUIDES[archetype.category] || CATEGORY_FLOW_GUIDES[FIN_CATEGORIES.MEDIA_CREATOR_HUSTLES] || CATEGORY_FLOW_GUIDES[FIN_CATEGORIES.SMALL_CAPITAL_BUSINESS];
 
-  const systemPrompt = `You are a master viral documentary scriptwriter and financial educator for the Fin Blueprint channel (${cleanHandle}).
+  const systemPrompt = `You are a master viral documentary scriptwriter and financial creator for the Fin Blueprint channel (${cleanHandle}).
 CHANNEL PHILOSOPHY:
-Tell fascinating, curiosity-driven financial stories and reveal hidden money mechanics in simple, captivating language.
-TONE: Fascinating, conversational, non-preachy, and entertaining. NO aggressive sales pitches, NO boring textbook lectures, and NO scolding the viewer. Treat the viewer like a smart friend sharing a wild economic secret.
+Tell fascinating, curiosity-driven media stories and reveal accessible creator hustles in simple, captivating language.
+TONE: Engaging, punchy, conversational, and energetic. NO aggressive sales pitches, NO boring textbook lectures, and NO scolding the viewer.
+
+CRITICAL USER MANDATE (MEDIA-BASED & NO ECONOMICS CALCULATIONS):
+1. FOCUS ON MEDIA-BASED HUSTLES: Focus heavily on small, engaging, media-based concepts (e.g., faceless video curation, podcast clipping, Canva design for local shops, phone editing, digital templates, and audio cleanup).
+2. STOP THE DRY ECONOMICS CALCULATIONS: ZERO complex interest compounding formulas, ZERO APR equations, ZERO inflation percentages, and ZERO dry corporate ledger math.
+3. CONVERSATIONAL REALITY OVER SPREADSHEETS: Explain concepts through concrete everyday actions that someone can start immediately with just a smartphone and zero budget.
 
 CRITICAL YOUTUBE SHORTS RETENTION & ALGORITHM RULES (EXACTLY 6 SLIDES):
 1. STRICT SLIDE COUNT: Output EXACTLY 6 SLIDES (slideIndex 0 to 5) — NEVER MORE, NEVER LESS. Exactly 6 cinematic images are generated.
 2. PUNCHY SPOKEN PACING: Each slide MUST contain 18 to 26 crisp spoken words (~115-145 words total across the whole video). Short, rhythmic sentences that roll off the tongue effortlessly.
-3. CONVERSATIONAL REALITY OVER SPREADSHEETS: Explain concepts through clear real-world examples. Use standard US Dollars ($ USD) with simple everyday numbers ($5, $20, $100). ZERO complex algebraic formulas or dry accounting jargon.
-4. ZERO PREACHING OR SCOLDING: Never speak like a pushy salesman or a scolding professor. Reveal the "hidden system" or "the untold paradox" instead of telling people what they "must" do.
-5. SEAMLESS INFINITE LOOP: The final spoken sentence of Slide 5 MUST naturally bridge back into the opening words of Slide 0 for continuous rewatching retention.
-6. ZERO BLUEPRINT LEAKAGE: Output 100% clean spoken narration ONLY. Never include word counts, stage directions, or bracketed notes in the "text" field.
+3. ZERO PREACHING OR SCOLDING: Never speak like a pushy salesman or a scolding professor. Reveal the "clever workflow" or "untapped media strategy" instead of telling people what they "must" do.
+4. SEAMLESS INFINITE LOOP: The final spoken sentence of Slide 5 MUST naturally bridge back into the opening words of Slide 0 for continuous rewatching retention.
+5. ZERO BLUEPRINT LEAKAGE: Output 100% clean spoken narration ONLY. Never include word counts, stage directions, or bracketed notes in the "text" field.
 
 6-STEP HIGH-RETENTION NARRATIVE ARC:
-- Slide 0 (Paradox Hook): "${chosenHookFormat.name}" approach: "${chosenHookFormat.formula}". Start with a counter-intuitive fact or intriguing question in under 12 words.
-- Slide 1 (The Hidden Game): What actually happens behind the scenes that 95% of people never notice.
-- Slide 2 (The Real Mechanism): The concrete, simple math in plain everyday English ($10 into $50).
-- Slide 3 (The Psychological Twist): The subtle human behavior or hidden leverage that makes it work.
-- Slide 4 (The Contrarian Edge): Why common advice fails and what the smart minority quietly does instead.
+- Slide 0 (Curiosity Hook): "${chosenHookFormat.name}" approach: "${chosenHookFormat.formula}". Start with a counter-intuitive media insight or intriguing question in under 12 words.
+- Slide 1 (The Market Need): Why creators or local businesses are actively paying for this exact media output right now.
+- Slide 2 (The Phone Workflow): The simple, practical step to do using free smartphone apps (CapCut, Canva, Notion, or phone camera).
+- Slide 3 (The Client / Distribution Angle): How to get the first 3 clients or viewers with zero ad spend.
+- Slide 4 (The Common Mistake): The fatal trap beginners make (overcomplicating, buying gear they don't need) and what the smart minority does instead.
 - Slide 5 (The Golden Rule & Loop): The unforgettable core truth, ending seamlessly with: "${chosenOutro}" that connects right back into Slide 0!
 
 EXCLUDED RECENT TOPICS (DO NOT REPEAT):
@@ -1119,15 +1267,15 @@ TARGET THEME & ANGLE:
 
 OUTPUT FORMAT: Return strictly valid JSON:
 {
-  "title": "Intriguing Viral Title (under 50 chars) #Shorts #viral #trending #finance",
+  "title": "Intriguing Viral Title (e.g. 3 Websites That Pay You To Edit On Your Phone) #Shorts #SideHustle",
   "category": "${archetype.category}",
   "series": "${flowGuide.series}",
   "theme": "${archetype.theme}",
   "angle": "${archetype.angle}",
   "estimatedBudget": "${archetype.targetBudget}",
   "communityQuestion": "${flowGuide.communityQuestion}",
-  "description": "Fascinating breakdown of ${archetype.theme}.\\n\\n${flowGuide.communityQuestion}\\n\\n#Shorts #viral #trending #PersonalFinance #MoneySecrets #FinancialLiteracy #fyp",
-  "tags": ["#Shorts", "#viral", "#trending", "#PersonalFinance", "#MoneySecrets", "#FinancialLiteracy", "#fyp"],
+  "description": "Fascinating breakdown of ${archetype.theme}.\\n\\n${flowGuide.communityQuestion}\\n\\n#Shorts #SideHustle #CreatorEconomy #MakeMoneyOnline #PhoneHustle #viral #trending #fyp",
+  "tags": ["#Shorts", "#SideHustle", "#CreatorEconomy", "#MakeMoneyOnline", "#PhoneHustle", "#viral", "#trending", "#fyp"],
   "slides": [
     {
       "slideIndex": 0,

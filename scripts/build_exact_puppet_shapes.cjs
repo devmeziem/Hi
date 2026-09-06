@@ -331,6 +331,13 @@ const posesToGenerate = [
 ];
 
 function ensureExactPuppetAssets(force = false) {
+  try {
+    const { buildAllModernCharacterAssets } = require('./build_modern_tech_character.cjs');
+    return buildAllModernCharacterAssets(force);
+  } catch (err) {
+    console.warn(`[Exact Puppet Builder] Using internal modern build fallback: ${err.message}`);
+  }
+
   if (!fs.existsSync(OUT_DIR)) fs.mkdirSync(OUT_DIR, { recursive: true });
   if (!fs.existsSync(COMP_DIR)) fs.mkdirSync(COMP_DIR, { recursive: true });
 
