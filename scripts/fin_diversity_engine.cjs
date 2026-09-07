@@ -140,8 +140,9 @@ function formatViralShortsTitle(rawHeadline, nicheOrCategory = 'fin', isDeepDive
   return finalTitle;
 }
 
-// 10 Core Content Pillars (Media-First & Engaging Focus)
+// 11 Core Content Pillars (Media-First & Engaging Focus)
 const FIN_CATEGORIES = {
+  CREATOR_TOOLKIT: 'creator_toolkit_essentials',         // Content creator tools (fonts, video ideas, b-roll, audio, thumbnails)
   MEDIA_CREATOR_HUSTLES: 'media_creator_hustles',         // Faceless shorts, podcast clipping, audio cleanup
   MEDIA_BASED_SERVICES: 'media_based_services',           // Canva flyers, product photography, UGC reviews
   SMALL_CAPITAL_BUSINESS: 'small_capital_business',       // $0 - $15 micro startup ideas
@@ -156,6 +157,7 @@ const FIN_CATEGORIES = {
 
 // Recurring Channel Series
 const FIN_SERIES = {
+  CREATOR_TOOLKIT: 'Creator Toolkit',
   MEDIA_HUSTLE: 'Media Hustle',
   CREATOR_BLUEPRINT: 'Creator Blueprint',
   PHONE_TO_INCOME: 'Phone-to-Income',
@@ -166,8 +168,14 @@ const FIN_SERIES = {
   THIRTY_DAY_CHALLENGE: '30-Day Creator Challenge'
 };
 
-// 8 Distinct Rotating Hook Frameworks (Intro formats)
+// 9 Distinct Rotating Hook Frameworks (Intro formats)
 const ROTATING_FIN_HOOK_TEMPLATES = [
+  {
+    id: 'creator_stop_scrolling',
+    name: 'Content Creator Stop-Scrolling Hook',
+    formula: 'If you are a content creator, wait—this video is for you! Here are [2 or 3] secret free tools you need right now...',
+    generateHook: (theme, budget) => `If you are a content creator, wait—this video is for you! Stop wasting hours searching the internet, because these 3 free tools will transform your workflow...`
+  },
   {
     id: 'contrarian_myth_buster',
     name: 'Contrarian Myth Buster',
@@ -264,6 +272,19 @@ const ROTATING_FIN_OUTROS = [
 
 // Category-Specific Flow Schemas for High-Impact Narrative Execution (Media-First & Engaging Clarity)
 const CATEGORY_FLOW_GUIDES = {
+  [FIN_CATEGORIES.CREATOR_TOOLKIT]: {
+    name: 'Content Creator Toolkit Flow',
+    series: FIN_SERIES.CREATOR_TOOLKIT,
+    slideSteps: [
+      'Stop-Scrolling Creator Hook: "If you are a content creator, wait—this video is for you!"',
+      'Tool 1 Breakdown: Exact name, direct link/website, and what it does in 30 seconds',
+      'Tool 2 Breakdown: Exact name, why it replaces expensive paid subscriptions',
+      'Tool 3 Breakdown: The secret resource for aesthetic fonts, viral video ideas, or 4K B-roll',
+      'The 60-Second Creator Workflow: How to connect all 3 tools together seamlessly',
+      'Golden Takeaway & Infinite Loop Outro Bridge'
+    ],
+    communityQuestion: 'Which of these 3 free creator tools are you trying out first?'
+  },
   [FIN_CATEGORIES.MEDIA_CREATOR_HUSTLES]: {
     name: 'Media Creator Hustle Flow',
     series: FIN_SERIES.MEDIA_HUSTLE,
@@ -531,9 +552,61 @@ function validateFinStoryboardQuality(storyboard) {
   return { valid: true };
 }
 
-// 30+ Comprehensive Diverse Financial Archetypes (Media-First & Engaging)
+// 35+ Comprehensive Diverse Financial & Creator Archetypes (Media-First & Engaging)
 const FIN_ARCHETYPES = [
-  // 0. SMALL ENGAGING MEDIA-BASED HUSTLES (PHONE-FIRST & CREATOR ECONOMY)
+  // 0. CONTENT CREATOR TOOLKITS (STOP-SCROLLING HOOKS & FREE PRODUCTIVITY TOOLS)
+  {
+    id: 'fin_creator_tools_01_fonts',
+    category: FIN_CATEGORIES.CREATOR_TOOLKIT,
+    series: FIN_SERIES.CREATOR_TOOLKIT,
+    theme: '3 Secret Free Websites for Aesthetic Commercial Fonts',
+    angle: 'Stop Using Boring Default Fonts: 3 Websites Where Pro Editors Get Clean, Aesthetic, 100% Free Commercial Fonts',
+    targetBudget: '$0 (100% Free Tools)',
+    hookArchetypeId: 'creator_stop_scrolling',
+    visualAesthetic: 'Crisp typography studio screen displaying glowing minimalist sans-serif and display typefaces, neon violet and emerald accent lighting'
+  },
+  {
+    id: 'fin_creator_tools_02_video_ideas',
+    category: FIN_CATEGORIES.CREATOR_TOOLKIT,
+    series: FIN_SERIES.CREATOR_TOOLKIT,
+    theme: '3 Free Tools That Hand You Viral Video Ideas Daily',
+    angle: 'Never Run Out of Content: 3 Free Tools That Reveal Exactly What People Are Searching For Right Now',
+    targetBudget: '$0 (100% Free Tools)',
+    hookArchetypeId: 'creator_stop_scrolling',
+    visualAesthetic: 'Creator desktop workstation with rising search graphs, keyword heatmaps, glowing emerald analytics on dark obsidian glass'
+  },
+  {
+    id: 'fin_creator_tools_03_free_broll',
+    category: FIN_CATEGORIES.CREATOR_TOOLKIT,
+    series: FIN_SERIES.CREATOR_TOOLKIT,
+    theme: '3 Secret Sites for Unlimited 4K Cinematic B-Roll',
+    angle: 'Stop Paying Expensive Stock Subscriptions: 3 Free Secret Vaults For 4K Vertical Video Loops',
+    targetBudget: '$0 (100% Free Tools)',
+    hookArchetypeId: 'creator_stop_scrolling',
+    visualAesthetic: 'Ultrawide editing monitor showing crisp 4K cinematic video reels, film timeline with vivid colored marker cuts'
+  },
+  {
+    id: 'fin_creator_tools_04_audio_sfx',
+    category: FIN_CATEGORIES.CREATOR_TOOLKIT,
+    series: FIN_SERIES.CREATOR_TOOLKIT,
+    theme: '3 Free Sound Effect & Audio Libraries With Zero Copyright Strikes',
+    angle: 'The 3 Safest Free Sites For Cinematic Whooshes, Pops, and Atmospheric Background Beats',
+    targetBudget: '$0 (100% Free Tools)',
+    hookArchetypeId: 'creator_stop_scrolling',
+    visualAesthetic: 'Professional studio headphones resting on sleek mixing desk with glowing rainbow audio waveforms on tablet'
+  },
+  {
+    id: 'fin_creator_tools_05_thumbnail_boosters',
+    category: FIN_CATEGORIES.CREATOR_TOOLKIT,
+    series: FIN_SERIES.CREATOR_TOOLKIT,
+    theme: '3 Free Tools To Build High-CTR Thumbnails in 60 Seconds',
+    angle: 'Fix Your Click-Through Rate: 3 Free Tools For Instant Background Cutouts, Vibrant Color Contrast, and Mobile Previews',
+    targetBudget: '$0 (100% Free Tools)',
+    hookArchetypeId: 'creator_stop_scrolling',
+    visualAesthetic: 'Split-screen smartphone view showing high-contrast thumbnail test with glowing green 94% CTR metric'
+  },
+
+  // 1. SMALL ENGAGING MEDIA-BASED HUSTLES (PHONE-FIRST & CREATOR ECONOMY)
   {
     id: 'fin_media_01_faceless_shorts',
     category: FIN_CATEGORIES.MEDIA_CREATOR_HUSTLES,
@@ -1182,14 +1255,30 @@ function selectDiverseFinArchetype(recentHistory = [], attemptOffset = 0) {
   const recentTitles = historyArr.map(h => (((h && (h.title || h.topic)) || '') + ' ' + ((h && h.theme) || '')).toLowerCase());
   const recentCategories = historyArr.slice(0, 5).map(h => (h.category || '').toLowerCase()).filter(Boolean);
 
-  // Priority categories: Media creator hustles, media based services, phone to income, digital media assets
+  // Priority categories: Creator toolkits, Media creator hustles, media based services, phone to income, digital media assets
   const mediaCategories = [
+    FIN_CATEGORIES.CREATOR_TOOLKIT,
     FIN_CATEGORIES.MEDIA_CREATOR_HUSTLES,
     FIN_CATEGORIES.MEDIA_BASED_SERVICES,
     FIN_CATEGORIES.DIGITAL_MEDIA_ASSETS,
     FIN_CATEGORIES.SKILLS_TO_INCOME,
     FIN_CATEGORIES.SMALL_CAPITAL_BUSINESS
   ];
+
+  // 0. Super priority: Content Creator Toolkit archetypes ("wait this video is for you")
+  const creatorToolkitCandidates = FIN_ARCHETYPES.filter(arch => {
+    const isCreator = arch.category === FIN_CATEGORIES.CREATOR_TOOLKIT;
+    const usedRecently = recentTitles.some(t => t.includes(arch.theme.toLowerCase()) || t.includes(arch.id.toLowerCase()));
+    return isCreator && !usedRecently;
+  });
+
+  const lastCategory = recentCategories[0] || '';
+  if (creatorToolkitCandidates.length > 0 && lastCategory !== FIN_CATEGORIES.CREATOR_TOOLKIT.toLowerCase() && Math.random() < 0.60) {
+    const pool = creatorToolkitCandidates;
+    const offset = typeof attemptOffset === 'number' ? attemptOffset : 0;
+    const index = (Math.floor(Math.random() * pool.length) + offset) % pool.length;
+    return pool[index];
+  }
 
   // 1. First priority: Media archetypes not used recently
   let candidates = FIN_ARCHETYPES.filter(arch => {
@@ -1228,9 +1317,28 @@ function buildFinPromptForSlot(archetype, recentHistory = [], slotIndex = 0, cha
   const cleanHandle = channelHandle.startsWith('@') ? channelHandle : `@${channelHandle}`;
   const recentTitles = (recentHistory || []).slice(0, 20).map(h => `"${h.topic || h.title}"`).join(', ');
   
-  const chosenHookFormat = selectFinHookFormat(slotIndex, recentHistory.length);
+  const chosenHookFormat = (archetype.hookArchetypeId === 'creator_stop_scrolling' || archetype.category === FIN_CATEGORIES.CREATOR_TOOLKIT)
+    ? (ROTATING_FIN_HOOK_TEMPLATES.find(h => h.id === 'creator_stop_scrolling') || selectFinHookFormat(slotIndex, recentHistory.length))
+    : selectFinHookFormat(slotIndex, recentHistory.length);
   const chosenOutro = resolveFinOutro(cleanHandle, slotIndex * 17 + Date.now());
   const flowGuide = CATEGORY_FLOW_GUIDES[archetype.category] || CATEGORY_FLOW_GUIDES[FIN_CATEGORIES.MEDIA_CREATOR_HUSTLES] || CATEGORY_FLOW_GUIDES[FIN_CATEGORIES.SMALL_CAPITAL_BUSINESS];
+
+  const isCreatorToolkit = archetype.category === FIN_CATEGORIES.CREATOR_TOOLKIT;
+  const narrativeArcText = isCreatorToolkit
+    ? `6-STEP CREATOR TOOLKIT NARRATIVE ARC:
+- Slide 0 (Creator Stop-Scrolling Hook): MUST start with: "If you are a content creator, wait—this video is for you!" (or "If you create videos, wait—this is for you!"). Immediately promise 3 secret free tools that save hours or boost quality.
+- Slide 1 (Tool 1 Breakdown): Introduce Tool 1 with its exact real name (e.g. Velvetyne / AnswerThePublic / Pexels / Freesound / Remove.bg) and the specific problem it solves in seconds.
+- Slide 2 (Tool 2 Breakdown): Introduce Tool 2 with its exact real name (e.g. DaFont / Google Trends / Mixkit / Pixabay / Coolors) and the shortcut feature 99% of creators overlook.
+- Slide 3 (Tool 3 Breakdown): Introduce Tool 3 with its exact real name (e.g. Google Fonts / VidIQ / Coverr / YouTube Audio Library / ThumbsUp.tv) and how it makes videos or thumbnails look pro.
+- Slide 4 (The 60-Second Workflow): How to combine all 3 tools together seamlessly with zero dollars spent.
+- Slide 5 (Golden Takeaway & Loop): The core truth for creators, ending seamlessly with: "${chosenOutro}" that loops back into Slide 0!`
+    : `6-STEP HIGH-RETENTION NARRATIVE ARC:
+- Slide 0 (Curiosity Hook): "${chosenHookFormat.name}" approach: "${chosenHookFormat.formula}". Start with a counter-intuitive media insight or intriguing question in under 12 words.
+- Slide 1 (The Market Need): Why creators or local businesses are actively paying for this exact media output right now.
+- Slide 2 (The Phone Workflow): The simple, practical step to do using free smartphone apps (CapCut, Canva, Notion, or phone camera).
+- Slide 3 (The Client / Distribution Angle): How to get the first 3 clients or viewers with zero ad spend.
+- Slide 4 (The Common Mistake): The fatal trap beginners make (overcomplicating, buying gear they don't need) and what the smart minority does instead.
+- Slide 5 (The Golden Rule & Loop): The unforgettable core truth, ending seamlessly with: "${chosenOutro}" that connects right back into Slide 0!`;
 
   const systemPrompt = `You are a master viral documentary scriptwriter and financial creator for the Fin Blueprint channel (${cleanHandle}).
 CHANNEL PHILOSOPHY:
@@ -1249,13 +1357,7 @@ CRITICAL YOUTUBE SHORTS RETENTION & ALGORITHM RULES (EXACTLY 6 SLIDES):
 4. SEAMLESS INFINITE LOOP: The final spoken sentence of Slide 5 MUST naturally bridge back into the opening words of Slide 0 for continuous rewatching retention.
 5. ZERO BLUEPRINT LEAKAGE: Output 100% clean spoken narration ONLY. Never include word counts, stage directions, or bracketed notes in the "text" field.
 
-6-STEP HIGH-RETENTION NARRATIVE ARC:
-- Slide 0 (Curiosity Hook): "${chosenHookFormat.name}" approach: "${chosenHookFormat.formula}". Start with a counter-intuitive media insight or intriguing question in under 12 words.
-- Slide 1 (The Market Need): Why creators or local businesses are actively paying for this exact media output right now.
-- Slide 2 (The Phone Workflow): The simple, practical step to do using free smartphone apps (CapCut, Canva, Notion, or phone camera).
-- Slide 3 (The Client / Distribution Angle): How to get the first 3 clients or viewers with zero ad spend.
-- Slide 4 (The Common Mistake): The fatal trap beginners make (overcomplicating, buying gear they don't need) and what the smart minority does instead.
-- Slide 5 (The Golden Rule & Loop): The unforgettable core truth, ending seamlessly with: "${chosenOutro}" that connects right back into Slide 0!
+${narrativeArcText}
 
 EXCLUDED RECENT TOPICS (DO NOT REPEAT):
 [${recentTitles || 'None'}]

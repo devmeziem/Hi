@@ -121,16 +121,18 @@ jobs:
           node scripts/build_exact_puppet_shapes.cjs
           ls -la cartoon_character_assets/exact_puppet/
 
-      - name: Auto-Discover and Cache Working AI Models (Grok & Groq)
+      - name: Auto-Discover and Cache Working AI Models (Grok, Groq, OpenRouter)
         env:
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
           GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
           GROK_KEY: ${{ secrets.GROK_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
-          echo "=== Discovering Active Grok & Groq Models ==="
+          echo "=== Discovering Active Grok, Groq & OpenRouter Models ==="
           node scripts/grok_model_finder.cjs || true
           node scripts/groq_model_finder.cjs || true
+          node scripts/openrouter_model_finder.cjs || true
 
       - name: Execute Cartoon Factory Pipeline
         env:

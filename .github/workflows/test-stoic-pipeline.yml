@@ -120,15 +120,13 @@ jobs:
           DRY_RUN: ${{ github.event.inputs.dry_run }}
         run: node scripts/generate_stoic_quote_reel.cjs
 
-      - name: Archive Stoic Daily Short & Community Post
+      - name: Archive Stoic Daily Short
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: stoic-daily-short-and-community-post
+          name: stoic-daily-short
           path: |
             rendered_videos/stoic_quote_5s_latest.mp4
-            rendered_videos/daily_community_post_latest.png
-            rendered_videos/daily_community_post_latest.json
             daily_blueprint_manifest.json
           if-no-files-found: ignore
           retention-days: 7

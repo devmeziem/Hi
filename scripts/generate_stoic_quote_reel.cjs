@@ -20,7 +20,6 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const https = require('https');
-const { generateDailyCommunityPost } = require('./generate_daily_community_post.cjs');
 
 const MANIFEST_PATH = path.join(process.cwd(), 'daily_blueprint_manifest.json');
 const LOCAL_QUOTE_CACHE = path.join(process.cwd(), 'stoic_quote_history.json');
@@ -824,10 +823,7 @@ async function generateStoic5sVideo() {
   fs.copyFileSync(finalMp4Path, artifactMp4Path);
   await saveQuoteHistory(chosen);
 
-  // 5. Generate Matching Daily YouTube Community Post (Text + Image)
-  await generateDailyCommunityPost(chosen, chosen.quote, portraitPath);
-
-  // 6. Format Viral Title, Description, and Hashtags
+  // 5. Format Viral Title, Description, and Hashtags
   const cleanAuthorName = chosen.author.replace(/^(Dr\.|Prof\.)\s*/, '').trim();
   const viralTitle = `The Truth 99% Avoid — ${chosen.author} #Shorts`;
   const viralDescription = `"${chosen.quote}"
@@ -846,7 +842,6 @@ ${chosen.communityQuestion}
   console.log(`📜 Scholar:     ${chosen.author}`);
   console.log(`🎓 Reference:   ${chosen.credentials}`);
   console.log(`🎵 Sound:       Loopable mystery drone (cold atmospheric tension)`);
-  console.log(`📢 Community:   Daily image & text post packaged in manifest & artifacts`);
   console.log(`======================================================\n`);
 
   // Update daily blueprint manifest

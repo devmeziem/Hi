@@ -229,69 +229,93 @@ async function callGemini(topic) {
 }
 
 /**
- * 2. Groq Inference Call
+ * 2. Groq Inference Call with Dynamic Auto-Model Discovery
  */
 async function callGroq(topic) {
   if (!GROQ_API_KEY) throw new Error('GROQ_API_KEY not configured');
 
-  let models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'gemma2-9b-it'];
+  let models = [
+    'llama-3.3-70b-versatile',
+    'llama-3.1-8b-instant',
+    'llama3-70b-8192',
+    'mixtral-8x7b-32768',
+    'deepseek-r1-distill-llama-70b',
+    'gemma2-9b-it'
+  ];
+
   try {
     const { fetchAndVerifyGroqModels } = require('./groq_model_finder.cjs');
     const verified = await fetchAndVerifyGroqModels();
-    if (verified && verified.length > 0) models = verified;
-  } catch {}
+    if (verified && verified.length > 0) {
+      models = [...new Set([...verified, ...models])];
+      console.log(`[AI Planner] 🔍 Groq Auto-Model Finder activated. Discovered ${verified.length} candidate models: ${models.slice(0, 4).join(', ')}`);
+    }
+  } catch (mErr) {
+    console.warn(`[AI Planner] Groq model finder notice: ${mErr.message}`);
+  }
+
+  const userPrompt = `Create an educational cartoon episode scene plan in JSON format for: "${topic}". Output strictly valid JSON with root object containing title, description, keywords, and scenes array.`;
 
   for (const model of models) {
-    try {
-      console.log(`[AI Planner] Requesting Groq (${model}) for topic: "${topic}"...`);
-      const body = JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: `Create an educational cartoon episode scene plan for: "${topic}"` }
-        ],
-        response_format: { type: 'json_object' },
-        temperature: 0.7,
-        max_tokens: 1800
-      });
+    // Try first with json_object mode, then fallback to standard mode without response_format
+    for (const useJsonFormat of [true, false]) {
+      try {
+        console.log(`[AI Planner] Requesting Groq (${model}${useJsonFormat ? ', json_mode' : ''}) for topic: "${topic}"...`);
+        const payload = {
+          model,
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 1800
+        };
+        if (useJsonFormat) {
+          payload.response_format = { type: 'json_object' };
+        }
 
-      const raw = await new Promise((resolve, reject) => {
-        const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${GROQ_API_KEY}`,
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(body)
-          },
-          timeout: 15000
-        }, (res) => {
-          let data = '';
-          res.on('data', c => data += c);
-          res.on('end', () => {
-            if (res.statusCode >= 200 && res.statusCode < 300) {
-              try {
-                const parsed = JSON.parse(data);
-                resolve(parsed.choices?.[0]?.message?.content || '');
-              } catch (e) {
-                reject(e);
+        const body = JSON.stringify(payload);
+
+        const raw = await new Promise((resolve, reject) => {
+          const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${GROQ_API_KEY}`,
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(body)
+            },
+            timeout: 15000
+          }, (res) => {
+            let data = '';
+            res.on('data', c => data += c);
+            res.on('end', () => {
+              if (res.statusCode >= 200 && res.statusCode < 300) {
+                try {
+                  const parsed = JSON.parse(data);
+                  resolve(parsed.choices?.[0]?.message?.content || '');
+                } catch (e) {
+                  reject(e);
+                }
+              } else {
+                reject(new Error(`Groq HTTP ${res.statusCode}: ${data.slice(0, 150)}`));
               }
-            } else {
-              reject(new Error(`Groq HTTP ${res.statusCode}: ${data.slice(0, 150)}`));
-            }
+            });
           });
+          req.on('error', reject);
+          req.on('timeout', () => { req.destroy(); reject(new Error('Groq request timed out (15s)')); });
+          req.write(body);
+          req.end();
         });
-        req.on('error', reject);
-        req.on('timeout', () => { req.destroy(); reject(new Error('Groq request timed out (15s)')); });
-        req.write(body);
-        req.end();
-      });
 
-      const cleaned = validateAndCleanEpisode(raw, topic);
-      if (cleaned) {
-        return { plan: cleaned, provider: `groq/${model}` };
+        const cleaned = validateAndCleanEpisode(raw, topic);
+        if (cleaned) {
+          return { plan: cleaned, provider: `groq/${model}` };
+        }
+      } catch (e) {
+        console.warn(`[AI Planner] Groq ${model} (${useJsonFormat ? 'json_mode' : 'standard'}) failed:`, e.message);
+        // If it was 400 bad request in json_format mode, continue to try standard mode
+        if (!useJsonFormat) break;
       }
-    } catch (e) {
-      console.warn(`[AI Planner] Groq ${model} failed:`, e.message);
     }
   }
   throw new Error('All Groq models failed');
@@ -312,7 +336,7 @@ async function callOpenAI(topic) {
         model,
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: `Create an educational cartoon episode scene plan for: "${topic}"` }
+          { role: 'user', content: `Create an educational cartoon episode scene plan in JSON format for: "${topic}". Return strictly valid JSON.` }
         ],
         response_format: { type: 'json_object' },
         temperature: 0.7,
@@ -362,12 +386,32 @@ async function callOpenAI(topic) {
 }
 
 /**
- * 4. OpenRouter Inference Call
+ * 4. OpenRouter Inference Call with Dynamic Auto-Model Discovery
  */
 async function callOpenRouter(topic) {
   if (!OPENROUTER_API_KEY) throw new Error('OPENROUTER_API_KEY not configured');
 
-  const models = ['google/gemini-2.0-flash-001', 'meta-llama/llama-3.3-70b-instruct', 'deepseek/deepseek-chat', 'mistralai/mistral-small-24b-instruct-2501'];
+  let models = [
+    'google/gemini-2.0-flash-exp:free',
+    'meta-llama/llama-3.3-70b-instruct:free',
+    'deepseek/deepseek-r1:free',
+    'mistralai/mistral-small-24b-instruct-2501:free',
+    'qwen/qwen-2.5-72b-instruct:free',
+    'google/gemini-2.0-flash-001',
+    'meta-llama/llama-3.3-70b-instruct',
+    'deepseek/deepseek-chat'
+  ];
+
+  try {
+    const { fetchAndVerifyOpenRouterModels } = require('./openrouter_model_finder.cjs');
+    const verified = await fetchAndVerifyOpenRouterModels();
+    if (verified && verified.length > 0) {
+      models = [...new Set([...verified, ...models])];
+      console.log(`[AI Planner] 🔍 OpenRouter Auto-Model Finder activated. Discovered ${verified.length} candidate models: ${models.slice(0, 4).join(', ')}`);
+    }
+  } catch (mErr) {
+    console.warn(`[AI Planner] OpenRouter model finder notice: ${mErr.message}`);
+  }
 
   for (const model of models) {
     try {
@@ -376,7 +420,7 @@ async function callOpenRouter(topic) {
         model,
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: `Create an educational cartoon episode scene plan for: "${topic}". Return strictly valid JSON.` }
+          { role: 'user', content: `Create an educational cartoon episode scene plan in JSON format for: "${topic}". Return strictly valid JSON.` }
         ],
         temperature: 0.7,
         max_tokens: 1800
