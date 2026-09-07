@@ -30,19 +30,42 @@
     <!-- 2. Arms, Hands & Smartwatch -->
     
     <!-- Left Arm -->
-    <path d="M 165 375 L 185 375 L 178 520 L 160 520 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2" />
-    <path d="M 160 520 L 180 520 L 176 670 L 158 670 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+    <path d="M 162 375 C 158 420, 156 460, 160 515 C 168 518, 182 518, 188 515 C 188 460, 186 420, 184 375 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+    <path d="M 160 510 C 168 514, 180 514, 188 510 L 188 522 C 180 526, 168 526, 160 522 Z" fill="#334155" stroke="#0f172a" stroke-width="2" />
+    <!-- Forearm -->
+    <path d="M 162 522 C 158 560, 156 610, 160 655 L 182 655 C 186 610, 184 560, 184 522 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
     
-    <rect x="156" y="660" width="22" height="16" rx="4" fill="#0f172a" stroke="#0f172a" stroke-width="1.5" />
-    <circle cx="167" cy="668" r="8" fill="#0f172a" stroke="#06b6d4" stroke-width="2" />
-    <circle cx="167" cy="668" r="4" fill="#06b6d4" opacity="0.8" />
+    <!-- Smartwatch Casing & Screen -->
+    <rect x="156" y="652" width="22" height="18" rx="5" fill="#0f172a" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="159" y="655" width="16" height="12" rx="3" fill="#0f172a" stroke="#06b6d4" stroke-width="1.5" />
+    <circle cx="167" cy="661" r="3" fill="#06b6d4" opacity="0.85" />
   
-    <path d="M 158 675 L 176 675 L 178 720 L 156 720 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+    <!-- Sculpted Left Hand: Natural resting curl with thumb and distinct fingers -->
+    <path d="M 160 668 
+             C 156 680, 155 700, 158 722 
+             C 161 728, 165 727, 167 721
+             C 169 727, 173 726, 175 719
+             C 177 725, 181 724, 183 716
+             C 185 712, 185 695, 184 668 Z" 
+          fill="#eab383" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+    <!-- Fleshy thumb crease -->
+    <path d="M 158 682 C 152 688, 152 698, 157 704" stroke="#d09564" stroke-width="1.8" fill="none" stroke-linecap="round" />
 
     <!-- Right Arm -->
-    <path d="M 315 375 L 335 375 L 338 520 L 318 520 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2" />
-    <path d="M 318 520 L 338 520 L 336 670 L 318 670 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-    <path d="M 318 675 L 336 675 L 338 720 L 316 720 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+    <path d="M 315 375 C 320 420, 324 460, 320 515 C 328 518, 342 518, 348 515 C 348 460, 346 420, 344 375 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+    <path d="M 320 510 C 328 514, 340 514, 348 510 L 348 522 C 340 526, 328 526, 320 522 Z" fill="#334155" stroke="#0f172a" stroke-width="2" />
+    <!-- Forearm -->
+    <path d="M 322 522 C 320 560, 320 610, 324 655 L 346 655 C 348 610, 348 560, 346 522 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+    <!-- Sculpted Right Hand: Natural resting curl with thumb and distinct fingers -->
+    <path d="M 322 668 
+             C 318 680, 318 700, 321 722 
+             C 324 728, 328 727, 330 721
+             C 332 727, 336 726, 338 719
+             C 340 725, 344 724, 346 716
+             C 348 712, 349 695, 348 668 Z" 
+          fill="#eab383" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+    <!-- Fleshy thumb crease -->
+    <path d="M 342 682 C 348 688, 348 698, 343 704" stroke="#d09564" stroke-width="1.8" fill="none" stroke-linecap="round" />
   
 
     <!-- 3. Torso, Inner Tee & Modern Tech Overshirt -->

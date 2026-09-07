@@ -29,14 +29,22 @@
 
     <!-- 2. Arms, Hands & Smartwatch -->
     
-      <!-- Surprised / Astonished: Both hands thrown slightly back/up -->
-      <path d="M 165 370 L 185 370 L 125 450 L 110 445 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2" />
-      <path d="M 115 445 L 130 455 L 90 390 L 105 385 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-      <circle cx="95" cy="385" r="14" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Surprised / Astonished: Both hands raised near chest/shoulders -->
+      <path d="M 165 372 C 150 405, 135 440, 120 460 L 138 468 C 152 440, 168 405, 185 375 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2.5" />
+      <path d="M 122 460 C 114 430, 108 395, 102 360 L 118 356 C 124 390, 130 425, 138 460 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Left Hand (Open palm facing camera in astonishment) -->
+      <ellipse cx="106" cy="350" rx="14" ry="12" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <path d="M 96 342 C 92 334, 88 324, 86 314 C 91 312, 95 316, 98 326 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 103 340 C 102 330, 101 320, 100 310 C 105 310, 108 314, 108 324 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 110 341 C 112 331, 114 321, 116 312 C 120 314, 120 318, 118 326 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
 
-      <path d="M 315 370 L 335 370 L 375 450 L 390 445 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2" />
-      <path d="M 380 445 L 395 455 L 410 390 L 395 385 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-      <circle cx="405" cy="385" r="14" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <path d="M 315 372 C 330 405, 345 440, 360 460 L 342 468 C 328 440, 312 405, 295 375 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2.5" />
+      <path d="M 358 460 C 366 430, 372 395, 378 360 L 362 356 C 356 390, 350 425, 342 460 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Right Hand (Open palm facing camera) -->
+      <ellipse cx="374" cy="350" rx="14" ry="12" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <path d="M 384 342 C 388 334, 392 324, 394 314 C 389 312, 385 316, 382 326 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 377 340 C 378 330, 379 320, 380 310 C 375 310, 372 314, 372 324 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 370 341 C 368 331, 366 321, 364 312 C 360 314, 360 318, 362 326 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
     
 
     <!-- 3. Torso, Inner Tee & Modern Tech Overshirt -->

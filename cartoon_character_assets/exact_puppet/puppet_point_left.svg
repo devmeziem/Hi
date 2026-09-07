@@ -29,17 +29,45 @@
 
     <!-- 2. Arms, Hands & Smartwatch -->
     
-      <!-- Left Arm (Pointing Dynamically to Left where UI HUD appears) -->
-      <path d="M 180 375 L 160 375 L 90 470 L 110 480 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2" />
-      <path d="M 100 475 L 85 485 L 0 440 L 10 425 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-      <!-- Left Pointing Hand with Extended Index Finger -->
-      <path d="M 5 432 L -65 410 L -63 424 L -25 448 L 5 452 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
-      <line x1="-65" y1="410" x2="-75" y2="408" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" />
+      <!-- Left Arm (Dynamically pointing to left toward HUD/graphics) -->
+      <!-- Upper Jacket Sleeve extending left -->
+      <path d="M 180 375 C 160 405, 130 435, 88 468 L 104 488 C 140 455, 165 420, 188 385 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 104 484 C 98 478, 90 472, 84 468 L 76 478 C 84 484, 94 490, 102 496 Z" fill="#334155" stroke="#0f172a" stroke-width="2" />
+      <!-- Forearm reaching left -->
+      <path d="M 84 472 C 55 456, 25 442, -6 432 L -12 448 C 20 460, 50 475, 78 490 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      
+      <!-- Left Hand: Sculpted Human Pointing Hand (pointing left) -->
+      <!-- Palm base -->
+      <path d="M -6 432 C -18 428, -26 426, -35 425 L -36 450 C -26 452, -18 450, -10 448 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Curled Fingers -->
+      <path d="M -34 436 C -42 436, -48 440, -45 446 C -42 450, -36 450, -32 448 Z" fill="#d09564" opacity="0.4" />
+      <!-- Extended Natural Index Finger pointing left -->
+      <path d="M -32 425 
+               C -52 422, -74 419, -92 417 
+               C -97 416, -99 422, -94 425 
+               C -76 430, -54 434, -35 435 Z" 
+            fill="#eab383" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+      <!-- Knuckle accent lines -->
+      <line x1="-56" y1="420" x2="-57" y2="426" stroke="#d09564" stroke-width="1.5" stroke-linecap="round" />
+      <line x1="-76" y1="418" x2="-77" y2="424" stroke="#d09564" stroke-width="1.5" stroke-linecap="round" />
+      <!-- Thumb folded -->
+      <path d="M -22 434 C -30 430, -38 432, -40 438 C -38 444, -28 446, -20 442 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <!-- Glowing energy beacon -->
+      <circle cx="-97" cy="421" r="3" fill="#38bdf8" />
+      <circle cx="-97" cy="421" r="7" fill="#38bdf8" opacity="0.3" />
 
-      <!-- Right Arm (Resting naturally) -->
-      <path d="M 315 375 L 335 375 L 338 520 L 318 520 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2" />
-      <path d="M 318 520 L 338 520 L 336 670 L 318 670 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-      <path d="M 318 675 L 336 675 L 338 720 L 316 720 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Right Arm (Resting naturally at side) -->
+      <path d="M 315 375 C 320 420, 324 460, 320 515 C 328 518, 342 518, 348 515 C 348 460, 346 420, 344 375 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 320 510 C 328 514, 340 514, 348 510 L 348 522 C 340 526, 328 526, 320 522 Z" fill="#334155" stroke="#0f172a" stroke-width="2" />
+      <path d="M 322 522 C 320 560, 320 610, 324 655 L 346 655 C 348 610, 348 560, 346 522 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Right Hand -->
+      <path d="M 322 668 
+               C 318 680, 318 700, 321 720 
+               C 324 726, 328 726, 330 720
+               C 332 725, 336 725, 338 718
+               C 340 724, 344 723, 346 715
+               C 348 712, 349 695, 348 668 Z" 
+            fill="#eab383" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
     
 
     <!-- 3. Torso, Inner Tee & Modern Tech Overshirt -->

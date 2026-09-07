@@ -29,21 +29,28 @@
 
     <!-- 2. Arms, Hands & Smartwatch -->
     
-      <!-- Left Arm (Folded across chest or resting) -->
-      <path d="M 165 375 L 185 375 L 210 490 L 190 495 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2" />
-      <path d="M 195 490 L 210 500 L 270 480 L 265 465 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Left Arm (Folded across chest supporting elbow) -->
+      <path d="M 162 375 C 158 415, 172 455, 205 485 L 222 470 C 195 445, 185 410, 184 375 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2.5" />
+      <path d="M 205 480 C 230 488, 258 480, 280 465 L 272 450 C 255 462, 230 470, 212 464 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
       
-    <rect x="156" y="660" width="22" height="16" rx="4" fill="#0f172a" stroke="#0f172a" stroke-width="1.5" />
-    <circle cx="167" cy="668" r="8" fill="#0f172a" stroke="#06b6d4" stroke-width="2" />
-    <circle cx="167" cy="668" r="4" fill="#06b6d4" opacity="0.8" />
+    <!-- Smartwatch Casing & Screen -->
+    <rect x="156" y="652" width="22" height="18" rx="5" fill="#0f172a" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="159" y="655" width="16" height="12" rx="3" fill="#0f172a" stroke="#06b6d4" stroke-width="1.5" />
+    <circle cx="167" cy="661" r="3" fill="#06b6d4" opacity="0.85" />
   
 
-      <!-- Right Arm (Raised thoughtfully with hand at chin / temple) -->
-      <path d="M 320 375 L 340 375 L 350 490 L 330 495 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2" />
-      <path d="M 335 490 L 350 500 L 305 310 L 290 315 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-      <!-- Hand at chin / temple -->
-      <path d="M 285 310 Q 295 285 280 275 L 265 280 L 270 315 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-      <circle cx="275" cy="275" r="5" fill="#eab383" stroke="#0f172a" stroke-width="1.5" />
+      <!-- Right Arm (Raised thoughtfully with hand cradling chin/cheek) -->
+      <path d="M 320 375 C 335 415, 348 450, 345 490 L 328 494 C 326 455, 318 415, 310 380 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2.5" />
+      <!-- Forearm ascending to chin -->
+      <path d="M 335 488 C 342 445, 328 375, 286 312 L 272 322 C 310 378, 322 442, 318 492 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      
+      <!-- Hand at Chin: Sculpted Fingers Resting Thoughtfully on Jaw -->
+      <!-- Palm base under chin -->
+      <path d="M 276 312 C 270 305, 268 295, 266 285 L 280 282 C 282 292, 285 300, 290 306 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Index & Middle Fingers gently resting alongside cheek/jaw -->
+      <path d="M 268 286 C 267 274, 270 264, 273 252 C 277 252, 280 256, 278 266 L 276 286 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <!-- Thumb cradling lower jaw -->
+      <path d="M 266 295 C 256 296, 248 297, 244 298 C 243 302, 248 304, 255 304 C 260 304, 266 303, 272 301 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
     
 
     <!-- 3. Torso, Inner Tee & Modern Tech Overshirt -->

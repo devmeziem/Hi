@@ -29,18 +29,38 @@
 
     <!-- 2. Arms, Hands & Smartwatch -->
     
-      <!-- Shrug Pose: Both hands raised, palms turned up quizzically -->
-      <!-- Left Arm -->
-      <path d="M 165 370 L 185 370 L 140 480 L 120 475 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2" />
-      <path d="M 125 475 L 140 485 L 85 460 L 95 445 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-      <!-- Left Hand (Open palm facing up) -->
-      <path d="M 85 450 L 55 435 L 58 450 L 85 470 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Confused / Shrug Pose: Both arms lifted, expressive open palms turned up quizzically -->
+      <!-- Left Upper Arm -->
+      <path d="M 165 372 C 150 405, 134 440, 118 472 L 136 480 C 150 450, 166 415, 185 375 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2.5" />
+      <path d="M 118 472 L 110 475 L 116 488 L 136 480 Z" fill="#334155" stroke="#0f172a" stroke-width="1.8" />
+      <!-- Left Forearm angled up & out -->
+      <path d="M 112 476 C 92 468, 72 458, 54 448 L 62 434 C 80 444, 98 454, 120 462 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Left Hand (Open palm facing up with 5 articulated fingers) -->
+      <!-- Palm -->
+      <ellipse cx="50" cy="438" rx="14" ry="10" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Thumb extending outward -->
+      <path d="M 58 444 C 64 448, 70 452, 74 456 C 73 460, 68 460, 62 454 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <!-- 4 Spread upward fingers -->
+      <path d="M 44 430 C 38 424, 34 416, 30 408 C 34 406, 38 410, 42 418 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 49 428 C 46 420, 44 412, 42 404 C 46 403, 50 406, 52 416 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 54 429 C 54 421, 54 413, 55 405 C 59 405, 61 409, 60 418 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 59 432 C 62 426, 66 420, 70 414 C 74 416, 73 421, 68 428 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
 
-      <!-- Right Arm -->
-      <path d="M 315 370 L 335 370 L 380 480 L 360 475 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2" />
-      <path d="M 365 475 L 380 485 L 435 460 L 425 445 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-      <!-- Right Hand (Open palm facing up) -->
-      <path d="M 425 450 L 455 435 L 452 450 L 425 470 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Right Upper Arm -->
+      <path d="M 315 372 C 330 405, 346 440, 362 472 L 344 480 C 330 450, 314 415, 295 375 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2.5" />
+      <path d="M 362 472 L 370 475 L 364 488 L 344 480 Z" fill="#334155" stroke="#0f172a" stroke-width="1.8" />
+      <!-- Right Forearm angled up & out -->
+      <path d="M 368 476 C 388 468, 408 458, 426 448 L 418 434 C 400 444, 382 454, 360 462 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Right Hand (Open palm facing up with 5 articulated fingers) -->
+      <!-- Palm -->
+      <ellipse cx="430" cy="438" rx="14" ry="10" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Thumb extending outward -->
+      <path d="M 422 444 C 416 448, 410 452, 406 456 C 407 460, 412 460, 418 454 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <!-- 4 Spread upward fingers -->
+      <path d="M 436 430 C 442 424, 446 416, 450 408 C 446 406, 442 410, 438 418 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 431 428 C 434 420, 436 412, 438 404 C 434 403, 430 406, 428 416 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 426 429 C 426 421, 426 413, 425 405 C 421 405, 419 409, 420 418 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 421 432 C 418 426, 414 420, 410 414 C 406 416, 407 421, 412 428 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
     
 
     <!-- 3. Torso, Inner Tee & Modern Tech Overshirt -->

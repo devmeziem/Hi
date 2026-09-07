@@ -29,23 +29,56 @@
 
     <!-- 2. Arms, Hands & Smartwatch -->
     
-      <!-- Left Arm (Resting naturally with smartwatch) -->
-      <path d="M 165 375 L 185 375 L 180 520 L 160 520 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2" />
-      <path d="M 160 520 L 180 520 L 176 670 L 158 670 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Left Arm (Resting naturally at side with smartwatch) -->
+      <!-- Upper Jacket Sleeve -->
+      <path d="M 162 375 C 158 420, 156 460, 160 515 C 168 518, 182 518, 188 515 C 188 460, 186 420, 184 375 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 160 510 C 168 514, 180 514, 188 510 L 188 522 C 180 526, 168 526, 160 522 Z" fill="#334155" stroke="#0f172a" stroke-width="2" />
+      <!-- Left Forearm (Tapered natural arm muscle) -->
+      <path d="M 162 522 C 158 560, 156 610, 160 655 L 182 655 C 186 610, 184 560, 184 522 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
       
-    <rect x="156" y="660" width="22" height="16" rx="4" fill="#0f172a" stroke="#0f172a" stroke-width="1.5" />
-    <circle cx="167" cy="668" r="8" fill="#0f172a" stroke="#06b6d4" stroke-width="2" />
-    <circle cx="167" cy="668" r="4" fill="#06b6d4" opacity="0.8" />
+    <!-- Smartwatch Casing & Screen -->
+    <rect x="156" y="652" width="22" height="18" rx="5" fill="#0f172a" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="159" y="655" width="16" height="12" rx="3" fill="#0f172a" stroke="#06b6d4" stroke-width="1.5" />
+    <circle cx="167" cy="661" r="3" fill="#06b6d4" opacity="0.85" />
   
-      <!-- Left Hand -->
-      <path d="M 158 675 L 176 675 L 178 720 L 156 720 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Left Hand (Natural relaxed fingers hanging down) -->
+      <path d="M 160 668 
+               C 156 680, 155 700, 158 720 
+               C 161 726, 165 726, 167 720
+               C 169 725, 173 725, 175 718
+               C 177 724, 181 723, 182 715
+               C 184 712, 185 695, 184 668 Z" 
+            fill="#eab383" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+      <!-- Palm crease and thumb detail -->
+      <path d="M 158 680 C 153 686, 153 696, 157 702" stroke="#d09564" stroke-width="1.8" fill="none" stroke-linecap="round" />
 
-      <!-- Right Arm (Pointing Dynamically to Right where UI HUD appears) -->
-      <path d="M 320 375 L 340 375 L 410 470 L 390 480 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2" />
-      <path d="M 400 475 L 415 485 L 500 440 L 490 425 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-      <!-- Right Pointing Hand with Extended Index Finger -->
-      <path d="M 495 432 L 565 410 L 563 424 L 525 448 L 495 452 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
-      <line x1="565" y1="410" x2="575" y2="408" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" />
+      <!-- Right Arm (Dynamically pointing to right toward HUD/graphics) -->
+      <!-- Upper Jacket Sleeve extending outward -->
+      <path d="M 320 375 C 340 405, 370 435, 412 468 L 396 488 C 360 455, 335 420, 312 385 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 396 484 C 402 478, 410 472, 416 468 L 424 478 C 416 484, 406 490, 398 496 Z" fill="#334155" stroke="#0f172a" stroke-width="2" />
+      <!-- Forearm reaching right -->
+      <path d="M 416 472 C 445 456, 475 442, 506 432 L 512 448 C 480 460, 450 475, 422 490 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      
+      <!-- Right Hand: Sculpted Human Pointing Hand with Knuckles & Extended Index Finger -->
+      <!-- Wrist & Palm base -->
+      <path d="M 506 432 C 518 428, 526 426, 535 425 L 536 450 C 526 452, 518 450, 510 448 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Curled Middle, Ring, Pinky Fingers -->
+      <path d="M 534 436 C 542 436, 548 440, 545 446 C 542 450, 536 450, 532 448 Z" fill="#d09564" opacity="0.4" />
+      <path d="M 533 444 C 543 444, 549 448, 546 454 C 542 458, 535 456, 530 454 Z" fill="#d09564" opacity="0.4" />
+      <!-- Extended Natural Index Finger pointing with two subtle knuckle joints -->
+      <path d="M 532 425 
+               C 552 422, 574 419, 592 417 
+               C 597 416, 599 422, 594 425 
+               C 576 430, 554 434, 535 435 Z" 
+            fill="#eab383" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+      <!-- Knuckle accent lines -->
+      <line x1="556" y1="420" x2="557" y2="426" stroke="#d09564" stroke-width="1.5" stroke-linecap="round" />
+      <line x1="576" y1="418" x2="577" y2="424" stroke="#d09564" stroke-width="1.5" stroke-linecap="round" />
+      <!-- Thumb folded over knuckles -->
+      <path d="M 522 434 C 530 430, 538 432, 540 438 C 538 444, 528 446, 520 442 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <!-- Glowing energy beacon at fingertip -->
+      <circle cx="597" cy="421" r="3" fill="#38bdf8" />
+      <circle cx="597" cy="421" r="7" fill="#38bdf8" opacity="0.3" />
     
 
     <!-- 3. Torso, Inner Tee & Modern Tech Overshirt -->

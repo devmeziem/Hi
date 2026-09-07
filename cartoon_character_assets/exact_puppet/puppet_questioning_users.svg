@@ -29,16 +29,30 @@
 
     <!-- 2. Arms, Hands & Smartwatch -->
     
-      <!-- Welcoming / Explaining Gesture: Hands forward engaging audience -->
+      <!-- Welcoming / Explaining Gesture: Both arms open forward addressing the audience -->
       <!-- Left Arm -->
-      <path d="M 165 375 L 185 375 L 135 480 L 118 475 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2" />
-      <path d="M 124 475 L 138 485 L 95 560 L 80 550 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-      <ellipse cx="86" cy="565" rx="14" ry="10" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <path d="M 165 375 C 152 410, 138 445, 122 480 L 140 488 C 154 455, 168 420, 185 375 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2.5" />
+      <path d="M 124 480 L 118 484 L 122 494 L 140 488 Z" fill="#334155" stroke="#0f172a" stroke-width="1.8" />
+      <!-- Forearm reaching forward/down -->
+      <path d="M 122 486 C 110 520, 98 555, 86 585 L 104 592 C 116 560, 128 525, 138 490 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Left Hand: Sculpted welcoming open palm -->
+      <ellipse cx="88" cy="595" rx="14" ry="12" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Fingers curled naturally forward toward viewer -->
+      <path d="M 78 598 C 72 606, 68 616, 64 624 C 69 626, 74 622, 78 612 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 84 602 C 82 612, 80 622, 78 630 C 83 630, 87 626, 88 616 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 92 602 C 92 612, 94 622, 96 630 C 100 628, 101 624, 98 616 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
 
       <!-- Right Arm -->
-      <path d="M 315 375 L 335 375 L 365 480 L 382 475 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2" />
-      <path d="M 374 475 L 388 485 L 405 560 L 420 550 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-      <ellipse cx="414" cy="565" rx="14" ry="10" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <path d="M 315 375 C 328 410, 342 445, 358 480 L 340 488 C 326 455, 312 420, 295 375 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2.5" />
+      <path d="M 356 480 L 362 484 L 358 494 L 340 488 Z" fill="#334155" stroke="#0f172a" stroke-width="1.8" />
+      <!-- Forearm reaching forward/down -->
+      <path d="M 358 486 C 370 520, 382 555, 394 585 L 376 592 C 364 560, 352 525, 342 490 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Right Hand: Sculpted welcoming open palm -->
+      <ellipse cx="392" cy="595" rx="14" ry="12" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Fingers curled naturally forward toward viewer -->
+      <path d="M 402 598 C 408 606, 412 616, 416 624 C 411 626, 406 622, 402 612 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 396 602 C 398 612, 400 622, 402 630 C 397 630, 393 626, 392 616 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 388 602 C 388 612, 386 622, 384 630 C 380 628, 379 624, 382 616 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
     
 
     <!-- 3. Torso, Inner Tee & Modern Tech Overshirt -->

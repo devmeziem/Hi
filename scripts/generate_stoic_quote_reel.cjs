@@ -874,7 +874,135 @@ ${chosen.communityQuestion}
     console.warn('[Quote Reel] Manifest sync notice:', e.message);
   }
 
+  // 7. Publish to YouTube as 5s Viral Short (if credentials configured)
+  const isDryRun = process.env.DRY_RUN === 'true';
+  const clientId = process.env.YOUTUBE_CLIENT_ID || process.env.YOUTUBE_CLIENT_ID_CH2;
+  const clientSecret = process.env.YOUTUBE_CLIENT_SECRET || process.env.YOUTUBE_CLIENT_SECRET_CH2;
+  const refreshToken = process.env.YOUTUBE_REFRESH_TOKEN || process.env.YOUTUBE_REFRESH_TOKEN_CH2;
+
+  if (clientId && clientSecret && refreshToken && !isDryRun) {
+    try {
+      console.log(`\n[Quote Reel] 📤 Publishing 5s Quote Reel to YouTube Shorts...`);
+      await uploadQuoteReelToYouTube(finalMp4Path, viralTitle, viralDescription, [
+        'Shorts', 'Wisdom', 'Philosophy', 'Mindset', 'Stoic', 'Psychology', chosen.author.replace(/[^a-zA-Z0-9]/g, '')
+      ]);
+    } catch (err) {
+      console.warn(`[Quote Reel] YouTube upload notice: ${err.message}`);
+    }
+  } else if (isDryRun) {
+    console.log(`[Quote Reel] ℹ️ Dry Run mode enabled — video saved locally for review without live YouTube upload.`);
+  } else {
+    console.log(`[Quote Reel] ℹ️ YouTube secrets not configured in environment — video archived to artifacts.`);
+  }
+
   return finalMp4Path;
+}
+
+/**
+ * Upload 5s video to YouTube via OAuth2 resumable upload
+ */
+async function uploadQuoteReelToYouTube(videoFilePath, title, description, tags = []) {
+  const clientId = process.env.YOUTUBE_CLIENT_ID || process.env.YOUTUBE_CLIENT_ID_CH2;
+  const clientSecret = process.env.YOUTUBE_CLIENT_SECRET || process.env.YOUTUBE_CLIENT_SECRET_CH2;
+  const refreshToken = process.env.YOUTUBE_REFRESH_TOKEN || process.env.YOUTUBE_REFRESH_TOKEN_CH2;
+
+  const postData = new URLSearchParams({
+    client_id: clientId,
+    client_secret: clientSecret,
+    refresh_token: refreshToken,
+    grant_type: 'refresh_token'
+  }).toString();
+
+  const tokenRes = await new Promise((resolve) => {
+    const req = https.request('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(postData)
+      },
+      timeout: 10000
+    }, (res) => {
+      let data = '';
+      res.on('data', c => { data += c; });
+      res.on('end', () => {
+        try { resolve(JSON.parse(data)); } catch { resolve({}); }
+      });
+    });
+    req.on('error', () => resolve({}));
+    req.write(postData);
+    req.end();
+  });
+
+  if (!tokenRes.access_token) {
+    throw new Error('Failed to obtain YouTube OAuth2 access token: ' + (tokenRes.error_description || tokenRes.error || 'unknown'));
+  }
+
+  const accessToken = tokenRes.access_token;
+  const fileSize = fs.statSync(videoFilePath).size;
+
+  const metadata = JSON.stringify({
+    snippet: {
+      title: title.slice(0, 100),
+      description: description,
+      tags: tags.slice(0, 15),
+      categoryId: '27'
+    },
+    status: {
+      privacyStatus: 'public',
+      selfDeclaredMadeForKids: false,
+      containsSyntheticMedia: true
+    }
+  });
+
+  const sessionRes = await new Promise((resolve) => {
+    const req = https.request('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json; charset=UTF-8',
+        'X-Upload-Content-Length': fileSize,
+        'X-Upload-Content-Type': 'video/mp4'
+      }
+    }, (res) => {
+      if (res.headers.location) {
+        resolve({ success: true, location: res.headers.location });
+      } else {
+        resolve({ success: false, statusCode: res.statusCode });
+      }
+    });
+    req.on('error', (e) => resolve({ success: false, error: e.message }));
+    req.write(metadata);
+    req.end();
+  });
+
+  if (!sessionRes.success || !sessionRes.location) {
+    throw new Error('Failed to initiate YouTube upload session');
+  }
+
+  const uploadResult = await new Promise((resolve) => {
+    const stream = fs.createReadStream(videoFilePath);
+    const req = https.request(sessionRes.location, {
+      method: 'PUT',
+      headers: {
+        'Content-Length': fileSize,
+        'Content-Type': 'video/mp4'
+      }
+    }, (res) => {
+      let d = '';
+      res.on('data', c => d += c);
+      res.on('end', () => {
+        try { resolve({ success: true, data: JSON.parse(d) }); } catch { resolve({ success: false }); }
+      });
+    });
+    req.on('error', (e) => resolve({ success: false, error: e.message }));
+    stream.pipe(req);
+  });
+
+  if (uploadResult.success && uploadResult.data?.id) {
+    const vidId = uploadResult.data.id;
+    console.log(`[Quote Reel] ✅ Published to YouTube: https://www.youtube.com/shorts/${vidId}`);
+    return vidId;
+  }
 }
 
 if (require.main === module) {

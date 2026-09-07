@@ -379,35 +379,177 @@ function rasterizeSvgToPng(svgPath, pngPath, width = 1080, height = 1920) {
 function generateSceneBackgroundSvg(backgroundStyle = 'tech_studio', topic = '', objects = [], width = 1080, height = 1920) {
   const style = String(backgroundStyle || '').toLowerCase();
   
-  // 1. Modern Tech Lab / Server Room / Cyber
-  if (style.includes('tech') || style.includes('lab') || style.includes('server') || style.includes('internet') || style.includes('cable')) {
+  // 1. Modern Creator Studio (YouTube / Tech Creator Desk, Warm LED Lightbars, Hex Acoustic Panels)
+  if (style.includes('creator') || style.includes('studio') || style.includes('desk') || style.includes('room')) {
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
       <defs>
-        <linearGradient id="techBg" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#020617" />
-          <stop offset="60%" stop-color="#0f172a" />
-          <stop offset="100%" stop-color="#1e1b4b" />
+        <linearGradient id="wallBg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#0b0f19" />
+          <stop offset="60%" stop-color="#111827" />
+          <stop offset="100%" stop-color="#030712" />
         </linearGradient>
-        <pattern id="gridPattern" width="60" height="60" patternUnits="userSpaceOnUse">
-          <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#38bdf8" stroke-width="0.75" opacity="0.18" />
-        </pattern>
-        <radialGradient id="techGlow" cx="50%" cy="40%" r="50%">
-          <stop offset="0%" stop-color="#0284c7" stop-opacity="0.35" />
+        <linearGradient id="ambientLightLeft" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#6366f1" stop-opacity="0.5" />
+          <stop offset="100%" stop-color="#6366f1" stop-opacity="0" />
+        </linearGradient>
+        <linearGradient id="ambientLightRight" x1="1" y1="0" x2="0" y2="0">
+          <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.45" />
+          <stop offset="100%" stop-color="#38bdf8" stop-opacity="0" />
+        </linearGradient>
+        <radialGradient id="deskSpotlight" cx="50%" cy="60%" r="55%">
+          <stop offset="0%" stop-color="#1e293b" stop-opacity="0.8" />
           <stop offset="100%" stop-color="#020617" stop-opacity="0" />
         </radialGradient>
       </defs>
-      <rect width="${width}" height="${height}" fill="url(#techBg)" />
+      <!-- Studio Dark Wall -->
+      <rect width="${width}" height="${height}" fill="url(#wallBg)" />
+      <!-- Ambient Rim Lights (Left Violet, Right Cyan) -->
+      <rect x="0" y="0" width="360" height="${height}" fill="url(#ambientLightLeft)" />
+      <rect x="720" y="0" width="360" height="${height}" fill="url(#ambientLightRight)" />
+
+      <!-- Acoustic Hex Panels on back wall -->
+      <g stroke="#1e293b" stroke-width="2" fill="#0f172a" opacity="0.6">
+        <polygon points="200,240 240,265 240,315 200,340 160,315 160,265" />
+        <polygon points="285,240 325,265 325,315 285,340 245,315 245,265" />
+        <polygon points="242,318 282,343 282,393 242,418 202,393 202,343" />
+        <polygon points="800,220 840,245 840,295 800,320 760,295 760,245" />
+        <polygon points="885,220 925,245 925,295 885,320 845,295 845,245" />
+      </g>
+
+      <!-- Vertical LED Studio Lightbars -->
+      <rect x="80" y="160" width="8" height="1100" rx="4" fill="#a855f7" />
+      <rect x="76" y="150" width="16" height="1120" rx="8" fill="#c084fc" opacity="0.35" filter="blur(4px)" />
+      <rect x="992" y="160" width="8" height="1100" rx="4" fill="#38bdf8" />
+      <rect x="988" y="150" width="16" height="1120" rx="8" fill="#38bdf8" opacity="0.35" filter="blur(4px)" />
+
+      <!-- Back Wall Shelving & Floating Tech Decor -->
+      <line x1="140" y1="480" x2="440" y2="480" stroke="#334155" stroke-width="6" stroke-linecap="round" />
+      <rect x="180" y="440" width="28" height="40" rx="4" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5" />
+      <rect x="220" y="450" width="32" height="30" rx="4" fill="#1e293b" stroke="#6366f1" stroke-width="1.5" />
+      <line x1="640" y1="440" x2="940" y2="440" stroke="#334155" stroke-width="6" stroke-linecap="round" />
+      <rect x="680" y="405" width="40" height="35" rx="4" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5" />
+
+      <!-- Center Warm Studio Floor & Stage Spotlight -->
+      <ellipse cx="540" cy="1420" rx="520" ry="260" fill="url(#deskSpotlight)" />
+      <path d="M 0 1560 Q 540 1500 1080 1560 L 1080 1920 L 0 1920 Z" fill="#090d16" />
+      <!-- Floor Edge Neon Runner Line -->
+      <path d="M 0 1560 Q 540 1500 1080 1560" stroke="#38bdf8" stroke-width="3" fill="none" opacity="0.4" />
+    </svg>`;
+  }
+
+  // 2. AI Datacenter / High-Performance Computing / Server Bays
+  if (style.includes('datacenter') || style.includes('data_center') || style.includes('server') || style.includes('cloud')) {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+      <defs>
+        <linearGradient id="datacenterBg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#020617" />
+          <stop offset="50%" stop-color="#091322" />
+          <stop offset="100%" stop-color="#020617" />
+        </linearGradient>
+        <linearGradient id="serverGlow" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#0284c7" stop-opacity="0.4" />
+          <stop offset="100%" stop-color="#0284c7" stop-opacity="0" />
+        </linearGradient>
+      </defs>
+      <rect width="${width}" height="${height}" fill="url(#datacenterBg)" />
+      
+      <!-- Perspective Server Racks - Left Side -->
+      <g stroke="#0369a1" stroke-width="2" fill="#0b1329">
+        <polygon points="40,240 180,320 180,1400 40,1500" />
+        <!-- Server unit slots -->
+        <line x1="40" y1="400" x2="180" y2="450" stroke="#0284c7" stroke-width="1.5" />
+        <line x1="40" y1="560" x2="180" y2="590" stroke="#0284c7" stroke-width="1.5" />
+        <line x1="40" y1="720" x2="180" y2="730" stroke="#0284c7" stroke-width="1.5" />
+        <line x1="40" y1="880" x2="180" y2="870" stroke="#0284c7" stroke-width="1.5" />
+        <line x1="40" y1="1040" x2="180" y2="1010" stroke="#0284c7" stroke-width="1.5" />
+        <line x1="40" y1="1200" x2="180" y2="1150" stroke="#0284c7" stroke-width="1.5" />
+      </g>
+      <!-- Blinking Activity LEDs Left -->
+      <g fill="#10b981">
+        <circle cx="90" cy="420" r="3" /><circle cx="110" cy="425" r="3" /><circle cx="130" cy="430" r="3" />
+        <circle cx="90" cy="580" r="3" /><circle cx="110" cy="585" r="3" /><circle cx="130" cy="590" r="3" fill="#38bdf8" />
+        <circle cx="90" cy="740" r="3" /><circle cx="110" cy="742" r="3" /><circle cx="130" cy="745" r="3" fill="#38bdf8" />
+      </g>
+
+      <!-- Perspective Server Racks - Right Side -->
+      <g stroke="#0369a1" stroke-width="2" fill="#0b1329">
+        <polygon points="1040,240 900,320 900,1400 1040,1500" />
+        <!-- Server unit slots -->
+        <line x1="1040" y1="400" x2="900" y2="450" stroke="#0284c7" stroke-width="1.5" />
+        <line x1="1040" y1="560" x2="900" y2="590" stroke="#0284c7" stroke-width="1.5" />
+        <line x1="1040" y1="720" x2="900" y2="730" stroke="#0284c7" stroke-width="1.5" />
+        <line x1="1040" y1="880" x2="900" y2="870" stroke="#0284c7" stroke-width="1.5" />
+        <line x1="1040" y1="1040" x2="900" y2="1010" stroke="#0284c7" stroke-width="1.5" />
+        <line x1="1040" y1="1200" x2="900" y2="1150" stroke="#0284c7" stroke-width="1.5" />
+      </g>
+      <!-- Blinking Activity LEDs Right -->
+      <g fill="#10b981">
+        <circle cx="990" cy="420" r="3" /><circle cx="970" cy="425" r="3" /><circle cx="950" cy="430" r="3" fill="#38bdf8" />
+        <circle cx="990" cy="580" r="3" /><circle cx="970" cy="585" r="3" /><circle cx="950" cy="590" r="3" />
+        <circle cx="990" cy="740" r="3" /><circle cx="970" cy="742" r="3" /><circle cx="950" cy="745" r="3" fill="#38bdf8" />
+      </g>
+
+      <!-- Center Aisle Runway Floor & Overhead Cable Tray -->
+      <polygon points="180,1400 900,1400 1080,1920 0,1920" fill="#040812" />
+      <!-- Floor Guideline Tracks -->
+      <line x1="420" y1="1400" x2="280" y2="1920" stroke="#0284c7" stroke-width="2" opacity="0.5" />
+      <line x1="660" y1="1400" x2="800" y2="1920" stroke="#0284c7" stroke-width="2" opacity="0.5" />
+      <!-- High-tech Overhead Cable Gantry -->
+      <line x1="180" y1="320" x2="900" y2="320" stroke="#1e293b" stroke-width="10" />
+      <line x1="180" y1="320" x2="900" y2="320" stroke="#0ea5e9" stroke-width="2" stroke-dasharray="8 12" />
+    </svg>`;
+  }
+
+  // 3. Holographic Lab / Cyber Workspace / Futuristic AI Lab
+  if (style.includes('hologram') || style.includes('lab') || style.includes('cyber') || style.includes('quantum') || style.includes('tech')) {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+      <defs>
+        <linearGradient id="holoBg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#050814" />
+          <stop offset="50%" stop-color="#0a1226" />
+          <stop offset="100%" stop-color="#02040a" />
+        </linearGradient>
+        <pattern id="gridPattern" width="64" height="64" patternUnits="userSpaceOnUse">
+          <path d="M 64 0 L 0 0 0 64" fill="none" stroke="#38bdf8" stroke-width="0.75" opacity="0.12" />
+        </pattern>
+        <radialGradient id="holoGlow" cx="50%" cy="40%" r="55%">
+          <stop offset="0%" stop-color="#0284c7" stop-opacity="0.3" />
+          <stop offset="100%" stop-color="#02040a" stop-opacity="0" />
+        </radialGradient>
+      </defs>
+      <rect width="${width}" height="${height}" fill="url(#holoBg)" />
       <rect width="${width}" height="${height}" fill="url(#gridPattern)" />
-      <circle cx="540" cy="800" r="550" fill="url(#techGlow)" />
-      <!-- Server Racks / Digital Nodes in background -->
-      <g opacity="0.4" stroke="#38bdf8" stroke-width="2" fill="none">
-        <rect x="80" y="300" width="160" height="900" rx="10" stroke="#0284c7" stroke-width="3" />
-        <line x1="100" y1="360" x2="220" y2="360" /><line x1="100" y1="420" x2="220" y2="420" /><line x1="100" y1="480" x2="220" y2="480" />
-        <rect x="840" y="300" width="160" height="900" rx="10" stroke="#0284c7" stroke-width="3" />
-        <line x1="860" y1="360" x2="980" y2="360" /><line x1="860" y1="420" x2="980" y2="420" /><line x1="860" y1="480" x2="980" y2="480" />
-        <!-- Glowing Data Stream Lines -->
-        <path d="M 0 1400 Q 540 1200 1080 1400" stroke="#06b6d4" stroke-width="4" />
-        <path d="M 0 1480 Q 540 1320 1080 1480" stroke="#3b82f6" stroke-width="3" />
+      <circle cx="540" cy="780" r="540" fill="url(#holoGlow)" />
+
+      <!-- Floating Holographic Glass Panels in Background -->
+      <g opacity="0.35">
+        <!-- Floating Left Hologram Glass Widget -->
+        <rect x="70" y="340" width="220" height="320" rx="14" fill="#0f172a" stroke="#38bdf8" stroke-width="2" />
+        <line x1="90" y1="380" x2="210" y2="380" stroke="#38bdf8" stroke-width="3" />
+        <rect x="90" y="410" width="60" height="8" rx="2" fill="#0284c7" />
+        <rect x="90" y="430" width="140" height="6" rx="2" fill="#334155" />
+        <rect x="90" y="450" width="110" height="6" rx="2" fill="#334155" />
+        <circle cx="240" cy="560" r="30" stroke="#38bdf8" stroke-width="2" fill="none" stroke-dasharray="6 4" />
+
+        <!-- Floating Right Hologram Neural Node Widget -->
+        <rect x="790" y="380" width="220" height="340" rx="14" fill="#0f172a" stroke="#a855f7" stroke-width="2" />
+        <line x1="810" y1="420" x2="930" y2="420" stroke="#a855f7" stroke-width="3" />
+        <circle cx="850" cy="480" r="12" fill="#a855f7" />
+        <circle cx="950" cy="480" r="8" fill="#38bdf8" />
+        <circle cx="900" cy="560" r="14" fill="#6366f1" />
+        <line x1="850" y1="480" x2="900" y2="560" stroke="#a855f7" stroke-width="1.5" />
+        <line x1="950" y1="480" x2="900" y2="560" stroke="#38bdf8" stroke-width="1.5" />
+      </g>
+
+      <!-- Glowing Perspective Cyber Floor Grid -->
+      <polygon points="0,1500 1080,1500 1080,1920 0,1920" fill="#030611" />
+      <path d="M 0 1500 Q 540 1440 1080 1500" stroke="#38bdf8" stroke-width="3" fill="none" opacity="0.6" />
+      <g stroke="#0284c7" stroke-width="1.5" opacity="0.3">
+        <line x1="150" y1="1500" x2="0" y2="1920" />
+        <line x1="360" y1="1500" x2="220" y2="1920" />
+        <line x1="540" y1="1470" x2="540" y2="1920" />
+        <line x1="720" y1="1500" x2="860" y2="1920" />
+        <line x1="930" y1="1500" x2="1080" y2="1920" />
       </g>
     </svg>`;
   }
@@ -652,11 +794,42 @@ function ensureCharacterRigAssets() {
   console.log(`[Character Rig] Initialized Archie SVG & PNG character assets in ${ASSETS_DIR}`);
 }
 
+/**
+ * Generate a floating non-intrusive glossary translation board SVG for technical terms
+ */
+function generateGlossaryBoardSvg(term = '', explanation = '', width = 860, height = 180) {
+  const cleanTerm = String(term || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const cleanExpl = String(explanation || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+    <defs>
+      <linearGradient id="boardGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#090d16" stop-opacity="0.94" />
+        <stop offset="100%" stop-color="#1e1b4b" stop-opacity="0.92" />
+      </linearGradient>
+      <filter id="hudGlow" x="-10%" y="-10%" width="120%" height="120%">
+        <feDropShadow dx="0" dy="6" stdDeviation="12" flood-color="#06b6d4" flood-opacity="0.3" />
+      </filter>
+    </defs>
+    <!-- Glassmorphic Rounded Board -->
+    <rect x="4" y="4" width="${width - 8}" height="${height - 8}" rx="22" ry="22" fill="url(#boardGrad)" stroke="#38bdf8" stroke-width="2.5" filter="url(#hudGlow)" />
+    <!-- Glowing Top Accent Line -->
+    <path d="M 40 4 L ${width - 40} 4" stroke="#06b6d4" stroke-width="3" stroke-linecap="round" />
+    <!-- Category Pill Badge -->
+    <rect x="36" y="24" width="170" height="28" rx="14" ry="14" fill="#0284c7" fill-opacity="0.3" stroke="#38bdf8" stroke-width="1.5" />
+    <text x="121" y="43" fill="#38bdf8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" letter-spacing="1.5" text-anchor="middle">TECH TRANSLATION</text>
+    <!-- Glossary Term (Bold Display) -->
+    <text x="36" y="90" fill="#f8fafc" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="30" font-weight="800">${cleanTerm}</text>
+    <!-- Non-Intrusive Plain English Definition -->
+    <text x="36" y="132" fill="#cbd5e1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="500">${cleanExpl}</text>
+  </svg>`;
+}
+
 module.exports = {
   getMouthSvg,
   generateCharacterFrameSvg,
   generateCharacterBodySvg,
   generateSceneBackgroundSvg,
+  generateGlossaryBoardSvg,
   rasterizeSvgToPng,
   getComponentSvgs,
   ensureCharacterRigAssets,

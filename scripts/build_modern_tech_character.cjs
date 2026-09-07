@@ -320,122 +320,255 @@ function renderModernLegs(pose = 'idle') {
 
 /**
  * Render Modern Creator Arms, Hands & Smartwatch
+ * Features anatomically sculpted human hands with fingers, thumb, knuckles,
+ * tapered forearms, and fabric jacket sleeves.
  */
 function renderModernArms(pose = 'idle') {
-  // Smartwatch SVG snippet on left wrist
+  // Smartwatch on left wrist
   const smartwatch = `
-    <rect x="156" y="660" width="22" height="16" rx="4" fill="${WATCH_STRAP}" stroke="#0f172a" stroke-width="1.5" />
-    <circle cx="167" cy="668" r="8" fill="#0f172a" stroke="${WATCH_GLOW}" stroke-width="2" />
-    <circle cx="167" cy="668" r="4" fill="${WATCH_GLOW}" opacity="0.8" />
+    <!-- Smartwatch Casing & Screen -->
+    <rect x="156" y="652" width="22" height="18" rx="5" fill="${WATCH_STRAP}" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="159" y="655" width="16" height="12" rx="3" fill="#0f172a" stroke="${WATCH_GLOW}" stroke-width="1.5" />
+    <circle cx="167" cy="661" r="3" fill="${WATCH_GLOW}" opacity="0.85" />
   `;
 
   if (pose === 'point_right') {
     return `
-      <!-- Left Arm (Resting naturally with smartwatch) -->
-      <path d="M 165 375 L 185 375 L 180 520 L 160 520 Z" fill="${JACKET_MID}" stroke="#0f172a" stroke-width="2" />
-      <path d="M 160 520 L 180 520 L 176 670 L 158 670 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Left Arm (Resting naturally at side with smartwatch) -->
+      <!-- Upper Jacket Sleeve -->
+      <path d="M 162 375 C 158 420, 156 460, 160 515 C 168 518, 182 518, 188 515 C 188 460, 186 420, 184 375 Z" fill="${JACKET_MID}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 160 510 C 168 514, 180 514, 188 510 L 188 522 C 180 526, 168 526, 160 522 Z" fill="${JACKET_LIGHT}" stroke="#0f172a" stroke-width="2" />
+      <!-- Left Forearm (Tapered natural arm muscle) -->
+      <path d="M 162 522 C 158 560, 156 610, 160 655 L 182 655 C 186 610, 184 560, 184 522 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
       ${smartwatch}
-      <!-- Left Hand -->
-      <path d="M 158 675 L 176 675 L 178 720 L 156 720 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Left Hand (Natural relaxed fingers hanging down) -->
+      <path d="M 160 668 
+               C 156 680, 155 700, 158 720 
+               C 161 726, 165 726, 167 720
+               C 169 725, 173 725, 175 718
+               C 177 724, 181 723, 182 715
+               C 184 712, 185 695, 184 668 Z" 
+            fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+      <!-- Palm crease and thumb detail -->
+      <path d="M 158 680 C 153 686, 153 696, 157 702" stroke="${SKIN_SHADOW}" stroke-width="1.8" fill="none" stroke-linecap="round" />
 
-      <!-- Right Arm (Pointing Dynamically to Right where UI HUD appears) -->
-      <path d="M 320 375 L 340 375 L 410 470 L 390 480 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2" />
-      <path d="M 400 475 L 415 485 L 500 440 L 490 425 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
-      <!-- Right Pointing Hand with Extended Index Finger -->
-      <path d="M 495 432 L 565 410 L 563 424 L 525 448 L 495 452 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
-      <line x1="565" y1="410" x2="575" y2="408" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" />
+      <!-- Right Arm (Dynamically pointing to right toward HUD/graphics) -->
+      <!-- Upper Jacket Sleeve extending outward -->
+      <path d="M 320 375 C 340 405, 370 435, 412 468 L 396 488 C 360 455, 335 420, 312 385 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 396 484 C 402 478, 410 472, 416 468 L 424 478 C 416 484, 406 490, 398 496 Z" fill="${JACKET_LIGHT}" stroke="#0f172a" stroke-width="2" />
+      <!-- Forearm reaching right -->
+      <path d="M 416 472 C 445 456, 475 442, 506 432 L 512 448 C 480 460, 450 475, 422 490 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      
+      <!-- Right Hand: Sculpted Human Pointing Hand with Knuckles & Extended Index Finger -->
+      <!-- Wrist & Palm base -->
+      <path d="M 506 432 C 518 428, 526 426, 535 425 L 536 450 C 526 452, 518 450, 510 448 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Curled Middle, Ring, Pinky Fingers -->
+      <path d="M 534 436 C 542 436, 548 440, 545 446 C 542 450, 536 450, 532 448 Z" fill="${SKIN_SHADOW}" opacity="0.4" />
+      <path d="M 533 444 C 543 444, 549 448, 546 454 C 542 458, 535 456, 530 454 Z" fill="${SKIN_SHADOW}" opacity="0.4" />
+      <!-- Extended Natural Index Finger pointing with two subtle knuckle joints -->
+      <path d="M 532 425 
+               C 552 422, 574 419, 592 417 
+               C 597 416, 599 422, 594 425 
+               C 576 430, 554 434, 535 435 Z" 
+            fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+      <!-- Knuckle accent lines -->
+      <line x1="556" y1="420" x2="557" y2="426" stroke="${SKIN_SHADOW}" stroke-width="1.5" stroke-linecap="round" />
+      <line x1="576" y1="418" x2="577" y2="424" stroke="${SKIN_SHADOW}" stroke-width="1.5" stroke-linecap="round" />
+      <!-- Thumb folded over knuckles -->
+      <path d="M 522 434 C 530 430, 538 432, 540 438 C 538 444, 528 446, 520 442 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <!-- Glowing energy beacon at fingertip -->
+      <circle cx="597" cy="421" r="3" fill="#38bdf8" />
+      <circle cx="597" cy="421" r="7" fill="#38bdf8" opacity="0.3" />
     `;
   }
 
   if (pose === 'point_left') {
     return `
-      <!-- Left Arm (Pointing Dynamically to Left where UI HUD appears) -->
-      <path d="M 180 375 L 160 375 L 90 470 L 110 480 Z" fill="${JACKET_MID}" stroke="#0f172a" stroke-width="2" />
-      <path d="M 100 475 L 85 485 L 0 440 L 10 425 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
-      <!-- Left Pointing Hand with Extended Index Finger -->
-      <path d="M 5 432 L -65 410 L -63 424 L -25 448 L 5 452 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
-      <line x1="-65" y1="410" x2="-75" y2="408" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" />
+      <!-- Left Arm (Dynamically pointing to left toward HUD/graphics) -->
+      <!-- Upper Jacket Sleeve extending left -->
+      <path d="M 180 375 C 160 405, 130 435, 88 468 L 104 488 C 140 455, 165 420, 188 385 Z" fill="${JACKET_MID}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 104 484 C 98 478, 90 472, 84 468 L 76 478 C 84 484, 94 490, 102 496 Z" fill="${JACKET_LIGHT}" stroke="#0f172a" stroke-width="2" />
+      <!-- Forearm reaching left -->
+      <path d="M 84 472 C 55 456, 25 442, -6 432 L -12 448 C 20 460, 50 475, 78 490 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      
+      <!-- Left Hand: Sculpted Human Pointing Hand (pointing left) -->
+      <!-- Palm base -->
+      <path d="M -6 432 C -18 428, -26 426, -35 425 L -36 450 C -26 452, -18 450, -10 448 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Curled Fingers -->
+      <path d="M -34 436 C -42 436, -48 440, -45 446 C -42 450, -36 450, -32 448 Z" fill="${SKIN_SHADOW}" opacity="0.4" />
+      <!-- Extended Natural Index Finger pointing left -->
+      <path d="M -32 425 
+               C -52 422, -74 419, -92 417 
+               C -97 416, -99 422, -94 425 
+               C -76 430, -54 434, -35 435 Z" 
+            fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+      <!-- Knuckle accent lines -->
+      <line x1="-56" y1="420" x2="-57" y2="426" stroke="${SKIN_SHADOW}" stroke-width="1.5" stroke-linecap="round" />
+      <line x1="-76" y1="418" x2="-77" y2="424" stroke="${SKIN_SHADOW}" stroke-width="1.5" stroke-linecap="round" />
+      <!-- Thumb folded -->
+      <path d="M -22 434 C -30 430, -38 432, -40 438 C -38 444, -28 446, -20 442 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <!-- Glowing energy beacon -->
+      <circle cx="-97" cy="421" r="3" fill="#38bdf8" />
+      <circle cx="-97" cy="421" r="7" fill="#38bdf8" opacity="0.3" />
 
-      <!-- Right Arm (Resting naturally) -->
-      <path d="M 315 375 L 335 375 L 338 520 L 318 520 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2" />
-      <path d="M 318 520 L 338 520 L 336 670 L 318 670 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
-      <path d="M 318 675 L 336 675 L 338 720 L 316 720 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Right Arm (Resting naturally at side) -->
+      <path d="M 315 375 C 320 420, 324 460, 320 515 C 328 518, 342 518, 348 515 C 348 460, 346 420, 344 375 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 320 510 C 328 514, 340 514, 348 510 L 348 522 C 340 526, 328 526, 320 522 Z" fill="${JACKET_LIGHT}" stroke="#0f172a" stroke-width="2" />
+      <path d="M 322 522 C 320 560, 320 610, 324 655 L 346 655 C 348 610, 348 560, 346 522 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Right Hand -->
+      <path d="M 322 668 
+               C 318 680, 318 700, 321 720 
+               C 324 726, 328 726, 330 720
+               C 332 725, 336 725, 338 718
+               C 340 724, 344 723, 346 715
+               C 348 712, 349 695, 348 668 Z" 
+            fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
     `;
   }
 
   if (pose === 'thinking') {
     return `
-      <!-- Left Arm (Folded across chest or resting) -->
-      <path d="M 165 375 L 185 375 L 210 490 L 190 495 Z" fill="${JACKET_MID}" stroke="#0f172a" stroke-width="2" />
-      <path d="M 195 490 L 210 500 L 270 480 L 265 465 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Left Arm (Folded across chest supporting elbow) -->
+      <path d="M 162 375 C 158 415, 172 455, 205 485 L 222 470 C 195 445, 185 410, 184 375 Z" fill="${JACKET_MID}" stroke="#0f172a" stroke-width="2.5" />
+      <path d="M 205 480 C 230 488, 258 480, 280 465 L 272 450 C 255 462, 230 470, 212 464 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
       ${smartwatch}
 
-      <!-- Right Arm (Raised thoughtfully with hand at chin / temple) -->
-      <path d="M 320 375 L 340 375 L 350 490 L 330 495 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2" />
-      <path d="M 335 490 L 350 500 L 305 310 L 290 315 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
-      <!-- Hand at chin / temple -->
-      <path d="M 285 310 Q 295 285 280 275 L 265 280 L 270 315 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
-      <circle cx="275" cy="275" r="5" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.5" />
+      <!-- Right Arm (Raised thoughtfully with hand cradling chin/cheek) -->
+      <path d="M 320 375 C 335 415, 348 450, 345 490 L 328 494 C 326 455, 318 415, 310 380 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2.5" />
+      <!-- Forearm ascending to chin -->
+      <path d="M 335 488 C 342 445, 328 375, 286 312 L 272 322 C 310 378, 322 442, 318 492 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      
+      <!-- Hand at Chin: Sculpted Fingers Resting Thoughtfully on Jaw -->
+      <!-- Palm base under chin -->
+      <path d="M 276 312 C 270 305, 268 295, 266 285 L 280 282 C 282 292, 285 300, 290 306 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Index & Middle Fingers gently resting alongside cheek/jaw -->
+      <path d="M 268 286 C 267 274, 270 264, 273 252 C 277 252, 280 256, 278 266 L 276 286 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <!-- Thumb cradling lower jaw -->
+      <path d="M 266 295 C 256 296, 248 297, 244 298 C 243 302, 248 304, 255 304 C 260 304, 266 303, 272 301 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
     `;
   }
 
   if (pose === 'confused') {
     return `
-      <!-- Shrug Pose: Both hands raised, palms turned up quizzically -->
-      <!-- Left Arm -->
-      <path d="M 165 370 L 185 370 L 140 480 L 120 475 Z" fill="${JACKET_MID}" stroke="#0f172a" stroke-width="2" />
-      <path d="M 125 475 L 140 485 L 85 460 L 95 445 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
-      <!-- Left Hand (Open palm facing up) -->
-      <path d="M 85 450 L 55 435 L 58 450 L 85 470 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Confused / Shrug Pose: Both arms lifted, expressive open palms turned up quizzically -->
+      <!-- Left Upper Arm -->
+      <path d="M 165 372 C 150 405, 134 440, 118 472 L 136 480 C 150 450, 166 415, 185 375 Z" fill="${JACKET_MID}" stroke="#0f172a" stroke-width="2.5" />
+      <path d="M 118 472 L 110 475 L 116 488 L 136 480 Z" fill="${JACKET_LIGHT}" stroke="#0f172a" stroke-width="1.8" />
+      <!-- Left Forearm angled up & out -->
+      <path d="M 112 476 C 92 468, 72 458, 54 448 L 62 434 C 80 444, 98 454, 120 462 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Left Hand (Open palm facing up with 5 articulated fingers) -->
+      <!-- Palm -->
+      <ellipse cx="50" cy="438" rx="14" ry="10" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Thumb extending outward -->
+      <path d="M 58 444 C 64 448, 70 452, 74 456 C 73 460, 68 460, 62 454 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <!-- 4 Spread upward fingers -->
+      <path d="M 44 430 C 38 424, 34 416, 30 408 C 34 406, 38 410, 42 418 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 49 428 C 46 420, 44 412, 42 404 C 46 403, 50 406, 52 416 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 54 429 C 54 421, 54 413, 55 405 C 59 405, 61 409, 60 418 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 59 432 C 62 426, 66 420, 70 414 C 74 416, 73 421, 68 428 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
 
-      <!-- Right Arm -->
-      <path d="M 315 370 L 335 370 L 380 480 L 360 475 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2" />
-      <path d="M 365 475 L 380 485 L 435 460 L 425 445 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
-      <!-- Right Hand (Open palm facing up) -->
-      <path d="M 425 450 L 455 435 L 452 450 L 425 470 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Right Upper Arm -->
+      <path d="M 315 372 C 330 405, 346 440, 362 472 L 344 480 C 330 450, 314 415, 295 375 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2.5" />
+      <path d="M 362 472 L 370 475 L 364 488 L 344 480 Z" fill="${JACKET_LIGHT}" stroke="#0f172a" stroke-width="1.8" />
+      <!-- Right Forearm angled up & out -->
+      <path d="M 368 476 C 388 468, 408 458, 426 448 L 418 434 C 400 444, 382 454, 360 462 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Right Hand (Open palm facing up with 5 articulated fingers) -->
+      <!-- Palm -->
+      <ellipse cx="430" cy="438" rx="14" ry="10" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Thumb extending outward -->
+      <path d="M 422 444 C 416 448, 410 452, 406 456 C 407 460, 412 460, 418 454 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <!-- 4 Spread upward fingers -->
+      <path d="M 436 430 C 442 424, 446 416, 450 408 C 446 406, 442 410, 438 418 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 431 428 C 434 420, 436 412, 438 404 C 434 403, 430 406, 428 416 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 426 429 C 426 421, 426 413, 425 405 C 421 405, 419 409, 420 418 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 421 432 C 418 426, 414 420, 410 414 C 406 416, 407 421, 412 428 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
     `;
   }
 
   if (pose === 'surprised') {
     return `
-      <!-- Surprised / Astonished: Both hands thrown slightly back/up -->
-      <path d="M 165 370 L 185 370 L 125 450 L 110 445 Z" fill="${JACKET_MID}" stroke="#0f172a" stroke-width="2" />
-      <path d="M 115 445 L 130 455 L 90 390 L 105 385 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
-      <circle cx="95" cy="385" r="14" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Surprised / Astonished: Both hands raised near chest/shoulders -->
+      <path d="M 165 372 C 150 405, 135 440, 120 460 L 138 468 C 152 440, 168 405, 185 375 Z" fill="${JACKET_MID}" stroke="#0f172a" stroke-width="2.5" />
+      <path d="M 122 460 C 114 430, 108 395, 102 360 L 118 356 C 124 390, 130 425, 138 460 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Left Hand (Open palm facing camera in astonishment) -->
+      <ellipse cx="106" cy="350" rx="14" ry="12" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <path d="M 96 342 C 92 334, 88 324, 86 314 C 91 312, 95 316, 98 326 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 103 340 C 102 330, 101 320, 100 310 C 105 310, 108 314, 108 324 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 110 341 C 112 331, 114 321, 116 312 C 120 314, 120 318, 118 326 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
 
-      <path d="M 315 370 L 335 370 L 375 450 L 390 445 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2" />
-      <path d="M 380 445 L 395 455 L 410 390 L 395 385 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
-      <circle cx="405" cy="385" r="14" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <path d="M 315 372 C 330 405, 345 440, 360 460 L 342 468 C 328 440, 312 405, 295 375 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2.5" />
+      <path d="M 358 460 C 366 430, 372 395, 378 360 L 362 356 C 356 390, 350 425, 342 460 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Right Hand (Open palm facing camera) -->
+      <ellipse cx="374" cy="350" rx="14" ry="12" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <path d="M 384 342 C 388 334, 392 324, 394 314 C 389 312, 385 316, 382 326 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 377 340 C 378 330, 379 320, 380 310 C 375 310, 372 314, 372 324 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 370 341 C 368 331, 366 321, 364 312 C 360 314, 360 318, 362 326 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
     `;
   }
 
   if (pose === 'questioning_users' || pose === 'explain_both') {
     return `
-      <!-- Welcoming / Explaining Gesture: Hands forward engaging audience -->
+      <!-- Welcoming / Explaining Gesture: Both arms open forward addressing the audience -->
       <!-- Left Arm -->
-      <path d="M 165 375 L 185 375 L 135 480 L 118 475 Z" fill="${JACKET_MID}" stroke="#0f172a" stroke-width="2" />
-      <path d="M 124 475 L 138 485 L 95 560 L 80 550 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
-      <ellipse cx="86" cy="565" rx="14" ry="10" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <path d="M 165 375 C 152 410, 138 445, 122 480 L 140 488 C 154 455, 168 420, 185 375 Z" fill="${JACKET_MID}" stroke="#0f172a" stroke-width="2.5" />
+      <path d="M 124 480 L 118 484 L 122 494 L 140 488 Z" fill="${JACKET_LIGHT}" stroke="#0f172a" stroke-width="1.8" />
+      <!-- Forearm reaching forward/down -->
+      <path d="M 122 486 C 110 520, 98 555, 86 585 L 104 592 C 116 560, 128 525, 138 490 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Left Hand: Sculpted welcoming open palm -->
+      <ellipse cx="88" cy="595" rx="14" ry="12" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Fingers curled naturally forward toward viewer -->
+      <path d="M 78 598 C 72 606, 68 616, 64 624 C 69 626, 74 622, 78 612 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 84 602 C 82 612, 80 622, 78 630 C 83 630, 87 626, 88 616 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 92 602 C 92 612, 94 622, 96 630 C 100 628, 101 624, 98 616 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
 
       <!-- Right Arm -->
-      <path d="M 315 375 L 335 375 L 365 480 L 382 475 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2" />
-      <path d="M 374 475 L 388 485 L 405 560 L 420 550 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
-      <ellipse cx="414" cy="565" rx="14" ry="10" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <path d="M 315 375 C 328 410, 342 445, 358 480 L 340 488 C 326 455, 312 420, 295 375 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2.5" />
+      <path d="M 356 480 L 362 484 L 358 494 L 340 488 Z" fill="${JACKET_LIGHT}" stroke="#0f172a" stroke-width="1.8" />
+      <!-- Forearm reaching forward/down -->
+      <path d="M 358 486 C 370 520, 382 555, 394 585 L 376 592 C 364 560, 352 525, 342 490 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Right Hand: Sculpted welcoming open palm -->
+      <ellipse cx="392" cy="595" rx="14" ry="12" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Fingers curled naturally forward toward viewer -->
+      <path d="M 402 598 C 408 606, 412 616, 416 624 C 411 626, 406 622, 402 612 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 396 602 C 398 612, 400 622, 402 630 C 397 630, 393 626, 392 616 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 388 602 C 388 612, 386 622, 384 630 C 380 628, 379 624, 382 616 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
     `;
   }
 
-  // Default Relaxed Conversational Stance
+  // Default Relaxed Conversational Stance (Natural relaxed arms and sculpted hands)
   return `
     <!-- Left Arm -->
-    <path d="M 165 375 L 185 375 L 178 520 L 160 520 Z" fill="${JACKET_MID}" stroke="#0f172a" stroke-width="2" />
-    <path d="M 160 520 L 180 520 L 176 670 L 158 670 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+    <path d="M 162 375 C 158 420, 156 460, 160 515 C 168 518, 182 518, 188 515 C 188 460, 186 420, 184 375 Z" fill="${JACKET_MID}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+    <path d="M 160 510 C 168 514, 180 514, 188 510 L 188 522 C 180 526, 168 526, 160 522 Z" fill="${JACKET_LIGHT}" stroke="#0f172a" stroke-width="2" />
+    <!-- Forearm -->
+    <path d="M 162 522 C 158 560, 156 610, 160 655 L 182 655 C 186 610, 184 560, 184 522 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
     ${smartwatch}
-    <path d="M 158 675 L 176 675 L 178 720 L 156 720 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+    <!-- Sculpted Left Hand: Natural resting curl with thumb and distinct fingers -->
+    <path d="M 160 668 
+             C 156 680, 155 700, 158 722 
+             C 161 728, 165 727, 167 721
+             C 169 727, 173 726, 175 719
+             C 177 725, 181 724, 183 716
+             C 185 712, 185 695, 184 668 Z" 
+          fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+    <!-- Fleshy thumb crease -->
+    <path d="M 158 682 C 152 688, 152 698, 157 704" stroke="${SKIN_SHADOW}" stroke-width="1.8" fill="none" stroke-linecap="round" />
 
     <!-- Right Arm -->
-    <path d="M 315 375 L 335 375 L 338 520 L 318 520 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2" />
-    <path d="M 318 520 L 338 520 L 336 670 L 318 670 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
-    <path d="M 318 675 L 336 675 L 338 720 L 316 720 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+    <path d="M 315 375 C 320 420, 324 460, 320 515 C 328 518, 342 518, 348 515 C 348 460, 346 420, 344 375 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+    <path d="M 320 510 C 328 514, 340 514, 348 510 L 348 522 C 340 526, 328 526, 320 522 Z" fill="${JACKET_LIGHT}" stroke="#0f172a" stroke-width="2" />
+    <!-- Forearm -->
+    <path d="M 322 522 C 320 560, 320 610, 324 655 L 346 655 C 348 610, 348 560, 346 522 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+    <!-- Sculpted Right Hand: Natural resting curl with thumb and distinct fingers -->
+    <path d="M 322 668 
+             C 318 680, 318 700, 321 722 
+             C 324 728, 328 727, 330 721
+             C 332 727, 336 726, 338 719
+             C 340 725, 344 724, 346 716
+             C 348 712, 349 695, 348 668 Z" 
+          fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+    <!-- Fleshy thumb crease -->
+    <path d="M 342 682 C 348 688, 348 698, 343 704" stroke="${SKIN_SHADOW}" stroke-width="1.8" fill="none" stroke-linecap="round" />
   `;
 }
 

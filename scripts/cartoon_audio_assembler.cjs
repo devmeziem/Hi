@@ -161,7 +161,28 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
   // Remove stale incomplete output if present
   try { if (fs.existsSync(outputSceneMp4)) fs.unlinkSync(outputSceneMp4); } catch {}
 
-  const bgInput = (bgImage && fs.existsSync(bgImage)) ? bgImage : svgPath;
+  // Guarantee clean background input (never fall back to a character frame)
+  let bgInput = (bgImage && fs.existsSync(bgImage)) ? bgImage : null;
+  if (!bgInput) {
+    const defaultBgPath = path.join(process.cwd(), 'cartoon_character_assets', 'creator_studio_bg.png');
+    if (fs.existsSync(defaultBgPath)) {
+      bgInput = defaultBgPath;
+    } else {
+      try {
+        const { generateSceneBackgroundSvg, rasterizeSvgToPng } = require('./cartoon_character_rig.cjs');
+        const defaultSvg = generateSceneBackgroundSvg('creator_studio', '', []);
+        const tempSvgPath = path.join(process.cwd(), 'cartoon_character_assets', 'creator_studio_bg.svg');
+        fs.writeFileSync(tempSvgPath, defaultSvg);
+        rasterizeSvgToPng(tempSvgPath, defaultBgPath, 1080, 1920);
+        if (fs.existsSync(defaultBgPath)) bgInput = defaultBgPath;
+      } catch (err) {
+        console.warn(`[Media Engine] Notice creating fallback studio background: ${err.message}`);
+      }
+    }
+  }
+  if (!bgInput) bgInput = svgPath;
+
+  const glossaryBoard = options.glossaryBoard || options.glossary_board || null;
   let renderSucceeded = false;
 
   // 1. PRIMARY ENGINE: MoviePy Exact Puppet Animator
@@ -269,45 +290,83 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
 
     let filterComplex = '';
     let ffmpegCmd = '';
+    const hasGloss = glossaryBoard && fs.existsSync(glossaryBoard);
 
     if (action === 'walk_in') {
-      // Walk in from left with stepping bounce, then settle into speaking stance
-      filterComplex = [
-        `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
-        `[1:v]scale=-1:1100[walk]`,
-        `[2:v]scale=-1:1100[stand]`,
-        `[3:v]scale=-1:1100[eyes]`,
-        `[bg][walk]overlay=x='if(lte(t,1.2), -380 + t*530, -9999)':y='760 + 12*abs(sin(t*12))':enable='lte(t,1.2)'[s1]`,
-        `[s1][stand]overlay=x=260:y='760 + 5*sin(t*3)':enable='between(t,1.2,2.3)+between(t,2.46,${duration})'[s2]`,
-        `[s2][eyes]overlay=x=260:y='760 + 5*sin(t*3)':enable='between(t,2.3,2.46)'[v]`
-      ].join(';');
-
-      ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${walkAsset}" -loop 1 -t ${duration} -i "${standAsset}" -loop 1 -t ${duration} -i "${blinkAsset}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 4:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+      if (hasGloss) {
+        filterComplex = [
+          `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
+          `[4:v]scale=860:-1[gloss]`,
+          `[bg][gloss]overlay=x=(W-w)/2:y='150 + 4*sin(t*2)'[bg0]`,
+          `[1:v]scale=-1:1100[walk]`,
+          `[2:v]scale=-1:1100[stand]`,
+          `[3:v]scale=-1:1100[eyes]`,
+          `[bg0][walk]overlay=x='if(lte(t,1.2), -380 + t*530, -9999)':y='760 + 12*abs(sin(t*12))':enable='lte(t,1.2)'[s1]`,
+          `[s1][stand]overlay=x=260:y='760 + 5*sin(t*3)':enable='between(t,1.2,2.3)+between(t,2.46,${duration})'[s2]`,
+          `[s2][eyes]overlay=x=260:y='760 + 5*sin(t*3)':enable='between(t,2.3,2.46)'[v]`
+        ].join(';');
+        ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${walkAsset}" -loop 1 -t ${duration} -i "${standAsset}" -loop 1 -t ${duration} -i "${blinkAsset}" -loop 1 -t ${duration} -i "${glossaryBoard}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 5:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+      } else {
+        filterComplex = [
+          `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
+          `[1:v]scale=-1:1100[walk]`,
+          `[2:v]scale=-1:1100[stand]`,
+          `[3:v]scale=-1:1100[eyes]`,
+          `[bg][walk]overlay=x='if(lte(t,1.2), -380 + t*530, -9999)':y='760 + 12*abs(sin(t*12))':enable='lte(t,1.2)'[s1]`,
+          `[s1][stand]overlay=x=260:y='760 + 5*sin(t*3)':enable='between(t,1.2,2.3)+between(t,2.46,${duration})'[s2]`,
+          `[s2][eyes]overlay=x=260:y='760 + 5*sin(t*3)':enable='between(t,2.3,2.46)'[v]`
+        ].join(';');
+        ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${walkAsset}" -loop 1 -t ${duration} -i "${standAsset}" -loop 1 -t ${duration} -i "${blinkAsset}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 4:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+      }
     } else if ((action === 'point_left' || action === 'point_right' || action === 'explain_both') && fs.existsSync(hudCard)) {
-      // Dynamic pointing with floating HUD card
       const hudX = action === 'point_right' ? 530 : (action === 'point_left' ? 70 : 300);
-      filterComplex = [
-        `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
-        `[1:v]scale=-1:1100[pose]`,
-        `[2:v]scale=-1:1100[eyes]`,
-        `[3:v]scale=460:-1[hud]`,
-        `[bg][hud]overlay=x=${hudX}:y='430 + 6*sin(t*2.5)'[s0]`,
-        `[s0][pose]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='between(t,0,2.3)+between(t,2.46,${duration})'[s1]`,
-        `[s1][eyes]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='between(t,2.3,2.46)'[v]`
-      ].join(';');
-
-      ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${mainPuppet}" -loop 1 -t ${duration} -i "${blinkAsset}" -loop 1 -t ${duration} -i "${hudCard}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 4:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+      if (hasGloss) {
+        filterComplex = [
+          `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
+          `[4:v]scale=860:-1[gloss]`,
+          `[bg][gloss]overlay=x=(W-w)/2:y='150 + 4*sin(t*2)'[bg0]`,
+          `[1:v]scale=-1:1100[pose]`,
+          `[2:v]scale=-1:1100[eyes]`,
+          `[3:v]scale=460:-1[hud]`,
+          `[bg0][hud]overlay=x=${hudX}:y='430 + 6*sin(t*2.5)'[s0]`,
+          `[s0][pose]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='between(t,0,2.3)+between(t,2.46,${duration})'[s1]`,
+          `[s1][eyes]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='between(t,2.3,2.46)'[v]`
+        ].join(';');
+        ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${mainPuppet}" -loop 1 -t ${duration} -i "${blinkAsset}" -loop 1 -t ${duration} -i "${hudCard}" -loop 1 -t ${duration} -i "${glossaryBoard}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 5:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+      } else {
+        filterComplex = [
+          `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
+          `[1:v]scale=-1:1100[pose]`,
+          `[2:v]scale=-1:1100[eyes]`,
+          `[3:v]scale=460:-1[hud]`,
+          `[bg][hud]overlay=x=${hudX}:y='430 + 6*sin(t*2.5)'[s0]`,
+          `[s0][pose]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='between(t,0,2.3)+between(t,2.46,${duration})'[s1]`,
+          `[s1][eyes]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='between(t,2.3,2.46)'[v]`
+        ].join(';');
+        ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${mainPuppet}" -loop 1 -t ${duration} -i "${blinkAsset}" -loop 1 -t ${duration} -i "${hudCard}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 4:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+      }
     } else {
-      // Dynamic host pose with breathing sway and periodic eye blinks
-      filterComplex = [
-        `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
-        `[1:v]scale=-1:1100[pose]`,
-        `[2:v]scale=-1:1100[eyes]`,
-        `[bg][pose]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='between(t,0,2.3)+between(t,2.46,${duration})'[s1]`,
-        `[s1][eyes]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='between(t,2.3,2.46)'[v]`
-      ].join(';');
-
-      ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${mainPuppet}" -loop 1 -t ${duration} -i "${blinkAsset}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 3:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+      if (hasGloss) {
+        filterComplex = [
+          `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
+          `[3:v]scale=860:-1[gloss]`,
+          `[bg][gloss]overlay=x=(W-w)/2:y='150 + 4*sin(t*2)'[bg0]`,
+          `[1:v]scale=-1:1100[pose]`,
+          `[2:v]scale=-1:1100[eyes]`,
+          `[bg0][pose]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='between(t,0,2.3)+between(t,2.46,${duration})'[s1]`,
+          `[s1][eyes]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='between(t,2.3,2.46)'[v]`
+        ].join(';');
+        ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${mainPuppet}" -loop 1 -t ${duration} -i "${blinkAsset}" -loop 1 -t ${duration} -i "${glossaryBoard}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 4:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+      } else {
+        filterComplex = [
+          `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
+          `[1:v]scale=-1:1100[pose]`,
+          `[2:v]scale=-1:1100[eyes]`,
+          `[bg][pose]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='between(t,0,2.3)+between(t,2.46,${duration})'[s1]`,
+          `[s1][eyes]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='between(t,2.3,2.46)'[v]`
+        ].join(';');
+        ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${mainPuppet}" -loop 1 -t ${duration} -i "${blinkAsset}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 3:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+      }
     }
 
     try {

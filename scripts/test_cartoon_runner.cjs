@@ -10,7 +10,7 @@ const path = require('path');
 const { generateCartoonEpisodePlan } = require('./cartoon_planner.cjs');
 const { generateSceneVoice } = require('./cartoon_tts_engine.cjs');
 const { extractMouthCues } = require('./cartoon_lipsync_engine.cjs');
-const { ensureCharacterRigAssets, generateCharacterFrameSvg, generateSceneBackgroundSvg, rasterizeSvgToPng } = require('./cartoon_character_rig.cjs');
+const { ensureCharacterRigAssets, generateCharacterFrameSvg, generateSceneBackgroundSvg, generateGlossaryBoardSvg, rasterizeSvgToPng } = require('./cartoon_character_rig.cjs');
 const { generateSrtSubtitles, assembleFinalCartoonVideo, renderSingleSceneVideo } = require('./cartoon_audio_assembler.cjs');
 const { validateCartoonOutput } = require('./cartoon_validator.cjs');
 const { publisher } = require('./cartoon_publishing_adapter.cjs');
@@ -104,19 +104,31 @@ async function runCartoonPipelineDiagnostic() {
     const lipsyncResult = extractMouthCues(audioWavPath, scene.dialogue, ttsResult.duration, ARTIFACTS_DIR);
     console.log(`   👄 Lip-Sync Track: Extracted ${lipsyncResult.cues.length} mouth cues for continuous animation`);
 
-    // D. Generate 2D Vector Frame Reference for this scene
+    // D. Generate Floating Non-Intrusive Glossary Translation Board (if technical term present)
+    let glossPngPath = null;
+    if (scene.glossary_term) {
+      const glossSvgPath = path.join(ARTIFACTS_DIR, `scene_${sceneIndex}_glossary.svg`);
+      glossPngPath = path.join(ARTIFACTS_DIR, `scene_${sceneIndex}_glossary.png`);
+      const glossSvg = generateGlossaryBoardSvg(scene.glossary_term, scene.glossary_explanation || '');
+      fs.writeFileSync(glossSvgPath, glossSvg);
+      rasterizeSvgToPng(glossSvgPath, glossPngPath, 860, 180);
+      console.log(`   💡 Floating Glossary Board: "${scene.glossary_term}" -> "${scene.glossary_explanation || ''}"`);
+    }
+
+    // E. Generate 2D Vector Frame Reference for this scene
     const frameSvgPath = path.join(ARTIFACTS_DIR, `scene_${sceneIndex}_frame.svg`);
     const svgContent = generateCharacterFrameSvg(scene.character_action, scene.emotion, 'B', 1080, 1920, scene.background_style, inputTopic, scene.objects);
     fs.writeFileSync(frameSvgPath, svgContent);
 
-    // E. Render Single Scene MP4 via Blender 2.5D Animated Engine
+    // F. Render Single Scene MP4 via Exact Character Animation Engine
     const sceneMp4Path = path.join(ARTIFACTS_DIR, `scene_${sceneIndex}.mp4`);
     renderSingleSceneVideo(frameSvgPath, audioWavPath, sceneMp4Path, ttsResult.duration, {
       mouthCuesJson: lipsyncResult.jsonPath,
       action: scene.character_action,
       emotion: scene.emotion,
       camera: scene.camera,
-      bgImage: fs.existsSync(bgPngPath) ? bgPngPath : null
+      bgImage: fs.existsSync(bgPngPath) ? bgPngPath : null,
+      glossaryBoard: (glossPngPath && fs.existsSync(glossPngPath)) ? glossPngPath : null
     });
     renderedScenes.push({
       sceneIndex,
