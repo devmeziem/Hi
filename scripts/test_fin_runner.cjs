@@ -837,21 +837,33 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
 
     // 2. SECONDARY: OpenRouter AI (High-Reliability Multi-Provider Gateway)
     if (!scriptData && OPENROUTER_API_KEY) {
-      const openRouterModels = ['google/gemini-2.0-flash-001', 'meta-llama/llama-3.3-70b-instruct', 'deepseek/deepseek-chat', 'mistralai/mistral-small-24b-instruct-2501'];
+      let openRouterModels = ['google/gemini-2.0-flash-001', 'meta-llama/llama-3.3-70b-instruct', 'deepseek/deepseek-chat', 'mistralai/mistral-small-24b-instruct-2501'];
+      let formatOrPayload = null;
+      let cleanOrJson = null;
+      try {
+        const orFinder = require('./openrouter_model_finder.cjs');
+        const verified = await orFinder.fetchAndVerifyOpenRouterModels();
+        if (verified && verified.length > 0) openRouterModels = verified;
+        formatOrPayload = orFinder.formatOpenRouterPayload;
+        cleanOrJson = orFinder.cleanOpenRouterJson;
+      } catch {}
+
       for (const orModel of openRouterModels) {
         if (scriptData) break;
         try {
           logInfo(`[Storyboard Engine] 2. Requesting storyboard from OpenRouter (${orModel})...`);
-          const raw = await new Promise((resolve) => {
-            const postData = JSON.stringify({
+          const userPromptText = `${userPrompt} Topic Title: "${activeTopic}". Return strictly valid JSON.`;
+          const payloadObj = formatOrPayload
+            ? formatOrPayload(orModel, { systemPrompt, userPrompt: userPromptText, jsonMode: true, maxTokens: 2200 })
+            : {
               model: orModel,
-              messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: `${userPrompt} Topic Title: "${activeTopic}". Return strictly valid JSON.` }
-              ],
+              messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPromptText }],
               temperature: 0.7,
               max_tokens: 2200
-            });
+            };
+
+          const raw = await new Promise((resolve) => {
+            const postData = JSON.stringify(payloadObj);
             const req = https.request('https://openrouter.ai/api/v1/chat/completions', {
               method: 'POST',
               headers: {
@@ -881,7 +893,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
           });
 
           if (raw.success && raw.content) {
-            const parsed = cleanLlmJson(raw.content);
+            const parsed = cleanOrJson ? (cleanOrJson(raw.content) || cleanLlmJson(raw.content)) : cleanLlmJson(raw.content);
             if (parsed && validateFinStoryboard(parsed)) {
               if (!isDeepDive && parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
               parsed.modelUsed = `OpenRouter (${orModel})`;
@@ -898,23 +910,35 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
       }
     }
 
-    // 3. TERTIARY: Groq LPU Models (Active Production Models Only - Deprecated Models Removed)
+    // 3. TERTIARY: Groq LPU Models (Active Production Models with Model Needs Adaptor)
     if (!scriptData && GROQ_API_KEY) {
-      const groqModels = [groqModel, 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'deepseek-r1-distill-llama-70b', 'openai/gpt-oss-20b'].filter(Boolean);
+      let groqModels = [groqModel, 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'deepseek-r1-distill-llama-70b'].filter(Boolean);
+      let formatGrPayload = null;
+      let cleanGrJson = null;
+      try {
+        const grFinder = require('./groq_model_finder.cjs');
+        const verified = await grFinder.fetchAndVerifyGroqModels();
+        if (verified && verified.length > 0) groqModels = [...new Set([groqModel, ...verified])].filter(Boolean);
+        formatGrPayload = grFinder.formatGroqPayload;
+        cleanGrJson = grFinder.cleanGroqJson;
+      } catch {}
+
       for (const gModel of groqModels) {
         if (scriptData) break;
         try {
           logInfo(`[Storyboard Engine] 3. Requesting storyboard from Groq LPU (${gModel})...`);
-          const raw = await new Promise((resolve) => {
-            const postData = JSON.stringify({
+          const userPromptText = `${userPrompt} Topic Title: "${activeTopic}". Return strictly valid JSON.`;
+          const payloadObj = formatGrPayload
+            ? formatGrPayload(gModel, { systemPrompt, userPrompt: userPromptText, jsonMode: true, maxTokens: 2200 })
+            : {
               model: gModel,
-              messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: `${userPrompt} Topic Title: "${activeTopic}". Return strictly valid JSON.` }
-              ],
+              messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPromptText }],
               temperature: 0.7,
               max_tokens: 2200
-            });
+            };
+
+          const raw = await new Promise((resolve) => {
+            const postData = JSON.stringify(payloadObj);
             const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
               method: 'POST',
               headers: {
@@ -942,12 +966,12 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
           });
 
           if (raw.success && raw.content) {
-            const parsed = cleanLlmJson(raw.content);
+            const parsed = cleanGrJson ? (cleanGrJson(raw.content) || cleanLlmJson(raw.content)) : cleanLlmJson(raw.content);
             if (parsed && validateFinStoryboard(parsed)) {
               if (!isDeepDive && parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
               parsed.modelUsed = `Groq LPU (${gModel})`;
               scriptData = parsed;
-              logSuccess(`[Storyboard Engine] Groq (${gModel}) generated complete ${scriptData.slides.length}-slide storyboard!`);
+              logSuccess(`[Storyboard Engine] Groq LPU (${gModel}) generated complete ${scriptData.slides.length}-slide storyboard!`);
               break;
             }
           } else {
@@ -1273,7 +1297,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
     console.error(`    • Ensure GitHub Actions workflow runs the "Setup Local Open-Source AI Engine" step with Ollama.`);
     console.error(`${colors.red}${colors.bright}════════════════════════════════════════════════════════════════════════════════\n${colors.reset}`);
 
-    throw new Error(`[AI Generation Fatal] All LLM inference providers failed for topic "${targetTopicLabel}". Preset fallback scripts are strictly disabled. Please configure at least one active AI provider key or local Ollama engine.`);
+    throw new Error(`[AI Generation Fatal] All real LLM inference providers failed for topic "${targetTopicLabel}". Fallback scripts are strictly disabled per user directive. Please configure at least one active AI provider key (GEMINI_API_KEY, GROQ_API_KEY, OPENROUTER_API_KEY, XAI_API_KEY, OPENAI_API_KEY, or DEEPSEEK_API_KEY).`);
   }
 
   // Final Quality Check to prevent any blueprint leakage

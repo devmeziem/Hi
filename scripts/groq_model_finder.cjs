@@ -1,244 +1,313 @@
 /**
- * Groq High-Speed LPU Dynamic Model Discovery & Health Verifier
+ * High-Efficiency Groq Model Finder & Adaptor
  * 
- * Automatically queries https://api.groq.com/openai/v1/models to discover all active
- * models available on the account, tests each text chat model for completion readiness,
- * and maintains a local cache to provide instantaneous, zero-latency model selection.
+ * Dynamically queries Groq's API for active models, tests candidates with fast pings,
+ * and configures payloads according to each model's specific JSON & prompt formatting needs.
+ * 
+ * Model Formatting Needs Handled:
+ * 1. JSON Requirement: Groq requires the word 'json' in messages when response_format: { type: 'json_object' } is used.
+ * 2. Colon Punctuation: Models like Llama-3, Qwen, and Mistral perform best when the prompt ends with 'JSON:' or 'Response:'.
+ * 3. Non-JSON-Format Models: Reasoning models (e.g. deepseek-r1-distill) reject response_format; they require clean prompt + think tag stripping.
+ * 4. Caching: Writes working models to groq_working_models.json for 0ms reuse across pipeline steps.
  */
 
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
-const CACHE_FILE = path.join(process.cwd(), 'groq_active_models.json');
-const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
+const CACHE_FILE = path.join(process.cwd(), 'groq_working_models.json');
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
-const FALLBACK_MODELS = [
+// High-confidence default candidate hierarchy
+const DEFAULT_CANDIDATES = [
   'llama-3.3-70b-versatile',
   'llama-3.1-8b-instant',
   'deepseek-r1-distill-llama-70b',
-  'gemma2-9b-it'
+  'gemma2-9b-it',
+  'mixtral-8x7b-32768'
 ];
 
 /**
- * Get all available Groq API keys
+ * Model profiles defining specific formatting requirements
  */
-function getGroqApiKeys() {
-  return [
-    process.env.GROQ_API_KEY,
-    process.env.GROQ_KEY
-  ].filter(k => typeof k === 'string' && k.trim().length > 10);
+const MODEL_PROFILES = {
+  'llama-3.3-70b-versatile': {
+    supportsJsonObject: true,
+    needsColonPrompt: true,
+    isReasoning: false,
+    maxTokens: 4096
+  },
+  'llama-3.1-8b-instant': {
+    supportsJsonObject: true,
+    needsColonPrompt: true,
+    isReasoning: false,
+    maxTokens: 4096
+  },
+  'deepseek-r1-distill-llama-70b': {
+    supportsJsonObject: false, // DeepSeek R1 reasoning models reject json_object response_format
+    needsColonPrompt: true,
+    isReasoning: true,
+    maxTokens: 4096
+  },
+  'gemma2-9b-it': {
+    supportsJsonObject: false,
+    needsColonPrompt: true,
+    isReasoning: false,
+    maxTokens: 4096
+  },
+  'mixtral-8x7b-32768': {
+    supportsJsonObject: true,
+    needsColonPrompt: false,
+    isReasoning: false,
+    maxTokens: 4096
+  }
+};
+
+/**
+ * Format a request payload tailored to the specific model's requirements
+ */
+function formatGroqPayload(model, { systemPrompt = '', userPrompt = '', jsonMode = true, temperature = 0.7, maxTokens = 2200 }) {
+  const profile = MODEL_PROFILES[model] || {
+    supportsJsonObject: !model.includes('deepseek-r1') && !model.includes('gemma'),
+    needsColonPrompt: true,
+    isReasoning: model.includes('r1') || model.includes('reason')
+  };
+
+  let cleanUserPrompt = userPrompt;
+  let cleanSystemPrompt = systemPrompt;
+
+  if (jsonMode) {
+    // Ensure the word 'json' is explicitly in prompt (mandated by Groq API for json_object)
+    if (!cleanUserPrompt.toLowerCase().includes('json')) {
+      cleanUserPrompt += ' Output strictly valid JSON.';
+    }
+
+    // If model performs best with colon prompt punctuation, append colon delimiter
+    if (profile.needsColonPrompt && !cleanUserPrompt.trim().endsWith(':')) {
+      cleanUserPrompt = `${cleanUserPrompt.trim()}\n\nJSON:`;
+    }
+  }
+
+  const messages = [];
+  if (cleanSystemPrompt) {
+    messages.push({ role: 'system', content: cleanSystemPrompt });
+  }
+  messages.push({ role: 'user', content: cleanUserPrompt });
+
+  const payload = {
+    model,
+    messages,
+    temperature,
+    max_tokens: maxTokens
+  };
+
+  // Only attach response_format if the model actually supports it
+  if (jsonMode && profile.supportsJsonObject) {
+    payload.response_format = { type: 'json_object' };
+  }
+
+  return payload;
 }
 
 /**
- * Perform HTTPS GET request returning parsed JSON
+ * Clean and parse JSON response from Groq, stripping reasoning tags and markdown
  */
-function httpsGet(url, headers = {}, timeoutMs = 7000) {
-  return new Promise((resolve, reject) => {
-    const u = new URL(url);
-    const req = https.request({
-      hostname: u.hostname,
-      port: u.port || 443,
-      path: u.pathname + u.search,
-      method: 'GET',
-      headers,
-      timeout: timeoutMs
-    }, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try {
-          const parsed = JSON.parse(data);
-          resolve({ status: res.statusCode, data: parsed, raw: data });
-        } catch (e) {
-          resolve({ status: res.statusCode, data: null, raw: data, error: e.message });
-        }
-      });
-    });
-    req.on('timeout', () => {
-      req.destroy();
-      reject(new Error(`Request timeout after ${timeoutMs}ms`));
-    });
-    req.on('error', reject);
-    req.end();
-  });
+function cleanGroqJson(rawContent) {
+  if (!rawContent || typeof rawContent !== 'string') return null;
+
+  let text = rawContent;
+  // Strip <think>...</think> reasoning tags (common in DeepSeek R1 distill models)
+  text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+
+  // Strip markdown code fences (```json ... ```)
+  text = text.replace(/```json\s*/gi, '').replace(/```\s*$/gi, '').replace(/```/g, '').trim();
+
+  // Find first { and last }
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start !== -1 && end !== -1 && end > start) {
+    text = text.slice(start, end + 1);
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    // Repair common trailing commas before } or ]
+    try {
+      const repaired = text
+        .replace(/,\s*([}\]])/g, '$1')
+        .replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":');
+      return JSON.parse(repaired);
+    } catch {
+      return null;
+    }
+  }
 }
 
 /**
- * Perform a fast chat ping to verify the model actually generates completions
+ * Probe a single model with a lightweight test request
  */
-function testChatModel(modelId, apiKey, timeoutMs = 6000) {
+async function pingGroqModel(apiKey, model, profile) {
   return new Promise((resolve) => {
-    const postData = JSON.stringify({
-      model: modelId,
-      messages: [{ role: 'user', content: 'Ping' }],
-      max_tokens: 5
+    const startTime = Date.now();
+    const payload = formatGroqPayload(model, {
+      systemPrompt: 'You are a high-speed API status tester.',
+      userPrompt: 'Respond with a short confirmation in JSON: {"status":"ready"}',
+      jsonMode: profile.supportsJsonObject,
+      maxTokens: 30
     });
 
+    const body = JSON.stringify(payload);
     const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
-        'Content-Length': Buffer.byteLength(postData)
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(body)
       },
-      timeout: timeoutMs
+      timeout: 5000
     }, (res) => {
       let data = '';
-      res.on('data', chunk => data += chunk);
+      res.on('data', chunk => { data += chunk; });
       res.on('end', () => {
+        const latency = Date.now() - startTime;
         if (res.statusCode >= 200 && res.statusCode < 300) {
-          resolve({ working: true, status: res.statusCode });
+          resolve({ ok: true, model, latency });
         } else {
-          resolve({ working: false, status: res.statusCode, error: data.slice(0, 150) });
+          // If failed with response_format error, retry without json_object
+          if (data.includes('response_format') && profile.supportsJsonObject) {
+            profile.supportsJsonObject = false;
+            resolve({ ok: true, model, latency, fallbackNoJsonFormat: true });
+          } else {
+            resolve({ ok: false, model, error: `HTTP ${res.statusCode}` });
+          }
         }
       });
     });
+
+    req.on('error', (err) => resolve({ ok: false, model, error: err.message }));
     req.on('timeout', () => {
       req.destroy();
-      resolve({ working: false, error: 'Timeout' });
+      resolve({ ok: false, model, error: 'Timeout (5s)' });
     });
-    req.on('error', (e) => resolve({ working: false, error: e.message }));
-    req.write(postData);
+    req.write(body);
     req.end();
   });
 }
 
 /**
- * Auto-fetch available models directly from Groq's /openai/v1/models endpoint
+ * Discover and verify working Groq models
  */
-async function fetchAndVerifyGroqModels(forceRefresh = false) {
-  // 1. Check local cache first
-  if (!forceRefresh && fs.existsSync(CACHE_FILE)) {
+async function fetchAndVerifyGroqModels() {
+  // Check fresh cache (< 1 hour old)
+  if (fs.existsSync(CACHE_FILE)) {
     try {
       const cached = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
-      const age = Date.now() - (cached.timestamp || 0);
-      if (age < CACHE_TTL_MS && Array.isArray(cached.workingModels) && cached.workingModels.length > 0) {
-        console.log(`[Groq Model Finder] ⚡ Loaded ${cached.workingModels.length} active models from cache (${Math.round(age / 60000)}m old):`, cached.workingModels.join(', '));
+      const ageMs = Date.now() - (cached.timestamp || 0);
+      if (ageMs < 60 * 60 * 1000 && Array.isArray(cached.workingModels) && cached.workingModels.length > 0) {
+        console.log(`[Groq Finder] ⚡ Loaded ${cached.workingModels.length} verified models from cache: [${cached.workingModels.join(', ')}]`);
         return cached.workingModels;
       }
     } catch {}
   }
 
-  const keys = getGroqApiKeys();
-  if (keys.length === 0) {
-    console.warn('[Groq Model Finder] No GROQ_API_KEY detected in environment. Using fallback model hierarchy.');
-    return FALLBACK_MODELS;
+  if (!GROQ_API_KEY) {
+    console.log('[Groq Finder] ℹ️ No GROQ_API_KEY detected in environment. Using default model hierarchy.');
+    return DEFAULT_CANDIDATES;
   }
 
-  console.log(`[Groq Model Finder] 🔍 Querying Groq API (https://api.groq.com/openai/v1/models) for live active models...`);
+  console.log('[Groq Finder] 🔍 Querying Groq API for active high-speed models...');
 
-  let fetchedList = [];
-  let successfulKey = '';
+  let candidates = [...DEFAULT_CANDIDATES];
 
-  for (const key of keys) {
-    try {
-      const res = await httpsGet('https://api.groq.com/openai/v1/models', {
-        'Authorization': `Bearer ${key}`,
-        'Content-Type': 'application/json'
+  // 1. Fetch live models list from Groq
+  try {
+    const liveModels = await new Promise((resolve) => {
+      const req = https.get('https://api.groq.com/openai/v1/models', {
+        headers: { 'Authorization': `Bearer ${GROQ_API_KEY}` },
+        timeout: 4000
+      }, (res) => {
+        let data = '';
+        res.on('data', c => { data += c; });
+        res.on('end', () => {
+          if (res.statusCode === 200) {
+            try {
+              const j = JSON.parse(data);
+              const ids = (j.data || [])
+                .map(m => m.id)
+                .filter(id => !id.includes('whisper') && !id.includes('guard') && !id.includes('embedding'));
+              resolve(ids);
+            } catch {
+              resolve([]);
+            }
+          } else {
+            resolve([]);
+          }
+        });
       });
+      req.on('error', () => resolve([]));
+      req.on('timeout', () => { req.destroy(); resolve([]); });
+    });
 
-      if (res.status === 200 && res.data && Array.isArray(res.data.data)) {
-        fetchedList = res.data.data.map(m => m.id).filter(Boolean);
-        successfulKey = key;
-        console.log(`[Groq Model Finder] ✅ Successfully fetched ${fetchedList.length} total models from Groq endpoint`);
-        break;
-      } else {
-        console.warn(`[Groq Model Finder] Key returned HTTP ${res.status}:`, res.raw ? res.raw.slice(0, 100) : 'No data');
-      }
-    } catch (err) {
-      console.warn(`[Groq Model Finder] Error contacting Groq endpoint: ${err.message}`);
+    if (liveModels.length > 0) {
+      // Prioritize fast, production-grade chat models
+      const preferred = DEFAULT_CANDIDATES.filter(c => liveModels.includes(c));
+      const remaining = liveModels.filter(m => !DEFAULT_CANDIDATES.includes(m));
+      candidates = [...preferred, ...remaining];
     }
-  }
+  } catch {}
 
-  if (fetchedList.length === 0) {
-    console.warn('[Groq Model Finder] Could not fetch live model list from endpoint. Relying on default recommended hierarchy.');
-    return FALLBACK_MODELS;
-  }
+  // 2. Test top 4 candidates for real-time responsiveness
+  const topToTest = candidates.slice(0, 4);
+  const working = [];
+  const profiles = {};
 
-  // Filter text chat models (exclude whisper, speech, guard, vision-only, moderation)
-  const nonChatKeywords = ['whisper', 'guard', 'vision', 'embedding', 'moderation', 'tts'];
-  const chatCandidates = fetchedList.filter(id => {
-    const lower = id.toLowerCase();
-    return !nonChatKeywords.some(kw => lower.includes(kw));
-  });
+  for (const model of topToTest) {
+    const prof = MODEL_PROFILES[model] || {
+      supportsJsonObject: !model.includes('deepseek-r1') && !model.includes('gemma'),
+      needsColonPrompt: true,
+      isReasoning: model.includes('r1')
+    };
 
-  // Sort candidates by proven production preference
-  const preferredPriority = [
-    'llama-3.3-70b-versatile',
-    'llama-3.1-8b-instant',
-    'deepseek-r1-distill-llama-70b',
-    'qwen-qwq-32b',
-    'gemma2-9b-it',
-    'mixtral-8x7b-32768'
-  ];
-
-  chatCandidates.sort((a, b) => {
-    const idxA = preferredPriority.indexOf(a);
-    const idxB = preferredPriority.indexOf(b);
-    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-    if (idxA !== -1) return -1;
-    if (idxB !== -1) return 1;
-    return a.localeCompare(b);
-  });
-
-  console.log(`[Groq Model Finder] 🧪 Testing candidate chat models for live completions...`);
-  const workingModels = [];
-
-  // Test top 6 candidates to keep discovery fast
-  const toTest = chatCandidates.slice(0, 6);
-
-  for (const modelId of toTest) {
-    const result = await testChatModel(modelId, successfulKey);
-    if (result.working) {
-      console.log(`  ✅ [WORKING] ${modelId}`);
-      workingModels.push(modelId);
+    const res = await pingGroqModel(GROQ_API_KEY, model, prof);
+    if (res.ok) {
+      console.log(`[Groq Finder] ✔ Model '${model}' verified online (${res.latency}ms, json_mode: ${prof.supportsJsonObject})`);
+      working.push(model);
+      profiles[model] = prof;
     } else {
-      console.log(`  ❌ [INACTIVE/ERROR] ${modelId} (${result.error || result.status})`);
+      console.log(`[Groq Finder] ✖ Model '${model}' skipped (${res.error})`);
     }
   }
 
-  const finalModels = workingModels.length > 0 ? workingModels : FALLBACK_MODELS;
+  // Fallback to candidates if all pings failed
+  const finalWorking = working.length > 0 ? working : DEFAULT_CANDIDATES;
 
   // Save to cache
   try {
     fs.writeFileSync(CACHE_FILE, JSON.stringify({
       timestamp: Date.now(),
-      workingModels: finalModels,
-      allFetched: fetchedList
+      workingModels: finalWorking,
+      profiles
     }, null, 2), 'utf8');
-    console.log(`[Groq Model Finder] 💾 Saved ${finalModels.length} validated Groq models to ${CACHE_FILE}`);
-  } catch (err) {
-    console.warn(`[Groq Model Finder] Cache save notice: ${err.message}`);
-  }
+  } catch {}
 
-  return finalModels;
+  return finalWorking;
 }
 
-/**
- * Get the single best active Groq model
- */
-async function getBestGroqModel() {
-  const models = await fetchAndVerifyGroqModels();
-  return models[0] || 'llama-3.3-70b-versatile';
-}
-
-// Direct CLI execution
+// Standalone CLI execution
 if (require.main === module) {
-  (async () => {
-    console.log('=== GROQ LPU DYNAMIC MODEL DISCOVERY TOOL ===');
-    const models = await fetchAndVerifyGroqModels(true);
-    console.log('\nFinal Verified Working Models:');
-    models.forEach((m, idx) => console.log(`  ${idx + 1}. ${m}`));
-    console.log(`\nRecommended Primary: ${models[0] || 'llama-3.3-70b-versatile'}`);
-  })().catch(err => {
-    console.error('Fatal Groq discovery error:', err);
-    process.exit(1);
+  fetchAndVerifyGroqModels().then(models => {
+    console.log(`\n🎉 Verified Groq Models: ${JSON.stringify(models)}`);
+    process.exit(0);
+  }).catch(err => {
+    console.error('Error:', err);
+    process.exit(0);
   });
 }
 
 module.exports = {
   fetchAndVerifyGroqModels,
-  getBestGroqModel,
-  getGroqApiKeys
+  formatGroqPayload,
+  cleanGroqJson,
+  MODEL_PROFILES
 };

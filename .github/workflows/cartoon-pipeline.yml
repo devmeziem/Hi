@@ -1,6 +1,8 @@
 name: Automated Cartoon Factory (Workflow 3)
 
 on:
+  push:
+    branches: [ main, master ]
   schedule:
     - cron: '0 8,14,20 * * *' # Automated 3x daily Cartoon / Tech Animated Shorts (08:00, 14:00, 20:00 UTC)
   workflow_dispatch:
@@ -83,37 +85,12 @@ jobs:
           fi
           rm -rf rhubarb.zip rhubarb_bin
 
-      - name: Install Headless Blender 3.3 LTS
-        run: |
-          sudo mkdir -p /opt/blender
-          curl -sL "https://download.blender.org/release/Blender3.3/blender-3.3.1-linux-x64.tar.xz" -o blender.tar.xz
-          sudo tar -xf blender.tar.xz -C /opt/blender --strip-components=1
-          sudo ln -sf /opt/blender/blender /usr/local/bin/blender
-          sudo chmod +x /usr/local/bin/blender
-          rm -f blender.tar.xz
-
       - name: Verify Environment Binaries
         run: |
-          echo "=== VERIFYING COLD PIPELINE BINARIES ==="
+          echo "=== VERIFYING PIPELINE BINARIES ==="
           ffmpeg -version | head -n 1
           rhubarb --version || echo "Rhubarb check finished"
-          blender -v | head -n 1
           python3 -c "import kokoro_onnx; print('Kokoro-ONNX ready')"
-
-      - name: Setup Local Open-Source AI Engine (Ollama Zero-Key Fallback)
-        run: |
-          echo "=== Setting up Ollama for Local AI Inference ==="
-          curl -fsSL https://ollama.com/install.sh | sh
-          ollama serve > /tmp/ollama.log 2>&1 &
-          sleep 5
-          if curl -s -f http://127.0.0.1:11434/api/tags; then
-            echo "Ollama service started. Pulling model..."
-            ollama pull qwen2.5:1.5b || ollama pull qwen2.5:0.5b
-          else
-            echo "::error::Ollama daemon failed to initialize on port 11434. Logs below:"
-            cat /tmp/ollama.log
-            exit 1
-          fi
 
       - name: Pre-Compile Exact Puppet Character Rig Assets
         run: |
@@ -122,16 +99,15 @@ jobs:
           node scripts/build_modern_tech_character.cjs
           ls -la cartoon_character_assets/exact_puppet/
 
-      - name: Auto-Discover and Cache Working AI Models (Grok, Groq, OpenRouter)
+      - name: Generate Ominous & Cinematic Sound Library
+        run: node scripts/generate_ominous_sounds.cjs
+
+      - name: Discover and Cache Working AI Models (Groq & OpenRouter)
         env:
-          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
-          GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
-          GROK_KEY: ${{ secrets.GROK_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
-          echo "=== Discovering Active Grok, Groq & OpenRouter Models ==="
-          node scripts/grok_model_finder.cjs || true
+          echo "=== Discovering Active Groq & OpenRouter Models ==="
           node scripts/groq_model_finder.cjs || true
           node scripts/openrouter_model_finder.cjs || true
 
@@ -158,6 +134,20 @@ jobs:
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
         run: node scripts/test_cartoon_runner.cjs
 
+      - name: Generate Daily Archie 5-Second Tech Fact Reel
+        env:
+          DRY_RUN: ${{ github.event.inputs.dry_run != '' && github.event.inputs.dry_run || 'false' }}
+          YOUTUBE_CLIENT_ID_CH3: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 }}
+          YOUTUBE_CLIENT_SECRET_CH3: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 }}
+          YOUTUBE_REFRESH_TOKEN_CH3: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 }}
+          YOUTUBE_CLIENT_ID_TECH: ${{ secrets.YOUTUBE_CLIENT_ID_TECH }}
+          YOUTUBE_CLIENT_SECRET_TECH: ${{ secrets.YOUTUBE_CLIENT_SECRET_TECH }}
+          YOUTUBE_REFRESH_TOKEN_TECH: ${{ secrets.YOUTUBE_REFRESH_TOKEN_TECH }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+        run: node scripts/generate_archie_tech_fact_reel.cjs
+
       - name: Upload Production Video & Diagnostics Artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -166,6 +156,8 @@ jobs:
           path: |
             rendered_videos/*.mp4
             public/rendered_videos/*.mp4
+            test_artifacts/archie_5s_reels/*.mp4
+            test_artifacts/archie_tech_fact_5s_latest.mp4
             test_artifacts/cartoon_episode_plan.json
             test_artifacts/validation_report.json
             test_artifacts/subtitles.srt

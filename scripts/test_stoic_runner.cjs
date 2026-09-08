@@ -658,27 +658,38 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
 
   // 1. PRIMARY: OpenRouter Gateway (Highest Reliability, Broad Model Fallbacks)
   if (OPENROUTER_API_KEY) {
-    const openRouterModels = [
+    let openRouterModels = [
       'google/gemini-2.0-flash-001',
       'meta-llama/llama-3.3-70b-instruct',
       'deepseek/deepseek-chat',
       'mistralai/mistral-small-24b-instruct-2501'
     ];
+    let formatOrPayload = null;
+    let cleanOrJson = null;
+    try {
+      const orFinder = require('./openrouter_model_finder.cjs');
+      const verified = await orFinder.fetchAndVerifyOpenRouterModels();
+      if (verified && verified.length > 0) openRouterModels = verified;
+      formatOrPayload = orFinder.formatOpenRouterPayload;
+      cleanOrJson = orFinder.cleanOpenRouterJson;
+    } catch {}
+
     for (const model of openRouterModels) {
       try {
         logInfo(`[Storyboard Engine] 1. Requesting storyboard from OpenRouter (${model})...`);
-        const raw = await new Promise((resolve) => {
-          const postData = JSON.stringify({
-            model: model,
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: `${userPrompt} Topic title: "${topic}". Ensure complete sentences on every slide. Return strictly valid JSON.` }
-            ],
+        const userPromptText = `${userPrompt} Topic title: "${topic}". Ensure complete sentences on every slide. Return strictly valid JSON.`;
+        const payloadObj = formatOrPayload
+          ? formatOrPayload(model, { systemPrompt, userPrompt: userPromptText, jsonMode: true, maxTokens: 2200 })
+          : {
+            model,
+            messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPromptText }],
             response_format: { type: 'json_object' },
             temperature: 0.7,
             max_tokens: 2200
-          });
+          };
 
+        const postData = JSON.stringify(payloadObj);
+        const raw = await new Promise((resolve) => {
           const req = https.request('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -712,7 +723,7 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
         });
 
         if (raw.success && raw.content) {
-          const parsed = cleanLlmJson(raw.content);
+          const parsed = cleanOrJson ? (cleanOrJson(raw.content) || cleanLlmJson(raw.content)) : cleanLlmJson(raw.content);
           if (parsed && validateStoicStoryboard(parsed)) {
             if (!isDeepDive && parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
             parsed.modelUsed = `OpenRouter (${model})`;
@@ -733,17 +744,26 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
   if (!scriptData && backupEngines && backupEngines.groqWorkingModel) {
     try {
       logInfo(`[Storyboard Engine] 2. Requesting storyboard from Groq LPU (${backupEngines.groqWorkingModel})...`);
-      const raw = await new Promise((resolve) => {
-        const postData = JSON.stringify({
+      let formatGrPayload = null;
+      let cleanGrJson = null;
+      try {
+        const grFinder = require('./groq_model_finder.cjs');
+        formatGrPayload = grFinder.formatGroqPayload;
+        cleanGrJson = grFinder.cleanGroqJson;
+      } catch {}
+
+      const userPromptText = `${userPrompt} Topic title: "${topic}". Ensure complete sentences on every slide. Return strictly valid JSON.`;
+      const payloadObj = formatGrPayload
+        ? formatGrPayload(backupEngines.groqWorkingModel, { systemPrompt, userPrompt: userPromptText, jsonMode: true, maxTokens: 1800 })
+        : {
           model: backupEngines.groqWorkingModel,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: `${userPrompt} Topic title: "${topic}". Ensure complete sentences on every slide. Return strictly valid JSON.` }
-          ],
+          messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPromptText }],
           temperature: 0.7,
-          max_tokens: 1800,
-          response_format: { type: 'json_object' }
-        });
+          max_tokens: 1800
+        };
+
+      const raw = await new Promise((resolve) => {
+        const postData = JSON.stringify(payloadObj);
 
         const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
@@ -776,7 +796,7 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
       });
 
       if (raw.success && raw.content) {
-        const parsed = cleanLlmJson(raw.content);
+        const parsed = cleanGrJson ? (cleanGrJson(raw.content) || cleanLlmJson(raw.content)) : cleanLlmJson(raw.content);
         if (parsed && validateStoicStoryboard(parsed)) {
           if (parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
           parsed.modelUsed = `Groq LPU (${backupEngines.groqWorkingModel})`;
@@ -1215,7 +1235,7 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
     console.error(`    • Ensure GitHub Actions workflow runs the "Setup Local Open-Source AI Engine" step with Ollama.`);
     console.error(`${colors.red}${colors.bright}════════════════════════════════════════════════════════════════════════════════\n${colors.reset}`);
 
-    throw new Error(`[AI Generation Fatal] All LLM inference providers failed for topic "${targetTopicLabel}". Preset fallback scripts are strictly disabled. Please configure at least one active AI provider key or local Ollama engine.`);
+    throw new Error(`[AI Generation Fatal] All real LLM inference providers failed for topic "${targetTopicLabel}". Fallback scripts are strictly disabled per user directive. Please configure at least one active AI provider key (GEMINI_API_KEY, GROQ_API_KEY, OPENROUTER_API_KEY, XAI_API_KEY, OPENAI_API_KEY, or DEEPSEEK_API_KEY).`);
   }
 
   // Sanitize sentence completeness for all slides (no cutoffs or unfinished sentences)

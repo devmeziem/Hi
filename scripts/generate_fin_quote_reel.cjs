@@ -17,6 +17,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const https = require('https');
+const { getSyncedChannelProfile, formatChannelFollowCta } = require('./youtube_channel_dispatcher.cjs');
 
 const MANIFEST_PATH = path.join(process.cwd(), 'daily_blueprint_manifest.json');
 const LOCAL_QUOTE_CACHE = path.join(process.cwd(), 'fin_quote_history.json');
@@ -404,31 +405,108 @@ async function resolveFinancialPortrait(scholar) {
 }
 
 /**
- * Synthesize Royalty-Free Loopable Mystery Sub-Drone Sound (.wav)
- * Produces deep 45Hz sub-bass + minor-third suspended tone + hypnotic resonance
+ * Sound Engine: Loopable Mystery Audio for Financial Quote Reels
+ * Supports the three requested Pixabay mystery sound archetypes and loads local audio assets:
+ * 1. horror-scene-murder-mystery (pixabay 519625)
+ * 2. instrumental-mystery (pixabay 548639)
+ * 3. mystery-darkness (pixabay 355606)
  */
 function generateFinancialMysterySound(outWavPath, duration = 5.0) {
-  if (fs.existsSync(outWavPath) && fs.statSync(outWavPath).size > 1000) {
-    return outWavPath;
-  }
   const dir = path.dirname(outWavPath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-  // Synthesize rich ambient sound via FFmpeg lavfi
-  const filterGraph = `
-    aevalsrc='
-      0.22*sin(2*PI*48*t) +
-      0.15*sin(2*PI*96*t + sin(2*PI*0.4*t)) +
-      0.08*sin(2*PI*114*t) +
-      0.05*sin(2*PI*192*t + 0.5*sin(2*PI*0.8*t)) +
-      0.03*sin(2*PI*288*t)
-    ':s=44100:d=${duration},
-    lowpass=f=420,
-    afade=t=in:ss=0:d=0.3,
-    afade=t=out:st=${duration - 0.4}:d=0.4
-  `.replace(/\s+/g, ' ');
+  // 1. Check local audio assets directories
+  const soundDirs = [
+    path.join(process.cwd(), 'assets', 'sounds'),
+    path.join(process.cwd(), 'src', 'assets', 'sounds'),
+    path.join(process.cwd(), 'test_artifacts', 'sounds')
+  ];
 
-  execSync(`ffmpeg -y -f lavfi -i "${filterGraph}" -c:a pcm_s16le "${outWavPath}" 2>/dev/null`);
+  const { generateAllOminousSounds } = require('./generate_ominous_sounds.cjs');
+  const presets = [
+    'ominous_dark_suspense',
+    'ominous_eerie_drone',
+    'ominous_tension_pulse',
+    'ominous_abyss_resonance',
+    'horror_scene_murder_mystery',
+    'mystery_darkness',
+    'instrumental_mystery'
+  ];
+  const runSeed = Math.floor(Date.now() / (1000 * 60 * 15)); // change every 15 mins or run
+  const chosenPreset = process.env.SOUND_PRESET || presets[runSeed % presets.length];
+
+  for (const sDir of soundDirs) {
+    if (fs.existsSync(sDir)) {
+      // Check for exact preset file first
+      const specificFile = path.join(sDir, `${chosenPreset}.wav`);
+      const specificMp3 = path.join(sDir, `${chosenPreset}.mp3`);
+      const targetLocal = fs.existsSync(specificFile) ? specificFile : (fs.existsSync(specificMp3) ? specificMp3 : null);
+
+      if (targetLocal) {
+        console.log(`[Sound Engine] Using master audio track: ${path.basename(targetLocal)}`);
+        try {
+          execSync(
+            `ffmpeg -y -stream_loop -1 -i "${targetLocal}" -t ${duration} -af "afade=t=in:ss=0:d=0.2,afade=t=out:st=${(duration - 0.2).toFixed(2)}:d=0.2" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`
+          );
+          if (fs.existsSync(outWavPath) && fs.statSync(outWavPath).size > 5000) {
+            return outWavPath;
+          }
+        } catch (e) {
+          // Fall through to procedural
+        }
+      }
+
+      // Check any available audio in folder
+      const allAudios = fs.readdirSync(sDir).filter(f => f.match(/\.(mp3|wav|ogg|m4a)$/i));
+      if (allAudios.length > 0) {
+        const anyAudio = path.join(sDir, allAudios[0]);
+        console.log(`[Sound Engine] Using available audio track: ${path.basename(anyAudio)}`);
+        try {
+          execSync(
+            `ffmpeg -y -stream_loop -1 -i "${anyAudio}" -t ${duration} -af "afade=t=in:ss=0:d=0.2,afade=t=out:st=${(duration - 0.2).toFixed(2)}:d=0.2" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`
+          );
+          if (fs.existsSync(outWavPath) && fs.statSync(outWavPath).size > 5000) {
+            return outWavPath;
+          }
+        } catch (e) {
+          // Fall through
+        }
+      }
+    }
+  }
+
+  console.log(`[Sound Engine] Synthesizing loopable mystery audio track: "${chosenPreset}" (${duration}s)...`);
+  const d = duration.toFixed(2);
+  const fadeOutStart = (duration - 0.2).toFixed(2);
+  let filterExpr = '';
+
+  if (chosenPreset === 'horror_scene_murder_mystery') {
+    // Archetype 1: Horror Scene Murder Mystery (dissonant tension, 48Hz/96Hz/135Hz drone + tremolo)
+    filterExpr = [
+      `aevalsrc='sin(2*PI*48*t)*0.32 + sin(2*PI*96*t)*0.22 + sin(2*PI*135.76*t)*0.18 + sin(2*PI*192*t)*0.10 + sin(2*PI*1536*t)*(0.025+0.02*sin(2*PI*0.4*t))':s=44100:d=${d}`,
+      `lowpass=f=1200`,
+      `aecho=0.85:0.75:350|700:0.25|0.15`,
+      `afade=t=in:ss=0:d=0.2,afade=t=out:st=${fadeOutStart}:d=0.2`
+    ].join(',');
+  } else if (chosenPreset === 'instrumental_mystery') {
+    // Archetype 2: Instrumental Mystery (C minor 9th suspense: 65.4Hz C2, 98Hz G2, 155.5Hz Eb3, 233Hz Bb3)
+    filterExpr = [
+      `aevalsrc='sin(2*PI*65.4*t)*0.28 + sin(2*PI*98*t)*0.22 + sin(2*PI*155.56*t)*0.18 + sin(2*PI*233.08*t)*0.14 + sin(2*PI*392*t)*(0.04+0.03*sin(2*PI*0.25*t))':s=44100:d=${d}`,
+      `bandpass=f=800:w=600`,
+      `aecho=0.8:0.7:450|900:0.3|0.2`,
+      `afade=t=in:ss=0:d=0.2,afade=t=out:st=${fadeOutStart}:d=0.2`
+    ].join(',');
+  } else {
+    // Archetype 3: Mystery Darkness (abyssal deep 43Hz F1 bass, cold room tone)
+    filterExpr = [
+      `aevalsrc='sin(2*PI*43.65*t)*0.36 + sin(2*PI*87.3*t)*0.24 + sin(2*PI*130.81*t)*0.16 + sin(2*PI*261.63*t)*0.08':s=44100:d=${d}`,
+      `lowpass=f=450`,
+      `aecho=0.9:0.8:500|1000:0.35|0.2`,
+      `afade=t=in:ss=0:d=0.2,afade=t=out:st=${fadeOutStart}:d=0.2`
+    ].join(',');
+  }
+
+  execSync(`ffmpeg -y -f lavfi -i "${filterExpr}" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
   return outWavPath;
 }
 
@@ -575,7 +653,8 @@ async function generateFin5sVideo() {
 
   // 6. Update Blueprint Manifest
   const viralTitle = `The #1 Rule of Wealth 🧠 | ${chosen.author} #Shorts`;
-  const viralDescription = `"${chosen.quote}"\n\n— ${chosen.author}, ${chosen.credentials}\nReference: ${chosen.reference}\n\nSubscribe to @bones_ceo for daily wealth principles, creator blueprints, and financial freedom.\n\n#Shorts #Finance #Wealth #Money #Investing #WarrenBuffett #Business #FinancialFreedom #Stocks #Mindset #BonesCEO #fyp`;
+  const initialFollowCta = formatChannelFollowCta('finance_saas', process.env.YOUTUBE_HANDLE_CH1 || process.env.YOUTUBE_HANDLE_FIN || process.env.YOUTUBE_HANDLE || '');
+  const viralDescription = `"${chosen.quote}"\n\n— ${chosen.author}, ${chosen.credentials}\nReference: ${chosen.reference}\n\n${initialFollowCta}\n\n#Shorts #Finance #Wealth #Money #Investing #WarrenBuffett #Business #FinancialFreedom #Stocks #Mindset #fyp`;
 
   try {
     let manifestData = { videos: [] };
@@ -669,10 +748,21 @@ async function uploadQuoteReelToYouTube(videoFilePath, title, description, tags,
   const accessToken = tokenRes.access_token;
   const fileSize = fs.statSync(videoFilePath).size;
 
+  let activeDescription = description;
+  try {
+    const synced = await getSyncedChannelProfile(accessToken);
+    if (synced && synced.handle) {
+      console.log(`[Finance Upload] 🔄 Synced channel profile: "${synced.title}" (${synced.handle})`);
+      const dynamicFollow = formatChannelFollowCta('finance_saas', synced.handle, synced.title);
+      // Replace generic placeholder in description with synced handle CTA
+      activeDescription = description.replace(/📈 Follow [^\n]+/, dynamicFollow);
+    }
+  } catch (e) {}
+
   const metadata = JSON.stringify({
     snippet: {
       title: title.slice(0, 100),
-      description: description,
+      description: activeDescription,
       tags: tags.slice(0, 15),
       categoryId: '27' // Education
     },

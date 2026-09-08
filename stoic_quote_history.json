@@ -49,5 +49,19 @@
     "credentials": "Historian, Sociologist & Philosopher • Author of the Muqaddimah",
     "theme": "discipline",
     "usedAt": "2026-09-07T19:45:58.973Z"
+  },
+  {
+    "quote": "He who has a why to live can bear almost any how.",
+    "author": "Prof. Friedrich Nietzsche",
+    "credentials": "Chair of Classical Philology • University of Basel",
+    "theme": "fortitude",
+    "usedAt": "2026-09-08T08:00:29.130Z"
+  },
+  {
+    "quote": "He will win who knows when to fight and when not to fight.",
+    "author": "Sun Tzu",
+    "credentials": "General, Strategist & Philosopher • Author of The Art of War",
+    "theme": "strategy",
+    "usedAt": "2026-09-08T08:13:00.052Z"
   }
 ]

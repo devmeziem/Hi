@@ -13,41 +13,117 @@ const { formatViralShortsTitle } = require('./fin_diversity_engine.cjs');
 const DEFAULT_CLIENT_ID = process.env.YOUTUBE_CLIENT_ID || '';
 const DEFAULT_CLIENT_SECRET = process.env.YOUTUBE_CLIENT_SECRET || '';
 
+// Dynamic Channel Resolver: Automatically syncs with the authenticated YouTube account
 const CHANNEL_CONFIG = {
   finance_saas: {
-    handle: '@bones_ceo',
+    key: 'finance_saas',
+    handle: process.env.YOUTUBE_HANDLE_CH1 || process.env.YOUTUBE_HANDLE_FIN || process.env.YOUTUBE_HANDLE || '',
     name: 'Fin Blueprint',
     isPrimary: true,
     clientId: process.env.YOUTUBE_CLIENT_ID_CH1 || DEFAULT_CLIENT_ID,
     clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH1 || DEFAULT_CLIENT_SECRET,
     refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH1 || process.env.YOUTUBE_REFRESH_TOKEN || '',
-    affiliateCta: '📱 Start your phone-based media hustle: https://selar.co/m/bones-ceo (Creator Playbook)',
-    pinnedComment: '📌 Which phone hustle are you trying this week? Drop your thoughts below and subscribe to @bones_ceo for daily practical creator blueprints!',
+    affiliateUrl: process.env.CREATOR_PLAYBOOK_URL || 'https://selar.co/m/bones-ceo',
     tags: ['#Shorts', '#SideHustle', '#CreatorEconomy', '#MakeMoneyOnline', '#PhoneHustle', '#viral', '#trending', '#fyp']
   },
   motivation_stoicism: {
-    handle: '@thestoicarchitect-n4b',
+    key: 'motivation_stoicism',
+    handle: process.env.YOUTUBE_HANDLE_CH2 || process.env.YOUTUBE_HANDLE_STOIC || '',
     name: 'The Stoic Architect',
     isPrimary: false,
     clientId: process.env.YOUTUBE_CLIENT_ID_CH2 || process.env.YOUTUBE_CLIENT_ID_STOIC || DEFAULT_CLIENT_ID,
     clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH2 || process.env.YOUTUBE_CLIENT_SECRET_STOIC || DEFAULT_CLIENT_SECRET,
     refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH2 || process.env.YOUTUBE_REFRESH_TOKEN_STOIC || '',
-    affiliateCta: '🏛️ Follow @TheStoicArchitect for daily Stoic wisdom and mental strength.',
-    pinnedComment: '📌 "No person is free who is not master of himself." Which of these Stoic rules resonates most with you today? Subscribe to @TheStoicArchitect for daily fortitude.',
     tags: ['#Shorts', '#viral', '#trending', '#Stoicism', '#MarcusAurelius', '#Discipline', '#Motivation', '#Mindset', '#Wisdom', '#DailyStoic', '#fyp']
   },
   cartoon_factory: {
-    handle: '@bonesceo',
-    name: 'Godswill Isaac (Tech & AI Animation)',
+    key: 'cartoon_factory',
+    handle: process.env.YOUTUBE_HANDLE_CH3 || process.env.YOUTUBE_HANDLE_TECH || '',
+    name: 'Tech & AI Animation',
     isPrimary: false,
     clientId: process.env.YOUTUBE_CLIENT_ID_CH3 || process.env.YOUTUBE_CLIENT_ID_TECH || DEFAULT_CLIENT_ID,
     clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH3 || process.env.YOUTUBE_CLIENT_SECRET_TECH || DEFAULT_CLIENT_SECRET,
     refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH3 || process.env.YOUTUBE_REFRESH_TOKEN_TECH || '',
-    affiliateCta: '🎬 Subscribe to @bonesceo for daily fast-paced Tech, AI, and Science visual animated explainers!',
-    pinnedComment: '📌 What curious tech or science mystery should Archie animate next? Drop your ideas below and subscribe!',
     tags: ['#Shorts', '#viral', '#trending', '#Tech', '#AI', '#Animation', '#Cartoon', '#Science', '#Explained', '#Blender', '#fyp']
   }
 };
+
+/**
+ * Format dynamic Follow / Subscribe CTA using real synced username (never preset or hardcoded)
+ */
+function formatChannelFollowCta(channelKey, syncedHandle, syncedTitle) {
+  const handle = syncedHandle || (syncedTitle ? `@${syncedTitle.replace(/\s+/g, '')}` : '');
+  const targetLabel = handle ? handle : 'this channel';
+
+  if (channelKey === 'motivation_stoicism' || channelKey === 'ch2' || channelKey === 'stoic') {
+    return `🏛️ Follow ${targetLabel} for daily Stoic wisdom, mental fortitude, and timeless philosophy.`;
+  } else if (channelKey === 'cartoon_factory' || channelKey === 'ch3' || channelKey === 'tech') {
+    return `🎬 Subscribe to ${targetLabel} for daily animated Tech, AI, and Science visual explainers!`;
+  } else {
+    const affiliate = process.env.CREATOR_PLAYBOOK_URL || 'https://selar.co/m/bones-ceo';
+    return `📱 Start your phone-based media hustle: ${affiliate} (Creator Playbook)\n📈 Follow ${targetLabel} for daily creator blueprints and financial principles.`;
+  }
+}
+
+/**
+ * Format dynamic Pinned Comment using real synced username (never preset or hardcoded)
+ */
+function formatChannelPinnedComment(channelKey, syncedHandle, syncedTitle) {
+  const handle = syncedHandle || (syncedTitle ? `@${syncedTitle.replace(/\s+/g, '')}` : '');
+  const targetLabel = handle ? handle : 'the channel';
+
+  if (channelKey === 'motivation_stoicism' || channelKey === 'ch2' || channelKey === 'stoic') {
+    return `📌 "No person is free who is not master of himself." Which Stoic rule resonates most with you today? Subscribe to ${targetLabel} for daily fortitude.`;
+  } else if (channelKey === 'cartoon_factory' || channelKey === 'ch3' || channelKey === 'tech') {
+    return `📌 What curious tech or science mystery should Archie animate next? Drop your ideas below and subscribe to ${targetLabel}!`;
+  } else {
+    return `📌 Which phone hustle or digital product model are you building this week? Drop your thoughts below and subscribe to ${targetLabel}!`;
+  }
+}
+
+/**
+ * Live Query to YouTube Data API v3 to fetch the authenticated channel's true synced handle & title
+ */
+async function getSyncedChannelProfile(accessToken) {
+  if (!accessToken) return null;
+
+  return new Promise((resolve) => {
+    const req = https.request('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json'
+      },
+      timeout: 10000
+    }, (res) => {
+      let data = '';
+      res.on('data', chunk => { data += chunk; });
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          const channelItem = json.items && json.items[0];
+          if (channelItem && channelItem.snippet) {
+            let handle = channelItem.snippet.customUrl || '';
+            if (handle && !handle.startsWith('@')) handle = '@' + handle;
+            const title = channelItem.snippet.title || '';
+            resolve({
+              title,
+              handle: handle || (title ? `@${title.replace(/\s+/g, '')}` : ''),
+              channelId: channelItem.id
+            });
+          } else {
+            resolve(null);
+          }
+        } catch (e) {
+          resolve(null);
+        }
+      });
+    });
+
+    req.on('error', () => resolve(null));
+    req.end();
+  });
+}
 
 // Aliases for multi-channel routing
 CHANNEL_CONFIG.tech = CHANNEL_CONFIG.cartoon_factory;
@@ -191,12 +267,16 @@ async function uploadToYouTube(accessToken, videoFilePath, title, description, t
         uploadReq.on('error', () => resolve(null));
         fileStream.pipe(uploadReq);
       } else {
-        // No local file stream
-        resolve('simulated_yt_' + Date.now());
+        // No local file stream - real video file is strictly required
+        console.error('[YouTube Uploader] Error: Video file stream is missing or invalid. Aborting upload.');
+        resolve(null);
       }
     });
 
-    req.on('error', () => resolve(null));
+    req.on('error', (err) => {
+      console.error('[YouTube Uploader] Metadata request error:', err.message);
+      resolve(null);
+    });
     req.write(metadata);
     req.end();
   });
@@ -206,7 +286,7 @@ async function uploadToYouTube(accessToken, videoFilePath, title, description, t
  * Post Pinned Affiliate Comment on YouTube Video
  */
 async function postPinnedComment(accessToken, videoId, commentText) {
-  if (!videoId || videoId.startsWith('simulated')) return;
+  if (!videoId) return;
 
   return new Promise((resolve) => {
     const postData = JSON.stringify({
@@ -280,6 +360,9 @@ async function dispatchScheduledVideos() {
     console.log(`  -> Video Asset: ${job.localVideoPath || job.renderedVideoUrl || job.generatedImageUrl}`);
     console.log(`  -> Affiliate Funnel: ${config.affiliateCta}`);
 
+    let dynamicCta = formatChannelFollowCta(channelKey, config.handle, config.name);
+    let dynamicComment = formatChannelPinnedComment(channelKey, config.handle, config.name);
+
     const refreshToken = config.refreshToken;
     let liveUploaded = false;
 
@@ -289,14 +372,25 @@ async function dispatchScheduledVideos() {
 
       if (accessToken) {
         console.log(`  -> [SUCCESS] Google Access Token granted!`);
+
+        // Query real authenticated channel profile (customUrl / handle)
+        const synced = await getSyncedChannelProfile(accessToken);
+        if (synced && synced.handle) {
+          config.handle = synced.handle;
+          if (synced.title) config.name = synced.title;
+          console.log(`  -> [YouTube Channel Synced]: Profile detected as "${config.name}" (${config.handle})`);
+          dynamicCta = formatChannelFollowCta(channelKey, config.handle, config.name);
+          dynamicComment = formatChannelPinnedComment(channelKey, config.handle, config.name);
+        }
+
         console.log(`  -> Initiating YouTube Data API v3 Resumable Upload (Shorts 9:16)...`);
         
-        const fullDescription = `${job.scriptText || job.title}\n\n${config.affiliateCta}\n\n${config.tags.join(' ')}`;
+        const fullDescription = `${job.scriptText || job.title}\n\n${dynamicCta}\n\n${config.tags.join(' ')}`;
         const videoId = await uploadToYouTube(accessToken, job.localVideoPath, job.title, fullDescription, config.tags);
 
         if (videoId) {
           console.log(`  -> [LIVE ON YOUTUBE]: Published to ${config.handle}/shorts! Video ID: ${videoId}`);
-          await postPinnedComment(accessToken, videoId, config.pinnedComment);
+          await postPinnedComment(accessToken, videoId, dynamicComment);
           console.log(`  -> [PINNED COMMENT]: Attached affiliate CTA to video.`);
           
           job.stage = 'PUBLISHED';
@@ -350,28 +444,45 @@ async function uploadYouTubeShort({ videoPath, title, description, tags, channel
     };
   }
 
-  const cleanDescription = `${description || title}\n\n${config.affiliateCta}\n\n${config.tags.join(' ')}`;
+  // Live query real authenticated YouTube channel handle
+  let syncedHandle = config.handle;
+  let syncedTitle = config.name;
+  const synced = await getSyncedChannelProfile(accessToken);
+  if (synced && synced.handle) {
+    syncedHandle = synced.handle;
+    syncedTitle = synced.title || config.name;
+    config.handle = syncedHandle;
+    config.name = syncedTitle;
+    console.log(`[YouTube Dispatcher] 🔄 Authenticated as real synced channel: "${syncedTitle}" (${syncedHandle})`);
+  }
+
+  const dynamicCta = formatChannelFollowCta(channelId, syncedHandle, syncedTitle);
+  const dynamicComment = formatChannelPinnedComment(channelId, syncedHandle, syncedTitle);
+
+  const cleanDescription = `${description || title}\n\n${dynamicCta}\n\n${(tags || config.tags).join(' ')}`;
   const videoId = await uploadToYouTube(accessToken, videoPath, title, cleanDescription, tags || config.tags, channelId);
 
-  if (videoId && !videoId.startsWith('simulated')) {
-    console.log(`[YouTube Dispatcher] Live published to ${config.handle}! Video ID: ${videoId}`);
-    await postPinnedComment(accessToken, videoId, config.pinnedComment);
+  if (videoId) {
+    console.log(`[YouTube Dispatcher] Live published to ${syncedHandle || config.name}! Video ID: ${videoId}`);
+    await postPinnedComment(accessToken, videoId, dynamicComment);
     return {
       success: true,
       status: 'PUBLISHED',
-      channel: config.name,
-      handle: config.handle,
+      channel: syncedTitle,
+      handle: syncedHandle,
       id: videoId,
       url: `https://youtube.com/shorts/${videoId}`
     };
   }
 
+  console.error(`[YouTube Dispatcher] Live upload failed to ${syncedTitle} (${syncedHandle}). Real publishing requires valid YouTube OAuth credentials.`);
   return {
-    success: true,
-    status: 'VAULT_PRESERVED',
-    channel: config.name,
-    handle: config.handle,
-    id: videoId || `vault_${Date.now()}`
+    success: false,
+    status: 'UPLOAD_FAILED',
+    channel: syncedTitle,
+    handle: syncedHandle,
+    id: null,
+    error: 'YouTube API upload failed or credentials invalid.'
   };
 }
 
@@ -385,6 +496,9 @@ if (require.main === module) {
 module.exports = {
   CHANNEL_CONFIG,
   getAccessToken,
+  getSyncedChannelProfile,
+  formatChannelFollowCta,
+  formatChannelPinnedComment,
   uploadToYouTube,
   uploadYouTubeShort,
   postPinnedComment,

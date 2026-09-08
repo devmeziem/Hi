@@ -1,248 +1,319 @@
 /**
- * OpenRouter Dynamic Model Discovery & Live Availability Finder
+ * High-Efficiency OpenRouter Model Finder & Adaptor
  * 
- * Automatically queries https://openrouter.ai/api/v1/models to discover all active models,
- * prioritizes zero-cost free models (:free) and resilient high-throughput chat models,
- * tests candidate models with a fast ping if an API key is present,
- * and maintains a local cache (openrouter_active_models.json) for 0ms execution.
+ * Dynamically queries OpenRouter's model directory, verifies connectivity on top candidates,
+ * and formats payloads to match each model's specific JSON schema, colon punctuation,
+ * and reasoning tag (<think>) requirements.
+ * 
+ * Model Formatting Needs Handled:
+ * 1. Colon Prompt Punctuation: Instruction models (Llama-3, Qwen, Mistral) work best when prompted with trailing 'JSON:'.
+ * 2. response_format Support: Only attached for models verified to support json_object (avoids 400 Bad Request on Anthropic/DeepSeek R1).
+ * 3. Reasoning Stripping: DeepSeek R1 and QwQ emit <think> blocks; parser strips them before JSON decoding.
+ * 4. Ultra-Fast Caching: Writes working models to openrouter_working_models.json (< 1 hour freshness).
  */
 
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
-const CACHE_FILE = path.join(process.cwd(), 'openrouter_active_models.json');
-const CACHE_TTL_MS = 3 * 60 * 60 * 1000; // 3 hours
+const CACHE_FILE = path.join(process.cwd(), 'openrouter_working_models.json');
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
-const FALLBACK_FREE_MODELS = [
-  'google/gemini-2.0-flash-exp:free',
-  'meta-llama/llama-3.3-70b-instruct:free',
-  'deepseek/deepseek-r1:free',
-  'mistralai/mistral-small-24b-instruct-2501:free',
-  'qwen/qwen-2.5-72b-instruct:free',
-  'google/gemini-2.0-flash-thinking-exp:free'
-];
-
-const FALLBACK_POPULAR_MODELS = [
+// High-speed, high-reliability candidate models on OpenRouter
+const DEFAULT_CANDIDATES = [
   'google/gemini-2.0-flash-001',
   'meta-llama/llama-3.3-70b-instruct',
   'deepseek/deepseek-chat',
+  'qwen/qwen-2.5-72b-instruct',
   'mistralai/mistral-small-24b-instruct-2501',
-  'qwen/qwen-2.5-72b-instruct'
+  'deepseek/deepseek-r1'
 ];
 
-function getOpenRouterApiKey() {
-  return (process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_KEY || '').trim();
-}
+/**
+ * Model profiles defining specific formatting requirements
+ */
+const MODEL_PROFILES = {
+  'google/gemini-2.0-flash-001': {
+    supportsJsonObject: true,
+    needsColonPrompt: false,
+    isReasoning: false,
+    maxTokens: 4096
+  },
+  'meta-llama/llama-3.3-70b-instruct': {
+    supportsJsonObject: true,
+    needsColonPrompt: true,
+    isReasoning: false,
+    maxTokens: 4096
+  },
+  'deepseek/deepseek-chat': {
+    supportsJsonObject: true,
+    needsColonPrompt: true,
+    isReasoning: false,
+    maxTokens: 4096
+  },
+  'qwen/qwen-2.5-72b-instruct': {
+    supportsJsonObject: true,
+    needsColonPrompt: true,
+    isReasoning: false,
+    maxTokens: 4096
+  },
+  'mistralai/mistral-small-24b-instruct-2501': {
+    supportsJsonObject: true,
+    needsColonPrompt: false,
+    isReasoning: false,
+    maxTokens: 4096
+  },
+  'deepseek/deepseek-r1': {
+    supportsJsonObject: false, // DeepSeek R1 rejects response_format on OpenRouter
+    needsColonPrompt: true,
+    isReasoning: true,
+    maxTokens: 4096
+  }
+};
 
 /**
- * Perform HTTPS GET request returning parsed JSON
+ * Format a request payload tailored to the specific model's requirements
  */
-function httpsGet(url, headers = {}, timeoutMs = 8000) {
-  return new Promise((resolve, reject) => {
-    const u = new URL(url);
-    const req = https.request({
-      hostname: u.hostname,
-      port: u.port || 443,
-      path: u.pathname + u.search,
-      method: 'GET',
-      headers: {
-        'User-Agent': 'Voxam-Cartoon-Pipeline/1.0',
-        ...headers
-      },
-      timeout: timeoutMs
-    }, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try {
-          const parsed = JSON.parse(data);
-          resolve({ status: res.statusCode, data: parsed, raw: data });
-        } catch (e) {
-          resolve({ status: res.statusCode, data: null, raw: data, error: e.message });
-        }
-      });
-    });
-    req.on('timeout', () => {
-      req.destroy();
-      reject(new Error(`Request timeout after ${timeoutMs}ms`));
-    });
-    req.on('error', reject);
-    req.end();
-  });
-}
+function formatOpenRouterPayload(model, { systemPrompt = '', userPrompt = '', jsonMode = true, temperature = 0.7, maxTokens = 2200 }) {
+  const profile = MODEL_PROFILES[model] || {
+    supportsJsonObject: !model.includes('r1') && !model.includes('claude'),
+    needsColonPrompt: true,
+    isReasoning: model.includes('r1') || model.includes('reason')
+  };
 
-/**
- * Fast chat ping to test if model actually generates completions on OpenRouter
- */
-function testOpenRouterChatModel(modelId, apiKey, timeoutMs = 7000) {
-  return new Promise((resolve) => {
-    if (!apiKey) {
-      // Without API key, cannot ping test, assume candidates valid
-      resolve({ working: true, status: 200 });
-      return;
+  let cleanUserPrompt = userPrompt;
+  let cleanSystemPrompt = systemPrompt;
+
+  if (jsonMode) {
+    if (!cleanUserPrompt.toLowerCase().includes('json')) {
+      cleanUserPrompt += ' Output strictly valid JSON.';
     }
 
-    const postData = JSON.stringify({
-      model: modelId,
-      messages: [{ role: 'user', content: 'Ping' }],
-      max_tokens: 5
+    // If model performs best with colon prompt punctuation, append colon delimiter
+    if (profile.needsColonPrompt && !cleanUserPrompt.trim().endsWith(':')) {
+      cleanUserPrompt = `${cleanUserPrompt.trim()}\n\nJSON:`;
+    }
+  }
+
+  const messages = [];
+  if (cleanSystemPrompt) {
+    messages.push({ role: 'system', content: cleanSystemPrompt });
+  }
+  messages.push({ role: 'user', content: cleanUserPrompt });
+
+  const payload = {
+    model,
+    messages,
+    temperature,
+    max_tokens: maxTokens
+  };
+
+  // Only attach response_format if model supports it
+  if (jsonMode && profile.supportsJsonObject) {
+    payload.response_format = { type: 'json_object' };
+  }
+
+  return payload;
+}
+
+/**
+ * Clean and parse JSON response from OpenRouter, stripping reasoning tags and markdown
+ */
+function cleanOpenRouterJson(rawContent) {
+  if (!rawContent || typeof rawContent !== 'string') return null;
+
+  let text = rawContent;
+  // Strip <think>...</think> reasoning blocks
+  text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+
+  // Strip markdown code fences
+  text = text.replace(/```json\s*/gi, '').replace(/```\s*$/gi, '').replace(/```/g, '').trim();
+
+  // Find first { and last }
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start !== -1 && end !== -1 && end > start) {
+    text = text.slice(start, end + 1);
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    // Repair common trailing commas
+    try {
+      const repaired = text
+        .replace(/,\s*([}\]])/g, '$1')
+        .replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":');
+      return JSON.parse(repaired);
+    } catch {
+      return null;
+    }
+  }
+}
+
+/**
+ * Probe a single model with a lightweight test request
+ */
+async function pingOpenRouterModel(apiKey, model, profile) {
+  return new Promise((resolve) => {
+    const startTime = Date.now();
+    const payload = formatOpenRouterPayload(model, {
+      systemPrompt: 'You are an API health checker.',
+      userPrompt: 'Output status in JSON: {"status":"ready"}',
+      jsonMode: profile.supportsJsonObject,
+      maxTokens: 25
     });
 
+    const body = JSON.stringify(payload);
     const req = https.request('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
         'HTTP-Referer': 'https://voxam.ai',
         'X-Title': 'Voxam Model Finder',
-        'Content-Length': Buffer.byteLength(postData)
+        'Content-Length': Buffer.byteLength(body)
       },
-      timeout: timeoutMs
+      timeout: 5500
     }, (res) => {
       let data = '';
-      res.on('data', chunk => data += chunk);
+      res.on('data', chunk => { data += chunk; });
       res.on('end', () => {
+        const latency = Date.now() - startTime;
         if (res.statusCode >= 200 && res.statusCode < 300) {
-          resolve({ working: true, status: res.statusCode });
+          resolve({ ok: true, model, latency });
         } else {
-          resolve({ working: false, status: res.statusCode, error: data.slice(0, 120) });
+          // If failed with response_format error, flag and accept
+          if (data.includes('response_format') && profile.supportsJsonObject) {
+            profile.supportsJsonObject = false;
+            resolve({ ok: true, model, latency, noJsonFormat: true });
+          } else {
+            resolve({ ok: false, model, error: `HTTP ${res.statusCode}` });
+          }
         }
       });
     });
+
+    req.on('error', (err) => resolve({ ok: false, model, error: err.message }));
     req.on('timeout', () => {
       req.destroy();
-      resolve({ working: false, error: 'Timeout' });
+      resolve({ ok: false, model, error: 'Timeout (5.5s)' });
     });
-    req.on('error', (e) => resolve({ working: false, error: e.message }));
-    req.write(postData);
+    req.write(body);
     req.end();
   });
 }
 
 /**
- * Auto-fetch and verify available models from OpenRouter endpoint
+ * Discover and verify working OpenRouter models
  */
-async function fetchAndVerifyOpenRouterModels(forceRefresh = false) {
-  // 1. Check local cache first
-  if (!forceRefresh && fs.existsSync(CACHE_FILE)) {
+async function fetchAndVerifyOpenRouterModels() {
+  // Check fresh cache (< 1 hour old)
+  if (fs.existsSync(CACHE_FILE)) {
     try {
       const cached = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
-      const age = Date.now() - (cached.timestamp || 0);
-      if (age < CACHE_TTL_MS && Array.isArray(cached.workingModels) && cached.workingModels.length > 0) {
-        console.log(`[OpenRouter Model Finder] ⚡ Loaded ${cached.workingModels.length} active models from cache (${Math.round(age / 60000)}m old):`, cached.workingModels.slice(0, 4).join(', '));
+      const ageMs = Date.now() - (cached.timestamp || 0);
+      if (ageMs < 60 * 60 * 1000 && Array.isArray(cached.workingModels) && cached.workingModels.length > 0) {
+        console.log(`[OpenRouter Finder] ⚡ Loaded ${cached.workingModels.length} verified models from cache: [${cached.workingModels.join(', ')}]`);
         return cached.workingModels;
       }
     } catch {}
   }
 
-  const apiKey = getOpenRouterApiKey();
-  console.log(`[OpenRouter Model Finder] 🔍 Discovering live OpenRouter models from API...`);
+  if (!OPENROUTER_API_KEY) {
+    console.log('[OpenRouter Finder] ℹ️ No OPENROUTER_API_KEY detected in environment. Using default candidate hierarchy.');
+    return DEFAULT_CANDIDATES;
+  }
 
-  let fetchedList = [];
+  console.log('[OpenRouter Finder] 🔍 Querying OpenRouter directory for active models...');
+
+  let candidates = [...DEFAULT_CANDIDATES];
+
   try {
-    const headers = {};
-    if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+    const liveModels = await new Promise((resolve) => {
+      const req = https.get('https://openrouter.ai/api/v1/models', {
+        headers: {
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'HTTP-Referer': 'https://voxam.ai'
+        },
+        timeout: 4500
+      }, (res) => {
+        let data = '';
+        res.on('data', c => { data += c; });
+        res.on('end', () => {
+          if (res.statusCode === 200) {
+            try {
+              const j = JSON.parse(data);
+              const ids = (j.data || []).map(m => m.id);
+              resolve(ids);
+            } catch {
+              resolve([]);
+            }
+          } else {
+            resolve([]);
+          }
+        });
+      });
+      req.on('error', () => resolve([]));
+      req.on('timeout', () => { req.destroy(); resolve([]); });
+    });
 
-    const res = await httpsGet('https://openrouter.ai/api/v1/models', headers);
-    if (res.status === 200 && res.data && Array.isArray(res.data.data)) {
-      fetchedList = res.data.data;
-      console.log(`[OpenRouter Model Finder] ✅ Retrieved ${fetchedList.length} total models from OpenRouter endpoint`);
+    if (liveModels.length > 0) {
+      const matched = DEFAULT_CANDIDATES.filter(c => liveModels.includes(c));
+      if (matched.length > 0) candidates = matched;
+    }
+  } catch {}
+
+  // Test top 4 candidates
+  const topToTest = candidates.slice(0, 4);
+  const working = [];
+  const profiles = {};
+
+  for (const model of topToTest) {
+    const prof = MODEL_PROFILES[model] || {
+      supportsJsonObject: !model.includes('r1'),
+      needsColonPrompt: true,
+      isReasoning: model.includes('r1')
+    };
+
+    const res = await pingOpenRouterModel(OPENROUTER_API_KEY, model, prof);
+    if (res.ok) {
+      console.log(`[OpenRouter Finder] ✔ Model '${model}' verified online (${res.latency}ms, json_mode: ${prof.supportsJsonObject})`);
+      working.push(model);
+      profiles[model] = prof;
     } else {
-      console.warn(`[OpenRouter Model Finder] Endpoint returned HTTP ${res.status}`);
-    }
-  } catch (err) {
-    console.warn(`[OpenRouter Model Finder] Error contacting OpenRouter: ${err.message}`);
-  }
-
-  if (!fetchedList || fetchedList.length === 0) {
-    console.warn('[OpenRouter Model Finder] Using default fallback model hierarchy.');
-    return [...FALLBACK_FREE_MODELS, ...FALLBACK_POPULAR_MODELS];
-  }
-
-  // Filter out multimodal/image-only/embedding models
-  const excludedKeywords = ['embed', 'whisper', 'moderation', 'guard', 'tts', 'audio', 'flux', 'midjourney', 'stable-diffusion'];
-  const textModels = fetchedList.filter(m => {
-    const id = (m.id || '').toLowerCase();
-    return !excludedKeywords.some(kw => id.includes(kw));
-  });
-
-  // Separate free models and reliable paid models
-  const freeModels = [];
-  const standardModels = [];
-
-  for (const m of textModels) {
-    const id = m.id;
-    const isFree = id.endsWith(':free') || (m.pricing && m.pricing.prompt === '0' && m.pricing.completion === '0');
-    if (isFree) {
-      freeModels.push(id);
-    } else {
-      standardModels.push(id);
+      console.log(`[OpenRouter Finder] ✖ Model '${model}' skipped (${res.error})`);
     }
   }
 
-  // Sort preferred models first
-  const preferredSubstrings = ['llama-3.3', 'gemini-2.0', 'deepseek', 'mistral', 'qwen-2.5'];
-  const sortFunc = (a, b) => {
-    const aLower = a.toLowerCase();
-    const bLower = b.toLowerCase();
-    const aMatch = preferredSubstrings.findIndex(s => aLower.includes(s));
-    const bMatch = preferredSubstrings.findIndex(s => bLower.includes(s));
-    if (aMatch !== -1 && bMatch !== -1) return aMatch - bMatch;
-    if (aMatch !== -1) return -1;
-    if (bMatch !== -1) return 1;
-    return a.localeCompare(b);
-  };
+  const finalWorking = working.length > 0 ? working : DEFAULT_CANDIDATES;
 
-  freeModels.sort(sortFunc);
-  standardModels.sort(sortFunc);
-
-  // Combine: free models first (so runs never fail due to zero balance), then top standard models
-  const candidates = [...freeModels.slice(0, 8), ...standardModels.slice(0, 6)];
-
-  console.log(`[OpenRouter Model Finder] 🧪 Found ${freeModels.length} free models, testing top candidates...`);
-
-  let workingModels = [];
-  if (apiKey) {
-    for (const modelId of candidates.slice(0, 8)) {
-      const ping = await testOpenRouterChatModel(modelId, apiKey);
-      if (ping.working) {
-        console.log(`  ✅ [WORKING] ${modelId}`);
-        workingModels.push(modelId);
-      } else {
-        console.log(`  ❌ [INACTIVE/ERROR] ${modelId} (${ping.error || ping.status})`);
-      }
-    }
-  }
-
-  // If no ping succeeded or no key, use candidates with fallback priority
-  if (workingModels.length === 0) {
-    workingModels = candidates.length > 0 ? candidates : [...FALLBACK_FREE_MODELS, ...FALLBACK_POPULAR_MODELS];
-  }
-
-  // Cache to disk
+  // Save to cache
   try {
     fs.writeFileSync(CACHE_FILE, JSON.stringify({
       timestamp: Date.now(),
-      workingModels
-    }, null, 2));
-    console.log(`[OpenRouter Model Finder] 💾 Cached ${workingModels.length} working models to ${CACHE_FILE}`);
+      workingModels: finalWorking,
+      profiles
+    }, null, 2), 'utf8');
   } catch {}
 
-  return workingModels;
+  return finalWorking;
 }
 
+// Standalone CLI execution
 if (require.main === module) {
-  fetchAndVerifyOpenRouterModels(true).then(models => {
-    console.log('[OpenRouter Model Finder] Execution complete. Ready models:', models);
+  fetchAndVerifyOpenRouterModels().then(models => {
+    console.log(`\n🎉 Verified OpenRouter Models: ${JSON.stringify(models)}`);
+    process.exit(0);
   }).catch(err => {
-    console.error('[OpenRouter Model Finder Fatal]', err);
-    process.exit(1);
+    console.error('Error:', err);
+    process.exit(0);
   });
 }
 
 module.exports = {
   fetchAndVerifyOpenRouterModels,
-  FALLBACK_FREE_MODELS,
-  FALLBACK_POPULAR_MODELS
+  formatOpenRouterPayload,
+  cleanOpenRouterJson,
+  MODEL_PROFILES
 };

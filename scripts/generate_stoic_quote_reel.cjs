@@ -20,6 +20,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const https = require('https');
+const { getSyncedChannelProfile, formatChannelFollowCta } = require('./youtube_channel_dispatcher.cjs');
 
 const MANIFEST_PATH = path.join(process.cwd(), 'daily_blueprint_manifest.json');
 const LOCAL_QUOTE_CACHE = path.join(process.cwd(), 'stoic_quote_history.json');
@@ -508,15 +509,47 @@ async function resolveScholarPortrait(scholar) {
 function generateLoopyMysterySound(outputPath, durationSeconds = 5.0) {
   if (!fs.existsSync(path.dirname(outputPath))) fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
-  // 1. Check if user placed custom audio files in assets/audio/ or test_artifacts/sounds/
+  // 1. Check if user placed custom audio files in assets/sounds, test_artifacts/sounds/, etc.
   const soundDirs = [
+    path.join(process.cwd(), 'assets', 'sounds'),
     path.join(process.cwd(), 'src', 'assets', 'audio'),
     path.join(process.cwd(), 'src', 'assets', 'sounds'),
     path.join(process.cwd(), 'test_artifacts', 'sounds')
   ];
 
+  const { generateAllOminousSounds } = require('./generate_ominous_sounds.cjs');
+  const presets = [
+    'ominous_dark_suspense',
+    'ominous_eerie_drone',
+    'ominous_tension_pulse',
+    'ominous_abyss_resonance',
+    'horror_scene_murder_mystery',
+    'mystery_darkness',
+    'instrumental_mystery'
+  ];
+  const chosenPreset = process.env.SOUND_PRESET || presets[Math.floor(Date.now() / (1000 * 60 * 15)) % presets.length];
+
   for (const sDir of soundDirs) {
     if (fs.existsSync(sDir)) {
+      // Check for exact preset file first
+      const specificFile = path.join(sDir, `${chosenPreset}.wav`);
+      const specificMp3 = path.join(sDir, `${chosenPreset}.mp3`);
+      const targetLocal = fs.existsSync(specificFile) ? specificFile : (fs.existsSync(specificMp3) ? specificMp3 : null);
+
+      if (targetLocal) {
+        console.log(`[Sound Engine] Using master audio track: ${path.basename(targetLocal)}`);
+        try {
+          execSync(
+            `ffmpeg -y -stream_loop -1 -i "${targetLocal}" -t ${durationSeconds} -af "afade=t=in:ss=0:d=0.15,afade=t=out:st=${(durationSeconds - 0.15).toFixed(2)}:d=0.15" -c:a pcm_s16le -ar 44100 "${outputPath}" 2>/dev/null`
+          );
+          if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 5000) {
+            return outputPath;
+          }
+        } catch (e) {
+          // Fall back to procedural synthesis
+        }
+      }
+
       const audioFiles = fs.readdirSync(sDir).filter(f => f.match(/\.(mp3|wav|ogg|aac|m4a)$/i));
       if (audioFiles.length > 0) {
         const localTrack = path.join(sDir, audioFiles[0]);
@@ -534,10 +567,6 @@ function generateLoopyMysterySound(outputPath, durationSeconds = 5.0) {
       }
     }
   }
-
-  // 2. Select procedural synthesis preset matching requested Pixabay sounds
-  const presets = ['horror_scene_murder_mystery', 'instrumental_mystery', 'mystery_darkness'];
-  const chosenPreset = process.env.SOUND_PRESET || presets[Math.floor(Date.now() / (1000 * 60 * 60 * 24)) % presets.length];
 
   console.log(`[Sound Engine] Synthesizing loopable mystery audio track: "${chosenPreset}" (${durationSeconds}s loop)...`);
 
@@ -826,11 +855,14 @@ async function generateStoic5sVideo() {
   // 5. Format Viral Title, Description, and Hashtags
   const cleanAuthorName = chosen.author.replace(/^(Dr\.|Prof\.)\s*/, '').trim();
   const viralTitle = `The Truth 99% Avoid — ${chosen.author} #Shorts`;
+  const initialFollowCta = formatChannelFollowCta('motivation_stoicism', process.env.YOUTUBE_HANDLE_CH2 || process.env.YOUTUBE_HANDLE_STOIC || '');
   const viralDescription = `"${chosen.quote}"
 — ${chosen.author}
 (${chosen.credentials})
 
 ${chosen.communityQuestion}
+
+${initialFollowCta}
 
 #Shorts #Wisdom #Philosophy #Mindset #Stoic #Psychology #DailyQuote #ScholarQuotes #LifeLessons #viral #trending`;
 
@@ -935,10 +967,20 @@ async function uploadQuoteReelToYouTube(videoFilePath, title, description, tags 
   const accessToken = tokenRes.access_token;
   const fileSize = fs.statSync(videoFilePath).size;
 
+  let activeDescription = description;
+  try {
+    const synced = await getSyncedChannelProfile(accessToken);
+    if (synced && synced.handle) {
+      console.log(`[Stoic Upload] 🔄 Synced channel profile: "${synced.title}" (${synced.handle})`);
+      const dynamicFollow = formatChannelFollowCta('motivation_stoicism', synced.handle, synced.title);
+      activeDescription = description.replace(/🏛️ Follow [^\n]+/, dynamicFollow);
+    }
+  } catch (e) {}
+
   const metadata = JSON.stringify({
     snippet: {
       title: title.slice(0, 100),
-      description: description,
+      description: activeDescription,
       tags: tags.slice(0, 15),
       categoryId: '27'
     },

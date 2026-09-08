@@ -1,6 +1,32 @@
 {
   "videos": [
     {
+      "id": "fin_quote_1788855187856",
+      "channelId": "finance_saas",
+      "type": "financial_quote_reel_5s",
+      "title": "The #1 Rule of Wealth 🧠 | Charlie Munger #Shorts",
+      "author": "Charlie Munger",
+      "credentials": "Vice Chairman, Berkshire Hathaway • Architectural Designer",
+      "reference": "Wesco Financial Annual Meeting 1999",
+      "duration": 5,
+      "videoPath": "/app/applet/rendered_videos/fin_quote_5s_1788855187856.mp4",
+      "loopable": true,
+      "publishedAt": "2026-09-08T08:13:16.842Z"
+    },
+    {
+      "id": "fin_quote_1788854438025",
+      "channelId": "finance_saas",
+      "type": "financial_quote_reel_5s",
+      "title": "The #1 Rule of Wealth 🧠 | Ray Dalio #Shorts",
+      "author": "Ray Dalio",
+      "credentials": "Founder, Bridgewater Associates • Macroeconomic Strategist",
+      "reference": "Principles for Navigating Big Debt Crises",
+      "duration": 5,
+      "videoPath": "/app/applet/rendered_videos/fin_quote_5s_1788854438025.mp4",
+      "loopable": true,
+      "publishedAt": "2026-09-08T08:00:46.425Z"
+    },
+    {
       "id": "fin_quote_1788853579772",
       "channelId": "finance_saas",
       "type": "financial_quote_reel_5s",
@@ -80,6 +106,32 @@
       "videoPath": "/app/applet/rendered_videos/stoic_quote_5s_latest.mp4",
       "loopable": true,
       "publishedAt": "2026-09-06T20:06:22.470Z"
+    },
+    {
+      "type": "scholar_quote_reel_5s",
+      "title": "The Truth 99% Avoid — Prof. Friedrich Nietzsche #Shorts",
+      "description": "\"He who has a why to live can bear almost any how.\"\n— Prof. Friedrich Nietzsche\n(Chair of Classical Philology • University of Basel)\n\nWhat is the single 'why' that gets you out of bed even on the hardest mornings?\n\n🏛️ Follow this channel for daily Stoic wisdom, mental fortitude, and timeless philosophy.\n\n#Shorts #Wisdom #Philosophy #Mindset #Stoic #Psychology #DailyQuote #ScholarQuotes #LifeLessons #viral #trending",
+      "quote": "He who has a why to live can bear almost any how.",
+      "author": "Prof. Friedrich Nietzsche",
+      "credentials": "Chair of Classical Philology • University of Basel",
+      "theme": "fortitude",
+      "duration": 5,
+      "videoPath": "/app/applet/rendered_videos/stoic_quote_5s_latest.mp4",
+      "loopable": true,
+      "publishedAt": "2026-09-08T08:00:29.132Z"
+    },
+    {
+      "type": "scholar_quote_reel_5s",
+      "title": "The Truth 99% Avoid — Sun Tzu #Shorts",
+      "description": "\"He will win who knows when to fight and when not to fight.\"\n— Sun Tzu\n(General, Strategist & Philosopher • Author of The Art of War)\n\nWhat pointless argument or drama are you choosing to walk away from today?\n\n🏛️ Follow this channel for daily Stoic wisdom, mental fortitude, and timeless philosophy.\n\n#Shorts #Wisdom #Philosophy #Mindset #Stoic #Psychology #DailyQuote #ScholarQuotes #LifeLessons #viral #trending",
+      "quote": "He will win who knows when to fight and when not to fight.",
+      "author": "Sun Tzu",
+      "credentials": "General, Strategist & Philosopher • Author of The Art of War",
+      "theme": "strategy",
+      "duration": 5,
+      "videoPath": "/app/applet/rendered_videos/stoic_quote_5s_latest.mp4",
+      "loopable": true,
+      "publishedAt": "2026-09-08T08:13:00.053Z"
     }
   ],
   "communityPost": {
