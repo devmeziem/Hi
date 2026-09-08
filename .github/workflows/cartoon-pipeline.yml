@@ -99,9 +99,6 @@ jobs:
           node scripts/build_modern_tech_character.cjs
           ls -la cartoon_character_assets/exact_puppet/
 
-      - name: Generate Ominous & Cinematic Sound Library
-        run: node scripts/generate_ominous_sounds.cjs
-
       - name: Discover and Cache Working AI Models (Groq & OpenRouter)
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}

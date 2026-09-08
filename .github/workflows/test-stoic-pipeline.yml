@@ -51,9 +51,6 @@ jobs:
       - name: Verify FFmpeg Installation
         run: ffmpeg -version
 
-      - name: Generate Ominous & Cinematic Sound Library
-        run: node scripts/generate_ominous_sounds.cjs
-
       - name: Discover and Cache Working AI Models (Groq & OpenRouter)
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
