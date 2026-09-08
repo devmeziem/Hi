@@ -192,7 +192,16 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
   if (preferMoviepy && fs.existsSync(moviepyScript)) {
     console.log(`[Media Engine] 🎬 Invoking Python MoviePy Exact Puppet Engine: ${path.basename(outputSceneMp4)} (${duration}s, action: ${action})...`);
     const bgArg = (bgInput && fs.existsSync(bgInput)) ? `--bg_image "${bgInput}"` : '';
-    const moviepyCmd = `python3 "${moviepyScript}" ${bgArg} --audio_wav "${wavPath}" --output_mp4 "${outputSceneMp4}" --duration ${duration} --action "${action}"`;
+    const glossArg = (glossaryBoard && fs.existsSync(glossaryBoard)) ? `--glossary_board "${glossaryBoard}"` : '';
+    let boardArgs = '';
+    if (options.interactiveBoards) {
+      const { board1Png, board2Png, vsPng, bamSoundWav } = options.interactiveBoards;
+      if (board1Png && fs.existsSync(board1Png)) boardArgs += ` --board1_image "${board1Png}"`;
+      if (board2Png && fs.existsSync(board2Png)) boardArgs += ` --board2_image "${board2Png}"`;
+      if (vsPng && fs.existsSync(vsPng)) boardArgs += ` --vs_badge "${vsPng}"`;
+      if (bamSoundWav && fs.existsSync(bamSoundWav)) boardArgs += ` --bam_sound "${bamSoundWav}"`;
+    }
+    const moviepyCmd = `python3 "${moviepyScript}" ${bgArg} ${glossArg} ${boardArgs} --audio_wav "${wavPath}" --output_mp4 "${outputSceneMp4}" --duration ${duration} --action "${action}"`;
     try {
       execSync(moviepyCmd, { stdio: 'inherit', timeout: 120000 });
       renderSucceeded = fs.existsSync(outputSceneMp4) && fs.statSync(outputSceneMp4).size > 1000;
@@ -241,9 +250,17 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
     }
 
     const puppetWalk = path.join(puppetDir, 'puppet_walking.png');
+    const puppetWalk1 = path.join(puppetDir, 'puppet_walk_stride1.png');
+    const puppetWalk2 = path.join(puppetDir, 'puppet_walk_stride2.png');
+    const puppetWalkTalk1 = path.join(puppetDir, 'puppet_walk_talk1.png');
+    const puppetWalkTalk2 = path.join(puppetDir, 'puppet_walk_talk2.png');
     const puppetIdle = path.join(puppetDir, 'puppet_idle.png');
     const puppetPointLeft = path.join(puppetDir, 'puppet_point_left.png');
     const puppetPointRight = path.join(puppetDir, 'puppet_point_right.png');
+    const puppetPointUpL = path.join(puppetDir, 'puppet_point_up_left.png');
+    const puppetPointUpR = path.join(puppetDir, 'puppet_point_up_right.png');
+    const puppetAkimboJaw = path.join(puppetDir, 'puppet_akimbo_jaw.png');
+    const puppetAkimboTalk = path.join(puppetDir, 'puppet_akimbo_jaw_talk.png');
     const puppetCompare = path.join(puppetDir, 'puppet_explain_both.png');
     const puppetTalk = path.join(puppetDir, 'puppet_talking.png');
     const puppetEyes = path.join(puppetDir, 'puppet_blink.png');
@@ -257,7 +274,16 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
     // Decide main pose based on action
     let mainPuppet = fs.existsSync(puppetCompare) ? puppetCompare : puppetIdle;
     let puppetX = 260;
-    if (action === 'point_left') {
+    if (action === 'point_up_left') {
+      mainPuppet = fs.existsSync(puppetPointUpL) ? puppetPointUpL : puppetIdle;
+      puppetX = 320;
+    } else if (action === 'point_up_right') {
+      mainPuppet = fs.existsSync(puppetPointUpR) ? puppetPointUpR : puppetIdle;
+      puppetX = 200;
+    } else if (action === 'akimbo_jaw') {
+      mainPuppet = fs.existsSync(puppetAkimboJaw) ? puppetAkimboJaw : puppetIdle;
+      puppetX = 260;
+    } else if (action === 'point_left') {
       mainPuppet = fs.existsSync(puppetPointLeft) ? puppetPointLeft : puppetIdle;
       puppetX = 360;
     } else if (action === 'point_right') {
@@ -278,46 +304,95 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
     } else if (action === 'questioning_users') {
       mainPuppet = fs.existsSync(puppetQuestioning) ? puppetQuestioning : puppetIdle;
       puppetX = 260;
-    } else if (action === 'walk_in' || action === 'walking') {
+    } else if (action === 'walk_in' || action === 'walking' || action === 'walk_out') {
       mainPuppet = fs.existsSync(puppetWalk) ? puppetWalk : puppetIdle;
     } else if (action === 'talking' || action === 'idle') {
       mainPuppet = fs.existsSync(puppetTalk) ? puppetTalk : puppetIdle;
     }
 
-    const walkAsset = fs.existsSync(puppetWalk) ? puppetWalk : mainPuppet;
+    const walk1Asset = fs.existsSync(puppetWalk1) ? puppetWalk1 : (fs.existsSync(puppetWalk) ? puppetWalk : mainPuppet);
+    const walk2Asset = fs.existsSync(puppetWalk2) ? puppetWalk2 : (fs.existsSync(puppetWalk) ? puppetWalk : mainPuppet);
     const standAsset = fs.existsSync(puppetIdle) ? puppetIdle : mainPuppet;
+    const talkAsset = fs.existsSync(puppetTalk) ? puppetTalk : mainPuppet;
     const blinkAsset = fs.existsSync(puppetEyes) ? puppetEyes : mainPuppet;
+    const pointUpLAsset = fs.existsSync(puppetPointUpL) ? puppetPointUpL : mainPuppet;
+    const pointUpRAsset = fs.existsSync(puppetPointUpR) ? puppetPointUpR : mainPuppet;
+    const akimboAsset = fs.existsSync(puppetAkimboJaw) ? puppetAkimboJaw : mainPuppet;
+    const akimboTalkAsset = fs.existsSync(puppetAkimboTalk) ? puppetAkimboTalk : akimboAsset;
 
     let filterComplex = '';
     let ffmpegCmd = '';
     const hasGloss = glossaryBoard && fs.existsSync(glossaryBoard);
+    const interactiveBoards = options.interactiveBoards;
+    const hasBoards = interactiveBoards && interactiveBoards.board1Png && fs.existsSync(interactiveBoards.board1Png);
 
-    if (action === 'walk_in') {
-      if (hasGloss) {
-        filterComplex = [
-          `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
-          `[4:v]scale=860:-1[gloss]`,
-          `[bg][gloss]overlay=x=(W-w)/2:y='150 + 4*sin(t*2)'[bg0]`,
-          `[1:v]scale=-1:1100[walk]`,
-          `[2:v]scale=-1:1100[stand]`,
-          `[3:v]scale=-1:1100[eyes]`,
-          `[bg0][walk]overlay=x='if(lte(t,1.2), -380 + t*530, -9999)':y='760 + 12*abs(sin(t*12))':enable='lte(t,1.2)'[s1]`,
-          `[s1][stand]overlay=x=260:y='760 + 5*sin(t*3)':enable='between(t,1.2,2.3)+between(t,2.46,${duration})'[s2]`,
-          `[s2][eyes]overlay=x=260:y='760 + 5*sin(t*3)':enable='between(t,2.3,2.46)'[v]`
-        ].join(';');
-        ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${walkAsset}" -loop 1 -t ${duration} -i "${standAsset}" -loop 1 -t ${duration} -i "${blinkAsset}" -loop 1 -t ${duration} -i "${glossaryBoard}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 5:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
-      } else {
-        filterComplex = [
-          `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
-          `[1:v]scale=-1:1100[walk]`,
-          `[2:v]scale=-1:1100[stand]`,
-          `[3:v]scale=-1:1100[eyes]`,
-          `[bg][walk]overlay=x='if(lte(t,1.2), -380 + t*530, -9999)':y='760 + 12*abs(sin(t*12))':enable='lte(t,1.2)'[s1]`,
-          `[s1][stand]overlay=x=260:y='760 + 5*sin(t*3)':enable='between(t,1.2,2.3)+between(t,2.46,${duration})'[s2]`,
-          `[s2][eyes]overlay=x=260:y='760 + 5*sin(t*3)':enable='between(t,2.3,2.46)'[v]`
-        ].join(';');
-        ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${walkAsset}" -loop 1 -t ${duration} -i "${standAsset}" -loop 1 -t ${duration} -i "${blinkAsset}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 4:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+    if (action === 'walk_in' || hasBoards) {
+      // Full Interactive Archie Presentation Sequence
+      const b1Path = hasBoards ? interactiveBoards.board1Png : hudCard;
+      const vsPath = hasBoards ? interactiveBoards.vsPng : hudCard;
+      const b2Path = hasBoards ? interactiveBoards.board2Png : hudCard;
+      const bamWav = (hasBoards && interactiveBoards.bamSoundWav && fs.existsSync(interactiveBoards.bamSoundWav)) ? interactiveBoards.bamSoundWav : null;
+
+      const exitStart = duration >= 6.0 ? (duration - 1.3).toFixed(2) : duration.toFixed(2);
+
+      filterComplex = [
+        `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
+        `[1:v]scale=-1:1100[w1]`,
+        `[2:v]scale=-1:1100[w2]`,
+        `[3:v]scale=-1:1100[stand]`,
+        `[4:v]scale=-1:1100[talk]`,
+        `[5:v]scale=-1:1100[pt_l]`,
+        `[6:v]scale=-1:1100[pt_r]`,
+        `[7:v]scale=-1:1100[akimbo]`,
+        `[8:v]scale=400:-1[b1]`,
+        `[9:v]scale=140:-1[vs]`,
+        `[10:v]scale=400:-1[b2]`,
+        // Walk in: -380 to 260 over 1.2s alternating strides
+        `[bg][w1]overlay=x='-380 + t*530':y='760 + 14*abs(sin(t*12))':enable='lte(t,1.2)*mod(floor(t*6),2)'[s1]`,
+        `[s1][w2]overlay=x='-380 + t*530':y='760 + 14*abs(sin(t*12))':enable='lte(t,1.2)*(1-mod(floor(t*6),2))'[s2]`,
+        // Center intro speech: t=1.2 to 2.2
+        `[s2][talk]overlay=x=260:y='760 + 4*sin(t*3)':enable='between(t,1.2,2.2)*mod(floor(t*5),2)'[s3]`,
+        `[s3][stand]overlay=x=260:y='760 + 4*sin(t*3)':enable='between(t,1.2,2.2)*(1-mod(floor(t*5),2))'[s4]`,
+        // Point up left to Board 1: t=2.2 to 3.2
+        `[s4][pt_l]overlay=x=300:y='760 + 4*sin(t*3)':enable='between(t,2.2,3.2)'[s5]`,
+        // Board 1 appears with slight stamp bounce: t >= 2.2 until exit
+        `[s5][b1]overlay=x=70:y='290 + 4*sin(t*2)':enable='between(t,2.2,${exitStart})'[s6]`,
+        // VS Badge appears: t >= 2.7 until exit
+        `[s6][vs]overlay=x=470:y='370 + 3*sin(t*2.5)':enable='between(t,2.7,${exitStart})'[s7]`,
+        // Point up right to Board 2: t=3.2 to 4.2
+        `[s7][pt_r]overlay=x=220:y='760 + 4*sin(t*3)':enable='between(t,3.2,4.2)'[s8]`,
+        // Board 2 appears: t >= 3.2 until exit
+        `[s8][b2]overlay=x=610:y='290 + 4*sin((t+0.5)*2)':enable='between(t,3.2,${exitStart})'[s9]`,
+        // Akimbo on hip + jaw pose analyzing: t=4.2 to exitStart
+        `[s9][akimbo]overlay=x=260:y='760 + 4*sin(t*3)':enable='between(t,4.2,${exitStart})'[s10]`,
+        // Walk out to the right: t >= exitStart
+        `[s10][w1]overlay=x='260 + (t-${exitStart})*600':y='760 + 14*abs(sin(t*12))':enable='gte(t,${exitStart})*mod(floor(t*6),2)'[s11]`,
+        `[s11][w2]overlay=x='260 + (t-${exitStart})*600':y='760 + 14*abs(sin(t*12))':enable='gte(t,${exitStart})*(1-mod(floor(t*6),2))'[v]`
+      ].join(';');
+
+      let audioMap = '-map 11:a';
+      let extraInputs = '';
+      if (bamWav) {
+        // Mix BAM stamp sound effect at t=2.2s and t=3.2s
+        filterComplex += `;[12:a]adelay=2200|2200[bam1];[12:a]adelay=3200|3200[bam2];[11:a][bam1][bam2]amix=inputs=3:duration=first[aout]`;
+        audioMap = '-map "[aout]"';
+        extraInputs = `-i "${bamWav}"`;
       }
+
+      ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${walk1Asset}" -loop 1 -t ${duration} -i "${walk2Asset}" -loop 1 -t ${duration} -i "${standAsset}" -loop 1 -t ${duration} -i "${talkAsset}" -loop 1 -t ${duration} -i "${pointUpLAsset}" -loop 1 -t ${duration} -i "${pointUpRAsset}" -loop 1 -t ${duration} -i "${akimboAsset}" -loop 1 -t ${duration} -i "${b1Path}" -loop 1 -t ${duration} -i "${vsPath}" -loop 1 -t ${duration} -i "${b2Path}" -i "${wavPath}" ${extraInputs} -filter_complex "${filterComplex}" -map "[v]" ${audioMap} -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+
+    } else if (action === 'akimbo_jaw') {
+      filterComplex = [
+        `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
+        `[1:v]scale=-1:1100[akimbo]`,
+        `[2:v]scale=-1:1100[akimbo_talk]`,
+        `[3:v]scale=-1:1100[eyes]`,
+        `[bg][akimbo]overlay=x=260:y='760 + 5*sin(t*3)':enable='mod(floor(t*5),2)'[s1]`,
+        `[s1][akimbo_talk]overlay=x=260:y='760 + 5*sin(t*3)':enable='(1-mod(floor(t*5),2))*(between(t,0,2.3)+between(t,2.46,${duration}))'[s2]`,
+        `[s2][eyes]overlay=x=260:y='760 + 5*sin(t*3)':enable='between(t,2.3,2.46)'[v]`
+      ].join(';');
+      ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${akimboAsset}" -loop 1 -t ${duration} -i "${akimboTalkAsset}" -loop 1 -t ${duration} -i "${blinkAsset}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 4:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+
     } else if ((action === 'point_left' || action === 'point_right' || action === 'explain_both') && fs.existsSync(hudCard)) {
       const hudX = action === 'point_right' ? 530 : (action === 'point_left' ? 70 : 300);
       if (hasGloss) {

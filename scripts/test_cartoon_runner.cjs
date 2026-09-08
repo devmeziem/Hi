@@ -15,6 +15,8 @@ const { generateSrtSubtitles, assembleFinalCartoonVideo, renderSingleSceneVideo 
 const { validateCartoonOutput } = require('./cartoon_validator.cjs');
 const { publisher } = require('./cartoon_publishing_adapter.cjs');
 const { discoverAndSelectTopicViaActiveAi } = require('./topic_discovery_engine.cjs');
+const { getSceneBackground } = require('./cartoon_background_generator.cjs');
+const { buildComparisonBoardAssets } = require('./cartoon_boards_generator.cjs');
 
 const ARTIFACTS_DIR = path.join(process.cwd(), 'test_artifacts');
 const RENDERED_DIR = path.join(process.cwd(), 'rendered_videos');
@@ -88,12 +90,18 @@ async function runCartoonPipelineDiagnostic() {
     console.log(`\n🎬 [Scene ${sceneIndex}/${episodePlan.scenes.length}] "${scene.dialogue}"`);
     console.log(`   🌆 Scene Environment: "${scene.background_style || 'tech_studio'}" | Action: "${scene.character_action}" | Camera: "${scene.camera}"`);
 
-    // A. Generate Dynamic Scene Environment Background
-    const bgSvgPath = path.join(ARTIFACTS_DIR, `scene_${sceneIndex}_bg.svg`);
-    const bgPngPath = path.join(ARTIFACTS_DIR, `scene_${sceneIndex}_bg.png`);
-    const bgSvg = generateSceneBackgroundSvg(scene.background_style, inputTopic, scene.objects);
-    fs.writeFileSync(bgSvgPath, bgSvg);
-    rasterizeSvgToPng(bgSvgPath, bgPngPath, 1080, 1920);
+    // A. Generate Dynamic Scene Environment Background (Pollinations AI or Modern Tech Interface)
+    let bgPngPath = null;
+    try {
+      bgPngPath = await getSceneBackground(sceneIndex, inputTopic, scene.background_style, ARTIFACTS_DIR);
+    } catch (bgErr) {
+      console.warn(`[Runner] Notice acquiring background: ${bgErr.message}. Generating vector fallback...`);
+      const bgSvgPath = path.join(ARTIFACTS_DIR, `scene_${sceneIndex}_bg.svg`);
+      bgPngPath = path.join(ARTIFACTS_DIR, `scene_${sceneIndex}_bg.png`);
+      const bgSvg = generateSceneBackgroundSvg(scene.background_style, inputTopic, scene.objects);
+      fs.writeFileSync(bgSvgPath, bgSvg);
+      rasterizeSvgToPng(bgSvgPath, bgPngPath, 1080, 1920);
+    }
 
     // B. Generate Local Audio
     const audioWavPath = path.join(ARTIFACTS_DIR, `scene_${sceneIndex}_audio.wav`);
@@ -115,20 +123,43 @@ async function runCartoonPipelineDiagnostic() {
       console.log(`   💡 Floating Glossary Board: "${scene.glossary_term}" -> "${scene.glossary_explanation || ''}"`);
     }
 
-    // E. Generate 2D Vector Frame Reference for this scene
+    // E. Interactive Topic Presentation Boards (for Scene 1 or when comparing concepts)
+    let interactiveBoards = null;
+    if (sceneIndex === 1 || scene.character_action === 'walk_in') {
+      let topicA = 'Technology A';
+      let topicB = 'Technology B';
+      const vsMatch = inputTopic.match(/(.+?)\s+(?:vs\.?|versus|and|or)\s+(.+)/i);
+      if (vsMatch) {
+        topicA = vsMatch[1].trim();
+        topicB = vsMatch[2].trim();
+      } else {
+        const words = inputTopic.split(/\s+/);
+        if (words.length >= 2) {
+          topicA = words.slice(0, Math.ceil(words.length / 2)).join(' ');
+          topicB = words.slice(Math.ceil(words.length / 2)).join(' ');
+        } else {
+          topicA = inputTopic;
+          topicB = 'Alternatives';
+        }
+      }
+      interactiveBoards = buildComparisonBoardAssets(topicA, topicB, episodePlan.category || 'Tech', ARTIFACTS_DIR);
+    }
+
+    // F. Generate 2D Vector Frame Reference for this scene
     const frameSvgPath = path.join(ARTIFACTS_DIR, `scene_${sceneIndex}_frame.svg`);
     const svgContent = generateCharacterFrameSvg(scene.character_action, scene.emotion, 'B', 1080, 1920, scene.background_style, inputTopic, scene.objects);
     fs.writeFileSync(frameSvgPath, svgContent);
 
-    // F. Render Single Scene MP4 via Exact Character Animation Engine
+    // G. Render Single Scene MP4 via Exact Character Animation Engine
     const sceneMp4Path = path.join(ARTIFACTS_DIR, `scene_${sceneIndex}.mp4`);
     renderSingleSceneVideo(frameSvgPath, audioWavPath, sceneMp4Path, ttsResult.duration, {
       mouthCuesJson: lipsyncResult.jsonPath,
       action: scene.character_action,
       emotion: scene.emotion,
       camera: scene.camera,
-      bgImage: fs.existsSync(bgPngPath) ? bgPngPath : null,
-      glossaryBoard: (glossPngPath && fs.existsSync(glossPngPath)) ? glossPngPath : null
+      bgImage: (bgPngPath && fs.existsSync(bgPngPath)) ? bgPngPath : null,
+      glossaryBoard: (glossPngPath && fs.existsSync(glossPngPath)) ? glossPngPath : null,
+      interactiveBoards: interactiveBoards
     });
     renderedScenes.push({
       sceneIndex,

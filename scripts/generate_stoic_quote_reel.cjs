@@ -869,15 +869,15 @@ ${chosen.communityQuestion}
     console.warn('[Quote Reel] Manifest sync notice:', e.message);
   }
 
-  // 7. Publish to YouTube as 5s Viral Short (if credentials configured)
+  // 7. Publish to YouTube as 5s Viral Short (Exclusively Channel 2: The Stoic Architect)
   const isDryRun = process.env.DRY_RUN === 'true';
-  const clientId = process.env.YOUTUBE_CLIENT_ID || process.env.YOUTUBE_CLIENT_ID_CH2;
-  const clientSecret = process.env.YOUTUBE_CLIENT_SECRET || process.env.YOUTUBE_CLIENT_SECRET_CH2;
-  const refreshToken = process.env.YOUTUBE_REFRESH_TOKEN || process.env.YOUTUBE_REFRESH_TOKEN_CH2;
+  const clientId = process.env.YOUTUBE_CLIENT_ID_CH2 || process.env.YOUTUBE_CLIENT_ID_STOIC;
+  const clientSecret = process.env.YOUTUBE_CLIENT_SECRET_CH2 || process.env.YOUTUBE_CLIENT_SECRET_STOIC;
+  const refreshToken = process.env.YOUTUBE_REFRESH_TOKEN_CH2 || process.env.YOUTUBE_REFRESH_TOKEN_STOIC;
 
   if (clientId && clientSecret && refreshToken && !isDryRun) {
     try {
-      console.log(`\n[Quote Reel] 📤 Publishing 5s Quote Reel to YouTube Shorts...`);
+      console.log(`\n[Quote Reel] 📤 Publishing 5s Stoic Quote Reel to YouTube Shorts (Channel 2: The Stoic Architect)...`);
       await uploadQuoteReelToYouTube(finalMp4Path, viralTitle, viralDescription, [
         'Shorts', 'Wisdom', 'Philosophy', 'Mindset', 'Stoic', 'Psychology', chosen.author.replace(/[^a-zA-Z0-9]/g, '')
       ]);
@@ -887,19 +887,19 @@ ${chosen.communityQuestion}
   } else if (isDryRun) {
     console.log(`[Quote Reel] ℹ️ Dry Run mode enabled — video saved locally for review without live YouTube upload.`);
   } else {
-    console.log(`[Quote Reel] ℹ️ YouTube secrets not configured in environment — video archived to artifacts.`);
+    console.log(`[Quote Reel] ℹ️ Channel 2 (The Stoic Architect) credentials (YOUTUBE_REFRESH_TOKEN_CH2) not provided in environment — preventing accidental cross-posting to Channel 1.`);
   }
 
   return finalMp4Path;
 }
 
 /**
- * Upload 5s video to YouTube via OAuth2 resumable upload
+ * Upload 5s video to YouTube via OAuth2 resumable upload (Channel 2: The Stoic Architect)
  */
 async function uploadQuoteReelToYouTube(videoFilePath, title, description, tags = []) {
-  const clientId = process.env.YOUTUBE_CLIENT_ID || process.env.YOUTUBE_CLIENT_ID_CH2;
-  const clientSecret = process.env.YOUTUBE_CLIENT_SECRET || process.env.YOUTUBE_CLIENT_SECRET_CH2;
-  const refreshToken = process.env.YOUTUBE_REFRESH_TOKEN || process.env.YOUTUBE_REFRESH_TOKEN_CH2;
+  const clientId = process.env.YOUTUBE_CLIENT_ID_CH2 || process.env.YOUTUBE_CLIENT_ID_STOIC;
+  const clientSecret = process.env.YOUTUBE_CLIENT_SECRET_CH2 || process.env.YOUTUBE_CLIENT_SECRET_STOIC;
+  const refreshToken = process.env.YOUTUBE_REFRESH_TOKEN_CH2 || process.env.YOUTUBE_REFRESH_TOKEN_STOIC;
 
   const postData = new URLSearchParams({
     client_id: clientId,

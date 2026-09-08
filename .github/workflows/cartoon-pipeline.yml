@@ -119,6 +119,7 @@ jobs:
         run: |
           echo "=== PRE-COMPILING EXACT PUPPET VECTOR & RASTER ASSETS ==="
           node scripts/build_exact_puppet_shapes.cjs
+          node scripts/build_modern_tech_character.cjs
           ls -la cartoon_character_assets/exact_puppet/
 
       - name: Auto-Discover and Cache Working AI Models (Grok, Groq, OpenRouter)

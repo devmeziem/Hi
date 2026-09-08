@@ -34,6 +34,7 @@ try:
             ImageClip,
             CompositeVideoClip,
             AudioFileClip,
+            CompositeAudioClip,
             ColorClip,
         )
     except ImportError:
@@ -42,6 +43,7 @@ try:
             ImageClip,
             CompositeVideoClip,
             AudioFileClip,
+            CompositeAudioClip,
             ColorClip,
         )
 except ImportError as e:
@@ -90,17 +92,29 @@ def get_puppet_asset(name):
     return path
 
 
-def build_puppet_clip(action="talking", duration=5.0, target_height=1120):
+def build_puppet_clip(action="talking", duration=5.0, target_height=1120, board1_path=None, board2_path=None, vs_path=None):
     """
-    Constructs a dynamic MoviePy clip of the modern human tech creator character.
+    Constructs a dynamic MoviePy clip of Archie (the modern human tech creator character).
+    Supports:
+    - Alternating stride walking entrance and exit
+    - Interactive comparison boards presentation with point_up_left, vs, and point_up_right
+    - Akimbo on hip + hand on jaw thinking pose
     """
     idle_path = get_puppet_asset("puppet_idle")
     talk_path = get_puppet_asset("puppet_talking")
     blink_path = get_puppet_asset("puppet_blink")
+    walk_path = get_puppet_asset("puppet_walking")
+    walk1_path = get_puppet_asset("puppet_walk_stride1")
+    walk2_path = get_puppet_asset("puppet_walk_stride2")
+    walk_talk1_path = get_puppet_asset("puppet_walk_talk1")
+    walk_talk2_path = get_puppet_asset("puppet_walk_talk2")
     point_l_path = get_puppet_asset("puppet_point_left")
     point_r_path = get_puppet_asset("puppet_point_right")
+    point_up_l_path = get_puppet_asset("puppet_point_up_left")
+    point_up_r_path = get_puppet_asset("puppet_point_up_right")
+    akimbo_path = get_puppet_asset("puppet_akimbo_jaw")
+    akimbo_talk_path = get_puppet_asset("puppet_akimbo_jaw_talk")
     explain_path = get_puppet_asset("puppet_explain_both")
-    walk_path = get_puppet_asset("puppet_walking")
     sit_path = get_puppet_asset("puppet_sitting")
     think_path = get_puppet_asset("puppet_thinking")
     confused_path = get_puppet_asset("puppet_confused")
@@ -119,12 +133,21 @@ def build_puppet_clip(action="talking", duration=5.0, target_height=1120):
     base_y = 1920 - target_height - 60  # standing just above bottom margin
 
     # Assign main pose and horizontal framing based on action
-    if action == "point_left":
+    if action == "point_up_left":
+        main_pose_path = point_up_l_path
+        base_x = (1080 - target_width) // 2 + 60
+    elif action == "point_up_right":
+        main_pose_path = point_up_r_path
+        base_x = (1080 - target_width) // 2 - 60
+    elif action == "akimbo_jaw":
+        main_pose_path = akimbo_path
+        base_x = (1080 - target_width) // 2
+    elif action == "point_left":
         main_pose_path = point_l_path
-        base_x = 360  # Host stands slightly on right, pointing left to HUD
+        base_x = 360
     elif action == "point_right":
         main_pose_path = point_r_path
-        base_x = 180  # Host stands slightly on left, pointing right to HUD
+        base_x = 180
     elif action == "sitting":
         main_pose_path = sit_path
         base_x = (1080 - target_width) // 2
@@ -161,69 +184,124 @@ def build_puppet_clip(action="talking", duration=5.0, target_height=1120):
         return clip
 
     c_idle = make_clip(main_pose_path)
-    c_talk = make_clip(talk_path if action not in ["point_left", "point_right", "confused", "surprised", "questioning_users"] else main_pose_path)
+    c_talk = make_clip(talk_path)
     c_blink = make_clip(blink_path)
-    c_walk = make_clip(walk_path)
+    c_walk1 = make_clip(walk1_path if os.path.exists(walk1_path) else walk_path)
+    c_walk2 = make_clip(walk2_path if os.path.exists(walk2_path) else walk_path)
+    c_walk_t1 = make_clip(walk_talk1_path if os.path.exists(walk_talk1_path) else walk1_path)
+    c_walk_t2 = make_clip(walk_talk2_path if os.path.exists(walk_talk2_path) else walk2_path)
+    c_point_up_l = make_clip(point_up_l_path)
+    c_point_up_r = make_clip(point_up_r_path)
+    c_akimbo = make_clip(akimbo_path)
+    c_akimbo_talk = make_clip(akimbo_talk_path if os.path.exists(akimbo_talk_path) else akimbo_path)
 
     layers = []
 
-    if action in ["walk_in", "walking"]:
-        # Dynamic entrance walk across frame, then settle into confident speaking stance
-        walk_dur = min(1.3, duration * 0.45)
+    # Check if this is an interactive presentation scene (walk in, show boards, walk out)
+    has_interactive_boards = board1_path and os.path.exists(board1_path)
 
-        def walk_pos(t):
-            if t < walk_dur:
-                progress = t / walk_dur
-                cur_x = -400 + progress * (base_x + 400)
-                bounce = 15 * abs(math.sin(t * 12))
-                return (int(cur_x), int(base_y - bounce))
-            else:
-                sway = 4 * math.sin((t - walk_dur) * 3.0)
-                return (int(base_x), int(base_y + sway))
+    if action in ["walk_in", "walking"] or has_interactive_boards:
+        walk_in_dur = min(1.3, duration * 0.30)
+        walk_out_dur = 1.3 if duration >= 6.0 else 0.0
+        center_end = duration - walk_out_dur
 
-        walk_layer = c_walk.with_duration(walk_dur).with_start(0).with_position(walk_pos)
-        layers.append(walk_layer)
+        # 1. Entrance Walk with Alternating Strides
+        t_w = 0.0
+        stride_dur = 0.18
+        while t_w < walk_in_dur:
+            cur_stride = c_walk1 if int(t_w / stride_dur) % 2 == 0 else c_walk2
+            chunk = min(stride_dur, walk_in_dur - t_w)
+            
+            def make_walk_in_pos(start_time):
+                def walk_pos(t):
+                    actual_t = start_time + t
+                    prog = min(1.0, actual_t / walk_in_dur)
+                    cur_x = -380 + prog * (base_x + 380)
+                    bounce = 14 * abs(math.sin(actual_t * 12))
+                    return (int(cur_x), int(base_y - bounce))
+                return walk_pos
 
-        # Standing talk layer for remainder
-        t_cur = walk_dur
-        while t_cur < duration:
-            chunk = min(0.20, duration - t_cur)
-            cycle_pos = (t_cur - walk_dur) % 2.5
-            is_blink = 2.2 <= cycle_pos <= 2.38
-
-            def rest_pos(t):
-                sway = 4 * math.sin(t * 3.0)
-                return (int(base_x), int(base_y + sway))
-
-            if is_blink:
-                sub = c_blink.with_start(t_cur).with_duration(chunk).with_position(rest_pos)
-            else:
-                is_mouth_open = int((t_cur * 4.8)) % 2 == 1
-                base_img = c_talk if is_mouth_open else c_idle
-                sub = base_img.with_start(t_cur).with_duration(chunk).with_position(rest_pos)
-
+            sub = cur_stride.with_start(t_w).with_duration(chunk).with_position(make_walk_in_pos(t_w))
             layers.append(sub)
-            t_cur += chunk
+            t_w += chunk
+
+        # 2. Interactive Presentation in Center (Talking, Pointing, Akimbo)
+        t_c = walk_in_dur
+        while t_c < center_end:
+            chunk = min(0.20, center_end - t_c)
+            rel_t = t_c - walk_in_dur
+            cycle_pos = rel_t % 2.5
+            is_blink = 2.2 <= cycle_pos <= 2.38
+            is_mouth_open = int((t_c * 4.8)) % 2 == 1
+
+            # Choreography based on time in center
+            if has_interactive_boards and 0.8 <= rel_t < 1.8:
+                # Point Up Left to Board 1
+                base_img = c_point_up_l
+            elif has_interactive_boards and 2.2 <= rel_t < 3.2:
+                # Point Up Right to Board 2
+                base_img = c_point_up_r
+            elif has_interactive_boards and rel_t >= 3.2:
+                # Akimbo on hip + hand on jaw while talking
+                base_img = c_akimbo_talk if is_mouth_open else c_akimbo
+            else:
+                # Standard talk / idle
+                if is_blink:
+                    base_img = c_blink
+                else:
+                    base_img = c_talk if is_mouth_open else c_idle
+
+            # Rock-solid stable stance while standing (no leg shaking/jitter)
+            def center_pos(t):
+                return (int(base_x), int(base_y))
+
+            sub = base_img.with_start(t_c).with_duration(chunk).with_position(center_pos)
+            layers.append(sub)
+            t_c += chunk
+
+        # 3. Walk Out to the Right while still talking!
+        if walk_out_dur > 0:
+            t_out = center_end
+            while t_out < duration:
+                prog_out = (t_out - center_end)
+                cur_stride = c_walk_t1 if int(prog_out / stride_dur) % 2 == 0 else c_walk_t2
+                chunk = min(stride_dur, duration - t_out)
+
+                def make_walk_out_pos(start_t):
+                    def out_pos(t):
+                        actual_t = (start_t - center_end) + t
+                        prog = actual_t / walk_out_dur
+                        cur_x = base_x + prog * (1100 - base_x)
+                        bounce = 12 * abs(math.sin(actual_t * 12))
+                        return (int(cur_x), int(base_y - bounce))
+                    return out_pos
+
+                sub = cur_stride.with_start(t_out).with_duration(chunk).with_position(make_walk_out_pos(t_out))
+                layers.append(sub)
+                t_out += chunk
 
     else:
-        # High-expressiveness stationary pose with breathing sway + animated mouth + natural eye blinks
+        # Stationary Poses: completely grounded feet (no leg shaking/jitter)
         def normal_pos(t):
-            sway = 5 * math.sin(t * 3.0)
-            h_sway = 2 * math.cos(t * 1.5)
-            return (int(base_x + h_sway), int(base_y + sway))
+            return (int(base_x), int(base_y))
 
         t_cur = 0.0
         while t_cur < duration:
             chunk = min(0.20, duration - t_cur)
             cycle_pos = t_cur % 2.6
             is_blink = 2.3 <= cycle_pos <= 2.46
+            is_mouth_open = int((t_cur * 5.0)) % 2 == 1
 
             if is_blink and action not in ["thinking", "surprised"]:
                 sub = c_blink.with_start(t_cur).with_duration(chunk).with_position(normal_pos)
             else:
-                is_mouth_open = int((t_cur * 5.0)) % 2 == 1
-                # If thinking, mouth stays closed; otherwise animates naturally
-                if action == "thinking":
+                if action == "akimbo_jaw":
+                    base_img = c_akimbo_talk if is_mouth_open else c_akimbo
+                elif action == "point_up_left":
+                    base_img = c_point_up_l
+                elif action == "point_up_right":
+                    base_img = c_point_up_r
+                elif action == "thinking":
                     base_img = c_idle
                 else:
                     base_img = c_talk if (is_mouth_open and action in ["talking", "point_left", "point_right", "explain_both", "comparing", "confused", "questioning_users", "sitting"]) else c_idle
@@ -231,6 +309,86 @@ def build_puppet_clip(action="talking", duration=5.0, target_height=1120):
 
             layers.append(sub)
             t_cur += chunk
+
+    # Add 2 Visible Interactive Comparison Boards (Board 1, VS Badge, Board 2) with Real Drop Slam
+    if has_interactive_boards:
+        try:
+            b_appear1 = 0.8
+            b_appear_vs = 1.35
+            b_appear2 = 1.9
+            b_exit = duration
+
+            # Helper for physical drop slam animation (fast fall from above screen + impact bounce + gentle hover)
+            def make_board_slam_pos(target_x, slam_start_t):
+                def slam_pos(t):
+                    local_t = t - slam_start_t
+                    target_y = 240
+                    if local_t <= 0.0:
+                        return (target_x, -420)
+                    elif local_t < 0.18:
+                        # Rapid accelerated drop
+                        p = local_t / 0.18
+                        cur_y = -420 + (target_y - -420) * (p * p)
+                        return (target_x, int(cur_y))
+                    elif local_t < 0.28:
+                        # High-impact overshoot bounce
+                        p2 = (local_t - 0.18) / 0.10
+                        bounce_y = target_y + 20 * math.sin(p2 * math.pi)
+                        return (target_x, int(bounce_y))
+                    else:
+                        # Settle and remain steady & visible
+                        return (target_x, target_y)
+                return slam_pos
+
+            # Board 1 (Left, 440px wide, real data)
+            b1_clip = ImageClip(board1_path)
+            if hasattr(b1_clip, "resized"):
+                b1_clip = b1_clip.resized(width=440)
+            elif hasattr(b1_clip, "resize"):
+                b1_clip = b1_clip.resize(width=440)
+
+            b1_dur = max(0.1, b_exit - b_appear1)
+            b1_layer = b1_clip.with_start(b_appear1).with_duration(b1_dur).with_position(make_board_slam_pos(45, b_appear1))
+            layers.insert(0, b1_layer)
+
+            # VS Badge (Center, 150x150)
+            if vs_path and os.path.exists(vs_path):
+                vs_clip = ImageClip(vs_path)
+                if hasattr(vs_clip, "resized"):
+                    vs_clip = vs_clip.resized(width=150)
+                elif hasattr(vs_clip, "resize"):
+                    vs_clip = vs_clip.resize(width=150)
+
+                def vs_pos(t):
+                    local_t = t - b_appear_vs
+                    target_y = 300
+                    if local_t <= 0.0:
+                        return (465, -200)
+                    elif local_t < 0.16:
+                        p = local_t / 0.16
+                        cur_y = -200 + (target_y - -200) * (p * p)
+                        return (465, int(cur_y))
+                    else:
+                        return (465, target_y)
+
+                vs_dur = max(0.1, b_exit - b_appear_vs)
+                vs_layer = vs_clip.with_start(b_appear_vs).with_duration(vs_dur).with_position(vs_pos)
+                layers.insert(0, vs_layer)
+
+            # Board 2 (Right, 440px wide, real data)
+            if board2_path and os.path.exists(board2_path):
+                b2_clip = ImageClip(board2_path)
+                if hasattr(b2_clip, "resized"):
+                    b2_clip = b2_clip.resized(width=440)
+                elif hasattr(b2_clip, "resize"):
+                    b2_clip = b2_clip.resize(width=440)
+
+                b2_dur = max(0.1, b_exit - b_appear2)
+                b2_layer = b2_clip.with_start(b_appear2).with_duration(b2_dur).with_position(make_board_slam_pos(595, b_appear2))
+                layers.insert(0, b2_layer)
+
+        except Exception as e:
+            print(f"[MoviePy] Notice attaching comparison boards: {e}")
 
     # Add Floating Holographic UI HUD Card when pointing or comparing!
     hud_path = os.path.join(os.getcwd(), "cartoon_character_assets", "ui_hud", "hud_comparison_card.png")
@@ -265,9 +423,9 @@ def build_puppet_clip(action="talking", duration=5.0, target_height=1120):
     return puppet_composite
 
 
-def render_scene(bg_image, audio_wav, output_mp4, duration=5.0, action="talking", glossary_board=""):
+def render_scene(bg_image, audio_wav, output_mp4, duration=5.0, action="talking", glossary_board="", board1_image="", board2_image="", vs_badge="", bam_sound=""):
     """
-    Renders the full scene using MoviePy with the exact animated puppet and floating glossary board.
+    Renders the full scene using MoviePy with the exact animated puppet, interactive comparison boards, and floating glossary board.
     """
     print(f"🎬 [MoviePy Engine] Rendering scene with Exact Puppet (Action: {action}, Duration: {duration}s)...")
 
@@ -304,19 +462,48 @@ def render_scene(bg_image, audio_wav, output_mp4, duration=5.0, action="talking"
         except Exception as e:
             print(f"[MoviePy] Notice attaching floating glossary board: {e}")
 
-    # 2. Puppet clip
-    puppet = build_puppet_clip(action=action, duration=duration, target_height=1120)
+    # 2. Puppet clip with interactive boards
+    puppet = build_puppet_clip(
+        action=action,
+        duration=duration,
+        target_height=1120,
+        board1_path=board1_image if (board1_image and os.path.exists(board1_image)) else None,
+        board2_path=board2_image if (board2_image and os.path.exists(board2_image)) else None,
+        vs_path=vs_badge if (vs_badge and os.path.exists(vs_badge)) else None,
+    )
     scene_layers.append(puppet)
 
     # 3. Composite scene
     final_video = CompositeVideoClip(scene_layers, size=(1080, 1920)).with_duration(duration)
 
-    # 4. Attach audio
+    # 4. Attach audio (mix voice dialogue + BAM stamp impact sounds at board arrivals)
+    audio_tracks = []
     if audio_wav and os.path.exists(audio_wav):
-        audio_clip = AudioFileClip(audio_wav)
-        # Ensure audio matches duration
-        audio_clip = audio_clip.with_duration(min(duration, audio_clip.duration))
-        final_video = final_video.with_audio(audio_clip)
+        voice_clip = AudioFileClip(audio_wav)
+        voice_clip = voice_clip.with_duration(min(duration, voice_clip.duration))
+        audio_tracks.append(voice_clip)
+
+    if bam_sound and os.path.exists(bam_sound) and (board1_image or board2_image):
+        try:
+            # BAM sound 1 at Board 1 slam (0.98s)
+            if duration >= 1.2:
+                bam_clip1 = AudioFileClip(bam_sound).with_start(0.98)
+                audio_tracks.append(bam_clip1)
+            # BAM sound 2 at Board 2 slam (2.08s)
+            if duration >= 2.3 and board2_image:
+                bam_clip2 = AudioFileClip(bam_sound).with_start(2.08)
+                audio_tracks.append(bam_clip2)
+        except Exception as e:
+            print(f"[MoviePy] Notice mixing BAM sound effects: {e}")
+
+    if audio_tracks:
+        try:
+            final_audio = CompositeAudioClip(audio_tracks).with_duration(duration)
+            final_video = final_video.with_audio(final_audio)
+        except Exception as e:
+            print(f"[MoviePy] Notice creating composite audio ({e}), using primary voice")
+            if audio_wav and os.path.exists(audio_wav):
+                final_video = final_video.with_audio(voice_clip)
 
     # 5. Write MP4
     out_dir = os.path.dirname(output_mp4)
@@ -348,8 +535,12 @@ def main():
     parser.add_argument("--audio_wav", type=str, default="", help="Path to audio WAV file")
     parser.add_argument("--output_mp4", type=str, required=True, help="Path for output MP4")
     parser.add_argument("--duration", type=float, default=5.0, help="Duration in seconds")
-    parser.add_argument("--action", type=str, default="talking", help="Action: talking, idle, point_left, point_right, explain_both, walk_in")
+    parser.add_argument("--action", type=str, default="talking", help="Action: talking, idle, point_left, point_right, explain_both, walk_in, point_up_left, point_up_right, akimbo_jaw")
     parser.add_argument("--glossary_board", type=str, default="", help="Path to floating glossary board image")
+    parser.add_argument("--board1_image", type=str, default="", help="Path to board 1 image")
+    parser.add_argument("--board2_image", type=str, default="", help="Path to board 2 image")
+    parser.add_argument("--vs_badge", type=str, default="", help="Path to VS badge image")
+    parser.add_argument("--bam_sound", type=str, default="", help="Path to BAM sound effect")
 
     args = parser.parse_args()
     render_scene(
@@ -359,6 +550,10 @@ def main():
         duration=args.duration,
         action=args.action,
         glossary_board=args.glossary_board,
+        board1_image=args.board1_image,
+        board2_image=args.board2_image,
+        vs_badge=args.vs_badge,
+        bam_sound=args.bam_sound,
     )
 
 

@@ -78,6 +78,24 @@ function renderHumanHead(pose = 'idle', options = {}) {
     pupilOffsetX = -6;
   } else if (pose === 'point_right' || pose === 'looking_right') {
     pupilOffsetX = 6;
+  } else if (pose === 'point_up_left') {
+    pupilOffsetX = -7;
+    pupilOffsetY = -6;
+    browLeftD = "M 206 186 Q 225 176 245 186";
+    browRightD = "M 255 192 Q 275 186 294 196";
+  } else if (pose === 'point_up_right') {
+    pupilOffsetX = 7;
+    pupilOffsetY = -6;
+    browLeftD = "M 206 192 Q 225 186 245 196";
+    browRightD = "M 255 186 Q 275 176 294 186";
+  } else if (pose === 'akimbo_jaw') {
+    pupilOffsetX = 3;
+    pupilOffsetY = -3;
+    browLeftD = "M 206 198 Q 225 194 245 200";
+    browRightD = "M 255 184 Q 275 174 294 184"; // Raised quizzical eyebrow
+  } else if (pose === 'walking' || pose === 'walk_stride1' || pose === 'walk_stride2' || pose === 'walk_out') {
+    pupilOffsetX = 5;
+    pupilOffsetY = 0;
   } else if (pose === 'thinking') {
     pupilOffsetX = 3;
     pupilOffsetY = -5;
@@ -124,6 +142,8 @@ function renderHumanHead(pose = 'idle', options = {}) {
     mouthPath = `<path d="M 235 268 Q 250 286 265 268 Z" fill="#581c1c" stroke="#1e293b" stroke-width="2.5" stroke-linejoin="round" />
                  <path d="M 238 270 Q 250 275 262 270" stroke="#f8fafc" stroke-width="3" stroke-linecap="round" />
                  <ellipse cx="250" cy="281" rx="6" ry="3" fill="#b91c1c" />`;
+  } else if (pose === 'akimbo_jaw') {
+    mouthPath = `<path d="M 236 272 Q 250 274 266 268" stroke="#451a03" stroke-width="3" stroke-linecap="round" fill="none" />`;
   } else if (pose === 'thinking') {
     mouthPath = `<path d="M 240 274 Q 252 273 262 271" stroke="#451a03" stroke-width="3" stroke-linecap="round" fill="none" />`;
   } else if (pose === 'confused') {
@@ -243,27 +263,58 @@ function renderModernTorso() {
 
 /**
  * Render Modern Creator Legs & Designer Sneakers
+ * Delivers true lateral side-walking profile when in motion, and grounded stance when stationary.
  */
 function renderModernLegs(pose = 'idle') {
-  if (pose === 'walking') {
+  if (pose === 'walking' || pose === 'walk_stride1' || pose === 'walk_out') {
     return `
-      <!-- Left Leg (Stepping Forward with dynamic bend) -->
-      <path d="M 215 526 L 245 526 L 230 710 L 195 710 Z" fill="${PANTS_MID}" stroke="#0f172a" stroke-width="2.5" />
-      <path d="M 195 710 L 230 710 L 210 900 L 180 900 Z" fill="${PANTS_MID}" stroke="#0f172a" stroke-width="2.5" />
-      <rect x="176" y="895" width="38" height="16" rx="4" fill="${JACKET_LIGHT}" />
-      <!-- Left Modern Designer Sneaker -->
-      <path d="M 152 940 L 218 940 L 218 912 L 188 910 L 154 925 Z" fill="${SNEAKER_WHITE}" stroke="#0f172a" stroke-width="2" />
-      <rect x="150" y="938" width="70" height="9" rx="3" fill="${SNEAKER_SOLE}" stroke="#0f172a" stroke-width="1.5" />
-      <line x1="172" y1="920" x2="192" y2="920" stroke="${SNEAKER_TRIM}" stroke-width="2.5" stroke-linecap="round" />
+      <!-- LATERAL SIDE-WALKING STRIDE 1 (Heading Rightward in dynamic lateral profile) -->
+      <!-- Pelvis in 3/4 lateral stride -->
+      <path d="M 215 526 C 230 526, 260 528, 275 530 L 285 580 C 265 585, 235 585, 215 578 Z" fill="${PANTS_MID}" stroke="#0f172a" stroke-width="2.5" />
 
-      <!-- Right Leg (Trailing Stride) -->
-      <path d="M 255 526 L 285 526 L 310 710 L 275 710 Z" fill="${PANTS_DARK}" stroke="#0f172a" stroke-width="2.5" />
-      <path d="M 275 710 L 310 710 L 330 900 L 295 900 Z" fill="${PANTS_DARK}" stroke="#0f172a" stroke-width="2.5" />
-      <rect x="290" y="895" width="42" height="16" rx="4" fill="${JACKET_LIGHT}" />
-      <!-- Right Modern Designer Sneaker -->
-      <path d="M 285 940 L 350 940 L 342 925 L 310 910 L 285 912 Z" fill="${SNEAKER_WHITE}" stroke="#0f172a" stroke-width="2" />
-      <rect x="282" y="938" width="72" height="9" rx="3" fill="${SNEAKER_SOLE}" stroke="#0f172a" stroke-width="1.5" />
-      <line x1="305" y1="920" x2="325" y2="920" stroke="${SNEAKER_TRIM}" stroke-width="2.5" stroke-linecap="round" />
+      <!-- Back Leg (Trailing Leg in Lateral Profile - pushing off backward-left) -->
+      <path d="M 225 572 L 255 575 L 205 730 L 175 725 Z" fill="${PANTS_DARK}" stroke="#0f172a" stroke-width="2.5" />
+      <path d="M 175 725 L 205 730 L 160 910 L 130 905 Z" fill="${PANTS_DARK}" stroke="#0f172a" stroke-width="2.5" />
+      <rect x="125" y="900" width="38" height="15" rx="4" fill="${JACKET_LIGHT}" transform="rotate(-15 144 907)" />
+      <!-- Back Sneaker (Flexed upward on toe in lateral profile) -->
+      <path d="M 115 930 L 180 942 L 188 926 L 158 912 L 126 916 Z" fill="${SNEAKER_WHITE}" stroke="#0f172a" stroke-width="2" />
+      <rect x="114" y="934" width="70" height="9" rx="3" fill="${SNEAKER_SOLE}" stroke="#0f172a" stroke-width="1.5" transform="rotate(8 149 938)" />
+      <line x1="135" y1="922" x2="160" y2="926" stroke="${SNEAKER_TRIM}" stroke-width="2.5" stroke-linecap="round" />
+
+      <!-- Front Leg (Leading Leg in Lateral Profile - stepping forward-right with knee flexed) -->
+      <path d="M 245 572 L 278 576 L 330 720 L 295 725 Z" fill="${PANTS_MID}" stroke="#0f172a" stroke-width="2.5" />
+      <path d="M 295 725 L 330 720 L 370 900 L 335 905 Z" fill="${PANTS_MID}" stroke="#0f172a" stroke-width="2.5" />
+      <rect x="330" y="895" width="42" height="16" rx="4" fill="${JACKET_LIGHT}" transform="rotate(12 351 903)" />
+      <!-- Front Sneaker (Reaching forward, heel planted rightward in lateral profile) -->
+      <path d="M 330 945 L 420 945 L 416 925 L 375 912 L 335 922 Z" fill="${SNEAKER_WHITE}" stroke="#0f172a" stroke-width="2" />
+      <rect x="328" y="942" width="95" height="10" rx="3" fill="${SNEAKER_SOLE}" stroke="#0f172a" stroke-width="1.5" />
+      <line x1="365" y1="926" x2="395" y2="926" stroke="${SNEAKER_TRIM}" stroke-width="2.5" stroke-linecap="round" />
+    `;
+  }
+
+  if (pose === 'walk_stride2') {
+    return `
+      <!-- LATERAL SIDE-WALKING STRIDE 2 (Opposite Legs Crossing in lateral profile) -->
+      <!-- Pelvis in 3/4 lateral stride -->
+      <path d="M 215 526 C 230 526, 260 528, 275 530 L 285 580 C 265 585, 235 585, 215 578 Z" fill="${PANTS_MID}" stroke="#0f172a" stroke-width="2.5" />
+
+      <!-- Back Leg (Trailing Left Leg pushing back) -->
+      <path d="M 240 572 L 270 576 L 200 730 L 170 725 Z" fill="${PANTS_MID}" stroke="#0f172a" stroke-width="2.5" />
+      <path d="M 170 725 L 200 730 L 150 910 L 120 905 Z" fill="${PANTS_MID}" stroke="#0f172a" stroke-width="2.5" />
+      <rect x="116" y="900" width="38" height="15" rx="4" fill="${JACKET_LIGHT}" transform="rotate(-15 135 907)" />
+      <!-- Back Sneaker flexed on toe in profile -->
+      <path d="M 106 930 L 172 942 L 180 926 L 150 912 L 118 916 Z" fill="${SNEAKER_WHITE}" stroke="#0f172a" stroke-width="2" />
+      <rect x="105" y="934" width="70" height="9" rx="3" fill="${SNEAKER_SOLE}" stroke="#0f172a" stroke-width="1.5" transform="rotate(8 140 938)" />
+      <line x1="126" y1="922" x2="152" y2="926" stroke="${SNEAKER_TRIM}" stroke-width="2.5" stroke-linecap="round" />
+
+      <!-- Front Leg (Leading Right Leg stepping forward-right) -->
+      <path d="M 230 572 L 262 576 L 310 720 L 276 725 Z" fill="${PANTS_DARK}" stroke="#0f172a" stroke-width="2.5" />
+      <path d="M 276 725 L 310 720 L 350 900 L 316 905 Z" fill="${PANTS_DARK}" stroke="#0f172a" stroke-width="2.5" />
+      <rect x="312" y="895" width="42" height="16" rx="4" fill="${JACKET_LIGHT}" transform="rotate(12 333 903)" />
+      <!-- Front Sneaker stepping forward in profile -->
+      <path d="M 312 945 L 402 945 L 398 925 L 358 912 L 318 922 Z" fill="${SNEAKER_WHITE}" stroke="#0f172a" stroke-width="2" />
+      <rect x="310" y="942" width="95" height="10" rx="3" fill="${SNEAKER_SOLE}" stroke="#0f172a" stroke-width="1.5" />
+      <line x1="346" y1="926" x2="376" y2="926" stroke="${SNEAKER_TRIM}" stroke-width="2.5" stroke-linecap="round" />
     `;
   }
 
@@ -319,6 +370,51 @@ function renderModernLegs(pose = 'idle') {
 }
 
 /**
+ * Anatomically Sculpted Human Hand Generator
+ * Renders realistic palm, thenar eminence (thumb root), thumb, index, middle, ring, and pinky fingers
+ */
+function renderHumanHand(wristX, wristY, isLeft = true, gesture = 'relaxed') {
+  const dir = isLeft ? 1 : -1;
+  const flip = isLeft ? 1 : -1;
+
+  if (gesture === 'relaxed') {
+    // Sculpted human hand hanging at side
+    return `
+      <g id="human_hand_${isLeft ? 'l' : 'r'}" transform="translate(${wristX}, ${wristY}) scale(${flip}, 1)">
+        <!-- Palm & Thenar Eminence (fleshy thumb base) -->
+        <path d="M 0 0 C -4 14, -8 28, -6 44 C 0 54, 18 54, 24 44 C 24 28, 20 14, 16 0 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+        
+        <!-- Opposable Human Thumb with Knuckle Joint -->
+        <path d="M -4 16 C -12 22, -18 30, -16 40 C -14 46, -8 46, -4 38 C -2 30, -1 24, -2 18 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" stroke-linejoin="round" />
+        <!-- Thumb crease & fingernail highlight -->
+        <line x1="-12" y1="30" x2="-8" y2="34" stroke="${SKIN_SHADOW}" stroke-width="1.2" stroke-linecap="round" />
+        <path d="M -14 38 Q -12 42 -10 39" stroke="${SKIN_SHADOW}" stroke-width="1" fill="none" opacity="0.6" />
+
+        <!-- Index Finger (distinct joint curve) -->
+        <path d="M -2 44 C -4 54, -4 66, -3 74 C -1 77, 3 77, 4 73 C 4 65, 3 54, 2 44 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+        <line x1="-2" y1="58" x2="2" y2="58" stroke="${SKIN_SHADOW}" stroke-width="1" stroke-linecap="round" opacity="0.6" />
+
+        <!-- Middle Finger (longest, reaching downward with subtle knuckle) -->
+        <path d="M 4 44 C 4 56, 4 70, 5 80 C 7 83, 11 83, 12 79 C 12 69, 11 56, 10 44 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+        <line x1="5" y1="62" x2="10" y2="62" stroke="${SKIN_SHADOW}" stroke-width="1" stroke-linecap="round" opacity="0.6" />
+
+        <!-- Ring Finger -->
+        <path d="M 11 44 C 11 55, 11 68, 12 76 C 14 79, 17 79, 18 75 C 18 66, 17 55, 16 44 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+        <line x1="12" y1="60" x2="16" y2="60" stroke="${SKIN_SHADOW}" stroke-width="1" stroke-linecap="round" opacity="0.6" />
+
+        <!-- Pinky Finger (smaller, natural curl) -->
+        <path d="M 17 42 C 18 50, 19 60, 20 67 C 22 70, 24 70, 25 66 C 25 58, 23 48, 22 40 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+        
+        <!-- Fleshy palm crease / life line -->
+        <path d="M 2 24 C 6 32, 10 38, 14 42" stroke="${SKIN_SHADOW}" stroke-width="1.3" fill="none" stroke-linecap="round" opacity="0.7" />
+      </g>
+    `;
+  }
+
+  return '';
+}
+
+/**
  * Render Modern Creator Arms, Hands & Smartwatch
  * Features anatomically sculpted human hands with fingers, thumb, knuckles,
  * tapered forearms, and fabric jacket sleeves.
@@ -341,16 +437,8 @@ function renderModernArms(pose = 'idle') {
       <!-- Left Forearm (Tapered natural arm muscle) -->
       <path d="M 162 522 C 158 560, 156 610, 160 655 L 182 655 C 186 610, 184 560, 184 522 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
       ${smartwatch}
-      <!-- Left Hand (Natural relaxed fingers hanging down) -->
-      <path d="M 160 668 
-               C 156 680, 155 700, 158 720 
-               C 161 726, 165 726, 167 720
-               C 169 725, 173 725, 175 718
-               C 177 724, 181 723, 182 715
-               C 184 712, 185 695, 184 668 Z" 
-            fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
-      <!-- Palm crease and thumb detail -->
-      <path d="M 158 680 C 153 686, 153 696, 157 702" stroke="${SKIN_SHADOW}" stroke-width="1.8" fill="none" stroke-linecap="round" />
+      <!-- Anatomically Sculpted Left Hand -->
+      ${renderHumanHand(164, 655, true, 'relaxed')}
 
       <!-- Right Arm (Dynamically pointing to right toward HUD/graphics) -->
       <!-- Upper Jacket Sleeve extending outward -->
@@ -415,14 +503,8 @@ function renderModernArms(pose = 'idle') {
       <path d="M 315 375 C 320 420, 324 460, 320 515 C 328 518, 342 518, 348 515 C 348 460, 346 420, 344 375 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
       <path d="M 320 510 C 328 514, 340 514, 348 510 L 348 522 C 340 526, 328 526, 320 522 Z" fill="${JACKET_LIGHT}" stroke="#0f172a" stroke-width="2" />
       <path d="M 322 522 C 320 560, 320 610, 324 655 L 346 655 C 348 610, 348 560, 346 522 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
-      <!-- Right Hand -->
-      <path d="M 322 668 
-               C 318 680, 318 700, 321 720 
-               C 324 726, 328 726, 330 720
-               C 332 725, 336 725, 338 718
-               C 340 724, 344 723, 346 715
-               C 348 712, 349 695, 348 668 Z" 
-            fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+      <!-- Anatomically Sculpted Right Hand -->
+      ${renderHumanHand(344, 655, false, 'relaxed')}
     `;
   }
 
@@ -535,6 +617,117 @@ function renderModernArms(pose = 'idle') {
     `;
   }
 
+  if (pose === 'point_up_left') {
+    return `
+      <!-- Left Arm: Dynamically pointing upward and left toward Board 1 -->
+      <path d="M 175 375 C 150 350, 120 320, 85 290 L 102 274 C 135 305, 165 338, 188 375 Z" fill="${JACKET_MID}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 85 290 L 76 298 L 86 310 L 102 274 Z" fill="${JACKET_LIGHT}" stroke="#0f172a" stroke-width="2" />
+      <!-- Forearm extending upward-left -->
+      <path d="M 80 292 C 50 260, 20 228, -8 195 L 8 182 C 34 214, 65 248, 96 278 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Sculpted Pointing Hand Up-Left -->
+      <ellipse cx="-4" cy="190" rx="14" ry="12" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Extended index finger pointing directly toward Board 1 -->
+      <path d="M -4 184 C -22 165, -45 142, -64 122 C -68 120, -70 126, -65 130 C -48 150, -26 172, -8 192 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+      <circle cx="-66" cy="124" r="4" fill="#38bdf8" />
+      <circle cx="-66" cy="124" r="9" fill="#38bdf8" opacity="0.3" />
+
+      <!-- Right Arm: Natural resting at waist/hip -->
+      <path d="M 315 375 C 320 420, 324 460, 320 515 C 328 518, 342 518, 348 515 C 348 460, 346 420, 344 375 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 320 510 C 328 514, 340 514, 348 510 L 348 522 C 340 526, 328 526, 320 522 Z" fill="${JACKET_LIGHT}" stroke="#0f172a" stroke-width="2" />
+      <path d="M 322 522 C 320 560, 320 610, 324 655 L 346 655 C 348 610, 348 560, 346 522 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Sculpted Human Hand -->
+      ${renderHumanHand(344, 655, false, 'relaxed')}
+    `;
+  }
+
+  if (pose === 'point_up_right') {
+    return `
+      <!-- Left Arm (Resting at side with smartwatch) -->
+      <path d="M 162 375 C 158 420, 156 460, 160 515 C 168 518, 182 518, 188 515 C 188 460, 186 420, 184 375 Z" fill="${JACKET_MID}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 160 510 C 168 514, 180 514, 188 510 L 188 522 C 180 526, 168 526, 160 522 Z" fill="${JACKET_LIGHT}" stroke="#0f172a" stroke-width="2" />
+      <path d="M 162 522 C 158 560, 156 610, 160 655 L 182 655 C 186 610, 184 560, 184 522 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      ${smartwatch}
+      <!-- Sculpted Human Hand -->
+      ${renderHumanHand(164, 655, true, 'relaxed')}
+
+      <!-- Right Arm: Dynamically pointing upward and right toward Board 2 -->
+      <path d="M 320 375 C 345 350, 375 320, 410 290 L 393 274 C 360 305, 330 338, 307 375 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 410 290 L 419 298 L 409 310 L 393 274 Z" fill="${JACKET_LIGHT}" stroke="#0f172a" stroke-width="2" />
+      <!-- Forearm extending upward-right -->
+      <path d="M 415 292 C 445 260, 475 228, 503 195 L 487 182 C 461 214, 430 248, 399 278 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Sculpted Pointing Hand Up-Right -->
+      <ellipse cx="499" cy="190" rx="14" ry="12" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Extended index finger pointing directly toward Board 2 -->
+      <path d="M 499 184 C 517 165, 540 142, 559 122 C 563 120, 565 126, 560 130 C 543 150, 521 172, 503 192 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+      <circle cx="561" cy="124" r="4" fill="#f97316" />
+      <circle cx="561" cy="124" r="9" fill="#f97316" opacity="0.3" />
+    `;
+  }
+
+  if (pose === 'akimbo_jaw') {
+    return `
+      <!-- Left Arm AKIMBO: Hand planted firmly on hip with elbow angled out -->
+      <!-- Upper arm angling outward -->
+      <path d="M 165 375 C 145 410, 125 445, 108 472 L 126 480 C 142 452, 160 415, 185 375 Z" fill="${JACKET_MID}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <!-- Forearm angling inward to hip -->
+      <path d="M 112 475 C 135 490, 160 505, 188 522 L 194 505 C 168 490, 142 475, 124 462 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Smartwatch at wrist -->
+      <rect x="180" y="504" width="18" height="18" rx="4" fill="${WATCH_STRAP}" stroke="#0f172a" stroke-width="1.5" />
+      <rect x="182" y="506" width="14" height="14" rx="3" fill="#0f172a" stroke="${WATCH_GLOW}" stroke-width="1.5" />
+      <circle cx="189" cy="513" r="3" fill="${WATCH_GLOW}" opacity="0.9" />
+      <!-- Left Hand resting firmly on hip/waist -->
+      <path d="M 188 518 C 196 524, 204 530, 208 534 C 206 538, 200 540, 194 536 C 188 532, 184 526, 182 520 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+
+      <!-- Right Arm ON JAW: Elbow bent, hand cradling chin/jawline thoughtfully -->
+      <!-- Upper arm in front of torso -->
+      <path d="M 315 375 C 330 415, 340 450, 335 490 L 318 494 C 318 455, 310 415, 305 380 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2.5" />
+      <!-- Forearm ascending to jaw -->
+      <path d="M 326 488 C 332 445, 318 375, 276 312 L 262 322 C 300 378, 312 442, 308 492 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Hand at Jaw: Thumb cradling chin, index & middle fingers along lower cheek -->
+      <path d="M 266 312 C 260 305, 258 295, 256 285 L 270 282 C 272 292, 275 300, 280 306 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <path d="M 258 286 C 257 274, 260 264, 263 252 C 267 252, 270 256, 268 266 L 266 286 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 256 295 C 246 296, 238 297, 234 298 C 233 302, 238 304, 245 304 C 250 304, 256 303, 262 301 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+    `;
+  }
+
+  if (pose === 'walking' || pose === 'walk_stride1' || pose === 'walk_out') {
+    return `
+      <!-- Left Arm (Swinging forward with bent elbow & smartwatch visible) -->
+      <path d="M 165 375 C 150 410, 136 445, 120 480 L 138 488 C 152 455, 166 420, 185 375 Z" fill="${JACKET_MID}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 120 480 L 114 484 L 118 494 L 138 488 Z" fill="${JACKET_LIGHT}" stroke="#0f172a" stroke-width="2" />
+      <!-- Forearm swinging forward -->
+      <path d="M 122 486 C 108 525, 96 565, 88 605 L 108 610 C 116 572, 126 532, 138 492 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Smartwatch swinging forward -->
+      <rect x="86" y="590" width="20" height="16" rx="4" fill="${WATCH_STRAP}" stroke="#0f172a" stroke-width="1.5" />
+      <circle cx="96" cy="598" r="3.5" fill="${WATCH_GLOW}" opacity="0.9" />
+      <!-- Sculpted Left Hand relaxed in stride -->
+      <ellipse cx="94" cy="625" rx="12" ry="14" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <path d="M 88 632 C 84 640, 82 648, 80 655" stroke="${SKIN_SHADOW}" stroke-width="1.8" fill="none" stroke-linecap="round" />
+
+      <!-- Right Arm (Swinging backward counter to left arm) -->
+      <path d="M 315 375 C 330 410, 345 445, 360 480 L 342 488 C 328 455, 314 420, 295 375 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 358 486 C 372 525, 386 565, 396 605 L 376 610 C 368 572, 356 532, 344 492 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Right Hand trailing backward in stride -->
+      <ellipse cx="388" cy="625" rx="12" ry="14" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+    `;
+  }
+
+  if (pose === 'walk_stride2') {
+    return `
+      <!-- Right Arm (Swinging forward) -->
+      <path d="M 315 375 C 300 410, 286 445, 270 480 L 288 488 C 302 455, 316 420, 335 375 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 272 486 C 258 525, 246 565, 238 605 L 258 610 C 266 572, 276 532, 288 492 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <ellipse cx="244" cy="625" rx="12" ry="14" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+
+      <!-- Left Arm (Swinging backward with smartwatch) -->
+      <path d="M 165 375 C 180 410, 195 445, 210 480 L 192 488 C 178 455, 164 420, 145 375 Z" fill="${JACKET_MID}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 208 486 C 222 525, 236 565, 246 605 L 226 610 C 218 572, 206 532, 194 492 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <rect x="232" y="590" width="20" height="16" rx="4" fill="${WATCH_STRAP}" stroke="#0f172a" stroke-width="1.5" />
+      <circle cx="242" cy="598" r="3.5" fill="${WATCH_GLOW}" opacity="0.9" />
+      <ellipse cx="238" cy="625" rx="12" ry="14" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+    `;
+  }
+
   // Default Relaxed Conversational Stance (Natural relaxed arms and sculpted hands)
   return `
     <!-- Left Arm -->
@@ -543,32 +736,16 @@ function renderModernArms(pose = 'idle') {
     <!-- Forearm -->
     <path d="M 162 522 C 158 560, 156 610, 160 655 L 182 655 C 186 610, 184 560, 184 522 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
     ${smartwatch}
-    <!-- Sculpted Left Hand: Natural resting curl with thumb and distinct fingers -->
-    <path d="M 160 668 
-             C 156 680, 155 700, 158 722 
-             C 161 728, 165 727, 167 721
-             C 169 727, 173 726, 175 719
-             C 177 725, 181 724, 183 716
-             C 185 712, 185 695, 184 668 Z" 
-          fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
-    <!-- Fleshy thumb crease -->
-    <path d="M 158 682 C 152 688, 152 698, 157 704" stroke="${SKIN_SHADOW}" stroke-width="1.8" fill="none" stroke-linecap="round" />
+    <!-- Anatomically Sculpted Left Hand -->
+    ${renderHumanHand(164, 655, true, 'relaxed')}
 
     <!-- Right Arm -->
     <path d="M 315 375 C 320 420, 324 460, 320 515 C 328 518, 342 518, 348 515 C 348 460, 346 420, 344 375 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
     <path d="M 320 510 C 328 514, 340 514, 348 510 L 348 522 C 340 526, 328 526, 320 522 Z" fill="${JACKET_LIGHT}" stroke="#0f172a" stroke-width="2" />
     <!-- Forearm -->
     <path d="M 322 522 C 320 560, 320 610, 324 655 L 346 655 C 348 610, 348 560, 346 522 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
-    <!-- Sculpted Right Hand: Natural resting curl with thumb and distinct fingers -->
-    <path d="M 322 668 
-             C 318 680, 318 700, 321 722 
-             C 324 728, 328 727, 330 721
-             C 332 727, 336 726, 338 719
-             C 340 725, 344 724, 346 716
-             C 348 712, 349 695, 348 668 Z" 
-          fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
-    <!-- Fleshy thumb crease -->
-    <path d="M 342 682 C 348 688, 348 698, 343 704" stroke="${SKIN_SHADOW}" stroke-width="1.8" fill="none" stroke-linecap="round" />
+    <!-- Anatomically Sculpted Right Hand -->
+    ${renderHumanHand(344, 655, false, 'relaxed')}
   `;
 }
 
@@ -579,12 +756,15 @@ function buildModernCharacterSVG(pose = 'idle', options = {}) {
   let viewBox = "0 50 500 1000";
   let width = 500;
 
-  if (pose === 'point_left' || pose === 'confused' || pose === 'surprised') {
+  if (pose === 'point_left' || pose === 'point_up_left' || pose === 'confused' || pose === 'surprised') {
     viewBox = "-100 50 700 1000";
     width = 700;
-  } else if (pose === 'point_right') {
-    viewBox = "0 50 620 1000";
-    width = 620;
+  } else if (pose === 'point_right' || pose === 'point_up_right') {
+    viewBox = "0 50 640 1000";
+    width = 640;
+  } else if (pose === 'walking' || pose === 'walk_stride1' || pose === 'walk_stride2' || pose === 'walk_out') {
+    viewBox = "-30 50 560 1000";
+    width = 560;
   }
 
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -758,6 +938,10 @@ const ALL_MODERN_POSES = [
   { name: 'puppet_blink', pose: 'idle', options: { blink: true, talking: false } },
   { name: 'puppet_talking', pose: 'idle', options: { blink: false, talking: true } },
   { name: 'puppet_walking', pose: 'walking', options: { blink: false, talking: false } },
+  { name: 'puppet_walk_stride1', pose: 'walk_stride1', options: { blink: false, talking: false } },
+  { name: 'puppet_walk_stride2', pose: 'walk_stride2', options: { blink: false, talking: false } },
+  { name: 'puppet_walk_talk1', pose: 'walk_stride1', options: { blink: false, talking: true } },
+  { name: 'puppet_walk_talk2', pose: 'walk_stride2', options: { blink: false, talking: true } },
   { name: 'puppet_sitting', pose: 'sitting', options: { blink: false, talking: true } },
   { name: 'puppet_thinking', pose: 'thinking', options: { blink: false, talking: false } },
   { name: 'puppet_confused', pose: 'confused', options: { blink: false, talking: true } },
@@ -765,6 +949,10 @@ const ALL_MODERN_POSES = [
   { name: 'puppet_questioning_users', pose: 'questioning_users', options: { blink: false, talking: true } },
   { name: 'puppet_point_left', pose: 'point_left', options: { blink: false, talking: true } },
   { name: 'puppet_point_right', pose: 'point_right', options: { blink: false, talking: true } },
+  { name: 'puppet_point_up_left', pose: 'point_up_left', options: { blink: false, talking: true } },
+  { name: 'puppet_point_up_right', pose: 'point_up_right', options: { blink: false, talking: true } },
+  { name: 'puppet_akimbo_jaw', pose: 'akimbo_jaw', options: { blink: false, talking: false } },
+  { name: 'puppet_akimbo_jaw_talk', pose: 'akimbo_jaw', options: { blink: false, talking: true } },
   { name: 'puppet_explain_both', pose: 'explain_both', options: { blink: false, talking: true } }
 ];
 

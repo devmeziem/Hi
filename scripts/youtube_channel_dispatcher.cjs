@@ -29,9 +29,9 @@ const CHANNEL_CONFIG = {
     handle: '@thestoicarchitect-n4b',
     name: 'The Stoic Architect',
     isPrimary: false,
-    clientId: process.env.YOUTUBE_CLIENT_ID_CH2 || DEFAULT_CLIENT_ID,
-    clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH2 || DEFAULT_CLIENT_SECRET,
-    refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH2 || process.env.YOUTUBE_REFRESH_TOKEN || '',
+    clientId: process.env.YOUTUBE_CLIENT_ID_CH2 || process.env.YOUTUBE_CLIENT_ID_STOIC || DEFAULT_CLIENT_ID,
+    clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH2 || process.env.YOUTUBE_CLIENT_SECRET_STOIC || DEFAULT_CLIENT_SECRET,
+    refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH2 || process.env.YOUTUBE_REFRESH_TOKEN_STOIC || '',
     affiliateCta: '🏛️ Follow @TheStoicArchitect for daily Stoic wisdom and mental strength.',
     pinnedComment: '📌 "No person is free who is not master of himself." Which of these Stoic rules resonates most with you today? Subscribe to @TheStoicArchitect for daily fortitude.',
     tags: ['#Shorts', '#viral', '#trending', '#Stoicism', '#MarcusAurelius', '#Discipline', '#Motivation', '#Mindset', '#Wisdom', '#DailyStoic', '#fyp']
@@ -42,7 +42,7 @@ const CHANNEL_CONFIG = {
     isPrimary: false,
     clientId: process.env.YOUTUBE_CLIENT_ID_CH3 || process.env.YOUTUBE_CLIENT_ID_TECH || DEFAULT_CLIENT_ID,
     clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH3 || process.env.YOUTUBE_CLIENT_SECRET_TECH || DEFAULT_CLIENT_SECRET,
-    refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH3 || process.env.YOUTUBE_REFRESH_TOKEN_TECH || process.env.YOUTUBE_REFRESH_TOKEN || '',
+    refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH3 || process.env.YOUTUBE_REFRESH_TOKEN_TECH || '',
     affiliateCta: '🎬 Subscribe to @bonesceo for daily fast-paced Tech, AI, and Science visual animated explainers!',
     pinnedComment: '📌 What curious tech or science mystery should Archie animate next? Drop your ideas below and subscribe!',
     tags: ['#Shorts', '#viral', '#trending', '#Tech', '#AI', '#Animation', '#Cartoon', '#Science', '#Explained', '#Blender', '#fyp']
