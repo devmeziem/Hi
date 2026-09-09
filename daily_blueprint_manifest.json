@@ -1,6 +1,19 @@
 {
   "videos": [
     {
+      "id": "fin_quote_1788939120014",
+      "channelId": "finance_saas",
+      "type": "financial_quote_reel_5s",
+      "title": "Finance Mindset — Naval Ravikant Quotes #Shorts",
+      "author": "Naval Ravikant",
+      "credentials": "Founder, AngelList • Tech Philosopher & Investor",
+      "reference": "The Almanack of Naval Ravikant",
+      "duration": 5,
+      "videoPath": "/home/runner/work/Hi/Hi/rendered_videos/fin_quote_5s_1788939120014.mp4",
+      "loopable": true,
+      "publishedAt": "2026-09-09T07:32:04.136Z"
+    },
+    {
       "id": "fin_quote_1788938275009",
       "channelId": "finance_saas",
       "type": "financial_quote_reel_5s",
