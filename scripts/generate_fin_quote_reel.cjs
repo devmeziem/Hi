@@ -422,15 +422,10 @@ function generateFinancialMysterySound(outWavPath, duration = 5.0) {
     path.join(process.cwd(), 'test_artifacts', 'sounds')
   ];
 
-  const { generateAllOminousSounds } = require('./generate_ominous_sounds.cjs');
   const presets = [
-    'ominous_dark_suspense',
-    'ominous_eerie_drone',
-    'ominous_tension_pulse',
-    'ominous_abyss_resonance',
     'horror_scene_murder_mystery',
-    'mystery_darkness',
-    'instrumental_mystery'
+    'instrumental_mystery',
+    'mystery_darkness'
   ];
   const runSeed = Math.floor(Date.now() / (1000 * 60 * 15)); // change every 15 mins or run
   const chosenPreset = process.env.SOUND_PRESET || presets[runSeed % presets.length];
@@ -511,15 +506,15 @@ function generateFinancialMysterySound(outWavPath, duration = 5.0) {
 }
 
 /**
- * Generate Frosted Center-Bottom Glass Caption Card SVG
+ * Generate High-Contrast Center-Bottom Caption Card SVG (Optimized for Maximum Visibility)
  */
 function buildFrostedGlassCardSvg(scholar, width = 1080, height = 1920) {
-  // Wrap text cleanly
+  // Wrap text with comfortable character length for large, visible typography
   const quoteWords = scholar.quote.split(' ');
   const lines = [];
   let currentLine = '';
   for (const w of quoteWords) {
-    if ((currentLine + ' ' + w).length > 34) {
+    if ((currentLine + ' ' + w).length > 25) {
       lines.push(currentLine.trim());
       currentLine = w;
     } else {
@@ -528,67 +523,82 @@ function buildFrostedGlassCardSvg(scholar, width = 1080, height = 1920) {
   }
   if (currentLine) lines.push(currentLine.trim());
 
-  // Center vertical placement
-  const cardY = 1100;
-  const cardHeight = Math.max(420, 240 + lines.length * 52);
+  // Center vertical placement with generous contrast margin
+  const cardHeight = Math.max(540, 300 + lines.length * 70);
+  const cardY = 1740 - cardHeight;
   const cardWidth = 980;
   const cardX = 50;
 
   const quoteTspans = lines.map((line, idx) => {
-    return `<tspan x="540" dy="${idx === 0 ? 0 : 54}" font-size="38" font-weight="800" fill="#ffffff">${line}</tspan>`;
+    return `<tspan x="540" dy="${idx === 0 ? 0 : 72}">${escapeXml(line)}</tspan>`;
   }).join('');
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
     <defs>
-      <!-- Glassmorphic Background Gradient -->
-      <linearGradient id="glassBg" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#020617" stop-opacity="0.88" />
-        <stop offset="60%" stop-color="#090d16" stop-opacity="0.94" />
-        <stop offset="100%" stop-color="#000000" stop-opacity="0.98" />
+      <!-- Deep High-Contrast Opaque Backdrop -->
+      <linearGradient id="solidContrastBg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#050811" stop-opacity="0.98" />
+        <stop offset="50%" stop-color="#0a0e1a" stop-opacity="0.98" />
+        <stop offset="100%" stop-color="#020409" stop-opacity="0.99" />
       </linearGradient>
 
-      <!-- Warm Amber Accent Glow -->
+      <!-- Warm Gold Accent Stroke -->
       <linearGradient id="goldBorder" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.8" />
+        <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.9" />
         <stop offset="50%" stop-color="#fbbf24" stop-opacity="1.0" />
-        <stop offset="100%" stop-color="#d97706" stop-opacity="0.7" />
+        <stop offset="100%" stop-color="#d97706" stop-opacity="0.9" />
       </linearGradient>
 
-      <filter id="cardBlur" x="-10%" y="-10%" width="120%" height="120%">
-        <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000000" flood-opacity="0.75" />
+      <filter id="cardShadow" x="-10%" y="-10%" width="120%" height="120%">
+        <feDropShadow dx="0" dy="20" stdDeviation="30" flood-color="#000000" flood-opacity="0.98" />
+      </filter>
+      <filter id="textContrast" x="-15%" y="-15%" width="130%" height="130%">
+        <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="1.0" />
       </filter>
     </defs>
 
-    <!-- Frosted Glass Outer Container -->
-    <rect x="${cardX}" y="${cardY}" width="${cardWidth}" height="${cardHeight}" rx="28" fill="url(#glassBg)" filter="url(#cardBlur)" />
-    <rect x="${cardX}" y="${cardY}" width="${cardWidth}" height="${cardHeight}" rx="28" fill="none" stroke="url(#goldBorder)" stroke-width="2" />
+    <!-- Bottom Shading Gradient for 100% Guaranteed Text Legibility Over Any Background -->
+    <rect x="0" y="850" width="1080" height="1070" fill="#000000" fill-opacity="0.80" />
 
-    <!-- Top Accent Pill Header -->
-    <rect x="90" y="${cardY + 36}" width="250" height="34" rx="17" fill="#f59e0b" fill-opacity="0.15" stroke="#f59e0b" stroke-width="1.2" />
-    <text x="215" y="${cardY + 59}" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="900" fill="#fcd34d" text-anchor="middle" letter-spacing="1.5">WEALTH LAW</text>
+    <!-- High-Contrast Caption Card Outer Container -->
+    <rect x="${cardX}" y="${cardY}" width="${cardWidth}" height="${cardHeight}" rx="32" fill="url(#solidContrastBg)" filter="url(#cardShadow)" />
+    <rect x="${cardX}" y="${cardY}" width="${cardWidth}" height="${cardHeight}" rx="32" fill="none" stroke="url(#goldBorder)" stroke-width="2.5" />
 
-    <!-- Reference Stamp at Right -->
-    <text x="940" y="${cardY + 59}" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#94a3b8" text-anchor="end">${scholar.reference || 'Verified Financial Principle'}</text>
+    <!-- Top Accent Badge Header -->
+    <rect x="90" y="${cardY + 36}" width="280" height="42" rx="21" fill="#f59e0b" fill-opacity="0.22" stroke="#fbbf24" stroke-width="2" />
+    <text x="230" y="${cardY + 63}" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="900" fill="#fcd34d" text-anchor="middle" letter-spacing="2">FINANCE MINDSET</text>
 
-    <!-- Quotation Mark Decorator -->
-    <text x="90" y="${cardY + 128}" font-family="Georgia, serif" font-size="64" font-weight="bold" fill="#f59e0b" opacity="0.4">“</text>
+    <!-- Reference Tag at Right -->
+    <text x="940" y="${cardY + 63}" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" fill="#e2e8f0" text-anchor="end">${escapeXml(scholar.reference || 'Financial Wisdom')}</text>
 
-    <!-- The Quote Body -->
-    <text x="540" y="${cardY + 130}" font-family="system-ui, -apple-system, BlinkMacSystemFont, sans-serif" text-anchor="middle" letter-spacing="0.5">
+    <!-- Quotation Mark -->
+    <text x="90" y="${cardY + 145}" font-family="Georgia, serif" font-size="76" font-weight="bold" fill="#f59e0b" opacity="0.7">“</text>
+
+    <!-- The Quote Body: Extra Large, Ultra-Bold, Pure White with Deep Shadow -->
+    <text x="540" y="${cardY + 150}" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="50" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="-0.5" filter="url(#textContrast)">
       ${quoteTspans}
     </text>
 
-    <!-- Author & Institutional Credentials Divider -->
-    <line x1="90" y1="${cardY + cardHeight - 85}" x2="990" y2="${cardY + cardHeight - 85}" stroke="#334155" stroke-width="1.2" opacity="0.6" />
+    <!-- Divider Line -->
+    <line x1="90" y1="${cardY + cardHeight - 105}" x2="990" y2="${cardY + cardHeight - 105}" stroke="#334155" stroke-width="1.8" opacity="0.9" />
 
-    <!-- Author Name & Title -->
-    <text x="540" y="${cardY + cardHeight - 54}" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="900" fill="#f8fafc" text-anchor="middle" letter-spacing="0.8">
-      ${scholar.author.toUpperCase()}
+    <!-- Author Name (Vibrant Gold) & Credentials -->
+    <text x="540" y="${cardY + cardHeight - 65}" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="900" fill="#fbbf24" text-anchor="middle" letter-spacing="1.5" filter="url(#textContrast)">
+      ${escapeXml(scholar.author.toUpperCase())}
     </text>
-    <text x="540" y="${cardY + cardHeight - 26}" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="600" fill="#cbd5e1" text-anchor="middle">
-      ${scholar.credentials}
+    <text x="540" y="${cardY + cardHeight - 26}" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="700" fill="#f8fafc" text-anchor="middle">
+      ${escapeXml(scholar.credentials)}
     </text>
   </svg>`;
+}
+
+function escapeXml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }
 
 /**
@@ -618,12 +628,32 @@ async function generateFin5sVideo() {
   const mysteryWavPath = path.join(ARTIFACTS_DIR, 'finance_mystery_drone.wav');
   generateFinancialMysterySound(mysteryWavPath, TARGET_DURATION);
 
-  // 4. Build Frosted Glass Card SVG & Rasterize
+  // 4. Build High-Contrast Caption Card SVG & Rasterize Safely
   const cardSvg = buildFrostedGlassCardSvg(chosen);
   const cardSvgPath = path.join(ARTIFACTS_DIR, 'finance_caption_card.svg');
   const cardPngPath = path.join(ARTIFACTS_DIR, 'finance_caption_card.png');
   fs.writeFileSync(cardSvgPath, cardSvg);
-  execSync(`ffmpeg -y -i "${cardSvgPath}" "${cardPngPath}" 2>/dev/null`);
+
+  try {
+    if (fs.existsSync(cardPngPath)) fs.unlinkSync(cardPngPath);
+    try {
+      execSync(`rsvg-convert -w 1080 -h 1920 -o "${cardPngPath}" "${cardSvgPath}" 2>/dev/null`);
+    } catch {}
+    if (!fs.existsSync(cardPngPath) || fs.statSync(cardPngPath).size < 1000) {
+      try {
+        execSync(`convert -background none -density 150 "${cardSvgPath}" "${cardPngPath}" 2>/dev/null`);
+      } catch {}
+    }
+    if (!fs.existsSync(cardPngPath) || fs.statSync(cardPngPath).size < 1000) {
+      try {
+        execSync(`ffmpeg -y -i "${cardSvgPath}" "${cardPngPath}" 2>/dev/null`);
+      } catch {}
+    }
+  } catch (err) {
+    console.warn('[Finance Quote Reel] Rasterizer notice:', err.message);
+  }
+
+  const cardInput = (fs.existsSync(cardPngPath) && fs.statSync(cardPngPath).size > 1000) ? cardPngPath : cardSvgPath;
 
   // 5. Composite Final 5-Second Video via FFmpeg
   // Slow subtle cinematic Ken Burns push-in zoom on the portrait
@@ -640,7 +670,7 @@ async function generateFin5sVideo() {
     [bg][card]overlay=0:0[vfinal]
   `.replace(/\s+/g, ' ');
 
-  const ffmpegCmd = `ffmpeg -y -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t ${TARGET_DURATION} -i "${cardPngPath}" -i "${mysteryWavPath}" -filter_complex "${complexFilter}" -map "[vfinal]" -map 2:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -shortest "${finalMp4Path}" 2>&1`;
+  const ffmpegCmd = `ffmpeg -y -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t ${TARGET_DURATION} -i "${cardInput}" -i "${mysteryWavPath}" -filter_complex "${complexFilter}" -map "[vfinal]" -map 2:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -shortest "${finalMp4Path}" 2>&1`;
 
   execSync(ffmpegCmd);
 
@@ -652,9 +682,9 @@ async function generateFin5sVideo() {
   }
 
   // 6. Update Blueprint Manifest
-  const viralTitle = `The #1 Rule of Wealth 🧠 | ${chosen.author} #Shorts`;
+  const viralTitle = `Finance Mindset — ${chosen.author} Quotes #Shorts`;
   const initialFollowCta = formatChannelFollowCta('finance_saas', process.env.YOUTUBE_HANDLE_CH1 || process.env.YOUTUBE_HANDLE_FIN || process.env.YOUTUBE_HANDLE || '');
-  const viralDescription = `"${chosen.quote}"\n\n— ${chosen.author}, ${chosen.credentials}\nReference: ${chosen.reference}\n\n${initialFollowCta}\n\n#Shorts #Finance #Wealth #Money #Investing #WarrenBuffett #Business #FinancialFreedom #Stocks #Mindset #fyp`;
+  const viralDescription = `"${chosen.quote}"\n\n— ${chosen.author}\n${chosen.credentials}\nSource: ${chosen.reference}\n\n🧠 Daily quotes and finance mindset principles to master wealth, investment discipline, and financial freedom.\n\n💬 What does this quote mean for your financial journey? Comment below.\n${initialFollowCta}\n\n#Quotes #FinanceMindset #FinancialMindset #MoneyMindset #WealthMindset #Finance #Investing #Wealth #Shorts`;
 
   try {
     let manifestData = { videos: [] };
@@ -686,7 +716,7 @@ async function generateFin5sVideo() {
     console.warn('[Finance Quote Reel] Manifest sync notice:', e.message);
   }
 
-  // 7. Publish to YouTube (Channel 1: Fin Blueprint / @bones_ceo)
+  // 7. Publish to YouTube (Channel 1: Fin Blueprint)
   const isDryRun = process.env.DRY_RUN === 'true';
   const clientId = process.env.YOUTUBE_CLIENT_ID_CH1 || process.env.YOUTUBE_CLIENT_ID_FIN || process.env.YOUTUBE_CLIENT_ID;
   const clientSecret = process.env.YOUTUBE_CLIENT_SECRET_CH1 || process.env.YOUTUBE_CLIENT_SECRET_FIN || process.env.YOUTUBE_CLIENT_SECRET;
@@ -694,9 +724,9 @@ async function generateFin5sVideo() {
 
   if (clientId && clientSecret && refreshToken && !isDryRun) {
     try {
-      console.log(`\n[Finance Quote Reel] 📤 Publishing 5s Financial Quote Reel to YouTube Shorts (Channel 1: Fin Blueprint / @bones_ceo)...`);
+      console.log(`\n[Finance Quote Reel] 📤 Publishing 5s Financial Quote Reel to YouTube Shorts (Channel 1: Fin Blueprint)...`);
       await uploadQuoteReelToYouTube(finalMp4Path, viralTitle, viralDescription, [
-        'Shorts', 'Finance', 'Wealth', 'Money', 'Investing', 'WarrenBuffett', 'Business', 'FinancialFreedom', chosen.author.replace(/[^a-zA-Z0-9]/g, '')
+        'Quotes', 'FinanceMindset', 'FinancialMindset', 'MoneyMindset', 'WealthMindset', 'FinanceQuotes', 'Finance', 'Investing', 'Wealth', 'Shorts', chosen.author.replace(/[^a-zA-Z0-9]/g, '')
       ], clientId, clientSecret, refreshToken);
     } catch (err) {
       console.warn(`[Finance Quote Reel] YouTube upload notice: ${err.message}`);

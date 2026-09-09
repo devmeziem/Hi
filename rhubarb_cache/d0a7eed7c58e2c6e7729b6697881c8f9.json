@@ -1,0 +1,724 @@
+{
+  "metadata": {
+    "duration": 9.768,
+    "text": "Breaking in tech: SQS: Bayesian DNN Compression through Sparse Quantized Sub-distributions. Here is why this changes everything you know about AI.",
+    "hash": "d0a7eed7c58e2c6e7729b6697881c8f9"
+  },
+  "mouthCues": [
+    {
+      "start": 0,
+      "end": 0.1,
+      "value": "X"
+    },
+    {
+      "start": 0.1,
+      "end": 0.149,
+      "value": "A"
+    },
+    {
+      "start": 0.149,
+      "end": 0.199,
+      "value": "G"
+    },
+    {
+      "start": 0.199,
+      "end": 0.248,
+      "value": "D"
+    },
+    {
+      "start": 0.248,
+      "end": 0.298,
+      "value": "C"
+    },
+    {
+      "start": 0.298,
+      "end": 0.347,
+      "value": "B"
+    },
+    {
+      "start": 0.347,
+      "end": 0.397,
+      "value": "D"
+    },
+    {
+      "start": 0.397,
+      "end": 0.446,
+      "value": "B"
+    },
+    {
+      "start": 0.446,
+      "end": 0.495,
+      "value": "B"
+    },
+    {
+      "start": 0.495,
+      "end": 0.565,
+      "value": "B"
+    },
+    {
+      "start": 0.565,
+      "end": 0.763,
+      "value": "D"
+    },
+    {
+      "start": 0.763,
+      "end": 0.961,
+      "value": "B"
+    },
+    {
+      "start": 0.961,
+      "end": 1.03,
+      "value": "B"
+    },
+    {
+      "start": 1.03,
+      "end": 1.129,
+      "value": "B"
+    },
+    {
+      "start": 1.129,
+      "end": 1.228,
+      "value": "D"
+    },
+    {
+      "start": 1.228,
+      "end": 1.327,
+      "value": "B"
+    },
+    {
+      "start": 1.327,
+      "end": 1.426,
+      "value": "B"
+    },
+    {
+      "start": 1.426,
+      "end": 1.495,
+      "value": "B"
+    },
+    {
+      "start": 1.495,
+      "end": 1.627,
+      "value": "B"
+    },
+    {
+      "start": 1.627,
+      "end": 1.759,
+      "value": "B"
+    },
+    {
+      "start": 1.759,
+      "end": 1.891,
+      "value": "B"
+    },
+    {
+      "start": 1.891,
+      "end": 1.961,
+      "value": "B"
+    },
+    {
+      "start": 1.961,
+      "end": 2.01,
+      "value": "A"
+    },
+    {
+      "start": 2.01,
+      "end": 2.059,
+      "value": "C"
+    },
+    {
+      "start": 2.059,
+      "end": 2.109,
+      "value": "D"
+    },
+    {
+      "start": 2.109,
+      "end": 2.158,
+      "value": "D"
+    },
+    {
+      "start": 2.158,
+      "end": 2.208,
+      "value": "B"
+    },
+    {
+      "start": 2.208,
+      "end": 2.257,
+      "value": "D"
+    },
+    {
+      "start": 2.257,
+      "end": 2.307,
+      "value": "C"
+    },
+    {
+      "start": 2.307,
+      "end": 2.356,
+      "value": "B"
+    },
+    {
+      "start": 2.356,
+      "end": 2.426,
+      "value": "B"
+    },
+    {
+      "start": 2.426,
+      "end": 2.558,
+      "value": "B"
+    },
+    {
+      "start": 2.558,
+      "end": 2.689,
+      "value": "B"
+    },
+    {
+      "start": 2.689,
+      "end": 2.821,
+      "value": "B"
+    },
+    {
+      "start": 2.821,
+      "end": 2.891,
+      "value": "B"
+    },
+    {
+      "start": 2.891,
+      "end": 2.927,
+      "value": "B"
+    },
+    {
+      "start": 2.927,
+      "end": 2.963,
+      "value": "C"
+    },
+    {
+      "start": 2.963,
+      "end": 2.999,
+      "value": "A"
+    },
+    {
+      "start": 2.999,
+      "end": 3.035,
+      "value": "A"
+    },
+    {
+      "start": 3.035,
+      "end": 3.071,
+      "value": "G"
+    },
+    {
+      "start": 3.071,
+      "end": 3.107,
+      "value": "D"
+    },
+    {
+      "start": 3.107,
+      "end": 3.142,
+      "value": "B"
+    },
+    {
+      "start": 3.142,
+      "end": 3.178,
+      "value": "B"
+    },
+    {
+      "start": 3.178,
+      "end": 3.214,
+      "value": "D"
+    },
+    {
+      "start": 3.214,
+      "end": 3.25,
+      "value": "C"
+    },
+    {
+      "start": 3.25,
+      "end": 3.286,
+      "value": "B"
+    },
+    {
+      "start": 3.286,
+      "end": 3.356,
+      "value": "B"
+    },
+    {
+      "start": 3.356,
+      "end": 3.412,
+      "value": "B"
+    },
+    {
+      "start": 3.412,
+      "end": 3.469,
+      "value": "B"
+    },
+    {
+      "start": 3.469,
+      "end": 3.525,
+      "value": "G"
+    },
+    {
+      "start": 3.525,
+      "end": 3.582,
+      "value": "C"
+    },
+    {
+      "start": 3.582,
+      "end": 3.638,
+      "value": "E"
+    },
+    {
+      "start": 3.638,
+      "end": 3.695,
+      "value": "B"
+    },
+    {
+      "start": 3.695,
+      "end": 3.751,
+      "value": "B"
+    },
+    {
+      "start": 3.751,
+      "end": 3.821,
+      "value": "B"
+    },
+    {
+      "start": 3.821,
+      "end": 3.887,
+      "value": "B"
+    },
+    {
+      "start": 3.887,
+      "end": 3.953,
+      "value": "A"
+    },
+    {
+      "start": 3.953,
+      "end": 4.019,
+      "value": "C"
+    },
+    {
+      "start": 4.019,
+      "end": 4.085,
+      "value": "G"
+    },
+    {
+      "start": 4.085,
+      "end": 4.151,
+      "value": "B"
+    },
+    {
+      "start": 4.151,
+      "end": 4.217,
+      "value": "D"
+    },
+    {
+      "start": 4.217,
+      "end": 4.286,
+      "value": "B"
+    },
+    {
+      "start": 4.286,
+      "end": 4.33,
+      "value": "B"
+    },
+    {
+      "start": 4.33,
+      "end": 4.374,
+      "value": "E"
+    },
+    {
+      "start": 4.374,
+      "end": 4.418,
+      "value": "C"
+    },
+    {
+      "start": 4.418,
+      "end": 4.462,
+      "value": "B"
+    },
+    {
+      "start": 4.462,
+      "end": 4.506,
+      "value": "B"
+    },
+    {
+      "start": 4.506,
+      "end": 4.55,
+      "value": "D"
+    },
+    {
+      "start": 4.55,
+      "end": 4.594,
+      "value": "B"
+    },
+    {
+      "start": 4.594,
+      "end": 4.638,
+      "value": "D"
+    },
+    {
+      "start": 4.638,
+      "end": 4.682,
+      "value": "B"
+    },
+    {
+      "start": 4.682,
+      "end": 4.751,
+      "value": "B"
+    },
+    {
+      "start": 4.751,
+      "end": 4.776,
+      "value": "B"
+    },
+    {
+      "start": 4.776,
+      "end": 4.801,
+      "value": "E"
+    },
+    {
+      "start": 4.801,
+      "end": 4.826,
+      "value": "A"
+    },
+    {
+      "start": 4.826,
+      "end": 4.85,
+      "value": "B"
+    },
+    {
+      "start": 4.85,
+      "end": 4.875,
+      "value": "D"
+    },
+    {
+      "start": 4.875,
+      "end": 4.9,
+      "value": "B"
+    },
+    {
+      "start": 4.9,
+      "end": 4.924,
+      "value": "B"
+    },
+    {
+      "start": 4.924,
+      "end": 4.949,
+      "value": "G"
+    },
+    {
+      "start": 4.949,
+      "end": 4.974,
+      "value": "D"
+    },
+    {
+      "start": 4.974,
+      "end": 4.999,
+      "value": "A"
+    },
+    {
+      "start": 4.999,
+      "end": 5.023,
+      "value": "E"
+    },
+    {
+      "start": 5.023,
+      "end": 5.048,
+      "value": "B"
+    },
+    {
+      "start": 5.048,
+      "end": 5.073,
+      "value": "D"
+    },
+    {
+      "start": 5.073,
+      "end": 5.097,
+      "value": "C"
+    },
+    {
+      "start": 5.097,
+      "end": 5.122,
+      "value": "B"
+    },
+    {
+      "start": 5.122,
+      "end": 5.147,
+      "value": "B"
+    },
+    {
+      "start": 5.147,
+      "end": 5.217,
+      "value": "B"
+    },
+    {
+      "start": 5.217,
+      "end": 5.315,
+      "value": "B"
+    },
+    {
+      "start": 5.315,
+      "end": 5.414,
+      "value": "D"
+    },
+    {
+      "start": 5.414,
+      "end": 5.513,
+      "value": "G"
+    },
+    {
+      "start": 5.513,
+      "end": 5.612,
+      "value": "D"
+    },
+    {
+      "start": 5.612,
+      "end": 5.682,
+      "value": "B"
+    },
+    {
+      "start": 5.682,
+      "end": 5.879,
+      "value": "D"
+    },
+    {
+      "start": 5.879,
+      "end": 6.077,
+      "value": "B"
+    },
+    {
+      "start": 6.077,
+      "end": 6.147,
+      "value": "B"
+    },
+    {
+      "start": 6.147,
+      "end": 6.279,
+      "value": "E"
+    },
+    {
+      "start": 6.279,
+      "end": 6.41,
+      "value": "B"
+    },
+    {
+      "start": 6.41,
+      "end": 6.542,
+      "value": "D"
+    },
+    {
+      "start": 6.542,
+      "end": 6.612,
+      "value": "B"
+    },
+    {
+      "start": 6.612,
+      "end": 6.711,
+      "value": "B"
+    },
+    {
+      "start": 6.711,
+      "end": 6.81,
+      "value": "B"
+    },
+    {
+      "start": 6.81,
+      "end": 6.909,
+      "value": "D"
+    },
+    {
+      "start": 6.909,
+      "end": 7.007,
+      "value": "B"
+    },
+    {
+      "start": 7.007,
+      "end": 7.077,
+      "value": "B"
+    },
+    {
+      "start": 7.077,
+      "end": 7.134,
+      "value": "B"
+    },
+    {
+      "start": 7.134,
+      "end": 7.19,
+      "value": "B"
+    },
+    {
+      "start": 7.19,
+      "end": 7.247,
+      "value": "C"
+    },
+    {
+      "start": 7.247,
+      "end": 7.303,
+      "value": "B"
+    },
+    {
+      "start": 7.303,
+      "end": 7.36,
+      "value": "B"
+    },
+    {
+      "start": 7.36,
+      "end": 7.416,
+      "value": "D"
+    },
+    {
+      "start": 7.416,
+      "end": 7.473,
+      "value": "B"
+    },
+    {
+      "start": 7.473,
+      "end": 7.542,
+      "value": "B"
+    },
+    {
+      "start": 7.542,
+      "end": 7.582,
+      "value": "D"
+    },
+    {
+      "start": 7.582,
+      "end": 7.621,
+      "value": "F"
+    },
+    {
+      "start": 7.621,
+      "end": 7.661,
+      "value": "D"
+    },
+    {
+      "start": 7.661,
+      "end": 7.7,
+      "value": "G"
+    },
+    {
+      "start": 7.7,
+      "end": 7.74,
+      "value": "D"
+    },
+    {
+      "start": 7.74,
+      "end": 7.78,
+      "value": "B"
+    },
+    {
+      "start": 7.78,
+      "end": 7.819,
+      "value": "B"
+    },
+    {
+      "start": 7.819,
+      "end": 7.859,
+      "value": "D"
+    },
+    {
+      "start": 7.859,
+      "end": 7.898,
+      "value": "B"
+    },
+    {
+      "start": 7.898,
+      "end": 7.938,
+      "value": "B"
+    },
+    {
+      "start": 7.938,
+      "end": 8.007,
+      "value": "B"
+    },
+    {
+      "start": 8.007,
+      "end": 8.139,
+      "value": "D"
+    },
+    {
+      "start": 8.139,
+      "end": 8.271,
+      "value": "C"
+    },
+    {
+      "start": 8.271,
+      "end": 8.403,
+      "value": "E"
+    },
+    {
+      "start": 8.403,
+      "end": 8.473,
+      "value": "B"
+    },
+    {
+      "start": 8.473,
+      "end": 8.571,
+      "value": "B"
+    },
+    {
+      "start": 8.571,
+      "end": 8.67,
+      "value": "B"
+    },
+    {
+      "start": 8.67,
+      "end": 8.769,
+      "value": "C"
+    },
+    {
+      "start": 8.769,
+      "end": 8.868,
+      "value": "E"
+    },
+    {
+      "start": 8.868,
+      "end": 8.938,
+      "value": "B"
+    },
+    {
+      "start": 8.938,
+      "end": 9.017,
+      "value": "C"
+    },
+    {
+      "start": 9.017,
+      "end": 9.096,
+      "value": "A"
+    },
+    {
+      "start": 9.096,
+      "end": 9.175,
+      "value": "C"
+    },
+    {
+      "start": 9.175,
+      "end": 9.254,
+      "value": "E"
+    },
+    {
+      "start": 9.254,
+      "end": 9.333,
+      "value": "B"
+    },
+    {
+      "start": 9.333,
+      "end": 9.403,
+      "value": "B"
+    },
+    {
+      "start": 9.403,
+      "end": 9.601,
+      "value": "C"
+    },
+    {
+      "start": 9.601,
+      "end": 9.798,
+      "value": "D"
+    },
+    {
+      "start": 9.798,
+      "end": 9.868,
+      "value": "B"
+    }
+  ]
+}

@@ -756,17 +756,30 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
     }
   }
 
-  // 3. OpenRouter
+  // 3. OpenRouter with Model Finder & Adaptive Formatting
   if (OPENROUTER_API_KEY) {
-    const models = ['google/gemini-2.0-flash-001', 'meta-llama/llama-3.3-70b-instruct', 'deepseek/deepseek-chat', 'mistralai/mistral-small-24b-instruct-2501'];
+    let models = ['google/gemini-2.0-flash-001', 'meta-llama/llama-3.3-70b-instruct', 'deepseek/deepseek-chat', 'mistralai/mistral-small-24b-instruct-2501'];
+    let formatOrPayload = null;
+    let cleanOrJson = null;
+    try {
+      const orFinder = require('./openrouter_model_finder.cjs');
+      const verified = await orFinder.fetchAndVerifyOpenRouterModels();
+      if (verified && verified.length > 0) models = [...new Set([...verified, ...models])];
+      formatOrPayload = orFinder.formatOpenRouterPayload;
+      cleanOrJson = orFinder.cleanOpenRouterJson;
+    } catch {}
+
     for (const model of models) {
       try {
-        const postData = JSON.stringify({
-          model,
-          messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
-          response_format: { type: 'json_object' },
-          temperature: 0.7
-        });
+        const payloadObj = formatOrPayload
+          ? formatOrPayload(model, { systemPrompt, userPrompt, jsonMode: true })
+          : {
+            model,
+            messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
+            response_format: { type: 'json_object' },
+            temperature: 0.7
+          };
+        const postData = JSON.stringify(payloadObj);
         const res = await new Promise((resolve, reject) => {
           const req = https.request('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
@@ -788,7 +801,8 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
         });
         if (res.status === 200) {
           const json = JSON.parse(res.data);
-          const parsed = cleanJsonText(json.choices?.[0]?.message?.content);
+          const raw = json.choices?.[0]?.message?.content;
+          const parsed = (cleanOrJson ? cleanOrJson(raw) : null) || cleanJsonText(raw);
           if (parsed) return { success: true, modelUsed: `OpenRouter (${model})`, data: parsed };
         } else {
           console.warn(`[AI Inference Notice] OpenRouter (${model}) HTTP ${res.status}: ${res.data.slice(0, 100)}`);
@@ -799,17 +813,30 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
     }
   }
 
-  // 4. Groq LPU (Removed decommissioned mixtral-8x7b-32768, kept active production models)
+  // 4. Groq LPU with Model Finder & Adaptive Formatting
   if (GROQ_API_KEY) {
-    const models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'gemma2-9b-it'];
+    let models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'deepseek-r1-distill-llama-70b', 'gemma2-9b-it'];
+    let formatGrPayload = null;
+    let cleanGrJson = null;
+    try {
+      const grFinder = require('./groq_model_finder.cjs');
+      const verified = await grFinder.fetchAndVerifyGroqModels();
+      if (verified && verified.length > 0) models = [...new Set([...verified, ...models])];
+      formatGrPayload = grFinder.formatGroqPayload;
+      cleanGrJson = grFinder.cleanGroqJson;
+    } catch {}
+
     for (const model of models) {
       try {
-        const postData = JSON.stringify({
-          model,
-          messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
-          response_format: { type: 'json_object' },
-          temperature: 0.7
-        });
+        const payloadObj = formatGrPayload
+          ? formatGrPayload(model, { systemPrompt, userPrompt, jsonMode: true })
+          : {
+            model,
+            messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
+            response_format: { type: 'json_object' },
+            temperature: 0.7
+          };
+        const postData = JSON.stringify(payloadObj);
         const res = await new Promise((resolve, reject) => {
           const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
@@ -831,7 +858,8 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
         });
         if (res.status === 200) {
           const json = JSON.parse(res.data);
-          const parsed = cleanJsonText(json.choices?.[0]?.message?.content);
+          const raw = json.choices?.[0]?.message?.content;
+          const parsed = (cleanGrJson ? cleanGrJson(raw) : null) || cleanJsonText(raw);
           if (parsed) return { success: true, modelUsed: `Groq LPU (${model})`, data: parsed };
         } else {
           console.warn(`[AI Inference Notice] Groq (${model}) HTTP ${res.status}: ${res.data.slice(0, 100)}`);

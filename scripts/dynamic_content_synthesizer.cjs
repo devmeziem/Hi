@@ -30,6 +30,7 @@ const XAI_API_KEYS = Array.from(new Set([
 ].filter(Boolean))).map(k => String(k).trim());
 
 const GROQ_API_KEY = (process.env.GROQ_API_KEY || '').trim();
+const OPENROUTER_API_KEY = (process.env.OPENROUTER_API_KEY || '').trim();
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim();
 const DEEPSEEK_API_KEY = (process.env.DEEPSEEK_API_KEY || '').trim();
 const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || '').trim();
@@ -170,22 +171,36 @@ function cleanAndParseLlmJson(rawText) {
  * Cascade: Groq LPU -> Gemini Flash -> Pollinations Free AI -> Cloudflare AI -> xAI Grok -> DeepSeek -> OpenAI
  */
 async function callLlmForScript(channelId, promptPayload) {
-  // 1. Try Groq (Ultra-Fast LPU)
+  // 1. Try Groq (Ultra-Fast LPU) with dynamic model finder & format adaptation
   if (GROQ_API_KEY) {
-    const groqModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'deepseek-r1-distill-llama-70b', 'gemma2-9b-it', 'qwen-2.5-32b'];
+    let groqModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'deepseek-r1-distill-llama-70b', 'gemma2-9b-it'];
+    let formatGrPayload = null;
+    let cleanGrJson = null;
+    try {
+      const grFinder = require('./groq_model_finder.cjs');
+      const verified = await grFinder.fetchAndVerifyGroqModels();
+      if (verified && verified.length > 0) groqModels = [...new Set([...verified, ...groqModels])];
+      formatGrPayload = grFinder.formatGroqPayload;
+      cleanGrJson = grFinder.cleanGroqJson;
+    } catch {}
+
     for (const gModel of groqModels) {
       try {
         console.log(`[AI Synthesizer] Querying Groq LPU (${gModel})...`);
-        const postData = JSON.stringify({
-          model: gModel,
-          messages: [
-            { role: 'system', content: promptPayload.systemPrompt },
-            { role: 'user', content: promptPayload.userPrompt }
-          ],
-          temperature: 0.8,
-          max_tokens: 1800,
-          response_format: { type: 'json_object' }
-        });
+        const payloadObj = formatGrPayload
+          ? formatGrPayload(gModel, { systemPrompt: promptPayload.systemPrompt, userPrompt: promptPayload.userPrompt, jsonMode: true, maxTokens: 1800 })
+          : {
+            model: gModel,
+            messages: [
+              { role: 'system', content: promptPayload.systemPrompt },
+              { role: 'user', content: promptPayload.userPrompt }
+            ],
+            temperature: 0.8,
+            max_tokens: 1800,
+            response_format: { type: 'json_object' }
+          };
+
+        const postData = JSON.stringify(payloadObj);
 
         const res = await new Promise((resolve) => {
           const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
@@ -214,13 +229,83 @@ async function callLlmForScript(channelId, promptPayload) {
           req.end();
         });
 
-        const parsed = cleanAndParseLlmJson(res);
+        const parsed = (cleanGrJson ? cleanGrJson(res) : null) || cleanAndParseLlmJson(res);
         if (parsed) {
           console.log(`[AI Synthesizer] ✅ Groq (${gModel}) generated fresh storyboard!`);
           return parsed;
         }
       } catch (e) {
         console.warn(`[AI Synthesizer] Groq (${gModel}) notice:`, e.message);
+      }
+    }
+  }
+
+  // 1b. Try OpenRouter with dynamic model finder & format adaptation
+  if (OPENROUTER_API_KEY) {
+    let orModels = ['google/gemini-2.0-flash-001', 'meta-llama/llama-3.3-70b-instruct', 'deepseek/deepseek-chat', 'mistralai/mistral-small-24b-instruct-2501'];
+    let formatOrPayload = null;
+    let cleanOrJson = null;
+    try {
+      const orFinder = require('./openrouter_model_finder.cjs');
+      const verified = await orFinder.fetchAndVerifyOpenRouterModels();
+      if (verified && verified.length > 0) orModels = [...new Set([...verified, ...orModels])];
+      formatOrPayload = orFinder.formatOpenRouterPayload;
+      cleanOrJson = orFinder.cleanOpenRouterJson;
+    } catch {}
+
+    for (const orModel of orModels) {
+      try {
+        console.log(`[AI Synthesizer] Querying OpenRouter (${orModel})...`);
+        const payloadObj = formatOrPayload
+          ? formatOrPayload(orModel, { systemPrompt: promptPayload.systemPrompt, userPrompt: promptPayload.userPrompt, jsonMode: true, maxTokens: 1800 })
+          : {
+            model: orModel,
+            messages: [
+              { role: 'system', content: promptPayload.systemPrompt },
+              { role: 'user', content: promptPayload.userPrompt }
+            ],
+            temperature: 0.8,
+            max_tokens: 1800
+          };
+
+        const postData = JSON.stringify(payloadObj);
+
+        const res = await new Promise((resolve) => {
+          const req = https.request('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+              'HTTP-Referer': 'https://voxam.ai',
+              'X-Title': 'Voxam Synthesizer',
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 15000
+          }, (resp) => {
+            let data = '';
+            resp.on('data', c => data += c);
+            resp.on('end', () => {
+              if (resp.statusCode === 200) {
+                try {
+                  const j = JSON.parse(data);
+                  resolve(j.choices[0]?.message?.content);
+                } catch { resolve(null); }
+              } else { resolve(null); }
+            });
+          });
+          req.on('error', () => resolve(null));
+          req.on('timeout', () => { req.destroy(); resolve(null); });
+          req.write(postData);
+          req.end();
+        });
+
+        const parsed = (cleanOrJson ? cleanOrJson(res) : null) || cleanAndParseLlmJson(res);
+        if (parsed) {
+          console.log(`[AI Synthesizer] ✅ OpenRouter (${orModel}) generated fresh storyboard!`);
+          return parsed;
+        }
+      } catch (e) {
+        console.warn(`[AI Synthesizer] OpenRouter (${orModel}) notice:`, e.message);
       }
     }
   }

@@ -4,13 +4,13 @@ import { DollarSign, ExternalLink, TrendingUp, Award, Link, ShoppingBag, CheckCi
 export const AffiliateDashboard: React.FC = () => {
   const affiliatePlatforms = [
     {
-      name: 'Selar (Africa & Global Creators)',
-      url: 'https://selar.co',
-      badge: 'High Conversion (WAT/Africa)',
-      description: 'Host digital products, ebooks, templates, and courses with direct checkout in NGN, GHS, KES, ZAR, and USD.',
+      name: 'YouTube Memberships & Super Thanks',
+      url: 'https://studio.youtube.com',
+      badge: 'Native Monetization',
+      description: 'Direct channel monetization through recurring memberships, Super Thanks, and official YouTube store integrations.',
       products: [
-        { name: 'AI Micro-SaaS Blueprint 2026', commission: '60%', link: 'https://selar.co/p/ai-micro-saas-blueprint' },
-        { name: 'Stoic Productivity System (Notion)', commission: '50%', link: 'https://selar.co/p/stoic-notion-system' }
+        { name: 'Channel VIP Supporter Tier', commission: '70%', link: 'https://studio.youtube.com' },
+        { name: 'Early Video Access & Badges', commission: '70%', link: 'https://studio.youtube.com' }
       ]
     },
     {

@@ -447,26 +447,25 @@ function renderModernArms(pose = 'idle') {
       <!-- Forearm reaching right -->
       <path d="M 416 472 C 445 456, 475 442, 506 432 L 512 448 C 480 460, 450 475, 422 490 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
       
-      <!-- Right Hand: Sculpted Human Pointing Hand with Knuckles & Extended Index Finger -->
+      <!-- Right Hand: Sculpted Human Pointing Hand with Natural Knuckles & Proportional Index Finger -->
       <!-- Wrist & Palm base -->
       <path d="M 506 432 C 518 428, 526 426, 535 425 L 536 450 C 526 452, 518 450, 510 448 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
       <!-- Curled Middle, Ring, Pinky Fingers -->
       <path d="M 534 436 C 542 436, 548 440, 545 446 C 542 450, 536 450, 532 448 Z" fill="${SKIN_SHADOW}" opacity="0.4" />
       <path d="M 533 444 C 543 444, 549 448, 546 454 C 542 458, 535 456, 530 454 Z" fill="${SKIN_SHADOW}" opacity="0.4" />
-      <!-- Extended Natural Index Finger pointing with two subtle knuckle joints -->
+      <!-- Human-proportioned natural index finger (short, realistic 24px) -->
       <path d="M 532 425 
-               C 552 422, 574 419, 592 417 
-               C 597 416, 599 422, 594 425 
-               C 576 430, 554 434, 535 435 Z" 
+               C 542 423, 550 421, 558 420 
+               C 562 420, 563 425, 559 427 
+               C 551 430, 542 433, 534 434 Z" 
             fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
-      <!-- Knuckle accent lines -->
-      <line x1="556" y1="420" x2="557" y2="426" stroke="${SKIN_SHADOW}" stroke-width="1.5" stroke-linecap="round" />
-      <line x1="576" y1="418" x2="577" y2="424" stroke="${SKIN_SHADOW}" stroke-width="1.5" stroke-linecap="round" />
-      <!-- Thumb folded over knuckles -->
-      <path d="M 522 434 C 530 430, 538 432, 540 438 C 538 444, 528 446, 520 442 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
-      <!-- Glowing energy beacon at fingertip -->
-      <circle cx="597" cy="421" r="3" fill="#38bdf8" />
-      <circle cx="597" cy="421" r="7" fill="#38bdf8" opacity="0.3" />
+      <!-- Natural Knuckle accent line -->
+      <line x1="545" y1="422" x2="546" y2="427" stroke="${SKIN_SHADOW}" stroke-width="1.5" stroke-linecap="round" />
+      <!-- Thumb folded naturally over knuckles -->
+      <path d="M 522 434 C 529 430, 536 432, 538 437 C 536 442, 528 444, 520 442 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <!-- Subtle highlight at fingertip -->
+      <circle cx="560" cy="423" r="2.5" fill="#38bdf8" />
+      <circle cx="560" cy="423" r="6" fill="#38bdf8" opacity="0.25" />
     `;
   }
 
@@ -484,20 +483,19 @@ function renderModernArms(pose = 'idle') {
       <path d="M -6 432 C -18 428, -26 426, -35 425 L -36 450 C -26 452, -18 450, -10 448 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
       <!-- Curled Fingers -->
       <path d="M -34 436 C -42 436, -48 440, -45 446 C -42 450, -36 450, -32 448 Z" fill="${SKIN_SHADOW}" opacity="0.4" />
-      <!-- Extended Natural Index Finger pointing left -->
+      <!-- Human-proportioned natural index finger pointing left (short, realistic 24px) -->
       <path d="M -32 425 
-               C -52 422, -74 419, -92 417 
-               C -97 416, -99 422, -94 425 
-               C -76 430, -54 434, -35 435 Z" 
+               C -42 423, -50 421, -58 420 
+               C -62 420, -63 425, -59 427 
+               C -51 430, -42 433, -34 434 Z" 
             fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
-      <!-- Knuckle accent lines -->
-      <line x1="-56" y1="420" x2="-57" y2="426" stroke="${SKIN_SHADOW}" stroke-width="1.5" stroke-linecap="round" />
-      <line x1="-76" y1="418" x2="-77" y2="424" stroke="${SKIN_SHADOW}" stroke-width="1.5" stroke-linecap="round" />
-      <!-- Thumb folded -->
-      <path d="M -22 434 C -30 430, -38 432, -40 438 C -38 444, -28 446, -20 442 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
-      <!-- Glowing energy beacon -->
-      <circle cx="-97" cy="421" r="3" fill="#38bdf8" />
-      <circle cx="-97" cy="421" r="7" fill="#38bdf8" opacity="0.3" />
+      <!-- Natural Knuckle accent line -->
+      <line x1="-45" y1="422" x2="-46" y2="427" stroke="${SKIN_SHADOW}" stroke-width="1.5" stroke-linecap="round" />
+      <!-- Thumb folded naturally -->
+      <path d="M -22 434 C -29 430, -36 432, -38 437 C -36 442, -28 444, -20 442 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <!-- Subtle highlight at fingertip -->
+      <circle cx="-60" cy="423" r="2.5" fill="#38bdf8" />
+      <circle cx="-60" cy="423" r="6" fill="#38bdf8" opacity="0.25" />
 
       <!-- Right Arm (Resting naturally at side) -->
       <path d="M 315 375 C 320 420, 324 460, 320 515 C 328 518, 342 518, 348 515 C 348 460, 346 420, 344 375 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
@@ -626,10 +624,10 @@ function renderModernArms(pose = 'idle') {
       <path d="M 80 292 C 50 260, 20 228, -8 195 L 8 182 C 34 214, 65 248, 96 278 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
       <!-- Sculpted Pointing Hand Up-Left -->
       <ellipse cx="-4" cy="190" rx="14" ry="12" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
-      <!-- Extended index finger pointing directly toward Board 1 -->
-      <path d="M -4 184 C -22 165, -45 142, -64 122 C -68 120, -70 126, -65 130 C -48 150, -26 172, -8 192 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
-      <circle cx="-66" cy="124" r="4" fill="#38bdf8" />
-      <circle cx="-66" cy="124" r="9" fill="#38bdf8" opacity="0.3" />
+      <!-- Natural human-length index finger pointing upward-left toward Board 1 (22px length) -->
+      <path d="M -4 184 C -12 174, -20 165, -28 156 C -32 154, -34 159, -30 162 C -22 171, -14 180, -8 189 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+      <circle cx="-30" cy="158" r="3" fill="#38bdf8" />
+      <circle cx="-30" cy="158" r="7" fill="#38bdf8" opacity="0.25" />
 
       <!-- Right Arm: Natural resting at waist/hip -->
       <path d="M 315 375 C 320 420, 324 460, 320 515 C 328 518, 342 518, 348 515 C 348 460, 346 420, 344 375 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
@@ -657,10 +655,10 @@ function renderModernArms(pose = 'idle') {
       <path d="M 415 292 C 445 260, 475 228, 503 195 L 487 182 C 461 214, 430 248, 399 278 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
       <!-- Sculpted Pointing Hand Up-Right -->
       <ellipse cx="499" cy="190" rx="14" ry="12" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
-      <!-- Extended index finger pointing directly toward Board 2 -->
-      <path d="M 499 184 C 517 165, 540 142, 559 122 C 563 120, 565 126, 560 130 C 543 150, 521 172, 503 192 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
-      <circle cx="561" cy="124" r="4" fill="#f97316" />
-      <circle cx="561" cy="124" r="9" fill="#f97316" opacity="0.3" />
+      <!-- Natural human-length index finger pointing upward-right toward Board 2 (22px length) -->
+      <path d="M 499 184 C 507 174, 515 165, 523 156 C 527 154, 529 159, 525 162 C 517 171, 509 180, 503 189 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+      <circle cx="525" cy="158" r="3" fill="#f97316" />
+      <circle cx="525" cy="158" r="7" fill="#f97316" opacity="0.25" />
     `;
   }
 

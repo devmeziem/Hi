@@ -211,8 +211,8 @@ function renderArms(pose = 'idle') {
       <polygon points="370,545 385,555 460,510 452,495" fill="#f59e0b" stroke="#0f172a" stroke-width="2" />
       <!-- Right Red Wrist Band -->
       <rect x="450" y="495" width="16" height="20" rx="3" fill="#ef4444" stroke="#0f172a" stroke-width="2" transform="rotate(-30 460 505)" />
-      <!-- Right Hand (Pointing finger) -->
-      <path d="M 466 502 L 520 480 L 518 492 L 485 515 L 466 520 Z" fill="#fbbf24" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+      <!-- Right Hand (Natural human pointing finger: short, proportional 22px) -->
+      <path d="M 466 502 L 492 492 C 496 490 496 496 492 498 L 478 510 L 466 516 Z" fill="#fbbf24" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
     `;
   }
 
@@ -226,8 +226,8 @@ function renderArms(pose = 'idle') {
       <polygon points="130,545 115,555 40,510 48,495" fill="#f59e0b" stroke="#0f172a" stroke-width="2" />
       <!-- Left Red Wrist Band -->
       <rect x="34" y="495" width="16" height="20" rx="3" fill="#ef4444" stroke="#0f172a" stroke-width="2" transform="rotate(30 40 505)" />
-      <!-- Left Hand (Pointing finger) -->
-      <path d="M 34 502 L -20 480 L -18 492 L 15 515 L 34 520 Z" fill="#fbbf24" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+      <!-- Left Hand (Natural human pointing finger: short, proportional 22px) -->
+      <path d="M 34 502 L 8 492 C 4 490 4 496 8 498 L 22 510 L 34 516 Z" fill="#fbbf24" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
 
       <!-- Right Arm (Resting idle at side with red bands) -->
       <polygon points="314,450 334,450 338,570 322,570" fill="#f59e0b" stroke="#0f172a" stroke-width="2" />

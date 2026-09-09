@@ -148,8 +148,8 @@ export const VerticalVideoPlayer: React.FC<VerticalVideoPlayerProps> = ({
         name: 'Fin Blueprint',
         avatarBg: 'bg-emerald-600',
         badgeColor: 'text-emerald-400',
-        affiliate: 'https://selar.co/m/bones-ceo',
-        affiliateLabel: '15k Micro-SaaS Blueprint'
+        affiliate: 'https://youtube.com/@bones_ceo',
+        affiliateLabel: 'Subscribe'
       };
     }
     if (niche.includes('stoic') || niche.includes('motivation')) {
@@ -158,8 +158,8 @@ export const VerticalVideoPlayer: React.FC<VerticalVideoPlayerProps> = ({
         name: 'The Stoic Architect',
         avatarBg: 'bg-purple-600',
         badgeColor: 'text-purple-400',
-        affiliate: 'https://selar.co/m/stoic-fortress',
-        affiliateLabel: 'Stoic Fortress Planner'
+        affiliate: 'https://youtube.com/@thestoicarchitect-n4b',
+        affiliateLabel: 'Subscribe'
       };
     }
     return {
@@ -167,8 +167,8 @@ export const VerticalVideoPlayer: React.FC<VerticalVideoPlayerProps> = ({
       name: 'Godswill Isaac',
       avatarBg: 'bg-blue-600',
       badgeColor: 'text-blue-400',
-      affiliate: 'https://github.com/devmeziem/Voxam',
-      affiliateLabel: 'AI Automation Repo'
+      affiliate: 'https://youtube.com/@bonesceo',
+      affiliateLabel: 'Subscribe'
     };
   })();
 
@@ -586,7 +586,7 @@ export const VerticalVideoPlayer: React.FC<VerticalVideoPlayerProps> = ({
                   rel="noreferrer"
                   className="px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 hover:bg-emerald-500/30 text-[10px] font-semibold flex items-center gap-1 transition-colors"
                 >
-                  <span>Link in Bio</span>
+                  <span>{channelMeta.affiliateLabel}</span>
                   <ExternalLink className="w-2.5 h-2.5" />
                 </a>
               </div>

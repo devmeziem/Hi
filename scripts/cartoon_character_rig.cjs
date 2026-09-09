@@ -91,13 +91,15 @@ function generateCharacterFrameSvg(action = 'talking', emotion = 'curious', mout
                      <circle cx="710" cy="1160" r="28" fill="#fbcfe8" stroke="#1e293b" stroke-width="4" />`;
 
   if (action === 'point_right') {
-    rightArmSvg = `<path d="M 650 920 Q 750 900 880 840" stroke="#2563eb" stroke-width="48" stroke-linecap="round" fill="none" />
-                   <path d="M 880 840 L 940 820" stroke="#fbcfe8" stroke-width="32" stroke-linecap="round" />
-                   <circle cx="880" cy="840" r="24" fill="#fbcfe8" />`;
+    rightArmSvg = `<path d="M 650 920 Q 740 905 840 850" stroke="#2563eb" stroke-width="48" stroke-linecap="round" fill="none" />
+                   <circle cx="840" cy="850" r="24" fill="#fbcfe8" stroke="#1e293b" stroke-width="3" />
+                   <path d="M 850 844 Q 868 836 876 832" stroke="#fbcfe8" stroke-width="18" stroke-linecap="round" />
+                   <path d="M 850 844 Q 868 836 876 832" stroke="#1e293b" stroke-width="3" stroke-linecap="round" fill="none" />`;
   } else if (action === 'point_left') {
-    leftArmSvg = `<path d="M 430 920 Q 330 900 200 840" stroke="#2563eb" stroke-width="48" stroke-linecap="round" fill="none" />
-                  <path d="M 200 840 L 140 820" stroke="#fbcfe8" stroke-width="32" stroke-linecap="round" />
-                  <circle cx="200" cy="840" r="24" fill="#fbcfe8" />`;
+    leftArmSvg = `<path d="M 430 920 Q 340 905 240 850" stroke="#2563eb" stroke-width="48" stroke-linecap="round" fill="none" />
+                  <circle cx="240" cy="850" r="24" fill="#fbcfe8" stroke="#1e293b" stroke-width="3" />
+                  <path d="M 230 844 Q 212 836 204 832" stroke="#fbcfe8" stroke-width="18" stroke-linecap="round" />
+                  <path d="M 230 844 Q 212 836 204 832" stroke="#1e293b" stroke-width="3" stroke-linecap="round" fill="none" />`;
   } else if (action === 'thinking') {
     rightArmSvg = `<path d="M 650 920 Q 720 980 620 840" stroke="#2563eb" stroke-width="48" stroke-linecap="round" fill="none" />
                    <circle cx="600" cy="820" r="30" fill="#fbcfe8" stroke="#1e293b" stroke-width="4" />`;
@@ -260,16 +262,18 @@ function getComponentSvgs(width = 1080, height = 1920) {
 
     // 11. Arm Right Pointing
     'arm_right_point': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
-      <path d="M 650 920 Q 750 900 880 840" stroke="#2563eb" stroke-width="48" stroke-linecap="round" fill="none" />
-      <path d="M 880 840 L 940 820" stroke="#fbcfe8" stroke-width="32" stroke-linecap="round" />
-      <circle cx="880" cy="840" r="24" fill="#fbcfe8" />
+      <path d="M 650 920 Q 740 905 840 850" stroke="#2563eb" stroke-width="48" stroke-linecap="round" fill="none" />
+      <circle cx="840" cy="850" r="24" fill="#fbcfe8" stroke="#1e293b" stroke-width="3" />
+      <path d="M 850 844 Q 868 836 876 832" stroke="#fbcfe8" stroke-width="18" stroke-linecap="round" />
+      <path d="M 850 844 Q 868 836 876 832" stroke="#1e293b" stroke-width="3" stroke-linecap="round" fill="none" />
     </svg>`,
 
     // 12. Arm Left Pointing
     'arm_left_point': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
-      <path d="M 430 920 Q 330 900 200 840" stroke="#2563eb" stroke-width="48" stroke-linecap="round" fill="none" />
-      <path d="M 200 840 L 140 820" stroke="#fbcfe8" stroke-width="32" stroke-linecap="round" />
-      <circle cx="200" cy="840" r="24" fill="#fbcfe8" />
+      <path d="M 430 920 Q 340 905 240 850" stroke="#2563eb" stroke-width="48" stroke-linecap="round" fill="none" />
+      <circle cx="240" cy="850" r="24" fill="#fbcfe8" stroke="#1e293b" stroke-width="3" />
+      <path d="M 230 844 Q 212 836 204 832" stroke="#fbcfe8" stroke-width="18" stroke-linecap="round" />
+      <path d="M 230 844 Q 212 836 204 832" stroke="#1e293b" stroke-width="3" stroke-linecap="round" fill="none" />
     </svg>`,
 
     // 13. Arm Right Thinking (hand on chin)
@@ -318,13 +322,15 @@ function generateCharacterBodySvg(action = 'talking', emotion = 'curious', width
                      <circle cx="710" cy="1160" r="28" fill="#fbcfe8" stroke="#1e293b" stroke-width="4" />`;
 
   if (action === 'point_right') {
-    rightArmSvg = `<path d="M 650 920 Q 750 900 880 840" stroke="#2563eb" stroke-width="48" stroke-linecap="round" fill="none" />
-                   <path d="M 880 840 L 940 820" stroke="#fbcfe8" stroke-width="32" stroke-linecap="round" />
-                   <circle cx="880" cy="840" r="24" fill="#fbcfe8" />`;
+    rightArmSvg = `<path d="M 650 920 Q 740 905 840 850" stroke="#2563eb" stroke-width="48" stroke-linecap="round" fill="none" />
+                   <circle cx="840" cy="850" r="24" fill="#fbcfe8" stroke="#1e293b" stroke-width="3" />
+                   <path d="M 850 844 Q 868 836 876 832" stroke="#fbcfe8" stroke-width="18" stroke-linecap="round" />
+                   <path d="M 850 844 Q 868 836 876 832" stroke="#1e293b" stroke-width="3" stroke-linecap="round" fill="none" />`;
   } else if (action === 'point_left') {
-    leftArmSvg = `<path d="M 430 920 Q 330 900 200 840" stroke="#2563eb" stroke-width="48" stroke-linecap="round" fill="none" />
-                  <path d="M 200 840 L 140 820" stroke="#fbcfe8" stroke-width="32" stroke-linecap="round" />
-                  <circle cx="200" cy="840" r="24" fill="#fbcfe8" />`;
+    leftArmSvg = `<path d="M 430 920 Q 340 905 240 850" stroke="#2563eb" stroke-width="48" stroke-linecap="round" fill="none" />
+                  <circle cx="240" cy="850" r="24" fill="#fbcfe8" stroke="#1e293b" stroke-width="3" />
+                  <path d="M 230 844 Q 212 836 204 832" stroke="#fbcfe8" stroke-width="18" stroke-linecap="round" />
+                  <path d="M 230 844 Q 212 836 204 832" stroke="#1e293b" stroke-width="3" stroke-linecap="round" fill="none" />`;
   } else if (action === 'thinking') {
     rightArmSvg = `<path d="M 650 920 Q 720 980 620 840" stroke="#2563eb" stroke-width="48" stroke-linecap="round" fill="none" />
                    <circle cx="600" cy="820" r="30" fill="#fbcfe8" stroke="#1e293b" stroke-width="4" />`;

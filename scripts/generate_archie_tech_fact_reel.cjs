@@ -14,7 +14,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const https = require('https');
-const { uploadYouTubeShort, getSyncedChannelProfile } = require('./youtube_channel_dispatcher.cjs');
+const { uploadYouTubeShort, getSyncedChannelProfile, formatChannelFollowCta } = require('./youtube_channel_dispatcher.cjs');
 
 const TARGET_DURATION = 5.0;
 const FPS = 30;
@@ -185,7 +185,6 @@ function resolveArchiePuppet() {
  * Resolve Loopable Mystery / Tech Audio Track (Supports 3 user-provided sound archetypes)
  */
 function resolveMysteryAudio(outWavPath, duration = 5.0) {
-  const { generateAllOminousSounds } = require('./generate_ominous_sounds.cjs');
   const soundDirs = [
     path.join(process.cwd(), 'assets', 'sounds'),
     path.join(process.cwd(), 'test_artifacts', 'sounds'),
@@ -193,13 +192,9 @@ function resolveMysteryAudio(outWavPath, duration = 5.0) {
   ];
 
   const presets = [
-    'ominous_dark_suspense',
-    'ominous_eerie_drone',
-    'ominous_tension_pulse',
-    'ominous_abyss_resonance',
     'horror_scene_murder_mystery',
-    'mystery_darkness',
-    'instrumental_mystery'
+    'instrumental_mystery',
+    'mystery_darkness'
   ];
   const chosenPreset = process.env.SOUND_PRESET || presets[Math.floor(Date.now() / (1000 * 60 * 15)) % presets.length];
 
@@ -232,19 +227,7 @@ function resolveMysteryAudio(outWavPath, duration = 5.0) {
     }
   }
 
-  // If audio files do not exist yet, generate ominous library immediately
-  try {
-    generateAllOminousSounds();
-    const specificFile = path.join(soundDirs[0], `${chosenPreset}.wav`);
-    if (fs.existsSync(specificFile)) {
-      execSync(
-        `ffmpeg -y -stream_loop -1 -i "${specificFile}" -t ${duration} -af "afade=t=in:ss=0:d=0.2,afade=t=out:st=${(duration - 0.2).toFixed(2)}:d=0.2" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`
-      );
-      if (fs.existsSync(outWavPath) && fs.statSync(outWavPath).size > 5000) return outWavPath;
-    }
-  } catch (e) {}
-
-  // Synthesize rich ominous suspense audio track
+  // Synthesize rich loopable suspense audio track
   const filterExpr = `aevalsrc='sin(2*PI*43.65*t)*0.40 + sin(2*PI*55.0*t)*0.32 + sin(2*PI*87.3*t)*0.20*(1+0.4*sin(2*PI*0.8*t)) + sin(2*PI*698.46*t)*0.015':s=44100:d=${duration},lowpass=f=500,aecho=0.8:0.7:250|500:0.3|0.2,afade=t=in:ss=0:d=0.2,afade=t=out:st=${duration - 0.2}:d=0.2`;
   execSync(`ffmpeg -y -f lavfi -i "${filterExpr}" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
   return outWavPath;
@@ -453,13 +436,14 @@ async function generateArchie5sDailyFact() {
 
   // 6. Format Title, Description & Real Synced Handle
   const viralTitle = `DID YOU KNOW? ⚡ ${fact.category} #Shorts`;
+  const initialFollowCta = formatChannelFollowCta('cartoon_factory', process.env.YOUTUBE_HANDLE_CH3 || process.env.YOUTUBE_HANDLE_TECH || '');
   
-  // Dynamic description using real synced username
-  const viralDescription = `${fact.hook}\n\n${fact.fact}\n\n📚 Verified Reference: ${fact.reference}\n\nWhat crazy AI or tech mystery should Archie animate next? Drop your ideas below!\n\n#Shorts #Tech #AI #Technology #Science #DidYouKnow #Semiconductors #Future #BonesCEO #fyp`;
+  // High-retention description and targeted tags
+  const viralDescription = `${fact.hook}\n\n${fact.fact}\n\n🔬 Verified Citation: ${fact.reference}\n\n⚡ Archie breaks down tech, AI, and science concepts. What tech mystery should Archie explore next? Drop your thoughts below!\n\n${initialFollowCta}\n\n#Tech #AI #ArtificialIntelligence #FutureTech #Science #Technology #DidYouKnow #TechFacts #Innovation #Archie #Shorts`;
 
   // 7. Publish to YouTube (Channel 3: Tech & AI Animation)
   const isDryRun = process.env.DRY_RUN === 'true';
-  const ch3RefreshToken = process.env.YOUTUBE_REFRESH_TOKEN_CH3 || process.env.YOUTUBE_REFRESH_TOKEN_TECH;
+  const ch3RefreshToken = process.env.YOUTUBE_REFRESH_TOKEN_CH3 || process.env.YOUTUBE_REFRESH_TOKEN_TECH || process.env.YOUTUBE_REFRESH_TOKEN_CARTOON || process.env.YOUTUBE_REFRESH_TOKEN_ARCHIE || (process.env.ALLOW_SHARED_YOUTUBE_TOKEN === 'true' ? process.env.YOUTUBE_REFRESH_TOKEN : '');
 
   if (ch3RefreshToken && !isDryRun) {
     try {

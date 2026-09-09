@@ -31,6 +31,7 @@ const XAI_API_KEYS = Array.from(new Set([
 const CLOUDFLARE_ACCOUNT_ID = (process.env.CLOUDFLARE_ACCOUNT_ID || '').trim().replace(/^https?:\/\/[^\/]+\//, '').replace(/\/$/, '');
 const CLOUDFLARE_API_TOKEN = (process.env.CLOUDFLARE_API_TOKEN || '').trim();
 const GROQ_API_KEY = (process.env.GROQ_API_KEY || '').trim();
+const OPENROUTER_API_KEY = (process.env.OPENROUTER_API_KEY || '').trim();
 
 // Track generated topics for strict deduplication
 const generatedTopicHistory = new Set();
@@ -613,16 +614,24 @@ async function getActiveGroqModels() {
 }
 
 /**
- * Call Groq with Dynamic Auto-Discovery for Deprecation Resilience
+ * Call Groq with Dynamic Auto-Discovery & Adaptive Payload Formatting
  */
 async function callGroq(prompt, systemPrompt) {
   if (!GROQ_API_KEY) return null;
   const candidateModels = await getActiveGroqModels();
+  let formatGrPayload = null;
+  let cleanGrJson = null;
+  try {
+    const grFinder = require('./groq_model_finder.cjs');
+    formatGrPayload = grFinder.formatGroqPayload;
+    cleanGrJson = grFinder.cleanGroqJson;
+  } catch {}
 
   for (const model of candidateModels) {
     try {
-      const result = await new Promise((resolve) => {
-        const postData = JSON.stringify({
+      const payload = formatGrPayload
+        ? formatGrPayload(model, { systemPrompt, userPrompt: prompt, jsonMode: true, maxTokens: 1800 })
+        : {
           model: model,
           messages: [
             { role: 'system', content: systemPrompt },
@@ -631,8 +640,10 @@ async function callGroq(prompt, systemPrompt) {
           temperature: 0.7,
           max_tokens: 1800,
           response_format: { type: 'json_object' }
-        });
+        };
+      const postData = JSON.stringify(payload);
 
+      const result = await new Promise((resolve) => {
         const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -666,8 +677,93 @@ async function callGroq(prompt, systemPrompt) {
       });
 
       if (result) {
+        const cleaned = cleanGrJson ? cleanGrJson(result) : result;
         console.log(`  -> [Groq Succeeded using active model: ${model}]`);
-        return result;
+        return typeof cleaned === 'object' ? JSON.stringify(cleaned) : cleaned;
+      }
+    } catch {
+      // Try next candidate model
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Call OpenRouter with Dynamic Auto-Discovery & Adaptive Payload Formatting
+ */
+async function callOpenRouter(prompt, systemPrompt) {
+  if (!OPENROUTER_API_KEY) return null;
+  let candidateModels = [
+    'google/gemini-2.0-flash-001',
+    'meta-llama/llama-3.3-70b-instruct',
+    'deepseek/deepseek-chat',
+    'mistralai/mistral-small-24b-instruct-2501'
+  ];
+  let formatOrPayload = null;
+  let cleanOrJson = null;
+  try {
+    const orFinder = require('./openrouter_model_finder.cjs');
+    const verified = await orFinder.fetchAndVerifyOpenRouterModels();
+    if (verified && verified.length > 0) candidateModels = [...new Set([...verified, ...candidateModels])];
+    formatOrPayload = orFinder.formatOpenRouterPayload;
+    cleanOrJson = orFinder.cleanOpenRouterJson;
+  } catch {}
+
+  for (const model of candidateModels) {
+    try {
+      const payload = formatOrPayload
+        ? formatOrPayload(model, { systemPrompt, userPrompt: prompt, jsonMode: true, maxTokens: 1800 })
+        : {
+          model: model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 1800
+        };
+      const postData = JSON.stringify(payload);
+
+      const result = await new Promise((resolve) => {
+        const req = https.request('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': 'https://voxam.ai',
+            'X-Title': 'Voxam Brain Generator',
+            'Content-Length': Buffer.byteLength(postData)
+          },
+          timeout: 15000
+        }, (res) => {
+          let data = '';
+          res.on('data', chunk => { data += chunk; });
+          res.on('end', () => {
+            if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+              try {
+                const json = JSON.parse(data);
+                const content = json.choices?.[0]?.message?.content;
+                resolve(content || null);
+              } catch (e) {
+                resolve(null);
+              }
+            } else {
+              resolve(null);
+            }
+          });
+        });
+
+        req.on('error', () => resolve(null));
+        req.on('timeout', () => { req.destroy(); resolve(null); });
+        req.write(postData);
+        req.end();
+      });
+
+      if (result) {
+        const cleaned = cleanOrJson ? cleanOrJson(result) : result;
+        console.log(`  -> [OpenRouter Succeeded using active model: ${model}]`);
+        return typeof cleaned === 'object' ? JSON.stringify(cleaned) : cleaned;
       }
     } catch {
       // Try next candidate model
@@ -776,6 +872,14 @@ Respond strictly in raw JSON format:
         try {
           aiResponse = await callGroq(userPrompt, systemPrompt);
           if (aiResponse) usedAiModel = 'Groq (High-Speed LPU)';
+        } catch {}
+      }
+
+      // 1b. Fast Secondary Attempt: OpenRouter Auto-Discovery
+      if (!aiResponse && OPENROUTER_API_KEY) {
+        try {
+          aiResponse = await callOpenRouter(userPrompt, systemPrompt);
+          if (aiResponse) usedAiModel = 'OpenRouter (Active Model)';
         } catch {}
       }
 

@@ -243,13 +243,17 @@ async function callGroq(topic) {
     'gemma2-9b-it'
   ];
 
+  let formatGrPayload = null;
+  let cleanGrJson = null;
   try {
-    const { fetchAndVerifyGroqModels } = require('./groq_model_finder.cjs');
-    const verified = await fetchAndVerifyGroqModels();
+    const grFinder = require('./groq_model_finder.cjs');
+    const verified = await grFinder.fetchAndVerifyGroqModels();
     if (verified && verified.length > 0) {
       models = [...new Set([...verified, ...models])];
       console.log(`[AI Planner] 🔍 Groq Auto-Model Finder activated. Discovered ${verified.length} candidate models: ${models.slice(0, 4).join(', ')}`);
     }
+    formatGrPayload = grFinder.formatGroqPayload;
+    cleanGrJson = grFinder.cleanGroqJson;
   } catch (mErr) {
     console.warn(`[AI Planner] Groq model finder notice: ${mErr.message}`);
   }
@@ -257,11 +261,11 @@ async function callGroq(topic) {
   const userPrompt = `Create an educational cartoon episode scene plan in JSON format for: "${topic}". Output strictly valid JSON with root object containing title, description, keywords, and scenes array.`;
 
   for (const model of models) {
-    // Try first with json_object mode, then fallback to standard mode without response_format
-    for (const useJsonFormat of [true, false]) {
-      try {
-        console.log(`[AI Planner] Requesting Groq (${model}${useJsonFormat ? ', json_mode' : ''}) for topic: "${topic}"...`);
-        const payload = {
+    try {
+      console.log(`[AI Planner] Requesting Groq (${model}) for topic: "${topic}"...`);
+      const payload = formatGrPayload
+        ? formatGrPayload(model, { systemPrompt: SYSTEM_PROMPT, userPrompt, jsonMode: true, maxTokens: 1800 })
+        : {
           model,
           messages: [
             { role: 'system', content: SYSTEM_PROMPT },
@@ -270,52 +274,46 @@ async function callGroq(topic) {
           temperature: 0.7,
           max_tokens: 1800
         };
-        if (useJsonFormat) {
-          payload.response_format = { type: 'json_object' };
-        }
 
-        const body = JSON.stringify(payload);
+      const body = JSON.stringify(payload);
 
-        const raw = await new Promise((resolve, reject) => {
-          const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${GROQ_API_KEY}`,
-              'Content-Type': 'application/json',
-              'Content-Length': Buffer.byteLength(body)
-            },
-            timeout: 15000
-          }, (res) => {
-            let data = '';
-            res.on('data', c => data += c);
-            res.on('end', () => {
-              if (res.statusCode >= 200 && res.statusCode < 300) {
-                try {
-                  const parsed = JSON.parse(data);
-                  resolve(parsed.choices?.[0]?.message?.content || '');
-                } catch (e) {
-                  reject(e);
-                }
-              } else {
-                reject(new Error(`Groq HTTP ${res.statusCode}: ${data.slice(0, 150)}`));
+      const raw = await new Promise((resolve, reject) => {
+        const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${GROQ_API_KEY}`,
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(body)
+          },
+          timeout: 15000
+        }, (res) => {
+          let data = '';
+          res.on('data', c => data += c);
+          res.on('end', () => {
+            if (res.statusCode >= 200 && res.statusCode < 300) {
+              try {
+                const parsed = JSON.parse(data);
+                resolve(parsed.choices?.[0]?.message?.content || '');
+              } catch (e) {
+                reject(e);
               }
-            });
+            } else {
+              reject(new Error(`Groq HTTP ${res.statusCode}: ${data.slice(0, 150)}`));
+            }
           });
-          req.on('error', reject);
-          req.on('timeout', () => { req.destroy(); reject(new Error('Groq request timed out (15s)')); });
-          req.write(body);
-          req.end();
         });
+        req.on('error', reject);
+        req.on('timeout', () => { req.destroy(); reject(new Error('Groq request timed out (15s)')); });
+        req.write(body);
+        req.end();
+      });
 
-        const cleaned = validateAndCleanEpisode(raw, topic);
-        if (cleaned) {
-          return { plan: cleaned, provider: `groq/${model}` };
-        }
-      } catch (e) {
-        console.warn(`[AI Planner] Groq ${model} (${useJsonFormat ? 'json_mode' : 'standard'}) failed:`, e.message);
-        // If it was 400 bad request in json_format mode, continue to try standard mode
-        if (!useJsonFormat) break;
+      const cleaned = (cleanGrJson ? cleanGrJson(raw) : null) || validateAndCleanEpisode(raw, topic);
+      if (cleaned) {
+        return { plan: cleaned, provider: `groq/${model}` };
       }
+    } catch (e) {
+      console.warn(`[AI Planner] Groq ${model} failed:`, e.message);
     }
   }
   throw new Error('All Groq models failed');
@@ -402,29 +400,39 @@ async function callOpenRouter(topic) {
     'deepseek/deepseek-chat'
   ];
 
+  let formatOrPayload = null;
+  let cleanOrJson = null;
   try {
-    const { fetchAndVerifyOpenRouterModels } = require('./openrouter_model_finder.cjs');
-    const verified = await fetchAndVerifyOpenRouterModels();
+    const orFinder = require('./openrouter_model_finder.cjs');
+    const verified = await orFinder.fetchAndVerifyOpenRouterModels();
     if (verified && verified.length > 0) {
       models = [...new Set([...verified, ...models])];
       console.log(`[AI Planner] 🔍 OpenRouter Auto-Model Finder activated. Discovered ${verified.length} candidate models: ${models.slice(0, 4).join(', ')}`);
     }
+    formatOrPayload = orFinder.formatOpenRouterPayload;
+    cleanOrJson = orFinder.cleanOpenRouterJson;
   } catch (mErr) {
     console.warn(`[AI Planner] OpenRouter model finder notice: ${mErr.message}`);
   }
 
+  const userPrompt = `Create an educational cartoon episode scene plan in JSON format for: "${topic}". Return strictly valid JSON.`;
+
   for (const model of models) {
     try {
       console.log(`[AI Planner] Requesting OpenRouter (${model})...`);
-      const body = JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: `Create an educational cartoon episode scene plan in JSON format for: "${topic}". Return strictly valid JSON.` }
-        ],
-        temperature: 0.7,
-        max_tokens: 1800
-      });
+      const payload = formatOrPayload
+        ? formatOrPayload(model, { systemPrompt: SYSTEM_PROMPT, userPrompt, jsonMode: true, maxTokens: 1800 })
+        : {
+          model,
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 1800
+        };
+
+      const body = JSON.stringify(payload);
 
       const raw = await new Promise((resolve, reject) => {
         const req = https.request('https://openrouter.ai/api/v1/chat/completions', {
@@ -459,7 +467,7 @@ async function callOpenRouter(topic) {
         req.end();
       });
 
-      const cleaned = validateAndCleanEpisode(raw, topic);
+      const cleaned = (cleanOrJson ? cleanOrJson(raw) : null) || validateAndCleanEpisode(raw, topic);
       if (cleaned) {
         return { plan: cleaned, provider: `openrouter/${model}` };
       }

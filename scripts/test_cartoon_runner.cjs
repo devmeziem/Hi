@@ -26,7 +26,8 @@ if (!fs.existsSync(RENDERED_DIR)) fs.mkdirSync(RENDERED_DIR, { recursive: true }
 if (!fs.existsSync(PUBLIC_RENDERED_DIR)) fs.mkdirSync(PUBLIC_RENDERED_DIR, { recursive: true });
 
 async function runCartoonPipelineDiagnostic() {
-  const isDryRun = process.env.DRY_RUN === 'false' ? false : true;
+  const ch3Token = process.env.YOUTUBE_REFRESH_TOKEN_CH3 || process.env.YOUTUBE_REFRESH_TOKEN_TECH || process.env.YOUTUBE_REFRESH_TOKEN_CARTOON || process.env.YOUTUBE_REFRESH_TOKEN_ARCHIE || (process.env.ALLOW_SHARED_YOUTUBE_TOKEN === 'true' ? process.env.YOUTUBE_REFRESH_TOKEN : '');
+  const isDryRun = process.env.DRY_RUN === 'true' || (!ch3Token && process.env.DRY_RUN !== 'false');
   let inputTopic = process.env.TEST_TOPIC || '';
 
   if (!inputTopic || inputTopic.trim().length < 4) {
@@ -233,8 +234,8 @@ async function runCartoonPipelineDiagnostic() {
       null,
       {
         title: episodePlan.title,
-        description: `${episodePlan.title}\n\nJoin Archie for fast explanations of science, tech, and everyday mysteries!\n\n#Shorts #Cartoon #Animation #Science #Explained`,
-        tags: ['Shorts', 'Cartoon', 'Science', 'Animation', 'Explained', 'Archie']
+        description: `${episodePlan.title}\n\nArchie breaks down tech, AI, and science concepts in animated visual breakdowns! What topic should Archie explore next? Drop your thoughts below!\n\n#Animation #Tech #Science #AI #HowItWorks #FutureTech #Engineering #TechExplained #Archie #Educational #Shorts #DidYouKnow`,
+        tags: ['#Animation', '#Tech', '#Science', '#AI', '#HowItWorks', '#FutureTech', '#Engineering', '#TechExplained', '#Archie', '#Educational', '#Shorts', '#DidYouKnow']
       }
     );
     console.log('[Runner Result]:', pubResult);

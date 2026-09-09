@@ -517,15 +517,10 @@ function generateLoopyMysterySound(outputPath, durationSeconds = 5.0) {
     path.join(process.cwd(), 'test_artifacts', 'sounds')
   ];
 
-  const { generateAllOminousSounds } = require('./generate_ominous_sounds.cjs');
   const presets = [
-    'ominous_dark_suspense',
-    'ominous_eerie_drone',
-    'ominous_tension_pulse',
-    'ominous_abyss_resonance',
     'horror_scene_murder_mystery',
-    'mystery_darkness',
-    'instrumental_mystery'
+    'instrumental_mystery',
+    'mystery_darkness'
   ];
   const chosenPreset = process.env.SOUND_PRESET || presets[Math.floor(Date.now() / (1000 * 60 * 15)) % presets.length];
 
@@ -758,14 +753,14 @@ async function generateStoic5sVideo() {
   const wavPath = path.join(ARTIFACTS_DIR, `scholar_mystery_sound_${TARGET_DURATION}s.wav`);
   generateLoopyMysterySound(wavPath, TARGET_DURATION);
 
-  // 4. Prepare Frosted Center-Bottom Glass Caption Overlay
-  const quoteLines = wrapQuoteText(chosen.quote, 28);
+  // 4. Prepare High-Contrast Glass Caption Overlay with Maximum Legibility
+  const quoteLines = wrapQuoteText(chosen.quote, 24);
   const quoteTspans = quoteLines.map((line, idx) =>
-    `<tspan x="540" dy="${idx === 0 ? 0 : 50}">${escapeXml(line)}</tspan>`
+    `<tspan x="540" dy="${idx === 0 ? 0 : 62}">${escapeXml(line)}</tspan>`
   ).join('\n        ');
 
-  const cardHeight = Math.max(480, 260 + quoteLines.length * 52);
-  const cardY = 1680 - cardHeight; // Positioned center-bottom so scholar portrait shines at top/center
+  const cardHeight = Math.max(520, 290 + quoteLines.length * 64);
+  const cardY = 1680 - cardHeight;
 
   const overlaySvgPath = path.join(ARTIFACTS_DIR, 'quote_overlay.svg');
   const overlayPngPath = path.join(ARTIFACTS_DIR, 'quote_overlay.png');
@@ -773,50 +768,65 @@ async function generateStoic5sVideo() {
   const overlaySvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" width="1080" height="1920">
     <defs>
       <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="16" stdDeviation="28" flood-color="#000000" flood-opacity="0.95" />
+        <feDropShadow dx="0" dy="24" stdDeviation="36" flood-color="#000000" flood-opacity="0.98" />
       </filter>
-      <filter id="textGlow" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#000000" flood-opacity="0.95" />
+      <filter id="textShadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="1.0" />
       </filter>
-      <linearGradient id="glassGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#0a101f" stop-opacity="0.70" />
-        <stop offset="100%" stop-color="#020617" stop-opacity="0.86" />
+      <linearGradient id="cardBg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#020617" stop-opacity="0.94" />
+        <stop offset="100%" stop-color="#000000" stop-opacity="0.98" />
       </linearGradient>
     </defs>
 
-    <!-- Bottom Vignette Shading for Ultra Clarity -->
-    <rect x="0" y="980" width="1080" height="940" fill="black" fill-opacity="0.45" />
+    <!-- Heavy Vignette Shading for Maximum Text Contrast -->
+    <rect x="0" y="800" width="1080" height="1120" fill="black" fill-opacity="0.65" />
 
-    <!-- Center Bottom Frosted Glass Card -->
-    <rect x="60" y="${cardY}" width="960" height="${cardHeight}" rx="28" fill="url(#glassGrad)" stroke="#38bdf8" stroke-width="1.5" stroke-opacity="0.22" filter="url(#cardShadow)" />
+    <!-- High-Contrast Caption Card -->
+    <rect x="50" y="${cardY}" width="980" height="${cardHeight}" rx="28" fill="url(#cardBg)" stroke="#d4af37" stroke-width="2.5" stroke-opacity="0.75" filter="url(#cardShadow)" />
 
-    <!-- Pill Badge -->
-    <rect x="380" y="${cardY + 36}" width="320" height="34" rx="17" fill="#0f172a" stroke="#d4af37" stroke-width="1.2" />
-    <text x="540" y="${cardY + 58}" font-family="sans-serif" font-size="13" font-weight="700" fill="#d4af37" letter-spacing="3" text-anchor="middle">SCHOLARS OF THE WORLD</text>
+    <!-- Gold Header Pill Badge -->
+    <rect x="360" y="${cardY + 36}" width="360" height="38" rx="19" fill="#1e1b4b" stroke="#d4af37" stroke-width="2" />
+    <text x="540" y="${cardY + 61}" font-family="sans-serif" font-size="14" font-weight="900" fill="#fef08a" letter-spacing="3" text-anchor="middle">🏛️ STOIC WISDOM</text>
 
-    <!-- The Quote -->
-    <text x="540" y="${cardY + 135}" font-family="serif" font-size="34" font-weight="700" fill="#f8fafc" text-anchor="middle" filter="url(#textGlow)">
+    <!-- Large High-Contrast Quote Text (42px bold white) -->
+    <text x="540" y="${cardY + 145}" font-family="serif" font-size="42" font-weight="900" fill="#ffffff" text-anchor="middle" filter="url(#textShadow)">
         ${quoteTspans}
     </text>
 
-    <!-- Elegant Divider Line -->
-    <line x1="420" y1="${cardY + 160 + quoteLines.length * 50}" x2="660" y2="${cardY + 160 + quoteLines.length * 50}" stroke="#d4af37" stroke-width="1.2" stroke-opacity="0.5" />
+    <!-- Accent Divider -->
+    <line x1="380" y1="${cardY + 175 + quoteLines.length * 62}" x2="700" y2="${cardY + 175 + quoteLines.length * 62}" stroke="#d4af37" stroke-width="2" stroke-opacity="0.8" />
 
-    <!-- Scholar Reference (Name + PhD / Credentials) -->
-    <text x="540" y="${cardY + 215 + quoteLines.length * 50}" font-family="sans-serif" font-size="22" font-weight="800" fill="#d4af37" letter-spacing="2" text-anchor="middle" filter="url(#textGlow)">
-      ${escapeXml(chosen.author.toUpperCase())}
+    <!-- Scholar Name (26px Gold Ultra-Bold) -->
+    <text x="540" y="${cardY + 235 + quoteLines.length * 62}" font-family="sans-serif" font-size="26" font-weight="900" fill="#facc15" letter-spacing="2" text-anchor="middle" filter="url(#textShadow)">
+      — ${escapeXml(chosen.author.toUpperCase())} —
     </text>
-    <text x="540" y="${cardY + 252 + quoteLines.length * 50}" font-family="sans-serif" font-size="16" font-weight="600" fill="#9ca3af" letter-spacing="1" text-anchor="middle">
+    <text x="540" y="${cardY + 275 + quoteLines.length * 62}" font-family="sans-serif" font-size="17" font-weight="700" fill="#cbd5e1" letter-spacing="1" text-anchor="middle">
       ${escapeXml(chosen.credentials)}
     </text>
   </svg>`;
 
   fs.writeFileSync(overlaySvgPath, overlaySvg, 'utf8');
 
-  // Convert SVG to PNG
+  // Convert SVG to PNG with Multi-Tool Fallback
   try {
     if (fs.existsSync(overlayPngPath)) fs.unlinkSync(overlayPngPath);
-    execSync(`ffmpeg -y -i "${overlaySvgPath}" "${overlayPngPath}" 2>/dev/null`);
+    let rasterized = false;
+    try {
+      execSync(`rsvg-convert -w 1080 -h 1920 "${overlaySvgPath}" -o "${overlayPngPath}" 2>/dev/null`);
+      rasterized = fs.existsSync(overlayPngPath) && fs.statSync(overlayPngPath).size > 2000;
+    } catch (_) {}
+
+    if (!rasterized) {
+      try {
+        execSync(`convert -background none -density 150 "${overlaySvgPath}" "${overlayPngPath}" 2>/dev/null`);
+        rasterized = fs.existsSync(overlayPngPath) && fs.statSync(overlayPngPath).size > 2000;
+      } catch (_) {}
+    }
+
+    if (!rasterized) {
+      execSync(`ffmpeg -y -i "${overlaySvgPath}" "${overlayPngPath}" 2>/dev/null`);
+    }
   } catch (err) {
     console.warn('[Quote Reel] SVG rasterizer notice:', err.message);
   }
@@ -852,19 +862,21 @@ async function generateStoic5sVideo() {
   fs.copyFileSync(finalMp4Path, artifactMp4Path);
   await saveQuoteHistory(chosen);
 
-  // 5. Format Viral Title, Description, and Hashtags
+  // 5. Format High-Retention Title, Description, and Targeted Hashtags
   const cleanAuthorName = chosen.author.replace(/^(Dr\.|Prof\.)\s*/, '').trim();
-  const viralTitle = `The Truth 99% Avoid — ${chosen.author} #Shorts`;
+  const viralTitle = `The Stoic Lesson Most People Learn Too Late — ${chosen.author} #Shorts`;
   const initialFollowCta = formatChannelFollowCta('motivation_stoicism', process.env.YOUTUBE_HANDLE_CH2 || process.env.YOUTUBE_HANDLE_STOIC || '');
   const viralDescription = `"${chosen.quote}"
 — ${chosen.author}
-(${chosen.credentials})
+${chosen.credentials}
 
-${chosen.communityQuestion}
+🏛️ Timeless Stoic wisdom and philosophy to master your emotions, build unbreakable resilience, and focus on what you can control.
+
+💬 ${chosen.communityQuestion || 'How do you apply this Stoic principle in your daily life?'}
 
 ${initialFollowCta}
 
-#Shorts #Wisdom #Philosophy #Mindset #Stoic #Psychology #DailyQuote #ScholarQuotes #LifeLessons #viral #trending`;
+#Stoicism #Stoic #MarcusAurelius #Philosophy #Mindset #Wisdom #DailyStoic #Quotes #LifeLessons #SelfDiscipline #Shorts`;
 
   const fileSizeMb = (fs.statSync(finalMp4Path).size / 1024 / 1024).toFixed(2);
   console.log(`\n======================================================`);
@@ -903,15 +915,15 @@ ${initialFollowCta}
 
   // 7. Publish to YouTube as 5s Viral Short (Exclusively Channel 2: The Stoic Architect)
   const isDryRun = process.env.DRY_RUN === 'true';
-  const clientId = process.env.YOUTUBE_CLIENT_ID_CH2 || process.env.YOUTUBE_CLIENT_ID_STOIC;
-  const clientSecret = process.env.YOUTUBE_CLIENT_SECRET_CH2 || process.env.YOUTUBE_CLIENT_SECRET_STOIC;
-  const refreshToken = process.env.YOUTUBE_REFRESH_TOKEN_CH2 || process.env.YOUTUBE_REFRESH_TOKEN_STOIC;
+  const clientId = process.env.YOUTUBE_CLIENT_ID_CH2 || process.env.YOUTUBE_CLIENT_ID_STOIC || process.env.YOUTUBE_CLIENT_ID;
+  const clientSecret = process.env.YOUTUBE_CLIENT_SECRET_CH2 || process.env.YOUTUBE_CLIENT_SECRET_STOIC || process.env.YOUTUBE_CLIENT_SECRET;
+  const refreshToken = process.env.YOUTUBE_REFRESH_TOKEN_CH2 || process.env.YOUTUBE_REFRESH_TOKEN_STOIC || process.env.YOUTUBE_REFRESH_TOKEN_STOICISM || (process.env.ALLOW_SHARED_YOUTUBE_TOKEN === 'true' ? process.env.YOUTUBE_REFRESH_TOKEN : '');
 
   if (clientId && clientSecret && refreshToken && !isDryRun) {
     try {
       console.log(`\n[Quote Reel] 📤 Publishing 5s Stoic Quote Reel to YouTube Shorts (Channel 2: The Stoic Architect)...`);
       await uploadQuoteReelToYouTube(finalMp4Path, viralTitle, viralDescription, [
-        'Shorts', 'Wisdom', 'Philosophy', 'Mindset', 'Stoic', 'Psychology', chosen.author.replace(/[^a-zA-Z0-9]/g, '')
+        'Stoicism', 'MarcusAurelius', 'DailyStoic', 'Philosophy', 'Wisdom', 'StoicQuotes', 'Discipline', 'Mindset', 'MentalFortitude', 'Stoic', 'Shorts', chosen.author.replace(/[^a-zA-Z0-9]/g, '')
       ]);
     } catch (err) {
       console.warn(`[Quote Reel] YouTube upload notice: ${err.message}`);
@@ -919,7 +931,7 @@ ${initialFollowCta}
   } else if (isDryRun) {
     console.log(`[Quote Reel] ℹ️ Dry Run mode enabled — video saved locally for review without live YouTube upload.`);
   } else {
-    console.log(`[Quote Reel] ℹ️ Channel 2 (The Stoic Architect) credentials (YOUTUBE_REFRESH_TOKEN_CH2) not provided in environment — preventing accidental cross-posting to Channel 1.`);
+    console.log(`[Quote Reel] ℹ️ Channel 2 (The Stoic Architect) credentials not provided in environment.`);
   }
 
   return finalMp4Path;

@@ -837,10 +837,10 @@ Format your response strictly as a JSON array of 3 strings, with no markdown cod
       addLog('Vaulting', 'info', 'Packaging campaign slides with burned-in subtitles & vaulting to Firestore...');
 
       const affiliateUrl = testPostChannel === 'finance_saas' 
-        ? 'https://selar.com/m/fin-blueprint-pack' 
+        ? 'https://youtube.com/@bones_ceo' 
         : testPostChannel === 'motivation_stoicism' 
-        ? 'https://amzn.to/stoic-meditations' 
-        : 'https://github.com/trending';
+        ? 'https://youtube.com/@thestoicarchitect-n4b' 
+        : 'https://youtube.com/@bonesceo';
 
       const totalWords = (narrationText || '').split(/\s+/).filter(Boolean).length;
       const avgSecondsPerWord = 0.45; // Natural conversational cadence

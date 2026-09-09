@@ -36,13 +36,15 @@ class PublishingAdapter {
     if (platform === 'youtube') {
       // Defer to YouTube API dispatcher only if OAuth credentials are fully provided
       const { uploadYouTubeShort } = require('./youtube_channel_dispatcher.cjs');
+      const defaultTags = ['#Animation', '#Tech', '#Science', '#AI', '#HowItWorks', '#FutureTech', '#Engineering', '#TechExplained', '#Archie', '#Educational', '#Shorts', '#DidYouKnow'];
+      const defaultDesc = `${metadata.title}\n\nArchie breaks down tech, AI, and science concepts in animated visual breakdowns! What topic should Archie explore next? Drop your thoughts below!\n\n${defaultTags.join(' ')}`;
       try {
         const result = await uploadYouTubeShort({
           videoPath,
           title: metadata.title,
-          description: metadata.description || `${metadata.title}\n\n#Shorts #Animation #Science #Explained`,
-          tags: metadata.tags || ['Shorts', 'Animation', 'Cartoon', 'Science', 'EverydayMysteries'],
-          channelId: 'channel_tech_03'
+          description: metadata.description || defaultDesc,
+          tags: metadata.tags || defaultTags,
+          channelId: 'cartoon_factory'
         });
         return { success: true, platform: 'youtube', videoId: result?.id, status: 'PUBLISHED' };
       } catch (err) {

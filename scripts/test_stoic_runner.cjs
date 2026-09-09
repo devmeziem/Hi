@@ -741,73 +741,86 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
   }
 
   // 2. SECONDARY: Groq LPU (Least Costly / Highest Speed / 0 Cold-start)
-  if (!scriptData && backupEngines && backupEngines.groqWorkingModel) {
+  if (!scriptData && GROQ_API_KEY) {
+    let groqModels = [
+      backupEngines?.groqWorkingModel,
+      'llama-3.3-70b-versatile',
+      'llama-3.1-8b-instant',
+      'deepseek-r1-distill-llama-70b',
+      'gemma2-9b-it'
+    ].filter(Boolean);
+    let formatGrPayload = null;
+    let cleanGrJson = null;
     try {
-      logInfo(`[Storyboard Engine] 2. Requesting storyboard from Groq LPU (${backupEngines.groqWorkingModel})...`);
-      let formatGrPayload = null;
-      let cleanGrJson = null;
+      const grFinder = require('./groq_model_finder.cjs');
+      const verified = await grFinder.fetchAndVerifyGroqModels();
+      if (verified && verified.length > 0) groqModels = [...new Set([...verified, ...groqModels])];
+      formatGrPayload = grFinder.formatGroqPayload;
+      cleanGrJson = grFinder.cleanGroqJson;
+    } catch {}
+
+    for (const gModel of groqModels) {
+      if (scriptData) break;
       try {
-        const grFinder = require('./groq_model_finder.cjs');
-        formatGrPayload = grFinder.formatGroqPayload;
-        cleanGrJson = grFinder.cleanGroqJson;
-      } catch {}
+        logInfo(`[Storyboard Engine] 2. Requesting storyboard from Groq LPU (${gModel})...`);
+        const userPromptText = `${userPrompt} Topic title: "${topic}". Ensure complete sentences on every slide. Return strictly valid JSON.`;
+        const payloadObj = formatGrPayload
+          ? formatGrPayload(gModel, { systemPrompt, userPrompt: userPromptText, jsonMode: true, maxTokens: 1800 })
+          : {
+            model: gModel,
+            messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPromptText }],
+            temperature: 0.7,
+            max_tokens: 1800
+          };
 
-      const userPromptText = `${userPrompt} Topic title: "${topic}". Ensure complete sentences on every slide. Return strictly valid JSON.`;
-      const payloadObj = formatGrPayload
-        ? formatGrPayload(backupEngines.groqWorkingModel, { systemPrompt, userPrompt: userPromptText, jsonMode: true, maxTokens: 1800 })
-        : {
-          model: backupEngines.groqWorkingModel,
-          messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPromptText }],
-          temperature: 0.7,
-          max_tokens: 1800
-        };
+        const raw = await new Promise((resolve) => {
+          const postData = JSON.stringify(payloadObj);
 
-      const raw = await new Promise((resolve) => {
-        const postData = JSON.stringify(payloadObj);
-
-        const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${GROQ_API_KEY}`,
-            'Content-Length': Buffer.byteLength(postData)
-          },
-          timeout: 12000
-        }, (res) => {
-          let data = '';
-          res.on('data', c => { data += c; });
-          res.on('end', () => {
-            if (res.statusCode === 200) {
-              try {
-                const j = JSON.parse(data);
-                resolve({ success: true, content: j.choices?.[0]?.message?.content });
-              } catch (e) {
-                resolve({ success: false, error: 'JSON parse error: ' + e.message });
+          const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${GROQ_API_KEY}`,
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 12000
+          }, (res) => {
+            let data = '';
+            res.on('data', c => { data += c; });
+            res.on('end', () => {
+              if (res.statusCode === 200) {
+                try {
+                  const j = JSON.parse(data);
+                  resolve({ success: true, content: j.choices?.[0]?.message?.content });
+                } catch (e) {
+                  resolve({ success: false, error: 'JSON parse error: ' + e.message });
+                }
+              } else {
+                resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 150)}` });
               }
-            } else {
-              resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 150)}` });
-            }
+            });
           });
+          req.on('error', (err) => resolve({ success: false, error: err.message }));
+          req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Request timeout' }); });
+          req.write(postData);
+          req.end();
         });
-        req.on('error', (err) => resolve({ success: false, error: err.message }));
-        req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Request timeout' }); });
-        req.write(postData);
-        req.end();
-      });
 
-      if (raw.success && raw.content) {
-        const parsed = cleanGrJson ? (cleanGrJson(raw.content) || cleanLlmJson(raw.content)) : cleanLlmJson(raw.content);
-        if (parsed && validateStoicStoryboard(parsed)) {
-          if (parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
-          parsed.modelUsed = `Groq LPU (${backupEngines.groqWorkingModel})`;
-          scriptData = parsed;
-          logSuccess(`[Storyboard Engine] Groq (${backupEngines.groqWorkingModel}) generated complete ${scriptData.slides.length}-slide package!`);
+        if (raw.success && raw.content) {
+          const parsed = cleanGrJson ? (cleanGrJson(raw.content) || cleanLlmJson(raw.content)) : cleanLlmJson(raw.content);
+          if (parsed && validateStoicStoryboard(parsed)) {
+            if (parsed.slides.length > 6) parsed.slides = parsed.slides.slice(0, 6);
+            parsed.modelUsed = `Groq LPU (${gModel})`;
+            scriptData = parsed;
+            logSuccess(`[Storyboard Engine] Groq (${gModel}) generated complete ${scriptData.slides.length}-slide package!`);
+            break;
+          }
+        } else {
+          logWarning(`[Storyboard Engine] Groq (${gModel}) failed: ${raw.error || 'Empty payload'}`);
         }
-      } else {
-        logWarning(`[Storyboard Engine] Groq failed: ${raw.error || 'Empty payload'}`);
+      } catch (e) {
+        logWarning(`[Storyboard Engine] Groq (${gModel}) exception: ${e.message}`);
       }
-    } catch (e) {
-      logWarning(`[Storyboard Engine] Groq exception: ${e.message}`);
     }
   }
 

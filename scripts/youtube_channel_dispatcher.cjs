@@ -23,8 +23,7 @@ const CHANNEL_CONFIG = {
     clientId: process.env.YOUTUBE_CLIENT_ID_CH1 || DEFAULT_CLIENT_ID,
     clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH1 || DEFAULT_CLIENT_SECRET,
     refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH1 || process.env.YOUTUBE_REFRESH_TOKEN || '',
-    affiliateUrl: process.env.CREATOR_PLAYBOOK_URL || 'https://selar.co/m/bones-ceo',
-    tags: ['#Shorts', '#SideHustle', '#CreatorEconomy', '#MakeMoneyOnline', '#PhoneHustle', '#viral', '#trending', '#fyp']
+    tags: ['#Quotes', '#Finance', '#FinancialMindset', '#MoneyMindset', '#Wealth', '#Investing', '#FinancialFreedom', '#WealthMindset', '#SuccessQuotes', '#MillionaireMindset', '#Shorts']
   },
   motivation_stoicism: {
     key: 'motivation_stoicism',
@@ -34,17 +33,17 @@ const CHANNEL_CONFIG = {
     clientId: process.env.YOUTUBE_CLIENT_ID_CH2 || process.env.YOUTUBE_CLIENT_ID_STOIC || DEFAULT_CLIENT_ID,
     clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH2 || process.env.YOUTUBE_CLIENT_SECRET_STOIC || DEFAULT_CLIENT_SECRET,
     refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH2 || process.env.YOUTUBE_REFRESH_TOKEN_STOIC || '',
-    tags: ['#Shorts', '#viral', '#trending', '#Stoicism', '#MarcusAurelius', '#Discipline', '#Motivation', '#Mindset', '#Wisdom', '#DailyStoic', '#fyp']
+    tags: ['#Stoicism', '#MarcusAurelius', '#DailyStoic', '#Philosophy', '#Wisdom', '#StoicQuotes', '#Discipline', '#Mindset', '#MentalFortitude', '#Stoic', '#Shorts']
   },
   cartoon_factory: {
     key: 'cartoon_factory',
-    handle: process.env.YOUTUBE_HANDLE_CH3 || process.env.YOUTUBE_HANDLE_TECH || '',
+    handle: process.env.YOUTUBE_HANDLE_CH3 || process.env.YOUTUBE_HANDLE_TECH || process.env.YOUTUBE_HANDLE_CARTOON || '',
     name: 'Tech & AI Animation',
     isPrimary: false,
-    clientId: process.env.YOUTUBE_CLIENT_ID_CH3 || process.env.YOUTUBE_CLIENT_ID_TECH || DEFAULT_CLIENT_ID,
-    clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH3 || process.env.YOUTUBE_CLIENT_SECRET_TECH || DEFAULT_CLIENT_SECRET,
-    refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH3 || process.env.YOUTUBE_REFRESH_TOKEN_TECH || '',
-    tags: ['#Shorts', '#viral', '#trending', '#Tech', '#AI', '#Animation', '#Cartoon', '#Science', '#Explained', '#Blender', '#fyp']
+    clientId: process.env.YOUTUBE_CLIENT_ID_CH3 || process.env.YOUTUBE_CLIENT_ID_TECH || process.env.YOUTUBE_CLIENT_ID_CARTOON || DEFAULT_CLIENT_ID,
+    clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH3 || process.env.YOUTUBE_CLIENT_SECRET_TECH || process.env.YOUTUBE_CLIENT_SECRET_CARTOON || DEFAULT_CLIENT_SECRET,
+    refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH3 || process.env.YOUTUBE_REFRESH_TOKEN_TECH || process.env.YOUTUBE_REFRESH_TOKEN_CARTOON || process.env.YOUTUBE_REFRESH_TOKEN_ARCHIE || (process.env.ALLOW_SHARED_YOUTUBE_TOKEN === 'true' ? process.env.YOUTUBE_REFRESH_TOKEN : '') || '',
+    tags: ['#Animation', '#Tech', '#Science', '#AI', '#HowItWorks', '#FutureTech', '#Engineering', '#TechExplained', '#Archie', '#Educational', '#Shorts', '#DidYouKnow']
   }
 };
 
@@ -56,12 +55,11 @@ function formatChannelFollowCta(channelKey, syncedHandle, syncedTitle) {
   const targetLabel = handle ? handle : 'this channel';
 
   if (channelKey === 'motivation_stoicism' || channelKey === 'ch2' || channelKey === 'stoic') {
-    return `🏛️ Follow ${targetLabel} for daily Stoic wisdom, mental fortitude, and timeless philosophy.`;
+    return `🏛️ Subscribe to ${targetLabel} for daily Stoic wisdom, mental fortitude, and timeless philosophy.`;
   } else if (channelKey === 'cartoon_factory' || channelKey === 'ch3' || channelKey === 'tech') {
-    return `🎬 Subscribe to ${targetLabel} for daily animated Tech, AI, and Science visual explainers!`;
+    return `🎬 Subscribe to ${targetLabel} for fast, animated breakdowns of AI, Future Tech, and Science mysteries!`;
   } else {
-    const affiliate = process.env.CREATOR_PLAYBOOK_URL || 'https://selar.co/m/bones-ceo';
-    return `📱 Start your phone-based media hustle: ${affiliate} (Creator Playbook)\n📈 Follow ${targetLabel} for daily creator blueprints and financial principles.`;
+    return `📈 Subscribe to ${targetLabel} for daily financial quotes, wealth principles, and money mindset.`;
   }
 }
 
@@ -73,11 +71,11 @@ function formatChannelPinnedComment(channelKey, syncedHandle, syncedTitle) {
   const targetLabel = handle ? handle : 'the channel';
 
   if (channelKey === 'motivation_stoicism' || channelKey === 'ch2' || channelKey === 'stoic') {
-    return `📌 "No person is free who is not master of himself." Which Stoic rule resonates most with you today? Subscribe to ${targetLabel} for daily fortitude.`;
+    return `📌 "No person is free who is not master of himself." How do you apply this Stoic wisdom today? Subscribe to ${targetLabel} for daily fortitude.`;
   } else if (channelKey === 'cartoon_factory' || channelKey === 'ch3' || channelKey === 'tech') {
-    return `📌 What curious tech or science mystery should Archie animate next? Drop your ideas below and subscribe to ${targetLabel}!`;
+    return `📌 What curious tech, AI, or science question should Archie animate next? Drop your ideas below and subscribe to ${targetLabel}!`;
   } else {
-    return `📌 Which phone hustle or digital product model are you building this week? Drop your thoughts below and subscribe to ${targetLabel}!`;
+    return `💬 Which financial principle has impacted your journey the most? Drop your thoughts below and subscribe to ${targetLabel} for daily wealth wisdom!`;
   }
 }
 
@@ -358,7 +356,6 @@ async function dispatchScheduledVideos() {
     console.log(`Target Channel: ${config.name} (${config.handle}) ${config.isPrimary ? '[PRIMARY FOCUS]' : ''}`);
     console.log(`  -> Title: "${job.title}"`);
     console.log(`  -> Video Asset: ${job.localVideoPath || job.renderedVideoUrl || job.generatedImageUrl}`);
-    console.log(`  -> Affiliate Funnel: ${config.affiliateCta}`);
 
     let dynamicCta = formatChannelFollowCta(channelKey, config.handle, config.name);
     let dynamicComment = formatChannelPinnedComment(channelKey, config.handle, config.name);
@@ -391,7 +388,7 @@ async function dispatchScheduledVideos() {
         if (videoId) {
           console.log(`  -> [LIVE ON YOUTUBE]: Published to ${config.handle}/shorts! Video ID: ${videoId}`);
           await postPinnedComment(accessToken, videoId, dynamicComment);
-          console.log(`  -> [PINNED COMMENT]: Attached affiliate CTA to video.`);
+          console.log(`  -> [PINNED COMMENT]: Attached community discussion question to video.`);
           
           job.stage = 'PUBLISHED';
           job.status = 'PUBLISHED';
@@ -405,7 +402,7 @@ async function dispatchScheduledVideos() {
     }
 
     if (!liveUploaded) {
-      console.log(`  -> [VAULT STORAGE]: Securely archived to Voxam Studio Vault with 9:16 storyboard, subtitles & affiliate link.`);
+      console.log(`  -> [VAULT STORAGE]: Securely archived to Voxam Studio Vault with 9:16 vertical video & subtitles.`);
       job.stage = 'READY_IN_VAULT';
       job.status = 'READY_IN_VAULT';
       job.savedToVaultAt = new Date().toISOString();
