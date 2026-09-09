@@ -438,8 +438,8 @@ async function generateArchie5sDailyFact() {
   const viralTitle = `DID YOU KNOW? ⚡ ${fact.category} #Shorts`;
   const initialFollowCta = formatChannelFollowCta('cartoon_factory', process.env.YOUTUBE_HANDLE_CH3 || process.env.YOUTUBE_HANDLE_TECH || '');
   
-  // High-retention description and targeted tags
-  const viralDescription = `${fact.hook}\n\n${fact.fact}\n\n🔬 Verified Citation: ${fact.reference}\n\n⚡ Archie breaks down tech, AI, and science concepts. What tech mystery should Archie explore next? Drop your thoughts below!\n\n${initialFollowCta}\n\n#Tech #AI #ArtificialIntelligence #FutureTech #Science #Technology #DidYouKnow #TechFacts #Innovation #Archie #Shorts`;
+  // High-retention description (pure insight without comment bleed)
+  const viralDescription = `${fact.hook}\n\n${fact.fact}\n\n🔬 Verified Citation: ${fact.reference}`;
 
   // 7. Publish to YouTube (Channel 3: Tech & AI Animation)
   const isDryRun = process.env.DRY_RUN === 'true';

@@ -684,7 +684,7 @@ async function generateFin5sVideo() {
   // 6. Update Blueprint Manifest
   const viralTitle = `Finance Mindset — ${chosen.author} Quotes #Shorts`;
   const initialFollowCta = formatChannelFollowCta('finance_saas', process.env.YOUTUBE_HANDLE_CH1 || process.env.YOUTUBE_HANDLE_FIN || process.env.YOUTUBE_HANDLE || '');
-  const viralDescription = `"${chosen.quote}"\n\n— ${chosen.author}\n${chosen.credentials}\nSource: ${chosen.reference}\n\n🧠 Daily quotes and finance mindset principles to master wealth, investment discipline, and financial freedom.\n\n💬 What does this quote mean for your financial journey? Comment below.\n${initialFollowCta}\n\n#Quotes #FinanceMindset #FinancialMindset #MoneyMindset #WealthMindset #Finance #Investing #Wealth #Shorts`;
+  const viralDescription = `"${chosen.quote}"\n\n— ${chosen.author}\n${chosen.credentials}\nSource: ${chosen.reference}\n\n🧠 Daily finance principles to master wealth, investment discipline, and financial freedom.\n\n${initialFollowCta}\n\n#Finance #Investing #Wealth #MoneyMindset #FinancialFreedom #Shorts`;
 
   try {
     let manifestData = { videos: [] };

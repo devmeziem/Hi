@@ -872,11 +872,9 @@ ${chosen.credentials}
 
 🏛️ Timeless Stoic wisdom and philosophy to master your emotions, build unbreakable resilience, and focus on what you can control.
 
-💬 ${chosen.communityQuestion || 'How do you apply this Stoic principle in your daily life?'}
-
 ${initialFollowCta}
 
-#Stoicism #Stoic #MarcusAurelius #Philosophy #Mindset #Wisdom #DailyStoic #Quotes #LifeLessons #SelfDiscipline #Shorts`;
+#Stoicism #MarcusAurelius #Philosophy #Wisdom #Discipline #Shorts`;
 
   const fileSizeMb = (fs.statSync(finalMp4Path).size / 1024 / 1024).toFixed(2);
   console.log(`\n======================================================`);

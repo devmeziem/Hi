@@ -43,9 +43,54 @@ const CHANNEL_CONFIG = {
     clientId: process.env.YOUTUBE_CLIENT_ID_CH3 || process.env.YOUTUBE_CLIENT_ID_TECH || process.env.YOUTUBE_CLIENT_ID_CARTOON || DEFAULT_CLIENT_ID,
     clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH3 || process.env.YOUTUBE_CLIENT_SECRET_TECH || process.env.YOUTUBE_CLIENT_SECRET_CARTOON || DEFAULT_CLIENT_SECRET,
     refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH3 || process.env.YOUTUBE_REFRESH_TOKEN_TECH || process.env.YOUTUBE_REFRESH_TOKEN_CARTOON || process.env.YOUTUBE_REFRESH_TOKEN_ARCHIE || (process.env.ALLOW_SHARED_YOUTUBE_TOKEN === 'true' ? process.env.YOUTUBE_REFRESH_TOKEN : '') || '',
-    tags: ['#Animation', '#Tech', '#Science', '#AI', '#HowItWorks', '#FutureTech', '#Engineering', '#TechExplained', '#Archie', '#Educational', '#Shorts', '#DidYouKnow']
+    tags: ['#Tech', '#ArtificialIntelligence', '#Science', '#FutureTech', '#Engineering', '#Archie', '#Shorts']
   }
 };
+
+/**
+ * Sanitize YouTube Short Description to prevent comment bleed and off-point hashtags
+ */
+function sanitizeVideoDescription(rawDesc = '', cta = '', tags = []) {
+  let text = String(rawDesc || '').trim();
+
+  // Strip out any discussion questions or comment prompts that may have entered the description
+  text = text
+    .split('\n')
+    .filter(line => {
+      const l = line.trim();
+      if (!l) return true;
+      if (/^(what (topic|curious|tech|financial|stoic)|drop your (thoughts|ideas)|comment below|leave a comment|how do you (apply|practice)|which financial principle|what was your biggest takeaway)/i.test(l)) {
+        return false;
+      }
+      if (/^💬|📌\s*["“]/.test(l)) {
+        return false;
+      }
+      return true;
+    })
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  // Strip trailing repetitive hashtags from the body
+  text = text.replace(/(#[a-zA-Z0-9_]+\s*)+$/g, '').trim();
+
+  // Clean and filter off-point hashtags, keeping sharp relevant tags
+  const validTags = Array.isArray(tags) ? tags : [];
+  const cleanTags = validTags
+    .map(t => t.trim())
+    .filter(t => t.startsWith('#'))
+    .filter(t => !['#Shorts', '#DidYouKnow', '#Educational', '#Quotes', '#Animation'].includes(t))
+    .slice(0, 5);
+
+  cleanTags.push('#Shorts');
+
+  const parts = [];
+  if (text) parts.push(text);
+  if (cta) parts.push(cta);
+  if (cleanTags.length > 0) parts.push(cleanTags.join(' '));
+
+  return parts.join('\n\n');
+}
 
 /**
  * Format dynamic Follow / Subscribe CTA using real synced username (never preset or hardcoded)
@@ -382,7 +427,7 @@ async function dispatchScheduledVideos() {
 
         console.log(`  -> Initiating YouTube Data API v3 Resumable Upload (Shorts 9:16)...`);
         
-        const fullDescription = `${job.scriptText || job.title}\n\n${dynamicCta}\n\n${config.tags.join(' ')}`;
+        const fullDescription = sanitizeVideoDescription(job.scriptText || job.description || job.title, dynamicCta, config.tags);
         const videoId = await uploadToYouTube(accessToken, job.localVideoPath, job.title, fullDescription, config.tags);
 
         if (videoId) {
@@ -456,7 +501,7 @@ async function uploadYouTubeShort({ videoPath, title, description, tags, channel
   const dynamicCta = formatChannelFollowCta(channelId, syncedHandle, syncedTitle);
   const dynamicComment = formatChannelPinnedComment(channelId, syncedHandle, syncedTitle);
 
-  const cleanDescription = `${description || title}\n\n${dynamicCta}\n\n${(tags || config.tags).join(' ')}`;
+  const cleanDescription = sanitizeVideoDescription(description || title, dynamicCta, tags || config.tags);
   const videoId = await uploadToYouTube(accessToken, videoPath, title, cleanDescription, tags || config.tags, channelId);
 
   if (videoId) {

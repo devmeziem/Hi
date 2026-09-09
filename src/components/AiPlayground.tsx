@@ -690,6 +690,27 @@ Format your response strictly as a JSON array of 3 strings, with no markdown cod
     }
   };
 
+  const sanitizeDescriptionForApp = (raw: string, topic: string, channel: string) => {
+    let text = (raw || '').trim();
+    // Strip community questions, comment prompts, or quote prompts from entering description
+    text = text
+      .split('\n')
+      .filter(l => {
+        const line = l.trim();
+        if (!line) return true;
+        if (/^(what (topic|curious|tech|financial|stoic)|drop your (thoughts|ideas)|comment below|leave a comment|how do you (apply|practice)|which financial principle|what was your biggest takeaway)/i.test(line)) return false;
+        if (/^💬|📌\s*["“]/.test(line)) return false;
+        return true;
+      })
+      .join('\n')
+      .trim();
+
+    if (!text) {
+      text = `Actionable breakdown of ${topic}.\n\nSubscribe for daily blueprints & workflows!\n#${channel.replace('_', '')} #Shorts`;
+    }
+    return text;
+  };
+
   const handleRunTestPost = async () => {
     if (!testPostTopic.trim() || isTestPostRunning) return;
     setIsTestPostRunning(true);
@@ -884,8 +905,8 @@ Format your response strictly as a JSON array of 3 strings, with no markdown cod
           bgMusicUrl: bgMusicTrackUrl,
           youtube: {
             title: script?.title || cleanTopic,
-            description: `${script?.description || ''}\n\n📌 Resource Link: ${affiliateUrl}\n#${testPostChannel.replace('_', '')} #Shorts`,
-            tags: script?.tags || [testPostChannel, 'viral', 'test-post', 'shorts', 'guide'],
+            description: sanitizeDescriptionForApp(script?.description || cleanTopic, cleanTopic, testPostChannel),
+            tags: script?.tags || [testPostChannel, 'viral', 'shorts'],
             slides: convertedSlides.length > 0 ? convertedSlides : [
               {
                 text: script?.title || cleanTopic,
@@ -921,8 +942,8 @@ Format your response strictly as a JSON array of 3 strings, with no markdown cod
         audioUrl: finalAudioUrl,
         bgMusicUrl: bgMusicTrackUrl,
         byteLength: audioBytes,
-        description: script?.description || `${cleanTopic}\n\nSubscribe for daily blueprints & actionable workflows!\n#Shorts #${testPostChannel.replace('_', '')}`,
-        tags: (script?.tags || ['FinBlueprint', 'Shorts']).map(t => t.startsWith('#') ? t : `#${t}`),
+        description: sanitizeDescriptionForApp(script?.description || cleanTopic, cleanTopic, testPostChannel),
+        tags: (script?.tags || [testPostChannel.replace('_', ''), 'Shorts']).map(t => t.startsWith('#') ? t : `#${t}`),
         affiliateLink: affiliateUrl,
         vaultedToFirestore: true,
         executedAt: new Date().toLocaleTimeString(),
@@ -951,7 +972,7 @@ Format your response strictly as a JSON array of 3 strings, with no markdown cod
         body: JSON.stringify({
           channel: testPostResult.channel,
           title: testPostResult.title,
-          description: testPostResult.description,
+          description: sanitizeDescriptionForApp(testPostResult.description, testPostResult.title, testPostResult.channel),
           tags: testPostResult.tags,
           slides: testPostResult.slides || []
         })

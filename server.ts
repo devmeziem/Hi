@@ -663,7 +663,8 @@ Every single slide (all 5-6) MUST have a unique, photorealistic, 9:16 vertical, 
 Respond STRICTLY with valid raw JSON without markdown:
 {
   "title": "High CTR Professional Title",
-  "description": "Engaging description with verified insights, community question, and hashtags",
+  "description": "Engaging concise description with verified insights and topic hashtags. Do NOT put community questions, comment prompts, or callouts in the description.",
+  "pinned_comment": "Engaging community discussion question for viewers.",
   "tags": ["#Shorts", "#Finance", "#Business", "#SideHustle", "#WealthCreation"],
   "slides": [
     {
@@ -1101,6 +1102,71 @@ Respond STRICTLY with valid raw JSON without markdown:
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: err.message }));
     }
+    return;
+  }
+
+  // API Direct YouTube Publish Endpoint (Invoked from UI Test Post Lab)
+  if (urlPath === '/api/youtube-direct-publish' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', async () => {
+      try {
+        const { channel = 'ch1', title = 'New Video', description = '', tags = [], slides = [] } = JSON.parse(body || '{}');
+        
+        // Map channel key to internal channel ID
+        const channelKeyMap: Record<string, string> = {
+          'finance_saas': 'finance_saas',
+          'motivation_stoicism': 'motivation_stoicism',
+          'tech_ai': 'cartoon_factory',
+          'cartoon_factory': 'cartoon_factory',
+          'ch1': 'finance_saas',
+          'ch2': 'motivation_stoicism',
+          'ch3': 'cartoon_factory'
+        };
+        const targetChannelId = channelKeyMap[channel] || 'finance_saas';
+
+        // Sanitize description so comments never enter it
+        const cleanDesc = description
+          .split('\n')
+          .filter((line: string) => {
+            const l = line.trim();
+            if (!l) return true;
+            if (/^(what (topic|curious|tech|financial|stoic)|drop your (thoughts|ideas)|comment below|leave a comment|how do you (apply|practice)|which financial principle|what was your biggest takeaway)/i.test(l)) return false;
+            if (/^💬|📌\s*["“]/.test(l)) return false;
+            return true;
+          })
+          .join('\n')
+          .trim();
+
+        // Check if there is an existing rendered video file to publish
+        let targetVideoPath = '';
+        const renderedDir = path.join(__dirname, 'rendered_videos');
+        if (fs.existsSync(renderedDir)) {
+          const files = fs.readdirSync(renderedDir).filter(f => f.endsWith('.mp4'));
+          if (files.length > 0) {
+            targetVideoPath = path.join(renderedDir, files[files.length - 1]);
+          }
+        }
+
+        // Dynamically invoke youtube_channel_dispatcher
+        const dispatcher = await import('./scripts/youtube_channel_dispatcher.cjs');
+        
+        const uploadResult = await dispatcher.uploadYouTubeShort({
+          videoPath: targetVideoPath || path.join(__dirname, 'artifacts', 'latest_render.mp4'),
+          title,
+          description: cleanDesc,
+          tags: Array.isArray(tags) ? tags : [tags],
+          channelId: targetChannelId
+        });
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(uploadResult));
+      } catch (err: any) {
+        console.error('[API Server] Direct YouTube Publish Error:', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: err.message || 'Direct upload execution error' }));
+      }
+    });
     return;
   }
 

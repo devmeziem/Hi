@@ -234,8 +234,8 @@ async function runCartoonPipelineDiagnostic() {
       null,
       {
         title: episodePlan.title,
-        description: `${episodePlan.title}\n\nArchie breaks down tech, AI, and science concepts in animated visual breakdowns! What topic should Archie explore next? Drop your thoughts below!\n\n#Animation #Tech #Science #AI #HowItWorks #FutureTech #Engineering #TechExplained #Archie #Educational #Shorts #DidYouKnow`,
-        tags: ['#Animation', '#Tech', '#Science', '#AI', '#HowItWorks', '#FutureTech', '#Engineering', '#TechExplained', '#Archie', '#Educational', '#Shorts', '#DidYouKnow']
+        description: `${episodePlan.title}\n\nArchie breaks down the breakthrough engineering, science mechanics, and artificial intelligence architecture behind ${episodePlan.topic || 'modern computing'}.`,
+        tags: ['#Tech', '#ArtificialIntelligence', '#Science', '#FutureTech', '#Engineering', '#Archie', '#Shorts']
       }
     );
     console.log('[Runner Result]:', pubResult);

@@ -22,9 +22,9 @@ on:
           - ffmpeg
           - blender
       dry_run:
-        description: 'Dry Run Mode (Render & validate for artifact download only, skips live YouTube upload)'
+        description: 'Dry Run Mode (Uncheck for live YouTube publishing)'
         required: true
-        default: true
+        default: false
         type: boolean
 
 jobs:
@@ -112,7 +112,8 @@ jobs:
         env:
           TEST_TOPIC: ${{ github.event.inputs.topic }}
           CARTOON_ENGINE: ${{ github.event.inputs.engine || 'moviepy' }}
-          DRY_RUN: ${{ github.event.inputs.dry_run != '' && github.event.inputs.dry_run || 'true' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
+          ALLOW_SHARED_YOUTUBE_TOKEN: 'true'
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
           GROK_API_KEY_2: ${{ secrets.GROK_API_KEY_2 }}
@@ -133,7 +134,8 @@ jobs:
 
       - name: Generate Daily Archie 5-Second Tech Fact Reel
         env:
-          DRY_RUN: ${{ github.event.inputs.dry_run != '' && github.event.inputs.dry_run || 'false' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
+          ALLOW_SHARED_YOUTUBE_TOKEN: 'true'
           YOUTUBE_CLIENT_ID_CH3: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 }}
           YOUTUBE_CLIENT_SECRET_CH3: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 }}
           YOUTUBE_REFRESH_TOKEN_CH3: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 }}
