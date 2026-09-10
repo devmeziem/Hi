@@ -1,0 +1,23 @@
+name: Discover & Copy Buffer Channel IDs
+on:
+  workflow_dispatch:
+    inputs:
+      buffer_token:
+        description: 'Buffer Access Token (Optional: leave blank if BUFFER_API_KEY is in GitHub Secrets)'
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  inspect_buffer_channels:
+    name: Scan Connected Buffer Social Channels
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Query Buffer API for Facebook, Instagram & TikTok IDs
+        env:
+          BUFFER_API_KEY: ${{ github.event.inputs.buffer_token || secrets.BUFFER_API_KEY }}
+        run: node scripts/list_buffer_channels.cjs

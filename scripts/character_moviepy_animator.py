@@ -128,9 +128,9 @@ def build_puppet_clip(action="talking", duration=5.0, target_height=1120, board1
     scale_factor = target_height / float(orig_h)
     target_width = int(orig_w * scale_factor)
 
-    # Base resting coordinates on 1080x1920 canvas
+    # Base resting coordinates on 1080x1920 canvas — solidly grounded on floor (no floating!)
     base_x = (1080 - target_width) // 2
-    base_y = 1920 - target_height - 60  # standing just above bottom margin
+    base_y = 1920 - target_height + 25  # Grounded sneakers contacting floor plane
 
     # Assign main pose and horizontal framing based on action
     if action == "point_up_left":
@@ -151,7 +151,7 @@ def build_puppet_clip(action="talking", duration=5.0, target_height=1120, board1
     elif action == "sitting":
         main_pose_path = sit_path
         base_x = (1080 - target_width) // 2
-        base_y = 1920 - target_height - 40
+        base_y = 1920 - target_height + 15
     elif action == "thinking":
         main_pose_path = think_path
         base_x = (1080 - target_width) // 2
@@ -183,7 +183,7 @@ def build_puppet_clip(action="talking", duration=5.0, target_height=1120, board1
             clip = clip.resize(height=target_height)
         return clip
 
-    c_idle = make_clip(main_pose_path)
+    c_idle = make_clip(idle_path)
     c_talk = make_clip(talk_path)
     c_blink = make_clip(blink_path)
     c_walk1 = make_clip(walk1_path if os.path.exists(walk1_path) else walk_path)
@@ -192,18 +192,26 @@ def build_puppet_clip(action="talking", duration=5.0, target_height=1120, board1
     c_walk_t2 = make_clip(walk_talk2_path if os.path.exists(walk_talk2_path) else walk2_path)
     c_point_up_l = make_clip(point_up_l_path)
     c_point_up_r = make_clip(point_up_r_path)
+    c_point_l = make_clip(point_l_path)
+    c_point_r = make_clip(point_r_path)
     c_akimbo = make_clip(akimbo_path)
     c_akimbo_talk = make_clip(akimbo_talk_path if os.path.exists(akimbo_talk_path) else akimbo_path)
+    c_think = make_clip(think_path)
+    c_confused = make_clip(confused_path)
+    c_surprised = make_clip(surprised_path)
+    c_question = make_clip(question_path)
+    c_explain = make_clip(explain_path)
+    c_sit = make_clip(sit_path)
 
     layers = []
 
-    # Check if this is an interactive presentation scene (walk in, show boards, walk out)
+    # Check if this is an interactive presentation scene (walk in, show boards, stay in frame for infinite loop)
     has_interactive_boards = board1_path and os.path.exists(board1_path)
 
     if action in ["walk_in", "walking"] or has_interactive_boards:
-        walk_in_dur = min(1.3, duration * 0.30)
-        walk_out_dur = 1.3 if duration >= 6.0 else 0.0
-        center_end = duration - walk_out_dur
+        walk_in_dur = min(1.0, duration * 0.25)
+        walk_out_dur = 0.0  # ZERO walk out: Archie stays in frame for seamless, loopy playback!
+        center_end = duration
 
         # 1. Entrance Walk with Alternating Strides
         t_w = 0.0
@@ -225,7 +233,7 @@ def build_puppet_clip(action="talking", duration=5.0, target_height=1120, board1
             layers.append(sub)
             t_w += chunk
 
-        # 2. Interactive Presentation in Center (Talking, Pointing, Akimbo)
+        # 2. Interactive Presentation in Center (Talking, Pointing, Akimbo, Thinking)
         t_c = walk_in_dur
         while t_c < center_end:
             chunk = min(0.20, center_end - t_c)
@@ -245,13 +253,19 @@ def build_puppet_clip(action="talking", duration=5.0, target_height=1120, board1
                 # Akimbo on hip + hand on jaw while talking
                 base_img = c_akimbo_talk if is_mouth_open else c_akimbo
             else:
-                # Standard talk / idle
-                if is_blink:
+                # Standard talk / idle / surprised / thinking
+                if is_blink and action not in ["surprised", "thinking"]:
                     base_img = c_blink
+                elif action == "surprised":
+                    base_img = c_surprised if is_mouth_open else c_talk
+                elif action == "thinking":
+                    base_img = c_akimbo_talk if is_mouth_open else c_think
+                elif action == "confused":
+                    base_img = c_confused if is_mouth_open else c_talk
                 else:
                     base_img = c_talk if is_mouth_open else c_idle
 
-            # Rock-solid stable stance while standing (no leg shaking/jitter)
+            # Rock-solid stable stance while standing (solid ground contact)
             def center_pos(t):
                 return (int(base_x), int(base_y))
 
@@ -259,29 +273,8 @@ def build_puppet_clip(action="talking", duration=5.0, target_height=1120, board1
             layers.append(sub)
             t_c += chunk
 
-        # 3. Walk Out to the Right while still talking!
-        if walk_out_dur > 0:
-            t_out = center_end
-            while t_out < duration:
-                prog_out = (t_out - center_end)
-                cur_stride = c_walk_t1 if int(prog_out / stride_dur) % 2 == 0 else c_walk_t2
-                chunk = min(stride_dur, duration - t_out)
-
-                def make_walk_out_pos(start_t):
-                    def out_pos(t):
-                        actual_t = (start_t - center_end) + t
-                        prog = actual_t / walk_out_dur
-                        cur_x = base_x + prog * (1100 - base_x)
-                        bounce = 12 * abs(math.sin(actual_t * 12))
-                        return (int(cur_x), int(base_y - bounce))
-                    return out_pos
-
-                sub = cur_stride.with_start(t_out).with_duration(chunk).with_position(make_walk_out_pos(t_out))
-                layers.append(sub)
-                t_out += chunk
-
     else:
-        # Stationary Poses: completely grounded feet (no leg shaking/jitter)
+        # Stationary Poses: completely grounded feet (no floating, no disappearing)
         def normal_pos(t):
             return (int(base_x), int(base_y))
 
@@ -290,21 +283,35 @@ def build_puppet_clip(action="talking", duration=5.0, target_height=1120, board1
             chunk = min(0.20, duration - t_cur)
             cycle_pos = t_cur % 2.6
             is_blink = 2.3 <= cycle_pos <= 2.46
-            is_mouth_open = int((t_cur * 5.0)) % 2 == 1
+            is_mouth_open = int((t_cur * 4.8)) % 2 == 1
 
             if is_blink and action not in ["thinking", "surprised"]:
                 sub = c_blink.with_start(t_cur).with_duration(chunk).with_position(normal_pos)
             else:
                 if action == "akimbo_jaw":
                     base_img = c_akimbo_talk if is_mouth_open else c_akimbo
+                elif action == "thinking":
+                    base_img = c_akimbo_talk if is_mouth_open else c_think
+                elif action == "surprised":
+                    base_img = c_surprised if is_mouth_open else c_talk
+                elif action == "confused":
+                    base_img = c_confused if is_mouth_open else c_talk
+                elif action == "questioning_users":
+                    base_img = c_question if is_mouth_open else c_talk
+                elif action in ["explain_both", "comparing"]:
+                    base_img = c_explain if is_mouth_open else c_talk
+                elif action == "point_left":
+                    base_img = c_point_l if is_mouth_open else c_talk
+                elif action == "point_right":
+                    base_img = c_point_r if is_mouth_open else c_talk
                 elif action == "point_up_left":
                     base_img = c_point_up_l
                 elif action == "point_up_right":
                     base_img = c_point_up_r
-                elif action == "thinking":
-                    base_img = c_idle
+                elif action == "sitting":
+                    base_img = c_sit if is_mouth_open else c_idle
                 else:
-                    base_img = c_talk if (is_mouth_open and action in ["talking", "point_left", "point_right", "explain_both", "comparing", "confused", "questioning_users", "sitting"]) else c_idle
+                    base_img = c_talk if is_mouth_open else c_idle
                 sub = base_img.with_start(t_cur).with_duration(chunk).with_position(normal_pos)
 
             layers.append(sub)

@@ -1065,8 +1065,22 @@ Respond strictly in raw JSON format:
       // Record topic for deduplication
       generatedTopicHistory.add(title);
 
-      const description = `${scriptText || title}\n\n#Shorts #${niche.id.replace(/[^a-zA-Z0-9]/g, '')} #viral #trending #Motivation #Mindset #Discipline #Success #fyp`;
-      const tags = ['#Shorts', '#viral', '#trending', `#${niche.id.replace(/[^a-zA-Z0-9]/g, '')}`, '#Motivation', '#Mindset', '#Discipline', '#Success', '#fyp'];
+      // Clean, high-CTR channel-specific tags and concise description (No comment bleed or script dump)
+      let tags = ['#Shorts'];
+      let cleanDescSummary = '';
+
+      if (niche.id === 'finance_business') {
+        tags = ['#Business', '#SideHustle', '#Money', '#Entrepreneur', '#Finance', '#Shorts'];
+        cleanDescSummary = `Actionable breakdown on ${title}. Practical micro-business blueprint for realistic execution with minimal capital.`;
+      } else if (niche.id === 'motivation_stoicism') {
+        tags = ['#Stoicism', '#Mindset', '#Discipline', '#MentalStrength', '#InnerPeace', '#Shorts'];
+        cleanDescSummary = `Actionable breakdown on ${title}. Timeless philosophy applied to modern focus, resilience, and emotional control.`;
+      } else {
+        tags = ['#Tech', '#ArtificialIntelligence', '#Science', '#FutureTech', '#Engineering', '#Shorts'];
+        cleanDescSummary = `Archie breaks down the breakthrough science, computing architecture, and future tech behind ${title}.`;
+      }
+
+      const description = `${cleanDescSummary}\n\n${tags.join(' ')}`;
 
       const jobData = {
         id: jobId,

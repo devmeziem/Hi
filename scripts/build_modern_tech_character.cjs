@@ -134,23 +134,71 @@ function renderHumanHead(pose = 'idle', options = {}) {
        <circle cx="${272 + pupilOffsetX}" cy="${212 + pupilOffsetY}" r="2.5" fill="#ffffff" opacity="0.9" />
        <circle cx="${277 + pupilOffsetX}" cy="${217 + pupilOffsetY}" r="1.2" fill="#ffffff" opacity="0.7" />`;
 
-  // Mouth rendering
+  // Defined Anatomical Human Lips Rendering
+  const upperLipClosed = `
+    <!-- Upper Lip with Cupid's Bow -->
+    <path d="M 235 269 C 241 265, 246 266, 250 264 C 254 266, 259 265, 265 269 C 258 271, 242 271, 235 269 Z" fill="#b4533c" stroke="#451a03" stroke-width="1.2" />
+  `;
+  const lowerLipClosed = `
+    <!-- Lower Lip with Fleshy Fullness & Soft Highlight -->
+    <path d="M 237 270 C 243 277, 257 277, 263 270 C 257 274, 243 274, 237 270 Z" fill="#cf705c" stroke="#451a03" stroke-width="1.2" />
+    <ellipse cx="250" cy="273" rx="5" ry="1.5" fill="#f87171" opacity="0.45" />
+    <!-- Subtle Lower Lip Shadow Crease -->
+    <path d="M 243 279 Q 250 282 257 279" stroke="${SKIN_SHADOW}" stroke-width="1.8" fill="none" opacity="0.5" stroke-linecap="round" />
+  `;
+
   if (pose === 'surprised') {
-    mouthPath = `<ellipse cx="250" cy="276" rx="11" ry="15" fill="#581c1c" stroke="#1e293b" stroke-width="2" />
-                 <ellipse cx="250" cy="272" rx="7" ry="5" fill="#f8fafc" />`;
+    mouthPath = `
+      <!-- Astonished Open Mouth with Realistic Parted Lips & Teeth -->
+      <path d="M 238 266 C 244 260, 256 260, 262 266 C 266 276, 264 290, 260 294 C 252 298, 246 298, 240 294 C 235 288, 234 276, 238 266 Z" fill="#380d12" stroke="#451a03" stroke-width="2" />
+      <!-- Upper Teeth Row -->
+      <path d="M 241 268 Q 250 271 259 268 L 258 273 Q 250 275 242 273 Z" fill="#f8fafc" stroke="#94a3b8" stroke-width="0.8" />
+      <!-- Sculpted Surprised Upper Lip Arched High -->
+      <path d="M 236 266 C 242 260, 247 261, 250 259 C 253 261, 258 260, 264 266 C 259 268, 241 268, 236 266 Z" fill="#b4533c" stroke="#451a03" stroke-width="1.3" />
+      <!-- Sculpted Surprised Lower Lip Dropped Down -->
+      <path d="M 238 294 C 244 300, 256 300, 262 294 C 257 296, 243 296, 238 294 Z" fill="#cf705c" stroke="#451a03" stroke-width="1.3" />
+      <path d="M 244 302 Q 250 304 256 302" stroke="${SKIN_SHADOW}" stroke-width="1.5" fill="none" opacity="0.6" stroke-linecap="round" />
+    `;
   } else if (talking) {
-    mouthPath = `<path d="M 235 268 Q 250 286 265 268 Z" fill="#581c1c" stroke="#1e293b" stroke-width="2.5" stroke-linejoin="round" />
-                 <path d="M 238 270 Q 250 275 262 270" stroke="#f8fafc" stroke-width="3" stroke-linecap="round" />
-                 <ellipse cx="250" cy="281" rx="6" ry="3" fill="#b91c1c" />`;
-  } else if (pose === 'akimbo_jaw') {
-    mouthPath = `<path d="M 236 272 Q 250 274 266 268" stroke="#451a03" stroke-width="3" stroke-linecap="round" fill="none" />`;
-  } else if (pose === 'thinking') {
-    mouthPath = `<path d="M 240 274 Q 252 273 262 271" stroke="#451a03" stroke-width="3" stroke-linecap="round" fill="none" />`;
+    mouthPath = `
+      <!-- Dynamic Talking Mouth with Natural Upper/Lower Lips, Dental Arch & Tongue -->
+      <!-- Inner Oral Cavity -->
+      <path d="M 235 268 C 240 286, 260 286, 265 268 C 258 272, 242 272, 235 268 Z" fill="#4a0e17" stroke="#451a03" stroke-width="1.8" />
+      <!-- Upper Teeth Arch -->
+      <path d="M 237 269 Q 250 273 263 269 L 261 273 Q 250 276 239 273 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.6" />
+      <!-- Tongue Curve -->
+      <path d="M 243 282 C 246 278, 254 278, 257 282 C 253 285, 247 285, 243 282 Z" fill="#d94858" />
+      <!-- Defined Upper Lip -->
+      <path d="M 234 268 C 240 264, 246 265, 250 263 C 254 265, 260 264, 266 268 C 260 270, 240 270, 234 268 Z" fill="#b4533c" stroke="#451a03" stroke-width="1.2" />
+      <!-- Defined Lower Lip -->
+      <path d="M 237 283 C 243 288, 257 288, 263 283 C 257 285, 243 285, 237 283 Z" fill="#cf705c" stroke="#451a03" stroke-width="1.2" />
+      <path d="M 243 290 Q 250 292 257 290" stroke="${SKIN_SHADOW}" stroke-width="1.6" fill="none" opacity="0.5" stroke-linecap="round" />
+    `;
+  } else if (pose === 'akimbo_jaw' || pose === 'thinking') {
+    mouthPath = `
+      <!-- Thoughtful / Philosophical Subtle Pursed Lips with Musing Smile -->
+      ${upperLipClosed}
+      ${lowerLipClosed}
+      <path d="M 236 269 Q 248 271 264 268" stroke="#451a03" stroke-width="2" stroke-linecap="round" fill="none" />
+      <circle cx="264" cy="268" r="1" fill="#451a03" />
+    `;
   } else if (pose === 'confused') {
-    mouthPath = `<path d="M 236 274 Q 248 270 262 275" stroke="#451a03" stroke-width="3" stroke-linecap="round" fill="none" />`;
+    mouthPath = `
+      <!-- Quizzical Wry Smirk with Sculpted Lips -->
+      ${upperLipClosed}
+      ${lowerLipClosed}
+      <path d="M 236 271 Q 248 268 263 273" stroke="#451a03" stroke-width="2" stroke-linecap="round" fill="none" />
+    `;
   } else {
-    // Friendly subtle confident smile
-    mouthPath = `<path d="M 236 270 Q 250 278 264 270" fill="none" stroke="#451a03" stroke-width="3" stroke-linecap="round" />`;
+    // Friendly, confident, welcoming smile with natural sculpted lips
+    mouthPath = `
+      ${upperLipClosed}
+      ${lowerLipClosed}
+      <!-- Smile Crease -->
+      <path d="M 236 269 Q 250 274 264 269" fill="none" stroke="#451a03" stroke-width="2" stroke-linecap="round" />
+      <circle cx="236" cy="269" r="0.8" fill="#451a03" />
+      <circle cx="264" cy="269" r="0.8" fill="#451a03" />
+    `;
   }
 
   // Thinking sparkles / Neural network thought nodes
@@ -771,13 +819,13 @@ function buildModernCharacterSVG(pose = 'idle', options = {}) {
     <!-- 1. Legs, Trousers & Modern Designer Sneakers -->
     ${renderModernLegs(pose)}
 
-    <!-- 2. Arms, Hands & Smartwatch -->
-    ${renderModernArms(pose)}
-
-    <!-- 3. Torso, Inner Tee & Modern Tech Overshirt -->
+    <!-- 2. Torso, Inner Tee & Modern Tech Overshirt (Base Layer) -->
     ${renderModernTorso()}
 
-    <!-- 4. Sculpted Human Head, Face, Hair & Eyes -->
+    <!-- 3. Arms, Forearms, Hands & Smartwatch (Rendered IN FRONT of Torso to prevent clipping into back) -->
+    ${renderModernArms(pose)}
+
+    <!-- 4. Sculpted Human Head, Face, Hair, Eyes & Anatomical Lips -->
     ${renderHumanHead(pose, options)}
   </g>
 </svg>`;
@@ -957,7 +1005,7 @@ const ALL_MODERN_POSES = [
 /**
  * Main Builder Function
  */
-function buildAllModernCharacterAssets(force = false) {
+function buildAllModernCharacterAssets(force = true) {
   console.log('🎨 [Modern Character Rig] Rendering modern human-like character assets & UI HUD...');
 
   // 1. Build character poses

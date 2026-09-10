@@ -26,28 +26,7 @@
       <line x1="365" y1="926" x2="395" y2="926" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" />
     
 
-    <!-- 2. Arms, Hands & Smartwatch -->
-    
-      <!-- Left Arm (Swinging forward with bent elbow & smartwatch visible) -->
-      <path d="M 165 375 C 150 410, 136 445, 120 480 L 138 488 C 152 455, 166 420, 185 375 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
-      <path d="M 120 480 L 114 484 L 118 494 L 138 488 Z" fill="#334155" stroke="#0f172a" stroke-width="2" />
-      <!-- Forearm swinging forward -->
-      <path d="M 122 486 C 108 525, 96 565, 88 605 L 108 610 C 116 572, 126 532, 138 492 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-      <!-- Smartwatch swinging forward -->
-      <rect x="86" y="590" width="20" height="16" rx="4" fill="#0f172a" stroke="#0f172a" stroke-width="1.5" />
-      <circle cx="96" cy="598" r="3.5" fill="#06b6d4" opacity="0.9" />
-      <!-- Sculpted Left Hand relaxed in stride -->
-      <ellipse cx="94" cy="625" rx="12" ry="14" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-      <path d="M 88 632 C 84 640, 82 648, 80 655" stroke="#d09564" stroke-width="1.8" fill="none" stroke-linecap="round" />
-
-      <!-- Right Arm (Swinging backward counter to left arm) -->
-      <path d="M 315 375 C 330 410, 345 445, 360 480 L 342 488 C 328 455, 314 420, 295 375 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
-      <path d="M 358 486 C 372 525, 386 565, 396 605 L 376 610 C 368 572, 356 532, 344 492 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-      <!-- Right Hand trailing backward in stride -->
-      <ellipse cx="388" cy="625" rx="12" ry="14" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-    
-
-    <!-- 3. Torso, Inner Tee & Modern Tech Overshirt -->
+    <!-- 2. Torso, Inner Tee & Modern Tech Overshirt (Base Layer) -->
     
     <!-- Minimalist Crewneck Inner Tee (Off-white / heather) -->
     <path d="M 225 338 Q 250 355 275 338 L 285 410 L 215 410 Z" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" />
@@ -71,7 +50,28 @@
     <rect x="242" y="511" width="16" height="12" rx="2" fill="#38bdf8" opacity="0.8" />
   
 
-    <!-- 4. Sculpted Human Head, Face, Hair & Eyes -->
+    <!-- 3. Arms, Forearms, Hands & Smartwatch (Rendered IN FRONT of Torso to prevent clipping into back) -->
+    
+      <!-- Left Arm (Swinging forward with bent elbow & smartwatch visible) -->
+      <path d="M 165 375 C 150 410, 136 445, 120 480 L 138 488 C 152 455, 166 420, 185 375 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 120 480 L 114 484 L 118 494 L 138 488 Z" fill="#334155" stroke="#0f172a" stroke-width="2" />
+      <!-- Forearm swinging forward -->
+      <path d="M 122 486 C 108 525, 96 565, 88 605 L 108 610 C 116 572, 126 532, 138 492 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Smartwatch swinging forward -->
+      <rect x="86" y="590" width="20" height="16" rx="4" fill="#0f172a" stroke="#0f172a" stroke-width="1.5" />
+      <circle cx="96" cy="598" r="3.5" fill="#06b6d4" opacity="0.9" />
+      <!-- Sculpted Left Hand relaxed in stride -->
+      <ellipse cx="94" cy="625" rx="12" ry="14" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <path d="M 88 632 C 84 640, 82 648, 80 655" stroke="#d09564" stroke-width="1.8" fill="none" stroke-linecap="round" />
+
+      <!-- Right Arm (Swinging backward counter to left arm) -->
+      <path d="M 315 375 C 330 410, 345 445, 360 480 L 342 488 C 328 455, 314 420, 295 375 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 358 486 C 372 525, 386 565, 396 605 L 376 610 C 368 572, 356 532, 344 492 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Right Hand trailing backward in stride -->
+      <ellipse cx="388" cy="625" rx="12" ry="14" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+    
+
+    <!-- 4. Sculpted Human Head, Face, Hair, Eyes & Anatomical Lips -->
     
     
 
@@ -147,7 +147,23 @@
     <circle cx="258" cy="249" r="1.5" fill="#451a03" />
 
     <!-- Mouth -->
-    <path d="M 236 270 Q 250 278 264 270" fill="none" stroke="#451a03" stroke-width="3" stroke-linecap="round" />
+    
+      
+    <!-- Upper Lip with Cupid's Bow -->
+    <path d="M 235 269 C 241 265, 246 266, 250 264 C 254 266, 259 265, 265 269 C 258 271, 242 271, 235 269 Z" fill="#b4533c" stroke="#451a03" stroke-width="1.2" />
+  
+      
+    <!-- Lower Lip with Fleshy Fullness & Soft Highlight -->
+    <path d="M 237 270 C 243 277, 257 277, 263 270 C 257 274, 243 274, 237 270 Z" fill="#cf705c" stroke="#451a03" stroke-width="1.2" />
+    <ellipse cx="250" cy="273" rx="5" ry="1.5" fill="#f87171" opacity="0.45" />
+    <!-- Subtle Lower Lip Shadow Crease -->
+    <path d="M 243 279 Q 250 282 257 279" stroke="#d09564" stroke-width="1.8" fill="none" opacity="0.5" stroke-linecap="round" />
+  
+      <!-- Smile Crease -->
+      <path d="M 236 269 Q 250 274 264 269" fill="none" stroke="#451a03" stroke-width="2" stroke-linecap="round" />
+      <circle cx="236" cy="269" r="0.8" fill="#451a03" />
+      <circle cx="264" cy="269" r="0.8" fill="#451a03" />
+    
   
   </g>
 </svg>

@@ -39,118 +39,65 @@ function fetchHttpsBuffer(url, timeoutMs = 24000) {
 }
 
 /**
- * Generate Engaging Studio Environment Props Overlay SVG (Seat, Door, Desk, Studio Gear)
- * Composited over the Pollinations AI image to provide depth and physical room realism
+ * Generate Engaging Studio Environment Props Overlay SVG (Sleek Side Lighting, Tech HUD & Room Depth)
+ * Clean framing that leaves the central presentation floor open so character is not obstructed
  */
 function generateStudioRoomPropsOverlaySvg(sceneIndex = 1, topic = '', width = 1080, height = 1920) {
-  const isScene1 = sceneIndex === 1;
-
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
   <defs>
-    <linearGradient id="doorGlass" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#0284c7" stop-opacity="0.35" />
-      <stop offset="50%" stop-color="#38bdf8" stop-opacity="0.15" />
-      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.6" />
+    <linearGradient id="lightPillarCyan" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#3b82f6" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.7" />
     </linearGradient>
-    <linearGradient id="chairMesh" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#1e293b" />
-      <stop offset="100%" stop-color="#0f172a" />
+    <linearGradient id="lightPillarPurple" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#6366f1" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.7" />
     </linearGradient>
-    <linearGradient id="lightTubeGrad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#38bdf8" />
-      <stop offset="50%" stop-color="#818cf8" />
-      <stop offset="100%" stop-color="#c084fc" />
+    <linearGradient id="floorReflectionGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.12" />
+      <stop offset="100%" stop-color="#020617" stop-opacity="0" />
     </linearGradient>
+    <filter id="pillarGlow" x="-50%" y="-10%" width="200%" height="120%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="16" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
   </defs>
 
-  <!-- 1. MODERN SLIDING STUDIO DOOR (Left Side, Background Plane) -->
-  <g id="studio_door" opacity="0.92">
-    <!-- Outer Door Frame -->
-    <rect x="-10" y="380" width="170" height="1160" rx="12" fill="#090d16" stroke="#1e293b" stroke-width="3" />
-    <!-- Glass Slats Panel -->
-    <rect x="15" y="410" width="130" height="1100" rx="8" fill="url(#doorGlass)" stroke="#38bdf8" stroke-width="1.5" />
-    <line x1="15" y1="560" x2="145" y2="560" stroke="#38bdf8" stroke-width="1" opacity="0.4" />
-    <line x1="15" y1="720" x2="145" y2="720" stroke="#38bdf8" stroke-width="1" opacity="0.4" />
-    <line x1="15" y1="880" x2="145" y2="880" stroke="#38bdf8" stroke-width="1" opacity="0.4" />
-    <line x1="15" y1="1040" x2="145" y2="1040" stroke="#38bdf8" stroke-width="1" opacity="0.4" />
-    <line x1="15" y1="1200" x2="145" y2="1200" stroke="#38bdf8" stroke-width="1" opacity="0.4" />
-
-    <!-- Modern Recessed Vertical Door Handle -->
-    <rect x="125" y="850" width="12" height="180" rx="6" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.5" />
-    <circle cx="131" cy="940" r="3" fill="#38bdf8" />
-
-    <!-- Digital Keycard Access Panel beside door -->
-    <rect x="150" y="880" width="22" height="42" rx="4" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5" />
-    <circle cx="161" cy="893" r="3.5" fill="#10b981" />
-    <circle cx="161" cy="893" r="7" fill="#10b981" opacity="0.3" />
-    <rect x="155" y="904" width="12" height="10" rx="2" fill="#1e293b" />
+  <!-- 1. SLEEK ARCHITECTURAL LED PILLARS (Left & Right Framing) -->
+  <g id="studio_pillars" filter="url(#pillarGlow)">
+    <!-- Left Pillar -->
+    <rect x="25" y="120" width="8" height="1360" rx="4" fill="url(#lightPillarCyan)" />
+    <!-- Right Pillar -->
+    <rect x="1047" y="120" width="8" height="1360" rx="4" fill="url(#lightPillarPurple)" />
   </g>
 
-  <!-- 2. ERGONOMIC CREATOR MESH CHAIR / EXECUTIVE SEAT (Right Midground Plane) -->
-  <g id="creator_chair" transform="translate(820, 920)" opacity="0.88">
-    <!-- Adjustable Headrest -->
-    <rect x="40" y="0" width="70" height="34" rx="10" fill="#0f172a" stroke="#334155" stroke-width="2" />
-    <path d="M 45 6 Q 75 14 105 6" stroke="#38bdf8" stroke-width="1.5" fill="none" opacity="0.6" />
-    <line x1="75" y1="34" x2="75" y2="52" stroke="#475569" stroke-width="4" stroke-linecap="round" />
-
-    <!-- Curved Lumbar Mesh Backrest -->
-    <path d="M 25 52 C 15 100, 15 180, 28 230 C 45 235, 105 235, 122 230 C 135 180, 135 100, 125 52 Z" fill="url(#chairMesh)" stroke="#38bdf8" stroke-width="2" />
-    <!-- Lumbar Support Band -->
-    <rect x="35" y="150" width="80" height="24" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5" />
-    <circle cx="75" cy="162" r="4" fill="#38bdf8" opacity="0.7" />
-
-    <!-- 3D Padded Armrests -->
-    <rect x="10" y="170" width="22" height="60" rx="8" fill="#0f172a" stroke="#475569" stroke-width="2" />
-    <rect x="118" y="170" width="22" height="60" rx="8" fill="#0f172a" stroke="#475569" stroke-width="2" />
-
-    <!-- High-Density Foam Seat Cushion -->
-    <path d="M 12 230 L 138 230 C 144 260, 136 280, 128 290 L 22 290 C 14 280, 6 260, 12 230 Z" fill="#090d16" stroke="#334155" stroke-width="2.5" />
-    <line x1="20" y1="260" x2="130" y2="260" stroke="#38bdf8" stroke-width="2" opacity="0.5" />
-
-    <!-- Heavy-Duty Pneumatic Piston Cylinder Stem -->
-    <rect x="68" y="290" width="14" height="80" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
-    <rect x="71" y="300" width="8" height="60" fill="#64748b" />
-
-    <!-- 5-Star Aluminum Caster Wheel Base -->
-    <path d="M 75 370 L 15 415" stroke="#334155" stroke-width="6" stroke-linecap="round" />
-    <path d="M 75 370 L 135 415" stroke="#334155" stroke-width="6" stroke-linecap="round" />
-    <path d="M 75 370 L 75 425" stroke="#334155" stroke-width="6" stroke-linecap="round" />
-    <!-- Caster Wheels -->
-    <circle cx="15" cy="420" r="7" fill="#0f172a" stroke="#64748b" stroke-width="2" />
-    <circle cx="135" cy="420" r="7" fill="#0f172a" stroke="#64748b" stroke-width="2" />
-    <circle cx="75" cy="430" r="7" fill="#0f172a" stroke="#64748b" stroke-width="2" />
+  <!-- 2. RECESSED CEILING KEY LIGHT CONES (Subtle Volumetric Beams) -->
+  <g id="ceiling_lights" opacity="0.18">
+    <polygon points="180,0 260,0 340,700 100,700" fill="#38bdf8" />
+    <polygon points="820,0 900,0 980,700 740,700" fill="#a855f7" />
   </g>
 
-  <!-- 3. STUDIO AMBIENT RGB TUBE LIGHT (Right Edge) -->
-  <g id="ambient_light_tube">
-    <rect x="1040" y="320" width="12" height="1180" rx="6" fill="url(#lightTubeGrad)" opacity="0.9" />
-    <rect x="1030" y="300" width="32" height="1220" rx="16" fill="url(#lightTubeGrad)" opacity="0.25" filter="blur(8px)" />
+  <!-- 3. TOP TELEMETRY HUD STRIP (Clean Broadcast Header) -->
+  <g id="top_hud_strip" transform="translate(540, 70)" opacity="0.85">
+    <rect x="-240" y="-18" width="480" height="36" rx="18" fill="#090d16" stroke="#1e293b" stroke-width="1.5" />
+    <circle cx="-215" cy="0" r="4" fill="#22c55e" />
+    <text x="-195" y="5" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="800" fill="#94a3b8" letter-spacing="1.5">
+      STUDIO ARCHIE • LIVE TELEMETRY
+    </text>
+    <rect x="150" y="-8" width="60" height="16" rx="4" fill="#38bdf8" fill-opacity="0.2" stroke="#38bdf8" stroke-width="1" />
+    <text x="180" y="4" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="900" fill="#38bdf8" text-anchor="middle">
+      REC 4K
+    </text>
   </g>
 
-  <!-- 4. WORKSTATION DESK & BROADCAST GEAR (Lower-Mid Horizon) -->
-  <g id="creator_workstation" opacity="0.90">
-    <!-- Console Surface Table Edge -->
-    <polygon points="100,1400 980,1400 1060,1470 20,1470" fill="#0b0f19" stroke="#1e293b" stroke-width="2.5" />
-    <line x1="30" y1="1466" x2="1050" y2="1466" stroke="#38bdf8" stroke-width="2" opacity="0.75" />
-
-    <!-- Background Ultrawide Curved Display Bezel (Behind Host) -->
-    <path d="M 280 1280 Q 540 1260 800 1280 L 785 1395 Q 540 1380 295 1395 Z" fill="#020617" stroke="#0ea5e9" stroke-width="2" opacity="0.75" />
-    <!-- Curved Bias Backlight Glow -->
-    <path d="M 280 1280 Q 540 1250 800 1280" stroke="#38bdf8" stroke-width="8" opacity="0.3" filter="blur(6px)" fill="none" />
-
-    <!-- Articulated Broadcast Mic Arm (Left Desk Edge) -->
-    <path d="M 160 1420 L 195 1330 L 220 1370" stroke="#475569" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-    <circle cx="160" cy="1420" r="6" fill="#0f172a" stroke="#38bdf8" stroke-width="2" />
-    <circle cx="195" cy="1330" r="5" fill="#0f172a" stroke="#38bdf8" stroke-width="2" />
-    <!-- Professional Studio Condenser Mic with Pop Filter -->
-    <rect x="215" y="1360" width="16" height="34" rx="7" fill="#0f172a" stroke="#94a3b8" stroke-width="2" />
-    <circle cx="223" cy="1355" r="9" fill="none" stroke="#e2e8f0" stroke-width="1.5" />
-    <circle cx="223" cy="1368" r="2.5" fill="#ef4444" /> <!-- Live mic recording LED -->
-
-    <!-- Creator Minimalist Matte Black Mug / Tumbler -->
-    <rect x="880" y="1410" width="22" height="34" rx="4" fill="#0f172a" stroke="#334155" stroke-width="1.8" />
-    <path d="M 902 1418 Q 912 1426 902 1434" stroke="#334155" stroke-width="2" fill="none" />
-  </g>
+  <!-- 4. POLISHED CARBON FLOOR REFLECTION (Grounded Horizon at y=1500) -->
+  <rect x="0" y="1500" width="${width}" height="420" fill="url(#floorReflectionGrad)" />
+  <line x1="0" y1="1500" x2="${width}" y2="1500" stroke="#38bdf8" stroke-width="2" opacity="0.4" />
 </svg>`;
 }
 

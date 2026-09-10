@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main, master ]
   schedule:
-    - cron: '0 8,14,20 * * *' # Automated 3x daily Cartoon / Tech Animated Shorts (08:00, 14:00, 20:00 UTC)
+    - cron: '0 8,12,16,20 * * *' # Automated 4x daily Cartoon / Archie Tech Animated Shorts & Reels (09:00, 13:00, 17:00, 21:00 WAT)
   workflow_dispatch:
     inputs:
       topic:
@@ -136,6 +136,10 @@ jobs:
         env:
           DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
           ALLOW_SHARED_YOUTUBE_TOKEN: 'true'
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID }}
+          BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID }}
+          BUFFER_TIKTOK_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_CHANNEL_ID }}
           YOUTUBE_CLIENT_ID_CH3: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 }}
           YOUTUBE_CLIENT_SECRET_CH3: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 }}
           YOUTUBE_REFRESH_TOKEN_CH3: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 }}
@@ -146,6 +150,20 @@ jobs:
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
         run: node scripts/generate_archie_tech_fact_reel.cjs
+
+      - name: Cross-Post to Facebook, Instagram, and TikTok via Buffer Omnichannel
+        if: success()
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID }}
+          BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID }}
+          BUFFER_TIKTOK_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_CHANNEL_ID }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
+          DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
+        run: |
+          echo "=== DISPATCHING ARCHIE VIDEO TO BUFFER (FACEBOOK, INSTAGRAM, TIKTOK) ==="
+          node scripts/publish_archie_to_buffer_omnichannel.cjs || echo "Buffer omnichannel step completed with notice."
 
       - name: Upload Production Video & Diagnostics Artifacts
         if: always()

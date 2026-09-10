@@ -141,29 +141,39 @@ const NICHE_SPHERES = {
   },
   cartoon: {
     channelHandle: '@ArchieExplains',
-    channelName: 'Archie Explains (Comparison & Science)',
-    targetAudience: 'Curious minds of all ages who love fast, visual, entertaining side-by-side comparisons, contrasts, and science mysteries.',
+    channelName: 'Archie Explains (Tech, AI & Cutting-Edge Science)',
+    targetAudience: 'Tech enthusiasts, engineers, students, and curious builders fascinated by frontier artificial intelligence, quantum computing, aerospace engineering, semiconductor physics, and mind-blowing science comparisons.',
     searchQueries: [
-      'mind blowing side by side comparisons of everyday things',
-      'cheap vs expensive engineering and science comparisons',
-      'human body vs animal superpowers surprising comparison',
-      'earth vs other planets extreme conditions compared',
-      'myth vs reality science comparisons that surprise people',
-      'fastest animals vs fastest human machines comparison',
-      'deepest ocean vs highest mountain extreme comparison',
-      'ancient technology vs modern technology comparison breakdown'
+      'frontier artificial intelligence architecture reasoning models comparison',
+      'quantum supremacy processor benchmarks vs supercomputers',
+      'human brain synaptic exaflops vs nvidia ai gpu power consumption',
+      'extreme ultraviolet lithography vs deep ultraviolet chip fabrication',
+      'nuclear fusion tokamak plasma temperatures vs sun core physics',
+      'james webb space telescope deepest cosmic discoveries compared to hubble',
+      'undersea fiber optic cables vs starlink laser satellite bandwidth',
+      'deep ocean mariana trench pressure vs deep space vacuum engineering',
+      'dna biological data storage density vs silicon ssd memory',
+      'falcon 9 reusable rocket mechanics vs saturn v lunar booster'
     ],
     spheres: [
-      { id: 'scale_and_size_comparisons', name: 'Mind-Blowing Size & Scale Comparisons', desc: 'Comparing human scale to atoms, mountains, planets, and black holes' },
-      { id: 'cheap_vs_expensive_science', name: 'Cheap vs Expensive Engineering Comparisons', desc: 'Budget materials vs luxury aerospace engineering breakdowns' },
-      { id: 'human_vs_animal_mechanics', name: 'Human Biology vs Animal Superpowers', desc: 'Comparing human vision, endurance, and strength to nature\'s extremes' },
-      { id: 'myth_vs_reality_contrasts', name: 'Popular Myths vs Real Science Contrasts', desc: 'Busting common assumptions with empirical physics side-by-side' },
-      { id: 'deep_ocean_vs_deep_space', name: 'Deep Ocean vs Outer Space Extreme Comparison', desc: 'Mariana Trench crushing pressure vs space vacuum survival comparison' },
-      { id: 'ai_vs_human_brain_speed', name: 'AI Supercomputers vs Human Brain Neural Comparison', desc: 'Comparing processing speed, power consumption, and memory retention' },
-      { id: 'speed_comparisons', name: 'Extreme Speed Comparisons (Cheetah to Light)', desc: 'Bullet trains, fighter jets, meteor re-entries compared' }
+      { id: 'ai_neural_architectures', name: 'Frontier AI & Neural Architectures', desc: 'Reasoning models, test-time compute, transformers vs biological neurons' },
+      { id: 'quantum_and_supercomputing', name: 'Quantum Supremacy & Supercomputing', desc: 'Superconducting qubits, cryogenic chilling, exaflop clusters vs classical limits' },
+      { id: 'semiconductors_atomic_scale', name: 'Nanoscale Semiconductors & EUV Lithography', desc: '2nm gate-all-around transistors, ASML molten tin lasers, quantum tunneling limits' },
+      { id: 'astrophysics_space_engineering', name: 'Astrophysics & Deep Space Exploration', desc: 'JWST early galaxies, neutron star density, black hole photon spheres, interstellar probes' },
+      { id: 'nuclear_fusion_plasma_physics', name: 'Nuclear Fusion & Clean Plasma Energy', desc: '150 million °C magnetic confinement, stellarators vs tokamaks, net energy gain' },
+      { id: 'robotics_and_biomechanics', name: 'Advanced Robotics & Humanoid Engineering', desc: 'Electric actuators vs biological muscles, high-speed computer vision, balance control' },
+      { id: 'extreme_physics_comparisons', name: 'Extreme Physics & Universe Scales', desc: 'Mariana Trench pressure vs space vacuum, light speed fiber latency, absolute zero' }
     ]
   }
 };
+
+// Negative topic pattern filter for Channel 3 (Tech & AI Animation)
+const BANNED_TECH_TOPIC_PATTERNS = [
+  /mattress/i, /bedding/i, /pillow/i, /furniture/i, /sofa/i, /couch/i,
+  /detergent/i, /cleaning\s*product/i, /skincare/i, /makeup/i, /cosmetics/i,
+  /shoe\s*polish/i, /cooking\s*pan/i, /kitchen\s*sponge/i, /vacuum\s*cleaner/i,
+  /curtain/i, /rug\b/i, /toilet\s*paper/i, /shampoo/i, /toothpaste/i
+];
 
 // ----------------------------------------------------
 // DUCKDUCKGO REAL-TIME SEARCH QUERY ENGINE WITH WIKIPEDIA FALLBACK
@@ -1127,6 +1137,19 @@ Formulate candidate topics from DuckDuckGo trends, check for similarities agains
   // ----------------------------------------------------
   // STEP 4: DISPLAY 5 CANDIDATES & ACTIVE AI SELECTION
   // ----------------------------------------------------
+  // Strict Niche Quality Check: Filter out any domestic or consumer goods for Channel 3 (Tech & AI Animation)
+  if (nicheKey === 'cartoon') {
+    parsedData.candidates = parsedData.candidates.filter(c => {
+      const fullText = `${c.title} ${c.angle} ${c.coreHook} ${c.sphereName || ''}`;
+      const isBanned = BANNED_TECH_TOPIC_PATTERNS.some(p => p.test(fullText));
+      if (isBanned) {
+        console.warn(`[Topic Discovery] ⛔ Rejected non-tech candidate #${c.id} ("${c.title}") matching banned domestic pattern.`);
+        return false;
+      }
+      return true;
+    });
+  }
+
   console.log(`\n${colors.bright}📋 5 Candidate Topics Formulated by ${colors.green}${modelUsed}${colors.reset}:`);
   parsedData.candidates.forEach(c => {
     console.log(`   [Candidate #${c.id}] ${colors.yellow}${c.title}${colors.reset}`);

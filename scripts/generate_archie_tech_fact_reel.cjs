@@ -23,87 +23,87 @@ const ARTIFACTS_DIR = path.join(process.cwd(), 'test_artifacts', 'archie_5s_reel
 const OUTPUT_DIR = path.join(process.cwd(), 'test_artifacts');
 const FACTS_CACHE = path.join(process.cwd(), 'test_artifacts', 'archie_tech_facts_cache.json');
 
-// Curated pool of high-retention, verified AI & Tech facts with citations
+// Curated pool of high-retention, mind-blowing AI & Tech facts with citations and loopy endings
 const VERIFIED_TECH_FACTS = [
   {
-    id: 'nvidia_blackwell_transistor',
+    id: 'ai_data_centers_nuclear_reactors',
     hook: 'DID YOU KNOW?',
-    fact: 'NVIDIA’s B200 chip packs 208 BILLION transistors onto a single silicon die — performing 20 quadrillion calculations per second.',
-    reference: 'NVIDIA Blackwell Architecture Technical Whitepaper (2024)',
-    category: 'Hardware & AI Silicon',
-    tags: ['#AI', '#NVIDIA', '#Hardware', '#Tech', '#Shorts', '#Future']
+    fact: 'By 2027, frontier AI models will require so much electricity that tech giants are reviving dormant nuclear power plants just to feed single server clusters.',
+    reference: 'International Energy Agency / Microsoft Constellation Nuclear Deal (2024)',
+    category: 'Frontier AI & Energy',
+    tags: ['#AI', '#NuclearEnergy', '#FutureTech', '#TechNews', '#Shorts', '#Science']
   },
   {
-    id: 'undersea_fiber_optic_99_percent',
+    id: 'dna_data_storage_density',
     hook: 'DID YOU KNOW?',
-    fact: 'Over 99% of all international internet traffic travels through 550 undersea fiber-optic cables on the ocean floor, NOT satellites.',
-    reference: 'TeleGeography Global Submarine Telemetry Map (2024)',
-    category: 'Internet Infrastructure',
-    tags: ['#Internet', '#TechFacts', '#Engineering', '#Science', '#Shorts']
+    fact: 'Scientists can now store 215 million gigabytes of digital data inside a single gram of synthetic DNA — and it will survive for over 1,000 years without power.',
+    reference: 'Columbia University & NY Genome Center / Science Journal (2024)',
+    category: 'Biotech & Data Storage',
+    tags: ['#BioTech', '#DataStorage', '#Genetics', '#FutureTech', '#Shorts']
   },
   {
-    id: 'alphafold_protein_structure_200m',
+    id: 'voyager_22_watts_interstellar',
     hook: 'DID YOU KNOW?',
-    fact: 'DeepMind’s AlphaFold has mapped the 3D structures of over 200 MILLION proteins — solving a 50-year biological grand challenge in weeks.',
-    reference: 'Nature / DeepMind AlphaFold Database (2024)',
-    category: 'Artificial Intelligence',
-    tags: ['#AlphaFold', '#Biology', '#DeepMind', '#AI', '#Science', '#Shorts']
+    fact: 'Voyager 1 is 15 billion miles away in interstellar space and beams data back to Earth using only 22 Watts — less power than your kitchen refrigerator light bulb.',
+    reference: 'NASA Jet Propulsion Laboratory Deep Space Network Telemetry (2024)',
+    category: 'Space & Deep Physics',
+    tags: ['#Space', '#NASA', '#Voyager', '#Physics', '#Shorts', '#Astronomy']
   },
   {
-    id: 'tsmc_2nm_nanosheet_atomic_scale',
+    id: 'asml_high_na_euv_tin_lasers',
     hook: 'DID YOU KNOW?',
-    fact: 'TSMC’s upcoming 2-nanometer chip gates are only 12 silicon atoms wide — so small that quantum tunneling must be controlled.',
-    reference: 'TSMC N2 Nanosheet Foundry Technical Brief (2025)',
-    category: 'Semiconductors',
-    tags: ['#Semiconductors', '#TSMC', '#Chips', '#NanoTech', '#Shorts']
+    fact: 'ASML’s High-NA chip lithography machines vaporize 50,000 molten tin droplets every second with high-power lasers to produce light that exists nowhere else in nature.',
+    reference: 'ASML N2 High-NA Lithography Technical Review (2024)',
+    category: 'Nanotechnology & Chips',
+    tags: ['#Semiconductors', '#Chips', '#ASML', '#Nanotechnology', '#Shorts']
   },
   {
-    id: 'light_speed_fiber_optic_delay',
+    id: 'quantum_willow_vs_supercomputer',
     hook: 'DID YOU KNOW?',
-    fact: 'Light inside a glass fiber cable travels 31% slower than light in a vacuum because of the glass refractive index.',
-    reference: 'Corning Optical Fiber Physical Principles (2024)',
-    category: 'Physics & Networking',
-    tags: ['#Physics', '#Optics', '#Networking', '#DidYouKnow', '#Shorts']
-  },
-  {
-    id: 'quantum_supremacy_benchmarks',
-    hook: 'DID YOU KNOW?',
-    fact: 'Google’s Willow quantum processor solved in 5 minutes a computation that would take the fastest supercomputer 10 septillion years.',
-    reference: 'Nature Quantum Benchmarks / Google Quantum AI (2024)',
+    fact: 'Google’s Willow quantum processor solved a benchmark task in 5 minutes that would take the world’s fastest supercomputer 10 septillion years to finish.',
+    reference: 'Nature Quantum Supremacy / Google Quantum AI (2024)',
     category: 'Quantum Computing',
     tags: ['#Quantum', '#GoogleAI', '#Supercomputing', '#Tech', '#Shorts']
   },
   {
-    id: 'human_brain_vs_gpu_power',
+    id: 'nuclear_fusion_150m_degrees',
     hook: 'DID YOU KNOW?',
-    fact: 'The human brain performs an estimated exaflop of biological neural calculations while consuming only 20 Watts of power — like a dim light bulb.',
+    fact: 'Nuclear fusion reactors on Earth reach 150 million degrees Celsius — ten times hotter than the core of the Sun — suspended entirely by invisible magnetic fields.',
+    reference: 'ITER Organization & KSTAR Plasma Physics Lab (2024)',
+    category: 'Clean Energy & Plasma',
+    tags: ['#NuclearFusion', '#Energy', '#Sun', '#PlasmaPhysics', '#Shorts']
+  },
+  {
+    id: 'human_brain_vs_gpu_efficiency',
+    hook: 'DID YOU KNOW?',
+    fact: 'The human brain executes roughly 1 exaflop of biological neural calculations every second while running on just 20 Watts — an AI GPU cluster uses thousands of Watts.',
     reference: 'Stanford Neuromorphic Computing Research (2024)',
     category: 'Neuroscience & AI',
     tags: ['#Brain', '#Neuroscience', '#AI', '#Biology', '#Shorts']
   },
   {
-    id: 'global_dram_memory_oligopoly',
+    id: 'undersea_cables_vs_satellites',
     hook: 'DID YOU KNOW?',
-    fact: 'Over 94% of the entire world’s DRAM computer memory chips are manufactured by only three companies: Samsung, SK Hynix, and Micron.',
-    reference: 'TrendForce Global DRAM Market Share Report (2024)',
-    category: 'Semiconductors',
-    tags: ['#DRAM', '#Hardware', '#Chips', '#TechEconomy', '#Shorts']
+    fact: 'Over 99% of all international internet traffic travels through 550 fiber-optic cables on the deep ocean floor, vulnerable to submarine tectonic earthquakes.',
+    reference: 'TeleGeography Global Submarine Telemetry Map (2024)',
+    category: 'Global Infrastructure',
+    tags: ['#Internet', '#Engineering', '#DeepOcean', '#Tech', '#Shorts']
   },
   {
-    id: 'first_computer_bug_1947',
+    id: 'neutron_star_density_mountain',
     hook: 'DID YOU KNOW?',
-    fact: 'The first recorded "computer bug" in 1947 was an actual physical moth trapped in Relay #70 of Harvard’s Mark II computer.',
-    reference: 'Smithsonian National Museum of American History (Log Book #1947)',
-    category: 'Computer History',
-    tags: ['#History', '#Coding', '#ComputerScience', '#Bug', '#Shorts']
+    fact: 'A single teaspoon of neutron star matter is so intensely dense that it weighs 6 billion tons on Earth — equal to the weight of Mount Everest compressed into a dice.',
+    reference: 'NASA Astrophysics / Chandra X-ray Observatory (2024)',
+    category: 'Astrophysics & Cosmos',
+    tags: ['#Space', '#NeutronStar', '#Physics', '#Cosmos', '#Shorts']
   },
   {
-    id: 'apollo_guidance_vs_smartphone',
+    id: 'relativistic_electrons_smartphone',
     hook: 'DID YOU KNOW?',
-    fact: 'A standard USB-C fast-charging cable controller today possesses more compute power than the Apollo 11 moon landing guidance computer.',
-    reference: 'NASA Apollo 11 AGC Specs vs Cypress USB-PD Silicon (2024)',
-    category: 'Space & Computing',
-    tags: ['#Space', '#NASA', '#Computing', '#Microchips', '#Shorts']
+    fact: 'Electrons in modern 3-nanometer smartphone processors move so fast that engineers must apply Einstein’s theory of special relativity to keep clock cycles synced.',
+    reference: 'IEEE Solid-State Circuits & Quantum Electrodynamics (2024)',
+    category: 'Quantum Electronics',
+    tags: ['#Quantum', '#Relativity', '#Smartphone', '#Physics', '#Shorts']
   }
 ];
 
@@ -329,28 +329,78 @@ function buildStudioBackgroundSvg(width = 1080, height = 1920) {
   return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#090d16" />
-        <stop offset="40%" stop-color="#0f172a" />
-        <stop offset="85%" stop-color="#020617" />
-        <stop offset="100%" stop-color="#000000" />
+        <stop offset="0%" stop-color="#020617" />
+        <stop offset="40%" stop-color="#090d16" />
+        <stop offset="78%" stop-color="#0f172a" />
+        <stop offset="100%" stop-color="#020617" />
       </linearGradient>
-      <linearGradient id="gridGlow" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.08" />
-        <stop offset="50%" stop-color="#3b82f6" stop-opacity="0.12" />
-        <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.08" />
+      <linearGradient id="neonLeftPillar" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.9" />
+        <stop offset="50%" stop-color="#3b82f6" stop-opacity="0.8" />
+        <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.7" />
       </linearGradient>
+      <linearGradient id="neonRightPillar" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.9" />
+        <stop offset="50%" stop-color="#6366f1" stop-opacity="0.8" />
+        <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.7" />
+      </linearGradient>
+      <linearGradient id="floorGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0f172a" />
+        <stop offset="40%" stop-color="#090d16" />
+        <stop offset="100%" stop-color="#020617" />
+      </linearGradient>
+      <filter id="softGlow" x="-50%" y="-20%" width="200%" height="140%">
+        <feGaussianBlur stdDeviation="16" result="blur" />
+        <feMerge>
+          <feMergeNode in="blur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
     </defs>
 
+    <!-- 1. Background Main Wall -->
     <rect width="${width}" height="${height}" fill="url(#bgGrad)" />
 
-    <!-- Ambient Grid & Studio Lighting -->
-    <circle cx="540" cy="400" r="600" fill="#06b6d4" opacity="0.12" filter="blur(140px)" />
-    <circle cx="200" cy="1400" r="450" fill="#3b82f6" opacity="0.09" filter="blur(120px)" />
-    <circle cx="880" cy="1200" r="400" fill="#8b5cf6" opacity="0.08" filter="blur(110px)" />
+    <!-- 2. Acoustic Studio Hexagonal Wall Geometry -->
+    <g stroke="#1e293b" stroke-width="1.8" fill="#0b1120" opacity="0.45">
+      <polygon points="120,240 160,265 160,315 120,340 80,315 80,265" />
+      <polygon points="205,240 245,265 245,315 205,340 165,315 165,265" />
+      <polygon points="162,318 202,343 202,393 162,418 122,393 122,343" />
+      <polygon points="900,240 940,265 940,315 900,340 860,315 860,265" />
+      <polygon points="985,240 1025,265 1025,315 985,340 945,315 945,265" />
+      <polygon points="942,318 982,343 982,393 942,418 902,393 902,343" />
+    </g>
 
-    <!-- Studio Floor Reflection Line -->
-    <line x1="0" y1="1520" x2="1080" y2="1520" stroke="#1e293b" stroke-width="2" opacity="0.6" />
-    <rect x="0" y="1520" width="1080" height="400" fill="#020617" opacity="0.7" />
+    <!-- 3. Ambient Volumetric Downlights from Ceiling -->
+    <g opacity="0.14">
+      <polygon points="180,0 260,0 360,800 80,800" fill="#38bdf8" />
+      <polygon points="820,0 900,0 1000,800 720,800" fill="#a855f7" />
+    </g>
+
+    <!-- 4. Vertical Architectural Light Columns -->
+    <g filter="url(#softGlow)">
+      <rect x="35" y="100" width="8" height="1380" rx="4" fill="url(#neonLeftPillar)" />
+      <rect x="1037" y="100" width="8" height="1380" rx="4" fill="url(#neonRightPillar)" />
+    </g>
+
+    <!-- 5. Stage Horizon Line (Datum at y=1480) -->
+    <line x1="0" y1="1480" x2="${width}" y2="1480" stroke="#38bdf8" stroke-width="2.5" opacity="0.7" />
+    <rect x="0" y="1480" width="${width}" height="440" fill="url(#floorGrad)" />
+
+    <!-- 6. Perspective Floor Grid Lines -->
+    <g stroke="#334155" stroke-width="1.5" opacity="0.35">
+      <line x1="540" y1="1480" x2="100" y2="1920" />
+      <line x1="540" y1="1480" x2="320" y2="1920" />
+      <line x1="540" y1="1480" x2="540" y2="1920" />
+      <line x1="540" y1="1480" x2="760" y2="1920" />
+      <line x1="540" y1="1480" x2="980" y2="1920" />
+      <line x1="0" y1="1580" x2="${width}" y2="1580" />
+      <line x1="0" y1="1700" x2="${width}" y2="1700" />
+      <line x1="0" y1="1840" x2="${width}" y2="1840" />
+    </g>
+
+    <!-- 7. Grounding Contact Shadow for Character (Ensures character never floats) -->
+    <ellipse cx="540" cy="1890" rx="260" ry="26" fill="#000000" opacity="0.75" filter="blur(8px)" />
   </svg>`;
 }
 

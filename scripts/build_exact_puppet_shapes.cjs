@@ -330,10 +330,10 @@ const posesToGenerate = [
   { name: 'puppet_walking', pose: 'walking', options: { blink: false, talking: false } }
 ];
 
-function ensureExactPuppetAssets(force = false) {
+function ensureExactPuppetAssets(force = true) {
   try {
     const { buildAllModernCharacterAssets } = require('./build_modern_tech_character.cjs');
-    return buildAllModernCharacterAssets(force);
+    return buildAllModernCharacterAssets(true);
   } catch (err) {
     console.warn(`[Exact Puppet Builder] Using internal modern build fallback: ${err.message}`);
   }

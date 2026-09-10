@@ -1,0 +1,445 @@
+#!/usr/bin/env node
+/**
+ * ==============================================================================
+ * Archie Explains: Buffer Omnichannel Dispatcher (Facebook, Instagram, TikTok)
+ * ==============================================================================
+ * Automatically publishes or queues Archie animated videos & fact reels
+ * to connected social platforms via Buffer's GraphQL API:
+ *  - Facebook Page
+ *  - Instagram Page (Reels)
+ *  - TikTok Account
+ *
+ * Requirements:
+ *  - BUFFER_API_KEY (from https://publish.buffer.com or Buffer Settings)
+ *  - Channels connected inside Buffer account (Facebook, Instagram, TikTok)
+ *  - Optional: BUFFER_FACEBOOK_CHANNEL_ID, BUFFER_INSTAGRAM_CHANNEL_ID, BUFFER_TIKTOK_CHANNEL_ID
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+const BUFFER_API_URL = 'https://api.buffer.com';
+const BUFFER_API_KEY = String(process.env.BUFFER_API_KEY || '').trim();
+
+// Specific channel overrides (optional - auto-discovery is used if omitted)
+const BUFFER_FACEBOOK_CHANNEL_ID = String(process.env.BUFFER_FACEBOOK_CHANNEL_ID || '').trim();
+const BUFFER_INSTAGRAM_CHANNEL_ID = String(process.env.BUFFER_INSTAGRAM_CHANNEL_ID || '').trim();
+const BUFFER_TIKTOK_CHANNEL_ID = String(process.env.BUFFER_TIKTOK_CHANNEL_ID || '').trim();
+
+// Media upload / Cloudinary options
+const CLOUDINARY_CLOUD_NAME = String(process.env.CLOUDINARY_CLOUD_NAME || '').trim();
+const CLOUDINARY_UPLOAD_PRESET = String(process.env.CLOUDINARY_UPLOAD_PRESET || '').trim();
+
+const IS_DRY_RUN = process.argv.includes('--dry-run') || process.env.DRY_RUN === 'true';
+const SHARE_NOW = process.env.BUFFER_SHARE_NOW === 'true';
+
+const colors = {
+  reset: '\x1b[0m',
+  bright: '\x1b[1m',
+  cyan: '\x1b[36m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  magenta: '\x1b[35m',
+  red: '\x1b[31m',
+  blue: '\x1b[34m'
+};
+
+/**
+ * Execute GraphQL query against Buffer API
+ */
+async function bufferRequest(query, variables = {}) {
+  if (!BUFFER_API_KEY) {
+    throw new Error('BUFFER_API_KEY is not set. Please provide your Buffer access token.');
+  }
+
+  const response = await fetch(BUFFER_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${BUFFER_API_KEY}`
+    },
+    body: JSON.stringify({ query, variables })
+  });
+
+  const text = await response.text();
+  let payload;
+  try {
+    payload = JSON.parse(text);
+  } catch {
+    throw new Error(`Buffer returned non-JSON response (HTTP ${response.status}): ${text.slice(0, 300)}`);
+  }
+
+  if (!response.ok) {
+    throw new Error(`Buffer HTTP ${response.status}: ${JSON.stringify(payload)}`);
+  }
+
+  if (payload.errors?.length) {
+    throw new Error(`Buffer GraphQL error: ${payload.errors.map(e => e.message).join('; ')}`);
+  }
+
+  return payload.data;
+}
+
+/**
+ * Auto-discover connected channels in the Buffer account
+ */
+async function discoverConnectedChannels() {
+  console.log(`[Buffer Omnichannel] 🔍 Querying Buffer account for connected social channels...`);
+
+  const query = `query GetAccountChannels {
+    account {
+      organizations {
+        id
+        name
+        channels {
+          id
+          name
+          displayName
+          service
+          isDisconnected
+          isLocked
+        }
+      }
+    }
+  }`;
+
+  const data = await bufferRequest(query);
+  const orgs = data?.account?.organizations || [];
+
+  const discovered = {
+    facebook: [],
+    instagram: [],
+    tiktok: [],
+    all: []
+  };
+
+  for (const org of orgs) {
+    for (const ch of (org.channels || [])) {
+      discovered.all.push(ch);
+      const svc = String(ch.service || '').toLowerCase();
+      const isUsable = !ch.isDisconnected && !ch.isLocked;
+
+      if (!isUsable) continue;
+
+      if (svc === 'facebook') {
+        discovered.facebook.push(ch);
+      } else if (svc === 'instagram') {
+        discovered.instagram.push(ch);
+      } else if (svc === 'tiktok') {
+        discovered.tiktok.push(ch);
+      }
+    }
+  }
+
+  return discovered;
+}
+
+/**
+ * Resolve target channels based on overrides or auto-discovery
+ */
+async function resolveTargetChannels(discovered) {
+  const targets = [];
+
+  // 1. Facebook Page
+  if (BUFFER_FACEBOOK_CHANNEL_ID) {
+    targets.push({ id: BUFFER_FACEBOOK_CHANNEL_ID, service: 'facebook', name: 'Facebook Page (Direct ID)' });
+  } else if (discovered.facebook.length > 0) {
+    targets.push(discovered.facebook[0]);
+  }
+
+  // 2. Instagram Page / Business Account
+  if (BUFFER_INSTAGRAM_CHANNEL_ID) {
+    targets.push({ id: BUFFER_INSTAGRAM_CHANNEL_ID, service: 'instagram', name: 'Instagram Page (Direct ID)' });
+  } else if (discovered.instagram.length > 0) {
+    targets.push(discovered.instagram[0]);
+  }
+
+  // 3. TikTok Account
+  if (BUFFER_TIKTOK_CHANNEL_ID) {
+    targets.push({ id: BUFFER_TIKTOK_CHANNEL_ID, service: 'tiktok', name: 'TikTok Account (Direct ID)' });
+  } else if (discovered.tiktok.length > 0) {
+    targets.push(discovered.tiktok[0]);
+  }
+
+  return targets;
+}
+
+/**
+ * Locate the latest Archie video file (fact reel or full cartoon episode)
+ */
+function findLatestArchieVideo(preferredPath = null) {
+  if (preferredPath && fs.existsSync(preferredPath)) {
+    return preferredPath;
+  }
+
+  const roots = [
+    path.join(process.cwd(), 'test_artifacts'),
+    path.join(process.cwd(), 'rendered_videos'),
+    path.join(process.cwd(), 'output')
+  ];
+
+  const candidateFiles = [];
+  for (const root of roots) {
+    if (!fs.existsSync(root)) continue;
+    for (const name of fs.readdirSync(root)) {
+      const full = path.join(root, name);
+      if (fs.statSync(full).isFile() && /\.mp4$/i.test(name)) {
+        // Prioritize archie / tech fact / cartoon videos
+        const isArchie = /archie|fact_reel|cartoon|tech/i.test(name);
+        candidateFiles.push({
+          path: full,
+          time: fs.statSync(full).mtimeMs,
+          priority: isArchie ? 2 : 1
+        });
+      }
+    }
+  }
+
+  if (!candidateFiles.length) {
+    return null;
+  }
+
+  candidateFiles.sort((a, b) => (b.priority - a.priority) || (b.time - a.time));
+  return candidateFiles[0].path;
+}
+
+/**
+ * Direct temporary media relay (24h public link for Buffer to ingest)
+ */
+async function uploadToPublicRelay(videoPath) {
+  console.log(`[Buffer Media Relay] 🚀 Uploading video to public relay: ${path.basename(videoPath)}...`);
+
+  const fileBuffer = fs.readFileSync(videoPath);
+  const formData = new FormData();
+  formData.append('reqtype', 'fileupload');
+  formData.append('time', '24h');
+  formData.append('fileToUpload', new Blob([fileBuffer], { type: 'video/mp4' }), path.basename(videoPath));
+
+  const res = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+    method: 'POST',
+    body: formData
+  });
+
+  const text = (await res.text()).trim();
+  if (res.ok && text.startsWith('http')) {
+    console.log(`[Buffer Media Relay] ✅ Public video URL ready: ${text}`);
+    return text;
+  }
+  throw new Error(`Media relay failed: ${text || res.statusText}`);
+}
+
+/**
+ * Cloudinary unsigned upload (optional backup)
+ */
+async function uploadToCloudinary(videoPath) {
+  if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) return null;
+
+  console.log(`[Buffer Media Relay] 📤 Uploading to Cloudinary (${CLOUDINARY_CLOUD_NAME})...`);
+  const form = new FormData();
+  const fileBuffer = fs.readFileSync(videoPath);
+  form.append('file', new Blob([fileBuffer], { type: 'video/mp4' }), path.basename(videoPath));
+  form.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+  const uploadUrl = `https://api.cloudinary.com/v1_1/${encodeURIComponent(CLOUDINARY_CLOUD_NAME)}/video/upload`;
+  const response = await fetch(uploadUrl, { method: 'POST', body: form });
+  const text = await response.text();
+  const payload = JSON.parse(text);
+
+  if (response.ok && payload.secure_url) {
+    console.log(`[Buffer Media Relay] ✅ Cloudinary Video URL: ${payload.secure_url}`);
+    return payload.secure_url;
+  }
+  return null;
+}
+
+/**
+ * Generate platform-tailored caption for Facebook, Instagram, and TikTok
+ */
+function buildOmnichannelCaption(metadata = {}, service = 'generic') {
+  const title = metadata.title || 'Did You Know? Mind-Blowing Science & Tech Breakdown';
+  const fact = metadata.fact || metadata.description || 'Archie Explains: Cutting-edge science, AI, and engineering wonders compared!';
+  const citation = metadata.reference ? `📚 Citation: ${metadata.reference}` : '';
+
+  const tags = ['#ArchieExplains', '#Tech', '#Science', '#AI', '#Engineering', '#HowItWorks', '#DidYouKnow'];
+
+  if (service === 'tiktok') {
+    tags.push('#TikTokTech', '#TechTok', '#FYP', '#LearnOnTikTok');
+    return `${title}\n\n${fact}\n\n${citation}\n\nWhat topic should Archie explore next? Drop your thoughts!\n\n${tags.join(' ')}`.trim();
+  }
+
+  if (service === 'instagram') {
+    tags.push('#ReelsInstagram', '#ScienceReels', '#TechNews', '#InstaScience');
+    return `${title}\n\n${fact}\n\n${citation}\n\nFollow @ArchieExplains for daily animated tech & science breakdowns.\n\n${tags.join(' ')}`.trim();
+  }
+
+  if (service === 'facebook') {
+    tags.push('#FacebookReels', '#ViralTech', '#ScienceExplained');
+    return `${title}\n\n${fact}\n\n${citation}\n\nLike and share for more mind-blowing engineering comparisons!\n\n${tags.join(' ')}`.trim();
+  }
+
+  return `${title}\n\n${fact}\n\n${tags.join(' ')}`;
+}
+
+/**
+ * Queue or publish a video post to a specific Buffer channel
+ */
+async function postToBufferChannel(channel, mediaUrl, caption) {
+  const mode = SHARE_NOW ? 'shareNow' : 'addToQueue';
+  const svcName = (channel.service || '').toUpperCase();
+  const chLabel = channel.displayName || channel.name || channel.id;
+
+  console.log(`\n[Buffer Dispatch] 📡 Sending to ${colors.cyan}${svcName}${colors.reset} (${chLabel}) [Mode: ${mode}]...`);
+
+  const mutation = `mutation CreateVideoPost($input: CreatePostInput!) {
+    createPost(input: $input) {
+      ... on PostActionSuccess {
+        post {
+          id
+          status
+          dueAt
+          channelId
+          text
+        }
+      }
+      ... on MutationError {
+        message
+      }
+    }
+  }`;
+
+  const input = {
+    text: caption,
+    channelId: channel.id,
+    schedulingType: 'automatic',
+    mode: mode,
+    assets: [
+      {
+        video: {
+          url: mediaUrl
+        }
+      }
+    ]
+  };
+
+  const data = await bufferRequest(mutation, { input });
+  const result = data?.createPost;
+
+  if (result?.message) {
+    throw new Error(`Buffer ${svcName} error: ${result.message}`);
+  }
+
+  if (result?.post) {
+    console.log(`  ${colors.green}✔ Successfully scheduled on ${svcName}! Post ID: ${result.post.id} (Status: ${result.post.status})${colors.reset}`);
+    return result.post;
+  }
+
+  return result;
+}
+
+/**
+ * Main dispatcher function
+ */
+async function publishArchieOmnichannel(options = {}) {
+  console.log(`\n${colors.bright}${colors.cyan}═══════════════════════════════════════════════════════════════════════════${colors.reset}`);
+  console.log(`${colors.bright}🤖 ARCHIE EXPLAINS — BUFFER OMNICHANNEL DISPATCHER${colors.reset}`);
+  console.log(`   Publishing to Facebook Page, Instagram Page, and TikTok via Buffer API`);
+  console.log(`${colors.bright}${colors.cyan}═══════════════════════════════════════════════════════════════════════════${colors.reset}\n`);
+
+  if (!BUFFER_API_KEY) {
+    console.warn(`[Buffer Omnichannel] ⚠️ BUFFER_API_KEY is not configured.`);
+    console.warn(`To set up Buffer Omnichannel publishing:`);
+    console.warn(`  1. Get an API access token from https://publish.buffer.com`);
+    console.warn(`  2. Add BUFFER_API_KEY in your environment secrets.`);
+    console.warn(`  3. Connect your Facebook Page, Instagram account, and TikTok in Buffer.`);
+    return { success: false, reason: 'MISSING_BUFFER_API_KEY' };
+  }
+
+  // 1. Locate Video
+  const videoPath = findLatestArchieVideo(options.videoPath);
+  if (!videoPath) {
+    console.warn(`[Buffer Omnichannel] ⚠️ No rendered Archie MP4 video found.`);
+    return { success: false, reason: 'NO_VIDEO_FOUND' };
+  }
+  console.log(`[Buffer Omnichannel] 📹 Found video: ${path.basename(videoPath)} (${Math.round(fs.statSync(videoPath).size / 1024)} KB)`);
+
+  // 2. Discover channels in Buffer
+  let discovered;
+  try {
+    discovered = await discoverConnectedChannels();
+  } catch (err) {
+    console.error(`[Buffer Omnichannel] ❌ Failed to fetch channels from Buffer: ${err.message}`);
+    return { success: false, error: err.message };
+  }
+
+  console.log(`[Buffer Omnichannel] Discovered accounts in Buffer:`);
+  console.log(`  - Facebook Pages: ${discovered.facebook.length > 0 ? discovered.facebook.map(c => `"${c.displayName || c.name}" (ID: ${c.id})`).join(', ') : 'None connected'}`);
+  console.log(`  - Instagram Accounts: ${discovered.instagram.length > 0 ? discovered.instagram.map(c => `"${c.displayName || c.name}" (ID: ${c.id})`).join(', ') : 'None connected'}`);
+  console.log(`  - TikTok Accounts: ${discovered.tiktok.length > 0 ? discovered.tiktok.map(c => `"${c.displayName || c.name}" (ID: ${c.id})`).join(', ') : 'None connected'}`);
+
+  const targetChannels = await resolveTargetChannels(discovered);
+
+  if (!targetChannels.length) {
+    console.warn(`\n[Buffer Omnichannel] ⚠️ No Facebook, Instagram, or TikTok channels connected in your Buffer account.`);
+    console.warn(`Please visit https://publish.buffer.com/channels to connect your accounts.`);
+    return { success: false, reason: 'NO_TARGET_CHANNELS_FOUND' };
+  }
+
+  console.log(`\n[Buffer Omnichannel] 🎯 Target channels for this broadcast (${targetChannels.length}):`);
+  targetChannels.forEach((ch, idx) => {
+    console.log(`  ${idx + 1}. [${(ch.service || '').toUpperCase()}] ${ch.displayName || ch.name} (ID: ${ch.id})`);
+  });
+
+  if (IS_DRY_RUN) {
+    console.log(`\n${colors.yellow}🧪 DRY RUN MODE ACTIVE — Skipping remote upload and post creation.${colors.reset}`);
+    return { success: true, dryRun: true, targets: targetChannels };
+  }
+
+  // 3. Resolve Public Video URL
+  let mediaUrl = options.videoUrl || process.env.BUFFER_VIDEO_URL;
+  if (!mediaUrl) {
+    try {
+      mediaUrl = await uploadToCloudinary(videoPath);
+    } catch (e) {
+      console.warn(`[Buffer Omnichannel] Cloudinary upload notice: ${e.message}`);
+    }
+
+    if (!mediaUrl) {
+      mediaUrl = await uploadToPublicRelay(videoPath);
+    }
+  }
+
+  // 4. Dispatch to each connected channel
+  const results = [];
+  for (const ch of targetChannels) {
+    const caption = buildOmnichannelCaption(options.metadata || {}, ch.service);
+    try {
+      const res = await postToBufferChannel(ch, mediaUrl, caption);
+      results.push({ service: ch.service, channelId: ch.id, success: true, res });
+    } catch (err) {
+      console.error(`  ${colors.red}❌ Failed posting to ${ch.service}: ${err.message}${colors.reset}`);
+      results.push({ service: ch.service, channelId: ch.id, success: false, error: err.message });
+    }
+  }
+
+  console.log(`\n${colors.bright}${colors.green}🎉 Omnichannel broadcast completed across ${results.filter(r => r.success).length}/${results.length} channels!${colors.reset}\n`);
+  return { success: true, results, mediaUrl };
+}
+
+// CLI execution check
+if (require.main === module) {
+  publishArchieOmnichannel()
+    .then(res => {
+      if (res.success) process.exit(0);
+      process.exit(1);
+    })
+    .catch(err => {
+      console.error('[Buffer Omnichannel Error]:', err);
+      process.exit(1);
+    });
+}
+
+module.exports = {
+  publishArchieOmnichannel,
+  discoverConnectedChannels,
+  buildOmnichannelCaption
+};

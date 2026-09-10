@@ -27,27 +27,7 @@
     <line x1="296" y1="934" x2="322" y2="934" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" />
   
 
-    <!-- 2. Arms, Hands & Smartwatch -->
-    
-      <!-- Surprised / Astonished: Both hands raised near chest/shoulders -->
-      <path d="M 165 372 C 150 405, 135 440, 120 460 L 138 468 C 152 440, 168 405, 185 375 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2.5" />
-      <path d="M 122 460 C 114 430, 108 395, 102 360 L 118 356 C 124 390, 130 425, 138 460 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-      <!-- Left Hand (Open palm facing camera in astonishment) -->
-      <ellipse cx="106" cy="350" rx="14" ry="12" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-      <path d="M 96 342 C 92 334, 88 324, 86 314 C 91 312, 95 316, 98 326 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
-      <path d="M 103 340 C 102 330, 101 320, 100 310 C 105 310, 108 314, 108 324 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
-      <path d="M 110 341 C 112 331, 114 321, 116 312 C 120 314, 120 318, 118 326 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
-
-      <path d="M 315 372 C 330 405, 345 440, 360 460 L 342 468 C 328 440, 312 405, 295 375 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2.5" />
-      <path d="M 358 460 C 366 430, 372 395, 378 360 L 362 356 C 356 390, 350 425, 342 460 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-      <!-- Right Hand (Open palm facing camera) -->
-      <ellipse cx="374" cy="350" rx="14" ry="12" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-      <path d="M 384 342 C 388 334, 392 324, 394 314 C 389 312, 385 316, 382 326 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
-      <path d="M 377 340 C 378 330, 379 320, 380 310 C 375 310, 372 314, 372 324 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
-      <path d="M 370 341 C 368 331, 366 321, 364 312 C 360 314, 360 318, 362 326 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
-    
-
-    <!-- 3. Torso, Inner Tee & Modern Tech Overshirt -->
+    <!-- 2. Torso, Inner Tee & Modern Tech Overshirt (Base Layer) -->
     
     <!-- Minimalist Crewneck Inner Tee (Off-white / heather) -->
     <path d="M 225 338 Q 250 355 275 338 L 285 410 L 215 410 Z" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" />
@@ -71,7 +51,27 @@
     <rect x="242" y="511" width="16" height="12" rx="2" fill="#38bdf8" opacity="0.8" />
   
 
-    <!-- 4. Sculpted Human Head, Face, Hair & Eyes -->
+    <!-- 3. Arms, Forearms, Hands & Smartwatch (Rendered IN FRONT of Torso to prevent clipping into back) -->
+    
+      <!-- Surprised / Astonished: Both hands raised near chest/shoulders -->
+      <path d="M 165 372 C 150 405, 135 440, 120 460 L 138 468 C 152 440, 168 405, 185 375 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2.5" />
+      <path d="M 122 460 C 114 430, 108 395, 102 360 L 118 356 C 124 390, 130 425, 138 460 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Left Hand (Open palm facing camera in astonishment) -->
+      <ellipse cx="106" cy="350" rx="14" ry="12" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <path d="M 96 342 C 92 334, 88 324, 86 314 C 91 312, 95 316, 98 326 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 103 340 C 102 330, 101 320, 100 310 C 105 310, 108 314, 108 324 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 110 341 C 112 331, 114 321, 116 312 C 120 314, 120 318, 118 326 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+
+      <path d="M 315 372 C 330 405, 345 440, 360 460 L 342 468 C 328 440, 312 405, 295 375 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2.5" />
+      <path d="M 358 460 C 366 430, 372 395, 378 360 L 362 356 C 356 390, 350 425, 342 460 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Right Hand (Open palm facing camera) -->
+      <ellipse cx="374" cy="350" rx="14" ry="12" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <path d="M 384 342 C 388 334, 392 324, 394 314 C 389 312, 385 316, 382 326 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 377 340 C 378 330, 379 320, 380 310 C 375 310, 372 314, 372 324 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 370 341 C 368 331, 366 321, 364 312 C 360 314, 360 318, 362 326 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+    
+
+    <!-- 4. Sculpted Human Head, Face, Hair, Eyes & Anatomical Lips -->
     
     
 
@@ -147,8 +147,17 @@
     <circle cx="258" cy="249" r="1.5" fill="#451a03" />
 
     <!-- Mouth -->
-    <ellipse cx="250" cy="276" rx="11" ry="15" fill="#581c1c" stroke="#1e293b" stroke-width="2" />
-                 <ellipse cx="250" cy="272" rx="7" ry="5" fill="#f8fafc" />
+    
+      <!-- Astonished Open Mouth with Realistic Parted Lips & Teeth -->
+      <path d="M 238 266 C 244 260, 256 260, 262 266 C 266 276, 264 290, 260 294 C 252 298, 246 298, 240 294 C 235 288, 234 276, 238 266 Z" fill="#380d12" stroke="#451a03" stroke-width="2" />
+      <!-- Upper Teeth Row -->
+      <path d="M 241 268 Q 250 271 259 268 L 258 273 Q 250 275 242 273 Z" fill="#f8fafc" stroke="#94a3b8" stroke-width="0.8" />
+      <!-- Sculpted Surprised Upper Lip Arched High -->
+      <path d="M 236 266 C 242 260, 247 261, 250 259 C 253 261, 258 260, 264 266 C 259 268, 241 268, 236 266 Z" fill="#b4533c" stroke="#451a03" stroke-width="1.3" />
+      <!-- Sculpted Surprised Lower Lip Dropped Down -->
+      <path d="M 238 294 C 244 300, 256 300, 262 294 C 257 296, 243 296, 238 294 Z" fill="#cf705c" stroke="#451a03" stroke-width="1.3" />
+      <path d="M 244 302 Q 250 304 256 302" stroke="#d09564" stroke-width="1.5" fill="none" opacity="0.6" stroke-linecap="round" />
+    
   
   </g>
 </svg>

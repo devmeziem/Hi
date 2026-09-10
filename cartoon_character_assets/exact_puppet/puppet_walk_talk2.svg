@@ -26,22 +26,7 @@
       <line x1="346" y1="926" x2="376" y2="926" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" />
     
 
-    <!-- 2. Arms, Hands & Smartwatch -->
-    
-      <!-- Right Arm (Swinging forward) -->
-      <path d="M 315 375 C 300 410, 286 445, 270 480 L 288 488 C 302 455, 316 420, 335 375 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
-      <path d="M 272 486 C 258 525, 246 565, 238 605 L 258 610 C 266 572, 276 532, 288 492 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-      <ellipse cx="244" cy="625" rx="12" ry="14" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-
-      <!-- Left Arm (Swinging backward with smartwatch) -->
-      <path d="M 165 375 C 180 410, 195 445, 210 480 L 192 488 C 178 455, 164 420, 145 375 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
-      <path d="M 208 486 C 222 525, 236 565, 246 605 L 226 610 C 218 572, 206 532, 194 492 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-      <rect x="232" y="590" width="20" height="16" rx="4" fill="#0f172a" stroke="#0f172a" stroke-width="1.5" />
-      <circle cx="242" cy="598" r="3.5" fill="#06b6d4" opacity="0.9" />
-      <ellipse cx="238" cy="625" rx="12" ry="14" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-    
-
-    <!-- 3. Torso, Inner Tee & Modern Tech Overshirt -->
+    <!-- 2. Torso, Inner Tee & Modern Tech Overshirt (Base Layer) -->
     
     <!-- Minimalist Crewneck Inner Tee (Off-white / heather) -->
     <path d="M 225 338 Q 250 355 275 338 L 285 410 L 215 410 Z" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" />
@@ -65,7 +50,22 @@
     <rect x="242" y="511" width="16" height="12" rx="2" fill="#38bdf8" opacity="0.8" />
   
 
-    <!-- 4. Sculpted Human Head, Face, Hair & Eyes -->
+    <!-- 3. Arms, Forearms, Hands & Smartwatch (Rendered IN FRONT of Torso to prevent clipping into back) -->
+    
+      <!-- Right Arm (Swinging forward) -->
+      <path d="M 315 375 C 300 410, 286 445, 270 480 L 288 488 C 302 455, 316 420, 335 375 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 272 486 C 258 525, 246 565, 238 605 L 258 610 C 266 572, 276 532, 288 492 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <ellipse cx="244" cy="625" rx="12" ry="14" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+
+      <!-- Left Arm (Swinging backward with smartwatch) -->
+      <path d="M 165 375 C 180 410, 195 445, 210 480 L 192 488 C 178 455, 164 420, 145 375 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 208 486 C 222 525, 236 565, 246 605 L 226 610 C 218 572, 206 532, 194 492 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <rect x="232" y="590" width="20" height="16" rx="4" fill="#0f172a" stroke="#0f172a" stroke-width="1.5" />
+      <circle cx="242" cy="598" r="3.5" fill="#06b6d4" opacity="0.9" />
+      <ellipse cx="238" cy="625" rx="12" ry="14" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+    
+
+    <!-- 4. Sculpted Human Head, Face, Hair, Eyes & Anatomical Lips -->
     
     
 
@@ -141,9 +141,20 @@
     <circle cx="258" cy="249" r="1.5" fill="#451a03" />
 
     <!-- Mouth -->
-    <path d="M 235 268 Q 250 286 265 268 Z" fill="#581c1c" stroke="#1e293b" stroke-width="2.5" stroke-linejoin="round" />
-                 <path d="M 238 270 Q 250 275 262 270" stroke="#f8fafc" stroke-width="3" stroke-linecap="round" />
-                 <ellipse cx="250" cy="281" rx="6" ry="3" fill="#b91c1c" />
+    
+      <!-- Dynamic Talking Mouth with Natural Upper/Lower Lips, Dental Arch & Tongue -->
+      <!-- Inner Oral Cavity -->
+      <path d="M 235 268 C 240 286, 260 286, 265 268 C 258 272, 242 272, 235 268 Z" fill="#4a0e17" stroke="#451a03" stroke-width="1.8" />
+      <!-- Upper Teeth Arch -->
+      <path d="M 237 269 Q 250 273 263 269 L 261 273 Q 250 276 239 273 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.6" />
+      <!-- Tongue Curve -->
+      <path d="M 243 282 C 246 278, 254 278, 257 282 C 253 285, 247 285, 243 282 Z" fill="#d94858" />
+      <!-- Defined Upper Lip -->
+      <path d="M 234 268 C 240 264, 246 265, 250 263 C 254 265, 260 264, 266 268 C 260 270, 240 270, 234 268 Z" fill="#b4533c" stroke="#451a03" stroke-width="1.2" />
+      <!-- Defined Lower Lip -->
+      <path d="M 237 283 C 243 288, 257 288, 263 283 C 257 285, 243 285, 237 283 Z" fill="#cf705c" stroke="#451a03" stroke-width="1.2" />
+      <path d="M 243 290 Q 250 292 257 290" stroke="#d09564" stroke-width="1.6" fill="none" opacity="0.5" stroke-linecap="round" />
+    
   
   </g>
 </svg>
