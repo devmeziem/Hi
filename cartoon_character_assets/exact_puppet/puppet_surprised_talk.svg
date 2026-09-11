@@ -148,12 +148,18 @@
 
     <!-- Mouth -->
     
-      <!-- Astonished Idle Parted Lips & Small O cavity -->
-      <path d="M 242 267 C 245 263, 255 263, 258 267 C 261 273, 260 282, 257 285 C 253 287, 247 287, 243 285 C 240 282, 239 273, 242 267 Z" fill="#380d12" stroke="#451a03" stroke-width="1.8" />
-      <!-- Upper Teeth Accent -->
-      <path d="M 244 269 Q 250 271 256 269" stroke="#f8fafc" stroke-width="1.2" fill="none" />
-      <!-- Surprised Lip Outline -->
-      <path d="M 240 267 C 245 263, 255 263, 260 267 C 263 274, 262 284, 258 287 C 252 290, 248 290, 242 287 C 238 283, 237 274, 240 267 Z" stroke="#b4533c" stroke-width="1.2" fill="none" />
+      <!-- Dynamic Talking Mouth with Natural Upper/Lower Lips, Dental Arch & Tongue -->
+      <!-- Inner Oral Cavity -->
+      <path d="M 235 268 C 240 286, 260 286, 265 268 C 258 272, 242 272, 235 268 Z" fill="#4a0e17" stroke="#451a03" stroke-width="1.8" />
+      <!-- Upper Teeth Arch -->
+      <path d="M 237 269 Q 250 273 263 269 L 261 273 Q 250 276 239 273 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.6" />
+      <!-- Tongue Curve -->
+      <path d="M 243 282 C 246 278, 254 278, 257 282 C 253 285, 247 285, 243 282 Z" fill="#d94858" />
+      <!-- Defined Upper Lip -->
+      <path d="M 234 268 C 240 264, 246 265, 250 263 C 254 265, 260 264, 266 268 C 260 270, 240 270, 234 268 Z" fill="#b4533c" stroke="#451a03" stroke-width="1.2" />
+      <!-- Defined Lower Lip -->
+      <path d="M 237 283 C 243 288, 257 288, 263 283 C 257 285, 243 285, 237 283 Z" fill="#cf705c" stroke="#451a03" stroke-width="1.2" />
+      <path d="M 243 290 Q 250 292 257 290" stroke="#d09564" stroke-width="1.6" fill="none" opacity="0.5" stroke-linecap="round" />
     
   
   </g>

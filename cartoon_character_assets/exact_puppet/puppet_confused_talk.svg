@@ -53,67 +53,38 @@
 
     <!-- 3. Arms, Forearms, Hands & Smartwatch (Rendered IN FRONT of Torso to prevent clipping into back) -->
     
-      <!-- Left Arm (Dynamically pointing to left toward HUD/graphics) -->
-      <!-- Upper Jacket Sleeve extending left -->
-      <path d="M 180 375 C 160 405, 130 435, 88 468 L 104 488 C 140 455, 165 420, 188 385 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
-      <path d="M 104 484 C 98 478, 90 472, 84 468 L 76 478 C 84 484, 94 490, 102 496 Z" fill="#334155" stroke="#0f172a" stroke-width="2" />
-      <!-- Forearm reaching left -->
-      <path d="M 84 472 C 55 456, 25 442, -6 432 L -12 448 C 20 460, 50 475, 78 490 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-      
-      <!-- Left Hand: Sculpted Human Pointing Hand (pointing left) -->
-      <!-- Palm base -->
-      <path d="M -6 432 C -18 428, -26 426, -35 425 L -36 450 C -26 452, -18 450, -10 448 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-      <!-- Curled Fingers -->
-      <path d="M -34 436 C -42 436, -48 440, -45 446 C -42 450, -36 450, -32 448 Z" fill="#d09564" opacity="0.4" />
-      <!-- Human-proportioned natural index finger pointing left (short, realistic 24px) -->
-      <path d="M -32 425 
-               C -42 423, -50 421, -58 420 
-               C -62 420, -63 425, -59 427 
-               C -51 430, -42 433, -34 434 Z" 
-            fill="#eab383" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
-      <!-- Natural Knuckle accent line -->
-      <line x1="-45" y1="422" x2="-46" y2="427" stroke="#d09564" stroke-width="1.5" stroke-linecap="round" />
-      <!-- Thumb folded naturally -->
-      <path d="M -22 434 C -29 430, -36 432, -38 437 C -36 442, -28 444, -20 442 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
-      <!-- Subtle highlight at fingertip -->
-      <circle cx="-60" cy="423" r="2.5" fill="#38bdf8" />
-      <circle cx="-60" cy="423" r="6" fill="#38bdf8" opacity="0.25" />
+      <!-- Confused / Shrug Pose: Both arms lifted, expressive open palms turned up quizzically -->
+      <!-- Left Upper Arm -->
+      <path d="M 165 372 C 150 405, 134 440, 118 472 L 136 480 C 150 450, 166 415, 185 375 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2.5" />
+      <path d="M 118 472 L 110 475 L 116 488 L 136 480 Z" fill="#334155" stroke="#0f172a" stroke-width="1.8" />
+      <!-- Left Forearm angled up & out -->
+      <path d="M 112 476 C 92 468, 72 458, 54 448 L 62 434 C 80 444, 98 454, 120 462 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Left Hand (Open palm facing up with 5 articulated fingers) -->
+      <!-- Palm -->
+      <ellipse cx="50" cy="438" rx="14" ry="10" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Thumb extending outward -->
+      <path d="M 58 444 C 64 448, 70 452, 74 456 C 73 460, 68 460, 62 454 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <!-- 4 Spread upward fingers -->
+      <path d="M 44 430 C 38 424, 34 416, 30 408 C 34 406, 38 410, 42 418 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 49 428 C 46 420, 44 412, 42 404 C 46 403, 50 406, 52 416 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 54 429 C 54 421, 54 413, 55 405 C 59 405, 61 409, 60 418 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 59 432 C 62 426, 66 420, 70 414 C 74 416, 73 421, 68 428 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
 
-      <!-- Right Arm (Resting naturally at side) -->
-      <path d="M 315 375 C 320 420, 324 460, 320 515 C 328 518, 342 518, 348 515 C 348 460, 346 420, 344 375 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
-      <path d="M 320 510 C 328 514, 340 514, 348 510 L 348 522 C 340 526, 328 526, 320 522 Z" fill="#334155" stroke="#0f172a" stroke-width="2" />
-      <path d="M 322 522 C 320 560, 320 610, 324 655 L 346 655 C 348 610, 348 560, 346 522 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-      <!-- Anatomically Sculpted Right Hand -->
-      
-      <g id="human_hand_r" transform="translate(344, 655) scale(-1, 1)">
-        <!-- Palm & Thenar Eminence (fleshy thumb base) -->
-        <path d="M 0 0 C -4 14, -8 28, -6 44 C 0 54, 18 54, 24 44 C 24 28, 20 14, 16 0 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
-        
-        <!-- Opposable Human Thumb with Knuckle Joint -->
-        <path d="M -4 16 C -12 22, -18 30, -16 40 C -14 46, -8 46, -4 38 C -2 30, -1 24, -2 18 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" stroke-linejoin="round" />
-        <!-- Thumb crease & fingernail highlight -->
-        <line x1="-12" y1="30" x2="-8" y2="34" stroke="#d09564" stroke-width="1.2" stroke-linecap="round" />
-        <path d="M -14 38 Q -12 42 -10 39" stroke="#d09564" stroke-width="1" fill="none" opacity="0.6" />
-
-        <!-- Index Finger (distinct joint curve) -->
-        <path d="M -2 44 C -4 54, -4 66, -3 74 C -1 77, 3 77, 4 73 C 4 65, 3 54, 2 44 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
-        <line x1="-2" y1="58" x2="2" y2="58" stroke="#d09564" stroke-width="1" stroke-linecap="round" opacity="0.6" />
-
-        <!-- Middle Finger (longest, reaching downward with subtle knuckle) -->
-        <path d="M 4 44 C 4 56, 4 70, 5 80 C 7 83, 11 83, 12 79 C 12 69, 11 56, 10 44 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
-        <line x1="5" y1="62" x2="10" y2="62" stroke="#d09564" stroke-width="1" stroke-linecap="round" opacity="0.6" />
-
-        <!-- Ring Finger -->
-        <path d="M 11 44 C 11 55, 11 68, 12 76 C 14 79, 17 79, 18 75 C 18 66, 17 55, 16 44 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
-        <line x1="12" y1="60" x2="16" y2="60" stroke="#d09564" stroke-width="1" stroke-linecap="round" opacity="0.6" />
-
-        <!-- Pinky Finger (smaller, natural curl) -->
-        <path d="M 17 42 C 18 50, 19 60, 20 67 C 22 70, 24 70, 25 66 C 25 58, 23 48, 22 40 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
-        
-        <!-- Fleshy palm crease / life line -->
-        <path d="M 2 24 C 6 32, 10 38, 14 42" stroke="#d09564" stroke-width="1.3" fill="none" stroke-linecap="round" opacity="0.7" />
-      </g>
-    
+      <!-- Right Upper Arm -->
+      <path d="M 315 372 C 330 405, 346 440, 362 472 L 344 480 C 330 450, 314 415, 295 375 Z" fill="#0f172a" stroke="#0f172a" stroke-width="2.5" />
+      <path d="M 362 472 L 370 475 L 364 488 L 344 480 Z" fill="#334155" stroke="#0f172a" stroke-width="1.8" />
+      <!-- Right Forearm angled up & out -->
+      <path d="M 368 476 C 388 468, 408 458, 426 448 L 418 434 C 400 444, 382 454, 360 462 Z" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Right Hand (Open palm facing up with 5 articulated fingers) -->
+      <!-- Palm -->
+      <ellipse cx="430" cy="438" rx="14" ry="10" fill="#eab383" stroke="#0f172a" stroke-width="2" />
+      <!-- Thumb extending outward -->
+      <path d="M 422 444 C 416 448, 410 452, 406 456 C 407 460, 412 460, 418 454 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <!-- 4 Spread upward fingers -->
+      <path d="M 436 430 C 442 424, 446 416, 450 408 C 446 406, 442 410, 438 418 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 431 428 C 434 420, 436 412, 438 404 C 434 403, 430 406, 428 416 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 426 429 C 426 421, 426 413, 425 405 C 421 405, 419 409, 420 418 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 421 432 C 418 426, 414 420, 410 414 C 406 416, 407 421, 412 428 Z" fill="#eab383" stroke="#0f172a" stroke-width="1.8" />
     
 
     <!-- 4. Sculpted Human Head, Face, Hair, Eyes & Anatomical Lips -->
@@ -164,26 +135,26 @@
     <path d="M 205 160 Q 215 145 230 155" stroke="#382a26" stroke-width="3.5" stroke-linecap="round" fill="none" />
 
     <!-- Eyebrows (Sculpted, naturally arched) -->
-    <path d="M 206 200 Q 225 190 245 196" stroke="#1f1917" stroke-width="4.5" stroke-linecap="round" fill="none" />
-    <path d="M 255 196 Q 275 190 294 200" stroke="#1f1917" stroke-width="4.5" stroke-linecap="round" fill="none" />
+    <path d="M 206 198 Q 225 204 245 200" stroke="#1f1917" stroke-width="4.5" stroke-linecap="round" fill="none" />
+    <path d="M 255 188 Q 275 178 294 186" stroke="#1f1917" stroke-width="4.5" stroke-linecap="round" fill="none" />
 
     <!-- Eyes (Sclera, Iris, Catchlight) -->
     <ellipse cx="225" cy="215" rx="15" ry="13" fill="#ffffff" stroke="#1e293b" stroke-width="2" />
        <!-- Iris -->
-       <circle cx="219" cy="215" r="8.5" fill="#382218" stroke="#1c1917" stroke-width="1.5" />
+       <circle cx="223" cy="215" r="8.5" fill="#382218" stroke="#1c1917" stroke-width="1.5" />
        <!-- Pupil -->
-       <circle cx="219" cy="215" r="4.5" fill="#090706" />
+       <circle cx="223" cy="215" r="4.5" fill="#090706" />
        <!-- Catchlight reflection -->
-       <circle cx="216" cy="212" r="2.5" fill="#ffffff" opacity="0.9" />
-       <circle cx="221" cy="217" r="1.2" fill="#ffffff" opacity="0.7" />
+       <circle cx="220" cy="212" r="2.5" fill="#ffffff" opacity="0.9" />
+       <circle cx="225" cy="217" r="1.2" fill="#ffffff" opacity="0.7" />
     <ellipse cx="275" cy="215" rx="15" ry="13" fill="#ffffff" stroke="#1e293b" stroke-width="2" />
        <!-- Iris -->
-       <circle cx="269" cy="215" r="8.5" fill="#382218" stroke="#1c1917" stroke-width="1.5" />
+       <circle cx="273" cy="215" r="8.5" fill="#382218" stroke="#1c1917" stroke-width="1.5" />
        <!-- Pupil -->
-       <circle cx="269" cy="215" r="4.5" fill="#090706" />
+       <circle cx="273" cy="215" r="4.5" fill="#090706" />
        <!-- Catchlight reflection -->
-       <circle cx="266" cy="212" r="2.5" fill="#ffffff" opacity="0.9" />
-       <circle cx="271" cy="217" r="1.2" fill="#ffffff" opacity="0.7" />
+       <circle cx="270" cy="212" r="2.5" fill="#ffffff" opacity="0.9" />
+       <circle cx="275" cy="217" r="1.2" fill="#ffffff" opacity="0.7" />
 
     <!-- Natural Sculpted Human Nose (Refined shading, no clown triangle!) -->
     <path d="M 248 214 L 246 244 Q 242 250 250 252 Q 258 250 254 244 L 252 214" fill="#d09564" opacity="0.35" />
@@ -193,21 +164,18 @@
 
     <!-- Mouth -->
     
-      
-    <!-- Upper Lip with Cupid's Bow -->
-    <path d="M 235 269 C 241 265, 246 266, 250 264 C 254 266, 259 265, 265 269 C 258 271, 242 271, 235 269 Z" fill="#b4533c" stroke="#451a03" stroke-width="1.2" />
-  
-      
-    <!-- Lower Lip with Fleshy Fullness & Soft Highlight -->
-    <path d="M 237 270 C 243 277, 257 277, 263 270 C 257 274, 243 274, 237 270 Z" fill="#cf705c" stroke="#451a03" stroke-width="1.2" />
-    <ellipse cx="250" cy="273" rx="5" ry="1.5" fill="#f87171" opacity="0.45" />
-    <!-- Subtle Lower Lip Shadow Crease -->
-    <path d="M 243 279 Q 250 282 257 279" stroke="#d09564" stroke-width="1.8" fill="none" opacity="0.5" stroke-linecap="round" />
-  
-      <!-- Smile Crease -->
-      <path d="M 236 269 Q 250 274 264 269" fill="none" stroke="#451a03" stroke-width="2" stroke-linecap="round" />
-      <circle cx="236" cy="269" r="0.8" fill="#451a03" />
-      <circle cx="264" cy="269" r="0.8" fill="#451a03" />
+      <!-- Dynamic Talking Mouth with Natural Upper/Lower Lips, Dental Arch & Tongue -->
+      <!-- Inner Oral Cavity -->
+      <path d="M 235 268 C 240 286, 260 286, 265 268 C 258 272, 242 272, 235 268 Z" fill="#4a0e17" stroke="#451a03" stroke-width="1.8" />
+      <!-- Upper Teeth Arch -->
+      <path d="M 237 269 Q 250 273 263 269 L 261 273 Q 250 276 239 273 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.6" />
+      <!-- Tongue Curve -->
+      <path d="M 243 282 C 246 278, 254 278, 257 282 C 253 285, 247 285, 243 282 Z" fill="#d94858" />
+      <!-- Defined Upper Lip -->
+      <path d="M 234 268 C 240 264, 246 265, 250 263 C 254 265, 260 264, 266 268 C 260 270, 240 270, 234 268 Z" fill="#b4533c" stroke="#451a03" stroke-width="1.2" />
+      <!-- Defined Lower Lip -->
+      <path d="M 237 283 C 243 288, 257 288, 263 283 C 257 285, 243 285, 237 283 Z" fill="#cf705c" stroke="#451a03" stroke-width="1.2" />
+      <path d="M 243 290 Q 250 292 257 290" stroke="#d09564" stroke-width="1.6" fill="none" opacity="0.5" stroke-linecap="round" />
     
   
   </g>

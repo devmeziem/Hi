@@ -164,18 +164,19 @@
 
     <!-- Mouth -->
     
-      <!-- Dynamic Talking Mouth with Natural Upper/Lower Lips, Dental Arch & Tongue -->
-      <!-- Inner Oral Cavity -->
-      <path d="M 235 268 C 240 286, 260 286, 265 268 C 258 272, 242 272, 235 268 Z" fill="#4a0e17" stroke="#451a03" stroke-width="1.8" />
-      <!-- Upper Teeth Arch -->
-      <path d="M 237 269 Q 250 273 263 269 L 261 273 Q 250 276 239 273 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.6" />
-      <!-- Tongue Curve -->
-      <path d="M 243 282 C 246 278, 254 278, 257 282 C 253 285, 247 285, 243 282 Z" fill="#d94858" />
-      <!-- Defined Upper Lip -->
-      <path d="M 234 268 C 240 264, 246 265, 250 263 C 254 265, 260 264, 266 268 C 260 270, 240 270, 234 268 Z" fill="#b4533c" stroke="#451a03" stroke-width="1.2" />
-      <!-- Defined Lower Lip -->
-      <path d="M 237 283 C 243 288, 257 288, 263 283 C 257 285, 243 285, 237 283 Z" fill="#cf705c" stroke="#451a03" stroke-width="1.2" />
-      <path d="M 243 290 Q 250 292 257 290" stroke="#d09564" stroke-width="1.6" fill="none" opacity="0.5" stroke-linecap="round" />
+      <!-- Quizzical Wry Smirk with Sculpted Lips -->
+      
+    <!-- Upper Lip with Cupid's Bow -->
+    <path d="M 235 269 C 241 265, 246 266, 250 264 C 254 266, 259 265, 265 269 C 258 271, 242 271, 235 269 Z" fill="#b4533c" stroke="#451a03" stroke-width="1.2" />
+  
+      
+    <!-- Lower Lip with Fleshy Fullness & Soft Highlight -->
+    <path d="M 237 270 C 243 277, 257 277, 263 270 C 257 274, 243 274, 237 270 Z" fill="#cf705c" stroke="#451a03" stroke-width="1.2" />
+    <ellipse cx="250" cy="273" rx="5" ry="1.5" fill="#f87171" opacity="0.45" />
+    <!-- Subtle Lower Lip Shadow Crease -->
+    <path d="M 243 279 Q 250 282 257 279" stroke="#d09564" stroke-width="1.8" fill="none" opacity="0.5" stroke-linecap="round" />
+  
+      <path d="M 236 271 Q 248 268 263 273" stroke="#451a03" stroke-width="2" stroke-linecap="round" fill="none" />
     
   
   </g>

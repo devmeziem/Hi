@@ -201,7 +201,8 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
       if (vsPng && fs.existsSync(vsPng)) boardArgs += ` --vs_badge "${vsPng}"`;
       if (bamSoundWav && fs.existsSync(bamSoundWav)) boardArgs += ` --bam_sound "${bamSoundWav}"`;
     }
-    const moviepyCmd = `python3 "${moviepyScript}" ${bgArg} ${glossArg} ${boardArgs} --audio_wav "${wavPath}" --output_mp4 "${outputSceneMp4}" --duration ${duration} --action "${action}"`;
+    const cuesArg = (mouthCuesJson && fs.existsSync(mouthCuesJson)) ? `--mouth_cues "${mouthCuesJson}"` : '';
+    const moviepyCmd = `python3 "${moviepyScript}" ${bgArg} ${glossArg} ${boardArgs} ${cuesArg} --audio_wav "${wavPath}" --output_mp4 "${outputSceneMp4}" --duration ${duration} --action "${action}"`;
     try {
       execSync(moviepyCmd, { stdio: 'inherit', timeout: 120000 });
       renderSucceeded = fs.existsSync(outputSceneMp4) && fs.statSync(outputSceneMp4).size > 1000;
@@ -271,44 +272,59 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
     const puppetQuestioning = path.join(puppetDir, 'puppet_questioning_users.png');
     const hudCard = path.join(process.cwd(), 'cartoon_character_assets', 'ui_hud', 'hud_comparison_card.png');
 
-    // Decide main pose based on action
+    // Decide main pose and talking variant based on action
     let mainPuppet = fs.existsSync(puppetCompare) ? puppetCompare : puppetIdle;
+    let mainPuppetTalk = path.join(puppetDir, 'puppet_explain_both_talk.png');
     let puppetX = 260;
     if (action === 'point_up_left') {
       mainPuppet = fs.existsSync(puppetPointUpL) ? puppetPointUpL : puppetIdle;
+      mainPuppetTalk = path.join(puppetDir, 'puppet_point_up_left_talk.png');
       puppetX = 320;
     } else if (action === 'point_up_right') {
       mainPuppet = fs.existsSync(puppetPointUpR) ? puppetPointUpR : puppetIdle;
+      mainPuppetTalk = path.join(puppetDir, 'puppet_point_up_right_talk.png');
       puppetX = 200;
     } else if (action === 'akimbo_jaw') {
       mainPuppet = fs.existsSync(puppetAkimboJaw) ? puppetAkimboJaw : puppetIdle;
+      mainPuppetTalk = puppetAkimboTalk;
       puppetX = 260;
     } else if (action === 'point_left') {
       mainPuppet = fs.existsSync(puppetPointLeft) ? puppetPointLeft : puppetIdle;
+      mainPuppetTalk = path.join(puppetDir, 'puppet_point_left_talk.png');
       puppetX = 360;
     } else if (action === 'point_right') {
       mainPuppet = fs.existsSync(puppetPointRight) ? puppetPointRight : puppetIdle;
+      mainPuppetTalk = path.join(puppetDir, 'puppet_point_right_talk.png');
       puppetX = 160;
     } else if (action === 'sitting') {
       mainPuppet = fs.existsSync(puppetSitting) ? puppetSitting : puppetIdle;
+      mainPuppetTalk = path.join(puppetDir, 'puppet_sitting_talk.png');
       puppetX = 260;
     } else if (action === 'thinking') {
       mainPuppet = fs.existsSync(puppetThinking) ? puppetThinking : puppetIdle;
+      mainPuppetTalk = path.join(puppetDir, 'puppet_thinking_talk.png');
       puppetX = 260;
     } else if (action === 'confused') {
       mainPuppet = fs.existsSync(puppetConfused) ? puppetConfused : puppetIdle;
+      mainPuppetTalk = path.join(puppetDir, 'puppet_confused_talk.png');
       puppetX = 260;
     } else if (action === 'surprised' || action === 'surprise') {
       mainPuppet = fs.existsSync(puppetSurprised) ? puppetSurprised : puppetIdle;
+      mainPuppetTalk = path.join(puppetDir, 'puppet_surprised_talk.png');
       puppetX = 260;
     } else if (action === 'questioning_users') {
       mainPuppet = fs.existsSync(puppetQuestioning) ? puppetQuestioning : puppetIdle;
+      mainPuppetTalk = path.join(puppetDir, 'puppet_questioning_users_talk.png');
       puppetX = 260;
     } else if (action === 'walk_in' || action === 'walking' || action === 'walk_out') {
       mainPuppet = fs.existsSync(puppetWalk) ? puppetWalk : puppetIdle;
+      mainPuppetTalk = fs.existsSync(puppetWalkTalk1) ? puppetWalkTalk1 : puppetTalk;
     } else if (action === 'talking' || action === 'idle') {
-      mainPuppet = fs.existsSync(puppetTalk) ? puppetTalk : puppetIdle;
+      mainPuppet = fs.existsSync(puppetIdle) ? puppetIdle : puppetTalk;
+      mainPuppetTalk = fs.existsSync(puppetTalk) ? puppetTalk : puppetIdle;
     }
+
+    if (!fs.existsSync(mainPuppetTalk)) mainPuppetTalk = fs.existsSync(puppetTalk) ? puppetTalk : mainPuppet;
 
     const walk1Asset = fs.existsSync(puppetWalk1) ? puppetWalk1 : (fs.existsSync(puppetWalk) ? puppetWalk : mainPuppet);
     const walk2Asset = fs.existsSync(puppetWalk2) ? puppetWalk2 : (fs.existsSync(puppetWalk) ? puppetWalk : mainPuppet);
@@ -316,7 +332,9 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
     const talkAsset = fs.existsSync(puppetTalk) ? puppetTalk : mainPuppet;
     const blinkAsset = fs.existsSync(puppetEyes) ? puppetEyes : mainPuppet;
     const pointUpLAsset = fs.existsSync(puppetPointUpL) ? puppetPointUpL : mainPuppet;
+    const pointUpLTalkAsset = fs.existsSync(path.join(puppetDir, 'puppet_point_up_left_talk.png')) ? path.join(puppetDir, 'puppet_point_up_left_talk.png') : pointUpLAsset;
     const pointUpRAsset = fs.existsSync(puppetPointUpR) ? puppetPointUpR : mainPuppet;
+    const pointUpRTalkAsset = fs.existsSync(path.join(puppetDir, 'puppet_point_up_right_talk.png')) ? path.join(puppetDir, 'puppet_point_up_right_talk.png') : pointUpRAsset;
     const akimboAsset = fs.existsSync(puppetAkimboJaw) ? puppetAkimboJaw : mainPuppet;
     const akimboTalkAsset = fs.existsSync(puppetAkimboTalk) ? puppetAkimboTalk : akimboAsset;
 
@@ -342,44 +360,50 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
         `[3:v]scale=-1:1100[stand]`,
         `[4:v]scale=-1:1100[talk]`,
         `[5:v]scale=-1:1100[pt_l]`,
-        `[6:v]scale=-1:1100[pt_r]`,
-        `[7:v]scale=-1:1100[akimbo]`,
-        `[8:v]scale=400:-1[b1]`,
-        `[9:v]scale=140:-1[vs]`,
-        `[10:v]scale=400:-1[b2]`,
+        `[6:v]scale=-1:1100[pt_l_talk]`,
+        `[7:v]scale=-1:1100[pt_r]`,
+        `[8:v]scale=-1:1100[pt_r_talk]`,
+        `[9:v]scale=-1:1100[akimbo]`,
+        `[10:v]scale=-1:1100[akimbo_talk]`,
+        `[11:v]scale=400:-1[b1]`,
+        `[12:v]scale=140:-1[vs]`,
+        `[13:v]scale=400:-1[b2]`,
         // Walk in: -380 to 260 over 1.2s alternating strides
         `[bg][w1]overlay=x='-380 + t*530':y='760 + 14*abs(sin(t*12))':enable='lte(t,1.2)*mod(floor(t*6),2)'[s1]`,
         `[s1][w2]overlay=x='-380 + t*530':y='760 + 14*abs(sin(t*12))':enable='lte(t,1.2)*(1-mod(floor(t*6),2))'[s2]`,
-        // Center intro speech: t=1.2 to 2.2
+        // Center intro speech: t=1.2 to 2.2 with active lip-sync
         `[s2][talk]overlay=x=260:y='760 + 4*sin(t*3)':enable='between(t,1.2,2.2)*mod(floor(t*5),2)'[s3]`,
         `[s3][stand]overlay=x=260:y='760 + 4*sin(t*3)':enable='between(t,1.2,2.2)*(1-mod(floor(t*5),2))'[s4]`,
-        // Point up left to Board 1: t=2.2 to 3.2
-        `[s4][pt_l]overlay=x=300:y='760 + 4*sin(t*3)':enable='between(t,2.2,3.2)'[s5]`,
+        // Point up left to Board 1 with active lip-sync: t=2.2 to 3.2
+        `[s4][pt_l_talk]overlay=x=300:y='760 + 4*sin(t*3)':enable='between(t,2.2,3.2)*mod(floor(t*5),2)'[s5a]`,
+        `[s5a][pt_l]overlay=x=300:y='760 + 4*sin(t*3)':enable='between(t,2.2,3.2)*(1-mod(floor(t*5),2))'[s5]`,
         // Board 1 appears with slight stamp bounce: t >= 2.2 until exit
         `[s5][b1]overlay=x=70:y='290 + 4*sin(t*2)':enable='between(t,2.2,${exitStart})'[s6]`,
         // VS Badge appears: t >= 2.7 until exit
         `[s6][vs]overlay=x=470:y='370 + 3*sin(t*2.5)':enable='between(t,2.7,${exitStart})'[s7]`,
-        // Point up right to Board 2: t=3.2 to 4.2
-        `[s7][pt_r]overlay=x=220:y='760 + 4*sin(t*3)':enable='between(t,3.2,4.2)'[s8]`,
+        // Point up right to Board 2 with active lip-sync: t=3.2 to 4.2
+        `[s7][pt_r_talk]overlay=x=220:y='760 + 4*sin(t*3)':enable='between(t,3.2,4.2)*mod(floor(t*5),2)'[s8a]`,
+        `[s8a][pt_r]overlay=x=220:y='760 + 4*sin(t*3)':enable='between(t,3.2,4.2)*(1-mod(floor(t*5),2))'[s8]`,
         // Board 2 appears: t >= 3.2 until exit
         `[s8][b2]overlay=x=610:y='290 + 4*sin((t+0.5)*2)':enable='between(t,3.2,${exitStart})'[s9]`,
-        // Akimbo on hip + jaw pose analyzing: t=4.2 to exitStart
-        `[s9][akimbo]overlay=x=260:y='760 + 4*sin(t*3)':enable='between(t,4.2,${exitStart})'[s10]`,
+        // Akimbo on hip + jaw pose analyzing with active lip-sync: t=4.2 to exitStart
+        `[s9][akimbo_talk]overlay=x=260:y='760 + 4*sin(t*3)':enable='between(t,4.2,${exitStart})*mod(floor(t*5),2)'[s10a]`,
+        `[s10a][akimbo]overlay=x=260:y='760 + 4*sin(t*3)':enable='between(t,4.2,${exitStart})*(1-mod(floor(t*5),2))'[s10]`,
         // Walk out to the right: t >= exitStart
         `[s10][w1]overlay=x='260 + (t-${exitStart})*600':y='760 + 14*abs(sin(t*12))':enable='gte(t,${exitStart})*mod(floor(t*6),2)'[s11]`,
         `[s11][w2]overlay=x='260 + (t-${exitStart})*600':y='760 + 14*abs(sin(t*12))':enable='gte(t,${exitStart})*(1-mod(floor(t*6),2))'[v]`
       ].join(';');
 
-      let audioMap = '-map 11:a';
+      let audioMap = '-map 14:a';
       let extraInputs = '';
       if (bamWav) {
         // Mix BAM stamp sound effect at t=2.2s and t=3.2s
-        filterComplex += `;[12:a]adelay=2200|2200[bam1];[12:a]adelay=3200|3200[bam2];[11:a][bam1][bam2]amix=inputs=3:duration=first[aout]`;
+        filterComplex += `;[15:a]adelay=2200|2200[bam1];[15:a]adelay=3200|3200[bam2];[14:a][bam1][bam2]amix=inputs=3:duration=first[aout]`;
         audioMap = '-map "[aout]"';
         extraInputs = `-i "${bamWav}"`;
       }
 
-      ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${walk1Asset}" -loop 1 -t ${duration} -i "${walk2Asset}" -loop 1 -t ${duration} -i "${standAsset}" -loop 1 -t ${duration} -i "${talkAsset}" -loop 1 -t ${duration} -i "${pointUpLAsset}" -loop 1 -t ${duration} -i "${pointUpRAsset}" -loop 1 -t ${duration} -i "${akimboAsset}" -loop 1 -t ${duration} -i "${b1Path}" -loop 1 -t ${duration} -i "${vsPath}" -loop 1 -t ${duration} -i "${b2Path}" -i "${wavPath}" ${extraInputs} -filter_complex "${filterComplex}" -map "[v]" ${audioMap} -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+      ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${walk1Asset}" -loop 1 -t ${duration} -i "${walk2Asset}" -loop 1 -t ${duration} -i "${standAsset}" -loop 1 -t ${duration} -i "${talkAsset}" -loop 1 -t ${duration} -i "${pointUpLAsset}" -loop 1 -t ${duration} -i "${pointUpLTalkAsset}" -loop 1 -t ${duration} -i "${pointUpRAsset}" -loop 1 -t ${duration} -i "${pointUpRTalkAsset}" -loop 1 -t ${duration} -i "${akimboAsset}" -loop 1 -t ${duration} -i "${akimboTalkAsset}" -loop 1 -t ${duration} -i "${b1Path}" -loop 1 -t ${duration} -i "${vsPath}" -loop 1 -t ${duration} -i "${b2Path}" -i "${wavPath}" ${extraInputs} -filter_complex "${filterComplex}" -map "[v]" ${audioMap} -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
 
     } else if (action === 'akimbo_jaw') {
       filterComplex = [
@@ -387,8 +411,8 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
         `[1:v]scale=-1:1100[akimbo]`,
         `[2:v]scale=-1:1100[akimbo_talk]`,
         `[3:v]scale=-1:1100[eyes]`,
-        `[bg][akimbo]overlay=x=260:y='760 + 5*sin(t*3)':enable='mod(floor(t*5),2)'[s1]`,
-        `[s1][akimbo_talk]overlay=x=260:y='760 + 5*sin(t*3)':enable='(1-mod(floor(t*5),2))*(between(t,0,2.3)+between(t,2.46,${duration}))'[s2]`,
+        `[bg][akimbo]overlay=x=260:y='760 + 5*sin(t*3)':enable='(1-mod(floor(t*5),2))*(between(t,0,2.3)+between(t,2.46,${duration}))'[s1]`,
+        `[s1][akimbo_talk]overlay=x=260:y='760 + 5*sin(t*3)':enable='mod(floor(t*5),2)*(between(t,0,2.3)+between(t,2.46,${duration}))'[s2]`,
         `[s2][eyes]overlay=x=260:y='760 + 5*sin(t*3)':enable='between(t,2.3,2.46)'[v]`
       ].join(';');
       ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${akimboAsset}" -loop 1 -t ${duration} -i "${akimboTalkAsset}" -loop 1 -t ${duration} -i "${blinkAsset}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 4:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
@@ -398,49 +422,57 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
       if (hasGloss) {
         filterComplex = [
           `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
-          `[4:v]scale=860:-1[gloss]`,
+          `[5:v]scale=860:-1[gloss]`,
           `[bg][gloss]overlay=x=(W-w)/2:y='150 + 4*sin(t*2)'[bg0]`,
           `[1:v]scale=-1:1100[pose]`,
-          `[2:v]scale=-1:1100[eyes]`,
-          `[3:v]scale=460:-1[hud]`,
+          `[2:v]scale=-1:1100[pose_talk]`,
+          `[3:v]scale=-1:1100[eyes]`,
+          `[4:v]scale=460:-1[hud]`,
           `[bg0][hud]overlay=x=${hudX}:y='430 + 6*sin(t*2.5)'[s0]`,
-          `[s0][pose]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='between(t,0,2.3)+between(t,2.46,${duration})'[s1]`,
+          `[s0][pose_talk]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='mod(floor(t*5),2)*(between(t,0,2.3)+between(t,2.46,${duration}))'[s1a]`,
+          `[s1a][pose]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='(1-mod(floor(t*5),2))*(between(t,0,2.3)+between(t,2.46,${duration}))'[s1]`,
           `[s1][eyes]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='between(t,2.3,2.46)'[v]`
         ].join(';');
-        ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${mainPuppet}" -loop 1 -t ${duration} -i "${blinkAsset}" -loop 1 -t ${duration} -i "${hudCard}" -loop 1 -t ${duration} -i "${glossaryBoard}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 5:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+        ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${mainPuppet}" -loop 1 -t ${duration} -i "${mainPuppetTalk}" -loop 1 -t ${duration} -i "${blinkAsset}" -loop 1 -t ${duration} -i "${hudCard}" -loop 1 -t ${duration} -i "${glossaryBoard}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 6:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
       } else {
         filterComplex = [
           `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
           `[1:v]scale=-1:1100[pose]`,
-          `[2:v]scale=-1:1100[eyes]`,
-          `[3:v]scale=460:-1[hud]`,
+          `[2:v]scale=-1:1100[pose_talk]`,
+          `[3:v]scale=-1:1100[eyes]`,
+          `[4:v]scale=460:-1[hud]`,
           `[bg][hud]overlay=x=${hudX}:y='430 + 6*sin(t*2.5)'[s0]`,
-          `[s0][pose]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='between(t,0,2.3)+between(t,2.46,${duration})'[s1]`,
+          `[s0][pose_talk]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='mod(floor(t*5),2)*(between(t,0,2.3)+between(t,2.46,${duration}))'[s1a]`,
+          `[s1a][pose]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='(1-mod(floor(t*5),2))*(between(t,0,2.3)+between(t,2.46,${duration}))'[s1]`,
           `[s1][eyes]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='between(t,2.3,2.46)'[v]`
         ].join(';');
-        ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${mainPuppet}" -loop 1 -t ${duration} -i "${blinkAsset}" -loop 1 -t ${duration} -i "${hudCard}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 4:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+        ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${mainPuppet}" -loop 1 -t ${duration} -i "${mainPuppetTalk}" -loop 1 -t ${duration} -i "${blinkAsset}" -loop 1 -t ${duration} -i "${hudCard}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 5:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
       }
     } else {
       if (hasGloss) {
         filterComplex = [
           `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
-          `[3:v]scale=860:-1[gloss]`,
+          `[4:v]scale=860:-1[gloss]`,
           `[bg][gloss]overlay=x=(W-w)/2:y='150 + 4*sin(t*2)'[bg0]`,
           `[1:v]scale=-1:1100[pose]`,
-          `[2:v]scale=-1:1100[eyes]`,
-          `[bg0][pose]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='between(t,0,2.3)+between(t,2.46,${duration})'[s1]`,
+          `[2:v]scale=-1:1100[pose_talk]`,
+          `[3:v]scale=-1:1100[eyes]`,
+          `[bg0][pose_talk]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='mod(floor(t*5),2)*(between(t,0,2.3)+between(t,2.46,${duration}))'[s1a]`,
+          `[s1a][pose]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='(1-mod(floor(t*5),2))*(between(t,0,2.3)+between(t,2.46,${duration}))'[s1]`,
           `[s1][eyes]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='between(t,2.3,2.46)'[v]`
         ].join(';');
-        ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${mainPuppet}" -loop 1 -t ${duration} -i "${blinkAsset}" -loop 1 -t ${duration} -i "${glossaryBoard}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 4:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+        ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${mainPuppet}" -loop 1 -t ${duration} -i "${mainPuppetTalk}" -loop 1 -t ${duration} -i "${blinkAsset}" -loop 1 -t ${duration} -i "${glossaryBoard}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 5:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
       } else {
         filterComplex = [
           `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
           `[1:v]scale=-1:1100[pose]`,
-          `[2:v]scale=-1:1100[eyes]`,
-          `[bg][pose]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='between(t,0,2.3)+between(t,2.46,${duration})'[s1]`,
+          `[2:v]scale=-1:1100[pose_talk]`,
+          `[3:v]scale=-1:1100[eyes]`,
+          `[bg][pose_talk]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='mod(floor(t*5),2)*(between(t,0,2.3)+between(t,2.46,${duration}))'[s1a]`,
+          `[s1a][pose]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='(1-mod(floor(t*5),2))*(between(t,0,2.3)+between(t,2.46,${duration}))'[s1]`,
           `[s1][eyes]overlay=x=${puppetX}:y='760 + 5*sin(t*3)':enable='between(t,2.3,2.46)'[v]`
         ].join(';');
-        ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${mainPuppet}" -loop 1 -t ${duration} -i "${blinkAsset}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 3:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
+        ffmpegCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgInput}" -loop 1 -t ${duration} -i "${mainPuppet}" -loop 1 -t ${duration} -i "${mainPuppetTalk}" -loop 1 -t ${duration} -i "${blinkAsset}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 4:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outputSceneMp4}"`;
       }
     }
 

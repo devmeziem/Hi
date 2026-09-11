@@ -25,6 +25,8 @@ import sys
 import os
 import argparse
 import math
+import json
+import wave
 
 try:
     import numpy as np
@@ -92,12 +94,13 @@ def get_puppet_asset(name):
     return path
 
 
-def build_puppet_clip(action="talking", duration=5.0, target_height=1120, board1_path=None, board2_path=None, vs_path=None):
+def build_puppet_clip(action="talking", duration=5.0, target_height=1120, board1_path=None, board2_path=None, vs_path=None, mouth_fn=None):
     """
     Constructs a dynamic MoviePy clip of Archie (the modern human tech creator character).
     Supports:
     - Alternating stride walking entrance and exit
     - Interactive comparison boards presentation with point_up_left, vs, and point_up_right
+    - Real lip-sync driven by phoneme cues and audio envelope (no arm flailing or frozen mouth)
     - Akimbo on hip + hand on jaw thinking pose
     """
     idle_path = get_puppet_asset("puppet_idle")
@@ -108,18 +111,37 @@ def build_puppet_clip(action="talking", duration=5.0, target_height=1120, board1
     walk2_path = get_puppet_asset("puppet_walk_stride2")
     walk_talk1_path = get_puppet_asset("puppet_walk_talk1")
     walk_talk2_path = get_puppet_asset("puppet_walk_talk2")
+
     point_l_path = get_puppet_asset("puppet_point_left")
+    point_l_talk_path = get_puppet_asset("puppet_point_left_talk")
     point_r_path = get_puppet_asset("puppet_point_right")
+    point_r_talk_path = get_puppet_asset("puppet_point_right_talk")
+
     point_up_l_path = get_puppet_asset("puppet_point_up_left")
+    point_up_l_talk_path = get_puppet_asset("puppet_point_up_left_talk")
     point_up_r_path = get_puppet_asset("puppet_point_up_right")
+    point_up_r_talk_path = get_puppet_asset("puppet_point_up_right_talk")
+
     akimbo_path = get_puppet_asset("puppet_akimbo_jaw")
     akimbo_talk_path = get_puppet_asset("puppet_akimbo_jaw_talk")
+
     explain_path = get_puppet_asset("puppet_explain_both")
+    explain_talk_path = get_puppet_asset("puppet_explain_both_talk")
+
     sit_path = get_puppet_asset("puppet_sitting")
+    sit_talk_path = get_puppet_asset("puppet_sitting_talk")
+
     think_path = get_puppet_asset("puppet_thinking")
+    think_talk_path = get_puppet_asset("puppet_thinking_talk")
+
     confused_path = get_puppet_asset("puppet_confused")
+    confused_talk_path = get_puppet_asset("puppet_confused_talk")
+
     surprised_path = get_puppet_asset("puppet_surprised")
+    surprised_talk_path = get_puppet_asset("puppet_surprised_talk")
+
     question_path = get_puppet_asset("puppet_questioning_users")
+    question_talk_path = get_puppet_asset("puppet_questioning_users_talk")
 
     # Load PIL images to get dimensions
     with Image.open(idle_path) as im:
@@ -186,22 +208,44 @@ def build_puppet_clip(action="talking", duration=5.0, target_height=1120, board1
     c_idle = make_clip(idle_path)
     c_talk = make_clip(talk_path)
     c_blink = make_clip(blink_path)
+
     c_walk1 = make_clip(walk1_path if os.path.exists(walk1_path) else walk_path)
     c_walk2 = make_clip(walk2_path if os.path.exists(walk2_path) else walk_path)
     c_walk_t1 = make_clip(walk_talk1_path if os.path.exists(walk_talk1_path) else walk1_path)
     c_walk_t2 = make_clip(walk_talk2_path if os.path.exists(walk_talk2_path) else walk2_path)
+
     c_point_up_l = make_clip(point_up_l_path)
+    c_point_up_l_talk = make_clip(point_up_l_talk_path if os.path.exists(point_up_l_talk_path) else point_up_l_path)
+
     c_point_up_r = make_clip(point_up_r_path)
+    c_point_up_r_talk = make_clip(point_up_r_talk_path if os.path.exists(point_up_r_talk_path) else point_up_r_path)
+
     c_point_l = make_clip(point_l_path)
+    c_point_l_talk = make_clip(point_l_talk_path if os.path.exists(point_l_talk_path) else point_l_path)
+
     c_point_r = make_clip(point_r_path)
+    c_point_r_talk = make_clip(point_r_talk_path if os.path.exists(point_r_talk_path) else point_r_path)
+
     c_akimbo = make_clip(akimbo_path)
     c_akimbo_talk = make_clip(akimbo_talk_path if os.path.exists(akimbo_talk_path) else akimbo_path)
-    c_think = make_clip(think_path)
-    c_confused = make_clip(confused_path)
-    c_surprised = make_clip(surprised_path)
-    c_question = make_clip(question_path)
+
     c_explain = make_clip(explain_path)
+    c_explain_talk = make_clip(explain_talk_path if os.path.exists(explain_talk_path) else explain_path)
+
+    c_think = make_clip(think_path)
+    c_think_talk = make_clip(think_talk_path if os.path.exists(think_talk_path) else think_path)
+
+    c_confused = make_clip(confused_path)
+    c_confused_talk = make_clip(confused_talk_path if os.path.exists(confused_talk_path) else confused_path)
+
+    c_surprised = make_clip(surprised_path)
+    c_surprised_talk = make_clip(surprised_talk_path if os.path.exists(surprised_talk_path) else surprised_path)
+
+    c_question = make_clip(question_path)
+    c_question_talk = make_clip(question_talk_path if os.path.exists(question_talk_path) else question_path)
+
     c_sit = make_clip(sit_path)
+    c_sit_talk = make_clip(sit_talk_path if os.path.exists(sit_talk_path) else sit_path)
 
     layers = []
 
@@ -236,32 +280,36 @@ def build_puppet_clip(action="talking", duration=5.0, target_height=1120, board1
         # 2. Interactive Presentation in Center (Talking, Pointing, Akimbo, Thinking)
         t_c = walk_in_dur
         while t_c < center_end:
-            chunk = min(0.20, center_end - t_c)
+            chunk = min(0.08, center_end - t_c)
             rel_t = t_c - walk_in_dur
             cycle_pos = rel_t % 2.5
-            is_blink = 2.2 <= cycle_pos <= 2.38
-            is_mouth_open = int((t_c * 4.8)) % 2 == 1
+            is_blink = 2.2 <= cycle_pos <= 2.36
+            is_mouth_open = mouth_fn(t_c) if mouth_fn else (int((t_c * 5.0)) % 2 == 1)
 
             # Choreography based on time in center
             if has_interactive_boards and 0.8 <= rel_t < 1.8:
-                # Point Up Left to Board 1
-                base_img = c_point_up_l
+                # Point Up Left to Board 1 with Active Lip-Sync (keeps arm steady, lips actively animated!)
+                base_img = c_point_up_l_talk if is_mouth_open else c_point_up_l
             elif has_interactive_boards and 2.2 <= rel_t < 3.2:
-                # Point Up Right to Board 2
-                base_img = c_point_up_r
+                # Point Up Right to Board 2 with Active Lip-Sync
+                base_img = c_point_up_r_talk if is_mouth_open else c_point_up_r
             elif has_interactive_boards and rel_t >= 3.2:
                 # Akimbo on hip + hand on jaw while talking
                 base_img = c_akimbo_talk if is_mouth_open else c_akimbo
             else:
                 # Standard talk / idle / surprised / thinking
-                if is_blink and action not in ["surprised", "thinking"]:
+                if is_blink and not is_mouth_open and action not in ["surprised", "thinking"]:
                     base_img = c_blink
                 elif action == "surprised":
-                    base_img = c_surprised if is_mouth_open else c_talk
+                    base_img = c_surprised_talk if is_mouth_open else c_surprised
                 elif action == "thinking":
-                    base_img = c_akimbo_talk if is_mouth_open else c_think
+                    base_img = c_think_talk if is_mouth_open else c_think
                 elif action == "confused":
-                    base_img = c_confused if is_mouth_open else c_talk
+                    base_img = c_confused_talk if is_mouth_open else c_confused
+                elif action == "questioning_users":
+                    base_img = c_question_talk if is_mouth_open else c_question
+                elif action in ["explain_both", "comparing"]:
+                    base_img = c_explain_talk if is_mouth_open else c_explain
                 else:
                     base_img = c_talk if is_mouth_open else c_idle
 
@@ -280,36 +328,36 @@ def build_puppet_clip(action="talking", duration=5.0, target_height=1120, board1
 
         t_cur = 0.0
         while t_cur < duration:
-            chunk = min(0.20, duration - t_cur)
+            chunk = min(0.08, duration - t_cur)
             cycle_pos = t_cur % 2.6
-            is_blink = 2.3 <= cycle_pos <= 2.46
-            is_mouth_open = int((t_cur * 4.8)) % 2 == 1
+            is_blink = 2.3 <= cycle_pos <= 2.44
+            is_mouth_open = mouth_fn(t_cur) if mouth_fn else (int((t_cur * 5.0)) % 2 == 1)
 
-            if is_blink and action not in ["thinking", "surprised"]:
+            if is_blink and not is_mouth_open and action not in ["thinking", "surprised"]:
                 sub = c_blink.with_start(t_cur).with_duration(chunk).with_position(normal_pos)
             else:
                 if action == "akimbo_jaw":
                     base_img = c_akimbo_talk if is_mouth_open else c_akimbo
                 elif action == "thinking":
-                    base_img = c_akimbo_talk if is_mouth_open else c_think
+                    base_img = c_think_talk if is_mouth_open else c_think
                 elif action == "surprised":
-                    base_img = c_surprised if is_mouth_open else c_talk
+                    base_img = c_surprised_talk if is_mouth_open else c_surprised
                 elif action == "confused":
-                    base_img = c_confused if is_mouth_open else c_talk
+                    base_img = c_confused_talk if is_mouth_open else c_confused
                 elif action == "questioning_users":
-                    base_img = c_question if is_mouth_open else c_talk
+                    base_img = c_question_talk if is_mouth_open else c_question
                 elif action in ["explain_both", "comparing"]:
-                    base_img = c_explain if is_mouth_open else c_talk
+                    base_img = c_explain_talk if is_mouth_open else c_explain
                 elif action == "point_left":
-                    base_img = c_point_l if is_mouth_open else c_talk
+                    base_img = c_point_l_talk if is_mouth_open else c_point_l
                 elif action == "point_right":
-                    base_img = c_point_r if is_mouth_open else c_talk
+                    base_img = c_point_r_talk if is_mouth_open else c_point_r
                 elif action == "point_up_left":
-                    base_img = c_point_up_l
+                    base_img = c_point_up_l_talk if is_mouth_open else c_point_up_l
                 elif action == "point_up_right":
-                    base_img = c_point_up_r
+                    base_img = c_point_up_r_talk if is_mouth_open else c_point_up_r
                 elif action == "sitting":
-                    base_img = c_sit if is_mouth_open else c_idle
+                    base_img = c_sit_talk if is_mouth_open else c_sit
                 else:
                     base_img = c_talk if is_mouth_open else c_idle
                 sub = base_img.with_start(t_cur).with_duration(chunk).with_position(normal_pos)
@@ -430,11 +478,83 @@ def build_puppet_clip(action="talking", duration=5.0, target_height=1120, board1
     return puppet_composite
 
 
-def render_scene(bg_image, audio_wav, output_mp4, duration=5.0, action="talking", glossary_board="", board1_image="", board2_image="", vs_badge="", bam_sound=""):
+def render_scene(bg_image, audio_wav, output_mp4, duration=5.0, action="talking", glossary_board="", board1_image="", board2_image="", vs_badge="", bam_sound="", mouth_cues=""):
     """
     Renders the full scene using MoviePy with the exact animated puppet, interactive comparison boards, and floating glossary board.
+    Synchronizes mouth lip movement to phoneme cues and audio amplitude waveform.
     """
     print(f"🎬 [MoviePy Engine] Rendering scene with Exact Puppet (Action: {action}, Duration: {duration}s)...")
+
+    # Parse phoneme mouth cues if provided
+    cues_list = []
+    if mouth_cues and os.path.exists(mouth_cues):
+        try:
+            with open(mouth_cues, "r", encoding="utf-8") as f:
+                cues_data = json.load(f)
+                if isinstance(cues_data, dict) and "mouthCues" in cues_data:
+                    cues_list = cues_data["mouthCues"]
+                elif isinstance(cues_data, list):
+                    cues_list = cues_data
+        except Exception as e:
+            print(f"[MoviePy] Notice parsing mouth cues JSON: {e}")
+
+    # Compute audio amplitude envelope for high-fidelity speech detection
+    audio_amplitudes = None
+    if audio_wav and os.path.exists(audio_wav):
+        try:
+            with wave.open(audio_wav, "rb") as wf:
+                sample_rate = wf.getframerate()
+                n_frames = wf.getnframes()
+                channels = wf.getnchannels()
+                sampwidth = wf.getsampwidth()
+                raw_bytes = wf.readframes(n_frames)
+                if sampwidth == 2 and n_frames > 0:
+                    audio_data = np.frombuffer(raw_bytes, dtype=np.int16)
+                    if channels > 1:
+                        audio_data = audio_data[::channels]
+                    chunk_size = max(1, int(sample_rate * 0.04))  # 40ms resolution
+                    n_chunks = len(audio_data) // chunk_size
+                    if n_chunks > 0:
+                        trimmed = audio_data[:n_chunks * chunk_size].reshape(n_chunks, chunk_size)
+                        rms = np.sqrt(np.mean(trimmed.astype(np.float32) ** 2, axis=1))
+                        max_rms = np.max(rms)
+                        if max_rms > 0:
+                            audio_amplitudes = rms / max_rms
+        except Exception as e:
+            print(f"[MoviePy] Notice analyzing audio amplitude: {e}")
+
+    def get_mouth_state(t):
+        """Returns True if mouth is open/talking at time t, False if closed/resting."""
+        # 1. Phoneme cues (Rhubarb)
+        if cues_list:
+            for cue in cues_list:
+                start = float(cue.get("start", 0))
+                end = float(cue.get("end", 0))
+                if start <= t <= end:
+                    val = str(cue.get("value", "")).upper()
+                    # Speaking phonemes: B, C, D, E, F, G, H have open lips; A and X are closed
+                    if val in ["B", "C", "D", "E", "F", "G", "H"]:
+                        return True
+                    elif val in ["A", "X"]:
+                        return False
+            return False
+
+        # 2. Audio amplitude envelope
+        if audio_amplitudes is not None and len(audio_amplitudes) > 0:
+            chunk_idx = int(t / 0.04)
+            if 0 <= chunk_idx < len(audio_amplitudes):
+                amp = audio_amplitudes[chunk_idx]
+                if amp > 0.04:  # Spoken dialogue above noise floor
+                    # Dynamic syllable flap cadence
+                    return int(t * 6.5) % 2 == 1
+                else:
+                    return False  # Closed lips during silence/pause
+            return False
+
+        # 3. Default cadence during audio
+        if audio_wav and os.path.exists(audio_wav):
+            return int(t * 5.0) % 2 == 1
+        return False
 
     # 1. Background clip
     if bg_image and os.path.exists(bg_image):
@@ -469,7 +589,7 @@ def render_scene(bg_image, audio_wav, output_mp4, duration=5.0, action="talking"
         except Exception as e:
             print(f"[MoviePy] Notice attaching floating glossary board: {e}")
 
-    # 2. Puppet clip with interactive boards
+    # 2. Puppet clip with interactive boards and lip-sync
     puppet = build_puppet_clip(
         action=action,
         duration=duration,
@@ -477,6 +597,7 @@ def render_scene(bg_image, audio_wav, output_mp4, duration=5.0, action="talking"
         board1_path=board1_image if (board1_image and os.path.exists(board1_image)) else None,
         board2_path=board2_image if (board2_image and os.path.exists(board2_image)) else None,
         vs_path=vs_badge if (vs_badge and os.path.exists(vs_badge)) else None,
+        mouth_fn=get_mouth_state,
     )
     scene_layers.append(puppet)
 
@@ -530,7 +651,7 @@ def render_scene(bg_image, audio_wav, output_mp4, duration=5.0, action="talking"
 
     final_video.close()
     if audio_wav and os.path.exists(audio_wav):
-        audio_clip.close()
+        voice_clip.close()
 
     print(f"✅ [MoviePy Engine] Scene rendered successfully: {output_mp4} ({os.path.getsize(output_mp4)} bytes)")
     return output_mp4
@@ -548,6 +669,7 @@ def main():
     parser.add_argument("--board2_image", type=str, default="", help="Path to board 2 image")
     parser.add_argument("--vs_badge", type=str, default="", help="Path to VS badge image")
     parser.add_argument("--bam_sound", type=str, default="", help="Path to BAM sound effect")
+    parser.add_argument("--mouth_cues", type=str, default="", help="Path to mouth cues JSON file")
 
     args = parser.parse_args()
     render_scene(
@@ -561,6 +683,7 @@ def main():
         board2_image=args.board2_image,
         vs_badge=args.vs_badge,
         bam_sound=args.bam_sound,
+        mouth_cues=args.mouth_cues,
     )
 
 

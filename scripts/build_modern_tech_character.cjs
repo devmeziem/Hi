@@ -147,19 +147,7 @@ function renderHumanHead(pose = 'idle', options = {}) {
     <path d="M 243 279 Q 250 282 257 279" stroke="${SKIN_SHADOW}" stroke-width="1.8" fill="none" opacity="0.5" stroke-linecap="round" />
   `;
 
-  if (pose === 'surprised') {
-    mouthPath = `
-      <!-- Astonished Open Mouth with Realistic Parted Lips & Teeth -->
-      <path d="M 238 266 C 244 260, 256 260, 262 266 C 266 276, 264 290, 260 294 C 252 298, 246 298, 240 294 C 235 288, 234 276, 238 266 Z" fill="#380d12" stroke="#451a03" stroke-width="2" />
-      <!-- Upper Teeth Row -->
-      <path d="M 241 268 Q 250 271 259 268 L 258 273 Q 250 275 242 273 Z" fill="#f8fafc" stroke="#94a3b8" stroke-width="0.8" />
-      <!-- Sculpted Surprised Upper Lip Arched High -->
-      <path d="M 236 266 C 242 260, 247 261, 250 259 C 253 261, 258 260, 264 266 C 259 268, 241 268, 236 266 Z" fill="#b4533c" stroke="#451a03" stroke-width="1.3" />
-      <!-- Sculpted Surprised Lower Lip Dropped Down -->
-      <path d="M 238 294 C 244 300, 256 300, 262 294 C 257 296, 243 296, 238 294 Z" fill="#cf705c" stroke="#451a03" stroke-width="1.3" />
-      <path d="M 244 302 Q 250 304 256 302" stroke="${SKIN_SHADOW}" stroke-width="1.5" fill="none" opacity="0.6" stroke-linecap="round" />
-    `;
-  } else if (talking) {
+  if (talking) {
     mouthPath = `
       <!-- Dynamic Talking Mouth with Natural Upper/Lower Lips, Dental Arch & Tongue -->
       <!-- Inner Oral Cavity -->
@@ -173,6 +161,15 @@ function renderHumanHead(pose = 'idle', options = {}) {
       <!-- Defined Lower Lip -->
       <path d="M 237 283 C 243 288, 257 288, 263 283 C 257 285, 243 285, 237 283 Z" fill="#cf705c" stroke="#451a03" stroke-width="1.2" />
       <path d="M 243 290 Q 250 292 257 290" stroke="${SKIN_SHADOW}" stroke-width="1.6" fill="none" opacity="0.5" stroke-linecap="round" />
+    `;
+  } else if (pose === 'surprised') {
+    mouthPath = `
+      <!-- Astonished Idle Parted Lips & Small O cavity -->
+      <path d="M 242 267 C 245 263, 255 263, 258 267 C 261 273, 260 282, 257 285 C 253 287, 247 287, 243 285 C 240 282, 239 273, 242 267 Z" fill="#380d12" stroke="#451a03" stroke-width="1.8" />
+      <!-- Upper Teeth Accent -->
+      <path d="M 244 269 Q 250 271 256 269" stroke="#f8fafc" stroke-width="1.2" fill="none" />
+      <!-- Surprised Lip Outline -->
+      <path d="M 240 267 C 245 263, 255 263, 260 267 C 263 274, 262 284, 258 287 C 252 290, 248 290, 242 287 C 238 283, 237 274, 240 267 Z" stroke="#b4533c" stroke-width="1.2" fill="none" />
     `;
   } else if (pose === 'akimbo_jaw' || pose === 'thinking') {
     mouthPath = `
@@ -988,18 +985,28 @@ const ALL_MODERN_POSES = [
   { name: 'puppet_walk_stride2', pose: 'walk_stride2', options: { blink: false, talking: false } },
   { name: 'puppet_walk_talk1', pose: 'walk_stride1', options: { blink: false, talking: true } },
   { name: 'puppet_walk_talk2', pose: 'walk_stride2', options: { blink: false, talking: true } },
-  { name: 'puppet_sitting', pose: 'sitting', options: { blink: false, talking: true } },
+  { name: 'puppet_sitting', pose: 'sitting', options: { blink: false, talking: false } },
+  { name: 'puppet_sitting_talk', pose: 'sitting', options: { blink: false, talking: true } },
   { name: 'puppet_thinking', pose: 'thinking', options: { blink: false, talking: false } },
-  { name: 'puppet_confused', pose: 'confused', options: { blink: false, talking: true } },
-  { name: 'puppet_surprised', pose: 'surprised', options: { blink: false, talking: true } },
-  { name: 'puppet_questioning_users', pose: 'questioning_users', options: { blink: false, talking: true } },
-  { name: 'puppet_point_left', pose: 'point_left', options: { blink: false, talking: true } },
-  { name: 'puppet_point_right', pose: 'point_right', options: { blink: false, talking: true } },
-  { name: 'puppet_point_up_left', pose: 'point_up_left', options: { blink: false, talking: true } },
-  { name: 'puppet_point_up_right', pose: 'point_up_right', options: { blink: false, talking: true } },
+  { name: 'puppet_thinking_talk', pose: 'thinking', options: { blink: false, talking: true } },
+  { name: 'puppet_confused', pose: 'confused', options: { blink: false, talking: false } },
+  { name: 'puppet_confused_talk', pose: 'confused', options: { blink: false, talking: true } },
+  { name: 'puppet_surprised', pose: 'surprised', options: { blink: false, talking: false } },
+  { name: 'puppet_surprised_talk', pose: 'surprised', options: { blink: false, talking: true } },
+  { name: 'puppet_questioning_users', pose: 'questioning_users', options: { blink: false, talking: false } },
+  { name: 'puppet_questioning_users_talk', pose: 'questioning_users', options: { blink: false, talking: true } },
+  { name: 'puppet_point_left', pose: 'point_left', options: { blink: false, talking: false } },
+  { name: 'puppet_point_left_talk', pose: 'point_left', options: { blink: false, talking: true } },
+  { name: 'puppet_point_right', pose: 'point_right', options: { blink: false, talking: false } },
+  { name: 'puppet_point_right_talk', pose: 'point_right', options: { blink: false, talking: true } },
+  { name: 'puppet_point_up_left', pose: 'point_up_left', options: { blink: false, talking: false } },
+  { name: 'puppet_point_up_left_talk', pose: 'point_up_left', options: { blink: false, talking: true } },
+  { name: 'puppet_point_up_right', pose: 'point_up_right', options: { blink: false, talking: false } },
+  { name: 'puppet_point_up_right_talk', pose: 'point_up_right', options: { blink: false, talking: true } },
   { name: 'puppet_akimbo_jaw', pose: 'akimbo_jaw', options: { blink: false, talking: false } },
   { name: 'puppet_akimbo_jaw_talk', pose: 'akimbo_jaw', options: { blink: false, talking: true } },
-  { name: 'puppet_explain_both', pose: 'explain_both', options: { blink: false, talking: true } }
+  { name: 'puppet_explain_both', pose: 'explain_both', options: { blink: false, talking: false } },
+  { name: 'puppet_explain_both_talk', pose: 'explain_both', options: { blink: false, talking: true } }
 ];
 
 /**
