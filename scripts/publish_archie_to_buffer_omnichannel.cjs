@@ -19,7 +19,18 @@ const fs = require('fs');
 const path = require('path');
 
 const BUFFER_API_URL = 'https://api.buffer.com';
-const BUFFER_API_KEY = String(process.env.BUFFER_API_KEY || '').trim();
+const RAW_BUFFER_API_KEY = String(process.env.BUFFER_API_KEY || '').trim();
+
+// Automatically sanitize token: strip surrounding quotes, strip leading 'Bearer ', trim whitespace
+function sanitizeToken(raw) {
+  if (!raw) return '';
+  let token = String(raw).trim();
+  token = token.replace(/^["']|["']$/g, '').trim();
+  token = token.replace(/^Bearer\s+/i, '').trim();
+  return token;
+}
+
+const BUFFER_API_KEY = sanitizeToken(RAW_BUFFER_API_KEY);
 
 // Specific channel overrides (optional - auto-discovery is used if omitted)
 const BUFFER_FACEBOOK_CHANNEL_ID = String(process.env.BUFFER_FACEBOOK_CHANNEL_ID || '').trim();
@@ -32,6 +43,9 @@ const CLOUDINARY_UPLOAD_PRESET = String(process.env.CLOUDINARY_UPLOAD_PRESET || 
 
 const IS_DRY_RUN = process.argv.includes('--dry-run') || process.env.DRY_RUN === 'true';
 const SHARE_NOW = process.env.BUFFER_SHARE_NOW === 'true';
+
+// Active API protocol mode: 'graphql' | 'rest' | 'auto'
+let activeApiEngine = 'auto';
 
 const colors = {
   reset: '\x1b[0m',
@@ -81,30 +95,35 @@ async function bufferRequest(query, variables = {}) {
 }
 
 /**
+ * Fallback query using classic REST profiles endpoint
+ */
+async function queryRestProfiles(token) {
+  try {
+    const res = await fetch(`https://api.bufferapp.com/1/profiles.json?access_token=${encodeURIComponent(token)}`);
+    if (res.ok) {
+      const list = await res.json();
+      if (Array.isArray(list)) return list;
+    }
+  } catch {}
+
+  try {
+    const res = await fetch('https://api.bufferapp.com/1/profiles.json', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const list = await res.json();
+      if (Array.isArray(list)) return list;
+    }
+  } catch {}
+
+  return null;
+}
+
+/**
  * Auto-discover connected channels in the Buffer account
  */
 async function discoverConnectedChannels() {
   console.log(`[Buffer Omnichannel] 🔍 Querying Buffer account for connected social channels...`);
-
-  const query = `query GetAccountChannels {
-    account {
-      organizations {
-        id
-        name
-        channels {
-          id
-          name
-          displayName
-          service
-          isDisconnected
-          isLocked
-        }
-      }
-    }
-  }`;
-
-  const data = await bufferRequest(query);
-  const orgs = data?.account?.organizations || [];
 
   const discovered = {
     facebook: [],
@@ -113,14 +132,73 @@ async function discoverConnectedChannels() {
     all: []
   };
 
-  for (const org of orgs) {
-    for (const ch of (org.channels || [])) {
+  // Attempt 1: Modern GraphQL API
+  try {
+    const query = `query GetAccountChannels {
+      account {
+        organizations {
+          id
+          name
+          channels {
+            id
+            name
+            displayName
+            service
+            isDisconnected
+            isLocked
+          }
+        }
+      }
+    }`;
+
+    const data = await bufferRequest(query);
+    const orgs = data?.account?.organizations || [];
+
+    for (const org of orgs) {
+      for (const ch of (org.channels || [])) {
+        discovered.all.push(ch);
+        const svc = String(ch.service || '').toLowerCase();
+        const isUsable = !ch.isDisconnected && !ch.isLocked;
+
+        if (!isUsable) continue;
+
+        if (svc === 'facebook') {
+          discovered.facebook.push(ch);
+        } else if (svc === 'instagram') {
+          discovered.instagram.push(ch);
+        } else if (svc === 'tiktok') {
+          discovered.tiktok.push(ch);
+        }
+      }
+    }
+
+    activeApiEngine = 'graphql';
+    console.log(`[Buffer Omnichannel] ✅ Connected via Modern GraphQL API (found ${discovered.all.length} channel(s))`);
+    return discovered;
+  } catch (gqlErr) {
+    console.warn(`[Buffer Omnichannel] ℹ️ GraphQL notice: ${gqlErr.message}. Checking Classic REST API fallback...`);
+  }
+
+  // Attempt 2: Classic REST API Fallback
+  const restProfiles = await queryRestProfiles(BUFFER_API_KEY);
+  if (Array.isArray(restProfiles) && restProfiles.length > 0) {
+    activeApiEngine = 'rest';
+    console.log(`[Buffer Omnichannel] ✅ Connected via Classic REST API (found ${restProfiles.length} profile(s))`);
+
+    for (const p of restProfiles) {
+      const ch = {
+        id: p.id || p._id,
+        name: p.formatted_username || p.service_username || p.service,
+        displayName: p.formatted_username || p.service_username || p.service,
+        service: (p.service || '').toLowerCase(),
+        isDisconnected: Boolean(p.disconnected),
+        isLocked: Boolean(p.locked)
+      };
       discovered.all.push(ch);
-      const svc = String(ch.service || '').toLowerCase();
-      const isUsable = !ch.isDisconnected && !ch.isLocked;
 
-      if (!isUsable) continue;
+      if (ch.isDisconnected || ch.isLocked) continue;
 
+      const svc = ch.service;
       if (svc === 'facebook') {
         discovered.facebook.push(ch);
       } else if (svc === 'instagram') {
@@ -129,9 +207,11 @@ async function discoverConnectedChannels() {
         discovered.tiktok.push(ch);
       }
     }
+
+    return discovered;
   }
 
-  return discovered;
+  throw new Error(`Could not authenticate or discover channels with provided BUFFER_API_KEY on both GraphQL and REST APIs. Please verify your token.`);
 }
 
 /**
@@ -281,6 +361,53 @@ function buildOmnichannelCaption(metadata = {}, service = 'generic') {
 }
 
 /**
+ * Post via classic REST API endpoint (api.bufferapp.com/1/updates/create.json)
+ */
+async function postViaClassicRest(channel, mediaUrl, caption, shareNow = true) {
+  const svcName = (channel.service || '').toUpperCase();
+  const form = new URLSearchParams();
+  form.append('profile_ids[]', channel.id);
+  form.append('text', caption);
+  form.append('now', shareNow ? 'true' : 'false');
+  form.append('media[video]', mediaUrl);
+  form.append('media[link]', mediaUrl);
+
+  // Method 1: with access_token query param
+  let endpoint = `https://api.bufferapp.com/1/updates/create.json?access_token=${encodeURIComponent(BUFFER_API_KEY)}`;
+  let res = await fetch(endpoint, {
+    method: 'POST',
+    body: form
+  });
+
+  if (!res.ok) {
+    // Method 2: with Bearer header
+    res = await fetch('https://api.bufferapp.com/1/updates/create.json', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${BUFFER_API_KEY}`
+      },
+      body: form
+    });
+  }
+
+  const text = await res.text();
+  let payload;
+  try {
+    payload = JSON.parse(text);
+  } catch {
+    throw new Error(`Buffer REST HTTP ${res.status}: ${text.slice(0, 200)}`);
+  }
+
+  if (payload.success || (payload.updates && payload.updates.length > 0)) {
+    const updateId = payload.updates?.[0]?.id || payload.updates?.[0]?._id || 'REST-OK';
+    console.log(`  ${colors.green}✔ Successfully posted via Classic REST on ${svcName}! (ID: ${updateId})${colors.reset}`);
+    return { id: updateId, status: shareNow ? 'published' : 'queued' };
+  }
+
+  throw new Error(`Buffer REST ${svcName} error: ${payload.message || text.slice(0, 200)}`);
+}
+
+/**
  * Queue or publish a video post to a specific Buffer channel
  */
 async function postToBufferChannel(channel, mediaUrl, caption) {
@@ -290,50 +417,61 @@ async function postToBufferChannel(channel, mediaUrl, caption) {
 
   console.log(`\n[Buffer Dispatch] 📡 Sending to ${colors.cyan}${svcName}${colors.reset} (${chLabel}) [Mode: ${mode}]...`);
 
-  const mutation = `mutation CreateVideoPost($input: CreatePostInput!) {
-    createPost(input: $input) {
-      ... on PostActionSuccess {
-        post {
-          id
-          status
-          dueAt
-          channelId
-          text
+  // If already confirmed in REST mode, use REST directly
+  if (activeApiEngine === 'rest') {
+    return await postViaClassicRest(channel, mediaUrl, caption, SHARE_NOW);
+  }
+
+  // Otherwise attempt GraphQL first
+  try {
+    const mutation = `mutation CreateVideoPost($input: CreatePostInput!) {
+      createPost(input: $input) {
+        ... on PostActionSuccess {
+          post {
+            id
+            status
+            dueAt
+            channelId
+            text
+          }
+        }
+        ... on MutationError {
+          message
         }
       }
-      ... on MutationError {
-        message
-      }
+    }`;
+
+    const input = {
+      text: caption,
+      channelId: channel.id,
+      schedulingType: 'automatic',
+      mode: mode,
+      assets: [
+        {
+          video: {
+            url: mediaUrl
+          }
+        }
+      ]
+    };
+
+    const data = await bufferRequest(mutation, { input });
+    const result = data?.createPost;
+
+    if (result?.message) {
+      throw new Error(`Buffer ${svcName} error: ${result.message}`);
     }
-  }`;
 
-  const input = {
-    text: caption,
-    channelId: channel.id,
-    schedulingType: 'automatic',
-    mode: mode,
-    assets: [
-      {
-        video: {
-          url: mediaUrl
-        }
-      }
-    ]
-  };
+    if (result?.post) {
+      console.log(`  ${colors.green}✔ Successfully scheduled on ${svcName}! Post ID: ${result.post.id} (Status: ${result.post.status})${colors.reset}`);
+      return result.post;
+    }
 
-  const data = await bufferRequest(mutation, { input });
-  const result = data?.createPost;
-
-  if (result?.message) {
-    throw new Error(`Buffer ${svcName} error: ${result.message}`);
+    return result;
+  } catch (gqlErr) {
+    console.warn(`[Buffer Dispatch] ⚠️ GraphQL post failed (${gqlErr.message}). Attempting Classic REST fallback...`);
+    return await postViaClassicRest(channel, mediaUrl, caption, SHARE_NOW);
   }
-
-  if (result?.post) {
-    console.log(`  ${colors.green}✔ Successfully scheduled on ${svcName}! Post ID: ${result.post.id} (Status: ${result.post.status})${colors.reset}`);
-    return result.post;
-  }
-
-  return result;
 }
 
 /**

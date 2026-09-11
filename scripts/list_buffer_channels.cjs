@@ -14,7 +14,18 @@
  * ==============================================================================
  */
 
-const BUFFER_API_KEY = String(process.env.BUFFER_API_KEY || '').trim();
+const RAW_BUFFER_API_KEY = String(process.env.BUFFER_API_KEY || '').trim();
+
+// Automatically sanitize token: strip surrounding quotes, strip leading 'Bearer ', trim whitespace
+function sanitizeToken(raw) {
+  if (!raw) return '';
+  let token = String(raw).trim();
+  token = token.replace(/^["']|["']$/g, '').trim();
+  token = token.replace(/^Bearer\s+/i, '').trim();
+  return token;
+}
+
+const BUFFER_API_KEY = sanitizeToken(RAW_BUFFER_API_KEY);
 
 const colors = {
   reset: '\x1b[0m',
@@ -51,43 +62,67 @@ async function queryGraphQLChannels(token) {
     }
   }`;
 
-  const res = await fetch('https://api.buffer.com', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify({ query })
-  });
-
-  const text = await res.text();
-  let payload;
   try {
-    payload = JSON.parse(text);
-  } catch {
-    return { ok: false, error: `Buffer returned non-JSON response (HTTP ${res.status}): ${text.slice(0, 200)}` };
-  }
+    const res = await fetch('https://api.buffer.com', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ query })
+    });
 
-  if (!res.ok || payload.errors?.length) {
-    const errMsg = payload.errors ? payload.errors.map(e => e.message).join('; ') : `HTTP ${res.status}`;
-    return { ok: false, error: errMsg, payload };
-  }
+    const text = await res.text();
+    let payload;
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      return { ok: false, error: `Buffer returned non-JSON response (HTTP ${res.status}): ${text.slice(0, 200)}` };
+    }
 
-  return { ok: true, data: payload.data };
+    if (!res.ok || payload.errors?.length) {
+      const errMsg = payload.errors ? payload.errors.map(e => e.message).join('; ') : `HTTP ${res.status}`;
+      return { ok: false, error: errMsg, payload };
+    }
+
+    return { ok: true, data: payload.data };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
 }
 
 async function queryRestProfiles(token) {
+  // Method A: query param
   try {
     const res = await fetch(`https://api.bufferapp.com/1/profiles.json?access_token=${encodeURIComponent(token)}`);
-    if (!res.ok) return { ok: false };
-    const list = await res.json();
-    if (Array.isArray(list)) {
-      return { ok: true, profiles: list };
+    if (res.ok) {
+      const list = await res.json();
+      if (Array.isArray(list)) {
+        return { ok: true, profiles: list, method: 'REST query param' };
+      }
     }
   } catch {
-    // ignore
+    // try header next
   }
-  return { ok: false };
+
+  // Method B: Authorization header
+  try {
+    const res = await fetch('https://api.bufferapp.com/1/profiles.json', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (res.ok) {
+      const list = await res.json();
+      if (Array.isArray(list)) {
+        return { ok: true, profiles: list, method: 'REST Bearer header' };
+      }
+    }
+    const errText = await res.text();
+    return { ok: false, error: `REST HTTP ${res.status}: ${errText.slice(0, 200)}` };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
 }
 
 async function main() {
@@ -117,7 +152,10 @@ async function main() {
   let allChannels = [];
   let userEmail = '';
 
+  let authMode = '';
+
   if (gqlResult.ok && gqlResult.data?.account) {
+    authMode = 'Modern GraphQL API (api.buffer.com)';
     userEmail = gqlResult.data.account.email || '';
     const orgs = gqlResult.data.account.organizations || [];
     for (const org of orgs) {
@@ -136,24 +174,32 @@ async function main() {
     // Fallback to classic REST API
     const restResult = await queryRestProfiles(BUFFER_API_KEY);
     if (restResult.ok && restResult.profiles) {
+      authMode = `Classic REST API (api.bufferapp.com - via ${restResult.method})`;
       allChannels = restResult.profiles.map(p => ({
         id: p.id || p._id,
         name: p.formatted_username || p.service_username || p.service,
         service: (p.service || '').toLowerCase(),
         isDisconnected: Boolean(p.disconnected),
         isLocked: Boolean(p.locked),
-        orgName: 'Default Organization'
+        orgName: 'Default Workspace'
       }));
     } else {
       console.error(`\n${colors.red}${colors.bold}❌ Failed to authenticate with Buffer API!${colors.reset}`);
-      console.error(`Details: ${gqlResult.error || 'Invalid credentials'}\n`);
-      console.log(`${colors.yellow}Please make sure your BUFFER_API_KEY is valid and has read permissions.${colors.reset}\n`);
+      console.error(`GraphQL Attempt Error: ${gqlResult.error || 'Unknown GraphQL error'}`);
+      console.error(`REST Attempt Error:    ${restResult.error || 'Unknown REST error'}\n`);
+      console.log(`${colors.yellow}👉 Tips:${colors.reset}`);
+      console.log(` 1. If you are using a token from another project, ensure it is active in your Buffer Account settings.`);
+      console.log(` 2. You can generate a fresh API token anytime at https://publish.buffer.com or https://buffer.com/developers/api`);
+      console.log(` 3. Make sure there are no accidental spaces or leading words like "Bearer " in your secret.\n`);
       process.exit(1);
     }
   }
 
+  console.log(`${colors.green}✔ Authenticated successfully via: ${authMode}${colors.reset}`);
   if (userEmail) {
-    console.log(`${colors.green}✔ Authenticated as:${colors.reset} ${userEmail}\n`);
+    console.log(`${colors.green}✔ Account email:${colors.reset} ${userEmail}\n`);
+  } else {
+    console.log('');
   }
 
   if (allChannels.length === 0) {

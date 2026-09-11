@@ -13,11 +13,23 @@ const fs = require('fs');
 const path = require('path');
 
 const BUFFER_API_URL = 'https://api.buffer.com';
-const BUFFER_API_KEY = String(process.env.BUFFER_API_KEY || '').trim();
+const RAW_BUFFER_API_KEY = String(process.env.BUFFER_API_KEY || '').trim();
+
+function sanitizeToken(raw) {
+  if (!raw) return '';
+  let token = String(raw).trim();
+  token = token.replace(/^["']|["']$/g, '').trim();
+  token = token.replace(/^Bearer\s+/i, '').trim();
+  return token;
+}
+
+const BUFFER_API_KEY = sanitizeToken(RAW_BUFFER_API_KEY);
 const BUFFER_TIKTOK_CHANNEL_ID = String(process.env.BUFFER_TIKTOK_CHANNEL_ID || '').trim();
 const CLOUDINARY_CLOUD_NAME = String(process.env.CLOUDINARY_CLOUD_NAME || '').trim();
 const CLOUDINARY_UPLOAD_PRESET = String(process.env.CLOUDINARY_UPLOAD_PRESET || '').trim();
 const STRICT_BUFFER_FAIL = process.env.STRICT_BUFFER_FAIL === 'true';
+
+let activeApiEngine = 'auto';
 
 function logWarn(message) {
   console.warn(`\n[Buffer/TikTok] ⚠️ WARNING: ${message}`);
@@ -97,6 +109,63 @@ async function bufferRequest(query, variables = {}) {
   }
 
   return payload.data;
+}
+
+/**
+ * Fallback query using classic REST profiles endpoint
+ */
+async function queryRestProfiles(token) {
+  try {
+    const res = await fetch(`https://api.bufferapp.com/1/profiles.json?access_token=${encodeURIComponent(token)}`);
+    if (res.ok) {
+      const list = await res.json();
+      if (Array.isArray(list)) return list;
+    }
+  } catch {}
+
+  try {
+    const res = await fetch('https://api.bufferapp.com/1/profiles.json', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const list = await res.json();
+      if (Array.isArray(list)) return list;
+    }
+  } catch {}
+
+  return null;
+}
+
+/**
+ * Post via classic REST API endpoint
+ */
+async function postViaClassicRest(channel, mediaUrl, caption, shareNow = false) {
+  const form = new URLSearchParams();
+  form.append('profile_ids[]', channel.id);
+  form.append('text', caption);
+  form.append('now', shareNow ? 'true' : 'false');
+  form.append('media[video]', mediaUrl);
+  form.append('media[link]', mediaUrl);
+
+  let endpoint = `https://api.bufferapp.com/1/updates/create.json?access_token=${encodeURIComponent(BUFFER_API_KEY)}`;
+  let res = await fetch(endpoint, { method: 'POST', body: form });
+  if (!res.ok) {
+    res = await fetch('https://api.bufferapp.com/1/updates/create.json', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${BUFFER_API_KEY}` },
+      body: form
+    });
+  }
+  const text = await res.text();
+  let payload;
+  try { payload = JSON.parse(text); } catch {
+    throw new Error(`Buffer REST HTTP ${res.status}: ${text.slice(0, 200)}`);
+  }
+  if (payload.success || (payload.updates && payload.updates.length > 0)) {
+    const updateId = payload.updates?.[0]?.id || payload.updates?.[0]?._id || 'REST-OK';
+    return { post: { id: updateId, status: shareNow ? 'published' : 'queued' } };
+  }
+  throw new Error(`Buffer REST error: ${payload.message || text.slice(0, 200)}`);
 }
 
 /**
@@ -344,10 +413,34 @@ async function resolveTikTokChannel() {
       const name = String(ch.displayName || ch.name || '').toLowerCase();
       if ((svc === 'tiktok' || svc.includes('tiktok') || name.includes('tiktok')) && !ch.isDisconnected && !ch.isLocked) {
         foundTikTok = ch;
+        activeApiEngine = 'graphql';
         break;
       }
     }
     if (foundTikTok) break;
+  }
+
+  // Fallback to REST profiles
+  if (!foundTikTok) {
+    const restProfiles = await queryRestProfiles(BUFFER_API_KEY);
+    if (Array.isArray(restProfiles) && restProfiles.length > 0) {
+      activeApiEngine = 'rest';
+      for (const p of restProfiles) {
+        const ch = {
+          id: p.id || p._id,
+          name: p.formatted_username || p.service_username || p.service,
+          displayName: p.formatted_username || p.service_username || p.service,
+          service: (p.service || '').toLowerCase(),
+          isDisconnected: Boolean(p.disconnected),
+          isLocked: Boolean(p.locked)
+        };
+        allDiscoveredChannels.push(ch);
+        if ((ch.service === 'tiktok' || ch.name.toLowerCase().includes('tiktok')) && !ch.isDisconnected && !ch.isLocked) {
+          foundTikTok = ch;
+          break;
+        }
+      }
+    }
   }
 
   if (!foundTikTok) {
@@ -378,6 +471,10 @@ async function createBufferPost(channel, mediaUrl, caption) {
 
   const mode = process.env.BUFFER_SHARE_NOW === 'true' ? 'shareNow' : 'addToQueue';
   const thumbnailOffsetMs = parseInt(process.env.BUFFER_THUMBNAIL_OFFSET_MS || '2000', 10);
+
+  if (activeApiEngine === 'rest') {
+    return await postViaClassicRest(channel, mediaUrl, caption, process.env.BUFFER_SHARE_NOW === 'true');
+  }
 
   const query = `mutation CreateVideoPost($input: CreatePostInput!) {
     createPost(input: $input) {
@@ -419,14 +516,19 @@ async function createBufferPost(channel, mediaUrl, caption) {
     data = await bufferRequest(query, { input });
   } catch (err) {
     logWarn(`Initial VideoAssetInput with metadata returned error: ${err.message}. Retrying with direct video asset payload...`);
-    input = {
-      text: caption,
-      channelId: channel.id,
-      schedulingType: 'automatic',
-      mode: mode,
-      assets: [{ video: { url: mediaUrl } }]
-    };
-    data = await bufferRequest(query, { input });
+    try {
+      input = {
+        text: caption,
+        channelId: channel.id,
+        schedulingType: 'automatic',
+        mode: mode,
+        assets: [{ video: { url: mediaUrl } }]
+      };
+      data = await bufferRequest(query, { input });
+    } catch (gqlErr2) {
+      logWarn(`Buffer GraphQL posting failed (${gqlErr2.message}). Attempting Classic REST fallback...`);
+      return await postViaClassicRest(channel, mediaUrl, caption, process.env.BUFFER_SHARE_NOW === 'true');
+    }
   }
 
   const result = data?.createPost;
