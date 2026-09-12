@@ -119,6 +119,10 @@ async function queryRestProfiles(token) {
   return null;
 }
 
+function isValidChannelId(id) {
+  return typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id.trim());
+}
+
 /**
  * Auto-discover connected channels in the Buffer account
  */
@@ -132,15 +136,87 @@ async function discoverConnectedChannels() {
     all: []
   };
 
-  // Attempt 1: Modern GraphQL API
+  // Attempt 1: Modern GraphQL API via Organizations -> Channels
   try {
-    const query = `query GetAccountChannels {
+    // Step 1A: Get organizations
+    const orgsQuery = `query GetOrganizations {
       account {
         id
         email
         organizations {
           id
           name
+        }
+      }
+    }`;
+
+    const orgsData = await bufferRequest(orgsQuery);
+    const organizations = orgsData?.account?.organizations || [];
+
+    if (organizations.length > 0) {
+      console.log(`[Buffer Omnichannel] 🏢 Discovered ${organizations.length} Buffer workspace organization(s): ${organizations.map(o => `"${o.name}" (${o.id})`).join(', ')}`);
+
+      // Step 1B: Query channels for each organization
+      for (const org of organizations) {
+        let chList = [];
+        try {
+          const channelsQuery = `query GetChannels($organizationId: OrganizationId!) {
+            channels(organizationId: $organizationId) {
+              id
+              name
+              displayName
+              service
+              serviceId
+              avatar
+              isDisconnected
+              isLocked
+            }
+          }`;
+          const chData = await bufferRequest(channelsQuery, { organizationId: org.id });
+          chList = chData?.channels || [];
+        } catch (orgChErr) {
+          // Fallback pattern with input wrapper
+          try {
+            const channelsQueryB = `query GetChannels($input: ChannelsInput!) {
+              channels(input: $input) {
+                id
+                name
+                displayName
+                service
+                serviceId
+                avatar
+                isDisconnected
+                isLocked
+              }
+            }`;
+            const chDataB = await bufferRequest(channelsQueryB, { input: { organizationId: org.id } });
+            chList = chDataB?.channels || [];
+          } catch (orgChErr2) {
+            console.warn(`[Buffer Omnichannel] Notice querying channels for org "${org.name}": ${orgChErr.message}`);
+          }
+        }
+
+        for (const ch of chList) {
+          discovered.all.push(ch);
+          const svc = String(ch.service || '').toLowerCase();
+          const isUsable = !ch.isDisconnected && !ch.isLocked;
+          if (!isUsable) continue;
+
+          if (svc === 'facebook') {
+            discovered.facebook.push(ch);
+          } else if (svc === 'instagram') {
+            discovered.instagram.push(ch);
+          } else if (svc === 'tiktok') {
+            discovered.tiktok.push(ch);
+          }
+        }
+      }
+    }
+
+    // Step 1C: If channels array still empty, try flat channels query
+    if (discovered.all.length === 0) {
+      try {
+        const flatQuery = `query GetAllChannels {
           channels {
             id
             name
@@ -151,21 +227,58 @@ async function discoverConnectedChannels() {
             isDisconnected
             isLocked
           }
+        }`;
+        const flatData = await bufferRequest(flatQuery);
+        const flatList = flatData?.channels || [];
+        for (const ch of flatList) {
+          discovered.all.push(ch);
+          const svc = String(ch.service || '').toLowerCase();
+          const isUsable = !ch.isDisconnected && !ch.isLocked;
+          if (!isUsable) continue;
+
+          if (svc === 'facebook') {
+            discovered.facebook.push(ch);
+          } else if (svc === 'instagram') {
+            discovered.instagram.push(ch);
+          } else if (svc === 'tiktok') {
+            discovered.tiktok.push(ch);
+          }
         }
+      } catch {
+        // continue
       }
-    }`;
+    }
 
-    const data = await bufferRequest(query);
-    const orgs = data?.account?.organizations || [];
+    if (discovered.all.length > 0) {
+      activeApiEngine = 'graphql';
+      console.log(`[Buffer Omnichannel] ✅ Connected via Modern GraphQL API (found ${discovered.all.length} channel(s))`);
+      return discovered;
+    }
+  } catch (gqlErr) {
+    console.warn(`[Buffer Omnichannel] ℹ️ GraphQL discovery notice: ${gqlErr.message}`);
+  }
 
-    for (const org of orgs) {
-      for (const ch of (org.channels || [])) {
+  // Attempt 2: Classic REST API Fallback (for legacy accounts)
+  try {
+    const restProfiles = await queryRestProfiles(BUFFER_API_KEY);
+    if (Array.isArray(restProfiles) && restProfiles.length > 0) {
+      activeApiEngine = 'rest';
+      console.log(`[Buffer Omnichannel] ✅ Connected via Classic REST API (found ${restProfiles.length} profile(s))`);
+
+      for (const p of restProfiles) {
+        const ch = {
+          id: p.id || p._id,
+          name: p.formatted_username || p.service_username || p.service,
+          displayName: p.formatted_username || p.service_username || p.service,
+          service: (p.service || '').toLowerCase(),
+          isDisconnected: Boolean(p.disconnected),
+          isLocked: Boolean(p.locked)
+        };
         discovered.all.push(ch);
-        const svc = String(ch.service || '').toLowerCase();
-        const isUsable = !ch.isDisconnected && !ch.isLocked;
 
-        if (!isUsable) continue;
+        if (ch.isDisconnected || ch.isLocked) continue;
 
+        const svc = ch.service;
         if (svc === 'facebook') {
           discovered.facebook.push(ch);
         } else if (svc === 'instagram') {
@@ -174,48 +287,14 @@ async function discoverConnectedChannels() {
           discovered.tiktok.push(ch);
         }
       }
-    }
 
-    activeApiEngine = 'graphql';
-    console.log(`[Buffer Omnichannel] ✅ Connected via Modern GraphQL API (found ${discovered.all.length} channel(s))`);
-    return discovered;
-  } catch (gqlErr) {
-    console.warn(`[Buffer Omnichannel] ℹ️ GraphQL notice: ${gqlErr.message}. Checking Classic REST API fallback...`);
+      return discovered;
+    }
+  } catch {
+    // ignore
   }
 
-  // Attempt 2: Classic REST API Fallback
-  const restProfiles = await queryRestProfiles(BUFFER_API_KEY);
-  if (Array.isArray(restProfiles) && restProfiles.length > 0) {
-    activeApiEngine = 'rest';
-    console.log(`[Buffer Omnichannel] ✅ Connected via Classic REST API (found ${restProfiles.length} profile(s))`);
-
-    for (const p of restProfiles) {
-      const ch = {
-        id: p.id || p._id,
-        name: p.formatted_username || p.service_username || p.service,
-        displayName: p.formatted_username || p.service_username || p.service,
-        service: (p.service || '').toLowerCase(),
-        isDisconnected: Boolean(p.disconnected),
-        isLocked: Boolean(p.locked)
-      };
-      discovered.all.push(ch);
-
-      if (ch.isDisconnected || ch.isLocked) continue;
-
-      const svc = ch.service;
-      if (svc === 'facebook') {
-        discovered.facebook.push(ch);
-      } else if (svc === 'instagram') {
-        discovered.instagram.push(ch);
-      } else if (svc === 'tiktok') {
-        discovered.tiktok.push(ch);
-      }
-    }
-
-    return discovered;
-  }
-
-  throw new Error(`Could not authenticate or discover channels with provided BUFFER_API_KEY on both GraphQL and REST APIs. Please verify your token.`);
+  throw new Error(`Could not discover channels with provided BUFFER_API_KEY.`);
 }
 
 /**
@@ -224,30 +303,57 @@ async function discoverConnectedChannels() {
 async function resolveTargetChannels(discovered) {
   const targets = [];
 
-  // 1. Facebook Page (Voxam Fact: 6aa31cd2cd8b9c702c468b52)
-  if (BUFFER_FACEBOOK_CHANNEL_ID) {
-    const matched = discovered.all.find(c => c.id === BUFFER_FACEBOOK_CHANNEL_ID);
-    targets.push(matched || { id: BUFFER_FACEBOOK_CHANNEL_ID, service: 'facebook', name: 'Voxam Fact (Facebook Page)' });
+  // 1. Facebook Page (Voxam Fact)
+  let fbTarget = null;
+  if (isValidChannelId(BUFFER_FACEBOOK_CHANNEL_ID)) {
+    fbTarget = discovered.all.find(c => c.id === BUFFER_FACEBOOK_CHANNEL_ID) || {
+      id: BUFFER_FACEBOOK_CHANNEL_ID,
+      service: 'facebook',
+      name: 'Voxam Fact (Facebook Page)',
+      displayName: 'Voxam Fact'
+    };
   } else if (discovered.facebook.length > 0) {
-    targets.push(discovered.facebook[0]);
+    fbTarget = discovered.facebook[0];
+  } else if (BUFFER_FACEBOOK_CHANNEL_ID) {
+    console.warn(`[Buffer Omnichannel] ⚠️ Provided BUFFER_FACEBOOK_CHANNEL_ID ("${BUFFER_FACEBOOK_CHANNEL_ID}") is not a valid 24-character hex ID.`);
   }
 
-  // 2. Instagram Page / Business Account (bones_ceo: 6aa31cd8b9c702c467a38)
-  if (BUFFER_INSTAGRAM_CHANNEL_ID) {
-    const matched = discovered.all.find(c => c.id === BUFFER_INSTAGRAM_CHANNEL_ID);
-    targets.push(matched || { id: BUFFER_INSTAGRAM_CHANNEL_ID, service: 'instagram', name: 'bones_ceo (Instagram Reels)' });
-  } else if (discovered.instagram.length > 0) {
-    targets.push(discovered.instagram[0]);
+  if (fbTarget) {
+    targets.push(fbTarget);
+  }
+
+  // 2. Instagram Page / Business Account (bones_ceo)
+  let igTarget = null;
+  if (isValidChannelId(BUFFER_INSTAGRAM_CHANNEL_ID)) {
+    igTarget = discovered.all.find(c => c.id === BUFFER_INSTAGRAM_CHANNEL_ID) || {
+      id: BUFFER_INSTAGRAM_CHANNEL_ID,
+      service: 'instagram',
+      name: 'bones_ceo (Instagram Reels)',
+      displayName: 'bones_ceo'
+    };
+  } else {
+    if (BUFFER_INSTAGRAM_CHANNEL_ID) {
+      console.warn(`[Buffer Omnichannel] ⚠️ Configured BUFFER_INSTAGRAM_CHANNEL_ID ("${BUFFER_INSTAGRAM_CHANNEL_ID}") is invalid (length ${BUFFER_INSTAGRAM_CHANNEL_ID.length}, expected 24 hex characters).`);
+      console.warn(`[Buffer Omnichannel] 🔎 Searching auto-discovered accounts for "bones_ceo"...`);
+    }
+    // Auto-match from discovered channels
+    const matchedBones = discovered.instagram.find(c =>
+      (c.name && c.name.toLowerCase().includes('bones')) ||
+      (c.displayName && c.displayName.toLowerCase().includes('bones'))
+    );
+    igTarget = matchedBones || (discovered.instagram.length > 0 ? discovered.instagram[0] : null);
+  }
+
+  if (igTarget) {
+    targets.push(igTarget);
+  } else if (BUFFER_INSTAGRAM_CHANNEL_ID && !isValidChannelId(BUFFER_INSTAGRAM_CHANNEL_ID)) {
+    console.warn(`[Buffer Omnichannel] ⚠️ Could not automatically resolve Instagram channel for bones_ceo.`);
   }
 
   // 3. TikTok Account (optional - skip locked channels)
-  if (BUFFER_TIKTOK_CHANNEL_ID) {
+  if (isValidChannelId(BUFFER_TIKTOK_CHANNEL_ID)) {
     const matched = discovered.all.find(c => c.id === BUFFER_TIKTOK_CHANNEL_ID && !c.isLocked);
-    if (matched) {
-      targets.push(matched);
-    } else {
-      targets.push({ id: BUFFER_TIKTOK_CHANNEL_ID, service: 'tiktok', name: 'TikTok Account' });
-    }
+    targets.push(matched || { id: BUFFER_TIKTOK_CHANNEL_ID, service: 'tiktok', name: 'TikTok Account' });
   } else if (discovered.tiktok.length > 0) {
     targets.push(discovered.tiktok[0]);
   }
@@ -459,17 +565,22 @@ async function postViaClassicRest(channel, mediaUrl, caption, shareNow = true) {
  */
 async function postToBufferChannel(channel, mediaUrl, caption) {
   const mode = SHARE_NOW ? 'shareNow' : 'addToQueue';
-  const svcName = (channel.service || '').toUpperCase();
+  const svc = (channel.service || '').toLowerCase();
+  const svcName = svc.toUpperCase();
   const chLabel = channel.displayName || channel.name || channel.id;
 
   console.log(`\n[Buffer Dispatch] 📡 Sending to ${colors.cyan}${svcName}${colors.reset} (${chLabel}) [Mode: ${mode}]...`);
 
-  // If already confirmed in REST mode, use REST directly
+  if (!isValidChannelId(channel.id)) {
+    throw new Error(`Invalid Buffer channelId format "${channel.id}" (length ${channel.id.length}, expected 24 hex characters). Please check your Instagram channel ID.`);
+  }
+
+  // If already confirmed in REST mode and token allows it, use REST directly
   if (activeApiEngine === 'rest') {
     return await postViaClassicRest(channel, mediaUrl, caption, SHARE_NOW);
   }
 
-  // Otherwise attempt GraphQL first
+  // Otherwise use Modern GraphQL
   try {
     const mutation = `mutation CreateVideoPost($input: CreatePostInput!) {
       createPost(input: $input) {
@@ -502,7 +613,30 @@ async function postToBufferChannel(channel, mediaUrl, caption) {
       ]
     };
 
-    const data = await bufferRequest(mutation, { input });
+    // Facebook posts REQUIRE a type in metadata ('reel', 'post', or 'story')
+    if (svc === 'facebook') {
+      const fbPostType = (process.env.BUFFER_FACEBOOK_POST_TYPE || 'reel').toLowerCase();
+      input.metadata = {
+        facebook: {
+          type: fbPostType
+        }
+      };
+    }
+
+    let data;
+    try {
+      data = await bufferRequest(mutation, { input });
+    } catch (reqErr) {
+      // If Facebook complained about post type, retry with 'post'
+      if (svc === 'facebook' && reqErr.message.includes('Facebook posts require a type')) {
+        console.log(`[Buffer Dispatch] Retrying Facebook with type: "post"...`);
+        input.metadata.facebook.type = 'post';
+        data = await bufferRequest(mutation, { input });
+      } else {
+        throw reqErr;
+      }
+    }
+
     const result = data?.createPost;
 
     if (result?.message) {
@@ -516,7 +650,12 @@ async function postToBufferChannel(channel, mediaUrl, caption) {
 
     return result;
   } catch (gqlErr) {
-    console.warn(`[Buffer Dispatch] ⚠️ GraphQL post failed (${gqlErr.message}). Attempting Classic REST fallback...`);
+    console.warn(`[Buffer Dispatch] ⚠️ GraphQL post failed: ${gqlErr.message}`);
+    // If the token is a modern Public API token, do not attempt the legacy REST API which rejects it with 401
+    if (gqlErr.message.includes('Invalid ChannelId format') || gqlErr.message.includes('require a type') || activeApiEngine === 'graphql') {
+      throw gqlErr;
+    }
+    console.log(`[Buffer Dispatch] Attempting Classic REST fallback...`);
     return await postViaClassicRest(channel, mediaUrl, caption, SHARE_NOW);
   }
 }
@@ -561,12 +700,34 @@ async function publishArchieOmnichannel(options = {}) {
     targetChannels = await resolveTargetChannels(discovered);
   } catch (err) {
     console.warn(`[Buffer Omnichannel] ⚠️ Channel auto-discovery notice: ${err.message}`);
-    console.log(`[Buffer Omnichannel] 📌 Proceeding directly with known target channel IDs:`);
-    targetChannels = [
-      { id: BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52', service: 'facebook', displayName: 'Voxam Fact', name: 'Voxam Fact (Facebook Page)' },
-      { id: BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31cd8b9c702c467a38', service: 'instagram', displayName: 'bones_ceo', name: 'bones_ceo (Instagram Reels)' }
-    ];
+    console.log(`[Buffer Omnichannel] 📌 Checking provided target channel IDs:`);
+    const fallbackList = [];
+    const fbId = BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52';
+    if (isValidChannelId(fbId)) {
+      fallbackList.push({ id: fbId, service: 'facebook', displayName: 'Voxam Fact', name: 'Voxam Fact (Facebook Page)' });
+    } else {
+      console.warn(`[Buffer Omnichannel] ⚠️ Skipping invalid Facebook Channel ID: "${fbId}"`);
+    }
+
+    const igId = BUFFER_INSTAGRAM_CHANNEL_ID;
+    if (isValidChannelId(igId)) {
+      fallbackList.push({ id: igId, service: 'instagram', displayName: 'bones_ceo', name: 'bones_ceo (Instagram Reels)' });
+    } else if (igId) {
+      console.warn(`[Buffer Omnichannel] ⚠️ Skipping invalid Instagram Channel ID: "${igId}" (length ${igId.length}, expected 24 hex characters).`);
+      console.warn(`[Buffer Omnichannel] 💡 Tip: Run "node scripts/list_buffer_channels.cjs" to copy the exact 24-character ID for bones_ceo.`);
+    }
+
+    targetChannels = fallbackList;
   }
+
+  // Filter only valid channel IDs
+  targetChannels = targetChannels.filter(ch => {
+    if (!isValidChannelId(ch.id)) {
+      console.warn(`[Buffer Omnichannel] ⚠️ Omitted channel ${ch.name} because its ID "${ch.id}" is not a valid 24-char ObjectId.`);
+      return false;
+    }
+    return true;
+  });
 
   if (!targetChannels.length) {
     console.warn(`\n[Buffer Omnichannel] ⚠️ No Facebook, Instagram, or TikTok channels connected in your Buffer account.`);

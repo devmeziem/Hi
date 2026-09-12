@@ -15,7 +15,6 @@
  */
 
 const RAW_BUFFER_API_KEY = String(process.env.BUFFER_API_KEY || '').trim();
-const RAW_BUFFER_ORG_ID = String(process.env.BUFFER_ORGANIZATION_ID || '').trim();
 
 // Automatically sanitize token: strip surrounding quotes, strip leading 'Bearer ', trim whitespace
 function sanitizeToken(raw) {
@@ -27,7 +26,6 @@ function sanitizeToken(raw) {
 }
 
 const BUFFER_API_KEY = sanitizeToken(RAW_BUFFER_API_KEY);
-const BUFFER_ORGANIZATION_ID = sanitizeToken(RAW_BUFFER_ORG_ID);
 
 const colors = {
   reset: '\x1b[0m',
@@ -42,140 +40,134 @@ const colors = {
   bgBlue: '\x1b[44m\x1b[37m'
 };
 
-async function executeBufferGraphQL(token, query, variables = {}) {
-  const res = await fetch('https://api.buffer.com', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify({ query, variables })
-  });
-
-  const text = await res.text();
-  let payload;
+async function queryGraphQLChannels(token) {
   try {
-    payload = JSON.parse(text);
-  } catch {
-    return { ok: false, error: `Buffer returned non-JSON response (HTTP ${res.status}): ${text.slice(0, 200)}` };
-  }
-
-  if (!res.ok || payload.errors?.length) {
-    const errMsg = payload.errors ? payload.errors.map(e => e.message).join('; ') : `HTTP ${res.status}`;
-    return { ok: false, error: errMsg, payload, status: res.status };
-  }
-
-  return { ok: true, data: payload.data };
-}
-
-async function queryGraphQLChannels(token, directOrgId = '') {
-  const allChannels = [];
-  let userEmail = '';
-  let organizationsFound = [];
-
-  // If a direct organization ID is provided, query channels directly
-  if (directOrgId) {
-    console.log(`Using explicitly provided organization ID: ${directOrgId}`);
-    organizationsFound = [{ id: directOrgId, name: 'Provided Organization' }];
-  } else {
-    // Step 1: Query user account and organizations (Buffer GraphQL hierarchy)
-    const orgsQuery = `query GetBufferOrganizations {
+    // 1. Get organizations
+    const orgsQuery = `query GetOrganizations {
       account {
         id
         email
-        name
         organizations {
           id
           name
-          channelCount
         }
       }
     }`;
 
-    let orgsRes = await executeBufferGraphQL(token, orgsQuery);
-
-    // If full account query fails, try minimal organizations query
-    if (!orgsRes.ok) {
-      const minimalQuery = `query GetBufferOrganizationsMinimal {
-        account {
-          organizations {
-            id
-            name
-          }
-        }
-      }`;
-      const minimalRes = await executeBufferGraphQL(token, minimalQuery);
-      if (minimalRes.ok) {
-        orgsRes = minimalRes;
-      }
-    }
-
-    if (!orgsRes.ok) {
-      return {
-        ok: false,
-        error: orgsRes.error,
-        details: orgsRes.payload
-      };
-    }
-
-    userEmail = orgsRes.data?.account?.email || '';
-    organizationsFound = orgsRes.data?.account?.organizations || [];
-  }
-
-  if (organizationsFound.length === 0) {
-    return {
-      ok: true,
-      channels: [],
-      userEmail,
-      organizations: []
-    };
-  }
-
-  // Step 2: Fetch channels for each organization using the root channels query
-  const channelsQuery = `query GetChannelsForOrg($input: ChannelsInput!) {
-    channels(input: $input) {
-      id
-      name
-      displayName
-      service
-      serviceId
-      avatar
-      isDisconnected
-      isLocked
-    }
-  }`;
-
-  for (const org of organizationsFound) {
-    const chRes = await executeBufferGraphQL(token, channelsQuery, {
-      input: { organizationId: org.id }
+    const resOrgs = await fetch('https://api.buffer.com', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ query: orgsQuery })
     });
 
-    if (chRes.ok && Array.isArray(chRes.data?.channels)) {
-      for (const ch of chRes.data.channels) {
-        allChannels.push({
-          id: ch.id,
-          name: ch.displayName || ch.name,
-          service: (ch.service || '').toLowerCase(),
-          isDisconnected: Boolean(ch.isDisconnected),
-          isLocked: Boolean(ch.isLocked),
-          orgName: org.name
-        });
-      }
-    } else if (chRes.error) {
-      console.warn(`[Warning] Could not retrieve channels for organization ${org.name || org.id}: ${chRes.error}`);
+    const orgsText = await resOrgs.text();
+    let orgsPayload = {};
+    try {
+      orgsPayload = JSON.parse(orgsText);
+    } catch {
+      return { ok: false, error: `Buffer non-JSON response (HTTP ${resOrgs.status}): ${orgsText.slice(0, 150)}` };
     }
-  }
 
-  return {
-    ok: true,
-    channels: allChannels,
-    userEmail,
-    organizations: organizationsFound
-  };
+    if (!resOrgs.ok || orgsPayload.errors?.length) {
+      const errMsg = orgsPayload.errors ? orgsPayload.errors.map(e => e.message).join('; ') : `HTTP ${resOrgs.status}`;
+      return { ok: false, error: errMsg };
+    }
+
+    const orgs = orgsPayload.data?.account?.organizations || [];
+    const allChannels = [];
+
+    // 2. Get channels for each organization
+    for (const org of orgs) {
+      const chQuery = `query GetChannels($organizationId: OrganizationId!) {
+        channels(organizationId: $organizationId) {
+          id
+          name
+          displayName
+          service
+          serviceId
+          avatar
+          isDisconnected
+          isLocked
+        }
+      }`;
+
+      try {
+        const resCh = await fetch('https://api.buffer.com', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ query: chQuery, variables: { organizationId: org.id } })
+        });
+
+        const chText = await resCh.text();
+        const chPayload = JSON.parse(chText);
+        const chList = chPayload?.data?.channels || [];
+        for (const ch of chList) {
+          allChannels.push({
+            ...ch,
+            orgName: org.name
+          });
+        }
+      } catch (err) {
+        // continue
+      }
+    }
+
+    // 3. Fallback: if no channels from orgs, try root channels query
+    if (allChannels.length === 0) {
+      try {
+        const rootChQuery = `query GetAllChannels {
+          channels {
+            id
+            name
+            displayName
+            service
+            serviceId
+            avatar
+            isDisconnected
+            isLocked
+          }
+        }`;
+        const resRoot = await fetch('https://api.buffer.com', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ query: rootChQuery })
+        });
+        const rootText = await resRoot.text();
+        const rootPayload = JSON.parse(rootText);
+        const rootList = rootPayload?.data?.channels || [];
+        for (const ch of rootList) {
+          allChannels.push({ ...ch, orgName: 'Default Workspace' });
+        }
+      } catch {
+        // continue
+      }
+    }
+
+    return {
+      ok: true,
+      data: {
+        account: {
+          email: orgsPayload.data?.account?.email || '',
+          channels: allChannels
+        }
+      }
+    };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
 }
 
 async function queryRestProfiles(token) {
-  // Legacy REST API fallback (Only works for older legacy Buffer REST apps)
+  // Method A: query param
   try {
     const res = await fetch(`https://api.bufferapp.com/1/profiles.json?access_token=${encodeURIComponent(token)}`);
     if (res.ok) {
@@ -184,11 +176,16 @@ async function queryRestProfiles(token) {
         return { ok: true, profiles: list, method: 'REST query param' };
       }
     }
-  } catch {}
+  } catch {
+    // try header next
+  }
 
+  // Method B: Authorization header
   try {
     const res = await fetch('https://api.bufferapp.com/1/profiles.json', {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
     });
     if (res.ok) {
       const list = await res.json();
@@ -225,16 +222,24 @@ async function main() {
 
   console.log(`Connecting to Buffer using provided token (${BUFFER_API_KEY.slice(0, 6)}...${BUFFER_API_KEY.slice(-4)})...`);
 
-  // Try Modern GraphQL first (using two-step Organization -> Channels query)
-  const gqlResult = await queryGraphQLChannels(BUFFER_API_KEY, BUFFER_ORGANIZATION_ID);
+  // Try GraphQL first
+  const gqlResult = await queryGraphQLChannels(BUFFER_API_KEY);
   let allChannels = [];
   let userEmail = '';
+
   let authMode = '';
 
-  if (gqlResult.ok) {
+  if (gqlResult.ok && gqlResult.data?.account) {
     authMode = 'Modern GraphQL API (api.buffer.com)';
-    userEmail = gqlResult.userEmail || '';
-    allChannels = gqlResult.channels || [];
+    userEmail = gqlResult.data.account.email || '';
+    allChannels = (gqlResult.data.account.channels || []).map(ch => ({
+      id: ch.id,
+      name: ch.displayName || ch.name,
+      service: (ch.service || '').toLowerCase(),
+      isDisconnected: Boolean(ch.isDisconnected),
+      isLocked: Boolean(ch.isLocked),
+      orgName: ch.orgName || 'Workspace'
+    }));
   } else {
     // Fallback to classic REST API
     const restResult = await queryRestProfiles(BUFFER_API_KEY);
@@ -251,22 +256,11 @@ async function main() {
     } else {
       console.error(`\n${colors.red}${colors.bold}❌ Failed to authenticate with Buffer API!${colors.reset}`);
       console.error(`GraphQL Attempt Error: ${gqlResult.error || 'Unknown GraphQL error'}`);
-      if (restResult.error) {
-        console.error(`REST Attempt Notice:   ${restResult.error}`);
-      }
-
-      console.log(`\n${colors.yellow}${colors.bold}👉 WHY THIS HAPPENS & HOW TO RESOLVE IN 60 SECONDS:${colors.reset}`);
-      console.log(` 1. ${colors.bold}Unverified Buffer Email Address:${colors.reset}`);
-      console.log(`    Buffer's new GraphQL API strictly enforces that your account email is verified.`);
-      console.log(`    Log in to ${colors.cyan}https://publish.buffer.com${colors.reset} -> Check if there is an "Unverified Email" notification banner.`);
-      console.log(` 2. ${colors.bold}Personal Access Token vs Legacy App Client:${colors.reset}`);
-      console.log(`    Buffer deprecated REST API keys on February 1, 2027 ("Public API tokens are not accepted for REST API access").`);
-      console.log(`    Generate a fresh Personal Access Token at: ${colors.cyan}https://publish.buffer.com/settings/api${colors.reset}`);
-      console.log(` 3. ${colors.bold}Optional Organization ID:${colors.reset}`);
-      console.log(`    If your account belongs to a team or multiple organizations, you can provide:`);
-      console.log(`    ${colors.yellow}BUFFER_ORGANIZATION_ID="your_org_id"${colors.reset} to query channels directly.`);
-      console.log(` 4. Verify that your connected channels (Facebook Page, Instagram, TikTok) are active at:`);
-      console.log(`    ${colors.cyan}https://publish.buffer.com/channels${colors.reset}\n`);
+      console.error(`REST Attempt Error:    ${restResult.error || 'Unknown REST error'}\n`);
+      console.log(`${colors.yellow}👉 Tips:${colors.reset}`);
+      console.log(` 1. If you are using a token from another project, ensure it is active in your Buffer Account settings.`);
+      console.log(` 2. You can generate a fresh API token anytime at https://publish.buffer.com or https://buffer.com/developers/api`);
+      console.log(` 3. Make sure there are no accidental spaces or leading words like "Bearer " in your secret.\n`);
       process.exit(1);
     }
   }

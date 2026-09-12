@@ -388,12 +388,14 @@ jobs:
           PAUSE_YOUTUBE: \${{ github.event.inputs.pause_youtube || 'true' }}
           BUFFER_API_KEY: \${{ github.event.inputs.buffer_token || secrets.BUFFER_API_KEY }}
           BUFFER_FACEBOOK_CHANNEL_ID: \${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
-          BUFFER_INSTAGRAM_CHANNEL_ID: \${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31cd8b9c702c467a38' }}
+          BUFFER_INSTAGRAM_CHANNEL_ID: \${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID }}
           BUFFER_TIKTOK_CHANNEL_ID: \${{ secrets.BUFFER_TIKTOK_CHANNEL_ID }}
           CLOUDINARY_CLOUD_NAME: \${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_UPLOAD_PRESET: \${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
           DRY_RUN: \${{ github.event.inputs.dry_run == 'true' }}
-        run: node scripts/publish_archie_to_buffer_omnichannel.cjs`;
+        run: |
+          node scripts/list_buffer_channels.cjs || true
+          node scripts/publish_archie_to_buffer_omnichannel.cjs`;
 
   const workflowBufferInspectorYaml = `name: Discover & Copy Buffer Channel IDs
 on:
