@@ -187,7 +187,7 @@ jobs:
             node scripts/generate_archie_tech_fact_reel.cjs
           fi
 
-      - name: Cross-Post to Facebook (Voxam Fact) and Instagram (bones_ceo) via Buffer Omnichannel
+      - name: Cross-Post to Facebook (Voxam Fact), Instagram (bones_ceo) and TikTok via Buffer
         if: success()
         env:
           PAUSE_YOUTUBE: ${{ github.event.inputs.pause_youtube || 'true' }}
@@ -195,11 +195,13 @@ jobs:
           BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
           BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID }}
           BUFFER_TIKTOK_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_CHANNEL_ID }}
-          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
           DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
         run: |
-          echo "=== DISPATCHING ARCHIE VIDEO TO BUFFER (Voxam Fact & bones_ceo) ==="
+          echo "=== DISPATCHING ARCHIE VIDEO TO BUFFER USING A PUBLIC GITHUB RELEASE AS MEDIA HOST ==="
           node scripts/list_buffer_channels.cjs || true
           node scripts/publish_archie_to_buffer_omnichannel.cjs || echo "Buffer omnichannel step completed with notice."
 
