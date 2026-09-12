@@ -32,9 +32,9 @@ function sanitizeToken(raw) {
 
 const BUFFER_API_KEY = sanitizeToken(RAW_BUFFER_API_KEY);
 
-// Specific channel overrides (optional - auto-discovery is used if omitted)
-const BUFFER_FACEBOOK_CHANNEL_ID = String(process.env.BUFFER_FACEBOOK_CHANNEL_ID || '').trim();
-const BUFFER_INSTAGRAM_CHANNEL_ID = String(process.env.BUFFER_INSTAGRAM_CHANNEL_ID || '').trim();
+// Specific channel overrides (defaulting to configured Voxam Fact and bones_ceo)
+const BUFFER_FACEBOOK_CHANNEL_ID = String(process.env.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52').trim();
+const BUFFER_INSTAGRAM_CHANNEL_ID = String(process.env.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31cd8b9c702c467a38').trim();
 const BUFFER_TIKTOK_CHANNEL_ID = String(process.env.BUFFER_TIKTOK_CHANNEL_ID || '').trim();
 
 // Media upload / Cloudinary options
@@ -132,69 +132,49 @@ async function discoverConnectedChannels() {
     all: []
   };
 
-  const directOrgId = String(process.env.BUFFER_ORGANIZATION_ID || '').trim();
-
-  // Attempt 1: Modern GraphQL API (Buffer standard 2-step hierarchy)
+  // Attempt 1: Modern GraphQL API
   try {
-    let orgs = [];
-
-    if (directOrgId) {
-      orgs = [{ id: directOrgId, name: 'Configured Organization' }];
-    } else {
-      const orgQuery = `query GetBufferOrganizations {
-        account {
-          organizations {
+    const query = `query GetAccountChannels {
+      account {
+        organizations {
+          id
+          name
+          channels {
             id
             name
+            displayName
+            service
+            isDisconnected
+            isLocked
           }
         }
-      }`;
-      const orgData = await bufferRequest(orgQuery);
-      orgs = orgData?.account?.organizations || [];
-    }
-
-    const channelsQuery = `query GetChannelsForOrg($input: ChannelsInput!) {
-      channels(input: $input) {
-        id
-        name
-        displayName
-        service
-        serviceId
-        avatar
-        isDisconnected
-        isLocked
       }
     }`;
 
+    const data = await bufferRequest(query);
+    const orgs = data?.account?.organizations || [];
+
     for (const org of orgs) {
-      try {
-        const chData = await bufferRequest(channelsQuery, { input: { organizationId: org.id } });
-        const chList = chData?.channels || [];
-        for (const ch of chList) {
-          discovered.all.push(ch);
-          const svc = String(ch.service || '').toLowerCase();
-          const isUsable = !ch.isDisconnected && !ch.isLocked;
+      for (const ch of (org.channels || [])) {
+        discovered.all.push(ch);
+        const svc = String(ch.service || '').toLowerCase();
+        const isUsable = !ch.isDisconnected && !ch.isLocked;
 
-          if (!isUsable) continue;
+        if (!isUsable) continue;
 
-          if (svc.includes('facebook')) {
-            discovered.facebook.push(ch);
-          } else if (svc.includes('instagram')) {
-            discovered.instagram.push(ch);
-          } else if (svc.includes('tiktok')) {
-            discovered.tiktok.push(ch);
-          }
+        if (svc === 'facebook') {
+          discovered.facebook.push(ch);
+        } else if (svc === 'instagram') {
+          discovered.instagram.push(ch);
+        } else if (svc === 'tiktok') {
+          discovered.tiktok.push(ch);
         }
-      } catch (err) {
-        console.warn(`[Buffer Omnichannel] Notice: Failed to query channels for organization ${org.name || org.id}: ${err.message}`);
       }
     }
 
-    if (discovered.all.length > 0) {
-      activeApiEngine = 'graphql';
-      console.log(`[Buffer Omnichannel] ✅ Connected via Modern GraphQL API (found ${discovered.all.length} channel(s))`);
-      return discovered;
-    }
+    activeApiEngine = 'graphql';
+    console.log(`[Buffer Omnichannel] ✅ Connected via Modern GraphQL API (found ${discovered.all.length} channel(s))`);
+    return discovered;
   } catch (gqlErr) {
     console.warn(`[Buffer Omnichannel] ℹ️ GraphQL notice: ${gqlErr.message}. Checking Classic REST API fallback...`);
   }
@@ -240,23 +220,30 @@ async function discoverConnectedChannels() {
 async function resolveTargetChannels(discovered) {
   const targets = [];
 
-  // 1. Facebook Page
+  // 1. Facebook Page (Voxam Fact: 6aa31cd2cd8b9c702c468b52)
   if (BUFFER_FACEBOOK_CHANNEL_ID) {
-    targets.push({ id: BUFFER_FACEBOOK_CHANNEL_ID, service: 'facebook', name: 'Facebook Page (Direct ID)' });
+    const matched = discovered.all.find(c => c.id === BUFFER_FACEBOOK_CHANNEL_ID);
+    targets.push(matched || { id: BUFFER_FACEBOOK_CHANNEL_ID, service: 'facebook', name: 'Voxam Fact (Facebook Page)' });
   } else if (discovered.facebook.length > 0) {
     targets.push(discovered.facebook[0]);
   }
 
-  // 2. Instagram Page / Business Account
+  // 2. Instagram Page / Business Account (bones_ceo: 6aa31cd8b9c702c467a38)
   if (BUFFER_INSTAGRAM_CHANNEL_ID) {
-    targets.push({ id: BUFFER_INSTAGRAM_CHANNEL_ID, service: 'instagram', name: 'Instagram Page (Direct ID)' });
+    const matched = discovered.all.find(c => c.id === BUFFER_INSTAGRAM_CHANNEL_ID);
+    targets.push(matched || { id: BUFFER_INSTAGRAM_CHANNEL_ID, service: 'instagram', name: 'bones_ceo (Instagram Reels)' });
   } else if (discovered.instagram.length > 0) {
     targets.push(discovered.instagram[0]);
   }
 
-  // 3. TikTok Account
+  // 3. TikTok Account (optional - skip locked channels)
   if (BUFFER_TIKTOK_CHANNEL_ID) {
-    targets.push({ id: BUFFER_TIKTOK_CHANNEL_ID, service: 'tiktok', name: 'TikTok Account (Direct ID)' });
+    const matched = discovered.all.find(c => c.id === BUFFER_TIKTOK_CHANNEL_ID && !c.isLocked);
+    if (matched) {
+      targets.push(matched);
+    } else {
+      targets.push({ id: BUFFER_TIKTOK_CHANNEL_ID, service: 'tiktok', name: 'TikTok Account' });
+    }
   } else if (discovered.tiktok.length > 0) {
     targets.push(discovered.tiktok[0]);
   }

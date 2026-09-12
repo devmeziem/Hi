@@ -288,6 +288,10 @@ jobs:
 
   const workflowCartoonYaml = `name: Automated Cartoon Factory (Workflow 3)
 on:
+  push:
+    branches:
+      - main
+      - master
   schedule:
     # Strict 4x daily Archie releases: 1 Animated Video (13:00 UTC) + 3 Everyday Science Fact Reels (08:00, 18:00, 23:00 UTC)
     - cron: '0 8,13,18,23 * * *'
@@ -355,19 +359,22 @@ jobs:
           YOUTUBE_REFRESH_TOKEN_CH3: \${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 }}
         run: |
           CURRENT_HOUR=$(date -u +%-H)
-          if [ "$VIDEO_MODE" = "video" ] || { [ "$VIDEO_MODE" = "auto" ] && [ "$CURRENT_HOUR" -eq 13 ]; }; then
+          if [ "\${{ github.event_name }}" = "push" ]; then
+            echo "🚀 Push event detected! Initiating immediate Archie Reel generation..."
+            node scripts/generate_archie_tech_fact_reel.cjs
+          elif [ "$VIDEO_MODE" = "video" ] || { [ "$VIDEO_MODE" = "auto" ] && [ "$CURRENT_HOUR" -eq 13 ]; }; then
             echo "▶️ Generating 1 Full Archie Animated Cartoon Video..."
             node scripts/test_cartoon_runner.cjs
           else
             echo "▶️ Generating 1 Archie Everyday Science / Tech Fact Reel..."
             node scripts/generate_archie_tech_fact_reel.cjs
           fi
-      - name: Cross-Post to Facebook, Instagram, and TikTok via Buffer Omnichannel
+      - name: Cross-Post to Facebook (Voxam Fact) and Instagram (bones_ceo) via Buffer Omnichannel
         if: success()
         env:
           BUFFER_API_KEY: \${{ secrets.BUFFER_API_KEY }}
-          BUFFER_FACEBOOK_CHANNEL_ID: \${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID }}
-          BUFFER_INSTAGRAM_CHANNEL_ID: \${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID }}
+          BUFFER_FACEBOOK_CHANNEL_ID: \${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
+          BUFFER_INSTAGRAM_CHANNEL_ID: \${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31cd8b9c702c467a38' }}
           BUFFER_TIKTOK_CHANNEL_ID: \${{ secrets.BUFFER_TIKTOK_CHANNEL_ID }}
           CLOUDINARY_CLOUD_NAME: \${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_UPLOAD_PRESET: \${{ secrets.CLOUDINARY_UPLOAD_PRESET }}

@@ -1,6 +1,10 @@
 name: Automated Cartoon Factory (Workflow 3)
 
 on:
+  push:
+    branches:
+      - main
+      - master
   schedule:
     # Strict 4x daily Archie releases: 1 Animated Video (13:00 UTC) + 3 Everyday Science Fact Reels (08:00, 18:00, 23:00 UTC)
     - cron: '0 8,13,18,23 * * *'
@@ -141,14 +145,17 @@ jobs:
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 || secrets.YOUTUBE_CLIENT_SECRET_TECH }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 || secrets.YOUTUBE_REFRESH_TOKEN_TECH }}
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
-          BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID }}
-          BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID }}
+          BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
+          BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31cd8b9c702c467a38' }}
           BUFFER_TIKTOK_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_CHANNEL_ID }}
         run: |
           CURRENT_HOUR=$(date -u +%-H)
-          echo "=== Processing Archie Video Dispatch (Mode: $VIDEO_MODE, Hour: $CURRENT_HOUR UTC) ==="
+          echo "=== Processing Archie Video Dispatch (Event: ${{ github.event_name }}, Mode: $VIDEO_MODE, Hour: $CURRENT_HOUR UTC) ==="
           
-          if [ "$VIDEO_MODE" = "video" ] || [ "$VIDEO_MODE" = "episode" ] || { [ "$VIDEO_MODE" = "auto" ] && [ "$CURRENT_HOUR" -eq 13 ]; }; then
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "🚀 Push event detected! Initiating immediate Archie Reel generation & omnichannel release..."
+            node scripts/generate_archie_tech_fact_reel.cjs
+          elif [ "$VIDEO_MODE" = "video" ] || [ "$VIDEO_MODE" = "episode" ] || { [ "$VIDEO_MODE" = "auto" ] && [ "$CURRENT_HOUR" -eq 13 ]; }; then
             echo "▶️ Generating 1 Full Archie Animated Cartoon Video..."
             node scripts/test_cartoon_runner.cjs
           elif [ "$VIDEO_MODE" = "fact_reel" ] || { [ "$VIDEO_MODE" = "auto" ] && [ "$CURRENT_HOUR" -ne 13 ]; }; then
@@ -169,18 +176,18 @@ jobs:
             node scripts/generate_archie_tech_fact_reel.cjs
           fi
 
-      - name: Cross-Post to Facebook, Instagram, and TikTok via Buffer Omnichannel
+      - name: Cross-Post to Facebook (Voxam Fact) and Instagram (bones_ceo) via Buffer Omnichannel
         if: success()
         env:
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
-          BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID }}
-          BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID }}
+          BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
+          BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31cd8b9c702c467a38' }}
           BUFFER_TIKTOK_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_CHANNEL_ID }}
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
           DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
         run: |
-          echo "=== DISPATCHING ARCHIE VIDEO TO BUFFER (FACEBOOK, INSTAGRAM, TIKTOK) ==="
+          echo "=== DISPATCHING ARCHIE VIDEO TO BUFFER (Voxam Fact & bones_ceo) ==="
           node scripts/publish_archie_to_buffer_omnichannel.cjs || echo "Buffer omnichannel step completed with notice."
 
       - name: Upload Production Video & Diagnostics Artifacts
