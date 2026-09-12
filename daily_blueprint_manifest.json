@@ -1,6 +1,19 @@
 {
   "videos": [
     {
+      "id": "fin_quote_1789221524206",
+      "channelId": "finance_saas",
+      "type": "financial_quote_reel_5s",
+      "title": "Finance Mindset — Warren Buffett Quotes #Shorts",
+      "author": "Warren Buffett",
+      "credentials": "Chairman & CEO, Berkshire Hathaway • Philanthropist",
+      "reference": "Congressional Testimony & Chairman's Letters",
+      "duration": 5,
+      "videoPath": "/home/runner/work/Hi/Hi/rendered_videos/fin_quote_5s_1789221524206.mp4",
+      "loopable": true,
+      "publishedAt": "2026-09-12T13:58:48.270Z"
+    },
+    {
       "id": "fin_quote_1788939120014",
       "channelId": "finance_saas",
       "type": "financial_quote_reel_5s",
