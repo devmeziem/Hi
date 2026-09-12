@@ -23,87 +23,103 @@ const ARTIFACTS_DIR = path.join(process.cwd(), 'test_artifacts', 'archie_5s_reel
 const OUTPUT_DIR = path.join(process.cwd(), 'test_artifacts');
 const FACTS_CACHE = path.join(process.cwd(), 'test_artifacts', 'archie_tech_facts_cache.json');
 
-// Curated pool of high-retention, mind-blowing AI & Tech facts with citations and loopy endings
+// Curated pool of high-retention, relatable everyday science & tech facts with citations
 const VERIFIED_TECH_FACTS = [
   {
-    id: 'ai_data_centers_nuclear_reactors',
+    id: 'microwave_water_dipole_mug',
     hook: 'DID YOU KNOW?',
-    fact: 'By 2027, frontier AI models will require so much electricity that tech giants are reviving dormant nuclear power plants just to feed single server clusters.',
-    reference: 'International Energy Agency / Microsoft Constellation Nuclear Deal (2024)',
-    category: 'Frontier AI & Energy',
-    tags: ['#AI', '#NuclearEnergy', '#FutureTech', '#TechNews', '#Shorts', '#Science']
+    fact: 'Microwaves boil your soup but leave ceramic mugs cold because the 2.45 GHz radiation only oscillates polar water molecules, passing right through non-polar ceramic.',
+    reference: 'Industrial Microwave Heating Review / Journal of Chemical Physics',
+    category: 'Everyday Physics & Cooking',
+    tags: ['#EverydayScience', '#Microwave', '#Physics', '#LifeHacks', '#Shorts']
   },
   {
-    id: 'dna_data_storage_density',
+    id: 'phone_touchscreen_capacitive',
     hook: 'DID YOU KNOW?',
-    fact: 'Scientists can now store 215 million gigabytes of digital data inside a single gram of synthetic DNA — and it will survive for over 1,000 years without power.',
-    reference: 'Columbia University & NY Genome Center / Science Journal (2024)',
-    category: 'Biotech & Data Storage',
-    tags: ['#BioTech', '#DataStorage', '#Genetics', '#FutureTech', '#Shorts']
+    fact: 'Your phone screen ignores fingernails and gloves because it uses capacitive sensing: your skin is 60% salty water that drains electrostatic charge to pinpoint your tap.',
+    reference: 'Operating Principles of Projected Capacitive Touchscreens / IEEE Micro',
+    category: 'Everyday Tech & Smartphones',
+    tags: ['#Smartphone', '#Touchscreen', '#TechFacts', '#Physics', '#Shorts']
   },
   {
-    id: 'voyager_22_watts_interstellar',
+    id: 'caffeine_adenosine_blockade',
     hook: 'DID YOU KNOW?',
-    fact: 'Voyager 1 is 15 billion miles away in interstellar space and beams data back to Earth using only 22 Watts — less power than your kitchen refrigerator light bulb.',
-    reference: 'NASA Jet Propulsion Laboratory Deep Space Network Telemetry (2024)',
-    category: 'Space & Deep Physics',
-    tags: ['#Space', '#NASA', '#Voyager', '#Physics', '#Shorts', '#Astronomy']
+    fact: 'Coffee gives you zero real energy: caffeine just parks inside your brain’s adenosine receptors, blinding you to tiredness while fatigue chemicals silently pile up.',
+    reference: 'Actions of Caffeine in the Brain / Pharmacological Reviews',
+    category: 'Everyday Biology & Health',
+    tags: ['#Coffee', '#Neuroscience', '#SleepScience', '#HealthHacks', '#Shorts']
   },
   {
-    id: 'asml_high_na_euv_tin_lasers',
+    id: 'wrinkly_fingers_nervous_drainage',
     hook: 'DID YOU KNOW?',
-    fact: 'ASML’s High-NA chip lithography machines vaporize 50,000 molten tin droplets every second with high-power lasers to produce light that exists nowhere else in nature.',
-    reference: 'ASML N2 High-NA Lithography Technical Review (2024)',
-    category: 'Nanotechnology & Chips',
-    tags: ['#Semiconductors', '#Chips', '#ASML', '#Nanotechnology', '#Shorts']
+    fact: 'Pruney bath fingers are not from absorbing water: your nervous system actively constricts blood vessels to carve tire treads on your fingers for better wet grip.',
+    reference: 'Changizi, M. et al. / Brain, Behavior and Evolution (2011)',
+    category: 'Everyday Human Biology',
+    tags: ['#HumanBody', '#Evolution', '#Biology', '#LifeHacks', '#Shorts']
   },
   {
-    id: 'quantum_willow_vs_supercomputer',
+    id: 'static_shock_doorknob_winter',
     hook: 'DID YOU KNOW?',
-    fact: 'Google’s Willow quantum processor solved a benchmark task in 5 minutes that would take the world’s fastest supercomputer 10 septillion years to finish.',
-    reference: 'Nature Quantum Supremacy / Google Quantum AI (2024)',
-    category: 'Quantum Computing',
-    tags: ['#Quantum', '#GoogleAI', '#Supercomputing', '#Tech', '#Shorts']
+    fact: 'Walking on winter carpets can charge your body up to 15,000 Volts because dry air cannot bleed electrons away until you zap a conductive metal doorknob.',
+    reference: 'Feynman Lectures on Physics / Triboelectric Series',
+    category: 'Everyday Physics',
+    tags: ['#Electrostatics', '#WinterFacts', '#Physics', '#Science', '#Shorts']
   },
   {
-    id: 'nuclear_fusion_150m_degrees',
+    id: 'mirrors_flip_front_to_back',
     hook: 'DID YOU KNOW?',
-    fact: 'Nuclear fusion reactors on Earth reach 150 million degrees Celsius — ten times hotter than the core of the Sun — suspended entirely by invisible magnetic fields.',
-    reference: 'ITER Organization & KSTAR Plasma Physics Lab (2024)',
-    category: 'Clean Energy & Plasma',
-    tags: ['#NuclearFusion', '#Energy', '#Sun', '#PlasmaPhysics', '#Shorts']
+    fact: 'Bathroom mirrors do not flip you left-to-right: they flip along the 3D Z-axis front-to-back, and your brain mistakenly imagines doing a 180° turn.',
+    reference: 'Gardner, M., The Ambidextrous Universe / American Journal of Physics',
+    category: 'Everyday Optics & Mind',
+    tags: ['#Optics', '#MindBlown', '#BrainFacts', '#Science', '#Shorts']
   },
   {
-    id: 'human_brain_vs_gpu_efficiency',
+    id: 'onions_crying_sulfuric_gas',
     hook: 'DID YOU KNOW?',
-    fact: 'The human brain executes roughly 1 exaflop of biological neural calculations every second while running on just 20 Watts — an AI GPU cluster uses thousands of Watts.',
-    reference: 'Stanford Neuromorphic Computing Research (2024)',
-    category: 'Neuroscience & AI',
-    tags: ['#Brain', '#Neuroscience', '#AI', '#Biology', '#Shorts']
+    fact: 'Chopping onions makes you cry because crushed cells release volatile gas that mixes with eye moisture to create trace sulfuric acid that your eyes flush away.',
+    reference: 'Block, E., Garlic and Other Alliums / Royal Society of Chemistry',
+    category: 'Everyday Kitchen Science',
+    tags: ['#CookingScience', '#Onions', '#Chemistry', '#FoodFacts', '#Shorts']
   },
   {
-    id: 'undersea_cables_vs_satellites',
+    id: 'potato_chip_bag_boyle_law',
     hook: 'DID YOU KNOW?',
-    fact: 'Over 99% of all international internet traffic travels through 550 fiber-optic cables on the deep ocean floor, vulnerable to submarine tectonic earthquakes.',
-    reference: 'TeleGeography Global Submarine Telemetry Map (2024)',
-    category: 'Global Infrastructure',
-    tags: ['#Internet', '#Engineering', '#DeepOcean', '#Tech', '#Shorts']
+    fact: 'Chip bags puff up like balloons on mountain road trips because external atmospheric pressure drops while the sealed gas inside expands by Boyle’s Law.',
+    reference: 'Fundamentals of Physics / Gas Thermodynamics & Boyle’s Law',
+    category: 'Everyday Physics & Travel',
+    tags: ['#RoadTrip', '#Physics', '#GasLaws', '#EverydayScience', '#Shorts']
   },
   {
-    id: 'neutron_star_density_mountain',
+    id: 'cold_water_sweet_trpm5',
     hook: 'DID YOU KNOW?',
-    fact: 'A single teaspoon of neutron star matter is so intensely dense that it weighs 6 billion tons on Earth — equal to the weight of Mount Everest compressed into a dice.',
-    reference: 'NASA Astrophysics / Chandra X-ray Observatory (2024)',
-    category: 'Astrophysics & Cosmos',
-    tags: ['#Space', '#NeutronStar', '#Physics', '#Cosmos', '#Shorts']
+    fact: 'Ice water tastes so crisp and clean because extreme cold numbs your TRPM5 taste receptors, blocking out the bitter taste of dissolved tap minerals.',
+    reference: 'Heat activation of TRPM5 / Nature Journal of Neuroscience',
+    category: 'Everyday Sensory Science',
+    tags: ['#Water', '#TasteScience', '#Biology', '#EverydayStuff', '#Shorts']
   },
   {
-    id: 'relativistic_electrons_smartphone',
+    id: 'recorded_voice_bone_conduction',
     hook: 'DID YOU KNOW?',
-    fact: 'Electrons in modern 3-nanometer smartphone processors move so fast that engineers must apply Einstein’s theory of special relativity to keep clock cycles synced.',
-    reference: 'IEEE Solid-State Circuits & Quantum Electrodynamics (2024)',
-    category: 'Quantum Electronics',
-    tags: ['#Quantum', '#Relativity', '#Smartphone', '#Physics', '#Shorts']
+    fact: 'You hate your recorded voice because you normally hear yourself through skull bone vibrations that amplify deep bass tones that air microphones miss.',
+    reference: 'Acoustic Resonance & Bone Conduction Audiometry / Acoustical Society',
+    category: 'Everyday Acoustics & Audio',
+    tags: ['#Voice', '#Acoustics', '#HumanBody', '#Psychology', '#Shorts']
+  },
+  {
+    id: 'spicy_food_capsaicin_dairy',
+    hook: 'DID YOU KNOW?',
+    fact: 'Water makes spicy food hotter because capsaicin is a non-polar oil that water spreads; only dairy with non-polar casein protein can bind and wash it away.',
+    reference: 'Capsaicin Receptor & Thermal Nociceptors / Nature',
+    category: 'Everyday Food Science',
+    tags: ['#SpicyFood', '#FoodScience', '#Chemistry', '#Shorts']
+  },
+  {
+    id: 'soda_explosion_warm_henry_law',
+    hook: 'DID YOU KNOW?',
+    fact: 'Warm soda sprays everywhere when opened because carbon dioxide gas dissolves poorly in warm water by Henry’s Law, building massive internal vapor pressure.',
+    reference: 'Binary Solutions & Gas Thermodynamics / Physical Chemistry',
+    category: 'Everyday Chemistry',
+    tags: ['#Soda', '#Chemistry', '#ScienceTricks', '#Shorts']
   }
 ];
 

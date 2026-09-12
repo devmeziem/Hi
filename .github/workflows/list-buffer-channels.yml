@@ -7,6 +7,11 @@ on:
         required: false
         default: ''
         type: string
+      buffer_org_id:
+        description: 'Buffer Organization ID (Optional: leave blank to auto-discover)'
+        required: false
+        default: ''
+        type: string
 
 jobs:
   inspect_buffer_channels:
@@ -20,4 +25,5 @@ jobs:
       - name: Query Buffer API for Facebook, Instagram & TikTok IDs
         env:
           BUFFER_API_KEY: ${{ github.event.inputs.buffer_token || secrets.BUFFER_API_KEY }}
+          BUFFER_ORGANIZATION_ID: ${{ github.event.inputs.buffer_org_id || secrets.BUFFER_ORGANIZATION_ID }}
         run: node scripts/list_buffer_channels.cjs

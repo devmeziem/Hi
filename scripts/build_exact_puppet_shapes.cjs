@@ -37,9 +37,14 @@ function renderHead(pose = 'idle', blink = false, talking = false) {
        <circle cx="${275 + pupilOffset}" cy="212" r="2.5" fill="#ffffff" />`;
 
   const mouth = talking
-    ? `<path d="M 235 272 Q 250 288 265 272 Z" fill="#7f1d1d" stroke="#1f2937" stroke-width="2.5" />
-       <path d="M 240 274 Q 250 278 260 274" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" />`
-    : `<path d="M 238 272 Q 250 278 262 272" fill="none" stroke="#29140c" stroke-width="3" stroke-linecap="round" />`;
+    ? `<path d="M 235 270 Q 250 286 265 270 Z" fill="#350b12" stroke="#5c2417" stroke-width="1.8" />
+       <path d="M 239 270 Q 250 273 261 270" stroke="#f8fafc" stroke-width="2" stroke-linecap="round" />
+       <ellipse cx="250" cy="281" rx="8" ry="3.5" fill="#e26274" />
+       <path d="M 235 269 Q 250 267 265 269" stroke="#c77864" stroke-width="1.8" fill="none" />
+       <path d="M 237 284 Q 250 287 263 284" stroke="#dc8a75" stroke-width="1.8" fill="none" />`
+    : `<path d="M 236 270 Q 250 273.5 264 270" fill="none" stroke="#5c2417" stroke-width="2" stroke-linecap="round" />
+       <path d="M 238 269 Q 250 267 262 269" stroke="#c77864" stroke-width="1.6" fill="none" />
+       <path d="M 239 271 Q 250 274.5 261 271" stroke="#dc8a75" stroke-width="1.6" fill="none" />`;
 
   return `
     <!-- Neck -->

@@ -2,19 +2,20 @@ name: Test Fin Blueprint Pipeline
 
 on:
   schedule:
-    # 4 daily video cadence: 1 content creation breakdown (13:00) + 3 5s Financial Quotes (08:00, 17:00, 21:00 UTC)
-    - cron: '0 8,13,17,21 * * *'
+    # Strict 4x daily cadence: 4 reels per day (alternating 3s and 5s reels spaced 5 hours apart)
+    # 06:00 UTC (3s), 11:00 UTC (5s), 16:00 UTC (3s), 21:00 UTC (5s)
+    - cron: '0 6,11,16,21 * * *'
   workflow_dispatch:
     inputs:
       video_mode:
-        description: 'Video Mode (auto | content_creation | financial_quote | all_daily_4)'
+        description: 'Video Mode (auto | 3s_reel | 5s_reel | all_daily_4)'
         required: false
         default: 'auto'
         type: choice
         options:
           - auto
-          - content_creation
-          - financial_quote
+          - 3s_reel
+          - 5s_reel
           - all_daily_4
       topic:
         description: 'Video Topic / Theme (Optional)'
@@ -97,24 +98,25 @@ jobs:
           CURRENT_HOUR=$(date -u +%-H)
           echo "=== Processing Video Dispatch (Mode: $VIDEO_MODE, Current UTC Hour: $CURRENT_HOUR) ==="
           
-          if [ "$VIDEO_MODE" = "content_creation" ] || { [ "$VIDEO_MODE" = "auto" ] && [ "$CURRENT_HOUR" -eq 13 ]; }; then
-            echo "▶️ Generating Daily Content Creation & Creator Blueprint Video..."
-            node scripts/test_fin_runner.cjs
-          elif [ "$VIDEO_MODE" = "financial_quote" ] || { [ "$VIDEO_MODE" = "auto" ] && [ "$CURRENT_HOUR" -ne 13 ]; }; then
-            echo "▶️ Generating 5-Second Financial Quote Reel..."
-            node scripts/generate_fin_quote_reel.cjs
+          if [ "$VIDEO_MODE" = "3s_reel" ] || { [ "$VIDEO_MODE" = "auto" ] && { [ "$CURRENT_HOUR" -eq 6 ] || [ "$CURRENT_HOUR" -eq 16 ]; }; }; then
+            echo "▶️ Generating 1 Fin Reel (3 Seconds Duration)..."
+            SHORT_DURATION=3.0 node scripts/generate_fin_quote_reel.cjs
+          elif [ "$VIDEO_MODE" = "5s_reel" ] || { [ "$VIDEO_MODE" = "auto" ] && { [ "$CURRENT_HOUR" -eq 11 ] || [ "$CURRENT_HOUR" -eq 21 ]; }; }; then
+            echo "▶️ Generating 1 Fin Reel (5 Seconds Duration)..."
+            SHORT_DURATION=5.0 node scripts/generate_fin_quote_reel.cjs
           elif [ "$VIDEO_MODE" = "all_daily_4" ]; then
-            echo "▶️ Generating 1 Content Creation Video..."
-            node scripts/test_fin_runner.cjs || true
-            echo "▶️ Generating Financial Quote Reel 1 of 3..."
-            node scripts/generate_fin_quote_reel.cjs || true
-            echo "▶️ Generating Financial Quote Reel 2 of 3..."
-            node scripts/generate_fin_quote_reel.cjs || true
-            echo "▶️ Generating Financial Quote Reel 3 of 3..."
-            node scripts/generate_fin_quote_reel.cjs || true
+            echo "▶️ Generating Full Daily 4-Reel Suite (Two 3s Reels + Two 5s Reels)..."
+            echo "--- Slot 1: 3-Second Reel ---"
+            SHORT_DURATION=3.0 node scripts/generate_fin_quote_reel.cjs || true
+            echo "--- Slot 2: 5-Second Reel ---"
+            SHORT_DURATION=5.0 node scripts/generate_fin_quote_reel.cjs || true
+            echo "--- Slot 3: 3-Second Reel ---"
+            SHORT_DURATION=3.0 node scripts/generate_fin_quote_reel.cjs || true
+            echo "--- Slot 4: 5-Second Reel ---"
+            SHORT_DURATION=5.0 node scripts/generate_fin_quote_reel.cjs || true
           else
-            echo "▶️ Defaulting to Financial Quote Reel..."
-            node scripts/generate_fin_quote_reel.cjs
+            echo "▶️ Defaulting to 5-Second Fin Reel..."
+            SHORT_DURATION=5.0 node scripts/generate_fin_quote_reel.cjs
           fi
 
       - name: Queue Generated Video to TikTok through Buffer

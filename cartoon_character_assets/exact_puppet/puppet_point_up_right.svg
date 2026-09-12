@@ -186,20 +186,19 @@
     <!-- Mouth -->
     
       
-    <!-- Upper Lip with Cupid's Bow -->
-    <path d="M 235 269 C 241 265, 246 266, 250 264 C 254 266, 259 265, 265 269 C 258 271, 242 271, 235 269 Z" fill="#b4533c" stroke="#451a03" stroke-width="1.2" />
+    <!-- Natural Upper Lip with Graceful Cupid's Bow -->
+    <path d="M 235 268 Q 242 265.5 246 266.5 Q 250 267.5 254 266.5 Q 258 265.5 265 268 C 258 269.5, 242 269.5, 235 268 Z" fill="#c77864" />
   
       
-    <!-- Lower Lip with Fleshy Fullness & Soft Highlight -->
-    <path d="M 237 270 C 243 277, 257 277, 263 270 C 257 274, 243 274, 237 270 Z" fill="#cf705c" stroke="#451a03" stroke-width="1.2" />
-    <ellipse cx="250" cy="273" rx="5" ry="1.5" fill="#f87171" opacity="0.45" />
-    <!-- Subtle Lower Lip Shadow Crease -->
-    <path d="M 243 279 Q 250 282 257 279" stroke="#d09564" stroke-width="1.8" fill="none" opacity="0.5" stroke-linecap="round" />
+    <!-- Natural Lower Lip with Soft Highlight & Subtle Chin Crease -->
+    <path d="M 237 268.5 Q 250 275.5 263 268.5 C 257 272.5, 243 272.5, 237 268.5 Z" fill="#dc8a75" />
+    <ellipse cx="250" cy="272" rx="4.5" ry="1.2" fill="#f3a492" opacity="0.45" />
+    <path d="M 244 277.5 Q 250 279.5 256 277.5" stroke="#d09564" stroke-width="1.4" fill="none" opacity="0.4" stroke-linecap="round" />
   
-      <!-- Smile Crease -->
-      <path d="M 236 269 Q 250 274 264 269" fill="none" stroke="#451a03" stroke-width="2" stroke-linecap="round" />
-      <circle cx="236" cy="269" r="0.8" fill="#451a03" />
-      <circle cx="264" cy="269" r="0.8" fill="#451a03" />
+      <!-- Refined Smile Seam -->
+      <path d="M 235 268 Q 250 271.5 265 268" fill="none" stroke="#5c2417" stroke-width="1.5" stroke-linecap="round" />
+      <circle cx="235" cy="268" r="0.75" fill="#5c2417" />
+      <circle cx="265" cy="268" r="0.75" fill="#5c2417" />
     
   
   </g>

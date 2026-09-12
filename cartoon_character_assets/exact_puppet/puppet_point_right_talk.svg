@@ -202,18 +202,18 @@
 
     <!-- Mouth -->
     
-      <!-- Dynamic Talking Mouth with Natural Upper/Lower Lips, Dental Arch & Tongue -->
+      <!-- Expressive Animated Talking Mouth with Natural Lips, Teeth & Tongue -->
+      <!-- Upper Lip Band -->
+      <path d="M 235 267 Q 242 265 246 266 Q 250 267 254 266 Q 258 265 265 267 C 258 268.5, 242 268.5, 235 267 Z" fill="#c77864" />
       <!-- Inner Oral Cavity -->
-      <path d="M 235 268 C 240 286, 260 286, 265 268 C 258 272, 242 272, 235 268 Z" fill="#4a0e17" stroke="#451a03" stroke-width="1.8" />
+      <path d="M 236 268 Q 250 270 264 268 C 263 283, 237 283, 236 268 Z" fill="#350b12" stroke="#5c2417" stroke-width="1.2" />
       <!-- Upper Teeth Arch -->
-      <path d="M 237 269 Q 250 273 263 269 L 261 273 Q 250 276 239 273 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.6" />
+      <path d="M 238 268 Q 250 270.5 262 268 L 261 271.5 Q 250 273.5 239 271.5 Z" fill="#f8fafc" />
       <!-- Tongue Curve -->
-      <path d="M 243 282 C 246 278, 254 278, 257 282 C 253 285, 247 285, 243 282 Z" fill="#d94858" />
-      <!-- Defined Upper Lip -->
-      <path d="M 234 268 C 240 264, 246 265, 250 263 C 254 265, 260 264, 266 268 C 260 270, 240 270, 234 268 Z" fill="#b4533c" stroke="#451a03" stroke-width="1.2" />
-      <!-- Defined Lower Lip -->
-      <path d="M 237 283 C 243 288, 257 288, 263 283 C 257 285, 243 285, 237 283 Z" fill="#cf705c" stroke="#451a03" stroke-width="1.2" />
-      <path d="M 243 290 Q 250 292 257 290" stroke="#d09564" stroke-width="1.6" fill="none" opacity="0.5" stroke-linecap="round" />
+      <path d="M 242 278 Q 250 274.5 258 278 C 255 281.5, 245 281.5, 242 278 Z" fill="#e26274" />
+      <!-- Lower Lip Cushion -->
+      <path d="M 237 281.5 Q 250 285.5 263 281.5 C 257 283.5, 243 283.5, 237 281.5 Z" fill="#dc8a75" />
+      <path d="M 244 287 Q 250 289 256 287" stroke="#d09564" stroke-width="1.4" fill="none" opacity="0.4" stroke-linecap="round" />
     
   
   </g>

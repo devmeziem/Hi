@@ -35,7 +35,9 @@ import {
   Workflow,
   Headphones,
   Database,
-  Shield
+  Shield,
+  Menu,
+  Atom
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { NicheType, SavedCampaign, FactoryJob, WorkerLog, IntegrationKeys, ChannelMetrics, ProjectConfig } from '../types';
@@ -58,6 +60,7 @@ interface VoxamFactoryAppProps {
 
 export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onSignOut }) => {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState<boolean>(false);
   const [keys, setKeys] = useState<IntegrationKeys>(DEFAULT_KEYS);
   const [savedCampaigns, setSavedCampaigns] = useState<SavedCampaign[]>([]);
   const [selectedCampaignForPlayer, setSelectedCampaignForPlayer] = useState<SavedCampaign | null>(null);
@@ -626,10 +629,160 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
     ];
   }, [channel1Data, channel2Data, channel3Data]);
 
+  const navItems = [
+    { id: 'dashboard', label: 'Overview Dashboard', icon: LayoutDashboard },
+    { id: 'finance', label: 'Finance Engine (Channel 1)', icon: DollarSign },
+    { id: 'pipeline', label: '4-Stage GitHub Pipeline', icon: Workflow },
+    { id: 'dj', label: 'DJ Audio & TTS Studio', icon: Headphones },
+    { id: 'playground', label: 'AI Test Lab & Grok Chat', icon: Sparkles },
+    { id: 'channels', label: 'Channels (3 Accounts)', icon: Youtube },
+    { id: 'studio', label: 'Content Studio', icon: Clapperboard },
+    { id: 'queue', label: 'Job Queue & Pipeline', icon: ListOrdered },
+    { id: 'vault', label: 'Video Vault & History', icon: FolderLock },
+    { id: 'affiliates', label: 'Affiliates & Monetization', icon: DollarSign },
+    { id: 'niches', label: 'Niche Configurations', icon: Sliders },
+    { id: 'guidelines', label: 'Content Masterclass', icon: BookOpen },
+    { id: 'settings', label: 'Settings & Integrations', icon: Settings }
+  ];
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row w-full max-w-full overflow-x-hidden">
-      {/* SIDEBAR NAVIGATION */}
-      <aside className="w-full md:w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between shrink-0 min-w-0">
+      {/* MOBILE TOP BAR WITH HAMBURGER DRAWER BUTTON */}
+      <header className="md:hidden flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800 shrink-0 w-full z-30">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-black text-sm shrink-0">
+            V
+          </div>
+          <div className="truncate">
+            <h1 className="font-extrabold text-xs text-white tracking-tight leading-none truncate">VOXAM FACTORY</h1>
+            <span className="text-[9px] font-mono text-indigo-400">Autonomous Hub</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('playground');
+            }}
+            className="px-2 py-1 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 rounded-lg text-[10px] font-bold flex items-center gap-1 font-mono"
+          >
+            <Atom className="w-3 h-3 text-emerald-400" />
+            <span>Archie Ideas</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsMobileDrawerOpen(!isMobileDrawerOpen)}
+            aria-label="Toggle Navigation Drawer"
+            className="p-2 rounded-xl bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 transition-all cursor-pointer"
+          >
+            {isMobileDrawerOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
+      </header>
+
+      {/* MOBILE SLIDE-OVER DRAWER */}
+      {isMobileDrawerOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" 
+            onClick={() => setIsMobileDrawerOpen(false)} 
+          />
+
+          {/* Drawer Panel */}
+          <div className="relative w-4/5 max-w-xs bg-slate-900 border-r border-slate-800 flex flex-col justify-between z-10 shadow-2xl h-full overflow-y-auto">
+            <div>
+              {/* Drawer Header */}
+              <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-extrabold text-base">
+                    V
+                  </div>
+                  <div>
+                    <h2 className="font-extrabold text-xs text-white">VOXAM FACTORY</h2>
+                    <span className="text-[10px] font-mono text-indigo-400">Menu & Navigation</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsMobileDrawerOpen(false)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Special Archie Callout inside Drawer */}
+              <div className="p-3 border-b border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('playground');
+                    setIsMobileDrawerOpen(false);
+                  }}
+                  className="w-full p-3 bg-gradient-to-r from-emerald-950/50 to-indigo-950/50 border border-emerald-500/40 rounded-xl text-left cursor-pointer transition-all hover:border-emerald-400 flex items-center gap-2.5"
+                >
+                  <Atom className="w-5 h-5 text-emerald-400 shrink-0" />
+                  <div>
+                    <div className="text-xs font-bold text-emerald-300">Archie Idea Box</div>
+                    <div className="text-[10px] text-slate-400">Random Science Facts for Students</div>
+                  </div>
+                </button>
+              </div>
+
+              {/* Drawer Nav Items */}
+              <nav className="p-3 space-y-1">
+                {navItems.map(tab => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        setActiveTab(tab.id);
+                        setIsMobileDrawerOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                        isActive
+                          ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+
+            {/* Mobile Drawer Footer */}
+            <div className="p-4 border-t border-slate-800 bg-slate-950/50">
+              <div className="flex items-center justify-between">
+                <div className="truncate pr-2">
+                  <div className="text-[11px] font-bold text-slate-200 truncate">{userEmail}</div>
+                  <div className="text-[10px] text-emerald-400 font-mono">Owner / Admin</div>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsMobileDrawerOpen(false);
+                    onSignOut();
+                  }}
+                  title="Sign Out"
+                  className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-rose-400 cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DESKTOP SIDEBAR NAVIGATION */}
+      <aside className="hidden md:flex w-64 bg-slate-900 border-r border-slate-800 flex-col justify-between shrink-0 min-w-0">
         <div>
           {/* Brand Header */}
           <div className="p-5 border-b border-slate-800 flex items-center justify-between">
@@ -644,23 +797,24 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
             </div>
           </div>
 
+          {/* Quick Archie Link */}
+          <div className="p-3 border-b border-slate-800">
+            <button
+              type="button"
+              onClick={() => setActiveTab('playground')}
+              className="w-full p-2.5 bg-emerald-950/40 hover:bg-emerald-950/60 border border-emerald-500/30 rounded-xl text-left cursor-pointer transition-all flex items-center gap-2"
+            >
+              <Atom className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div className="truncate">
+                <div className="text-[11px] font-bold text-emerald-300 truncate">Archie Idea Box</div>
+                <div className="text-[9px] text-slate-400 truncate">Random Student Science Facts</div>
+              </div>
+            </button>
+          </div>
+
           {/* Nav Items */}
           <nav className="p-3 space-y-1">
-            {[
-              { id: 'dashboard', label: 'Overview Dashboard', icon: LayoutDashboard },
-              { id: 'finance', label: 'Finance Engine (Channel 1)', icon: DollarSign },
-              { id: 'pipeline', label: '4-Stage GitHub Pipeline', icon: Workflow },
-              { id: 'dj', label: 'DJ Audio & TTS Studio', icon: Headphones },
-              { id: 'playground', label: 'AI Test Lab & Grok Chat', icon: Sparkles },
-              { id: 'channels', label: 'Channels (3 Accounts)', icon: Youtube },
-              { id: 'studio', label: 'Content Studio', icon: Clapperboard },
-              { id: 'queue', label: 'Job Queue & Pipeline', icon: ListOrdered },
-              { id: 'vault', label: 'Video Vault & History', icon: FolderLock },
-              { id: 'affiliates', label: 'Affiliates & Monetization', icon: DollarSign },
-              { id: 'niches', label: 'Niche Configurations', icon: Sliders },
-              { id: 'guidelines', label: 'Content Masterclass', icon: BookOpen },
-              { id: 'settings', label: 'Settings & Integrations', icon: Settings }
-            ].map(tab => {
+            {navItems.map(tab => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
               return (

@@ -28,9 +28,15 @@ import {
   FileText,
   ExternalLink,
   Share2,
-  AlertCircle
+  AlertCircle,
+  BookOpen,
+  Atom,
+  Shuffle,
+  Search,
+  GraduationCap
 } from 'lucide-react';
 import { IntegrationKeys, NicheType } from '../types';
+import { STUDENT_SCIENCE_FACTS, StudentScienceFact } from '../data/studentScienceFacts';
 import {
   chatWithXaiGrok,
   chatWithGroq,
@@ -81,6 +87,14 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
   const [selectedTtsVoiceId, setSelectedTtsVoiceId] = useState<string>('zeus');
   const [topicSuggestions, setTopicSuggestions] = useState<string[]>([]);
   const [isGeneratingTopics, setIsGeneratingTopics] = useState<boolean>(false);
+  
+  // Archie Idea Box State
+  const [selectedScienceSubject, setSelectedScienceSubject] = useState<string>('All');
+  const [scienceSearchQuery, setScienceSearchQuery] = useState<string>('');
+  const [copiedFactId, setCopiedFactId] = useState<string | null>(null);
+  const [shuffledFactId, setShuffledFactId] = useState<string | null>(null);
+  const [bufferPushNotice, setBufferPushNotice] = useState<string | null>(null);
+
   const [testPostStep, setTestPostStep] = useState<string>('');
   const [isTestPostRunning, setIsTestPostRunning] = useState<boolean>(false);
   const [testPostResult, setTestPostResult] = useState<{
@@ -633,9 +647,17 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
         ? 'Fin Blueprint (@bones_ceo)' 
         : testPostChannel === 'motivation_stoicism' 
         ? 'The Stoic Architect (@thestoicarchitect-n4b)' 
+        : testPostChannel === 'science_cartoon'
+        ? 'Archie Explains: Random Scientific Facts Students Need (@ArchieExplains)'
         : 'Godswill Isaac (@bonesceo)';
 
-      const prompt = `Generate exactly 3 fresh, distinct, viral YouTube Shorts topic ideas for the channel "${channelName}" (${testPostChannel}).
+      const prompt = testPostChannel === 'science_cartoon'
+        ? `Generate exactly 3 fresh, mind-blowing, curriculum-relevant scientific fact topic ideas that students need and love for the YouTube Shorts channel "${channelName}". Topics should cover high-yield exam intuition (physics, biology, chemistry, space, neuroscience) explained simply without textbook jargon.
+Ensure NONE of these duplicate:
+${pastTitles.length > 0 ? pastTitles.join('\n') : 'No previous posts yet.'}
+Format your response strictly as a JSON array of 3 strings, with no markdown code fences, e.g.:
+["Why Ice Floats: The Molecular Anomaly Saving Marine Life", "Einstein's Relativity in Your Phone: Why GPS Would Drift 11km a Day", "How Soap Destroys Viruses: The Lipid Crowbar Effect"]`
+        : `Generate exactly 3 fresh, distinct, viral YouTube Shorts topic ideas for the channel "${channelName}" (${testPostChannel}).
 Ensure NONE of these 3 topics duplicate or repeat any of these recently published topics:
 ${pastTitles.length > 0 ? pastTitles.join('\n') : 'No previous posts yet.'}
 
@@ -669,6 +691,9 @@ Format your response strictly as a JSON array of 3 strings, with no markdown cod
             'The Art of Strategic Silence: Why High Achievers Never Explain Themselves',
             'How to Build Iron Discipline When Motivation Completely Disappears'
           ];
+        } else if (testPostChannel === 'science_cartoon') {
+          const shuffled = [...STUDENT_SCIENCE_FACTS].sort(() => 0.5 - Math.random());
+          generatedList = shuffled.slice(0, 3).map(f => `${f.hook.replace(/[?!.]$/, '')}: ${f.fact.split('.')[0]}`);
         } else {
           generatedList = [
             '5 Insane AI Tools in 2026 That Feel Completely Illegal to Use',
@@ -1096,6 +1121,10 @@ Format your response strictly as a JSON array of 3 strings, with no markdown cod
                       setTestPostTopic('Marcus Aurelius on Inner Fortress and Focus Under Pressure');
                       setSelectedTtsVoiceId('zeus');
                       setSelectedBgMusicId('mystic_deep');
+                    } else if (newChannel === 'science_cartoon') {
+                      setTestPostTopic('Why Oceans Don’t Freeze Solid: The Ice Density Anomaly That Saves Marine Life');
+                      setSelectedTtsVoiceId('orpheus');
+                      setSelectedBgMusicId('tech_wealth');
                     } else if (newChannel === 'tech_ai') {
                       setTestPostTopic('Top 3 Autonomous AI Agent Tools in 2026 That Feel Illegal');
                       setSelectedTtsVoiceId('orpheus');
@@ -1112,6 +1141,7 @@ Format your response strictly as a JSON array of 3 strings, with no markdown cod
                   <option value="finance_saas">Channel 1: Fin Blueprint (@bones_ceo)</option>
                   <option value="motivation_stoicism">Channel 2: The Stoic Architect (@thestoicarchitect-n4b)</option>
                   <option value="tech_ai">Channel 3: Godswill Isaac (@bonesceo)</option>
+                  <option value="science_cartoon">Channel 4: Archie Explains (Science Facts for Students)</option>
                 </select>
               </div>
             </div>
@@ -1324,6 +1354,217 @@ Format your response strictly as a JSON array of 3 strings, with no markdown cod
                   <span className="text-emerald-400 font-bold block mb-0.5">🎯 4. Wealth Discipline:</span>
                   <span className="text-slate-300 text-[11px]">Automating emergency funds & 50/30/20 rule</span>
                 </button>
+              </div>
+            </div>
+
+            {/* ARCHIE IDEA BOX: RANDOM SCIENTIFIC FACTS STUDENTS NEED */}
+            <div className="p-4 sm:p-5 bg-slate-900 border border-emerald-500/30 rounded-2xl sm:rounded-3xl space-y-4 shadow-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="px-2.5 py-1 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[11px] font-bold rounded-lg flex items-center gap-1.5 font-mono">
+                      <Atom className="w-3.5 h-3.5 text-emerald-400" />
+                      Archie Idea Box
+                    </span>
+                    <span className="px-2.5 py-1 bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-[11px] font-bold rounded-lg font-mono">
+                      {STUDENT_SCIENCE_FACTS.length} Verified Student Facts
+                    </span>
+                  </div>
+                  <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">
+                    Random Scientific Facts Students Need
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    High-yield exam intuition and curiosity hooks for Archie Explains Shorts, Reels & Buffer Idea Box.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const facts = selectedScienceSubject === 'All' 
+                        ? STUDENT_SCIENCE_FACTS 
+                        : STUDENT_SCIENCE_FACTS.filter((f: StudentScienceFact) => f.subject === selectedScienceSubject);
+                      const randomFact = facts[Math.floor(Math.random() * facts.length)];
+                      if (randomFact) {
+                        setShuffledFactId(randomFact.id);
+                        setTestPostChannel('science_cartoon');
+                        setTestPostTopic(`${randomFact.hook.replace(/[?!.]$/, '')}: ${randomFact.fact.split('.')[0]}`);
+                        setSelectedTtsVoiceId('orpheus');
+                        setSelectedBgMusicId('tech_wealth');
+                        setBufferPushNotice(`Loaded "${randomFact.subject}: ${randomFact.hook}" into Topic input!`);
+                        setTimeout(() => setBufferPushNotice(null), 3000);
+                      }
+                    }}
+                    className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-md shadow-emerald-600/20 transition-all"
+                  >
+                    <Shuffle className="w-3.5 h-3.5" />
+                    <span>Shuffle Random Fact</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Notification Banner */}
+              {bufferPushNotice && (
+                <div className="p-3 bg-emerald-950/60 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs font-medium flex items-center justify-between animate-fadeIn">
+                  <span>{bufferPushNotice}</span>
+                  <button type="button" onClick={() => setBufferPushNotice(null)} className="text-emerald-400 hover:text-white text-xs">✕</button>
+                </div>
+              )}
+
+              {/* Filter Chips & Search Bar */}
+              <div className="space-y-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                  {/* Subject Tabs */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full scrollbar-none">
+                    {['All', 'Physics', 'Biology', 'Chemistry', 'Space', 'Neuroscience', 'Earth Science'].map((sub) => {
+                      const isSel = selectedScienceSubject === sub;
+                      return (
+                        <button
+                          key={sub}
+                          type="button"
+                          onClick={() => setSelectedScienceSubject(sub)}
+                          className={`px-2.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                            isSel
+                              ? 'bg-emerald-600 text-white shadow-sm'
+                              : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
+                          }`}
+                        >
+                          {sub}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Search Bar */}
+                  <div className="relative min-w-[200px]">
+                    <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
+                    <input
+                      type="text"
+                      value={scienceSearchQuery}
+                      onChange={(e) => setScienceSearchQuery(e.target.value)}
+                      placeholder="Search exam topic or keyword..."
+                      className="w-full bg-slate-950 border border-slate-800 text-xs text-slate-200 rounded-xl pl-8 pr-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Facts Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[460px] overflow-y-auto pr-1">
+                  {STUDENT_SCIENCE_FACTS.filter((fact: StudentScienceFact) => {
+                    const matchSub = selectedScienceSubject === 'All' || fact.subject === selectedScienceSubject;
+                    const q = scienceSearchQuery.toLowerCase().trim();
+                    const matchQ = !q || 
+                      fact.hook.toLowerCase().includes(q) || 
+                      fact.fact.toLowerCase().includes(q) || 
+                      fact.examRelevance.toLowerCase().includes(q) ||
+                      fact.whyStudentsNeedIt.toLowerCase().includes(q);
+                    return matchSub && matchQ;
+                  }).map((item: StudentScienceFact) => {
+                    const isCopied = copiedFactId === item.id;
+                    const isShuffled = shuffledFactId === item.id;
+                    return (
+                      <div
+                        key={item.id}
+                        className={`p-3.5 rounded-2xl border transition-all flex flex-col justify-between space-y-3 ${
+                          isShuffled
+                            ? 'bg-emerald-950/40 border-emerald-500 ring-1 ring-emerald-500 shadow-lg'
+                            : 'bg-slate-950 border-slate-800/90 hover:border-slate-700'
+                        }`}
+                      >
+                        <div className="space-y-2">
+                          {/* Card Badges */}
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider font-mono ${
+                              item.subject === 'Physics' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
+                              item.subject === 'Biology' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                              item.subject === 'Chemistry' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                              item.subject === 'Space' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' :
+                              item.subject === 'Neuroscience' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
+                              'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                            }`}>
+                              {item.subject}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
+                              <GraduationCap className="w-3 h-3 text-emerald-400" />
+                              {item.examRelevance}
+                            </span>
+                          </div>
+
+                          {/* Hook */}
+                          <h4 className="text-xs font-bold text-white leading-snug">
+                            {item.hook}
+                          </h4>
+
+                          {/* Fact Text */}
+                          <p className="text-xs text-slate-300 leading-relaxed">
+                            {item.fact}
+                          </p>
+
+                          {/* Why Students Need It */}
+                          <div className="p-2 bg-slate-900/90 border border-slate-800/80 rounded-xl space-y-1">
+                            <div className="text-[10px] font-bold text-emerald-400 font-mono">WHY STUDENTS NEED IT:</div>
+                            <div className="text-[11px] text-slate-300 leading-snug">{item.whyStudentsNeedIt}</div>
+                          </div>
+
+                          {/* Academic Citation */}
+                          <div className="text-[10px] text-slate-500 font-mono italic">
+                            Source: {item.citation}
+                          </div>
+                        </div>
+
+                        {/* Card Action Buttons */}
+                        <div className="flex items-center gap-2 pt-2 border-t border-slate-900">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTestPostChannel('science_cartoon');
+                              setTestPostTopic(`${item.hook.replace(/[?!.]$/, '')}: ${item.fact.split('.')[0]}`);
+                              setSelectedTtsVoiceId('orpheus');
+                              setSelectedBgMusicId('tech_wealth');
+                              setBufferPushNotice(`Loaded "${item.hook}" into Archie video generator!`);
+                              setTimeout(() => setBufferPushNotice(null), 3000);
+                            }}
+                            className="flex-1 px-2.5 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 font-bold text-[11px] rounded-lg flex items-center justify-center gap-1 cursor-pointer transition-all"
+                          >
+                            <Sparkles className="w-3 h-3" />
+                            <span>Load into Archie Studio</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const text = `${item.hook}\n\n${item.fact}\n\nExam Focus: ${item.examRelevance}\nWhy Students Need It: ${item.whyStudentsNeedIt}\nSource: ${item.citation}\nTags: ${item.tags.join(' ')}`;
+                              navigator.clipboard.writeText(text);
+                              setCopiedFactId(item.id);
+                              setTimeout(() => setCopiedFactId(null), 2500);
+                            }}
+                            className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-medium text-[11px] rounded-lg flex items-center gap-1 cursor-pointer transition-all"
+                            title="Copy fact for study notes"
+                          >
+                            {isCopied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                            <span>{isCopied ? 'Copied' : 'Copy'}</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const bufferIdeaText = `${item.hook}\n\n${item.fact}\n\n📚 Exam intuition: ${item.examRelevance}\n💡 Why students need it: ${item.whyStudentsNeedIt}\n📖 Reference: ${item.citation}\n\n${item.tags.join(' ')}`;
+                              navigator.clipboard.writeText(bufferIdeaText);
+                              setBufferPushNotice(`Copied "${item.hook}" formatted for Buffer Idea Box!`);
+                              setTimeout(() => setBufferPushNotice(null), 3500);
+                            }}
+                            className="px-2.5 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 font-medium text-[11px] rounded-lg flex items-center gap-1 cursor-pointer transition-all"
+                            title="Format and copy for Buffer Idea Box"
+                          >
+                            <Share2 className="w-3 h-3" />
+                            <span>Buffer Idea</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 

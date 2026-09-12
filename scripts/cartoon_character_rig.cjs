@@ -24,38 +24,61 @@ const ASSETS_DIR = path.join(process.cwd(), 'cartoon_character_assets');
 
 /**
  * Generate SVGs for all mouth shapes (A through X) in standard Preston Blair phoneme set
+ * Crafted with natural warm lip tones and elegant clean contours
  */
 function getMouthSvg(shape) {
+  const LIP_UPPER = '#c77864';
+  const LIP_LOWER = '#dc8a75';
+  const LIP_CONTOUR = '#5c2417';
+  const MOUTH_CAVITY = '#350b12';
+  const TEETH_WHITE = '#f8fafc';
+  const TONGUE_PINK = '#e26274';
+
   switch (shape) {
     case 'A': // Closed / Rest (P, B, M)
-      return `<path d="M 20 50 Q 50 52 80 50" stroke="#1e293b" stroke-width="6" stroke-linecap="round" fill="none" />`;
+      return `<path d="M 22 50 Q 50 48 78 50" stroke="${LIP_CONTOUR}" stroke-width="2.5" stroke-linecap="round" fill="none" />
+              <path d="M 30 49 Q 50 45 70 49" stroke="${LIP_UPPER}" stroke-width="1.8" fill="none" />
+              <path d="M 34 52 Q 50 55 66 52" stroke="${LIP_LOWER}" stroke-width="1.8" fill="none" />`;
     case 'B': // Slightly Open (Consonants S, T, D, N, K, G)
-      return `<ellipse cx="50" cy="50" rx="28" ry="12" fill="#e11d48" stroke="#1e293b" stroke-width="5" />
-              <rect x="32" y="44" width="36" height="6" fill="#ffffff" rx="2" stroke="#1e293b" stroke-width="1.5" />`;
+      return `<path d="M 24 49 C 24 44, 76 44, 76 49 C 76 56, 24 56, 24 49 Z" fill="${MOUTH_CAVITY}" stroke="${LIP_CONTOUR}" stroke-width="2" />
+              <rect x="30" y="46" width="40" height="4" fill="${TEETH_WHITE}" rx="1" />
+              <path d="M 26 47 Q 50 43 74 47" stroke="${LIP_UPPER}" stroke-width="1.8" fill="none" />
+              <path d="M 30 54 Q 50 57 70 54" stroke="${LIP_LOWER}" stroke-width="1.8" fill="none" />`;
     case 'C': // Wide Open (Vowels AH, AA)
-      return `<ellipse cx="50" cy="52" rx="32" ry="24" fill="#be123c" stroke="#1e293b" stroke-width="5.5" />
-              <ellipse cx="50" cy="38" rx="20" ry="7" fill="#ffffff" />
-              <ellipse cx="50" cy="68" rx="18" ry="8" fill="#fb7185" />`;
+      return `<path d="M 22 47 C 22 36, 78 36, 78 47 C 78 66, 22 66, 22 47 Z" fill="${MOUTH_CAVITY}" stroke="${LIP_CONTOUR}" stroke-width="2.2" />
+              <path d="M 32 42 Q 50 46 68 42 L 66 45 Q 50 48 34 45 Z" fill="${TEETH_WHITE}" />
+              <ellipse cx="50" cy="59" rx="16" ry="6" fill="${TONGUE_PINK}" />
+              <path d="M 26 43 Q 50 38 74 43" stroke="${LIP_UPPER}" stroke-width="2" fill="none" />
+              <path d="M 28 64 Q 50 67 72 64" stroke="${LIP_LOWER}" stroke-width="2" fill="none" />`;
     case 'D': // Smile / Teeth Exposed (EE, I)
-      return `<path d="M 18 45 Q 50 75 82 45 Z" fill="#ffffff" stroke="#1e293b" stroke-width="5.5" />
-              <line x1="20" y1="52" x2="80" y2="52" stroke="#cbd5e1" stroke-width="2.5" />`;
+      return `<path d="M 20 48 Q 50 44 80 48 Q 50 62 20 48 Z" fill="${MOUTH_CAVITY}" stroke="${LIP_CONTOUR}" stroke-width="2" />
+              <path d="M 24 48 Q 50 46 76 48 L 74 53 Q 50 55 26 53 Z" fill="${TEETH_WHITE}" />
+              <path d="M 22 47 Q 50 43 78 47" stroke="${LIP_UPPER}" stroke-width="1.8" fill="none" />
+              <path d="M 26 59 Q 50 63 74 59" stroke="${LIP_LOWER}" stroke-width="1.8" fill="none" />`;
     case 'E': // Rounded / OO, W, U
-      return `<circle cx="50" cy="50" r="20" fill="#e11d48" stroke="#1e293b" stroke-width="5.5" />
-              <circle cx="50" cy="50" r="10" fill="#4c0519" />`;
+      return `<ellipse cx="50" cy="50" rx="15" ry="14" fill="${MOUTH_CAVITY}" stroke="${LIP_CONTOUR}" stroke-width="2.2" />
+              <ellipse cx="50" cy="50" rx="9" ry="8" fill="#1f070b" />
+              <ellipse cx="50" cy="50" rx="17" ry="16" fill="none" stroke="${LIP_UPPER}" stroke-width="1.5" />`;
     case 'F': // Lip Tuck (F, V)
-      return `<path d="M 20 45 Q 50 55 80 45" stroke="#1e293b" stroke-width="5" fill="none" />
-              <rect x="36" y="47" width="28" height="8" fill="#ffffff" rx="2" stroke="#1e293b" stroke-width="2" />
-              <path d="M 30 58 Q 50 64 70 58" stroke="#e11d48" stroke-width="5" fill="none" />`;
+      return `<path d="M 24 47 Q 50 49 76 47" stroke="${LIP_CONTOUR}" stroke-width="2" fill="none" />
+              <rect x="34" y="47" width="32" height="5" fill="${TEETH_WHITE}" rx="1" />
+              <path d="M 30 52 Q 50 56 70 52" stroke="${LIP_LOWER}" stroke-width="2.5" fill="none" stroke-linecap="round" />`;
     case 'G': // Narrow Open / Tongue behind teeth (L, TH)
-      return `<ellipse cx="50" cy="50" rx="24" ry="16" fill="#e11d48" stroke="#1e293b" stroke-width="5" />
-              <path d="M 38 48 Q 50 42 62 48" stroke="#ffffff" stroke-width="5" fill="none" />`;
+      return `<path d="M 26 48 C 26 41, 74 41, 74 48 C 74 60, 26 60, 26 48 Z" fill="${MOUTH_CAVITY}" stroke="${LIP_CONTOUR}" stroke-width="2" />
+              <path d="M 40 50 Q 50 44 60 50" stroke="${TONGUE_PINK}" stroke-width="4" fill="none" stroke-linecap="round" />
+              <path d="M 32 46 Q 50 49 68 46" stroke="${TEETH_WHITE}" stroke-width="2" fill="none" />
+              <path d="M 28 45 Q 50 42 72 45" stroke="${LIP_UPPER}" stroke-width="1.8" fill="none" />`;
     case 'H': // Wide Smiling Open
-      return `<path d="M 15 42 Q 50 82 85 42 Z" fill="#e11d48" stroke="#1e293b" stroke-width="5.5" />
-              <path d="M 24 42 L 76 42 Q 50 50 24 42 Z" fill="#ffffff" />
-              <ellipse cx="50" cy="70" rx="18" ry="9" fill="#fb7185" />`;
+      return `<path d="M 18 46 Q 50 44 82 46 C 80 67, 20 67, 18 46 Z" fill="${MOUTH_CAVITY}" stroke="${LIP_CONTOUR}" stroke-width="2.2" />
+              <path d="M 24 46 Q 50 48 76 46 L 74 50 Q 50 52 26 50 Z" fill="${TEETH_WHITE}" />
+              <ellipse cx="50" cy="61" rx="16" ry="6" fill="${TONGUE_PINK}" />
+              <path d="M 20 45 Q 50 41 80 45" stroke="${LIP_UPPER}" stroke-width="2" fill="none" />
+              <path d="M 24 64 Q 50 67 76 64" stroke="${LIP_LOWER}" stroke-width="2" fill="none" />`;
     case 'X': // Total Rest / Neutral
     default:
-      return `<path d="M 25 50 Q 50 54 75 50" stroke="#1e293b" stroke-width="6" stroke-linecap="round" fill="none" />`;
+      return `<path d="M 24 50 Q 50 51 76 50" stroke="${LIP_CONTOUR}" stroke-width="2.2" stroke-linecap="round" fill="none" />
+              <path d="M 30 49 Q 50 47 70 49" stroke="${LIP_UPPER}" stroke-width="1.6" fill="none" />
+              <path d="M 34 52 Q 50 54 66 52" stroke="${LIP_LOWER}" stroke-width="1.6" fill="none" />`;
   }
 }
 

@@ -1,17 +1,26 @@
 name: Automated Cartoon Factory (Workflow 3)
 
 on:
-  push:
-    branches: [ main, master ]
   schedule:
-    - cron: '0 8,12,16,20 * * *' # Automated 4x daily Cartoon / Archie Tech Animated Shorts & Reels (09:00, 13:00, 17:00, 21:00 WAT)
+    # Strict 4x daily Archie releases: 1 Animated Video (13:00 UTC) + 3 Everyday Science Fact Reels (08:00, 18:00, 23:00 UTC)
+    - cron: '0 8,13,18,23 * * *'
   workflow_dispatch:
     inputs:
       topic:
-        description: 'Cartoon Topic / Wonder (e.g., "How Undersea Cables Connect the Internet", "How GPUs Render Games")'
+        description: 'Cartoon Topic / Wonder (e.g., "Why Microwaves Heat Soup Not Mugs", "Why Onions Make You Cry")'
         required: false
         default: ''
         type: string
+      video_mode:
+        description: 'Video Generation Mode (auto | video | fact_reel | all_daily_4)'
+        required: false
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - video
+          - fact_reel
+          - all_daily_4
       engine:
         description: 'Rendering Engine (moviepy for exact puppet character animation, ffmpeg for ultra-fast 2.5D, blender for 3D cutout)'
         required: false
@@ -108,12 +117,13 @@ jobs:
           node scripts/groq_model_finder.cjs || true
           node scripts/openrouter_model_finder.cjs || true
 
-      - name: Execute Cartoon Factory Pipeline
+      - name: Execute Archie Video Production (1 Video Per Trigger to Prevent Spam)
         env:
+          VIDEO_MODE: ${{ github.event.inputs.video_mode || 'auto' }}
           TEST_TOPIC: ${{ github.event.inputs.topic }}
           CARTOON_ENGINE: ${{ github.event.inputs.engine || 'moviepy' }}
           DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
-          ALLOW_SHARED_YOUTUBE_TOKEN: 'true'
+          ALLOW_SHARED_YOUTUBE_TOKEN: 'false'
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
           GROK_API_KEY_2: ${{ secrets.GROK_API_KEY_2 }}
@@ -127,29 +137,37 @@ jobs:
           YOUTUBE_CLIENT_ID_TECH: ${{ secrets.YOUTUBE_CLIENT_ID_TECH }}
           YOUTUBE_CLIENT_SECRET_TECH: ${{ secrets.YOUTUBE_CLIENT_SECRET_TECH }}
           YOUTUBE_REFRESH_TOKEN_TECH: ${{ secrets.YOUTUBE_REFRESH_TOKEN_TECH }}
-          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
-        run: node scripts/test_cartoon_runner.cjs
-
-      - name: Generate Daily Archie 5-Second Tech Fact Reel
-        env:
-          DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
-          ALLOW_SHARED_YOUTUBE_TOKEN: 'true'
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 || secrets.YOUTUBE_CLIENT_ID_TECH }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 || secrets.YOUTUBE_CLIENT_SECRET_TECH }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 || secrets.YOUTUBE_REFRESH_TOKEN_TECH }}
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
           BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID }}
           BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID }}
           BUFFER_TIKTOK_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_CHANNEL_ID }}
-          YOUTUBE_CLIENT_ID_CH3: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 }}
-          YOUTUBE_CLIENT_SECRET_CH3: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 }}
-          YOUTUBE_REFRESH_TOKEN_CH3: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 }}
-          YOUTUBE_CLIENT_ID_TECH: ${{ secrets.YOUTUBE_CLIENT_ID_TECH }}
-          YOUTUBE_CLIENT_SECRET_TECH: ${{ secrets.YOUTUBE_CLIENT_SECRET_TECH }}
-          YOUTUBE_REFRESH_TOKEN_TECH: ${{ secrets.YOUTUBE_REFRESH_TOKEN_TECH }}
-          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
-        run: node scripts/generate_archie_tech_fact_reel.cjs
+        run: |
+          CURRENT_HOUR=$(date -u +%-H)
+          echo "=== Processing Archie Video Dispatch (Mode: $VIDEO_MODE, Hour: $CURRENT_HOUR UTC) ==="
+          
+          if [ "$VIDEO_MODE" = "video" ] || [ "$VIDEO_MODE" = "episode" ] || { [ "$VIDEO_MODE" = "auto" ] && [ "$CURRENT_HOUR" -eq 13 ]; }; then
+            echo "▶️ Generating 1 Full Archie Animated Cartoon Video..."
+            node scripts/test_cartoon_runner.cjs
+          elif [ "$VIDEO_MODE" = "fact_reel" ] || { [ "$VIDEO_MODE" = "auto" ] && [ "$CURRENT_HOUR" -ne 13 ]; }; then
+            echo "▶️ Generating 1 Archie Everyday Science / Tech Fact Reel..."
+            node scripts/generate_archie_tech_fact_reel.cjs
+          elif [ "$VIDEO_MODE" = "all_daily_4" ]; then
+            echo "▶️ Generating Full Daily 4-Video Suite (1 Animated Video + 3 Everyday Fact Reels)..."
+            echo "--- Slot 1: Everyday Fact Reel 1 of 3 ---"
+            node scripts/generate_archie_tech_fact_reel.cjs || true
+            echo "--- Slot 2: Full Animated Video ---"
+            node scripts/test_cartoon_runner.cjs || true
+            echo "--- Slot 3: Everyday Fact Reel 2 of 3 ---"
+            node scripts/generate_archie_tech_fact_reel.cjs || true
+            echo "--- Slot 4: Everyday Fact Reel 3 of 3 ---"
+            node scripts/generate_archie_tech_fact_reel.cjs || true
+          else
+            echo "▶️ Defaulting to Archie Everyday Fact Reel..."
+            node scripts/generate_archie_tech_fact_reel.cjs
+          fi
 
       - name: Cross-Post to Facebook, Instagram, and TikTok via Buffer Omnichannel
         if: success()

@@ -144,40 +144,63 @@ jobs:
 
   const workflowTestFinYaml = `name: Test Fin Blueprint Pipeline
 on:
+  schedule:
+    # Strict 4x daily cadence: 4 reels per day (alternating 3s and 5s reels spaced 5 hours apart)
+    # 06:00 UTC (3s), 11:00 UTC (5s), 16:00 UTC (3s), 21:00 UTC (5s)
+    - cron: '0 6,11,16,21 * * *'
   workflow_dispatch:
     inputs:
+      video_mode:
+        description: 'Video Mode (auto | 3s_reel | 5s_reel | all_daily_4)'
+        required: false
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - 3s_reel
+          - 5s_reel
+          - all_daily_4
       topic:
-        description: 'Video Topic / Theme'
+        description: 'Video Topic / Theme (Optional)'
         required: false
         default: ''
         type: string
       dry_run:
-        description: 'Dry Run Mode (No live YouTube upload)'
+        description: 'Dry Run Mode (Uncheck for live YouTube/TikTok publishing)'
         required: true
-        default: true
+        default: false
         type: boolean
 
 jobs:
   test_fin_pipeline:
-    name: Run Fin Blueprint Pipeline Diagnostic
+    name: Run Fin Reel Pipeline (4 Reels / Day)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install --legacy-peer-deps || true
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg
-      - name: Execute Fin Blueprint Test Runner
+      - name: Generate 3s or 5s Fin Reel (1 Reel Per Trigger)
         env:
+          VIDEO_MODE: \${{ github.event.inputs.video_mode || 'auto' }}
           TEST_TOPIC: \${{ github.event.inputs.topic }}
-          DRY_RUN: \${{ github.event.inputs.dry_run }}
-          GROQ_API_KEY: \${{ secrets.GROQ_API_KEY }}
-          FIREBASE_CONFIG_JSON: \${{ secrets.FIREBASE_CONFIG_JSON }}
-        run: node scripts/test_fin_runner.cjs`;
+          DRY_RUN: \${{ github.event.inputs.dry_run == 'true' }}
+          GEMINI_API_KEY: \${{ secrets.GEMINI_API_KEY }}
+          YOUTUBE_REFRESH_TOKEN_CH1: \${{ secrets.YOUTUBE_REFRESH_TOKEN_CH1 }}
+        run: |
+          CURRENT_HOUR=$(date -u +%-H)
+          if [ "$VIDEO_MODE" = "3s_reel" ] || { [ "$VIDEO_MODE" = "auto" ] && { [ "$CURRENT_HOUR" -eq 6 ] || [ "$CURRENT_HOUR" -eq 16 ]; }; }; then
+            SHORT_DURATION=3.0 node scripts/generate_fin_quote_reel.cjs
+          else
+            SHORT_DURATION=5.0 node scripts/generate_fin_quote_reel.cjs
+          fi`;
 
   const workflowTestStoicYaml = `name: Test Stoic & Motivation Pipeline
 on:
+  schedule:
+    # Strict 4x daily cadence: 1 Stoic Short (12:00 UTC) + 3 Reels of 3s/5s (07:00, 17:00, 22:00 UTC)
+    - cron: '0 7,12,17,22 * * *'
   workflow_dispatch:
     inputs:
       topic:
@@ -185,30 +208,49 @@ on:
         required: false
         default: ''
         type: string
+      video_mode:
+        description: 'Video Generation Mode (auto | short | 3s_reel | 5s_reel | all_daily_4)'
+        required: false
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - short
+          - 3s_reel
+          - 5s_reel
+          - all_daily_4
       dry_run:
-        description: 'Dry Run Mode (No live YouTube upload)'
+        description: 'Dry Run Mode (Uncheck for live YouTube upload)'
         required: true
-        default: true
+        default: false
         type: boolean
 
 jobs:
   test_pipeline:
-    name: Run Stoic Pipeline Diagnostic
+    name: Run Stoic Pipeline Diagnostic (1 Short + 3 Reels / Day)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install --legacy-peer-deps || true
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg
-      - name: Execute Stoic Test Runner
+      - name: Execute Stoic Video Dispatch (1 Video Per Trigger)
         env:
+          VIDEO_MODE: \${{ github.event.inputs.video_mode || 'auto' }}
           TEST_TOPIC: \${{ github.event.inputs.topic }}
-          DRY_RUN: \${{ github.event.inputs.dry_run }}
+          DRY_RUN: \${{ github.event.inputs.dry_run == 'true' }}
           GROQ_API_KEY: \${{ secrets.GROQ_API_KEY }}
-          FIREBASE_CONFIG_JSON: \${{ secrets.FIREBASE_CONFIG_JSON }}
-        run: node scripts/test_stoic_runner.cjs`;
+          YOUTUBE_REFRESH_TOKEN_CH2: \${{ secrets.YOUTUBE_REFRESH_TOKEN_CH2 }}
+        run: |
+          CURRENT_HOUR=$(date -u +%-H)
+          if [ "$VIDEO_MODE" = "short" ] || { [ "$VIDEO_MODE" = "auto" ] && [ "$CURRENT_HOUR" -eq 12 ]; }; then
+            node scripts/test_stoic_runner.cjs
+          elif [ "$VIDEO_MODE" = "5s_reel" ] || { [ "$VIDEO_MODE" = "auto" ] && [ "$CURRENT_HOUR" -eq 17 ]; }; then
+            SHORT_DURATION=5.0 node scripts/generate_stoic_quote_reel.cjs
+          else
+            SHORT_DURATION=3.0 node scripts/generate_stoic_quote_reel.cjs
+          fi`;
 
   const workflowTestTechYaml = `name: Test Tech AI Pipeline
 on:
@@ -244,17 +286,28 @@ jobs:
           FIREBASE_CONFIG_JSON: \${{ secrets.FIREBASE_CONFIG_JSON }}
         run: node scripts/test_tech_runner.cjs`;
 
-  const workflowCartoonYaml = `name: Automated Cartoon Factory & Archie 4x Daily Schedule
+  const workflowCartoonYaml = `name: Automated Cartoon Factory (Workflow 3)
 on:
   schedule:
-    - cron: '0 8,12,16,20 * * *' # Automated 4x daily: 09:00, 13:00, 17:00, 21:00 WAT
+    # Strict 4x daily Archie releases: 1 Animated Video (13:00 UTC) + 3 Everyday Science Fact Reels (08:00, 18:00, 23:00 UTC)
+    - cron: '0 8,13,18,23 * * *'
   workflow_dispatch:
     inputs:
       topic:
-        description: 'Cartoon Topic / Wonder (Tech, AI, Quantum, Aerospace)'
+        description: 'Cartoon Topic / Wonder (e.g., "Why Microwaves Heat Soup Not Mugs", "Why Onions Make You Cry")'
         required: false
         default: ''
         type: string
+      video_mode:
+        description: 'Video Generation Mode (auto | video | fact_reel | all_daily_4)'
+        required: false
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - video
+          - fact_reel
+          - all_daily_4
       engine:
         description: 'Rendering Engine (moviepy for grounded puppet character, ffmpeg for rapid)'
         required: false
@@ -271,7 +324,7 @@ on:
 
 jobs:
   cartoon_factory_pipeline:
-    name: Build & Publish Archie Episodes & 5s Fact Reels
+    name: Build & Publish Archie Episodes & Everyday Science Reels (4 / Day)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -290,8 +343,9 @@ jobs:
         run: |
           node scripts/build_exact_puppet_shapes.cjs
           node scripts/build_modern_tech_character.cjs
-      - name: Execute Grounded Full Comparison Episode Pipeline
+      - name: Execute Archie Video Dispatch (1 Video Per Trigger to Prevent Spam)
         env:
+          VIDEO_MODE: \${{ github.event.inputs.video_mode || 'auto' }}
           TEST_TOPIC: \${{ github.event.inputs.topic }}
           CARTOON_ENGINE: \${{ github.event.inputs.engine || 'moviepy' }}
           DRY_RUN: \${{ github.event.inputs.dry_run == 'true' }}
@@ -299,12 +353,15 @@ jobs:
           GROQ_API_KEY: \${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: \${{ secrets.OPENROUTER_API_KEY }}
           YOUTUBE_REFRESH_TOKEN_CH3: \${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 }}
-        run: node scripts/test_cartoon_runner.cjs
-      - name: Generate Daily Archie 5-Second Mind-Bending Tech Fact Reel
-        env:
-          DRY_RUN: \${{ github.event.inputs.dry_run == 'true' }}
-          YOUTUBE_REFRESH_TOKEN_CH3: \${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 }}
-        run: node scripts/generate_archie_tech_fact_reel.cjs
+        run: |
+          CURRENT_HOUR=$(date -u +%-H)
+          if [ "$VIDEO_MODE" = "video" ] || { [ "$VIDEO_MODE" = "auto" ] && [ "$CURRENT_HOUR" -eq 13 ]; }; then
+            echo "▶️ Generating 1 Full Archie Animated Cartoon Video..."
+            node scripts/test_cartoon_runner.cjs
+          else
+            echo "▶️ Generating 1 Archie Everyday Science / Tech Fact Reel..."
+            node scripts/generate_archie_tech_fact_reel.cjs
+          fi
       - name: Cross-Post to Facebook, Instagram, and TikTok via Buffer Omnichannel
         if: success()
         env:
@@ -373,6 +430,74 @@ jobs:
               <span className="text-slate-400">Cloud Storage:</span>
               <span className="text-sky-400 font-bold">Cloudinary (voxawell)</span>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 4 Videos Per Day Cadence & Anti-Spam Strategy Card */}
+      <div className="p-6 bg-slate-900 border border-indigo-900/50 rounded-3xl space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-indigo-500/20 text-indigo-400 rounded-xl border border-indigo-500/30">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white">Daily Production Cadence: Exactly 4 Videos / Day Per Channel</h2>
+              <p className="text-xs text-indigo-300/80">Anti-Spam Enforced • Strict 1-Video-Per-Trigger Execution • Zero Duplicate Runs</p>
+            </div>
+          </div>
+          <span className="px-3 py-1 bg-indigo-950 border border-indigo-800 text-indigo-300 text-xs font-mono rounded-full font-bold">
+            12 Total Daily Videos
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+          {/* Fin */}
+          <div className="p-4 bg-slate-950 border border-emerald-900/40 rounded-2xl space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-bold text-emerald-300">Channel 1: Fin Blueprint</div>
+              <span className="text-[11px] font-mono font-bold text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-800/60">4 Reels</span>
+            </div>
+            <div className="text-xs text-slate-300 font-semibold">4 Reels Daily (3s &amp; 5s Alternating)</div>
+            <ul className="text-xs text-slate-400 space-y-1 font-mono">
+              <li>• 06:00 UTC: 3s Quote Reel</li>
+              <li>• 11:00 UTC: 5s Quote Reel</li>
+              <li>• 16:00 UTC: 3s Quote Reel</li>
+              <li>• 21:00 UTC: 5s Quote Reel</li>
+            </ul>
+            <div className="text-[11px] text-emerald-400/90 pt-1">High-retention rapid wealth &amp; micro-business wisdom.</div>
+          </div>
+
+          {/* Stoic */}
+          <div className="p-4 bg-slate-950 border border-amber-900/40 rounded-2xl space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-bold text-amber-300">Channel 2: Stoic Architect</div>
+              <span className="text-[11px] font-mono font-bold text-amber-400 bg-amber-950/80 px-2 py-0.5 rounded-full border border-amber-800/60">1 Short + 3 Reels</span>
+            </div>
+            <div className="text-xs text-slate-300 font-semibold">1 Full Short + 3 Reels Daily (3s / 5s)</div>
+            <ul className="text-xs text-slate-400 space-y-1 font-mono">
+              <li>• 07:00 UTC: 3s Mystery Reel</li>
+              <li>• 12:00 UTC: 1 Stoic Animated Short</li>
+              <li>• 17:00 UTC: 5s Mystery Reel</li>
+              <li>• 22:00 UTC: 3s Mystery Reel</li>
+            </ul>
+            <div className="text-[11px] text-amber-400/90 pt-1">Deep mental armor + mystery looping quote reels.</div>
+          </div>
+
+          {/* Archie */}
+          <div className="p-4 bg-slate-950 border border-cyan-900/40 rounded-2xl space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-bold text-cyan-300">Channel 3: Archie Explains</div>
+              <span className="text-[11px] font-mono font-bold text-cyan-400 bg-cyan-950/80 px-2 py-0.5 rounded-full border border-cyan-800/60">3 Reels + 1 Video</span>
+            </div>
+            <div className="text-xs text-slate-300 font-semibold">3 Reels + 1 Full Animated Video Daily</div>
+            <ul className="text-xs text-slate-400 space-y-1 font-mono">
+              <li>• 08:00 UTC: Everyday Fact Reel 1</li>
+              <li>• 13:00 UTC: 1 Full Animated Cartoon Video</li>
+              <li>• 18:00 UTC: Everyday Fact Reel 2</li>
+              <li>• 23:00 UTC: Everyday Fact Reel 3</li>
+            </ul>
+            <div className="text-[11px] text-cyan-400/90 pt-1">Everyday kitchen, phone, body &amp; science wonders.</div>
           </div>
         </div>
       </div>
@@ -477,40 +602,40 @@ jobs:
             </div>
             <div>
               <h2 className="text-lg font-bold text-white">Channel 3 Formula: Archie Explains (@ArchieExplains)</h2>
-              <p className="text-xs text-cyan-400/80">Frontier Tech & AI Animation • 4x Daily Broadcast Schedule</p>
+              <p className="text-xs text-cyan-400/80">Everyday Science & Relatable Tech Wonders • 4x Daily (3 Reels + 1 Video)</p>
             </div>
           </div>
           <span className="px-3 py-1 bg-cyan-950 border border-cyan-800 text-cyan-300 text-xs font-mono rounded-full font-bold">
-            09:00, 13:00, 17:00, 21:00 WAT
+            08:00, 13:00, 18:00, 23:00 UTC (4 Daily)
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
           <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-2xl space-y-1.5">
-            <div className="font-bold text-cyan-300">1. Dual Video Archetypes</div>
+            <div className="font-bold text-cyan-300">1. 3 Reels + 1 Full Video</div>
             <p className="text-slate-400 leading-relaxed">
-              Alternates between <strong>5s Mind-Bending Fact Reels</strong> (looping hooks + citations) and <strong>Full Comparison Episodes</strong> with grounded empirical stats.
+              3 everyday science fact reels (08:00, 18:00, 23:00 UTC) + 1 animated cartoon video (13:00 UTC) per day. Strict 1-video-per-trigger to prevent spam.
             </p>
           </div>
 
           <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-2xl space-y-1.5">
-            <div className="font-bold text-cyan-300">2. Real Verified Tech Data</div>
+            <div className="font-bold text-cyan-300">2. Relatable Everyday Science</div>
             <p className="text-slate-400 leading-relaxed">
-              Zero fake comparison data. Grounded in empirical benchmarks: Google Willow 105-qubit specs, TSMC 2nm nanosheets, and ASML High-NA EUV lithography.
+              Everyday mysteries people touch and see: why microwaves heat soup not mugs, why onions make you cry, touchscreen physics, static shocks, and bath wrinkles.
             </p>
           </div>
 
           <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-2xl space-y-1.5">
-            <div className="font-bold text-cyan-300">3. Grounded Character Rigging</div>
+            <div className="font-bold text-cyan-300">3. Natural Lips & Grounded Rig</div>
             <p className="text-slate-400 leading-relaxed">
-              Archie features contact floor shadows (zero floating), anatomically constrained arms (no clipping), and continuous on-screen presence (no disappearing).
+              Refined lip-sync phoneme anatomy with natural lip contours and Rhubarb mouth cues. Grounded contact shadow with zero float or visual jitter.
             </p>
           </div>
 
           <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-2xl space-y-1.5">
-            <div className="font-bold text-cyan-300">4. Suspense Sound & Clean Bio</div>
+            <div className="font-bold text-cyan-300">4. Suspense Sound & Multi-Network</div>
             <p className="text-slate-400 leading-relaxed">
-              Every reel carries suspenseful mystery audio, zero comment-in-description bleeding, and focused tech hashtags (#Quantum #AI #FutureTech #Shorts).
+              High-retention looping audio, crisp verified citations, and Buffer omnichannel relay across YouTube, Facebook, Instagram Reels, and TikTok.
             </p>
           </div>
         </div>

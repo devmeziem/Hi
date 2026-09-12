@@ -134,67 +134,73 @@ function renderHumanHead(pose = 'idle', options = {}) {
        <circle cx="${272 + pupilOffsetX}" cy="${212 + pupilOffsetY}" r="2.5" fill="#ffffff" opacity="0.9" />
        <circle cx="${277 + pupilOffsetX}" cy="${217 + pupilOffsetY}" r="1.2" fill="#ffffff" opacity="0.7" />`;
 
-  // Defined Anatomical Human Lips Rendering
+  // Natural Warm Creator Lips Rendering (Harmonious with Skin Tone)
+  const LIP_UPPER = '#c77864';
+  const LIP_LOWER = '#dc8a75';
+  const LIP_HIGHLIGHT = '#f3a492';
+  const LIP_CONTOUR = '#5c2417';
+  const MOUTH_CAVITY = '#350b12';
+  const TEETH_WHITE = '#f8fafc';
+  const TONGUE_PINK = '#e26274';
+
   const upperLipClosed = `
-    <!-- Upper Lip with Cupid's Bow -->
-    <path d="M 235 269 C 241 265, 246 266, 250 264 C 254 266, 259 265, 265 269 C 258 271, 242 271, 235 269 Z" fill="#b4533c" stroke="#451a03" stroke-width="1.2" />
+    <!-- Natural Upper Lip with Graceful Cupid's Bow -->
+    <path d="M 235 268 Q 242 265.5 246 266.5 Q 250 267.5 254 266.5 Q 258 265.5 265 268 C 258 269.5, 242 269.5, 235 268 Z" fill="${LIP_UPPER}" />
   `;
   const lowerLipClosed = `
-    <!-- Lower Lip with Fleshy Fullness & Soft Highlight -->
-    <path d="M 237 270 C 243 277, 257 277, 263 270 C 257 274, 243 274, 237 270 Z" fill="#cf705c" stroke="#451a03" stroke-width="1.2" />
-    <ellipse cx="250" cy="273" rx="5" ry="1.5" fill="#f87171" opacity="0.45" />
-    <!-- Subtle Lower Lip Shadow Crease -->
-    <path d="M 243 279 Q 250 282 257 279" stroke="${SKIN_SHADOW}" stroke-width="1.8" fill="none" opacity="0.5" stroke-linecap="round" />
+    <!-- Natural Lower Lip with Soft Highlight & Subtle Chin Crease -->
+    <path d="M 237 268.5 Q 250 275.5 263 268.5 C 257 272.5, 243 272.5, 237 268.5 Z" fill="${LIP_LOWER}" />
+    <ellipse cx="250" cy="272" rx="4.5" ry="1.2" fill="${LIP_HIGHLIGHT}" opacity="0.45" />
+    <path d="M 244 277.5 Q 250 279.5 256 277.5" stroke="${SKIN_SHADOW}" stroke-width="1.4" fill="none" opacity="0.4" stroke-linecap="round" />
   `;
 
   if (talking) {
     mouthPath = `
-      <!-- Dynamic Talking Mouth with Natural Upper/Lower Lips, Dental Arch & Tongue -->
+      <!-- Expressive Animated Talking Mouth with Natural Lips, Teeth & Tongue -->
+      <!-- Upper Lip Band -->
+      <path d="M 235 267 Q 242 265 246 266 Q 250 267 254 266 Q 258 265 265 267 C 258 268.5, 242 268.5, 235 267 Z" fill="${LIP_UPPER}" />
       <!-- Inner Oral Cavity -->
-      <path d="M 235 268 C 240 286, 260 286, 265 268 C 258 272, 242 272, 235 268 Z" fill="#4a0e17" stroke="#451a03" stroke-width="1.8" />
+      <path d="M 236 268 Q 250 270 264 268 C 263 283, 237 283, 236 268 Z" fill="${MOUTH_CAVITY}" stroke="${LIP_CONTOUR}" stroke-width="1.2" />
       <!-- Upper Teeth Arch -->
-      <path d="M 237 269 Q 250 273 263 269 L 261 273 Q 250 276 239 273 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.6" />
+      <path d="M 238 268 Q 250 270.5 262 268 L 261 271.5 Q 250 273.5 239 271.5 Z" fill="${TEETH_WHITE}" />
       <!-- Tongue Curve -->
-      <path d="M 243 282 C 246 278, 254 278, 257 282 C 253 285, 247 285, 243 282 Z" fill="#d94858" />
-      <!-- Defined Upper Lip -->
-      <path d="M 234 268 C 240 264, 246 265, 250 263 C 254 265, 260 264, 266 268 C 260 270, 240 270, 234 268 Z" fill="#b4533c" stroke="#451a03" stroke-width="1.2" />
-      <!-- Defined Lower Lip -->
-      <path d="M 237 283 C 243 288, 257 288, 263 283 C 257 285, 243 285, 237 283 Z" fill="#cf705c" stroke="#451a03" stroke-width="1.2" />
-      <path d="M 243 290 Q 250 292 257 290" stroke="${SKIN_SHADOW}" stroke-width="1.6" fill="none" opacity="0.5" stroke-linecap="round" />
+      <path d="M 242 278 Q 250 274.5 258 278 C 255 281.5, 245 281.5, 242 278 Z" fill="${TONGUE_PINK}" />
+      <!-- Lower Lip Cushion -->
+      <path d="M 237 281.5 Q 250 285.5 263 281.5 C 257 283.5, 243 283.5, 237 281.5 Z" fill="${LIP_LOWER}" />
+      <path d="M 244 287 Q 250 289 256 287" stroke="${SKIN_SHADOW}" stroke-width="1.4" fill="none" opacity="0.4" stroke-linecap="round" />
     `;
   } else if (pose === 'surprised') {
     mouthPath = `
-      <!-- Astonished Idle Parted Lips & Small O cavity -->
-      <path d="M 242 267 C 245 263, 255 263, 258 267 C 261 273, 260 282, 257 285 C 253 287, 247 287, 243 285 C 240 282, 239 273, 242 267 Z" fill="#380d12" stroke="#451a03" stroke-width="1.8" />
-      <!-- Upper Teeth Accent -->
-      <path d="M 244 269 Q 250 271 256 269" stroke="#f8fafc" stroke-width="1.2" fill="none" />
-      <!-- Surprised Lip Outline -->
-      <path d="M 240 267 C 245 263, 255 263, 260 267 C 263 274, 262 284, 258 287 C 252 290, 248 290, 242 287 C 238 283, 237 274, 240 267 Z" stroke="#b4533c" stroke-width="1.2" fill="none" />
+      <!-- Expressive Surprised O-Mouth with Natural Lip Contours -->
+      <ellipse cx="250" cy="275" rx="9" ry="11" fill="${MOUTH_CAVITY}" stroke="${LIP_CONTOUR}" stroke-width="1.2" />
+      <path d="M 245 266 Q 250 268 255 266" stroke="${TEETH_WHITE}" stroke-width="1.5" stroke-linecap="round" fill="none" />
+      <path d="M 241 267 C 245 264, 255 264, 259 267 C 262 273, 261 283, 257 286 C 253 288, 247 288, 243 286 C 239 283, 238 273, 241 267 Z" stroke="${LIP_UPPER}" stroke-width="1.4" fill="none" />
+      <path d="M 244 289 Q 250 291 256 289" stroke="${SKIN_SHADOW}" stroke-width="1.4" fill="none" opacity="0.4" stroke-linecap="round" />
     `;
   } else if (pose === 'akimbo_jaw' || pose === 'thinking') {
     mouthPath = `
-      <!-- Thoughtful / Philosophical Subtle Pursed Lips with Musing Smile -->
+      <!-- Thoughtful / Musing Inquisitive Half-Smile -->
       ${upperLipClosed}
       ${lowerLipClosed}
-      <path d="M 236 269 Q 248 271 264 268" stroke="#451a03" stroke-width="2" stroke-linecap="round" fill="none" />
-      <circle cx="264" cy="268" r="1" fill="#451a03" />
+      <path d="M 236 268.5 Q 248 270.5 264 267" stroke="${LIP_CONTOUR}" stroke-width="1.5" stroke-linecap="round" fill="none" />
+      <circle cx="264" cy="267" r="0.8" fill="${LIP_CONTOUR}" />
     `;
   } else if (pose === 'confused') {
     mouthPath = `
-      <!-- Quizzical Wry Smirk with Sculpted Lips -->
+      <!-- Quizzical Asymmetric Wry Smirk -->
       ${upperLipClosed}
       ${lowerLipClosed}
-      <path d="M 236 271 Q 248 268 263 273" stroke="#451a03" stroke-width="2" stroke-linecap="round" fill="none" />
+      <path d="M 236 270 Q 248 267 263 271.5" stroke="${LIP_CONTOUR}" stroke-width="1.5" stroke-linecap="round" fill="none" />
     `;
   } else {
     // Friendly, confident, welcoming smile with natural sculpted lips
     mouthPath = `
       ${upperLipClosed}
       ${lowerLipClosed}
-      <!-- Smile Crease -->
-      <path d="M 236 269 Q 250 274 264 269" fill="none" stroke="#451a03" stroke-width="2" stroke-linecap="round" />
-      <circle cx="236" cy="269" r="0.8" fill="#451a03" />
-      <circle cx="264" cy="269" r="0.8" fill="#451a03" />
+      <!-- Refined Smile Seam -->
+      <path d="M 235 268 Q 250 271.5 265 268" fill="none" stroke="${LIP_CONTOUR}" stroke-width="1.5" stroke-linecap="round" />
+      <circle cx="235" cy="268" r="0.75" fill="${LIP_CONTOUR}" />
+      <circle cx="265" cy="268" r="0.75" fill="${LIP_CONTOUR}" />
     `;
   }
 

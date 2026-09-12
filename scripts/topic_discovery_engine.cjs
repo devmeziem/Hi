@@ -141,28 +141,28 @@ const NICHE_SPHERES = {
   },
   cartoon: {
     channelHandle: '@ArchieExplains',
-    channelName: 'Archie Explains (Tech, AI & Cutting-Edge Science)',
-    targetAudience: 'Tech enthusiasts, engineers, students, and curious builders fascinated by frontier artificial intelligence, quantum computing, aerospace engineering, semiconductor physics, and mind-blowing science comparisons.',
+    channelName: 'Archie Explains (Everyday Science & Relatable Tech Wonders)',
+    targetAudience: 'Curious learners, students, and everyday viewers fascinated by the hidden science and surprising physics behind everyday stuff they touch, eat, use, and experience every single day.',
     searchQueries: [
-      'frontier artificial intelligence architecture reasoning models comparison',
-      'quantum supremacy processor benchmarks vs supercomputers',
-      'human brain synaptic exaflops vs nvidia ai gpu power consumption',
-      'extreme ultraviolet lithography vs deep ultraviolet chip fabrication',
-      'nuclear fusion tokamak plasma temperatures vs sun core physics',
-      'james webb space telescope deepest cosmic discoveries compared to hubble',
-      'undersea fiber optic cables vs starlink laser satellite bandwidth',
-      'deep ocean mariana trench pressure vs deep space vacuum engineering',
-      'dna biological data storage density vs silicon ssd memory',
-      'falcon 9 reusable rocket mechanics vs saturn v lunar booster'
+      'why microwave boils water but leaves ceramic mug cold physics',
+      'how smartphone capacitive touchscreen senses fingers vs gloves physics',
+      'why chopped onions make eyes cry syn-propanethial-s-oxide chemistry',
+      'why bathroom mirrors flip left right instead of upside down optics',
+      'why fingers wrinkle in bath water nervous system tire treads biology',
+      'why caffeine does not give real energy adenosine receptor crash',
+      'why potato chip bags puff up like balloons on mountain drives boyle law',
+      'why ice water tastes sweet and refreshing while warm water tastes flat trpm5',
+      'why touching metal doorknob zaps fingers in winter static electricity',
+      'why toasted bread smells amazing maillard reaction chemistry',
+      'why chugging water makes spicy food feel hotter capsaicin oil polarity',
+      'why shaking warm soda bottle explodes while cold soda does not henry law'
     ],
     spheres: [
-      { id: 'ai_neural_architectures', name: 'Frontier AI & Neural Architectures', desc: 'Reasoning models, test-time compute, transformers vs biological neurons' },
-      { id: 'quantum_and_supercomputing', name: 'Quantum Supremacy & Supercomputing', desc: 'Superconducting qubits, cryogenic chilling, exaflop clusters vs classical limits' },
-      { id: 'semiconductors_atomic_scale', name: 'Nanoscale Semiconductors & EUV Lithography', desc: '2nm gate-all-around transistors, ASML molten tin lasers, quantum tunneling limits' },
-      { id: 'astrophysics_space_engineering', name: 'Astrophysics & Deep Space Exploration', desc: 'JWST early galaxies, neutron star density, black hole photon spheres, interstellar probes' },
-      { id: 'nuclear_fusion_plasma_physics', name: 'Nuclear Fusion & Clean Plasma Energy', desc: '150 million °C magnetic confinement, stellarators vs tokamaks, net energy gain' },
-      { id: 'robotics_and_biomechanics', name: 'Advanced Robotics & Humanoid Engineering', desc: 'Electric actuators vs biological muscles, high-speed computer vision, balance control' },
-      { id: 'extreme_physics_comparisons', name: 'Extreme Physics & Universe Scales', desc: 'Mariana Trench pressure vs space vacuum, light speed fiber latency, absolute zero' }
+      { id: 'everyday_kitchen_physics', name: 'Kitchen Science & Breakfast Physics', desc: 'Microwaves, toaster Maillard reaction, boiling water anomalies, cold drink taste receptors' },
+      { id: 'everyday_smartphone_tech', name: 'Smartphone & Screen Magic', desc: 'Capacitive touchscreens, lithium battery degradation, OLED pixels vs LCD backlight' },
+      { id: 'everyday_human_body_quirks', name: 'Surprising Human Body Glitches', desc: 'Bath finger wrinkles, why you hate recorded voice, contagious yawning, onion crying chemistry' },
+      { id: 'everyday_household_physics', name: 'Household Physics & Winter Sparks', desc: 'Static door shocks, bathroom mirror optics, chip bag air pressure, salt melting road ice' },
+      { id: 'food_and_flavor_chemistry', name: 'Food, Flavor & Spice Chemistry', desc: 'Capsaicin vs milk casein, coffee adenosine blocking, soda carbonation Henry’s law' }
     ]
   }
 };

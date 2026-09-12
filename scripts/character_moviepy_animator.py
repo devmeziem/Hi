@@ -544,16 +544,17 @@ def render_scene(bg_image, audio_wav, output_mp4, duration=5.0, action="talking"
             chunk_idx = int(t / 0.04)
             if 0 <= chunk_idx < len(audio_amplitudes):
                 amp = audio_amplitudes[chunk_idx]
-                if amp > 0.04:  # Spoken dialogue above noise floor
+                if amp > 0.015:  # Spoken dialogue above noise floor
                     # Dynamic syllable flap cadence
-                    return int(t * 6.5) % 2 == 1
+                    return int(t * 6.0) % 2 == 1
                 else:
                     return False  # Closed lips during silence/pause
-            return False
+            elif t < (len(audio_amplitudes) * 0.04):
+                return int(t * 5.5) % 2 == 1
 
         # 3. Default cadence during audio
         if audio_wav and os.path.exists(audio_wav):
-            return int(t * 5.0) % 2 == 1
+            return int(t * 5.5) % 2 == 1
         return False
 
     # 1. Background clip

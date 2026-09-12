@@ -132,49 +132,69 @@ async function discoverConnectedChannels() {
     all: []
   };
 
-  // Attempt 1: Modern GraphQL API
+  const directOrgId = String(process.env.BUFFER_ORGANIZATION_ID || '').trim();
+
+  // Attempt 1: Modern GraphQL API (Buffer standard 2-step hierarchy)
   try {
-    const query = `query GetAccountChannels {
-      account {
-        organizations {
-          id
-          name
-          channels {
+    let orgs = [];
+
+    if (directOrgId) {
+      orgs = [{ id: directOrgId, name: 'Configured Organization' }];
+    } else {
+      const orgQuery = `query GetBufferOrganizations {
+        account {
+          organizations {
             id
             name
-            displayName
-            service
-            isDisconnected
-            isLocked
           }
         }
+      }`;
+      const orgData = await bufferRequest(orgQuery);
+      orgs = orgData?.account?.organizations || [];
+    }
+
+    const channelsQuery = `query GetChannelsForOrg($input: ChannelsInput!) {
+      channels(input: $input) {
+        id
+        name
+        displayName
+        service
+        serviceId
+        avatar
+        isDisconnected
+        isLocked
       }
     }`;
 
-    const data = await bufferRequest(query);
-    const orgs = data?.account?.organizations || [];
-
     for (const org of orgs) {
-      for (const ch of (org.channels || [])) {
-        discovered.all.push(ch);
-        const svc = String(ch.service || '').toLowerCase();
-        const isUsable = !ch.isDisconnected && !ch.isLocked;
+      try {
+        const chData = await bufferRequest(channelsQuery, { input: { organizationId: org.id } });
+        const chList = chData?.channels || [];
+        for (const ch of chList) {
+          discovered.all.push(ch);
+          const svc = String(ch.service || '').toLowerCase();
+          const isUsable = !ch.isDisconnected && !ch.isLocked;
 
-        if (!isUsable) continue;
+          if (!isUsable) continue;
 
-        if (svc === 'facebook') {
-          discovered.facebook.push(ch);
-        } else if (svc === 'instagram') {
-          discovered.instagram.push(ch);
-        } else if (svc === 'tiktok') {
-          discovered.tiktok.push(ch);
+          if (svc.includes('facebook')) {
+            discovered.facebook.push(ch);
+          } else if (svc.includes('instagram')) {
+            discovered.instagram.push(ch);
+          } else if (svc.includes('tiktok')) {
+            discovered.tiktok.push(ch);
+          }
         }
+      } catch (err) {
+        console.warn(`[Buffer Omnichannel] Notice: Failed to query channels for organization ${org.name || org.id}: ${err.message}`);
       }
     }
 
-    activeApiEngine = 'graphql';
-    console.log(`[Buffer Omnichannel] ✅ Connected via Modern GraphQL API (found ${discovered.all.length} channel(s))`);
-    return discovered;
+    if (discovered.all.length > 0) {
+      activeApiEngine = 'graphql';
+      console.log(`[Buffer Omnichannel] ✅ Connected via Modern GraphQL API (found ${discovered.all.length} channel(s))`);
+      return discovered;
+    }
   } catch (gqlErr) {
     console.warn(`[Buffer Omnichannel] ℹ️ GraphQL notice: ${gqlErr.message}. Checking Classic REST API fallback...`);
   }
