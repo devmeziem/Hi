@@ -34,8 +34,18 @@ on:
           - moviepy
           - ffmpeg
           - blender
+      pause_youtube:
+        description: 'Pause YouTube Upload (Focus on Facebook & Instagram Buffer testing)'
+        required: false
+        default: true
+        type: boolean
+      buffer_token:
+        description: 'Buffer Access Token (Optional: paste your token here to test directly)'
+        required: false
+        default: ''
+        type: string
       dry_run:
-        description: 'Dry Run Mode (Uncheck for live YouTube publishing)'
+        description: 'Dry Run Mode (Uncheck for live publishing)'
         required: true
         default: false
         type: boolean
@@ -144,13 +154,14 @@ jobs:
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 || secrets.YOUTUBE_CLIENT_ID_TECH }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 || secrets.YOUTUBE_CLIENT_SECRET_TECH }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 || secrets.YOUTUBE_REFRESH_TOKEN_TECH }}
-          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          PAUSE_YOUTUBE: ${{ github.event.inputs.pause_youtube || 'true' }}
+          BUFFER_API_KEY: ${{ github.event.inputs.buffer_token || secrets.BUFFER_API_KEY }}
           BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
           BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31cd8b9c702c467a38' }}
           BUFFER_TIKTOK_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_CHANNEL_ID }}
         run: |
           CURRENT_HOUR=$(date -u +%-H)
-          echo "=== Processing Archie Video Dispatch (Event: ${{ github.event_name }}, Mode: $VIDEO_MODE, Hour: $CURRENT_HOUR UTC) ==="
+          echo "=== Processing Archie Video Dispatch (Event: ${{ github.event_name }}, Mode: $VIDEO_MODE, Hour: $CURRENT_HOUR UTC, Pause YouTube: $PAUSE_YOUTUBE) ==="
           
           if [ "${{ github.event_name }}" = "push" ]; then
             echo "🚀 Push event detected! Initiating immediate Archie Reel generation & omnichannel release..."
@@ -179,7 +190,8 @@ jobs:
       - name: Cross-Post to Facebook (Voxam Fact) and Instagram (bones_ceo) via Buffer Omnichannel
         if: success()
         env:
-          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          PAUSE_YOUTUBE: ${{ github.event.inputs.pause_youtube || 'true' }}
+          BUFFER_API_KEY: ${{ github.event.inputs.buffer_token || secrets.BUFFER_API_KEY }}
           BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
           BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31cd8b9c702c467a38' }}
           BUFFER_TIKTOK_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_CHANNEL_ID }}

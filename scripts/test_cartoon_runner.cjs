@@ -227,7 +227,12 @@ async function runCartoonPipelineDiagnostic() {
 
   // STEP 7: Publishing Adapter Dispatch
   console.log('\n--- STEP 7: DISPATCHING TO PUBLISHING ADAPTER ---');
-  if (validationReport.valid) {
+  const isYouTubePaused = process.env.PAUSE_YOUTUBE === 'true' || process.env.SKIP_YOUTUBE === 'true' || process.env.PAUSE_YOUTUBE_UPLOAD === 'true';
+  if (isYouTubePaused) {
+    console.log('\n[Publisher] ⏸️ YouTube upload is explicitly PAUSED (PAUSE_YOUTUBE=true).');
+    console.log('[Publisher] 🎯 Focusing on Facebook ("Voxam Fact") & Instagram ("bones_ceo") Buffer testing.');
+    console.log(`[Publisher] 📁 Rendered Video ready: ${finalMp4Path}`);
+  } else if (validationReport.valid) {
     const pubResult = await publisher.publish(
       finalMp4Path,
       isDryRun ? 'dry_run' : 'youtube',

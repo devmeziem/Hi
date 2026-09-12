@@ -509,9 +509,14 @@ async function generateArchie5sDailyFact() {
 
   // 7. Publish to YouTube (Channel 3: Tech & AI Animation)
   const isDryRun = process.env.DRY_RUN === 'true';
+  const isYouTubePaused = process.env.PAUSE_YOUTUBE === 'true' || process.env.SKIP_YOUTUBE === 'true' || process.env.PAUSE_YOUTUBE_UPLOAD === 'true';
   const ch3RefreshToken = process.env.YOUTUBE_REFRESH_TOKEN_CH3 || process.env.YOUTUBE_REFRESH_TOKEN_TECH || process.env.YOUTUBE_REFRESH_TOKEN_CARTOON || process.env.YOUTUBE_REFRESH_TOKEN_ARCHIE || (process.env.ALLOW_SHARED_YOUTUBE_TOKEN === 'true' ? process.env.YOUTUBE_REFRESH_TOKEN : '');
 
-  if (ch3RefreshToken && !isDryRun) {
+  if (isYouTubePaused) {
+    console.log(`\n[Archie Dispatcher] ⏸️ YouTube upload is explicitly PAUSED (PAUSE_YOUTUBE=true).`);
+    console.log(`[Archie Dispatcher] 🎯 Focusing on Facebook ("Voxam Fact") & Instagram ("bones_ceo") Buffer testing.`);
+    console.log(`[Archie Dispatcher] 📁 Rendered Video ready: ${finalMp4Path}`);
+  } else if (ch3RefreshToken && !isDryRun) {
     try {
       console.log(`\n[Archie Dispatcher] 📤 Publishing 5s Tech Fact Short to YouTube (Channel 3)...`);
       const res = await uploadYouTubeShort({

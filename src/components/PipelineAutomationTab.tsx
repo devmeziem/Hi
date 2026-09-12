@@ -320,8 +320,18 @@ on:
         options:
           - moviepy
           - ffmpeg
+      pause_youtube:
+        description: 'Pause YouTube Upload (Focus on Facebook & Instagram Buffer testing)'
+        required: false
+        default: true
+        type: boolean
+      buffer_token:
+        description: 'Buffer Access Token (Optional override)'
+        required: false
+        default: ''
+        type: string
       dry_run:
-        description: 'Dry Run Mode (Uncheck for live YouTube publishing)'
+        description: 'Dry Run Mode (Uncheck for live publishing)'
         required: true
         default: false
         type: boolean
@@ -353,10 +363,13 @@ jobs:
           TEST_TOPIC: \${{ github.event.inputs.topic }}
           CARTOON_ENGINE: \${{ github.event.inputs.engine || 'moviepy' }}
           DRY_RUN: \${{ github.event.inputs.dry_run == 'true' }}
+          PAUSE_YOUTUBE: \${{ github.event.inputs.pause_youtube || 'true' }}
           GEMINI_API_KEY: \${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: \${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: \${{ secrets.OPENROUTER_API_KEY }}
-          YOUTUBE_REFRESH_TOKEN_CH3: \${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 }}
+          BUFFER_API_KEY: \${{ github.event.inputs.buffer_token || secrets.BUFFER_API_KEY }}
+          BUFFER_FACEBOOK_CHANNEL_ID: \${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
+          BUFFER_INSTAGRAM_CHANNEL_ID: \${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31cd8b9c702c467a38' }}
         run: |
           CURRENT_HOUR=$(date -u +%-H)
           if [ "\${{ github.event_name }}" = "push" ]; then
@@ -372,7 +385,8 @@ jobs:
       - name: Cross-Post to Facebook (Voxam Fact) and Instagram (bones_ceo) via Buffer Omnichannel
         if: success()
         env:
-          BUFFER_API_KEY: \${{ secrets.BUFFER_API_KEY }}
+          PAUSE_YOUTUBE: \${{ github.event.inputs.pause_youtube || 'true' }}
+          BUFFER_API_KEY: \${{ github.event.inputs.buffer_token || secrets.BUFFER_API_KEY }}
           BUFFER_FACEBOOK_CHANNEL_ID: \${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
           BUFFER_INSTAGRAM_CHANNEL_ID: \${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31cd8b9c702c467a38' }}
           BUFFER_TIKTOK_CHANNEL_ID: \${{ secrets.BUFFER_TIKTOK_CHANNEL_ID }}

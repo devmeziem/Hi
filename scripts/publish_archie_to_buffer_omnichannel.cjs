@@ -19,7 +19,7 @@ const fs = require('fs');
 const path = require('path');
 
 const BUFFER_API_URL = 'https://api.buffer.com';
-const RAW_BUFFER_API_KEY = String(process.env.BUFFER_API_KEY || '').trim();
+const RAW_BUFFER_API_KEY = String(process.env.BUFFER_API_KEY || process.env.BUFFER_TOKEN || '').trim();
 
 // Automatically sanitize token: strip surrounding quotes, strip leading 'Bearer ', trim whitespace
 function sanitizeToken(raw) {
@@ -136,6 +136,8 @@ async function discoverConnectedChannels() {
   try {
     const query = `query GetAccountChannels {
       account {
+        id
+        email
         organizations {
           id
           name
@@ -144,6 +146,8 @@ async function discoverConnectedChannels() {
             name
             displayName
             service
+            serviceId
+            avatar
             isDisconnected
             isLocked
           }
@@ -283,6 +287,15 @@ function findLatestArchieVideo(preferredPath = null) {
   }
 
   if (!candidateFiles.length) {
+    if (IS_DRY_RUN) {
+      const mockDir = path.join(process.cwd(), 'test_artifacts');
+      if (!fs.existsSync(mockDir)) fs.mkdirSync(mockDir, { recursive: true });
+      const mockVideo = path.join(mockDir, 'archie_tech_fact_dryrun_sample.mp4');
+      if (!fs.existsSync(mockVideo)) {
+        fs.writeFileSync(mockVideo, 'DUMMY_MP4_FOR_DRYRUN_TESTING');
+      }
+      return mockVideo;
+    }
     return null;
   }
 
@@ -296,23 +309,50 @@ function findLatestArchieVideo(preferredPath = null) {
 async function uploadToPublicRelay(videoPath) {
   console.log(`[Buffer Media Relay] 🚀 Uploading video to public relay: ${path.basename(videoPath)}...`);
 
-  const fileBuffer = fs.readFileSync(videoPath);
-  const formData = new FormData();
-  formData.append('reqtype', 'fileupload');
-  formData.append('time', '24h');
-  formData.append('fileToUpload', new Blob([fileBuffer], { type: 'video/mp4' }), path.basename(videoPath));
+  // Attempt 1: Litterbox Catbox (24h temporary mp4 link)
+  try {
+    const fileBuffer = fs.readFileSync(videoPath);
+    const formData = new FormData();
+    formData.append('reqtype', 'fileupload');
+    formData.append('time', '24h');
+    formData.append('fileToUpload', new Blob([fileBuffer], { type: 'video/mp4' }), path.basename(videoPath));
 
-  const res = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
-    method: 'POST',
-    body: formData
-  });
+    const res = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+      method: 'POST',
+      body: formData
+    });
 
-  const text = (await res.text()).trim();
-  if (res.ok && text.startsWith('http')) {
-    console.log(`[Buffer Media Relay] ✅ Public video URL ready: ${text}`);
-    return text;
+    const text = (await res.text()).trim();
+    if (res.ok && text.startsWith('http')) {
+      console.log(`[Buffer Media Relay] ✅ Public video URL ready (Litterbox): ${text}`);
+      return text;
+    }
+  } catch (e) {
+    console.warn(`[Buffer Media Relay] Litterbox notice: ${e.message}`);
   }
-  throw new Error(`Media relay failed: ${text || res.statusText}`);
+
+  // Attempt 2: tmpfiles.org
+  try {
+    const fileBuffer = fs.readFileSync(videoPath);
+    const formData = new FormData();
+    formData.append('file', new Blob([fileBuffer], { type: 'video/mp4' }), path.basename(videoPath));
+
+    const res = await fetch('https://tmpfiles.org/api/v1/upload', {
+      method: 'POST',
+      body: formData
+    });
+
+    const json = await res.json();
+    if (json?.data?.url) {
+      const directUrl = json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+      console.log(`[Buffer Media Relay] ✅ Public video URL ready (tmpfiles): ${directUrl}`);
+      return directUrl;
+    }
+  } catch (e) {
+    console.warn(`[Buffer Media Relay] tmpfiles notice: ${e.message}`);
+  }
+
+  throw new Error(`Public media relay failed across both primary and fallback hosts.`);
 }
 
 /**
@@ -493,11 +533,14 @@ async function publishArchieOmnichannel(options = {}) {
   if (!BUFFER_API_KEY) {
     console.warn(`[Buffer Omnichannel] ⚠️ BUFFER_API_KEY is not configured.`);
     console.warn(`To set up Buffer Omnichannel publishing:`);
-    console.warn(`  1. Get an API access token from https://publish.buffer.com`);
-    console.warn(`  2. Add BUFFER_API_KEY in your environment secrets.`);
-    console.warn(`  3. Connect your Facebook Page, Instagram account, and TikTok in Buffer.`);
+    console.warn(`  1. Get an API access token from https://publish.buffer.com or https://buffer.com/developers/api`);
+    console.warn(`  2. Add BUFFER_API_KEY in your GitHub Secrets or pass via workflow dispatch.`);
+    console.warn(`  3. Connect your Facebook Page and Instagram account in Buffer.`);
     return { success: false, reason: 'MISSING_BUFFER_API_KEY' };
   }
+
+  const tokenMasked = BUFFER_API_KEY.length > 8 ? `${BUFFER_API_KEY.slice(0, 6)}...${BUFFER_API_KEY.slice(-4)}` : '***';
+  console.log(`[Buffer Omnichannel] 🔑 Active Buffer Token: ${tokenMasked} (Length: ${BUFFER_API_KEY.length})`);
 
   // 1. Locate Video
   const videoPath = findLatestArchieVideo(options.videoPath);
@@ -507,21 +550,23 @@ async function publishArchieOmnichannel(options = {}) {
   }
   console.log(`[Buffer Omnichannel] 📹 Found video: ${path.basename(videoPath)} (${Math.round(fs.statSync(videoPath).size / 1024)} KB)`);
 
-  // 2. Discover channels in Buffer
-  let discovered;
+  // 2. Discover channels in Buffer (with graceful fallback to explicit channel IDs)
+  let targetChannels = [];
   try {
-    discovered = await discoverConnectedChannels();
+    const discovered = await discoverConnectedChannels();
+    console.log(`[Buffer Omnichannel] Discovered accounts in Buffer:`);
+    console.log(`  - Facebook Pages: ${discovered.facebook.length > 0 ? discovered.facebook.map(c => `"${c.displayName || c.name}" (ID: ${c.id})`).join(', ') : 'None connected'}`);
+    console.log(`  - Instagram Accounts: ${discovered.instagram.length > 0 ? discovered.instagram.map(c => `"${c.displayName || c.name}" (ID: ${c.id})`).join(', ') : 'None connected'}`);
+    console.log(`  - TikTok Accounts: ${discovered.tiktok.length > 0 ? discovered.tiktok.map(c => `"${c.displayName || c.name}" (ID: ${c.id})`).join(', ') : 'None connected'}`);
+    targetChannels = await resolveTargetChannels(discovered);
   } catch (err) {
-    console.error(`[Buffer Omnichannel] ❌ Failed to fetch channels from Buffer: ${err.message}`);
-    return { success: false, error: err.message };
+    console.warn(`[Buffer Omnichannel] ⚠️ Channel auto-discovery notice: ${err.message}`);
+    console.log(`[Buffer Omnichannel] 📌 Proceeding directly with known target channel IDs:`);
+    targetChannels = [
+      { id: BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52', service: 'facebook', displayName: 'Voxam Fact', name: 'Voxam Fact (Facebook Page)' },
+      { id: BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31cd8b9c702c467a38', service: 'instagram', displayName: 'bones_ceo', name: 'bones_ceo (Instagram Reels)' }
+    ];
   }
-
-  console.log(`[Buffer Omnichannel] Discovered accounts in Buffer:`);
-  console.log(`  - Facebook Pages: ${discovered.facebook.length > 0 ? discovered.facebook.map(c => `"${c.displayName || c.name}" (ID: ${c.id})`).join(', ') : 'None connected'}`);
-  console.log(`  - Instagram Accounts: ${discovered.instagram.length > 0 ? discovered.instagram.map(c => `"${c.displayName || c.name}" (ID: ${c.id})`).join(', ') : 'None connected'}`);
-  console.log(`  - TikTok Accounts: ${discovered.tiktok.length > 0 ? discovered.tiktok.map(c => `"${c.displayName || c.name}" (ID: ${c.id})`).join(', ') : 'None connected'}`);
-
-  const targetChannels = await resolveTargetChannels(discovered);
 
   if (!targetChannels.length) {
     console.warn(`\n[Buffer Omnichannel] ⚠️ No Facebook, Instagram, or TikTok channels connected in your Buffer account.`);
