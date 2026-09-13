@@ -1,6 +1,19 @@
 {
   "videos": [
     {
+      "id": "fin_quote_1789299344364",
+      "channelId": "finance_saas",
+      "type": "financial_quote_reel_5s",
+      "title": "Finance Mindset — Benjamin Graham Quotes #Shorts",
+      "author": "Benjamin Graham",
+      "credentials": "Columbia Business School • Dean of Financial Analysts",
+      "reference": "Security Analysis (1934)",
+      "duration": 5,
+      "videoPath": "/home/runner/work/Hi/Hi/rendered_videos/fin_quote_5s_1789299344364.mp4",
+      "loopable": true,
+      "publishedAt": "2026-09-13T11:35:47.408Z"
+    },
+    {
       "id": "fin_quote_1789253797011",
       "channelId": "finance_saas",
       "type": "financial_quote_reel_5s",
