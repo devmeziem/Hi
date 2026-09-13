@@ -340,6 +340,8 @@ jobs:
   cartoon_factory_pipeline:
     name: Build & Publish Archie Episodes & Everyday Science Reels (4 / Day)
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -369,7 +371,7 @@ jobs:
           OPENROUTER_API_KEY: \${{ secrets.OPENROUTER_API_KEY }}
           BUFFER_API_KEY: \${{ github.event.inputs.buffer_token || secrets.BUFFER_API_KEY }}
           BUFFER_FACEBOOK_CHANNEL_ID: \${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
-          BUFFER_INSTAGRAM_CHANNEL_ID: \${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31cd8b9c702c467a38' }}
+          BUFFER_INSTAGRAM_CHANNEL_ID: \${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31c1dcd8b9c702c467a38' }}
         run: |
           CURRENT_HOUR=$(date -u +%-H)
           if [ "\${{ github.event_name }}" = "push" ]; then
@@ -388,8 +390,10 @@ jobs:
           PAUSE_YOUTUBE: \${{ github.event.inputs.pause_youtube || 'true' }}
           BUFFER_API_KEY: \${{ github.event.inputs.buffer_token || secrets.BUFFER_API_KEY }}
           BUFFER_FACEBOOK_CHANNEL_ID: \${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
-          BUFFER_INSTAGRAM_CHANNEL_ID: \${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID }}
-          BUFFER_TIKTOK_CHANNEL_ID: \${{ secrets.BUFFER_TIKTOK_CHANNEL_ID }}
+          BUFFER_INSTAGRAM_CHANNEL_ID: \${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31c1dcd8b9c702c467a38' }}
+          BUFFER_TIKTOK_CHANNEL_ID: \${{ secrets.BUFFER_TIKTOK_CHANNEL_ID || '6a9b6f3f065799be468f596b' }}
+          BUFFER_SHARE_NOW: 'true'
+          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
           CLOUDINARY_CLOUD_NAME: \${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_UPLOAD_PRESET: \${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
           DRY_RUN: \${{ github.event.inputs.dry_run == 'true' }}

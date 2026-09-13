@@ -259,9 +259,83 @@ function resolvePostCaption() {
 }
 
 /**
- * Upload local video file to direct media relay (Litterbox zero-config, no credentials required)
+ * Upload local video file to direct media relay (GitHub Release CDN or Litterbox)
  */
 async function uploadToDirectRelay(videoPath) {
+  // 1. GitHub Release Asset CDN
+  const ghToken = (process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '').trim();
+  const ghRepo = (process.env.GITHUB_REPOSITORY || '').trim();
+  if (ghToken && ghRepo) {
+    try {
+      console.log(`\n[Buffer/TikTok] 📦 Uploading video to GitHub Release CDN (${ghRepo})...`);
+      const fileBuffer = fs.readFileSync(videoPath);
+      const tag = 'v-media-cdn';
+      const cleanBase = path.basename(videoPath).replace(/[^a-zA-Z0-9._-]/g, '_');
+      const assetName = `fin_${Date.now()}_${cleanBase}`;
+
+      let releaseId = null;
+      let uploadUrlTemplate = null;
+
+      const getRes = await fetch(`https://api.github.com/repos/${ghRepo}/releases/tags/${tag}`, {
+        headers: {
+          'Authorization': `Bearer ${ghToken}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'FinBufferRelay/1.0'
+        }
+      });
+
+      if (getRes.ok) {
+        const relData = await getRes.json();
+        releaseId = relData.id;
+        uploadUrlTemplate = relData.upload_url;
+      } else if (getRes.status === 404) {
+        const createRes = await fetch(`https://api.github.com/repos/${ghRepo}/releases`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${ghToken}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json',
+            'User-Agent': 'FinBufferRelay/1.0'
+          },
+          body: JSON.stringify({
+            tag_name: tag,
+            name: 'Media Assets CDN',
+            body: 'Automated video assets CDN for Buffer social media ingest.',
+            draft: false,
+            prerelease: false
+          })
+        });
+        if (createRes.ok) {
+          const createData = await createRes.json();
+          releaseId = createData.id;
+          uploadUrlTemplate = createData.upload_url;
+        }
+      }
+
+      if (releaseId && uploadUrlTemplate) {
+        const uploadUrl = uploadUrlTemplate.replace(/\{\?name,label\}/, `?name=${encodeURIComponent(assetName)}`);
+        const uploadRes = await fetch(uploadUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${ghToken}`,
+            'Content-Type': 'video/mp4',
+            'Content-Length': String(fileBuffer.length),
+            'User-Agent': 'FinBufferRelay/1.0'
+          },
+          body: fileBuffer
+        });
+
+        if (uploadRes.ok) {
+          const assetData = await uploadRes.json();
+          console.log(`[Buffer/TikTok] ✅ Public video URL generated (GitHub Release CDN): ${assetData.browser_download_url}`);
+          return assetData.browser_download_url;
+        }
+      }
+    } catch (e) {
+      console.warn(`[Buffer/TikTok] GitHub Release CDN notice: ${e.message}`);
+    }
+  }
+
   console.log(`\n[Buffer/TikTok] 🚀 Uploading ${path.basename(videoPath)} (${Math.round(fs.statSync(videoPath).size / 1024)} KB) straight to direct media relay (no Cloudinary needed)...`);
 
   const fileBuffer = fs.readFileSync(videoPath);
@@ -469,11 +543,12 @@ async function resolveTikTokChannel() {
 async function createBufferPost(channel, mediaUrl, caption) {
   console.log(`\n[Buffer/TikTok] 📝 Queuing post to TikTok with caption:\n"${caption.slice(0, 120)}..."`);
 
-  const mode = process.env.BUFFER_SHARE_NOW === 'true' ? 'shareNow' : 'addToQueue';
+  const isImmediate = process.env.BUFFER_SHARE_NOW !== 'false';
+  const mode = isImmediate ? 'shareNow' : 'addToQueue';
   const thumbnailOffsetMs = parseInt(process.env.BUFFER_THUMBNAIL_OFFSET_MS || '2000', 10);
 
   if (activeApiEngine === 'rest') {
-    return await postViaClassicRest(channel, mediaUrl, caption, process.env.BUFFER_SHARE_NOW === 'true');
+    return await postViaClassicRest(channel, mediaUrl, caption, isImmediate);
   }
 
   const query = `mutation CreateVideoPost($input: CreatePostInput!) {
