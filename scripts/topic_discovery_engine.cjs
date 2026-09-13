@@ -61,15 +61,17 @@ const NICHE_SPHERES = {
     channelName: 'Fin Blueprint',
     targetAudience: 'Everyday young people, students, beginners, and aspiring entrepreneurs starting with little or no capital ($0 to $50 USD). Single standard currency is US Dollars ($ USD).',
     searchQueries: [
+      'trending personal finance money saving hacks small business ideas today',
+      'did you know personal finance and money facts today',
+      'trending small business economics and side hustle ideas today',
+      'trending consumer money saving rules and compounding today',
       'unusual small business ideas under 50 dollars capital that actually work',
       'hidden financial mistakes keeping smart people broke in their 20s',
       'real ways everyday people make daily income with just a smartphone',
       'psychological money tricks that stop impulse spending cold',
       'compound interest real life comparison examples for beginners',
       'how to calculate real profit margins and eliminate hidden costs in small business',
-      'how to build a fast 500 dollar emergency cash reserve with zero loans',
-      'high demand phone-only freelance skills you can learn in 14 days',
-      'how to detect online money scams pyramid schemes and fake gurus'
+      'how to build a fast 500 dollar emergency cash reserve with zero loans'
     ],
     spheres: [
       { id: 'small_biz_low_cap', name: 'Small Capital Business ($0-$5-$50)', desc: 'Micro-retail, digital services, zero-inventory agency, local distribution' },
@@ -101,15 +103,17 @@ const NICHE_SPHERES = {
     channelName: 'The Stoic Architect',
     targetAudience: 'Everyday people seeking practical emotional discipline, unshakeable mental fortitude, and psychological resilience amidst modern chaos.',
     searchQueries: [
+      'trending stoic philosophy mental resilience life lessons today',
+      'did you know psychology facts and emotional mastery today',
+      'trending practical stoic quotes handling stress anxiety today',
+      'ancient stoic strategies modern daily problems today',
       'unexpected psychological tricks for quiet confidence and self respect',
       'ancient stoic strategies for handling toxic disrespect and betrayal',
       'unspoken laws of emotional armor and mental toughness in modern life',
       'rare teachings of Epictetus and Seneca on self mastery and focus',
       'fascinating psychology experiments on overcoming self doubt and fear',
       'how ancient philosophers stayed ice cold under extreme provocation',
-      'the psychological secret to emotional detachment and zero reaction',
-      'dark psychology defense strategies using calm strategic silence',
-      'why the strongest people never explain themselves or seek validation'
+      'the psychological secret to emotional detachment and zero reaction'
     ],
     spheres: [
       { id: 'stoic_self_confidence', name: 'Unshakeable Quiet Confidence & Self-Command', desc: 'Internal validation, virtue-anchored self-respect, silencing self-doubt, mastering self-command' },
@@ -144,6 +148,12 @@ const NICHE_SPHERES = {
     channelName: 'Archie Explains (Everyday Science & Relatable Tech Wonders)',
     targetAudience: 'Curious learners, students, and everyday viewers fascinated by the hidden science and surprising physics behind everyday stuff they touch, eat, use, and experience every single day.',
     searchQueries: [
+      'trending physics science and tech facts today',
+      'did you know science facts today',
+      'trending everyday physics phenomena curious facts today',
+      'trending science facts viral reels tiktok today',
+      'trending technology breakthroughs and everyday science curiosities today',
+      'mind blowing everyday physics facts today did you know',
       'why microwave boils water but leaves ceramic mug cold physics',
       'how smartphone capacitive touchscreen senses fingers vs gloves physics',
       'why chopped onions make eyes cry syn-propanethial-s-oxide chemistry',
@@ -406,6 +416,73 @@ async function queryGoogleNewsRss(queryStr, maxResults = 5) {
       resolve([]);
     });
   });
+}
+
+/**
+ * Real-Time Google Trends Daily RSS
+ * Directly queries trends.google.com/trending/rss?geo=US for breaking real-time search queries and trending topics today.
+ */
+async function queryGoogleTrendsDaily(maxResults = 8) {
+  return new Promise((resolve) => {
+    const url = 'https://trends.google.com/trending/rss?geo=US';
+    const req = https.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/rss+xml, text/xml, */*'
+      },
+      timeout: 8000
+    }, (res) => {
+      let xml = '';
+      res.on('data', c => xml += c);
+      res.on('end', () => {
+        const items = [];
+        const itemRegex = /<item>([\s\S]*?)<\/item>/gi;
+        let match;
+        while ((match = itemRegex.exec(xml)) !== null && items.length < maxResults) {
+          const chunk = match[1];
+          const titleMatch = /<title>(.*?)<\/title>/i.exec(chunk);
+          const trafficMatch = /<ht:approx_traffic>(.*?)<\/ht:approx_traffic>/i.exec(chunk);
+          const snippetMatch = /<ht:news_item_snippet>(.*?)<\/ht:news_item_snippet>/i.exec(chunk);
+          const newsTitleMatch = /<ht:news_item_title>(.*?)<\/ht:news_item_title>/i.exec(chunk);
+          if (titleMatch) {
+            const cleanTitle = titleMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").trim();
+            const newsTitle = newsTitleMatch ? newsTitleMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").trim() : '';
+            const snippet = snippetMatch ? snippetMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").trim() : '';
+            items.push({
+              title: cleanTitle,
+              newsTitle: newsTitle,
+              snippet: snippet || newsTitle,
+              traffic: trafficMatch ? trafficMatch[1] : '',
+              source: 'Google Trends Daily'
+            });
+          }
+        }
+        if (items.length > 0) {
+          console.log(`[Google Trends Daily] 📈 Harvested ${items.length} breakout search trends from trends.google.com`);
+        }
+        resolve(items);
+      });
+    });
+    req.on('error', (err) => {
+      console.warn(`[Google Trends RSS Notice] ${err.message}`);
+      resolve([]);
+    });
+    req.on('timeout', () => {
+      req.destroy();
+      console.warn(`[Google Trends RSS Notice] Request timed out`);
+      resolve([]);
+    });
+  });
+}
+
+/**
+ * Social Trends Query (Instagram / TikTok viral curiosity trends)
+ */
+async function querySocialTrends(nicheKey = 'cartoon', maxResults = 5) {
+  const query = nicheKey === 'cartoon'
+    ? 'trending science education facts instagram reels tiktok viral'
+    : (nicheKey === 'fin' ? 'trending personal finance money tips instagram reels tiktok' : 'trending stoic quotes mental health instagram reels tiktok');
+  return queryDuckDuckGo(query, maxResults);
 }
 
 /**
@@ -1011,26 +1088,24 @@ async function discoverAndSelectTopicViaActiveAi(nicheKey = 'fin', options = {})
   console.log(` • Thematic Spheres: ${colors.green}${nicheConfig.spheres.length} core archetype scopes loaded${colors.reset}`);
 
   // ----------------------------------------------------
-  // STEP 1: QUERY DUCKDUCKGO & GOOGLE NEWS RSS FOR REAL-TIME TRENDS & QUESTIONS
+  // STEP 1: QUERY DUCKDUCKGO, GOOGLE NEWS RSS, GOOGLE TRENDS, SOCIAL REELS & WIKIPEDIA
   // ----------------------------------------------------
-  console.log(`\n${colors.bright}🔎 Step 1: Performing Live Multi-Source Search (DuckDuckGo + Google News)...${colors.reset}`);
+  console.log(`\n${colors.bright}🔎 Step 1: Performing Live Multi-Source Search (Google Search/News + Google Trends + DuckDuckGo + Wikipedia + Social)...${colors.reset}`);
   const randomSearchQuery = nicheConfig.searchQueries[Math.floor(Math.random() * nicheConfig.searchQueries.length)];
   console.log(`   Target Query: "${colors.cyan}${randomSearchQuery}${colors.reset}"`);
   
-  const [ddgResults, newsResults] = await Promise.all([
-    queryDuckDuckGo(randomSearchQuery, 5),
-    queryGoogleNewsRss(randomSearchQuery, 4)
+  const [ddgResults, newsResults, gTrendsResults, socialResults, wikiSnippets] = await Promise.all([
+    queryDuckDuckGo(randomSearchQuery, 6),
+    queryGoogleNewsRss(randomSearchQuery, 5),
+    queryGoogleTrendsDaily(8),
+    querySocialTrends(nicheKey, 5),
+    queryWikipedia(randomSearchQuery, 5)
   ]);
 
-  let allSearchResults = [...ddgResults, ...newsResults];
-  if (allSearchResults.length < 2) {
-    console.log(`   ${colors.yellow}⚠️  Search yield low (${allSearchResults.length} snippets). Engaging Wikipedia knowledge fallback...${colors.reset}`);
-    const wikiSnippets = await queryWikipedia(randomSearchQuery, 5);
-    allSearchResults = [...allSearchResults, ...wikiSnippets];
-  }
+  let allSearchResults = [...ddgResults, ...newsResults, ...socialResults, ...wikiSnippets];
 
   if (allSearchResults.length > 0) {
-    console.log(`   ${colors.green}✓ Retrieved ${allSearchResults.length} live organic snippets (${ddgResults.length} DDG, ${newsResults.length} News, ${allSearchResults.filter(s => s.source === 'Wikipedia').length} Wikipedia):${colors.reset}`);
+    console.log(`   ${colors.green}✓ Retrieved ${allSearchResults.length} live organic snippets (${ddgResults.length} DDG, ${newsResults.length} News, ${gTrendsResults.length} Google Trends, ${socialResults.length} Social, ${wikiSnippets.length} Wikipedia):${colors.reset}`);
     allSearchResults.slice(0, 4).forEach((r, idx) => {
       console.log(`     ${idx + 1}. [${r.source || 'Live Search'}] ${colors.bright}${r.title}${colors.reset}`);
       console.log(`        "${r.snippet.slice(0, 110)}..."`);
@@ -1051,66 +1126,79 @@ async function discoverAndSelectTopicViaActiveAi(nicheKey = 'fin', options = {})
   // ----------------------------------------------------
   // STEP 3: ACTIVE AI FORMULATES 5 CANDIDATE TOPICS
   // ----------------------------------------------------
-  console.log(`\n${colors.bright}🤖 Step 3: Active AI generating 5 distinct candidate topics across 21+ spheres...${colors.reset}`);
+  console.log(`\n${colors.bright}🤖 Step 3: Active AI generating 5 distinct candidate topics based on today's search & trends...${colors.reset}`);
   
   const spheresJsonStr = JSON.stringify(nicheConfig.spheres, null, 2);
-  const searchContextStr = allSearchResults.map(r => `Title: ${r.title} | Details: ${r.snippet}`).join('\n');
+  const searchContextStr = allSearchResults.map(r => `[${r.source || 'Search'}] ${r.title}: ${r.snippet}`).join('\n');
+  const googleTrendsStr = gTrendsResults.length > 0 
+    ? gTrendsResults.map(t => `• ${t.title}${t.traffic ? ` (${t.traffic})` : ''}: ${t.newsTitle} - ${t.snippet}`).join('\n')
+    : 'No direct breaking trends today.';
 
-  const systemPrompt = `You are the Lead Creative Director and Topic Architect for YouTube Shorts channel "${nicheConfig.channelName}" (${nicheConfig.channelHandle}).
+  const systemPrompt = `You are an elite educational content creator and viral scriptwriter for a multi-social channel with a dedicated niche in education, science/physics, and "Did you know?" facts.
+Channel: "${nicheConfig.channelName}" (${nicheConfig.channelHandle}).
 Target Audience: ${nicheConfig.targetAudience}
 
-YOUR MANDATE:
-1. REAL-TIME SEARCH INSIGHTS: Analyze the real-time search topics, questions, and insights discovered from live web search (DuckDuckGo, Wikipedia & Google News) today.
-2. 21+ THEMATIC ARCHETYPE SPHERES: Connect the trending search signals with relevant sphere archetypes.
-3. STRICT ANTI-CLICHÉ & ANTI-REPETITION MANDATE (USER DIRECTIVE):
-   - NEVER use "the reason you are tired is not because you are tired" or ANY variation of this formula.
-   - NEVER write vague, repetitive sermons about "inner autonomy" or "stop seeking applause".
-   - NEVER generate generic stock scripts or repeat topics from previous runs.
-   - Ground every topic in a concrete, actionable, and unexpected real-world reality, tactic, or comparison.
-4. AI DATABASE SIMILARITY & DEDUPLICATION VERIFICATION:
-   Compare each candidate topic against EVERY single previously saved topic in our database.
-   Verify if there are any conceptual, thematic, or keyword similarities with past videos.
-   If a candidate is similar to any previous database topic, mark it as duplicate and eliminate it.
-   ONLY select a topic if it is 100% NEW and verified to have ZERO similarities with past database records.
-5. LOOPY RETENTION DESIGN:
-   Design the chosen topic and its core angle to be loopy where possible (the ending line of the video seamlessly loops back into the opening hook line).
-6. SELECTION RATIONALE:
-   Explain why the chosen topic is verified unique against the database and how the search details will be used to build the script.
+CORE DIRECTIVES:
+1. CONTENT CREATOR ARCHETYPE: You are a content creator for a multi-social channel with niche on education and "did you know" facts.
+2. AUTOMATED SEARCH & NICHE MATCHING: Using the real-time search results, Wikipedia insights, and Google Trends gathered today, automatically choose and formulate topics that best suit our setup and channel niche.
+3. FORMULATE 5 STRONG CANDIDATES:
+   - Each candidate must feature an irresistible "Did you know?" or "Why does...?" spoken hook.
+   - Grounded in mind-blowing, relatable mechanics (how everyday things work, unexpected physics/science/tech principles, or practical daily realities).
+   - Clear educational explanation that an everyday person or student will immediately grasp.
+   - Loopy ending concept that seamlessly loops back into the opening hook for high replay retention.
+4. AI DATABASE SIMILARITY & DEDUPLICATION:
+   Compare each candidate topic against EVERY previously saved topic in our database.
+   Verify that there are zero duplicate themes, keywords, or angles. Only accept topics that are 100% fresh and unique.
+5. CHOOSE 1 WINNER & DISCARD 4:
+   Select the 1 winning topic that best suits our setup and niche. Provide a selection rationale and state specific reasons for discarding the other 4 candidates.
 
 Return strictly valid JSON with this exact schema:
 {
   "candidates": [
     {
       "id": 1,
-      "sphereId": "small_biz_low_cap",
-      "sphereName": "Small Capital Business ($0-$5-$50)",
+      "sphereId": "sphere_id",
+      "sphereName": "Sphere Name",
       "title": "High-Impact Topic Headline #Shorts #viral",
-      "angle": "Unique tactical breakdown angle",
-      "coreHook": "Opening spoken hook sentence",
-      "searchDetailsUsed": "Specific insight or trend details from live search used here",
+      "angle": "Unique tactical or scientific breakdown angle",
+      "coreHook": "Opening spoken hook sentence (e.g., 'Did you know...?' or 'Why does...?')",
+      "factExplanation": "Clear, mind-blowing educational explanation of the fact and why it happens",
+      "searchDetailsUsed": "Specific insight or trend details from today's search used here",
       "similarityCheck": "Verified non-similar to past database topics",
       "isUnique": true,
-      "loopyHookConcept": "How the ending loops back into the opening hook"
+      "loopyHookConcept": "How the ending seamlessly loops back into the opening hook"
     }
   ],
   "chosenWinnerId": 1,
   "deduplicationAnalysis": "Detailed verification report proving zero similarity to previously saved database topics",
-  "selectionRationale": "Why this specific topic is chosen based on search trends, search insights, and verified uniqueness",
+  "selectionRationale": "Why this specific topic is chosen based on today's search trends and verified uniqueness",
   "discardedNotes": [
-    { "candidateId": 2, "reason": "Reason candidate 2 was eliminated (e.g. similarity or weaker angle)" }
+    { "candidateId": 2, "reason": "Reason candidate 2 was eliminated" }
   ]
 }`;
 
-  const userPrompt = `TODAY'S LIVE MULTI-SOURCE SEARCH TRENDS & INSIGHTS:
-${searchContextStr || 'General trending search interest in small business, practical mindset, and financial resilience.'}
+  const userPrompt = `You're a content creator for a multi social channel with niche on education and did you know facts. Using this fresh information gathered today from real-time searches:
 
-21+ THEMATIC SCOPES & SPHERES:
+=== TODAY'S REFRESHED REAL-TIME SEARCH RESULTS (Google Search, DuckDuckGo, Wikipedia, Social) ===
+${searchContextStr || 'Fresh daily search queries in education, everyday science, and practical facts.'}
+
+=== GOOGLE TRENDS DAILY BREAKING FEED (trends.google.com) ===
+${googleTrendsStr}
+
+=== 21+ THEMATIC SCOPES & SPHERES ===
 ${spheresJsonStr}
 
-DATABASE OF PREVIOUSLY SAVED TOPICS (CHECK FOR SIMILARITIES - REJECT ANY DUPLICATES):
+=== DATABASE OF PREVIOUSLY SAVED TOPICS (CHECK FOR SIMILARITIES - REJECT ANY DUPLICATES) ===
 ${pastTopicsListStr || 'None yet.'}
 
-Formulate candidate topics from DuckDuckGo trends, check for similarities against the past database, ensure zero similarity, choose 1 winning unique topic, and return strictly valid JSON.`;
+Using this information, choose the ones that suit our setup and niche:
+• Channel: ${nicheConfig.channelName} (${nicheConfig.channelHandle})
+• Format: Educational short-form video & reels (hook -> "did you know" core fact -> relatable explanation / mechanics -> loopy conclusion).
+
+Create 5 distinct candidate topics from this fresh trend data. Compare each candidate against our database of past topics to verify 100% uniqueness (zero duplicate concepts).
+Then select 1 winning topic that best suits our setup and niche, explain why it was chosen based on today's trends, and discard the other 4 candidates with clear reasons.
+
+Return strictly valid JSON.`;
 
   const aiResult = await callActiveAiForJson(systemPrompt, userPrompt, null, {
     preferLocalAi: nicheKey === 'fin',
@@ -1195,6 +1283,11 @@ Formulate candidate topics from DuckDuckGo trends, check for similarities agains
       sphereName: winner.sphereName,
       angle: winner.angle,
       hook: winner.coreHook,
+      fact: winner.factExplanation || winner.angle || winner.coreHook,
+      factExplanation: winner.factExplanation || winner.angle,
+      reference: winner.searchDetailsUsed || 'Peer-Reviewed Scientific Observation',
+      category: winner.sphereName || 'Everyday Science & Tech',
+      tags: ['#ScienceFacts', '#DidYouKnow', '#Physics', '#EverydayScience', '#Shorts'],
       searchDetailsUsed: winner.searchDetailsUsed || (ddgResults[0] ? `${ddgResults[0].title} - ${ddgResults[0].snippet}` : ''),
       loopyHookConcept: winner.loopyHookConcept || '',
       similarityCheck: winner.similarityCheck || 'Verified unique against database',
@@ -1214,6 +1307,8 @@ module.exports = {
   NICHE_SPHERES,
   queryDuckDuckGo,
   queryGoogleNewsRss,
+  queryGoogleTrendsDaily,
+  querySocialTrends,
   fetchPastTopicsDatabase,
   saveChosenTopicToDatabase,
   discoverAndSelectTopicViaActiveAi

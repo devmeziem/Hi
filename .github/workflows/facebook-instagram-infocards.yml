@@ -1,0 +1,65 @@
+name: Facebook & Instagram Knowledge Cards (Workflow 4)
+
+on:
+  schedule:
+    # Twice Daily In-Depth Visual Knowledge Releases (09:00 UTC and 19:00 UTC)
+    - cron: '0 9,19 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry Run Mode (Uncheck for live publishing)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  publish_infocards:
+    name: Generate & Publish Visual Knowledge InfoCards
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js Runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ffmpeg curl librsvg2-bin
+
+      - name: Install Project Dependencies
+        run: npm ci || npm install
+
+      - name: Generate In-Depth Science/Tech InfoCard & Captions
+        run: |
+          node scripts/generate_facebook_instagram_infocard.cjs
+
+      - name: Dispatch to Facebook (Voxam Fact) & Instagram (bones_ceo)
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
+          BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31c1dcd8b9c702c467a38' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
+          DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
+        run: |
+          node scripts/publish_infocards_to_facebook_instagram.cjs
+
+      - name: Upload Graphic Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: facebook-instagram-infocards-${{ github.run_id }}
+          path: |
+            test_artifacts/infocards/*
+            test_artifacts/infocard_latest.png
+            test_artifacts/infocard_latest.json

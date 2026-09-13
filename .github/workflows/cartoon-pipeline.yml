@@ -35,9 +35,9 @@ on:
           - ffmpeg
           - blender
       pause_youtube:
-        description: 'Pause YouTube Upload (Focus on Facebook & Instagram Buffer testing)'
+        description: 'Pause YouTube Upload (Uncheck to allow YouTube Shorts upload)'
         required: false
-        default: true
+        default: false
         type: boolean
       buffer_token:
         description: 'Buffer Access Token (Optional: paste your token here to test directly)'
@@ -78,23 +78,9 @@ jobs:
       - name: Install Node Dependencies
         run: npm install --legacy-peer-deps --no-audit --no-fund
 
-      - name: Install Python Neural Audio & Video Packages
+      - name: Install Python Video & Audio Packages
         run: |
-          pip install --no-cache-dir kokoro-onnx soundfile moviepy pillow numpy
-
-      - name: Cache & Download Kokoro-82M ONNX Models
-        run: |
-          sudo mkdir -p /opt/kokoro_models
-          sudo chmod 777 /opt/kokoro_models
-          if [ ! -f /opt/kokoro_models/kokoro-v1.0.onnx ]; then
-            echo "Downloading kokoro-v1.0.onnx..."
-            curl -sL "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx" -o /opt/kokoro_models/kokoro-v1.0.onnx
-          fi
-          if [ ! -f /opt/kokoro_models/voices-v1.0.bin ]; then
-            echo "Downloading voices-v1.0.bin..."
-            curl -sL "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin" -o /opt/kokoro_models/voices-v1.0.bin
-          fi
-          ls -lh /opt/kokoro_models
+          pip install --no-cache-dir soundfile moviepy pillow numpy
 
       - name: Install Rhubarb Lip Sync 1.13.0
         run: |
@@ -113,7 +99,6 @@ jobs:
           echo "=== VERIFYING PIPELINE BINARIES ==="
           ffmpeg -version | head -n 1
           rhubarb --version || echo "Rhubarb check finished"
-          python3 -c "import kokoro_onnx; print('Kokoro-ONNX ready')"
 
       - name: Pre-Compile Exact Puppet Character Rig Assets
         run: |
@@ -154,7 +139,7 @@ jobs:
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 || secrets.YOUTUBE_CLIENT_ID_TECH }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 || secrets.YOUTUBE_CLIENT_SECRET_TECH }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 || secrets.YOUTUBE_REFRESH_TOKEN_TECH }}
-          PAUSE_YOUTUBE: ${{ github.event.inputs.pause_youtube || 'true' }}
+          PAUSE_YOUTUBE: ${{ github.event.inputs.pause_youtube || 'false' }}
           BUFFER_API_KEY: ${{ github.event.inputs.buffer_token || secrets.BUFFER_API_KEY }}
           BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
           BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID }}
@@ -190,7 +175,7 @@ jobs:
       - name: Cross-Post to Facebook (Voxam Fact) and Instagram (bones_ceo) via Buffer Omnichannel
         if: success()
         env:
-          PAUSE_YOUTUBE: ${{ github.event.inputs.pause_youtube || 'true' }}
+          PAUSE_YOUTUBE: ${{ github.event.inputs.pause_youtube || 'false' }}
           BUFFER_API_KEY: ${{ github.event.inputs.buffer_token || secrets.BUFFER_API_KEY }}
           BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
           BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31c1dcd8b9c702c467a38' }}

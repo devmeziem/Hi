@@ -1,0 +1,67 @@
+name: TikTok Secondary Channel Dispatch (Workflow 5)
+
+on:
+  schedule:
+    # 2x Daily release schedule for secondary TikTok channel (11:00 UTC and 21:00 UTC)
+    - cron: '0 11,21 * * *'
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: 'Specific topic for secondary TikTok video'
+        required: false
+        default: ''
+        type: string
+      dry_run:
+        description: 'Dry Run Mode (Uncheck to publish live)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  publish_secondary_tiktok:
+    name: Generate & Dispatch to Secondary TikTok Channel
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js Runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ffmpeg curl librsvg2-bin
+
+      - name: Install Project Dependencies
+        run: npm ci || npm install
+
+      - name: Pre-Compile Puppet Shapes
+        run: |
+          node scripts/build_exact_puppet_shapes.cjs
+          node scripts/build_modern_tech_character.cjs
+
+      - name: Generate Fresh Tech Fact Reel
+        env:
+          TEST_TOPIC: ${{ github.event.inputs.topic }}
+          PAUSE_YOUTUBE: 'true'
+        run: |
+          node scripts/generate_archie_tech_fact_reel.cjs
+
+      - name: Dispatch to Secondary TikTok Channel
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          BUFFER_TIKTOK_CHANNEL_ID_2: ${{ secrets.BUFFER_TIKTOK_CHANNEL_ID_2 }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
+          DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
+        run: |
+          node scripts/publish_second_tiktok_channel.cjs

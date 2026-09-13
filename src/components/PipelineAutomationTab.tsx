@@ -354,7 +354,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg libespeak-ng1 libsndfile1
-          pip install --no-cache-dir kokoro-onnx soundfile moviepy pillow numpy
+          pip install --no-cache-dir soundfile moviepy pillow numpy
       - name: Pre-Compile Exact Puppet Character Rig Assets
         run: |
           node scripts/build_exact_puppet_shapes.cjs

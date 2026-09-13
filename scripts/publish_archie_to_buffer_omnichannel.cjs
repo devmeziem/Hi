@@ -621,34 +621,36 @@ async function uploadToCloudinary(videoPath) {
  * Generate platform-tailored caption for Facebook, Instagram, and TikTok
  */
 function buildOmnichannelCaption(metadata = {}, service = 'generic') {
-  const title = metadata.title || 'Did You Know? Mind-Blowing Science & Tech Breakdown';
-  const fact = metadata.fact || metadata.description || 'Archie Explains: Cutting-edge science, AI, and engineering wonders compared!';
-  const citation = metadata.reference ? `📚 Citation: ${metadata.reference}` : '';
+  const cleanTitle = (metadata.title || 'Did You Know? Mind-Blowing Science & Tech Breakdown').trim();
+  const fact = (metadata.fact || metadata.description || 'Archie Explains: Cutting-edge science, AI, and everyday wonders!').trim();
+  const citation = metadata.reference ? `🔬 Verified Citation: ${metadata.reference}` : '';
 
-  const tags = ['#ArchieExplains', '#Tech', '#Science', '#AI', '#Engineering', '#HowItWorks', '#DidYouKnow'];
+  const baseTags = metadata.tags && metadata.tags.length > 0
+    ? metadata.tags
+    : ['#ArchieExplains', '#EverydayScience', '#Tech', '#AI', '#Engineering', '#HowItWorks', '#DidYouKnow'];
 
   if (service === 'tiktok') {
-    tags.push('#TikTokTech', '#TechTok', '#FYP', '#LearnOnTikTok');
-    return `${title}\n\n${fact}\n\n${citation}\n\nWhat topic should Archie explore next? Drop your thoughts!\n\n${tags.join(' ')}`.trim();
+    const ttTags = Array.from(new Set([...baseTags, '#TikTokTech', '#TechTok', '#FYP', '#LearnOnTikTok', '#Shorts']));
+    return `⚡ ${cleanTitle.toUpperCase()}\n\n${fact}\n\n${citation}\n\nWhat science or tech mystery should Archie break down next? Let us know below!\n\n${ttTags.join(' ')}`.trim();
   }
 
   if (service === 'instagram') {
-    tags.push('#ReelsInstagram', '#ScienceReels', '#TechNews', '#InstaScience');
-    return `${title}\n\n${fact}\n\n${citation}\n\nFollow @ArchieExplains for daily animated tech & science breakdowns.\n\n${tags.join(' ')}`.trim();
+    const igTags = Array.from(new Set([...baseTags, '#ReelsInstagram', '#ScienceReels', '#TechNews', '#InstaScience', '#ViralScience', '#Shorts']));
+    return `⚡ ${cleanTitle.toUpperCase()}\n\n${fact}\n\n${citation}\n\nFollow @bones_ceo for daily animated science & tech insights.\n\n${igTags.join(' ')}`.trim();
   }
 
   if (service === 'facebook') {
-    tags.push('#FacebookReels', '#ViralTech', '#ScienceExplained');
-    return `${title}\n\n${fact}\n\n${citation}\n\nLike and share for more mind-blowing engineering comparisons!\n\n${tags.join(' ')}`.trim();
+    const fbTags = Array.from(new Set([...baseTags, '#FacebookReels', '#ViralTech', '#ScienceExplained', '#VoxamFact', '#Shorts']));
+    return `⚡ ${cleanTitle.toUpperCase()}\n\n${fact}\n\n${citation}\n\nFollow Voxam Fact for daily mind-blowing everyday science & engineering comparisons!\n\n${fbTags.join(' ')}`.trim();
   }
 
-  return `${title}\n\n${fact}\n\n${tags.join(' ')}`;
+  return `⚡ ${cleanTitle.toUpperCase()}\n\n${fact}\n\n${citation}\n\n${baseTags.join(' ')}`.trim();
 }
 
 /**
  * Post via classic REST API endpoint (api.bufferapp.com/1/updates/create.json)
  */
-async function postViaClassicRest(channel, mediaUrl, caption, shareNow = true) {
+async function postViaClassicRest(channel, mediaUrl, caption, shareNow = true, title = '') {
   const svcName = (channel.service || '').toUpperCase();
   const form = new URLSearchParams();
   form.append('profile_ids[]', channel.id);
@@ -656,6 +658,10 @@ async function postViaClassicRest(channel, mediaUrl, caption, shareNow = true) {
   form.append('now', shareNow ? 'true' : 'false');
   form.append('media[video]', mediaUrl);
   form.append('media[link]', mediaUrl);
+  if (title) {
+    form.append('media[title]', title);
+    form.append('media[description]', caption);
+  }
 
   // Method 1: with access_token query param
   let endpoint = `https://api.bufferapp.com/1/updates/create.json?access_token=${encodeURIComponent(BUFFER_API_KEY)}`;
@@ -695,7 +701,7 @@ async function postViaClassicRest(channel, mediaUrl, caption, shareNow = true) {
 /**
  * Queue or publish a video post to a specific Buffer channel
  */
-async function postToBufferChannel(channel, mediaUrl, caption) {
+async function postToBufferChannel(channel, mediaUrl, caption, postTitle = '') {
   const mode = SHARE_NOW ? 'shareNow' : 'addToQueue';
   const svc = (channel.service || '').toLowerCase();
   const svcName = svc.toUpperCase();
@@ -709,7 +715,7 @@ async function postToBufferChannel(channel, mediaUrl, caption) {
 
   // If already confirmed in REST mode and token allows it, use REST directly
   if (activeApiEngine === 'rest') {
-    return await postViaClassicRest(channel, mediaUrl, caption, SHARE_NOW);
+    return await postViaClassicRest(channel, mediaUrl, caption, SHARE_NOW, postTitle);
   }
 
   // Otherwise use Modern GraphQL
@@ -750,7 +756,8 @@ async function postToBufferChannel(channel, mediaUrl, caption) {
     if (svc === 'facebook') {
       const fbPostType = (process.env.BUFFER_FACEBOOK_POST_TYPE || 'reel').toLowerCase();
       metadata.facebook = {
-        type: fbPostType
+        type: fbPostType,
+        title: postTitle || 'Archie Explains: Everyday Science & Tech'
       };
     } else if (svc === 'instagram') {
       const igPostType = (process.env.BUFFER_INSTAGRAM_POST_TYPE || 'reel').toLowerCase();
@@ -885,6 +892,35 @@ async function publishArchieOmnichannel(options = {}) {
     return true;
   });
 
+  // Enforce TikTok 2-posts-per-day limit per user specification
+  const tiktokLogFile = path.join(process.cwd(), 'test_artifacts', 'buffer_tiktok_daily_log.json');
+  function checkTikTokAllowance() {
+    const today = new Date().toISOString().slice(0, 10);
+    let log = { date: today, count: 0, timestamps: [] };
+    try {
+      if (fs.existsSync(tiktokLogFile)) {
+        const d = JSON.parse(fs.readFileSync(tiktokLogFile, 'utf8'));
+        if (d.date === today) log = d;
+      }
+    } catch {}
+    return {
+      allowed: log.count < 2,
+      count: log.count,
+      log
+    };
+  }
+
+  const ttCheck = checkTikTokAllowance();
+  targetChannels = targetChannels.filter(ch => {
+    if (ch.service === 'tiktok') {
+      if (!ttCheck.allowed) {
+        console.log(`\n${colors.yellow}[Buffer Omnichannel] ⏸️ Skipping TikTok: Strictly capped at 2 cross-posts per day (current today count: ${ttCheck.count}/2). Facebook & Instagram proceed immediately.${colors.reset}`);
+        return false;
+      }
+    }
+    return true;
+  });
+
   if (!targetChannels.length) {
     console.warn(`\n[Buffer Omnichannel] ⚠️ No Facebook, Instagram, or TikTok channels connected in your Buffer account.`);
     console.warn(`Please visit https://publish.buffer.com/channels to connect your accounts.`);
@@ -915,13 +951,54 @@ async function publishArchieOmnichannel(options = {}) {
     }
   }
 
-  // 4. Dispatch to each connected channel
+  // 4. Resolve rich metadata (Fact / Topic / Title / Reference / Tags)
+  let metadata = Object.assign({}, options.metadata || {});
+  if (!metadata.title || !metadata.fact) {
+    const candidateFiles = [
+      path.join(process.cwd(), 'test_artifacts', 'archie_tech_fact_latest.json'),
+      path.join(process.cwd(), 'test_artifacts', 'cartoon_episode_plan.json'),
+      path.join(process.cwd(), 'test_artifacts', 'factory_job_record.json')
+    ];
+    for (const cf of candidateFiles) {
+      if (fs.existsSync(cf)) {
+        try {
+          const parsed = JSON.parse(fs.readFileSync(cf, 'utf8'));
+          if (parsed) {
+            metadata.title = metadata.title || parsed.title || parsed.topic || parsed.category;
+            metadata.fact = metadata.fact || parsed.fact || parsed.script || parsed.hook;
+            metadata.reference = metadata.reference || parsed.reference || parsed.citation;
+            metadata.tags = (metadata.tags && metadata.tags.length > 0) ? metadata.tags : parsed.tags;
+            console.log(`[Buffer Omnichannel] 📄 Loaded rich metadata from ${path.basename(cf)}: "${metadata.title}"`);
+            break;
+          }
+        } catch {}
+      }
+    }
+  }
+
+  const cleanTitle = (metadata.title || 'Did You Know? Mind-Blowing Science & Tech Breakdown').trim();
+
+  // 5. Dispatch to each connected channel
   const results = [];
   for (const ch of targetChannels) {
-    const caption = buildOmnichannelCaption(options.metadata || {}, ch.service);
+    const caption = buildOmnichannelCaption(metadata, ch.service);
     try {
-      const res = await postToBufferChannel(ch, mediaUrl, caption);
+      const res = await postToBufferChannel(ch, mediaUrl, caption, cleanTitle);
       results.push({ service: ch.service, channelId: ch.id, success: true, res });
+
+      // Record successful TikTok post to persist 2x/day rate cap
+      if (ch.service === 'tiktok') {
+        try {
+          const today = new Date().toISOString().slice(0, 10);
+          const currLog = ttCheck.log;
+          currLog.count += 1;
+          currLog.timestamps.push(new Date().toISOString());
+          const dir = path.dirname(tiktokLogFile);
+          if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+          fs.writeFileSync(tiktokLogFile, JSON.stringify(currLog, null, 2));
+          console.log(`[Buffer Omnichannel] 📝 Recorded TikTok dispatch for today (${currLog.count}/2 used).`);
+        } catch {}
+      }
     } catch (err) {
       console.error(`  ${colors.red}❌ Failed posting to ${ch.service}: ${err.message}${colors.reset}`);
       results.push({ service: ch.service, channelId: ch.id, success: false, error: err.message });
@@ -956,5 +1033,7 @@ if (require.main === module) {
 module.exports = {
   publishArchieOmnichannel,
   discoverConnectedChannels,
-  buildOmnichannelCaption
+  buildOmnichannelCaption,
+  uploadToPublicRelay,
+  uploadToCloudinary
 };

@@ -154,7 +154,35 @@ function renderHumanHead(pose = 'idle', options = {}) {
     <path d="M 244 277.5 Q 250 279.5 256 277.5" stroke="${SKIN_SHADOW}" stroke-width="1.4" fill="none" opacity="0.4" stroke-linecap="round" />
   `;
 
-  if (talking) {
+  const viseme = options.viseme || (talking ? 'talk' : (options.blink ? 'smile' : (options.viseme || 'idle')));
+
+  if (viseme === 'vowel') {
+    // NEW MOUTH: Expressive Wide-Open Vowel Viseme ("AH", "WOW", "FACT", "QUANTUM")
+    mouthPath = `
+      <!-- Expressive Wide-Open Vowel Mouth with Anatomical Teeth & Curved Tongue -->
+      <path d="M 233 266 Q 250 263 267 266 C 265 289, 235 289, 233 266 Z" fill="${MOUTH_CAVITY}" stroke="${LIP_CONTOUR}" stroke-width="1.5" />
+      <!-- Upper Dental Arch with Teeth Separation -->
+      <path d="M 236 266.5 Q 250 269 264 266.5 L 263 272.5 Q 250 275 237 272.5 Z" fill="${TEETH_WHITE}" />
+      <line x1="250" y1="267" x2="250" y2="274" stroke="#e2e8f0" stroke-width="0.8" />
+      <line x1="243" y1="267" x2="243" y2="273" stroke="#e2e8f0" stroke-width="0.8" />
+      <line x1="257" y1="267" x2="257" y2="273" stroke="#e2e8f0" stroke-width="0.8" />
+      <!-- Expressive Tongue Arch -->
+      <path d="M 239 283 Q 250 277 261 283 C 257 287.5, 243 287.5, 239 283 Z" fill="${TONGUE_PINK}" />
+      <!-- Upper & Lower Lip Contour -->
+      <path d="M 232 265.5 Q 242 263 250 264 Q 258 263 268 265.5" stroke="${LIP_UPPER}" stroke-width="2" fill="none" stroke-linecap="round" />
+      <path d="M 234 287 Q 250 291 266 287" stroke="${LIP_LOWER}" stroke-width="2" fill="none" stroke-linecap="round" />
+      <path d="M 244 293 Q 250 295 256 293" stroke="${SKIN_SHADOW}" stroke-width="1.4" fill="none" opacity="0.4" stroke-linecap="round" />
+    `;
+  } else if (viseme === 'o') {
+    // NEW MOUTH: Round O-Viseme ("O", "OO", "WHOA", "KNOW")
+    mouthPath = `
+      <!-- Expressive Round O-Mouth with Lip Contours -->
+      <ellipse cx="250" cy="275" rx="8" ry="10" fill="${MOUTH_CAVITY}" stroke="${LIP_CONTOUR}" stroke-width="1.4" />
+      <path d="M 245 267 Q 250 269 255 267" stroke="${TEETH_WHITE}" stroke-width="1.5" stroke-linecap="round" fill="none" />
+      <ellipse cx="250" cy="275" rx="8.5" ry="10.5" stroke="${LIP_UPPER}" stroke-width="1.6" fill="none" />
+      <path d="M 244 289 Q 250 291 256 289" stroke="${SKIN_SHADOW}" stroke-width="1.4" fill="none" opacity="0.4" stroke-linecap="round" />
+    `;
+  } else if (talking || viseme === 'talk') {
     mouthPath = `
       <!-- Expressive Animated Talking Mouth with Natural Lips, Teeth & Tongue -->
       <!-- Upper Lip Band -->
@@ -273,6 +301,22 @@ function renderHumanHead(pose = 'idle', options = {}) {
     ${eyeL}
     ${eyeR}
 
+    <!-- Archie's Signature Round Wire Glasses (Direct Match to Reference Images 2 & 3) -->
+    <!-- Left Wire Rim -->
+    <circle cx="224" cy="215" r="18" fill="#38bdf8" fill-opacity="0.06" stroke="#94a3b8" stroke-width="2.2" />
+    <path d="M 213 207 Q 220 201 228 203" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.85" />
+    
+    <!-- Right Wire Rim -->
+    <circle cx="276" cy="215" r="18" fill="#38bdf8" fill-opacity="0.06" stroke="#94a3b8" stroke-width="2.2" />
+    <path d="M 265 207 Q 272 201 280 203" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.85" />
+
+    <!-- Wire Bridge across nose -->
+    <path d="M 242 214 Q 250 210 258 214" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" fill="none" />
+
+    <!-- Temples reaching to ears -->
+    <path d="M 206 215 L 192 219" stroke="#64748b" stroke-width="2" stroke-linecap="round" />
+    <path d="M 294 215 L 308 219" stroke="#64748b" stroke-width="2" stroke-linecap="round" />
+
     <!-- Natural Sculpted Human Nose (Refined shading, no clown triangle!) -->
     <path d="M 248 214 L 246 244 Q 242 250 250 252 Q 258 250 254 244 L 252 214" fill="${SKIN_SHADOW}" opacity="0.35" />
     <path d="M 244 249 Q 250 254 256 249" stroke="${SKIN_SHADOW}" stroke-width="2.5" stroke-linecap="round" fill="none" />
@@ -298,6 +342,13 @@ function renderModernTorso() {
     <path d="M 210 340 L 160 375 L 175 510 L 235 510 L 230 400 L 225 340 Z" fill="${JACKET_MID}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
     <!-- Right Collar & Lapel -->
     <path d="M 290 340 L 340 375 L 325 510 L 265 510 L 270 400 L 275 340 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+
+    <!-- Blue Lanyard & Badge from Image 2 -->
+    <path d="M 238 340 L 248 425 L 258 340" stroke="#0284c7" stroke-width="2.5" fill="none" opacity="0.9" />
+    <rect x="238" y="425" width="20" height="28" rx="2.5" fill="#ffffff" stroke="#94a3b8" stroke-width="1.2" />
+    <rect x="241" y="429" width="14" height="11" rx="1.5" fill="#0284c7" />
+    <line x1="241" y1="444" x2="255" y2="444" stroke="#64748b" stroke-width="1.2" />
+    <line x1="241" y1="448" x2="250" y2="448" stroke="#94a3b8" stroke-width="1" />
 
     <!-- Front Center Zipper / Placket -->
     <line x1="250" y1="395" x2="250" y2="510" stroke="#0284c7" stroke-width="2" stroke-linecap="round" />
@@ -1009,6 +1060,15 @@ const ALL_MODERN_POSES = [
   { name: 'puppet_point_up_left_talk', pose: 'point_up_left', options: { blink: false, talking: true } },
   { name: 'puppet_point_up_right', pose: 'point_up_right', options: { blink: false, talking: false } },
   { name: 'puppet_point_up_right_talk', pose: 'point_up_right', options: { blink: false, talking: true } },
+  { name: 'puppet_standing_point_board', pose: 'point_up_right', options: { blink: false, talking: false } },
+  { name: 'puppet_standing_point_board_talk', pose: 'point_up_right', options: { blink: false, talking: true } },
+  { name: 'puppet_standing_point_board_talk_vowel', pose: 'point_up_right', options: { blink: false, viseme: 'vowel' } },
+  { name: 'puppet_standing_point_board_talk_o', pose: 'point_up_right', options: { blink: false, viseme: 'o' } },
+  { name: 'puppet_standing_point_board_blink', pose: 'point_up_right', options: { blink: true, talking: false } },
+  { name: 'puppet_desk_seated', pose: 'sitting', options: { blink: false, talking: false } },
+  { name: 'puppet_desk_seated_talk', pose: 'sitting', options: { blink: false, talking: true } },
+  { name: 'puppet_desk_seated_talk_vowel', pose: 'sitting', options: { blink: false, viseme: 'vowel' } },
+  { name: 'puppet_desk_seated_blink', pose: 'sitting', options: { blink: true, talking: false } },
   { name: 'puppet_akimbo_jaw', pose: 'akimbo_jaw', options: { blink: false, talking: false } },
   { name: 'puppet_akimbo_jaw_talk', pose: 'akimbo_jaw', options: { blink: false, talking: true } },
   { name: 'puppet_explain_both', pose: 'explain_both', options: { blink: false, talking: false } },

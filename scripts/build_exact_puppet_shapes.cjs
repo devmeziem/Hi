@@ -387,6 +387,14 @@ function ensureExactPuppetAssets(force = true) {
     console.warn('Notice syncing comparison_puppet:', syncErr.message);
   }
 
+  // Build and sync modern tech character Archie assets
+  try {
+    const { buildAllModernCharacterAssets } = require('./build_modern_tech_character.cjs');
+    buildAllModernCharacterAssets(force);
+  } catch (mErr) {
+    console.warn('Notice syncing modern character assets:', mErr.message);
+  }
+
   console.log('🚀 [Exact Puppet Builder] All shape assets rendered successfully!');
   return true;
 }
