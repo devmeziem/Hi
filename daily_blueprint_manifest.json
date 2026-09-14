@@ -1,6 +1,19 @@
 {
   "videos": [
     {
+      "id": "fin_quote_1789416931911",
+      "channelId": "finance_saas",
+      "type": "financial_quote_reel_5s",
+      "title": "Finance Mindset — Howard Marks Quotes #Shorts",
+      "author": "Howard Marks",
+      "credentials": "Co-Chairman, Oaktree Capital Management • Wharton B.S. & Chicago M.B.A.",
+      "reference": "The Most Important Thing: Uncommon Sense for the Thoughtful Investor",
+      "duration": 5,
+      "videoPath": "/home/runner/work/Hi/Hi/rendered_videos/fin_quote_5s_1789416931911.mp4",
+      "loopable": true,
+      "publishedAt": "2026-09-14T20:15:35.712Z"
+    },
+    {
       "id": "fin_quote_1789388936781",
       "channelId": "finance_saas",
       "type": "financial_quote_reel_5s",
