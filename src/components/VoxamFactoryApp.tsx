@@ -37,7 +37,8 @@ import {
   Database,
   Shield,
   Menu,
-  Atom
+  Atom,
+  Share2
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { NicheType, SavedCampaign, FactoryJob, WorkerLog, IntegrationKeys, ChannelMetrics, ProjectConfig } from '../types';
@@ -52,6 +53,7 @@ import { PipelineAutomationTab } from './PipelineAutomationTab';
 import { VerticalVideoPlayer } from './VerticalVideoPlayer';
 import { DjSoundboardTab } from './DjSoundboardTab';
 import { FinanceEngineTab } from './FinanceEngineTab';
+import { MonetizationMatrixTab } from './MonetizationMatrixTab';
 
 interface VoxamFactoryAppProps {
   userEmail: string;
@@ -639,7 +641,8 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
     { id: 'studio', label: 'Content Studio', icon: Clapperboard },
     { id: 'queue', label: 'Job Queue & Pipeline', icon: ListOrdered },
     { id: 'vault', label: 'Video Vault & History', icon: FolderLock },
-    { id: 'affiliates', label: 'Affiliates & Monetization', icon: DollarSign },
+    { id: 'monetization', label: 'Ad Monetization & API Hub', icon: Share2 },
+    { id: 'affiliates', label: 'Affiliates & Sponsorships', icon: DollarSign },
     { id: 'niches', label: 'Niche Configurations', icon: Sliders },
     { id: 'guidelines', label: 'Content Masterclass', icon: BookOpen },
     { id: 'settings', label: 'Settings & Integrations', icon: Settings }
@@ -714,17 +717,32 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                 </button>
               </div>
 
-              {/* Special Archie Callout inside Drawer */}
-              <div className="p-3 border-b border-slate-800">
+              {/* Special Quick Access Inside Drawer */}
+              <div className="p-3 border-b border-slate-800 space-y-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('monetization');
+                    setIsMobileDrawerOpen(false);
+                  }}
+                  className="w-full p-2.5 bg-gradient-to-r from-indigo-950/60 to-purple-950/60 border border-indigo-500/40 rounded-xl text-left cursor-pointer transition-all hover:border-indigo-400 flex items-center gap-2.5"
+                >
+                  <Share2 className="w-4 h-4 text-indigo-400 shrink-0" />
+                  <div>
+                    <div className="text-xs font-bold text-indigo-300">Ad Monetization & API Matrix</div>
+                    <div className="text-[10px] text-slate-400">Rumble, Dailymotion, Odysee & Meta</div>
+                  </div>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => {
                     setActiveTab('playground');
                     setIsMobileDrawerOpen(false);
                   }}
-                  className="w-full p-3 bg-gradient-to-r from-emerald-950/50 to-indigo-950/50 border border-emerald-500/40 rounded-xl text-left cursor-pointer transition-all hover:border-emerald-400 flex items-center gap-2.5"
+                  className="w-full p-2.5 bg-gradient-to-r from-emerald-950/50 to-indigo-950/50 border border-emerald-500/40 rounded-xl text-left cursor-pointer transition-all hover:border-emerald-400 flex items-center gap-2.5"
                 >
-                  <Atom className="w-5 h-5 text-emerald-400 shrink-0" />
+                  <Atom className="w-4 h-4 text-emerald-400 shrink-0" />
                   <div>
                     <div className="text-xs font-bold text-emerald-300">Archie Idea Box</div>
                     <div className="text-[10px] text-slate-400">Random Science Facts for Students</div>
@@ -2078,6 +2096,9 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
 
         {/* TAB 6: AFFILIATES */}
         {activeTab === 'affiliates' && <AffiliateDashboard />}
+
+        {/* TAB: MONETIZATION & OMNICHANNEL MATRIX */}
+        {activeTab === 'monetization' && <MonetizationMatrixTab />}
 
         {/* TAB 7: NICHES */}
         {activeTab === 'niches' && <NicheConfig />}

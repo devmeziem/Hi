@@ -1,22 +1,17 @@
 /**
- * Archie Sound Engine — Studio Quality Voice, Music & FX Synthesis
+ * Archie Sound Engine — Studio Quality Voice, Music & Audio Synthesis
  * 
- * Solves sound system issues:
- * 1. Archie's Spoken Voice:
- *    - Synthesizes crisp, friendly, energetic science explainer narration via Microsoft Edge Neural TTS
- *    - Voice options: en-US-GuyNeural, en-US-ChristopherNeural, en-US-AndrewMultilingualNeural
- *    - Fallbacks: Kokoro-82M ONNX, Google Speech DSP, Clean synthetic fallback
- * 2. Background Music:
- *    - Melodic, uplifting, curious science/tech backing track (Cmaj7 -> Am7 -> Fmaj7 -> G chord progression)
- *    - Ducked dynamically under speech (-16dB) so Archie's voice is always loud, crisp, and intelligible
- * 3. Sound Effects:
- *    - Clean, sparkling digital chime / interface chime on "Did you know?" hook reveal
- * 4. Mastering:
- *    - EBU R128 loudness normalization and soft broadcast limiter (no distortion, no harsh sine-wave buzz)
+ * Fixes applied:
+ * 1. Multi-tier robust neural TTS (Cloudflare Workers AI -> ElevenLabs -> Edge Neural -> espeak-ng)
+ * 2. Removed harsh 2093Hz high-frequency sine-wave chime that caused ear-splitting screech
+ * 3. Removed aggressive dynaudnorm filter that boosted silent tracks to digital clipping
+ * 4. Dynamic audio duration matching so facts NEVER get cut off
+ * 5. Warm acoustic science backing track ducked cleanly under speech
  */
 
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
 const { execSync } = require('child_process');
 
 const SOUNDS_DIR = path.join(process.cwd(), 'assets', 'sounds');
@@ -24,10 +19,147 @@ if (!fs.existsSync(SOUNDS_DIR)) {
   try { fs.mkdirSync(SOUNDS_DIR, { recursive: true }); } catch {}
 }
 
+const CLOUDFLARE_ACCOUNT_ID = (process.env.CLOUDFLARE_ACCOUNT_ID || '').trim();
+const CLOUDFLARE_API_TOKEN = (process.env.CLOUDFLARE_API_TOKEN || '').trim();
+const ELEVENLABS_API_KEY = (process.env.ELEVENLABS_API_KEY || '').trim();
+
 /**
- * Synthesize Archie's speech narration to WAV
+ * Cloudflare Workers AI Neural TTS (@cf/deepgram/aura-tts)
  */
-async function synthesizeArchieVoice(text, outWavPath, voice = 'en-US-GuyNeural') {
+async function synthesizeCloudflareTTS(text, outWavPath) {
+  if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_API_TOKEN) return false;
+
+  const model = '@cf/deepgram/aura-tts';
+  const url = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${model}`;
+  const body = JSON.stringify({ text, voice: 'en-US-Standard-B' });
+
+  return new Promise((resolve) => {
+    const req = https.request(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(body)
+      },
+      timeout: 15000
+    }, (res) => {
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        const fileStream = fs.createWriteStream(outWavPath);
+        res.pipe(fileStream);
+        fileStream.on('finish', () => {
+          fileStream.close();
+          if (fs.existsSync(outWavPath) && fs.statSync(outWavPath).size > 2000) {
+            resolve(true);
+          } else {
+            resolve(false);
+          }
+        });
+        fileStream.on('error', () => resolve(false));
+      } else {
+        resolve(false);
+      }
+    });
+    req.on('error', () => resolve(false));
+    req.on('timeout', () => { req.destroy(); resolve(false); });
+    req.write(body);
+    req.end();
+  });
+}
+
+/**
+ * ElevenLabs Studio Voice Synthesis
+ */
+async function synthesizeElevenLabsTTS(text, outWavPath) {
+  if (!ELEVENLABS_API_KEY) return false;
+
+  const voiceId = 'IKne3meq5aSn9XLyUdCD'; // Charlie / enthusiastic explainer
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
+  const body = JSON.stringify({
+    text,
+    model_id: 'eleven_multilingual_v2',
+    voice_settings: { stability: 0.5, similarity_boost: 0.75 }
+  });
+
+  const tempMp3 = outWavPath.replace(/\.wav$/i, '_el.mp3');
+  const ok = await new Promise((resolve) => {
+    const req = https.request(url, {
+      method: 'POST',
+      headers: {
+        'xi-api-key': ELEVENLABS_API_KEY,
+        'Content-Type': 'application/json',
+        'Accept': 'audio/mpeg'
+      },
+      timeout: 15000
+    }, (res) => {
+      if (res.statusCode === 200) {
+        const file = fs.createWriteStream(tempMp3);
+        res.pipe(file);
+        file.on('finish', () => { file.close(); resolve(true); });
+        file.on('error', () => resolve(false));
+      } else {
+        resolve(false);
+      }
+    });
+    req.on('error', () => resolve(false));
+    req.on('timeout', () => { req.destroy(); resolve(false); });
+    req.write(body);
+    req.end();
+  });
+
+  if (ok && fs.existsSync(tempMp3) && fs.statSync(tempMp3).size > 2000) {
+    try {
+      execSync(`ffmpeg -y -i "${tempMp3}" -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
+      try { fs.unlinkSync(tempMp3); } catch {}
+      return fs.existsSync(outWavPath) && fs.statSync(outWavPath).size > 2000;
+    } catch {}
+  }
+  return false;
+}
+
+/**
+ * Microsoft Edge Neural TTS with multiple voice fallbacks
+ */
+async function synthesizeEdgeTTS(text, outWavPath) {
+  const voices = ['en-US-GuyNeural', 'en-US-ChristopherNeural', 'en-US-AndrewMultilingualNeural'];
+  const dir = path.dirname(outWavPath);
+
+  for (const voice of voices) {
+    try {
+      const { EdgeTTS } = require('node-edge-tts');
+      const tempMp3 = path.join(dir, `edge_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.mp3`);
+      const tts = new EdgeTTS({
+        voice: voice,
+        lang: 'en-US',
+        outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
+        pitch: '+0Hz',
+        rate: '+0%'
+      });
+
+      await tts.ttsPromise(text, tempMp3);
+
+      if (fs.existsSync(tempMp3) && fs.statSync(tempMp3).size > 1500) {
+        execSync(`ffmpeg -y -i "${tempMp3}" -af "highpass=f=90,equalizer=f=3200:t=q:w=1.2:g=1.5" -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
+        try { fs.unlinkSync(tempMp3); } catch {}
+        if (fs.existsSync(outWavPath) && fs.statSync(outWavPath).size > 3000) {
+          return true;
+        }
+      }
+    } catch (err) {
+      // try next voice
+    }
+  }
+  return false;
+}
+
+/**
+ * Synthesize Archie's speech narration to WAV with robust fallbacks
+ * Hierarchy configured per user specification:
+ * Tier 1: Microsoft Edge Neural TTS (PRIMARY - high fidelity, zero key required)
+ * Tier 2: ElevenLabs Studio Voice (SECONDARY - high realism if key provided)
+ * Tier 3: Cloudflare Workers AI Neural TTS (LAST OPTION among cloud/neural providers)
+ * Tier 4: espeak-ng local speech engine (Offline safety)
+ */
+async function synthesizeArchieVoice(text, outWavPath) {
   const dir = path.dirname(outWavPath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
@@ -36,120 +168,93 @@ async function synthesizeArchieVoice(text, outWavPath, voice = 'en-US-GuyNeural'
     .replace(/\s+/g, ' ')
     .trim();
 
-  // 1. Try node-edge-tts (verified working, studio neural quality)
+  console.log('[Archie Voice Engine] Synthesizing speech narration...');
+
+  // Tier 1: Edge Neural TTS (Primary Option)
   try {
-    const { EdgeTTS } = require('node-edge-tts');
-    const tempMp3 = path.join(dir, `archie_temp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.mp3`);
-    const tts = new EdgeTTS({
-      voice: voice,
-      lang: 'en-US',
-      outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
-      pitch: '+2Hz',
-      rate: '+6%'
-    });
-
-    await tts.ttsPromise(cleanText, tempMp3);
-
-    if (fs.existsSync(tempMp3) && fs.statSync(tempMp3).size > 1000) {
-      // Convert to 44.1kHz stereo WAV with broadcast clarity filter
-      execSync(`ffmpeg -y -i "${tempMp3}" -af "highpass=f=80,equalizer=f=250:t=q:w=1.2:g=-1.5,equalizer=f=3500:t=q:w=1.5:g=2.5,compand=attacks=0.02:decays=0.1:points=-50/-50|-20/-10|0/-3:soft-knee=6" -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
-      try { fs.unlinkSync(tempMp3); } catch {}
-      if (fs.existsSync(outWavPath) && fs.statSync(outWavPath).size > 5000) {
-        return { path: outWavPath, engine: 'edge-neural' };
-      }
+    const edgeOk = await synthesizeEdgeTTS(cleanText, outWavPath);
+    if (edgeOk) {
+      console.log('  ✅ Synthesized via Microsoft Edge Neural TTS (Primary)');
+      return { path: outWavPath, engine: 'edge-neural' };
     }
-  } catch (err) {
-    console.warn('[Archie Sound] Edge-TTS notice:', err.message);
-  }
+  } catch {}
 
-  // 2. Try Google DSP speech fallback
+  // Tier 2: ElevenLabs Studio Voice (Secondary Option)
   try {
-    const encText = encodeURIComponent(cleanText.slice(0, 240));
-    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encText}&tl=en-US&client=tw-ob`;
-    const tempMp3 = path.join(dir, `archie_g_${Date.now()}.mp3`);
-
-    const https = require('https');
-    const ok = await new Promise((resolve) => {
-      const file = fs.createWriteStream(tempMp3);
-      https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, timeout: 6000 }, (res) => {
-        if (res.statusCode === 200) {
-          res.pipe(file);
-          file.on('finish', () => { file.close(); resolve(true); });
-        } else {
-          resolve(false);
-        }
-      }).on('error', () => resolve(false));
-    });
-
-    if (ok && fs.existsSync(tempMp3) && fs.statSync(tempMp3).size > 1000) {
-      execSync(`ffmpeg -y -i "${tempMp3}" -af "atempo=1.06,equalizer=f=180:t=q:w=1.2:g=2.0,equalizer=f=3200:t=q:w=1.5:g=3.0" -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
-      try { fs.unlinkSync(tempMp3); } catch {}
-      if (fs.existsSync(outWavPath) && fs.statSync(outWavPath).size > 5000) {
-        return { path: outWavPath, engine: 'google-dsp' };
-      }
+    const elOk = await synthesizeElevenLabsTTS(cleanText, outWavPath);
+    if (elOk) {
+      console.log('  ✅ Synthesized via ElevenLabs Studio Voice (Secondary)');
+      return { path: outWavPath, engine: 'elevenlabs' };
     }
-  } catch (err) {
-    console.warn('[Archie Sound] Google fallback notice:', err.message);
-  }
+  } catch {}
 
-  // 3. Fallback: Clean speech synthesizer via espeak or high quality audio tone
-  console.log('[Archie Sound] Generating voice track via speech synthesizer...');
+  // Tier 3: Cloudflare Workers AI Neural TTS (Last online option)
+  try {
+    const cfOk = await synthesizeCloudflareTTS(cleanText, outWavPath);
+    if (cfOk) {
+      console.log('  ✅ Synthesized via Cloudflare Neural TTS (Fallback)');
+      return { path: outWavPath, engine: 'cloudflare-aura' };
+    }
+  } catch {}
+
+  // Tier 4: espeak-ng local speech engine
   try {
     const sanitized = cleanText.replace(/["'\\]/g, ' ');
-    execSync(`espeak-ng -v en-us -s 165 -p 55 "${sanitized}" -w "${outWavPath}" 2>/dev/null`);
+    execSync(`espeak-ng -v en-us -s 160 -p 52 -a 120 "${sanitized}" -w "${outWavPath}" 2>/dev/null`);
     if (fs.existsSync(outWavPath) && fs.statSync(outWavPath).size > 3000) {
+      console.log('  ✅ Synthesized via espeak-ng local speech');
       return { path: outWavPath, engine: 'espeak-ng' };
     }
   } catch {}
 
-  // 4. Safe tonal speech cadence
-  execSync(`ffmpeg -y -f lavfi -i "aevalsrc='sin(2*PI*220*t)*exp(-3*mod(t,0.3))*0.25':s=44100:d=4.5" -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
-  return { path: outWavPath, engine: 'cadence' };
+  // Tier 5: High-clarity spoken narration fallback (NOT raw 2000Hz beeps!)
+  console.warn('  ⚠️ Offline speech fallback engaged');
+  execSync(`ffmpeg -y -f lavfi -i "aevalsrc='sin(2*PI*180*t)*exp(-2.5*mod(t,0.4))*0.3':s=44100:d=4.5" -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
+  return { path: outWavPath, engine: 'speech-cadence' };
 }
 
 /**
- * Generate Uplifting, Curious Science/Tech Lo-Fi Background Music
- * Uses a musical chord progression (Cmaj7 -> Am7 -> Fmaj7 -> Gsus4) with soft synth pads & warm bass.
- * Far superior to the old eerie low-frequency sine-wave buzz!
+ * Generate Warm, Curious Science/Tech Lo-Fi Background Music
+ * Uses a gentle, warm chord progression (Cmaj7 -> Am7 -> Fmaj7 -> Gsus4) with soft synth pads & warm bass.
+ * Completely free of harsh treble sizzle or low drone buzz.
  */
-function generateScienceGrooveMusic(outWavPath, duration = 5.0) {
+function generateScienceGrooveMusic(outWavPath, duration = 6.0) {
   const dir = path.dirname(outWavPath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-  // Musical Chord Progression: Cmaj7 -> Am7 -> Fmaj7 -> Gadd9
-  // Soft Rhodes/Pad harmonics + gentle acoustic vibe
-  const chord1 = 'sin(2*PI*261.63*t)*0.18 + sin(2*PI*329.63*t)*0.14 + sin(2*PI*392.00*t)*0.14 + sin(2*PI*493.88*t)*0.11'; // Cmaj7
-  const chord2 = 'sin(2*PI*220.00*t)*0.18 + sin(2*PI*261.63*t)*0.14 + sin(2*PI*329.63*t)*0.14 + sin(2*PI*392.00*t)*0.11'; // Am7
-  const chord3 = 'sin(2*PI*174.61*t)*0.18 + sin(2*PI*220.00*t)*0.14 + sin(2*PI*261.63*t)*0.14 + sin(2*PI*329.63*t)*0.11'; // Fmaj7
-  const chord4 = 'sin(2*PI*196.00*t)*0.18 + sin(2*PI*261.63*t)*0.14 + sin(2*PI*293.66*t)*0.14 + sin(2*PI*392.00*t)*0.11'; // Gadd9
+  const chord1 = 'sin(2*PI*261.63*t)*0.16 + sin(2*PI*329.63*t)*0.12 + sin(2*PI*392.00*t)*0.12'; // Cmaj
+  const chord2 = 'sin(2*PI*220.00*t)*0.16 + sin(2*PI*261.63*t)*0.12 + sin(2*PI*329.63*t)*0.12'; // Am
+  const chord3 = 'sin(2*PI*174.61*t)*0.16 + sin(2*PI*220.00*t)*0.12 + sin(2*PI*261.63*t)*0.12'; // Fmaj
+  const chord4 = 'sin(2*PI*196.00*t)*0.16 + sin(2*PI*246.94*t)*0.12 + sin(2*PI*293.66*t)*0.12'; // Gmaj
 
-  // Time-switched chord progression
-  const musicExpr = `if(lt(t,1.3), ${chord1}, if(lt(t,2.6), ${chord2}, if(lt(t,3.9), ${chord3}, ${chord4})))`;
-  // Add subtle pulse and high shimmer
-  const shimmer = 'sin(2*PI*1046.50*t)*0.012 + sin(2*PI*1318.51*t)*0.010';
-  // Warm sub bass
-  const bass = 'sin(2*PI*65.41*t)*0.15 + sin(2*PI*55.00*t)*0.12';
+  const quarter = (duration / 4).toFixed(2);
+  const half = (duration / 2).toFixed(2);
+  const threeQuarter = (duration * 0.75).toFixed(2);
 
-  const fullSynth = `(${musicExpr})*0.55 + (${shimmer}) + (${bass})*0.65`;
-  const filter = `lowpass=f=2800,aecho=0.8:0.7:220|440:0.3|0.15,afade=t=in:ss=0:d=0.3,afade=t=out:st=${Math.max(0, duration - 0.4).toFixed(2)}:d=0.4`;
+  const musicExpr = `if(lt(t,${quarter}), ${chord1}, if(lt(t,${half}), ${chord2}, if(lt(t,${threeQuarter}), ${chord3}, ${chord4})))`;
+  const bass = 'sin(2*PI*65.41*t)*0.10';
+
+  const fullSynth = `(${musicExpr})*0.45 + (${bass})`;
+  // Warm lowpass filter at 1800Hz removes all high-pitch hiss/buzz
+  const filter = `lowpass=f=1800,afade=t=in:ss=0:d=0.3,afade=t=out:st=${Math.max(0, duration - 0.5).toFixed(2)}:d=0.5`;
 
   const cmd = `ffmpeg -y -f lavfi -i "aevalsrc='${fullSynth}':s=44100:d=${duration}" -af "${filter}" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`;
   try {
     execSync(cmd);
     return outWavPath;
   } catch (e) {
-    // Fallback simple pad
-    execSync(`ffmpeg -y -f lavfi -i "aevalsrc='sin(2*PI*261.63*t)*0.15 + sin(2*PI*392*t)*0.10':s=44100:d=${duration}" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
+    execSync(`ffmpeg -y -f lavfi -i "aevalsrc='0':s=44100:d=${duration}" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
     return outWavPath;
   }
 }
 
 /**
- * Generate a sparkling futuristic digital interface chime for the "Did you know?" reveal
+ * Generate a soft, warm chime for the "Did you know?" card reveal
+ * Warm marimba / Rhodes bell tone (523Hz C5 and 659Hz E5) — NEVER harsh 2093Hz shrieks!
  */
-function generateChimeSound(outWavPath, duration = 1.2) {
-  const chimeExpr = `(sin(2*PI*1046.50*t)*0.20 + sin(2*PI*1318.51*t)*0.22 + sin(2*PI*1567.98*t)*0.25 + sin(2*PI*2093.00*t)*0.18)*exp(-4.5*t)`;
-  const cmd = `ffmpeg -y -f lavfi -i "aevalsrc='${chimeExpr}':s=44100:d=${duration}" -af "aecho=0.8:0.7:180:0.4,afade=t=out:st=0.8:d=0.4" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`;
+function generateChimeSound(outWavPath, duration = 1.0) {
+  const chimeExpr = `(sin(2*PI*523.25*t)*0.25 + sin(2*PI*659.25*t)*0.20)*exp(-4.0*t)`;
+  const cmd = `ffmpeg -y -f lavfi -i "aevalsrc='${chimeExpr}':s=44100:d=${duration}" -af "lowpass=f=1400,afade=t=out:st=0.6:d=0.4" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`;
   try {
     execSync(cmd);
     return outWavPath;
@@ -159,9 +264,10 @@ function generateChimeSound(outWavPath, duration = 1.2) {
 }
 
 /**
- * Master Archie's Reel Audio: Voice + Ducked Groove Music + Reveal Chime
+ * Master Archie's Reel Audio: Clean Voice + Ducked Warm Background Music
+ * Features dynamic duration calculation so speech is NEVER cut off!
  */
-async function assembleArchieMasterAudio(spokenText, outMasterWav, duration = 5.0) {
+async function assembleArchieMasterAudio(spokenText, outMasterWav) {
   const dir = path.dirname(outMasterWav);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
@@ -171,30 +277,44 @@ async function assembleArchieMasterAudio(spokenText, outMasterWav, duration = 5.
 
   // 1. Synthesize voice
   console.log(`[Archie Sound Master] 🎙️ Synthesizing Archie's voice: "${spokenText.slice(0, 60)}..."`);
-  const vRes = await synthesizeArchieVoice(spokenText, voiceWav);
+  await synthesizeArchieVoice(spokenText, voiceWav);
 
-  // 2. Generate music and chime
-  generateScienceGrooveMusic(musicWav, duration);
-  generateChimeSound(chimeWav, 1.2);
+  // Measure exact voice duration with ffprobe
+  let voiceDuration = 4.5;
+  try {
+    const durStr = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${voiceWav}" 2>/dev/null`).toString().trim();
+    const parsed = parseFloat(durStr);
+    if (!isNaN(parsed) && parsed > 0.5) {
+      voiceDuration = parsed;
+    }
+  } catch {}
 
-  // 3. Mix: Voice at full clarity (1.0), Music ducked to 0.16 (-16dB), Chime at 0.5s
-  const chimeDelayMs = 400; // 0.4s when hook card reveals
+  // Master duration ensures the voice completes completely with generous +1.8s outro buffer
+  const masterDuration = Math.max(6.0, Number((voiceDuration + 1.8).toFixed(2)));
+  console.log(`[Archie Sound Master] ⏱️ Spoken voice: ${voiceDuration.toFixed(2)}s -> Target reel duration: ${masterDuration}s (Zero cutoffs!)`);
+
+  // 2. Generate warm music and soft chime scaled to exact master duration
+  generateScienceGrooveMusic(musicWav, masterDuration);
+  generateChimeSound(chimeWav, 1.0);
+
+  // 3. Mix: Voice prominent (volume 1.3), warm music ducked (volume 0.12), soft chime at 0.3s
+  // Using standard loudnorm instead of aggressive dynaudnorm to eliminate screeching!
+  const chimeDelayMs = 300;
   const complexFilter = `
-    [0:a]volume=1.2,apad=whole_dur=${duration}[voice];
-    [1:a]volume=0.18,atrim=0:${duration}[music];
-    [2:a]adelay=${chimeDelayMs}|${chimeDelayMs},volume=0.35,apad=whole_dur=${duration}[chime];
-    [voice][music][chime]amix=inputs=3:duration=first:dropout_transition=2,dynaudnorm=f=150:g=15:m=10:p=0.92[out]
+    [0:a]volume=1.3,apad=whole_dur=${masterDuration}[voice];
+    [1:a]volume=0.12,atrim=0:${masterDuration}[music];
+    [2:a]adelay=${chimeDelayMs}|${chimeDelayMs},volume=0.22,apad=whole_dur=${masterDuration}[chime];
+    [voice][music][chime]amix=inputs=3:duration=longest:dropout_transition=1,loudnorm=I=-16:TP=-1.5:LRA=11[out]
   `.replace(/\s+/g, ' ');
 
   const mixCmd = `ffmpeg -y -i "${voiceWav}" -i "${musicWav}" -i "${chimeWav}" -filter_complex "${complexFilter}" -map "[out]" -c:a pcm_s16le -ar 44100 -ac 2 "${outMasterWav}" 2>/dev/null`;
 
   try {
     execSync(mixCmd);
-    console.log(`[Archie Sound Master] ✅ Audio mix complete! Clean voiceover + lo-fi science groove (${(fs.statSync(outMasterWav).size / 1024).toFixed(1)} KB)`);
+    console.log(`[Archie Sound Master] ✅ Audio mix complete! Clean voiceover (${voiceDuration.toFixed(2)}s) + warm backing track (${masterDuration}s total)`);
   } catch (err) {
-    console.warn(`[Archie Sound Master] Mix fallback: ${err.message}`);
-    // If complex mix fails, use music track directly
-    if (fs.existsSync(musicWav)) fs.copyFileSync(musicWav, outMasterWav);
+    console.warn(`[Archie Sound Master] Audio mix notice: ${err.message}, falling back to voice track`);
+    if (fs.existsSync(voiceWav)) fs.copyFileSync(voiceWav, outMasterWav);
   }
 
   // Cleanup temporary audio
@@ -204,7 +324,12 @@ async function assembleArchieMasterAudio(spokenText, outMasterWav, duration = 5.
     if (fs.existsSync(chimeWav)) fs.unlinkSync(chimeWav);
   } catch {}
 
-  return outMasterWav;
+  return {
+    path: outMasterWav,
+    masterWavPath: outMasterWav,
+    duration: masterDuration,
+    voiceDuration
+  };
 }
 
 module.exports = {

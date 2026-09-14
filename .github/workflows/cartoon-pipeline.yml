@@ -3,8 +3,7 @@ name: Automated Cartoon Factory (Workflow 3)
 on:
   push:
     branches:
-      - main
-      - master
+      - '**'
   schedule:
     # Strict 4x daily Archie releases: 1 Animated Video (13:00 UTC) + 3 Everyday Science Fact Reels (08:00, 18:00, 23:00 UTC)
     - cron: '0 8,13,18,23 * * *'
@@ -65,11 +64,6 @@ jobs:
         with:
           node-version: 20
 
-      - name: Setup Python Environment for Kokoro ONNX
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
       - name: Install System Utilities & FFmpeg
         run: |
           sudo apt-get update
@@ -77,10 +71,6 @@ jobs:
 
       - name: Install Node Dependencies
         run: npm install --legacy-peer-deps --no-audit --no-fund
-
-      - name: Install Python Video & Audio Packages
-        run: |
-          pip install --no-cache-dir soundfile moviepy pillow numpy
 
       - name: Install Rhubarb Lip Sync 1.13.0
         run: |

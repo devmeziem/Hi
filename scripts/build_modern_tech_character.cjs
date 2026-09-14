@@ -717,6 +717,37 @@ function renderModernArms(pose = 'idle') {
     `;
   }
 
+  if (pose === 'hands_at_stomach' || pose === 'gesturing_stomach') {
+    return `
+      <!-- Conversational Presenter Pose: Hands together towards stomach making expressive gestures, staring at audience -->
+      <!-- Left Upper Arm: Drops comfortably from shoulder -->
+      <path d="M 165 375 C 150 410, 138 445, 132 480 L 150 488 C 156 455, 168 420, 185 375 Z" fill="${JACKET_MID}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 132 480 L 126 484 L 130 494 L 150 488 Z" fill="${JACKET_LIGHT}" stroke="#0f172a" stroke-width="1.8" />
+      <!-- Left Forearm: Angling inward toward center stomach / midriff -->
+      <path d="M 130 486 C 155 498, 185 508, 218 514 L 214 496 C 185 490, 158 480, 140 472 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Smartwatch on Left Wrist -->
+      <rect x="188" y="490" width="18" height="16" rx="4" fill="${WATCH_STRAP}" stroke="#0f172a" stroke-width="1.5" />
+      <circle cx="197" cy="498" r="3.5" fill="${WATCH_GLOW}" opacity="0.9" />
+      <circle cx="197" cy="498" r="7" fill="${WATCH_GLOW}" opacity="0.25" />
+      <!-- Left Hand (Open conversational gesture near stomach, fingers expressive) -->
+      <ellipse cx="230" cy="512" rx="14" ry="11" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <path d="M 226 504 C 236 498, 246 494, 256 492 C 258 496, 254 500, 246 504 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 230 508 C 242 506, 252 506, 262 506 C 262 511, 256 513, 246 514 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 230 514 C 240 516, 250 518, 258 522 C 256 526, 250 526, 242 522 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+
+      <!-- Right Upper Arm: Drops down comfortably from shoulder -->
+      <path d="M 315 375 C 330 410, 342 445, 348 480 L 330 488 C 324 455, 312 420, 295 375 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 348 480 L 354 484 L 350 494 L 330 488 Z" fill="${JACKET_LIGHT}" stroke="#0f172a" stroke-width="1.8" />
+      <!-- Right Forearm: Angling inward toward center stomach / midriff -->
+      <path d="M 350 486 C 325 498, 295 508, 262 514 L 266 496 C 295 490, 322 480, 340 472 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Right Hand (Meeting near stomach in an articulate conversational gesture) -->
+      <ellipse cx="250" cy="512" rx="14" ry="11" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <path d="M 254 504 C 244 498, 234 494, 224 492 C 222 496, 226 500, 234 504 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 250 508 C 238 506, 228 506, 218 506 C 218 511, 224 513, 234 514 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 250 514 C 240 516, 230 518, 222 522 C 224 526, 230 526, 238 522 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+    `;
+  }
+
   if (pose === 'point_up_left') {
     return `
       <!-- Left Arm: Dynamically pointing upward and left toward Board 1 -->
@@ -1072,7 +1103,11 @@ const ALL_MODERN_POSES = [
   { name: 'puppet_akimbo_jaw', pose: 'akimbo_jaw', options: { blink: false, talking: false } },
   { name: 'puppet_akimbo_jaw_talk', pose: 'akimbo_jaw', options: { blink: false, talking: true } },
   { name: 'puppet_explain_both', pose: 'explain_both', options: { blink: false, talking: false } },
-  { name: 'puppet_explain_both_talk', pose: 'explain_both', options: { blink: false, talking: true } }
+  { name: 'puppet_explain_both_talk', pose: 'explain_both', options: { blink: false, talking: true } },
+  { name: 'puppet_hands_stomach', pose: 'hands_at_stomach', options: { blink: false, talking: false } },
+  { name: 'puppet_hands_stomach_talk1', pose: 'hands_at_stomach', options: { blink: false, talking: true } },
+  { name: 'puppet_hands_stomach_talk2', pose: 'hands_at_stomach', options: { blink: false, viseme: 'vowel' } },
+  { name: 'puppet_hands_stomach_blink', pose: 'hands_at_stomach', options: { blink: true, talking: false } }
 ];
 
 /**

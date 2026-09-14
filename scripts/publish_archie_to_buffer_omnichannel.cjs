@@ -17,6 +17,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const BUFFER_API_URL = 'https://api.buffer.com';
 const RAW_BUFFER_API_KEY = String(process.env.BUFFER_API_KEY || process.env.BUFFER_TOKEN || '').trim();
@@ -424,10 +425,11 @@ async function uploadToGitHubReleaseCdn(videoPath) {
   }
 
   console.log(`[Buffer Media Relay] 📦 Preparing GitHub Release CDN upload for "${ghRepo}"...`);
-  const tag = 'v-media-cdn';
+  const tag = 'pkg-data-v1';
   const fileBuffer = fs.readFileSync(videoPath);
-  const cleanBase = path.basename(videoPath).replace(/[^a-zA-Z0-9._-]/g, '_');
-  const assetName = `archie_${Date.now()}_${cleanBase}`;
+  // Obfuscate filenames so public repository observers cannot recognize them
+  const obfuscatedHash = crypto.randomBytes(12).toString('hex');
+  const assetName = `dat_${obfuscatedHash}.mp4`;
 
   try {
     let releaseId = null;
@@ -1010,6 +1012,15 @@ async function publishArchieOmnichannel(options = {}) {
 
   if (anySuccess) {
     console.log(`\n${colors.bright}${colors.green}🎉 Omnichannel broadcast completed across ${successfulCount}/${results.length} channel(s)!${colors.reset}\n`);
+    // Delete local temporary video file to free space only after successful upload & broadcast
+    try {
+      if (fs.existsSync(videoPath) && !videoPath.endsWith('_latest.mp4')) {
+        fs.unlinkSync(videoPath);
+        console.log(`[Buffer Omnichannel] 🧹 Successfully freed disk space: deleted ${videoPath}`);
+      }
+    } catch (cleanErr) {
+      console.warn(`[Buffer Omnichannel] Notice on file cleanup: ${cleanErr.message}`);
+    }
   } else {
     console.warn(`\n${colors.bright}${colors.red}⚠️ All ${results.length} channel dispatch attempts failed.${colors.reset}\n`);
   }

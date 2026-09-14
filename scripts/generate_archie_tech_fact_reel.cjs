@@ -333,23 +333,23 @@ function buildDigitalPresentationBoardSvg(factObj, width = 1080, height = 1920) 
   const boardW = 670;
   const boardH = 1220;
 
-  // Text wrap for explanation body
-  const words = factObj.fact.split(' ');
+  // Text wrap for explanation body: 3-4 clean lines, max 28 chars
+  const words = (factObj.fact || '').split(/\s+/);
   const lines = [];
   let cur = '';
   for (const w of words) {
-    if ((cur + ' ' + w).length > 26) {
-      lines.push(cur.trim());
+    if ((cur + ' ' + w).length > 28) {
+      if (lines.length < 4) lines.push(cur.trim());
       cur = w;
     } else {
       cur += ' ' + w;
     }
   }
-  if (cur.trim()) lines.push(cur.trim());
+  if (cur.trim() && lines.length < 4) lines.push(cur.trim());
 
   const renderedExplanation = lines.map((l, idx) => {
-    const yPos = boardY + 310 + (idx * 48);
-    return `<text x="${boardX + 40}" y="${yPos}" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="600" fill="#f8fafc" letter-spacing="-0.2">${escapeXml(l)}</text>`;
+    const yPos = boardY + 265 + (idx * 42);
+    return `<text x="${boardX + 40}" y="${yPos}" font-family="system-ui, -apple-system, sans-serif" font-size="26" font-weight="600" fill="#f8fafc" letter-spacing="-0.2">• ${escapeXml(l)}</text>`;
   }).join('\n');
 
   return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
@@ -368,18 +368,12 @@ function buildDigitalPresentationBoardSvg(factObj, width = 1080, height = 1920) 
         <stop offset="100%" stop-color="#818cf8" />
       </linearGradient>
 
-      <!-- Yellow Did You Know Card Gradient -->
-      <linearGradient id="didYouKnowCard" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#1e1b4b" stop-opacity="0.9" />
-        <stop offset="100%" stop-color="#0f172a" stop-opacity="0.95" />
-      </linearGradient>
-
       <filter id="boardDrop" x="-10%" y="-10%" width="120%" height="120%">
         <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#0284c7" flood-opacity="0.35" />
       </filter>
     </defs>
 
-    <!-- 1. The Big Interactive Digital Board Frame (Right side, matches Image 2) -->
+    <!-- 1. The Big Interactive Digital Board Frame (Right side, clear of character) -->
     <g filter="url(#boardDrop)">
       <rect x="${boardX}" y="${boardY}" width="${boardW}" height="${boardH}" rx="32" fill="url(#boardBg)" stroke="url(#boardNeonBorder)" stroke-width="3.5" />
       <!-- Subtle Glass Reflection Sheen across top right corner -->
@@ -400,76 +394,63 @@ function buildDigitalPresentationBoardSvg(factObj, width = 1080, height = 1920) 
       <text x="315" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#94a3b8" text-anchor="middle">AI</text>
 
       <rect x="365" y="0" width="180" height="38" rx="19" fill="#1e293b" stroke="#334155" stroke-width="1.2" />
-      <text x="455" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#94a3b8" text-anchor="middle">Better Together</text>
+      <text x="455" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#94a3b8" text-anchor="middle">Daily Fact</text>
     </g>
 
-    <!-- 3. Big High-Impact Title in Bright Golden Yellow (Direct match to Image 2) -->
-    <g transform="translate(${boardX + 40}, ${boardY + 115})">
-      <foreignObject width="${boardW - 80}" height="140">
-        <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: system-ui, -apple-system, sans-serif; font-size: 36px; font-weight: 900; line-height: 1.25; color: #facc15; letter-spacing: -0.5px;">
+    <!-- 3. Big High-Impact Title in Bright Golden Yellow -->
+    <g transform="translate(${boardX + 40}, ${boardY + 95})">
+      <foreignObject width="${boardW - 80}" height="120">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: system-ui, -apple-system, sans-serif; font-size: 34px; font-weight: 900; line-height: 1.25; color: #facc15; letter-spacing: -0.5px;">
           ${escapeXml(factObj.title)}
         </div>
       </foreignObject>
     </g>
 
     <!-- Divider Line -->
-    <line x1="${boardX + 40}" y1="${boardY + 265}" x2="${boardX + boardW - 40}" y2="${boardY + 265}" stroke="#334155" stroke-width="1.8" stroke-dasharray="6 6" />
+    <line x1="${boardX + 40}" y1="${boardY + 225}" x2="${boardX + boardW - 40}" y2="${boardY + 225}" stroke="#334155" stroke-width="1.8" stroke-dasharray="6 6" />
 
-    <!-- 4. Body Explanation Text (Crystal clear, in-depth explanation) -->
+    <!-- 4. Body Explanation Bullet Points (Clean vertical spacing, zero blocking card) -->
     ${renderedExplanation}
 
-    <!-- 5. "DID YOU KNOW?" Callout Card with Glowing Lightbulb (Matches Image 2) -->
-    <g transform="translate(${boardX + 40}, ${boardY + 540})">
-      <rect x="0" y="0" width="${boardW - 80}" height="175" rx="22" fill="url(#didYouKnowCard)" stroke="#facc15" stroke-width="2" stroke-opacity="0.85" />
-      
-      <!-- Glowing Lightbulb Badge -->
-      <circle cx="50" cy="50" r="26" fill="#facc15" fill-opacity="0.2" stroke="#facc15" stroke-width="2" />
-      <text x="50" y="58" font-family="system-ui, sans-serif" font-size="24" text-anchor="middle">💡</text>
-      
-      <text x="92" y="44" font-family="system-ui, sans-serif" font-size="15" font-weight="900" fill="#facc15" letter-spacing="2">DID YOU KNOW?</text>
-      <text x="92" y="68" font-family="system-ui, sans-serif" font-size="18" font-weight="800" fill="#ffffff">Instant Scientific Breakdown</text>
-
-      <line x1="25" y1="92" x2="${boardW - 105}" y2="92" stroke="#334155" stroke-width="1" />
-
-      <!-- Sub-explanation -->
-      <foreignObject x="25" y="102" width="${boardW - 130}" height="65">
-        <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: system-ui, sans-serif; font-size: 17px; font-weight: 500; line-height: 1.4; color: #cbd5e1;">
-          Real everyday physics in action: verified by laboratory measurements and thermodynamics.
-        </div>
-      </foreignObject>
-    </g>
-
-    <!-- 6. Schematic / Scientific Diagram Box (Center of board) -->
-    <g transform="translate(${boardX + 40}, ${boardY + 745})">
-      <rect x="0" y="0" width="${boardW - 80}" height="280" rx="20" fill="#090d16" stroke="#1e293b" stroke-width="1.8" />
-      <text x="25" y="32" font-family="system-ui, sans-serif" font-size="14" font-weight="800" fill="#38bdf8" letter-spacing="1">SCIENTIFIC SCHEMATIC</text>
+    <!-- 5. Schematic / Scientific Diagram Box (Spaced comfortably below text) -->
+    <g transform="translate(${boardX + 40}, ${boardY + 450})">
+      <rect x="0" y="0" width="${boardW - 80}" height="320" rx="20" fill="#090d16" stroke="#1e293b" stroke-width="1.8" />
+      <text x="25" y="34" font-family="system-ui, sans-serif" font-size="14" font-weight="800" fill="#38bdf8" letter-spacing="1">SCIENTIFIC SCHEMATIC</text>
 
       <!-- Accurate Wave / Dipole Diagram -->
       <g stroke="#38bdf8" stroke-width="2.5" fill="none" opacity="0.85">
-        <path d="M 40 140 Q 110 50 180 140 T 320 140 T 460 140 T 560 140" />
+        <path d="M 40 160 Q 110 70 180 160 T 320 160 T 460 160 T 560 160" />
       </g>
       <g stroke="#facc15" stroke-width="2" fill="none" stroke-dasharray="4 4">
-        <path d="M 40 140 Q 110 230 180 140 T 320 140 T 460 140 T 560 140" />
+        <path d="M 40 160 Q 110 250 180 160 T 320 160 T 460 160 T 560 160" />
       </g>
 
       <!-- Center Node Indicators -->
-      <circle cx="180" cy="140" r="7" fill="#ef4444" />
-      <text x="180" y="170" font-family="system-ui, sans-serif" font-size="13" font-weight="800" fill="#ef4444" text-anchor="middle">NODE</text>
+      <circle cx="180" cy="160" r="7" fill="#ef4444" />
+      <text x="180" y="195" font-family="system-ui, sans-serif" font-size="13" font-weight="800" fill="#ef4444" text-anchor="middle">NODE</text>
 
-      <circle cx="320" cy="140" r="7" fill="#22c55e" />
-      <text x="320" y="170" font-family="system-ui, sans-serif" font-size="13" font-weight="800" fill="#22c55e" text-anchor="middle">ANTINODE</text>
+      <circle cx="320" cy="160" r="7" fill="#22c55e" />
+      <text x="320" y="195" font-family="system-ui, sans-serif" font-size="13" font-weight="800" fill="#22c55e" text-anchor="middle">ANTINODE</text>
 
-      <circle cx="460" cy="140" r="7" fill="#ef4444" />
-      <text x="460" y="170" font-family="system-ui, sans-serif" font-size="13" font-weight="800" fill="#ef4444" text-anchor="middle">NODE</text>
+      <circle cx="460" cy="160" r="7" fill="#ef4444" />
+      <text x="460" y="195" font-family="system-ui, sans-serif" font-size="13" font-weight="800" fill="#ef4444" text-anchor="middle">NODE</text>
 
-      <text x="295" y="245" font-family="system-ui, sans-serif" font-size="14" font-weight="600" fill="#94a3b8" text-anchor="middle">Oscillation Frequency: 2.45 GHz • Polar Molecular Resonance</text>
+      <text x="295" y="275" font-family="system-ui, sans-serif" font-size="14" font-weight="600" fill="#94a3b8" text-anchor="middle">Oscillation Frequency: 2.45 GHz • Polar Molecular Resonance</text>
     </g>
 
-    <!-- 7. Verified Citation & Reference Tag (Bottom of board) -->
-    <g transform="translate(${boardX + 40}, ${boardY + 1055})">
-      <rect x="0" y="0" width="${boardW - 80}" height="95" rx="18" fill="#0f172a" stroke="#334155" stroke-width="1.5" />
+    <!-- 6. Verified Citation & Reference Tag (Bottom of board) -->
+    <g transform="translate(${boardX + 40}, ${boardY + 800})">
+      <rect x="0" y="0" width="${boardW - 80}" height="100" rx="18" fill="#0f172a" stroke="#334155" stroke-width="1.5" />
       <text x="25" y="34" font-family="system-ui, sans-serif" font-size="13" font-weight="900" fill="#94a3b8" letter-spacing="1">VERIFIED SCIENTIFIC REFERENCE</text>
-      <text x="25" y="68" font-family="system-ui, sans-serif" font-size="18" font-weight="700" fill="#38bdf8">${escapeXml(factObj.reference)}</text>
+      <text x="25" y="70" font-family="system-ui, sans-serif" font-size="18" font-weight="700" fill="#38bdf8">${escapeXml(factObj.reference)}</text>
+    </g>
+
+    <!-- 7. Dynamic Seamless Loop Replay Badge -->
+    <g transform="translate(${boardX + 40}, ${boardY + 930})">
+      <rect x="0" y="0" width="${boardW - 80}" height="65" rx="16" fill="#1e1b4b" stroke="#6366f1" stroke-width="1.5" stroke-opacity="0.6" />
+      <circle cx="40" cy="32" r="14" fill="#6366f1" fill-opacity="0.3" />
+      <text x="40" y="37" font-family="system-ui, sans-serif" font-size="14" text-anchor="middle">🔄</text>
+      <text x="70" y="38" font-family="system-ui, sans-serif" font-size="15" font-weight="800" fill="#c7d2fe">Seamless Loop • Watch again to verify</text>
     </g>
   </svg>`;
 }
@@ -529,21 +510,36 @@ async function generateArchie5sDailyFact() {
 
   // 2. Build or verify puppet assets
   const puppetDir = path.join(process.cwd(), 'cartoon_character_assets', 'exact_puppet');
-  const puppetIdle = path.join(puppetDir, 'puppet_standing_point_board.png');
-  const puppetTalk1 = path.join(puppetDir, 'puppet_standing_point_board_talk.png');
-  const puppetTalk2 = path.join(puppetDir, 'puppet_standing_point_board_talk_vowel.png');
-  const puppetBlink = path.join(puppetDir, 'puppet_standing_point_board_blink.png');
+  const puppetPointIdle = path.join(puppetDir, 'puppet_standing_point_board.png');
+  const puppetPointTalk1 = path.join(puppetDir, 'puppet_standing_point_board_talk.png');
+  const puppetPointTalk2 = path.join(puppetDir, 'puppet_standing_point_board_talk_vowel.png');
+  const puppetPointBlink = path.join(puppetDir, 'puppet_standing_point_board_blink.png');
 
-  if (!fs.existsSync(puppetIdle) || !fs.existsSync(puppetTalk2)) {
-    console.log('🎨 Compiling puppet shapes with new visemes...');
+  // Hands at stomach facing audience poses (User requirement: hands down together towards stomach, staring at audience)
+  const puppetStomachIdle = path.join(puppetDir, 'puppet_hands_stomach.png');
+  const puppetStomachTalk1 = path.join(puppetDir, 'puppet_hands_stomach_talk1.png');
+  const puppetStomachTalk2 = path.join(puppetDir, 'puppet_hands_stomach_talk2.png');
+  const puppetStomachBlink = path.join(puppetDir, 'puppet_hands_stomach_blink.png');
+
+  if (!fs.existsSync(puppetPointIdle) || !fs.existsSync(puppetStomachIdle)) {
+    console.log('🎨 Compiling puppet shapes with new visemes and audience-facing poses...');
     buildAllModernCharacterAssets(true);
   }
 
   // 3. Assemble Audio Engine: Neural Speech + Uplifting Science Lo-Fi Groove + Chime (Zero Drone Buzz!)
   const audioWavPath = path.join(ARTIFACTS_DIR, 'archie_master_sound.wav');
-  const speechNarration = `${fact.hook}! ${fact.fact}`;
+  // Sanitize spoken text so Archie articulates cleanly with zero stumbles or raw citation URLs
+  const cleanFact = (fact.fact || '')
+    .replace(/\s*\([^)]*(?:Journal|Review|DOI|http|vol\.|p\.|arXiv)[^)]*\)/gi, '')
+    .replace(/\[\d+\]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const speechNarration = `${fact.hook}! ${cleanFact}`;
+
   console.log(`[Audio Engine] Synthesizing speech & mastering lo-fi science backing track...`);
-  await assembleArchieMasterAudio(speechNarration, audioWavPath, TARGET_DURATION);
+  const audioResult = await assembleArchieMasterAudio(speechNarration, audioWavPath, TARGET_DURATION);
+  const reelDuration = typeof audioResult === 'object' && audioResult.duration ? audioResult.duration : TARGET_DURATION;
+  const voiceDuration = typeof audioResult === 'object' && audioResult.voiceDuration ? audioResult.voiceDuration : (reelDuration - 0.5);
 
   // 4. Build SVGs & Render PNGs
   const bgSvg = buildStudioBackgroundSvg();
@@ -558,49 +554,61 @@ async function generateArchie5sDailyFact() {
   fs.writeFileSync(boardSvgPath, boardSvg);
   execSync(`ffmpeg -y -i "${boardSvgPath}" "${boardPngPath}" 2>/dev/null`);
 
-  // 5. Composite Final 5.0s Video via FFmpeg with Live Lip-Sync & Natural Blinking
+  // 5. Composite Final Video via FFmpeg with Dynamic Pose Transitions & Natural Blinking
   const timestamp = Date.now();
   const finalMp4Path = path.join(ARTIFACTS_DIR, `archie_tech_fact_5s_${timestamp}.mp4`);
   const latestMp4Path = path.join(OUTPUT_DIR, 'archie_tech_fact_5s_latest.mp4');
 
-  console.log(`[FFmpeg Compositor] Rendering 5.0s video with animated character lip-sync...`);
+  console.log(`[FFmpeg Compositor] Rendering ${reelDuration}s video with dynamic character gestures (board point -> hands at stomach facing audience)...`);
 
-  // Input 0: Studio Background
-  // Input 1: Digital Presentation Board
-  // Input 2: Archie Idle Smile (puppet_standing_point_board)
-  // Input 3: Archie Consonant Mouth (puppet_standing_point_board_talk)
-  // Input 4: Archie Wide Vowel Mouth (puppet_standing_point_board_talk_vowel)
-  // Input 5: Archie Blink (puppet_standing_point_board_blink)
-  // Input 6: Master Audio (Speech + Lo-Fi Groove + Chime)
+  // Inputs:
+  // 0: bgPngPath
+  // 1: boardPngPath
+  // 2: puppetPointIdle
+  // 3: puppetPointTalk1
+  // 4: puppetPointTalk2
+  // 5: puppetStomachIdle
+  // 6: puppetStomachTalk1
+  // 7: puppetStomachTalk2
+  // 8: puppetStomachBlink
+  // 9: audioWavPath
   const inputs = `
-    -loop 1 -t ${TARGET_DURATION} -i "${bgPngPath}"
-    -loop 1 -t ${TARGET_DURATION} -i "${boardPngPath}"
-    -loop 1 -t ${TARGET_DURATION} -i "${puppetIdle}"
-    -loop 1 -t ${TARGET_DURATION} -i "${puppetTalk1}"
-    -loop 1 -t ${TARGET_DURATION} -i "${puppetTalk2}"
-    -loop 1 -t ${TARGET_DURATION} -i "${puppetBlink}"
+    -loop 1 -t ${reelDuration} -i "${bgPngPath}"
+    -loop 1 -t ${reelDuration} -i "${boardPngPath}"
+    -loop 1 -t ${reelDuration} -i "${puppetPointIdle}"
+    -loop 1 -t ${reelDuration} -i "${puppetPointTalk1}"
+    -loop 1 -t ${reelDuration} -i "${puppetPointTalk2}"
+    -loop 1 -t ${reelDuration} -i "${puppetStomachIdle}"
+    -loop 1 -t ${reelDuration} -i "${puppetStomachTalk1}"
+    -loop 1 -t ${reelDuration} -i "${puppetStomachTalk2}"
+    -loop 1 -t ${reelDuration} -i "${puppetStomachBlink}"
     -i "${audioWavPath}"
   `.replace(/\s+/g, ' ').trim();
 
-  // Character positioning: x=30, y=720
-  // Speech duration: t=0.25 to 4.35s
-  // Mouth articulates between talk1 and talk2 every 0.14s!
-  // Blink happens at t=2.15 to 2.30s!
+  // Character positioning: x=30, y=720, scaled to height 1150
+  // Transition point from Pointing Board to Hands at Stomach facing Audience: 1.4s
+  const pSwitch = 1.40;
   const complexFilter = `
     [0:v]scale=1080:1920[bg];
     [1:v]scale=1080:1920[board];
-    [2:v]scale=-1:1150[idle];
-    [3:v]scale=-1:1150[talk1];
-    [4:v]scale=-1:1150[talk2];
-    [5:v]scale=-1:1150[blink];
+    [2:v]scale=-1:1150[pt_idle];
+    [3:v]scale=-1:1150[pt_t1];
+    [4:v]scale=-1:1150[pt_t2];
+    [5:v]scale=-1:1150[st_idle];
+    [6:v]scale=-1:1150[st_t1];
+    [7:v]scale=-1:1150[st_t2];
+    [8:v]scale=-1:1150[st_blk];
     [bg][board]overlay=0:0[s0];
-    [s0][idle]overlay=x=30:y=720[s1];
-    [s1][talk1]overlay=x=30:y=720:enable='between(t,0.25,4.35)*eq(mod(floor(t/0.14),2),0)'[s2];
-    [s2][talk2]overlay=x=30:y=720:enable='between(t,0.25,4.35)*eq(mod(floor(t/0.14),2),1)'[s3];
-    [s3][blink]overlay=x=30:y=720:enable='between(t,2.15,2.30)'[vfinal]
+    [s0][pt_idle]overlay=x=30:y=720:enable='lt(t,${pSwitch})'[s1];
+    [s1][pt_t1]overlay=x=30:y=720:enable='between(t,0.25,${pSwitch})*eq(mod(floor(t/0.14),2),0)'[s2];
+    [s2][pt_t2]overlay=x=30:y=720:enable='between(t,0.25,${pSwitch})*eq(mod(floor(t/0.14),2),1)'[s3];
+    [s3][st_idle]overlay=x=30:y=720:enable='gte(t,${pSwitch})'[s4];
+    [s4][st_t1]overlay=x=30:y=720:enable='between(t,${pSwitch},${voiceDuration.toFixed(2)})*eq(mod(floor((t-${pSwitch})/0.13),2),0)'[s5];
+    [s5][st_t2]overlay=x=30:y=720:enable='between(t,${pSwitch},${voiceDuration.toFixed(2)})*eq(mod(floor((t-${pSwitch})/0.13),2),1)'[s6];
+    [s6][st_blk]overlay=x=30:y=720:enable='gt(t,${pSwitch})*between(mod(t,3.5),3.0,3.15)'[vfinal]
   `.replace(/\s+/g, ' ').trim();
 
-  const ffmpegCmd = `ffmpeg -y ${inputs} -filter_complex "${complexFilter}" -map "[vfinal]" -map 6:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -shortest "${finalMp4Path}" 2>&1`;
+  const ffmpegCmd = `ffmpeg -y ${inputs} -filter_complex "${complexFilter}" -map "[vfinal]" -map 9:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${reelDuration} "${finalMp4Path}" 2>&1`;
 
   execSync(ffmpegCmd);
 

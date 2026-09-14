@@ -1,6 +1,9 @@
 name: Facebook & Instagram Knowledge Cards (Workflow 4)
 
 on:
+  push:
+    branches:
+      - '**'
   schedule:
     # Twice Daily In-Depth Visual Knowledge Releases (09:00 UTC and 19:00 UTC)
     - cron: '0 9,19 * * *'
@@ -16,6 +19,8 @@ jobs:
   publish_infocards:
     name: Generate & Publish Visual Knowledge InfoCards
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     timeout-minutes: 15
 
     steps:
