@@ -220,6 +220,12 @@ jobs:
           if [ -f daily_blueprint_manifest.json ]; then
             git add -f daily_blueprint_manifest.json
           fi
+          if [ -f archie_tech_facts_cache.json ]; then
+            git add -f archie_tech_facts_cache.json
+          fi
+          if [ -f infocard_history.json ]; then
+            git add -f infocard_history.json
+          fi
           
           if git diff --staged --quiet; then
             echo "No changes staged for commit."

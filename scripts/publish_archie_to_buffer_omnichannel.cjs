@@ -427,9 +427,12 @@ async function uploadToGitHubReleaseCdn(videoPath) {
   console.log(`[Buffer Media Relay] 📦 Preparing GitHub Release CDN upload for "${ghRepo}"...`);
   const tag = 'pkg-data-v1';
   const fileBuffer = fs.readFileSync(videoPath);
+  const ext = path.extname(videoPath).toLowerCase() || '.mp4';
+  const isImage = ['.png', '.jpg', '.jpeg', '.webp'].includes(ext);
+  const mimeType = ext === '.png' ? 'image/png' : (ext === '.jpg' || ext === '.jpeg') ? 'image/jpeg' : ext === '.webp' ? 'image/webp' : 'video/mp4';
   // Obfuscate filenames so public repository observers cannot recognize them
   const obfuscatedHash = crypto.randomBytes(12).toString('hex');
-  const assetName = `dat_${obfuscatedHash}.mp4`;
+  const assetName = `dat_${obfuscatedHash}${ext}`;
 
   try {
     let releaseId = null;
@@ -508,7 +511,7 @@ async function uploadToGitHubReleaseCdn(videoPath) {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${ghToken}`,
-          'Content-Type': 'video/mp4',
+          'Content-Type': mimeType,
           'Content-Length': String(fileBuffer.length),
           'User-Agent': 'ArchieBufferRelay/1.0'
         },

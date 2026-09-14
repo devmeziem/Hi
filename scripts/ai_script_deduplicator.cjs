@@ -80,24 +80,42 @@ function loadAllChannelHistory(niche = 'stoic') {
     } catch {}
   }
 
-  // 2. Specific niche cache
-  const cacheFile = niche.toLowerCase().includes('fin')
-    ? path.join(process.cwd(), 'daily_fin_history_cache.json')
-    : path.join(process.cwd(), 'daily_stoic_history_cache.json');
+  // 2. Specific niche cache and quote/fact histories
+  const isFin = niche.toLowerCase().includes('fin');
+  const isTechOrArchie = niche.toLowerCase().includes('tech') || niche.toLowerCase().includes('archie') || niche.toLowerCase().includes('fact') || niche.toLowerCase().includes('info');
 
-  if (fs.existsSync(cacheFile)) {
-    try {
-      const cacheData = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
-      if (Array.isArray(cacheData)) {
-        for (const item of cacheData) {
-          if (typeof item === 'string') {
-            addHistory(item, [], '');
-          } else if (item) {
-            addHistory(item.title || item.topic, item.slides, item.theme);
+  const cacheFiles = [];
+  if (isFin) {
+    cacheFiles.push(path.join(process.cwd(), 'daily_fin_history_cache.json'));
+    cacheFiles.push(path.join(process.cwd(), 'fin_quote_history.json'));
+  } else if (isTechOrArchie) {
+    cacheFiles.push(path.join(process.cwd(), 'infocard_history.json'));
+    cacheFiles.push(path.join(process.cwd(), 'archie_tech_facts_cache.json'));
+  } else {
+    // Default / Stoic
+    cacheFiles.push(path.join(process.cwd(), 'daily_stoic_history_cache.json'));
+    cacheFiles.push(path.join(process.cwd(), 'stoic_quote_history.json'));
+  }
+
+  for (const cacheFile of cacheFiles) {
+    if (fs.existsSync(cacheFile)) {
+      try {
+        const cacheData = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
+        if (Array.isArray(cacheData)) {
+          for (const item of cacheData) {
+            if (typeof item === 'string') {
+              addHistory(item, [], '');
+            } else if (item && typeof item === 'object') {
+              addHistory(
+                item.title || item.topic || item.quote || item.fact,
+                item.slides || [item.mechanism, item.takeaway, item.fact].filter(Boolean),
+                item.theme || item.category || item.author
+              );
+            }
           }
         }
-      }
-    } catch {}
+      } catch {}
+    }
   }
 
   return historyList;

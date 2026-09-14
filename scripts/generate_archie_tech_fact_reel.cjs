@@ -30,7 +30,9 @@ const FPS = 30;
 const TOTAL_FRAMES = 150;
 const ARTIFACTS_DIR = path.join(process.cwd(), 'test_artifacts', 'archie_5s_reels');
 const OUTPUT_DIR = path.join(process.cwd(), 'test_artifacts');
-const FACTS_CACHE = path.join(process.cwd(), 'test_artifacts', 'archie_tech_facts_cache.json');
+const FACTS_CACHE = path.join(process.cwd(), 'archie_tech_facts_cache.json');
+const LEGACY_FACTS_CACHE = path.join(process.cwd(), 'test_artifacts', 'archie_tech_facts_cache.json');
+const INFOCARD_HISTORY = path.join(process.cwd(), 'infocard_history.json');
 const LATEST_FACT_JSON = path.join(process.cwd(), 'test_artifacts', 'archie_tech_fact_latest.json');
 
 // Curated pool of high-retention everyday science & tech facts with explicit, viral titles
@@ -142,6 +144,42 @@ const VERIFIED_TECH_FACTS = [
     reference: 'Binary Solutions & Gas Thermodynamics / Physical Chemistry',
     category: 'Everyday Chemistry',
     tags: ['#Soda', '#Chemistry', '#ScienceTricks', '#Shorts']
+  },
+  {
+    id: 'induction_cooktop_cold_glass_archie',
+    title: 'Why Induction Stoves Boil Water Without Hot Glass',
+    hook: 'DID YOU KNOW?',
+    fact: 'Induction cooktops boil water through a cold paper towel because oscillating magnetic fields create electrical currents inside the pan itself, leaving glass completely unheated.',
+    reference: 'Faraday Induction Principles / IEEE Transactions on Magnetics',
+    category: 'Everyday Physics',
+    tags: ['#Induction', '#PhysicsFacts', '#KitchenScience', '#Shorts']
+  },
+  {
+    id: 'airplane_window_secret_hole_archie',
+    title: 'Why Every Airplane Window Has A Tiny Hole',
+    hook: 'DID YOU KNOW?',
+    fact: 'That tiny hole in your airplane window keeps you alive by bleeding cabin air into the outer window gap, forcing the ultra-thick exterior pane to bear all 8 psi of atmospheric pressure.',
+    reference: 'FAA Airframe Standards / Aerospace Safety Reviews',
+    category: 'Aviation Engineering',
+    tags: ['#Aviation', '#AirplaneFacts', '#Engineering', '#Shorts']
+  },
+  {
+    id: 'pruney_fingers_tire_treads_archie',
+    title: 'Why Fingers Prune In The Bath (High-Grip Treads)',
+    hook: 'DID YOU KNOW?',
+    fact: 'Pruney fingers in the bath are not absorbed water: your nervous system constricts blood vessels to carve tire treads on your fingertips, boosting underwater grip by 40%.',
+    reference: 'Brain, Behavior and Evolution / Neurobiology',
+    category: 'Human Biology',
+    tags: ['#HumanBody', '#Evolution', '#BiologyFacts', '#Shorts']
+  },
+  {
+    id: 'helium_balloon_moves_forward_archie',
+    title: 'Why A Helium Balloon Moves Forward When You Accelerate',
+    hook: 'DID YOU KNOW?',
+    fact: 'When your car accelerates, a floating helium balloon flies forward toward the windshield because dense cabin air stacks against the rear window, creating a forward buoyant gradient.',
+    reference: 'Feynman Lectures on Physics / Accelerated Frames',
+    category: 'Fluid Mechanics',
+    tags: ['#PhysicsOddity', '#CarTricks', '#MindBlown', '#Shorts']
   }
 ];
 
@@ -150,29 +188,57 @@ function selectUniqueTechFact() {
   try {
     if (fs.existsSync(FACTS_CACHE)) {
       history = JSON.parse(fs.readFileSync(FACTS_CACHE, 'utf8'));
-      if (!Array.isArray(history)) history = [];
+    } else if (fs.existsSync(LEGACY_FACTS_CACHE)) {
+      history = JSON.parse(fs.readFileSync(LEGACY_FACTS_CACHE, 'utf8'));
     }
+    if (!Array.isArray(history)) history = [];
   } catch (e) {
     history = [];
   }
 
+  // Cross-reference with infocards history so identical topics are staggered
+  let infocardUsedIds = new Set();
+  try {
+    if (fs.existsSync(INFOCARD_HISTORY)) {
+      const infoHistory = JSON.parse(fs.readFileSync(INFOCARD_HISTORY, 'utf8'));
+      if (Array.isArray(infoHistory)) {
+        infoHistory.slice(-5).forEach(item => {
+          const id = typeof item === 'string' ? item : item?.id;
+          if (id) infocardUsedIds.add(id);
+        });
+      }
+    }
+  } catch {}
+
   const usedIds = new Set(history.map(h => (typeof h === 'string' ? h : h.id)));
-  const available = VERIFIED_TECH_FACTS.filter(f => !usedIds.has(f.id));
+  let available = VERIFIED_TECH_FACTS.filter(f => !usedIds.has(f.id));
+
+  // Prefer facts not run in last 5 infocard releases
+  const nonConflicting = available.filter(f => !infocardUsedIds.has(f.id));
+  if (nonConflicting.length > 0) {
+    available = nonConflicting;
+  }
 
   let chosen;
   if (available.length > 0) {
     chosen = available[0];
   } else {
-    chosen = VERIFIED_TECH_FACTS[Math.floor(Math.random() * VERIFIED_TECH_FACTS.length)];
+    console.log('[Archie Facts Deduplication] All facts cycled! Refreshing cycle from oldest...');
+    chosen = VERIFIED_TECH_FACTS[0];
     history = [];
   }
 
-  history.push({ id: chosen.id, timestamp: new Date().toISOString() });
-  if (history.length > 20) history.shift();
+  history.push({ id: chosen.id, title: chosen.title, timestamp: new Date().toISOString() });
+  if (history.length > 50) history = history.slice(-50);
 
   try {
     fs.writeFileSync(FACTS_CACHE, JSON.stringify(history, null, 2), 'utf8');
-  } catch (e) {}
+    if (fs.existsSync(path.dirname(LEGACY_FACTS_CACHE))) {
+      fs.writeFileSync(LEGACY_FACTS_CACHE, JSON.stringify(history, null, 2), 'utf8');
+    }
+  } catch (e) {
+    console.warn('[Archie Facts Deduplication] Notice persisting facts cache:', e.message);
+  }
 
   return chosen;
 }

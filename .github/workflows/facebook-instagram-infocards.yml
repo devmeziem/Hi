@@ -68,3 +68,31 @@ jobs:
             test_artifacts/infocards/*
             test_artifacts/infocard_latest.png
             test_artifacts/infocard_latest.json
+
+      - name: Git Keepalive & History Cache Commit
+        if: always()
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Prevent repository schedule suspension and persist infocard deduplication
+          echo "<!-- Last automated Infocards release: $(date -u) -->" >> KEEP_ALIVE.md
+          git add KEEP_ALIVE.md
+          
+          if [ -f infocard_history.json ]; then
+            git add -f infocard_history.json
+          fi
+          
+          if git diff --staged --quiet; then
+            echo "No changes staged for commit."
+          else
+            git commit -m "chore(sync): automated infocard history cache and keepalive [skip ci]"
+            git pull --rebase origin ${{ github.ref_name }} || true
+            git push origin HEAD:${{ github.ref_name }}
+          fi
+
+      - name: Cleanup Local Temporary Media & Blobs
+        if: always()
+        run: |
+          rm -rf test_artifacts/infocards/*.png test_artifacts/infocard_latest.png
+          echo "Cleaned up runner temporary media blobs."

@@ -21,7 +21,9 @@ const { buildModernCharacterSVG } = require('./build_modern_tech_character.cjs')
 
 const ARTIFACTS_DIR = path.join(process.cwd(), 'test_artifacts');
 const INFOCARDS_DIR = path.join(ARTIFACTS_DIR, 'infocards');
-const HISTORY_FILE = path.join(ARTIFACTS_DIR, 'infocard_history.json');
+const HISTORY_FILE = path.join(process.cwd(), 'infocard_history.json');
+const LEGACY_HISTORY_FILE = path.join(ARTIFACTS_DIR, 'infocard_history.json');
+const ARCHIE_FACTS_CACHE = path.join(process.cwd(), 'archie_tech_facts_cache.json');
 
 const IN_DEPTH_KNOWLEDGE_BASE = [
   {
@@ -127,6 +129,84 @@ const IN_DEPTH_KNOWLEDGE_BASE = [
     proTip: 'Delay your morning coffee by 60 to 90 minutes after waking: let your natural cortisol peak clear morning sleep inertia first, preserving caffeine for the afternoon!',
     reference: 'Huberman, A. / Stanford University School of Medicine & Nature',
     tags: ['#CoffeeScience', '#SleepScience', '#Neurochemistry', '#ProductivityHacks', '#ArchieExplains']
+  },
+  {
+    id: 'wifi_24ghz_microwaves_wall_penetration',
+    category: 'ELECTROMAGNETIC PHYSICS',
+    title: 'Why 2.4 GHz Wi-Fi Slices Through Walls But 5 GHz Dies in the Hallway',
+    hook: 'Did you know your Wi-Fi uses the exact same frequency as your microwave oven?',
+    mystery: 'Why does switching your phone to 5 GHz Wi-Fi drop to zero bars the moment you walk into the next bedroom?',
+    mythBuster: 'Myth: 5 GHz is always superior to 2.4 GHz. Fact: Higher frequency waves lose energy exponentially faster when colliding with drywall and brick!',
+    mechanism: '2.4 GHz radio waves have an approximate wavelength of 12.5 centimeters, allowing them to diffract around structural columns and pass through timber. 5 GHz waves are only 6 centimeters long.',
+    takeaway: 'Because 5 GHz waves pack twice as many cycles per foot, water molecules in plaster and concrete absorb their electromagnetic energy twice as fast.',
+    proTip: 'Keep smart home bulbs and security cameras on 2.4 GHz for broad house-wide coverage, reserving 5 GHz exclusively for your desk gaming PC or 4K TV in line-of-sight!',
+    reference: 'IEEE 802.11 Standards & Maxwell’s Electromagnetic Wave Propagation',
+    tags: ['#TechTips', '#WiFiExplained', '#PhysicsOfTech', '#ComputerNetworking', '#ArchieExplains']
+  },
+  {
+    id: 'induction_cooktop_cold_glass',
+    category: 'ELECTROMAGNETIC INDUCTION',
+    title: 'Why Induction Stoves Boil Water Without Ever Getting Hot Themselves',
+    hook: 'Did you know you can boil water on an induction cooktop through a paper towel without burning the paper?',
+    mystery: 'How can a glass surface bring a heavy cast iron pot to 400°F while staying safe to touch with your bare hand right beside it?',
+    mythBuster: 'Myth: Induction stoves use red-hot heating elements under ceramic glass. Fact: The cooktop itself generates zero thermal heat.',
+    mechanism: 'Underneath the ceramic glass sits a tightly wound copper coil carrying high-frequency alternating current (20-40 kHz). This creates an oscillating magnetic field that passes invisibly through the glass.',
+    takeaway: 'When a ferrous pan sits on top, the magnetic field swirls magnetic eddy currents and magnetic hysteresis inside the pan’s iron atoms, making the pan heat itself from within!',
+    proTip: 'Any pan that a refrigerator magnet sticks to will work on induction cooktops; non-magnetic aluminum and pure copper won’t register!',
+    reference: 'Faraday’s Law of Electromagnetic Induction & Joule Heating',
+    tags: ['#EverydayPhysics', '#KitchenScience', '#InductionCooking', '#SmartAppliances', '#ArchieExplains']
+  },
+  {
+    id: 'honey_never_spoils_eternal_sugar',
+    category: 'BIOCHEMISTRY & PRESERVATION',
+    title: 'Why 3,000-Year-Old Honey In Egyptian Tombs Is Still Edible',
+    hook: 'Did you know archaeologists ate 3,000-year-old honey found in Egyptian pharaoh tombs?',
+    mystery: 'How can raw honey sit in unsealed jars for thousands of years without breeding a single colony of mold or bacteria?',
+    mythBuster: 'Myth: Honey has artificial chemical preservatives. Fact: Honey has a natural osmotic pressure so intense that bacteria desiccate on contact.',
+    mechanism: 'Honey has less than 17% water content and high sugar concentration. When a bacterium lands in honey, osmosis forces all moisture out of the microbe’s cell membrane, instantly dehydrating and killing it.',
+    takeaway: 'Furthermore, bees add the enzyme glucose oxidase, which breaks down sugar into tiny amounts of hydrogen peroxide (H2O2) and gluconic acid, creating an acidic pH of 3.9 where pathogens cannot survive.',
+    proTip: 'If your jar of honey turns cloudy and solid, it hasn’t spoiled—it simply crystallized! Immerse the jar in warm water (100°F) to turn it liquid gold again.',
+    reference: 'National Honey Board & American Society for Microbiology',
+    tags: ['#BiologyFacts', '#FoodScience', '#AncientHistory', '#Biochemistry', '#ArchieExplains']
+  },
+  {
+    id: 'blue_sky_rayleigh_scattering',
+    category: 'ATMOSPHERIC OPTICS',
+    title: 'Why The Sky Is Blue Instead of Violet (The Eye Color Paradox)',
+    hook: 'Did you know sunlight scatters violet light far more than blue light?',
+    mystery: 'If violet light has the shortest wavelength and scatters strongest in the atmosphere, why is the sky sky-blue rather than purple?',
+    mythBuster: 'Myth: The sky reflects ocean water. Fact: The sky is blue due to Rayleigh scattering paired with human retina color sensitivity!',
+    mechanism: 'Nitrogen and oxygen molecules scatter shorter wavelengths (blue and violet) 10 times more effectively than red light. Violet light is indeed scattered most.',
+    takeaway: 'However, human retinal cones possess triple trichromatic receptors: red, green, and blue. Our eyes have almost zero sensitivity to violet photons, interpreting the mixture of scattered blue and violet as cyan sky-blue!',
+    proTip: 'At sunset, sunlight travels through 10 times more atmosphere, scattering away all blue and violet wavelengths entirely and leaving only long red and orange rays to reach your eyes.',
+    reference: 'Lord Rayleigh / Philosophical Magazine & Helmholtz Colour Theory',
+    tags: ['#OpticsFacts', '#AtmosphericScience', '#WhyTheSkyIsBlue', '#ColorScience', '#ArchieExplains']
+  },
+  {
+    id: 'gps_relativity_time_dilation',
+    category: 'RELATIVISTIC ASTROPHYSICS',
+    title: 'Why GPS In Your Phone Would Fail In 2 Minutes Without Einstein’s Relativity',
+    hook: 'Did you know GPS satellites age 38 microseconds faster every single day?',
+    mystery: 'How does Einstein’s 100-year-old theory of general relativity prevent Google Maps from sending you into a river?',
+    mythBuster: 'Myth: GPS only calculates simple speed-of-light radio pings. Fact: Satellite clocks run at a different speed than Earth clocks!',
+    mechanism: 'Special relativity dictates fast-moving satellites tick 7 microseconds slower per day. But General relativity proves weaker gravity at 20,200 km altitude makes them tick 45 microseconds FASTER per day.',
+    takeaway: 'The net difference is +38 microseconds daily. If engineers didn’t pre-program relativistic time shifts into satellite atomic clocks, GPS location would drift by 11 kilometers (6.8 miles) every single day!',
+    proTip: 'Your phone calculates your 3D latitude, longitude, and altitude by simultaneously solving light-speed spheres from 4 separate GPS satellites!',
+    reference: 'Ashby, N. / Relativity in the Global Positioning System, Living Reviews in Relativity',
+    tags: ['#Astrophysics', '#Einstein', '#GPSFacts', '#TechSecrets', '#ArchieExplains']
+  },
+  {
+    id: 'helium_balloon_accelerating_car',
+    category: 'CLASSICAL MECHANICS & BUOYANCY',
+    title: 'Why A Helium Balloon Moves FORWARD When You Hit The Gas In A Car',
+    hook: 'Did you know physics makes balloons fly forward when you slam the gas pedal?',
+    mystery: 'When your car accelerates rapidly, every human is pushed back into their seat. Why does a floating helium balloon jerk forward toward the dashboard?',
+    mythBuster: 'Myth: The balloon defies Newton’s laws of motion. Fact: Dense cabin air creates an artificial gravity gradient that pushes the balloon forward!',
+    mechanism: 'Air molecules have mass. When the car accelerates forward, the entire mass of cabin air rushes toward the back window due to inertia, creating high pressure in the rear and low pressure at the windshield.',
+    takeaway: 'Because helium is far lighter than air, the dense air in the rear exerts buoyant force forward, squeezing the balloon in the exact opposite direction of your body!',
+    proTip: 'If you brake hard, the cabin air stacks against the windshield and shoots the helium balloon backward into the back seat!',
+    reference: 'Feynman Lectures on Physics / Principles of Buoyancy & Accelerated Frames',
+    tags: ['#PhysicsOddity', '#CarScience', '#Buoyancy', '#MindBlown', '#ArchieExplains']
   }
 ];
 
@@ -166,27 +246,74 @@ function renderWrappedSvgText(text, x, y, maxChars = 55, lineHeight = 28, fontSi
 }
 
 /**
- * Select a deduplicated knowledge item
+ * Select a deduplicated knowledge item with robust history tracking
  */
 function selectDeduplicatedItem() {
   let history = [];
   try {
     if (fs.existsSync(HISTORY_FILE)) {
       history = JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8'));
-      if (!Array.isArray(history)) history = [];
+    } else if (fs.existsSync(LEGACY_HISTORY_FILE)) {
+      history = JSON.parse(fs.readFileSync(LEGACY_HISTORY_FILE, 'utf8'));
+    }
+    if (!Array.isArray(history)) history = [];
+  } catch {
+    history = [];
+  }
+
+  // Cross-check with Archie Tech facts cache to avoid same-day collisions
+  let archieCacheIds = new Set();
+  try {
+    if (fs.existsSync(ARCHIE_FACTS_CACHE)) {
+      const archieData = JSON.parse(fs.readFileSync(ARCHIE_FACTS_CACHE, 'utf8'));
+      if (Array.isArray(archieData)) {
+        archieData.forEach(item => {
+          const id = typeof item === 'string' ? item : item?.id;
+          if (id) archieCacheIds.add(id);
+        });
+      }
     }
   } catch {}
 
-  const recentIds = new Set(history.slice(-6));
-  const available = IN_DEPTH_KNOWLEDGE_BASE.filter(item => !recentIds.has(item.id));
-  const selected = available.length > 0 ? available[0] : IN_DEPTH_KNOWLEDGE_BASE[0];
+  const usedIds = new Set(history.map(item => typeof item === 'string' ? item : item.id));
 
-  history.push(selected.id);
-  if (history.length > 30) history = history.slice(-30);
+  // Available items not in recent history
+  let available = IN_DEPTH_KNOWLEDGE_BASE.filter(item => !usedIds.has(item.id));
+
+  // Prefer items that also haven't run recently in Archie Tech Facts
+  const nonConflicting = available.filter(item => !archieCacheIds.has(item.id));
+  if (nonConflicting.length > 0) {
+    available = nonConflicting;
+  }
+
+  let selected;
+  if (available.length > 0) {
+    selected = available[0];
+  } else {
+    // If all items have been cycled, rotate starting from oldest
+    console.log('[InfoCard Deduplication] Full catalog has cycled! Restarting rotation from oldest entries...');
+    selected = IN_DEPTH_KNOWLEDGE_BASE[0];
+    history = [];
+  }
+
+  history.push({
+    id: selected.id,
+    title: selected.title,
+    category: selected.category,
+    usedAt: new Date().toISOString()
+  });
+
+  // Keep last 100 historical items
+  if (history.length > 100) history = history.slice(-100);
+
   try {
-    if (!fs.existsSync(ARTIFACTS_DIR)) fs.mkdirSync(ARTIFACTS_DIR, { recursive: true });
-    fs.writeFileSync(HISTORY_FILE, JSON.stringify(history, null, 2));
-  } catch {}
+    fs.writeFileSync(HISTORY_FILE, JSON.stringify(history, null, 2), 'utf8');
+    if (fs.existsSync(ARTIFACTS_DIR)) {
+      fs.writeFileSync(LEGACY_HISTORY_FILE, JSON.stringify(history, null, 2), 'utf8');
+    }
+  } catch (err) {
+    console.warn('[InfoCard Deduplication] Notice persisting history:', err.message);
+  }
 
   return selected;
 }

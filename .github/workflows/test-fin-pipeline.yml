@@ -157,6 +157,9 @@ jobs:
           if [ -f daily_blueprint_manifest.json ]; then
             git add -f daily_blueprint_manifest.json
           fi
+          if [ -f fin_quote_history.json ]; then
+            git add -f fin_quote_history.json
+          fi
           
           if git diff --staged --quiet; then
             echo "No changes staged for commit."

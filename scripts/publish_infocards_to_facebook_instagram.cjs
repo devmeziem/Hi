@@ -59,31 +59,48 @@ async function postViaGraphQL(channel, imageUrl, caption) {
   if (channel.service === 'facebook') {
     input.metadata = { facebook: { type: 'post' } };
   } else if (channel.service === 'instagram') {
-    input.metadata = { instagram: { type: 'post' } };
+    input.metadata = {
+      instagram: {
+        type: 'post',
+        shouldShareToFeed: true
+      }
+    };
   }
 
-  const res = await fetch(BUFFER_GQL_URL, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${BUFFER_API_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ query: mutation, variables: { input } })
-  });
+  async function executeGql(payload) {
+    const res = await fetch(BUFFER_GQL_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${BUFFER_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ query: mutation, variables: { input: payload } })
+    });
+    const text = await res.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error(`Buffer GQL returned non-JSON (HTTP ${res.status}): ${text.slice(0, 200)}`);
+    }
+    return data;
+  }
 
-  const text = await res.text();
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    throw new Error(`Buffer GQL returned non-JSON (HTTP ${res.status}): ${text.slice(0, 200)}`);
+  let data = await executeGql(input);
+
+  // If error message indicates shareNow not supported for Instagram, retry with mode: 'addToQueue'
+  const initialErr = data?.data?.createPost?.message || data?.errors?.[0]?.message;
+  if (initialErr && (initialErr.toLowerCase().includes('sharenow') || initialErr.toLowerCase().includes('mode') || initialErr.toLowerCase().includes('cannot share'))) {
+    console.log(`  🔄 Retrying ${channel.service} with mode: "addToQueue"...`);
+    input.mode = 'addToQueue';
+    data = await executeGql(input);
   }
 
   if (data?.data?.createPost?.post?.id) {
     return { ok: true, id: data.data.createPost.post.id, engine: 'graphql' };
   }
 
-  const errMsg = data?.data?.createPost?.message || data?.errors?.[0]?.message || text;
+  const errMsg = data?.data?.createPost?.message || data?.errors?.[0]?.message || JSON.stringify(data);
   throw new Error(`Buffer GQL error: ${errMsg}`);
 }
 
@@ -125,7 +142,7 @@ async function postViaRest(channel, imageUrl, caption) {
 async function publishInfocards() {
   console.log('=== [Facebook & Instagram InfoCards Broadcast] ===');
 
-  if (!BUFFER_API_KEY) {
+  if (!BUFFER_API_KEY && !IS_DRY_RUN) {
     console.error('❌ BUFFER_API_KEY not configured.');
     process.exit(1);
   }
