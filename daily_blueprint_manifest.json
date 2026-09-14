@@ -1,6 +1,19 @@
 {
   "videos": [
     {
+      "id": "fin_quote_1789388936781",
+      "channelId": "finance_saas",
+      "type": "financial_quote_reel_5s",
+      "title": "Finance Mindset — Naval Ravikant Quotes #Shorts",
+      "author": "Naval Ravikant",
+      "credentials": "Founder, AngelList • Early Investor in Uber, Twitter & Stripe",
+      "reference": "How to Get Rich (Without Getting Lucky)",
+      "duration": 5,
+      "videoPath": "/home/runner/work/Hi/Hi/rendered_videos/fin_quote_5s_1789388936781.mp4",
+      "loopable": true,
+      "publishedAt": "2026-09-14T12:29:00.532Z"
+    },
+    {
       "id": "fin_quote_1789299344364",
       "channelId": "finance_saas",
       "type": "financial_quote_reel_5s",
