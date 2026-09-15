@@ -1,6 +1,19 @@
 {
   "videos": [
     {
+      "id": "fin_quote_1789501130946",
+      "channelId": "finance_saas",
+      "type": "financial_quote_reel_5s",
+      "title": "Finance Mindset — Nassim Nicholas Taleb, Ph.D. Quotes #Shorts",
+      "author": "Nassim Nicholas Taleb, Ph.D.",
+      "credentials": "Distinguished Professor of Risk Engineering, NYU Tandon • Author",
+      "reference": "Skin in the Game (2018)",
+      "duration": 5,
+      "videoPath": "/home/runner/work/Hi/Hi/rendered_videos/fin_quote_5s_1789501130946.mp4",
+      "loopable": true,
+      "publishedAt": "2026-09-15T19:38:53.958Z"
+    },
+    {
       "id": "fin_quote_1789471990246",
       "channelId": "finance_saas",
       "type": "financial_quote_reel_5s",
