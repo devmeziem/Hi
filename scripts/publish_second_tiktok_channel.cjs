@@ -104,15 +104,23 @@ async function publishToSecondaryTikTok() {
         body: JSON.stringify({ query })
       });
       const data = await res.json();
-      const allTiktoks = (data?.data?.account?.channels || []).filter(c => (c.service || '').toLowerCase() === 'tiktok');
-      console.log(`Found ${allTiktoks.length} TikTok channels in Buffer.`);
-      if (allTiktoks.length >= 2) {
-        // Second channel
-        targetChannelId = allTiktoks[1].id;
-        console.log(`🎯 Using Secondary TikTok Channel: "${allTiktoks[1].displayName || allTiktoks[1].name}" (ID: ${targetChannelId})`);
-      } else if (allTiktoks.length === 1) {
-        console.warn('⚠️ Only 1 TikTok channel is connected in Buffer. Please connect the second TikTok account at https://publish.buffer.com/channels or set BUFFER_TIKTOK_CHANNEL_ID_2.');
+      const allTiktoks = (data?.data?.account?.channels || [])
+        .filter(c => (c.service || '').toLowerCase() === 'tiktok')
+        .filter(c => {
+          const nameLower = `${c.name || ''} ${c.displayName || ''}`.toLowerCase();
+          const isFirstOrMike = c.id === '6a9b6f3f065799be468f596b' || nameLower.includes('mike.the.tutor') || nameLower.includes('mikethetutor');
+          if (isFirstOrMike) {
+            console.log(`[Secondary TikTok] 🛑 Bypassing primary account / mike.the.tutor (ID: ${c.id})`);
+            return false;
+          }
+          return true;
+        });
+      console.log(`Found ${allTiktoks.length} eligible secondary TikTok channel(s) in Buffer.`);
+      if (allTiktoks.length >= 1) {
         targetChannelId = allTiktoks[0].id;
+        console.log(`🎯 Using Secondary TikTok Channel: "${allTiktoks[0].displayName || allTiktoks[0].name}" (ID: ${targetChannelId})`);
+      } else {
+        console.warn('⚠️ No eligible secondary TikTok channel found (mike.the.tutor and first account excluded).');
       }
     } catch (e) {
       console.warn('⚠️ Discovery notice:', e.message);

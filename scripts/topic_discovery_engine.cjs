@@ -492,12 +492,49 @@ async function fetchPastTopicsDatabase(niche = 'fin') {
   const history = [];
   const cacheFile = niche === 'fin' ? LOCAL_FIN_CACHE : (niche === 'stoic' ? LOCAL_STOIC_CACHE : LOCAL_CARTOON_CACHE);
 
-  // 1. Read local history cache file
+  // 1. Read primary local history cache file
   if (fs.existsSync(cacheFile)) {
     try {
       const data = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
       if (Array.isArray(data)) history.push(...data);
     } catch {}
+  }
+
+  // 1b. Cross-channel & auxiliary cache ingestion for enhanced deduplication
+  const auxFiles = [];
+  if (niche === 'cartoon' || niche === 'archie' || niche === 'tech') {
+    auxFiles.push(
+      path.join(process.cwd(), 'archie_tech_facts_cache.json'),
+      path.join(process.cwd(), 'infocard_history.json'),
+      path.join(process.cwd(), 'test_artifacts', 'infocard_history.json'),
+      path.join(process.cwd(), 'test_artifacts', 'archie_tech_facts_cache.json')
+    );
+  } else if (niche === 'fin') {
+    auxFiles.push(
+      path.join(process.cwd(), 'fin_quote_history.json'),
+      path.join(process.cwd(), 'daily_fin_history_cache.json'),
+      path.join(process.cwd(), 'daily_blueprint_manifest.json')
+    );
+  }
+
+  for (const f of auxFiles) {
+    if (fs.existsSync(f)) {
+      try {
+        const auxData = JSON.parse(fs.readFileSync(f, 'utf8'));
+        if (Array.isArray(auxData)) {
+          auxData.forEach(item => {
+            if (typeof item === 'string') history.push({ topic: item, title: item, niche });
+            else if (item && typeof item === 'object') {
+              history.push({
+                topic: item.title || item.topic || item.fact || item.quote || item.id,
+                title: item.title || item.topic || item.fact || item.quote || '',
+                niche
+              });
+            }
+          });
+        }
+      } catch {}
+    }
   }
 
   // 2. Read manifest

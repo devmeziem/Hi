@@ -30,181 +30,155 @@ const IN_DEPTH_KNOWLEDGE_BASE = [
     id: 'pruney_fingers_tire_treads',
     category: 'EVERYDAY HUMAN BIOLOGY',
     title: 'Why Bath Wrinkles Are Actually High-Grip Tire Treads',
-    hook: 'Did you know your bath wrinkles are not absorbed water?',
-    mystery: 'Why do your fingers and toes prune in the bath, but never your stomach, arms, or back?',
-    mythBuster: 'Myth: Skin absorbs water like a kitchen sponge. Fact: People with severed finger nerves NEVER get wrinkly fingers underwater!',
-    mechanism: 'When submerged, your autonomic nervous system actively constricts subcutaneous blood vessels. This active shrinking pulls the skin inward, carving specialized drainage valleys.',
-    takeaway: 'These valleys divert water away from the fingertip contact patch just like tire treads on rain-soaked highways, boosting your underwater grip by up to 40%.',
-    proTip: 'If fingers on one hand fail to wrinkle in warm water, neurologists use it as a clinical bedside test for peripheral nerve health!',
+    hook: 'Did you know bath wrinkles on your fingers are not caused by absorbed water?',
+    mystery: 'Why do your fingers and toes get wrinkly in warm water, while your arms and face stay completely smooth?',
+    mythBuster: 'Myth: Skin soaks up water like a kitchen sponge. Fact: People with cut finger nerves never get pruney fingers!',
+    mechanism: 'When underwater, your autonomic nervous system (the involuntary brain controls) tightens subcutaneous blood vessels (tiny vessels under your skin). This shrinking pulls your skin downward into narrow channels.',
+    takeaway: 'These channels channel water away from your fingertips just like tire grooves push rain off roads, boosting your underwater grip by up to 40%.',
+    proTip: 'If your fingers do not prune after 15 minutes in warm water, doctors use this simple test to check nerve health!',
     reference: 'Changizi, M. et al. / Brain, Behavior and Evolution',
-    tags: ['#ScienceFacts', '#HumanBiology', '#Evolution', '#EverydayScience', '#DidYouKnow', '#ArchieExplains', '#LearnEveryday', '#VoxamFact']
+    tags: ['#ScienceFacts', '#HumanBiology', '#Evolution', '#EverydayScience', '#DidYouKnow', '#ArchieExplains', '#LearnEveryday', '#STEM']
   },
   {
     id: 'winter_static_shock_15000v',
     category: 'EVERYDAY APPLIANCE PHYSICS',
     title: 'Why Winter Carpets Shock You With 15,000 Volts',
-    hook: 'Did you know a winter doorknob shock packs up to 15,000 Volts?',
-    mystery: 'Why does touching a brass doorknob in dry winter feel like an electric cattle prod, but never happens in humid summer?',
-    mythBuster: 'Myth: Cold weather creates electricity. Fact: Cold radiator heating drops indoor humidity below 20%, destroying air conductivity.',
-    mechanism: 'Walking on carpet strips electrons via triboelectric contact. In summer, air moisture leaks this charge away safely. In dry winter, up to 15,000V builds up across your body.',
-    takeaway: 'When your finger nears grounded metal, the massive voltage ionizes air into a microscopic 30,000°C plasma spark that snaps for nanoseconds.',
-    proTip: 'Touch doorframes with a metal key or your knuckles first: the larger surface area discharges the voltage with zero pain receptors triggered!',
+    hook: 'Did you know a winter doorknob static shock carries up to 15,000 Volts?',
+    mystery: 'Why does touching a metal doorknob in cold winter give you a painful zap, but almost never in humid summer?',
+    mythBuster: 'Myth: Cold temperatures create electricity. Fact: Winter heaters dry out indoor air below 20% humidity, stopping electrical charge from leaking away.',
+    mechanism: 'Walking across carpet rubs electrons off shoe soles through triboelectric friction (static electricity caused by rubbing). In dry winter air, up to 15,000 Volts build up on your body.',
+    takeaway: 'When your hand nears grounded metal, the electric field ionizes the air (turns air particles into conductive paths), creating a tiny 30,000°C spark that snaps in nanoseconds.',
+    proTip: 'Touch doorframes with a metal key or your knuckle first: spreading the spark over a wider contact point means your pain sensors feel zero shock!',
     reference: 'Feynman Lectures on Physics / Electrostatics & Triboelectric Charging',
     tags: ['#PhysicsFacts', '#WinterScience', '#Electricity', '#DidYouKnow', '#ScienceExplained', '#EverydayHacks', '#ArchieExplains']
   },
   {
     id: 'microwave_cold_spots_standing_waves',
     category: 'KITCHEN PHYSICS & THERMODYNAMICS',
-    title: 'Why Microwaves Heat Food Unevenly (And The Simple Geometry Fix)',
-    hook: 'Did you know microwaves only penetrate 1 to 2 centimeters into food?',
-    mystery: 'Why is the edge of your soup bowl boiling lava while the exact center remains frozen solid?',
-    mythBuster: 'Myth: Microwaves cook food from the inside out. Fact: Microwaves penetrate only 1 to 2 cm into liquids before radiation is absorbed.',
-    mechanism: 'The 2.45 GHz magnetron forms 3D standing waves inside the metal chamber. Peak nodes have double energy while troughs have zero, creating fixed hot and cold spots.',
-    takeaway: 'The spinning turntable cuts food through circles, but if food sits in the dead center node, it receives virtually zero direct microwave radiation.',
-    proTip: 'Shape leftover pasta, rice, or stews into a ring or donut with an empty center hole: food heats evenly in half the time with zero frozen centers!',
+    title: 'Why Microwaves Heat Food Unevenly (And The Donut Fix)',
+    hook: 'Did you know microwaves only penetrate about 1 inch into your food?',
+    mystery: 'Why does the outer edge of your soup bowl turn scalding hot while the exact center stays ice cold?',
+    mythBuster: 'Myth: Microwaves cook food from the inside out. Fact: Microwaves only penetrate 1 to 2 centimeters (about 0.7 inches) before water absorbs them.',
+    mechanism: 'The microwave magnetron (the wave generator tube) creates standing waves (bouncing wave patterns) inside the metal box. Wave peaks give double heat, while troughs give zero heat, making hot and cold spots.',
+    takeaway: 'The spinning glass plate moves food in a circle, but whatever sits in the exact middle never crosses the hot wave peaks and stays cold.',
+    proTip: 'Push food toward the outer rim of your plate and leave an empty hole in the middle like a donut: your food heats evenly in half the time!',
     reference: 'Buffler, C. / Microwave Cooking & Processing Standards',
     tags: ['#KitchenScience', '#PhysicsHacks', '#LifeHacks', '#FoodScience', '#EngineeringWonders', '#ArchieExplains']
   },
   {
     id: 'crying_onions_syn_propanethial',
     category: 'KITCHEN BIOCHEMISTRY',
-    title: 'Why Cutting Onions Makes You Cry (The Cornea Acid Reaction)',
-    hook: 'Did you know onions make you cry by creating actual sulfuric acid on your eyes?',
-    mystery: 'Why does slicing an onion trigger intense tears when garlic, potatoes, and carrots never do?',
-    mythBuster: 'Myth: The pungent odor causes tears. Fact: It is an airborne aerosol reaction creating trace sulfuric acid directly on your cornea.',
-    mechanism: 'Knife blades slice open plant cell vacuoles, letting alliinase enzymes react with sulfoxides. This releases syn-propanethial-S-oxide gas that rises into the air.',
-    takeaway: 'When this gas touches the moisture film coating your eye, it hydrolyzes into mild sulfurous acid, triggering your lachrymal glands to flush the cornea.',
-    proTip: 'Chill onions in the fridge for 20 minutes or use a razor-sharp blade: cold halts enzymatic reaction kinetics, and sharp blades slice cells instead of crushing them!',
+    title: 'Why Cutting Onions Makes You Cry (The Acid Reaction)',
+    hook: 'Did you know onions make you cry by forming mild acid directly on your eyes?',
+    mystery: 'Why does slicing an onion trigger intense burning and tears, while potatoes and carrots never do?',
+    mythBuster: 'Myth: The strong onion smell makes you cry. Fact: An invisible gas reacts with moisture on your eye to create real acid.',
+    mechanism: 'Knife blades slice open plant cell walls, letting alliinase enzymes (special plant protein catalysts) mix with sulfur compounds. This produces a light gas called syn-propanethial-S-oxide.',
+    takeaway: 'When this gas touches the tear film covering your eyes, it turns into mild sulfurous acid. Your lachrymal glands (tear ducts) instantly flood your eyes with tears to wash it out.',
+    proTip: 'Chill onions in the fridge for 20 minutes or use a very sharp knife: cold slows down the chemical reaction, and sharp blades slice cells cleanly instead of popping them!',
     reference: 'Block, E. / Royal Society of Chemistry & Nature',
     tags: ['#FoodChemistry', '#CookingHacks', '#ScienceFacts', '#DidYouKnow', '#EverydayWonders', '#ArchieExplains']
   },
   {
     id: 'plane_cabin_taste_numbs_salt',
     category: 'AERONAUTICAL SENSORY SCIENCE',
-    title: 'Why Airplane Food Tastes Bland (It Is Not The Chef’s Fault)',
-    hook: 'Did you know flying at 35,000 feet shuts down your taste buds by up to 30%?',
-    mystery: 'Why does identical gourmet pasta taste rich on the ground but utterly bland at cruising altitude?',
-    mythBuster: 'Myth: Airlines cut costs with cheap ingredients. Fact: Lower cabin pressure and 12% Sahara-dry air temporarily numb human sensory receptors.',
-    mechanism: 'At 8,000 ft equivalent cabin altitude, lower barometric pressure reduces blood oxygenation, while dry filtered air evaporates mucous layers covering olfactory receptors.',
-    takeaway: 'Over 80% of perceived flavor is aroma. In addition, 85-decibel engine background noise selectively suppresses sweetness and salt perception while leaving Umami intact.',
-    proTip: 'Airlines serve massive amounts of tomato juice because savory Umami in tomatoes remains completely unaffected by cabin pressure and engine acoustics!',
+    title: 'Why Airplane Food Tastes Bland (It Is Not The Chef)',
+    hook: 'Did you know flying at 35,000 feet dulls your taste buds by up to 30%?',
+    mystery: 'Why does the exact same meal taste rich on the ground, but bland and tasteless inside an airplane cabin?',
+    mythBuster: 'Myth: Airlines use low-grade ingredients to save money. Fact: Cabin air pressure and desert-dry air temporarily numb human sensory receptors.',
+    mechanism: 'Pressurized cabin air has less than 12% humidity (drier than the Sahara desert). This dries out the mucosal lining (protective moist layer) inside your nose where 80% of flavor is detected.',
+    takeaway: 'In addition, loud 85-decibel engine background hum distracts the brain and suppresses sweet and salty flavors, but leaves savory Umami (rich meaty flavor) completely untouched.',
+    proTip: 'This is why airlines pour millions of cans of tomato juice: tomato juice is packed with natural Umami, which stays delicious even at 35,000 feet!',
     reference: 'Fraunhofer Institute for Building Physics & Cornell University Study',
     tags: ['#AviationFacts', '#SensoryScience', '#FoodFacts', '#Neuroscience', '#TravelTips', '#ArchieExplains']
   },
   {
     id: 'phone_battery_20_80_rule',
     category: 'BATTERY CHEMISTRY & TECH',
-    title: 'The Truth About Charging Overnight (The 20-80 Rule Explained)',
-    hook: 'Did you know keeping your phone at 100% all night degrades its battery health?',
-    mystery: 'Does leaving your smartphone plugged in on the nightstand really damage its battery lifespan?',
-    mythBuster: 'Myth: Overnight charging causes fires or overcharging. Fact: Power IC chips stop current, but sustained high voltage mechanical strain ruins cells.',
-    mechanism: 'At 100% state of charge, lithium ions are crammed tightly into the graphite anode, inducing maximum mechanical lattice strain and accelerating electrolyte breakdown.',
-    takeaway: 'Storing cells at 100% charge while warm causes micro-cracking in the cathode structure, cutting total cycle life from 800 down to 400 recharge cycles.',
-    proTip: 'Keep your smartphone between 20% and 80% charge. Enabling iOS "80% Limit" or Android "Protect Battery" can easily double your battery longevity for 3+ years!',
-    reference: 'Journal of The Electrochemical Society / Jeff Dahn Research',
+    title: 'The Truth About Charging Overnight (The 20-80 Rule)',
+    hook: 'Did you know leaving your phone at 100% all night wears out your battery faster?',
+    mystery: 'Does keeping your phone plugged in while you sleep actually damage the battery lifespan over time?',
+    mythBuster: 'Myth: Overnight charging causes phones to overcharge or explode. Fact: Phone safety chips stop electric current, but holding high voltage causes internal mechanical stress.',
+    mechanism: 'At 100% full charge, lithium ions (the charged particles storing energy) are crammed tightly into the battery anode (the negative terminal), causing microscopic physical strain and chemical wear.',
+    takeaway: 'Keeping battery cells at 100% in a warm room slowly cracks internal crystal layers, cutting the battery lifespan from 800 charge cycles down to 400 cycles.',
+    proTip: 'Keep battery charge between 20% and 80%. Turning on the 80% charge limit in your phone settings can keep your battery healthy for 3+ years!',
+    reference: 'Journal of The Electrochemical Society / Battery Lifetime Research',
     tags: ['#TechHacks', '#BatteryHealth', '#SmartphoneTips', '#EngineeringFacts', '#ArchieExplains']
   },
   {
     id: 'mirrors_z_axis_reflection',
     category: 'OPTICS & COGNITIVE SCIENCE',
-    title: 'Why Mirrors Do NOT Flip Left and Right (The 3D Perception Illusion)',
+    title: 'Why Mirrors Do NOT Flip Left and Right (The 3D Trick)',
     hook: 'Did you know mirrors do not reverse left and right at all?',
     mystery: 'If a mirror supposedly flips left and right, why does it never flip your head and feet upside down?',
-    mythBuster: 'Myth: Mirrors reverse horizontal axes. Fact: Mirrors do not reverse left or right AT ALL!',
-    mechanism: 'Mirrors reflect photons perpendicularly along the front-to-back Z-axis. When you point North, your mirror reflection points directly South.',
-    takeaway: 'Your brain creates the left-right illusion because humans are horizontally symmetrical. You mentally imagine rotating 180° around your spine behind the glass.',
-    proTip: 'Hold a glove up to a mirror: the right-hand glove does not become a left-hand glove, it turns inside out along the depth dimension!',
-    reference: 'Gardner, M., The Ambidextrous Universe / American Journal of Physics',
+    mythBuster: 'Myth: Mirrors flip images horizontally. Fact: Mirrors do not reverse left or right AT ALL!',
+    mechanism: 'Mirrors reflect light rays along the front-to-back Z-axis (the depth dimension). When you point North, your mirror reflection points straight South.',
+    takeaway: 'Your brain creates the left-right confusion because human bodies look symmetrical on the outside. Your brain imagines stepping behind the glass and turning around 180 degrees.',
+    proTip: 'Hold a right-hand glove to a mirror: it does not become a left-hand glove, it is pushed inside out along the depth dimension!',
+    reference: 'American Journal of Physics & Cognitive Perception Studies',
     tags: ['#OpticsFacts', '#MindBlown', '#BrainTricks', '#PhysicsExplained', '#ArchieExplains']
   },
   {
     id: 'coffee_caffeine_adenosine_blocker',
     category: 'NEUROCHEMISTRY & SLEEP SCIENCE',
-    title: 'Why Coffee Stops Working If You Drink It Right When Waking Up',
-    hook: 'Did you know caffeine contains zero biological calories or energy?',
-    mystery: 'Why do you experience a brutal 2 PM afternoon crash even after drinking a double espresso at 7 AM?',
-    mythBuster: 'Myth: Caffeine gives you energy. Fact: Caffeine has zero calories or metabolic energy—it is strictly an adenosine receptor antagonist.',
-    mechanism: 'All day, brain cells break down ATP and produce adenosine (sleep pressure). Caffeine mimics adenosine’s shape and docks into its receptors without activating them.',
-    takeaway: 'While caffeine blocks receptors, circulating adenosine continues to accumulate. When your liver clears the caffeine hours later, a tidal wave of adenosine floods in all at once.',
-    proTip: 'Delay your morning coffee by 60 to 90 minutes after waking: let your natural cortisol peak clear morning sleep inertia first, preserving caffeine for the afternoon!',
-    reference: 'Huberman, A. / Stanford University School of Medicine & Nature',
+    title: 'Why Coffee Fails When You Drink It Right Out Of Bed',
+    hook: 'Did you know caffeine contains zero calories and zero real physical energy?',
+    mystery: 'Why do you get a heavy afternoon crash around 2 PM even after having a big morning coffee?',
+    mythBuster: 'Myth: Caffeine gives your body fuel. Fact: Caffeine has zero calories—it is strictly an adenosine receptor blocker (a chemical plug that blocks sleep signals).',
+    mechanism: 'Throughout the day, brain activity creates adenosine (the natural chemical that creates tiredness). Caffeine has a similar shape and plugs into adenosine docks, hiding your tiredness temporarily.',
+    takeaway: 'While caffeine blocks the docks, adenosine keeps piling up in the background. When your liver cleans out the caffeine hours later, all that stored tiredness hits your brain at once.',
+    proTip: 'Wait 60 to 90 minutes after waking up before having your first coffee: this lets your morning cortisol (wake-up hormone) clear grogginess naturally so caffeine lasts all afternoon!',
+    reference: 'Stanford University School of Medicine / Neurobiology of Sleep',
     tags: ['#CoffeeScience', '#SleepScience', '#Neurochemistry', '#ProductivityHacks', '#ArchieExplains']
-  },
-  {
-    id: 'wifi_24ghz_microwaves_wall_penetration',
-    category: 'ELECTROMAGNETIC PHYSICS',
-    title: 'Why 2.4 GHz Wi-Fi Slices Through Walls But 5 GHz Dies in the Hallway',
-    hook: 'Did you know your Wi-Fi uses the exact same frequency as your microwave oven?',
-    mystery: 'Why does switching your phone to 5 GHz Wi-Fi drop to zero bars the moment you walk into the next bedroom?',
-    mythBuster: 'Myth: 5 GHz is always superior to 2.4 GHz. Fact: Higher frequency waves lose energy exponentially faster when colliding with drywall and brick!',
-    mechanism: '2.4 GHz radio waves have an approximate wavelength of 12.5 centimeters, allowing them to diffract around structural columns and pass through timber. 5 GHz waves are only 6 centimeters long.',
-    takeaway: 'Because 5 GHz waves pack twice as many cycles per foot, water molecules in plaster and concrete absorb their electromagnetic energy twice as fast.',
-    proTip: 'Keep smart home bulbs and security cameras on 2.4 GHz for broad house-wide coverage, reserving 5 GHz exclusively for your desk gaming PC or 4K TV in line-of-sight!',
-    reference: 'IEEE 802.11 Standards & Maxwell’s Electromagnetic Wave Propagation',
-    tags: ['#TechTips', '#WiFiExplained', '#PhysicsOfTech', '#ComputerNetworking', '#ArchieExplains']
-  },
-  {
-    id: 'induction_cooktop_cold_glass',
-    category: 'ELECTROMAGNETIC INDUCTION',
-    title: 'Why Induction Stoves Boil Water Without Ever Getting Hot Themselves',
-    hook: 'Did you know you can boil water on an induction cooktop through a paper towel without burning the paper?',
-    mystery: 'How can a glass surface bring a heavy cast iron pot to 400°F while staying safe to touch with your bare hand right beside it?',
-    mythBuster: 'Myth: Induction stoves use red-hot heating elements under ceramic glass. Fact: The cooktop itself generates zero thermal heat.',
-    mechanism: 'Underneath the ceramic glass sits a tightly wound copper coil carrying high-frequency alternating current (20-40 kHz). This creates an oscillating magnetic field that passes invisibly through the glass.',
-    takeaway: 'When a ferrous pan sits on top, the magnetic field swirls magnetic eddy currents and magnetic hysteresis inside the pan’s iron atoms, making the pan heat itself from within!',
-    proTip: 'Any pan that a refrigerator magnet sticks to will work on induction cooktops; non-magnetic aluminum and pure copper won’t register!',
-    reference: 'Faraday’s Law of Electromagnetic Induction & Joule Heating',
-    tags: ['#EverydayPhysics', '#KitchenScience', '#InductionCooking', '#SmartAppliances', '#ArchieExplains']
   },
   {
     id: 'honey_never_spoils_eternal_sugar',
     category: 'BIOCHEMISTRY & PRESERVATION',
-    title: 'Why 3,000-Year-Old Honey In Egyptian Tombs Is Still Edible',
-    hook: 'Did you know archaeologists ate 3,000-year-old honey found in Egyptian pharaoh tombs?',
-    mystery: 'How can raw honey sit in unsealed jars for thousands of years without breeding a single colony of mold or bacteria?',
-    mythBuster: 'Myth: Honey has artificial chemical preservatives. Fact: Honey has a natural osmotic pressure so intense that bacteria desiccate on contact.',
-    mechanism: 'Honey has less than 17% water content and high sugar concentration. When a bacterium lands in honey, osmosis forces all moisture out of the microbe’s cell membrane, instantly dehydrating and killing it.',
-    takeaway: 'Furthermore, bees add the enzyme glucose oxidase, which breaks down sugar into tiny amounts of hydrogen peroxide (H2O2) and gluconic acid, creating an acidic pH of 3.9 where pathogens cannot survive.',
-    proTip: 'If your jar of honey turns cloudy and solid, it hasn’t spoiled—it simply crystallized! Immerse the jar in warm water (100°F) to turn it liquid gold again.',
+    title: 'Why 3,000-Year-Old Honey In Egyptian Tombs Is Still Good',
+    hook: 'Did you know archaeologists found 3,000-year-old honey in Egyptian tombs that is still perfectly edible?',
+    mystery: 'How can pure raw honey sit in jars for thousands of years without growing any mold or bacteria?',
+    mythBuster: 'Myth: Honey has artificial preservatives. Fact: Natural honey has such high sugar density that bacteria dry out and die instantly.',
+    mechanism: 'Honey has less than 17% water. Through osmosis (the movement of water toward high sugar areas), honey pulls water out of bacterial cell walls, dehydrating germs immediately.',
+    takeaway: 'On top of that, bees add a natural enzyme (glucose oxidase) that creates tiny amounts of hydrogen peroxide (natural disinfectant), making an acidic environment where germs cannot live.',
+    proTip: 'If your honey turns cloudy and hard, it is not spoiled—it has just crystallized (sugar forming natural crystals)! Set the jar in warm water to turn it smooth and clear again.',
     reference: 'National Honey Board & American Society for Microbiology',
     tags: ['#BiologyFacts', '#FoodScience', '#AncientHistory', '#Biochemistry', '#ArchieExplains']
   },
   {
     id: 'blue_sky_rayleigh_scattering',
     category: 'ATMOSPHERIC OPTICS',
-    title: 'Why The Sky Is Blue Instead of Violet (The Eye Color Paradox)',
-    hook: 'Did you know sunlight scatters violet light far more than blue light?',
-    mystery: 'If violet light has the shortest wavelength and scatters strongest in the atmosphere, why is the sky sky-blue rather than purple?',
-    mythBuster: 'Myth: The sky reflects ocean water. Fact: The sky is blue due to Rayleigh scattering paired with human retina color sensitivity!',
-    mechanism: 'Nitrogen and oxygen molecules scatter shorter wavelengths (blue and violet) 10 times more effectively than red light. Violet light is indeed scattered most.',
-    takeaway: 'However, human retinal cones possess triple trichromatic receptors: red, green, and blue. Our eyes have almost zero sensitivity to violet photons, interpreting the mixture of scattered blue and violet as cyan sky-blue!',
-    proTip: 'At sunset, sunlight travels through 10 times more atmosphere, scattering away all blue and violet wavelengths entirely and leaving only long red and orange rays to reach your eyes.',
-    reference: 'Lord Rayleigh / Philosophical Magazine & Helmholtz Colour Theory',
+    title: 'Why The Sky Is Blue Instead of Purple (The Eye Paradox)',
+    hook: 'Did you know sunlight actually scatters purple light much more than blue light?',
+    mystery: 'If violet light scatters strongest in the atmosphere, why does our sky look bright blue instead of violet?',
+    mythBuster: 'Myth: The sky reflects blue oceans. Fact: Sunlight bounces off air molecules, and our human eyes are tuned to see blue!',
+    mechanism: 'Rayleigh scattering (the way air particles scatter light) scatters short wavelengths (violet and blue) 10 times more than red light. Violet light is scattered most of all.',
+    takeaway: 'However, human eyes have three cone color sensors (red, green, and blue). Our eye sensors are very sensitive to blue but weak at detecting violet, so our brain sees a sky-blue mix.',
+    proTip: 'At sunset, sunlight travels through 10 times more air distance, scattering away all blue light and leaving only warm red and orange rays for your eyes!',
+    reference: 'Lord Rayleigh / Royal Society Philosophical Magazine',
     tags: ['#OpticsFacts', '#AtmosphericScience', '#WhyTheSkyIsBlue', '#ColorScience', '#ArchieExplains']
   },
   {
     id: 'gps_relativity_time_dilation',
     category: 'RELATIVISTIC ASTROPHYSICS',
-    title: 'Why GPS In Your Phone Would Fail In 2 Minutes Without Einstein’s Relativity',
-    hook: 'Did you know GPS satellites age 38 microseconds faster every single day?',
-    mystery: 'How does Einstein’s 100-year-old theory of general relativity prevent Google Maps from sending you into a river?',
-    mythBuster: 'Myth: GPS only calculates simple speed-of-light radio pings. Fact: Satellite clocks run at a different speed than Earth clocks!',
-    mechanism: 'Special relativity dictates fast-moving satellites tick 7 microseconds slower per day. But General relativity proves weaker gravity at 20,200 km altitude makes them tick 45 microseconds FASTER per day.',
-    takeaway: 'The net difference is +38 microseconds daily. If engineers didn’t pre-program relativistic time shifts into satellite atomic clocks, GPS location would drift by 11 kilometers (6.8 miles) every single day!',
-    proTip: 'Your phone calculates your 3D latitude, longitude, and altitude by simultaneously solving light-speed spheres from 4 separate GPS satellites!',
-    reference: 'Ashby, N. / Relativity in the Global Positioning System, Living Reviews in Relativity',
+    title: 'Why GPS Would Fail In 2 Minutes Without Einstein',
+    hook: 'Did you know GPS satellites age 38 microseconds faster than clocks on Earth every day?',
+    mystery: 'How does Einstein’s theory of relativity stop phone navigation from pointing you into a river?',
+    mythBuster: 'Myth: GPS only measures radio ping travel times. Fact: Clocks on fast, high-altitude satellites tick at different speeds than clocks on the ground!',
+    mechanism: 'Special relativity proves fast motion slows clocks down (-7 microseconds daily). But General relativity proves weaker gravity up in space speeds clocks up (+45 microseconds daily).',
+    takeaway: 'The result is +38 microseconds every day. If satellite computers did not fix this relativistic time difference, your GPS position would drift off by 6 miles (10 km) every single day!',
+    proTip: 'Your phone calculates your location by reading distance signals from at least 4 GPS satellites at once!',
+    reference: 'Relativity in the Global Positioning System / Living Reviews in Relativity',
     tags: ['#Astrophysics', '#Einstein', '#GPSFacts', '#TechSecrets', '#ArchieExplains']
   },
   {
     id: 'helium_balloon_accelerating_car',
     category: 'CLASSICAL MECHANICS & BUOYANCY',
-    title: 'Why A Helium Balloon Moves FORWARD When You Hit The Gas In A Car',
-    hook: 'Did you know physics makes balloons fly forward when you slam the gas pedal?',
-    mystery: 'When your car accelerates rapidly, every human is pushed back into their seat. Why does a floating helium balloon jerk forward toward the dashboard?',
-    mythBuster: 'Myth: The balloon defies Newton’s laws of motion. Fact: Dense cabin air creates an artificial gravity gradient that pushes the balloon forward!',
-    mechanism: 'Air molecules have mass. When the car accelerates forward, the entire mass of cabin air rushes toward the back window due to inertia, creating high pressure in the rear and low pressure at the windshield.',
-    takeaway: 'Because helium is far lighter than air, the dense air in the rear exerts buoyant force forward, squeezing the balloon in the exact opposite direction of your body!',
-    proTip: 'If you brake hard, the cabin air stacks against the windshield and shoots the helium balloon backward into the back seat!',
+    title: 'Why Helium Balloons Move Forward When You Accelerate',
+    hook: 'Did you know tapping the gas pedal makes a helium balloon fly forward instead of backward?',
+    mystery: 'When a car speeds up, your body is pushed back into the seat. Why does a floating helium balloon jerk forward toward the dashboard?',
+    mythBuster: 'Myth: The balloon ignores the laws of motion. Fact: Dense car cabin air piles up at the back window, pushing the lighter balloon forward.',
+    mechanism: 'Air has physical weight. When the car accelerates forward, the air inside rushes backward due to inertia (the tendency of mass to resist acceleration), creating high air pressure at the rear.',
+    takeaway: 'Because helium is much lighter than air, the heavy air at the back squeezes the balloon forward toward the low-pressure windshield area.',
+    proTip: 'If you step on the brakes hard, cabin air piles up at the front windshield, and the helium balloon flies backward toward the rear seats!',
     reference: 'Feynman Lectures on Physics / Principles of Buoyancy & Accelerated Frames',
     tags: ['#PhysicsOddity', '#CarScience', '#Buoyancy', '#MindBlown', '#ArchieExplains']
   }
@@ -330,9 +304,8 @@ function buildPostInfocardSvg(item) {
   const width = 1080;
   const height = 1350;
 
-  // Generate Archie in the exact requested pose: akimbo_jaw (one hand on jaw, other on waist akimbo, one eyebrow raised)
+  // Generate Archie in akimbo_jaw pose
   const archieRawSvg = buildModernCharacterSVG('akimbo_jaw', { mouth: 'closed', eye: 'raised_right' });
-  // Extract the root group of Archie from the SVG
   const archieMatch = archieRawSvg.match(/<g id="modern_character_root">([\s\S]*?)<\/g>\s*<\/svg>/);
   const archieInnerContent = archieMatch ? archieMatch[1] : '';
 
@@ -341,125 +314,113 @@ function buildPostInfocardSvg(item) {
     <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
       <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#000000" flood-opacity="0.5" />
     </filter>
+    <linearGradient id="hookCardBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#090d16" />
+    </linearGradient>
+    <linearGradient id="goldBadge" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
   </defs>
 
   <!-- Clean Obsidian Canvas Background -->
-  <rect width="${width}" height="${height}" fill="#090d16" />
+  <rect width="${width}" height="${height}" fill="#070a12" />
   
   <!-- Subtle Framing Border -->
-  <rect x="16" y="16" width="${width - 32}" height="${height - 32}" rx="20" fill="none" stroke="#1e293b" stroke-width="2" />
+  <rect x="20" y="20" width="${width - 40}" height="${height - 40}" rx="24" fill="none" stroke="#1e293b" stroke-width="2" />
 
   <!-- Top Category & Brand Bar -->
-  <!-- Category Pill -->
-  <rect x="50" y="40" width="360" height="38" rx="19" fill="#0f172a" stroke="#38bdf8" stroke-width="1.8" />
-  <circle cx="72" cy="59" r="5" fill="#38bdf8" />
-  <text x="88" y="65" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#38bdf8" letter-spacing="1.2">
-    ${escapeXml(item.category)}
-  </text>
-
-  <!-- Brand Signature -->
-  <text x="1030" y="65" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" fill="#94a3b8" text-anchor="end" letter-spacing="1">
-    VOXAM FACT • ARCHIE EXPLAINS
-  </text>
+  <g transform="translate(50, 48)">
+    <rect x="0" y="0" width="340" height="38" rx="19" fill="#0f172a" stroke="#38bdf8" stroke-width="1.8" />
+    <circle cx="22" cy="19" r="5" fill="#38bdf8" />
+    <text x="38" y="25" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="800" fill="#38bdf8" letter-spacing="1.5">
+      ${escapeXml(item.category)}
+    </text>
+    <text x="980" y="25" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="800" fill="#94a3b8" text-anchor="end" letter-spacing="1.5">
+      ARCHIE LAB • FACT CHECK
+    </text>
+  </g>
 
   <!-- ================================================================= -->
-  <!-- BIG CARD ABOVE: THE "DID YOU KNOW?" FACT & IN-DEPTH EXPLANATION   -->
+  <!-- HERO HOOK CARD: CLEAN, UNCLUTTERED, MAXIMUM STOPPING POWER       -->
   <!-- ================================================================= -->
-  <g transform="translate(50, 95)" filter="url(#softShadow)">
-    <!-- Main Card Body -->
-    <rect x="0" y="0" width="980" height="570" rx="20" fill="#101726" stroke="#38bdf8" stroke-width="2" />
+  <g transform="translate(50, 110)" filter="url(#softShadow)">
+    <rect x="0" y="0" width="980" height="520" rx="24" fill="url(#hookCardBg)" stroke="#38bdf8" stroke-width="2.5" />
 
-    <!-- Card Header Badge: DID YOU KNOW? -->
-    <rect x="30" y="26" width="220" height="38" rx="10" fill="#facc15" />
-    <text x="140" y="52" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="900" fill="#0f172a" text-anchor="middle" letter-spacing="1.5">
+    <!-- Big Attention-Grabbing Hook Badge -->
+    <rect x="36" y="32" width="230" height="42" rx="12" fill="url(#goldBadge)" />
+    <text x="151" y="60" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="900" fill="#0f172a" text-anchor="middle" letter-spacing="1.5">
       💡 DID YOU KNOW?
     </text>
 
-    <!-- Post Title / Main Headline -->
-    ${renderWrappedSvgText(item.title, 30, 105, 48, 38, 28, '#ffffff', '800')}
+    <!-- Bold Main Hook Title (Prominent, High Impact) -->
+    ${renderWrappedSvgText(item.title, 36, 120, 36, 44, 34, '#ffffff', '900')}
 
     <!-- Divider -->
-    <line x1="30" y1="185" x2="950" y2="185" stroke="#1e293b" stroke-width="2" />
+    <line x1="36" y1="210" x2="944" y2="210" stroke="#1e293b" stroke-width="2" />
 
-    <!-- Long Explanatory Text: Mystery, Mechanism & Practical Impact -->
-    <!-- Section 1: The Common Myth vs Reality -->
-    <text x="30" y="220" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="800" fill="#f87171" letter-spacing="1">
-      ❌ THE COMMON MYTH
+    <!-- Core Hook Mystery Box: Readable, uncluttered, curiosity trigger -->
+    <rect x="36" y="235" width="908" height="150" rx="16" fill="#0b1120" stroke="#334155" stroke-width="1.5" />
+    <text x="64" y="275" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="900" fill="#38bdf8" letter-spacing="1.2">
+      🔍 THE EVERYDAY QUESTION:
     </text>
-    ${renderWrappedSvgText(item.mythBuster, 30, 248, 72, 26, 18, '#e2e8f0', '400')}
+    ${renderWrappedSvgText(item.mystery, 64, 310, 52, 32, 22, '#f1f5f9', '600')}
 
-    <!-- Section 2: The Biological / Physical Mechanism -->
-    <text x="30" y="325" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="800" fill="#38bdf8" letter-spacing="1">
-      🔬 THE SCIENTIFIC MECHANISM
+    <!-- Bottom Hook Punchline Bar -->
+    <rect x="36" y="415" width="908" height="75" rx="14" fill="#06251f" stroke="#10b981" stroke-width="1.5" />
+    <text x="64" y="452" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="900" fill="#34d399" letter-spacing="1.2">
+      ⚡ THE VERDICT:
     </text>
-    ${renderWrappedSvgText(item.mechanism, 30, 353, 72, 26, 18, '#e2e8f0', '400')}
-
-    <!-- Section 3: Why It Matters & Evolutionary Purpose -->
-    <text x="30" y="435" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="800" fill="#4ade80" letter-spacing="1">
-      ⚡ WHY IT MATTERS
+    <text x="210" y="452" font-family="system-ui, -apple-system, sans-serif" font-size="17" font-weight="700" fill="#ecfdf5">
+      ${escapeXml(item.mythBuster.replace(/^Myth:\s*/i, '').slice(0, 72))}...
     </text>
-    ${renderWrappedSvgText(item.takeaway, 30, 463, 72, 26, 18, '#e2e8f0', '400')}
-
-    <!-- Citation Footer along bottom of Card -->
-    <line x1="30" y1="520" x2="950" y2="520" stroke="#1e293b" stroke-width="1.5" />
-    <text x="30" y="546" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#94a3b8">
-      📚 Verified Peer-Reviewed Source: <tspan fill="#38bdf8">${escapeXml(item.reference)}</tspan>
+    <text x="64" y="475" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#94a3b8">
+      📖 Full scientific breakdown explained in caption below!
     </text>
   </g>
 
   <!-- ================================================================= -->
-  <!-- LOWER SECTION: FIGURE OF ARCHIE & COMPANION INSIGHT CARD          -->
+  <!-- LOWER SECTION: ARCHIE MASCOT & READABLE TAKEAWAY CARD             -->
   <!-- ================================================================= -->
-  <!-- Figure of Archie (Left Side): Hand on Jaw, Hand on Waist, Eyebrow Raised -->
-  <g id="archie_character_figure" transform="translate(10, 680) scale(0.66)">
-    <!-- Clip path to keep legs clean at canvas bottom -->
+  <!-- Archie Character on Left -->
+  <g id="archie_character_figure" transform="translate(10, 645) scale(0.68)">
     ${archieInnerContent}
   </g>
 
-  <!-- Companion Insight Card (Right of Archie) -->
-  <g transform="translate(430, 690)" filter="url(#softShadow)">
-    <rect x="0" y="0" width="600" height="610" rx="20" fill="#101726" stroke="#334155" stroke-width="2" />
+  <!-- Hook Companion Card (Right of Archie) -->
+  <g transform="translate(440, 655)" filter="url(#softShadow)">
+    <rect x="0" y="0" width="590" height="625" rx="24" fill="#0b1120" stroke="#334155" stroke-width="2" />
 
     <!-- Card Header Pill -->
-    <rect x="30" y="28" width="280" height="36" rx="10" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5" />
-    <text x="45" y="52" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="800" fill="#38bdf8" letter-spacing="1">
-      🧠 ARCHIE'S SCIENCE BREAKDOWN
+    <rect x="32" y="28" width="270" height="38" rx="12" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5" />
+    <text x="48" y="53" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#38bdf8" letter-spacing="1.2">
+      🧠 ARCHIE'S LAB NOTE
     </text>
 
-    <!-- Deep-Dive Breakdown Text -->
-    <text x="30" y="100" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="800" fill="#facc15" letter-spacing="1">
-      💡 THE EVERYDAY MYSTERY
+    <!-- Key Scientific Takeaway -->
+    <text x="32" y="105" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="900" fill="#facc15" letter-spacing="1">
+      ⚡ KEY TAKEAWAY:
     </text>
-    ${renderWrappedSvgText(item.mystery, 30, 128, 44, 26, 18, '#cbd5e1', '500')}
+    ${renderWrappedSvgText(item.takeaway, 32, 138, 38, 30, 20, '#f8fafc', '500')}
 
-    <!-- Pro Tip / Practical Hack -->
-    <rect x="30" y="210" width="540" height="155" rx="12" fill="#0f172a" stroke="#facc15" stroke-width="1.5" />
-    <text x="50" y="242" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="900" fill="#facc15" letter-spacing="1">
-      ⚡ PRO TIP &amp; CLINICAL TEST:
+    <!-- Pro Tip / Practical Action -->
+    <rect x="32" y="270" width="526" height="150" rx="14" fill="#0f172a" stroke="#facc15" stroke-width="1.5" />
+    <text x="52" y="304" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="900" fill="#facc15" letter-spacing="1">
+      💡 EVERYDAY LIFE HACK:
     </text>
-    ${renderWrappedSvgText(item.proTip, 50, 274, 42, 25, 17, '#fef08a', '500')}
+    ${renderWrappedSvgText(item.proTip, 52, 338, 38, 28, 18, '#fef08a', '500')}
 
     <!-- Engagement & Community Call To Action -->
-    <rect x="30" y="390" width="540" height="185" rx="12" fill="#0b1120" stroke="#1e293b" stroke-width="1.5" />
-    
-    <text x="50" y="425" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#ffffff">
-      💬 What everyday mystery should Archie explain next?
+    <rect x="32" y="445" width="526" height="150" rx="14" fill="#070d18" stroke="#1e293b" stroke-width="1.5" />
+    <text x="52" y="482" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="900" fill="#ffffff">
+      💬 Did this surprise you?
     </text>
-    <text x="50" y="455" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="500" fill="#94a3b8">
-      Drop your theories and questions in the comments below!
+    <text x="52" y="512" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="500" fill="#94a3b8">
+      Read the full caption for the full science details!
     </text>
-
-    <!-- Follow & Save Bar -->
-    <line x1="50" y1="485" x2="520" y2="485" stroke="#1e293b" stroke-width="1" />
-    
-    <rect x="50" y="505" width="220" height="42" rx="8" fill="#0284c7" />
-    <text x="160" y="531" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="800" fill="#ffffff" text-anchor="middle">
-      👉 Follow @bones_ceo
-    </text>
-
-    <rect x="285" y="505" width="235" height="42" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1" />
-    <text x="402" y="531" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" fill="#e2e8f0" text-anchor="middle">
-      📌 Save for Reference
+    <text x="52" y="555" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#38bdf8">
+      👉 Follow @bones_ceo • 📌 Save for later
     </text>
   </g>
 </svg>`;
@@ -471,73 +432,81 @@ function buildPostInfocardSvg(item) {
  */
 function buildInfocardCaptions(item) {
   const cleanTitle = item.title.trim();
-  const hashtags = Array.from(new Set([
+
+  // Optimized hashtags: balanced mix of high-volume discovery (#ScienceFacts, #DidYouKnow),
+  // niche educational tags (#HumanBiology, #EverydayScience), and platform community tags (#LearnOnInstagram)
+  const algorithmOptimizedHashtags = Array.from(new Set([
     ...item.tags,
-    '#VoxamFact',
     '#BonesCeo',
+    '#ArchieLab',
+    '#ScienceFacts',
+    '#DidYouKnow',
+    '#EverydayScience',
     '#ScienceExplained',
-    '#EverydayWonders',
-    '#Infographic',
-    '#KnowledgeIsPower',
+    '#LearnOnInstagram',
+    '#FactCheck',
+    '#CuriosityDaily',
     '#STEM'
   ])).join(' ');
 
-  const fbCaption = `${cleanTitle} 💡
+  // Format Facebook post: High engagement hook, clear everyday explanation with bracketed terms, clean spacing
+  const fbCaption = `💡 ${cleanTitle}
 
 ${item.hook}
 
-🔍 THE EVERYDAY MYSTERY:
+🔍 THE MYSTERY:
 ${item.mystery}
 
-❌ COMMON MYTH:
+❌ WHAT MOST PEOPLE THINK:
 ${item.mythBuster}
 
-🔬 THE SCIENTIFIC MECHANISM:
+🔬 HOW IT ACTUALLY WORKS (Plain Science):
 ${item.mechanism}
 
 ⚡ WHY IT MATTERS:
 ${item.takeaway}
 
-💡 PRO TIP / CLINICAL HACK:
+💡 EVERYDAY HACK:
 ${item.proTip}
 
-📚 Verified Citation:
+📖 Verified Citation:
 ${item.reference}
 
-💬 What everyday science mystery should Archie explain next? Tell us in the comments!
-👉 Follow Voxam Fact & @bones_ceo for daily mind-expanding facts!
-📌 Save this post so you have it ready next time!
+💬 Have you ever noticed this in everyday life? Share your thoughts below!
+👉 Follow Archie Lab & @bones_ceo for daily everyday science & technology breakdowns.
+📌 Save this post so you have it ready to share with friends!
 
-${hashtags}`;
+${algorithmOptimizedHashtags}`;
 
-  const igCaption = `${cleanTitle} 💡
+  // Format Instagram post: First 2 lines hook above the fold, structured scannable layout, bracketed definitions
+  const igCaption = `💡 ${cleanTitle}
 
 ${item.hook}
 
-🔍 The Mystery:
+🔍 The Everyday Mystery:
 ${item.mystery}
 
-❌ The Myth:
+❌ What Most People Believe:
 ${item.mythBuster}
 
 🔬 How It Actually Works:
 ${item.mechanism}
 
-⚡ Why Evolution Did This:
+⚡ Why This Happens:
 ${item.takeaway}
 
-💡 Pro Tip:
+💡 Life Hack:
 ${item.proTip}
 
-📚 Verified Source: ${item.reference}
+📖 Verified Citation: ${item.reference}
 
-💬 Have you ever noticed this in everyday life? Drop your thoughts below!
-👉 Follow @bones_ceo & Voxam Fact for daily science breakdowns!
-📌 Tap the ribbon to save this knowledge card!
+💬 What everyday mystery should Archie explain next? Let us know in the comments!
+👉 Follow @bones_ceo for daily science & tech insights
+📌 Tap save so you can revisit this anytime!
 
 .
 .
-${hashtags}`;
+${algorithmOptimizedHashtags}`;
 
   return { fbCaption, igCaption };
 }

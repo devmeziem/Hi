@@ -4,7 +4,7 @@
  * Archie Daily Tech & Science Fact Reel Generator (Channel 3: Tech, AI & Science)
  *
  * Direct match to User Reference Images 2 & 3:
- * - Studio background with "VOXAM LAB" glowing neon sign, bookshelf, laptop, potted plant, and stage floor
+ * - Studio background with "ARCHIE LAB" glowing neon sign, bookshelf, laptop, potted plant, and stage floor
  * - Digital presentation board with category tabs, bold high-contrast title, explanation, and "DID YOU KNOW?" card
  * - Archie standing and pointing up at the board with grounded floor contact shadow
  * - Dynamic animated lip-sync using visemes (consonant & wide vowel mouth) + natural eye blinks
@@ -254,7 +254,7 @@ function escapeXml(str) {
 
 /**
  * Generate Studio Background SVG matching User Reference Image 2 & 3:
- * - Left wall: warm backlit wooden shelving unit with glowing "VOXAM LAB" neon sign, atom icon, potted plant, laptop, books
+ * - Left wall: warm backlit wooden shelving unit with glowing "ARCHIE LAB" neon sign, atom icon, potted plant, laptop, books
  * - Stage floor: datum at y=1360 to 1920, perspective floor lines, warm amber circular spotlight on character side
  * - Grounding contact shadow for Archie
  */
@@ -317,7 +317,7 @@ function buildStudioBackgroundSvg(width = 1080, height = 1920) {
     <rect x="30" y="160" width="310" height="980" rx="14" fill="#0b0f19" stroke="#334155" stroke-width="2.5" />
     <rect x="40" y="170" width="290" height="960" rx="10" fill="url(#shelfBacklight)" opacity="0.18" />
 
-    <!-- Top Neon Sign: "VOXAM LAB" with Atom Icon (Direct match to Image 2) -->
+    <!-- Top Neon Sign: "ARCHIE LAB" with Atom Icon (Direct match to Image 2) -->
     <g filter="url(#neonGlow)" transform="translate(60, 210)">
       <rect x="0" y="0" width="250" height="52" rx="12" fill="#020617" stroke="#38bdf8" stroke-width="2.5" />
       <!-- Glowing Atom Icon -->
@@ -325,7 +325,7 @@ function buildStudioBackgroundSvg(width = 1080, height = 1920) {
       <ellipse cx="32" cy="26" rx="14" ry="5" fill="none" stroke="#38bdf8" stroke-width="1.6" transform="rotate(30 32 26)" />
       <ellipse cx="32" cy="26" rx="14" ry="5" fill="none" stroke="#38bdf8" stroke-width="1.6" transform="rotate(-30 32 26)" />
       <!-- Neon Text -->
-      <text x="60" y="34" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="900" fill="#38bdf8" letter-spacing="3">VOXAM LAB</text>
+      <text x="56" y="34" font-family="system-ui, -apple-system, sans-serif" font-size="19" font-weight="900" fill="#38bdf8" letter-spacing="2.5">ARCHIE LAB</text>
     </g>
 
     <!-- Shelf Tier 1 (y=380): Potted Green Succulent Plant & Books -->
@@ -703,7 +703,9 @@ async function generateArchie5sDailyFact() {
   // 7. Format YouTube Title and Description
   const viralTitle = `⚡ ${fact.title} #Shorts`;
   const initialFollowCta = formatChannelFollowCta('cartoon_factory', process.env.YOUTUBE_HANDLE_CH3 || process.env.YOUTUBE_HANDLE_TECH || '');
-  const viralDescription = `${fact.hook}\n\n${fact.fact}\n\n🔬 Verified Citation: ${fact.reference}\n\n${initialFollowCta}`;
+  
+  // Algorithm-optimized YouTube description with high-converting keyword density and clean scannable layout
+  const viralDescription = `${fact.hook}\n\n${fact.fact}\n\n🔬 Verified Citation: ${fact.reference}\n\n${initialFollowCta}\n\n#ArchieLab #ScienceFacts #EverydayScience #DidYouKnow #MindBlown #ScienceExplained #STEM #Shorts`;
 
   // 8. Publish to YouTube (Switched ON per user specification!)
   const isDryRun = process.env.DRY_RUN === 'true';
@@ -719,7 +721,18 @@ async function generateArchie5sDailyFact() {
         videoPath: finalMp4Path,
         title: viralTitle,
         description: viralDescription,
-        tags: fact.tags,
+        tags: Array.from(new Set([
+          ...fact.tags,
+          '#ArchieLab',
+          '#ScienceFacts',
+          '#DidYouKnow',
+          '#EverydayScience',
+          '#ScienceExplained',
+          '#MindBlown',
+          '#PhysicsFacts',
+          '#STEM',
+          '#Shorts'
+        ])),
         channelId: 'cartoon_factory'
       });
       console.log(`[Archie Dispatcher] Result:`, res);

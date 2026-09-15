@@ -91,7 +91,7 @@ async function runCartoonPipelineDiagnostic() {
     console.log(`\n🎬 [Scene ${sceneIndex}/${episodePlan.scenes.length}] "${scene.dialogue}"`);
     console.log(`   🌆 Scene Environment: "${scene.background_style || 'tech_studio'}" | Action: "${scene.character_action}" | Camera: "${scene.camera}"`);
 
-    // A. Generate Dynamic Scene Environment Background (Pollinations AI or Modern Tech Interface)
+    // A. Generate Dynamic Scene Environment Background (Watermark-free Modern Tech Interface)
     let bgPngPath = null;
     try {
       bgPngPath = await getSceneBackground(sceneIndex, inputTopic, scene.background_style, ARTIFACTS_DIR);

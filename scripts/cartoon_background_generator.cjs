@@ -132,28 +132,10 @@ function buildPollinationsPrompt(sceneIndex, topic = '', style = '') {
 
 /**
  * Attempt to download and convert background from Pollinations AI
+ * User directive: Pollinations AI background completely removed due to watermark and algorithm throttling.
  */
 async function downloadPollinationsBg(prompt, outPngPath, seed = 42) {
-  const encPrompt = encodeURIComponent(prompt);
-  const url = `https://image.pollinations.ai/prompt/${encPrompt}?width=1080&height=1920&nologo=true&seed=${seed}`;
-  const tempJpg = outPngPath.replace(/\.png$/i, '_raw.jpg');
-
-  try {
-    console.log(`[Background Engine] 🌐 Requesting AI background from Pollinations: "${prompt.slice(0, 60)}..."`);
-    const buf = await fetchHttpsBuffer(url, 7000);
-    if (buf && buf.length > 5000) {
-      fs.writeFileSync(tempJpg, buf);
-      // Scale and crop cleanly to 1080x1920
-      execSync(`ffmpeg -y -i "${tempJpg}" -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920" "${outPngPath}" 2>/dev/null`);
-      try { fs.unlinkSync(tempJpg); } catch {}
-      if (fs.existsSync(outPngPath) && fs.statSync(outPngPath).size > 10000) {
-        console.log(`[Background Engine] ✅ AI Background fetched successfully (${(fs.statSync(outPngPath).size / 1024).toFixed(1)} KB)`);
-        return outPngPath;
-      }
-    }
-  } catch (err) {
-    console.warn(`[Background Engine] Notice fetching AI background (${err.message}). Using drawn modern interface.`);
-  }
+  // Permanently disabled per user directive to prevent watermarks and optimize algorithm push
   return null;
 }
 
@@ -161,10 +143,17 @@ async function downloadPollinationsBg(prompt, outPngPath, seed = 42) {
  * Rich Drawn Modern Interface Vector SVG (Resilient Local Generator)
  */
 function generateDrawnModernInterfaceSvg(sceneIndex = 1, topic = '', style = '', width = 1080, height = 1920) {
-  const safeTopic = String(topic || 'SYSTEM DATA').toUpperCase().slice(0, 20);
+  const safeTopic = String(topic || 'SCIENCE & TECH DATA').toUpperCase().slice(0, 24);
+  const lowerTopic = String(topic || '').toLowerCase();
+
+  // Detect thematic domain from topic keywords
+  const isBiologyOrNature = /bio|cell|nerve|human|body|finger|honey|bacteria|blood|wrinkle|eye|taste|organism|brain/i.test(lowerTopic);
+  const isOpticsOrLight = /light|sky|blue|violet|color|prism|refract|scatter|sun|lens|wavelength|wave|laser/i.test(lowerTopic);
+  const isSpaceOrPhysics = /space|satellite|gps|einstein|relativ|orbit|gravity|moon|star|planet|cosmos|quantum/i.test(lowerTopic);
+  const isElectromagnetism = /electric|volt|shock|static|current|magnet|induction|wire|circuit|plasma|spark/i.test(lowerTopic);
 
   if (sceneIndex === 1) {
-    // Scene 1: Modern Stage & Presentation Arena
+    // Scene 1: Modern Stage & Presentation Arena with Archie Lab Warm Ambient Shelving & Acoustic Wood
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
       <defs>
         <linearGradient id="stageWall" x1="0" y1="0" x2="0" y2="1">
@@ -193,13 +182,22 @@ function generateDrawnModernInterfaceSvg(sceneIndex = 1, topic = '', style = '',
       <rect x="0" y="0" width="400" height="${height}" fill="url(#neonLeft)" />
       <rect x="680" y="0" width="400" height="${height}" fill="url(#neonRight)" />
 
-      <!-- Back Wall Acoustic Hexagon Grid -->
+      <!-- Left Back Wall Acoustic Slat Panels & Neon Sign -->
+      <g stroke="#1e293b" stroke-width="4" opacity="0.45">
+        <line x1="60" y1="120" x2="60" y2="1350" />
+        <line x1="110" y1="120" x2="110" y2="1350" />
+        <line x1="160" y1="120" x2="160" y2="1350" />
+        <line x1="210" y1="120" x2="210" y2="1350" />
+        <line x1="260" y1="120" x2="260" y2="1350" />
+        <line x1="310" y1="120" x2="310" y2="1350" />
+      </g>
+
+      <!-- Back Wall Acoustic Hexagon Grid on Right -->
       <g stroke="#1e293b" stroke-width="2.5" fill="#0f172a" opacity="0.65">
-        <polygon points="180,260 220,285 220,335 180,360 140,335 140,285" />
-        <polygon points="265,260 305,285 305,335 265,360 225,335 225,285" />
-        <polygon points="222,338 262,363 262,413 222,438 182,413 182,363" />
         <polygon points="820,240 860,265 860,315 820,340 780,315 780,265" />
         <polygon points="905,240 945,265 945,315 905,340 865,315 865,265" />
+        <polygon points="862,318 902,343 902,393 862,418 822,393 822,343" />
+        <polygon points="948,318 988,343 988,393 948,418 908,393 908,343" />
       </g>
 
       <!-- Sleek Vertical Studio Lightbars -->
@@ -219,7 +217,141 @@ function generateDrawnModernInterfaceSvg(sceneIndex = 1, topic = '', style = '',
     </svg>`;
   }
 
-  // Scene 2+: Modern Glass Interface Workspace / Futuristic Workstation
+  // Scene 2+: Dynamic topic-synchronized backdrop tailored to the specific scientific topic
+  if (isBiologyOrNature) {
+    // Biology & Cellular Bio-mechanics Lab Backdrop
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+      <defs>
+        <linearGradient id="bioLabBg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#02140f" />
+          <stop offset="50%" stop-color="#06221c" />
+          <stop offset="100%" stop-color="#010c08" />
+        </linearGradient>
+        <linearGradient id="bioGlass" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#064e3b" stop-opacity="0.8" />
+          <stop offset="100%" stop-color="#022c22" stop-opacity="0.9" />
+        </linearGradient>
+      </defs>
+      <rect width="${width}" height="${height}" fill="url(#bioLabBg)" />
+
+      <!-- Floating DNA Double Helix / Cellular Structure Background -->
+      <g stroke="#10b981" stroke-width="2" opacity="0.3" fill="none">
+        <path d="M 80 200 Q 150 260 220 200 T 360 200 T 500 200" />
+        <path d="M 80 260 Q 150 200 220 260 T 360 260 T 500 260" />
+        <line x1="150" y1="230" x2="150" y2="230" />
+        <line x1="220" y1="200" x2="220" y2="260" stroke-width="3" />
+        <line x1="360" y1="200" x2="360" y2="260" stroke-width="3" />
+      </g>
+
+      <!-- Cellular Observation Holographic HUD -->
+      <rect x="60" y="240" width="450" height="270" rx="18" fill="url(#bioGlass)" stroke="#34d399" stroke-width="2" />
+      <text x="90" y="280" fill="#34d399" font-family="system-ui, sans-serif" font-size="16" font-weight="800" letter-spacing="1">🔬 CELLULAR TELEMETRY // ${safeTopic}</text>
+      <!-- Cell membrane circles -->
+      <circle cx="160" cy="380" r="45" fill="#065f46" stroke="#10b981" stroke-width="2.5" opacity="0.8" />
+      <circle cx="160" cy="380" r="18" fill="#34d399" opacity="0.6" />
+      <circle cx="280" cy="370" r="32" fill="#065f46" stroke="#10b981" stroke-width="2" opacity="0.8" />
+      <circle cx="390" cy="390" r="25" fill="#065f46" stroke="#10b981" stroke-width="2" opacity="0.8" />
+
+      <!-- Right Telemetry Panel -->
+      <rect x="570" y="240" width="450" height="270" rx="18" fill="url(#bioGlass)" stroke="#34d399" stroke-width="2" />
+      <text x="600" y="280" fill="#34d399" font-family="system-ui, sans-serif" font-size="16" font-weight="800">BIO-METRIC RESPONSE SPECTRUM</text>
+      <path d="M 600 420 Q 660 330 730 400 T 850 310 T 960 380" fill="none" stroke="#10b981" stroke-width="3.5" />
+
+      <!-- Laboratory Workstation Midground Floor -->
+      <polygon points="100,1320 980,1320 1040,1390 40,1390" fill="#06221c" stroke="#10b981" stroke-width="2" />
+      <path d="M 40 1390 L 1040 1390 L 1080 1920 L 0 1920 Z" fill="#02140f" />
+      <ellipse cx="540" cy="1400" rx="440" ry="80" fill="#10b981" opacity="0.12" />
+    </svg>`;
+  }
+
+  if (isOpticsOrLight) {
+    // Optics & Atmospheric Dispersion Chamber Backdrop
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+      <defs>
+        <linearGradient id="opticsBg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#080c1d" />
+          <stop offset="50%" stop-color="#0d1b3e" />
+          <stop offset="100%" stop-color="#030611" />
+        </linearGradient>
+        <linearGradient id="rainbowSpectrum" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#ef4444" />
+          <stop offset="25%" stop-color="#f59e0b" />
+          <stop offset="50%" stop-color="#10b981" />
+          <stop offset="75%" stop-color="#06b6d4" />
+          <stop offset="100%" stop-color="#8b5cf6" />
+        </linearGradient>
+      </defs>
+      <rect width="${width}" height="${height}" fill="url(#opticsBg)" />
+
+      <!-- Atmospheric Ray Scatter Simulation Rays in Background -->
+      <g opacity="0.25">
+        <line x1="540" y1="100" x2="100" y2="800" stroke="#38bdf8" stroke-width="3" />
+        <line x1="540" y1="100" x2="300" y2="900" stroke="#818cf8" stroke-width="2.5" />
+        <line x1="540" y1="100" x2="540" y2="1000" stroke="#a855f7" stroke-width="2" />
+        <line x1="540" y1="100" x2="780" y2="900" stroke="#c084fc" stroke-width="2.5" />
+        <line x1="540" y1="100" x2="980" y2="800" stroke="#38bdf8" stroke-width="3" />
+      </g>
+
+      <!-- Optics Spectrometer Screens -->
+      <rect x="60" y="240" width="450" height="270" rx="18" fill="#0c1630" stroke="#38bdf8" stroke-width="2" />
+      <text x="90" y="280" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="16" font-weight="800">OPTICAL WAVELENGTH // ${safeTopic}</text>
+      <!-- Spectrum Bar -->
+      <rect x="90" y="320" width="390" height="24" rx="12" fill="url(#rainbowSpectrum)" />
+      <text x="90" y="380" fill="#94a3b8" font-family="monospace" font-size="14">RAYLEIGH SCATTERING RATIO: 10x (BLUE/VIOLET)</text>
+
+      <!-- Atmospheric Scattering Model on Right -->
+      <rect x="570" y="240" width="450" height="270" rx="18" fill="#0c1630" stroke="#818cf8" stroke-width="2" />
+      <text x="600" y="280" fill="#818cf8" font-family="system-ui, sans-serif" font-size="16" font-weight="800">RETINAL CONE SENSITIVITY</text>
+      <circle cx="700" cy="380" r="38" fill="none" stroke="#ef4444" stroke-width="2.5" opacity="0.8" />
+      <circle cx="795" cy="380" r="38" fill="none" stroke="#22c55e" stroke-width="2.5" opacity="0.8" />
+      <circle cx="890" cy="380" r="38" fill="none" stroke="#3b82f6" stroke-width="2.5" opacity="0.8" />
+
+      <!-- Glass Horizon & Stage Floor -->
+      <polygon points="100,1320 980,1320 1040,1390 40,1390" fill="#0d1b3e" stroke="#38bdf8" stroke-width="2" />
+      <path d="M 40 1390 L 1040 1390 L 1080 1920 L 0 1920 Z" fill="#040918" />
+      <ellipse cx="540" cy="1400" rx="440" ry="80" fill="#38bdf8" opacity="0.15" />
+    </svg>`;
+  }
+
+  if (isSpaceOrPhysics) {
+    // Relativistic Astrophysics & Orbital Geometry Backdrop
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+      <defs>
+        <linearGradient id="spaceBg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#030712" />
+          <stop offset="50%" stop-color="#0b112c" />
+          <stop offset="100%" stop-color="#02040a" />
+        </linearGradient>
+      </defs>
+      <rect width="${width}" height="${height}" fill="url(#spaceBg)" />
+
+      <!-- Distant Star Field and Orbital Ellipses -->
+      <g opacity="0.4" stroke="#60a5fa" stroke-width="1.5" fill="none">
+        <ellipse cx="540" cy="400" rx="480" ry="180" transform="rotate(-15 540 400)" />
+        <ellipse cx="540" cy="400" rx="420" ry="140" transform="rotate(25 540 400)" />
+        <circle cx="540" cy="400" r="32" fill="#1e3a8a" stroke="#60a5fa" stroke-width="2" />
+      </g>
+
+      <!-- Satellite Telemetry HUD Left -->
+      <rect x="60" y="240" width="450" height="270" rx="18" fill="#0b1120" stroke="#60a5fa" stroke-width="2" />
+      <text x="90" y="280" fill="#60a5fa" font-family="system-ui, sans-serif" font-size="16" font-weight="800">ORBITAL TIME DILATION // ${safeTopic}</text>
+      <text x="90" y="330" fill="#facc15" font-family="monospace" font-size="20" font-weight="700">+38.00 μs / DAY</text>
+      <path d="M 90 420 L 220 380 L 360 410 L 480 370" stroke="#38bdf8" stroke-width="3" fill="none" />
+
+      <!-- Gravitational Curvature HUD Right -->
+      <rect x="570" y="240" width="450" height="270" rx="18" fill="#0b1120" stroke="#a78bfa" stroke-width="2" />
+      <text x="600" y="280" fill="#a78bfa" font-family="system-ui, sans-serif" font-size="16" font-weight="800">EINSTEIN RELATIVISTIC CORRECTION</text>
+      <circle cx="795" cy="380" r="50" fill="none" stroke="#a78bfa" stroke-width="2" stroke-dasharray="6,4" />
+      <circle cx="795" cy="380" r="20" fill="#6d28d9" />
+
+      <!-- Ground Horizon & Carbon Floor -->
+      <polygon points="100,1320 980,1320 1040,1390 40,1390" fill="#0b112c" stroke="#60a5fa" stroke-width="2" />
+      <path d="M 40 1390 L 1040 1390 L 1080 1920 L 0 1920 Z" fill="#030613" />
+      <ellipse cx="540" cy="1400" rx="440" ry="80" fill="#60a5fa" opacity="0.12" />
+    </svg>`;
+  }
+
+  // Default: Modern Glass Interface Workspace / Futuristic Workstation
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
     <defs>
       <linearGradient id="labBg" x1="0" y1="0" x2="0" y2="1">
@@ -293,25 +425,19 @@ async function getSceneBackground(sceneIndex, topic = '', style = '', objects = 
   const propsOverlaySvg = path.join(dir, `scene_${sceneIndex}_props.svg`);
   const seed = (Math.abs(hashString(topic)) % 10000) + sceneIndex * 100;
 
-  // 1. Try Pollinations AI first
-  const prompt = buildPollinationsPrompt(sceneIndex, topic, style);
-  const pollinationsRes = await downloadPollinationsBg(prompt, rawBgPath, seed);
+  // 1. User Directive: Pollinations AI background removed (watermark free, clean algorithm friendly)
+  // Render pristine, watermark-free drawn modern interface backdrop directly
+  console.log(`[Background Engine] 🎨 Rendering clean, watermark-free modern interface backdrop for Scene ${sceneIndex}...`);
+  const svgPath = path.join(dir, `scene_${sceneIndex}_interface.svg`);
+  const svgContent = generateDrawnModernInterfaceSvg(sceneIndex, topic, style, 1080, 1920);
+  fs.writeFileSync(svgPath, svgContent, 'utf8');
 
   let baseBgPath = null;
-  if (pollinationsRes && fs.existsSync(pollinationsRes) && fs.statSync(pollinationsRes).size > 10000) {
-    baseBgPath = pollinationsRes;
-  } else {
-    // 2. Resilient fallback: Draw rich modern interface vector SVG and rasterize
-    console.log(`[Background Engine] 🎨 Rendering custom drawn modern interface backdrop for Scene ${sceneIndex}...`);
-    const svgPath = path.join(dir, `scene_${sceneIndex}_fallback.svg`);
-    const svgContent = generateDrawnModernInterfaceSvg(sceneIndex, topic, style, 1080, 1920);
-    fs.writeFileSync(svgPath, svgContent, 'utf8');
-    try {
-      execSync(`ffmpeg -y -i "${svgPath}" "${rawBgPath}" 2>/dev/null`);
-      if (fs.existsSync(rawBgPath)) baseBgPath = rawBgPath;
-    } catch (err) {
-      console.warn(`[Background Engine] Notice rasterizing fallback background: ${err.message}`);
-    }
+  try {
+    execSync(`ffmpeg -y -i "${svgPath}" "${rawBgPath}" 2>/dev/null`);
+    if (fs.existsSync(rawBgPath)) baseBgPath = rawBgPath;
+  } catch (err) {
+    console.warn(`[Background Engine] Notice rasterizing backdrop: ${err.message}`);
   }
 
   // 3. Composite custom props (sliding door, ergonomic creator chair, workstation desk, ambient light tube)

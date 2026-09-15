@@ -1170,6 +1170,39 @@ Respond STRICTLY with valid raw JSON without markdown:
     return;
   }
 
+  // API Analytics Snapshots & Sync
+  if (urlPath === '/api/analytics' && req.method === 'GET') {
+    try {
+      const analyticsPath = path.join(__dirname, 'data', 'channel_analytics.json');
+      if (fs.existsSync(analyticsPath)) {
+        const data = fs.readFileSync(analyticsPath, 'utf8');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(data);
+      } else {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ channels: {}, totals: { views: 0, subscribers: 0, videoCount: 0 } }));
+      }
+    } catch (err: any) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
+  if (urlPath === '/api/analytics/sync' && req.method === 'POST') {
+    try {
+      // Dynamic import / require of analytics engine
+      const { syncDailyChannelAnalytics } = await import('./scripts/fetch_realtime_channel_analytics.cjs');
+      const updated = await syncDailyChannelAnalytics();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, analytics: updated }));
+    } catch (err: any) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, error: err.message }));
+    }
+    return;
+  }
+
   // API Health Check
   if (urlPath === '/api/health' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });

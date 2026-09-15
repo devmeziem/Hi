@@ -263,16 +263,17 @@ function generateChimeSound(outWavPath, duration = 1.0) {
   }
 }
 
+const { resolveRealMusicTrack } = require('./audio_asset_manager.cjs');
+
 /**
- * Master Archie's Reel Audio: Clean Voice + Ducked Warm Background Music
+ * Master Archie's Reel Audio: Clean Voice + Ducked Real Background Music
  * Features dynamic duration calculation so speech is NEVER cut off!
  */
-async function assembleArchieMasterAudio(spokenText, outMasterWav) {
+async function assembleArchieMasterAudio(spokenText, outMasterWav, options = {}) {
   const dir = path.dirname(outMasterWav);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
   const voiceWav = path.join(dir, `archie_voice_${Date.now()}.wav`);
-  const musicWav = path.join(dir, `archie_music_${Date.now()}.wav`);
   const chimeWav = path.join(dir, `archie_chime_${Date.now()}.wav`);
 
   // 1. Synthesize voice
@@ -293,35 +294,58 @@ async function assembleArchieMasterAudio(spokenText, outMasterWav) {
   const masterDuration = Math.max(6.0, Number((voiceDuration + 1.8).toFixed(2)));
   console.log(`[Archie Sound Master] ⏱️ Spoken voice: ${voiceDuration.toFixed(2)}s -> Target reel duration: ${masterDuration}s (Zero cutoffs!)`);
 
-  // 2. Generate warm music and soft chime scaled to exact master duration
-  generateScienceGrooveMusic(musicWav, masterDuration);
+  // 2. Resolve real music track (from URL, local real mp3/wav, or Pixabay)
+  const realMusicWav = await resolveRealMusicTrack({
+    niche: 'cartoon',
+    duration: masterDuration,
+    soundUrl: options.soundUrl || process.env.ARCHIE_MUSIC_URL || process.env.SOUND_URL || process.env.MUSIC_URL
+  });
+
   generateChimeSound(chimeWav, 1.0);
 
-  // 3. Mix: Voice prominent (volume 1.3), warm music ducked (volume 0.12), soft chime at 0.3s
-  // Using standard loudnorm instead of aggressive dynaudnorm to eliminate screeching!
+  // 3. Mix: Voice prominent (volume 1.3), chime at 0.3s, and ducked real music if present
   const chimeDelayMs = 300;
-  const complexFilter = `
-    [0:a]volume=1.3,apad=whole_dur=${masterDuration}[voice];
-    [1:a]volume=0.12,atrim=0:${masterDuration}[music];
-    [2:a]adelay=${chimeDelayMs}|${chimeDelayMs},volume=0.22,apad=whole_dur=${masterDuration}[chime];
-    [voice][music][chime]amix=inputs=3:duration=longest:dropout_transition=1,loudnorm=I=-16:TP=-1.5:LRA=11[out]
-  `.replace(/\s+/g, ' ');
 
-  const mixCmd = `ffmpeg -y -i "${voiceWav}" -i "${musicWav}" -i "${chimeWav}" -filter_complex "${complexFilter}" -map "[out]" -c:a pcm_s16le -ar 44100 -ac 2 "${outMasterWav}" 2>/dev/null`;
+  if (realMusicWav && fs.existsSync(realMusicWav)) {
+    console.log(`[Archie Sound Master] 🎶 Mixing real audio backing track ducked cleanly under Archie's voice...`);
+    const complexFilter = `
+      [0:a]volume=1.35,apad=whole_dur=${masterDuration}[voice];
+      [1:a]volume=0.12,atrim=0:${masterDuration}[music];
+      [2:a]adelay=${chimeDelayMs}|${chimeDelayMs},volume=0.18,apad=whole_dur=${masterDuration}[chime];
+      [voice][music][chime]amix=inputs=3:duration=longest:dropout_transition=1,loudnorm=I=-16:TP=-1.5:LRA=11[out]
+    `.replace(/\s+/g, ' ');
 
-  try {
-    execSync(mixCmd);
-    console.log(`[Archie Sound Master] ✅ Audio mix complete! Clean voiceover (${voiceDuration.toFixed(2)}s) + warm backing track (${masterDuration}s total)`);
-  } catch (err) {
-    console.warn(`[Archie Sound Master] Audio mix notice: ${err.message}, falling back to voice track`);
-    if (fs.existsSync(voiceWav)) fs.copyFileSync(voiceWav, outMasterWav);
+    const mixCmd = `ffmpeg -y -i "${voiceWav}" -i "${realMusicWav}" -i "${chimeWav}" -filter_complex "${complexFilter}" -map "[out]" -c:a pcm_s16le -ar 44100 -ac 2 "${outMasterWav}" 2>/dev/null`;
+    try {
+      execSync(mixCmd);
+      console.log(`[Archie Sound Master] ✅ Audio mix complete! Clean voiceover + real backing track (${masterDuration}s)`);
+    } catch {
+      if (fs.existsSync(voiceWav)) fs.copyFileSync(voiceWav, outMasterWav);
+    }
+  } else {
+    // Pure clean voiceover + soft reveal chime (NO synthetic sine-wave beeps!)
+    console.log(`[Archie Sound Master] 🎙️ No external music URL provided; rendering studio-clean vocal master with soft card reveal chime.`);
+    const complexFilter = `
+      [0:a]volume=1.4,apad=whole_dur=${masterDuration}[voice];
+      [1:a]adelay=${chimeDelayMs}|${chimeDelayMs},volume=0.20,apad=whole_dur=${masterDuration}[chime];
+      [voice][chime]amix=inputs=2:duration=longest:dropout_transition=1,loudnorm=I=-16:TP=-1.5:LRA=11[out]
+    `.replace(/\s+/g, ' ');
+
+    const mixCmd = `ffmpeg -y -i "${voiceWav}" -i "${chimeWav}" -filter_complex "${complexFilter}" -map "[out]" -c:a pcm_s16le -ar 44100 -ac 2 "${outMasterWav}" 2>/dev/null`;
+    try {
+      execSync(mixCmd);
+    } catch {
+      if (fs.existsSync(voiceWav)) fs.copyFileSync(voiceWav, outMasterWav);
+    }
   }
 
   // Cleanup temporary audio
   try {
     if (fs.existsSync(voiceWav)) fs.unlinkSync(voiceWav);
-    if (fs.existsSync(musicWav)) fs.unlinkSync(musicWav);
     if (fs.existsSync(chimeWav)) fs.unlinkSync(chimeWav);
+    if (realMusicWav && realMusicWav.includes('resolved_music_') && fs.existsSync(realMusicWav)) {
+      fs.unlinkSync(realMusicWav);
+    }
   } catch {}
 
   return {

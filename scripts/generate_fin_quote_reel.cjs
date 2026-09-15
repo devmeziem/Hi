@@ -404,16 +404,34 @@ async function resolveFinancialPortrait(scholar) {
   return outJpgPath;
 }
 
+const { downloadSoundFromUrl, findLocalRealAudio } = require('./audio_asset_manager.cjs');
+
 /**
  * Sound Engine: Loopable Mystery Audio for Financial Quote Reels
- * Supports the three requested Pixabay mystery sound archetypes and loads local audio assets:
- * 1. horror-scene-murder-mystery (pixabay 519625)
- * 2. instrumental-mystery (pixabay 548639)
- * 3. mystery-darkness (pixabay 355606)
+ * Supports real sound URLs, local audio assets, and fallback atmosphere
  */
 function generateFinancialMysterySound(outWavPath, duration = 5.0) {
   const dir = path.dirname(outWavPath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+  const customSoundUrl = process.env.FIN_MUSIC_URL || process.env.SOUND_URL || process.env.MUSIC_URL || process.env.AUDIO_URL;
+  if (customSoundUrl && customSoundUrl.startsWith('http')) {
+    console.log(`[Sound Engine] 🌐 Detected custom sound URL: ${customSoundUrl}`);
+    const tempDl = path.join(dir, `remote_fin_sound_${Date.now()}`);
+    try {
+      execSync(`curl -sL --max-time 15 "${customSoundUrl}" -o "${tempDl}"`);
+      if (fs.existsSync(tempDl) && fs.statSync(tempDl).size > 1000) {
+        execSync(`ffmpeg -y -stream_loop -1 -i "${tempDl}" -t ${duration} -af "afade=t=in:ss=0:d=0.2,afade=t=out:st=${(duration - 0.2).toFixed(2)}:d=0.2" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
+        try { fs.unlinkSync(tempDl); } catch {}
+        if (fs.existsSync(outWavPath) && fs.statSync(outWavPath).size > 5000) {
+          console.log(`[Sound Engine] ✅ Applied real sound from URL to financial reel!`);
+          return outWavPath;
+        }
+      }
+    } catch (e) {
+      console.warn(`[Sound Engine] Remote sound download notice: ${e.message}`);
+    }
+  }
 
   // 1. Check local audio assets directories
   const soundDirs = [
@@ -684,7 +702,7 @@ async function generateFin5sVideo() {
   // 6. Update Blueprint Manifest
   const viralTitle = `Finance Mindset — ${chosen.author} Quotes #Shorts`;
   const initialFollowCta = formatChannelFollowCta('finance_saas', process.env.YOUTUBE_HANDLE_CH1 || process.env.YOUTUBE_HANDLE_FIN || process.env.YOUTUBE_HANDLE || '');
-  const viralDescription = `"${chosen.quote}"\n\n— ${chosen.author}\n${chosen.credentials}\nSource: ${chosen.reference}\n\n🧠 Daily finance principles to master wealth, investment discipline, and financial freedom.\n\n${initialFollowCta}\n\n#Finance #Investing #Wealth #MoneyMindset #FinancialFreedom #Shorts`;
+  const viralDescription = `"${chosen.quote}"\n\n— ${chosen.author}\n${chosen.credentials}\nSource: ${chosen.reference}\n\n🧠 Daily finance principles to master wealth, investment discipline, and financial freedom.\n\n${initialFollowCta}\n\n#Finance #Investing #MoneyMindset #WealthMindset #PersonalFinance #FinancialFreedom #StockMarket #SmartMoney #CompoundInterest #Shorts`;
 
   try {
     let manifestData = { videos: [] };
@@ -726,7 +744,7 @@ async function generateFin5sVideo() {
     try {
       console.log(`\n[Finance Quote Reel] 📤 Publishing 5s Financial Quote Reel to YouTube Shorts (Channel 1: Fin Blueprint)...`);
       await uploadQuoteReelToYouTube(finalMp4Path, viralTitle, viralDescription, [
-        'Quotes', 'FinanceMindset', 'FinancialMindset', 'MoneyMindset', 'WealthMindset', 'FinanceQuotes', 'Finance', 'Investing', 'Wealth', 'Shorts', chosen.author.replace(/[^a-zA-Z0-9]/g, '')
+        'Finance', 'Investing', 'MoneyMindset', 'WealthBuilding', 'PersonalFinance', 'FinancialFreedom', 'StockMarket', 'WarrenBuffett', 'CompoundInterest', 'Shorts', 'SmartMoney', chosen.author.replace(/[^a-zA-Z0-9]/g, '')
       ], clientId, clientSecret, refreshToken);
     } catch (err) {
       console.warn(`[Finance Quote Reel] YouTube upload notice: ${err.message}`);

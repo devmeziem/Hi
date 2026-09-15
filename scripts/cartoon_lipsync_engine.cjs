@@ -81,58 +81,98 @@ function runRhubarb(wavPath, outputPathJson) {
 
 /**
  * High-accuracy fallback phoneme timing generator based on text and duration
+ * Implements English digraph parsing (th, ch, sh, ph, ou, ea, oo), syllable weighting,
+ * and realistic Preston Blair mouth viseme distributions.
  */
 function generateFallbackMouthCues(text, durationSeconds = 5.0) {
   const safeText = String(text || '').trim();
-  const words = safeText.split(/\s+/).filter(Boolean);
+  const rawWords = safeText.split(/\s+/).filter(Boolean);
   const cues = [];
 
-  if (words.length === 0 || durationSeconds <= 0) {
+  if (rawWords.length === 0 || durationSeconds <= 0) {
     return [{ start: 0, end: Math.max(0.5, durationSeconds), value: 'X' }];
   }
 
-  const wordDuration = (durationSeconds * 0.85) / words.length;
-  let currentTime = 0.1; // Small initial pause
+  // Digraph and dipthong lookup table -> viseme + timing weight
+  const DIGRAPH_MAP = [
+    { pattern: 'ph', viseme: 'F', weight: 1.0 },
+    { pattern: 'th', viseme: 'H', weight: 1.0 }, // tongue between teeth / open smile
+    { pattern: 'ch', viseme: 'B', weight: 1.1 },
+    { pattern: 'sh', viseme: 'B', weight: 1.1 },
+    { pattern: 'wh', viseme: 'E', weight: 1.2 },
+    { pattern: 'ee', viseme: 'D', weight: 1.3 },
+    { pattern: 'ea', viseme: 'D', weight: 1.3 },
+    { pattern: 'oo', viseme: 'E', weight: 1.4 },
+    { pattern: 'ou', viseme: 'C', weight: 1.4 },
+    { pattern: 'ow', viseme: 'C', weight: 1.4 },
+    { pattern: 'ai', viseme: 'C', weight: 1.3 },
+    { pattern: 'ay', viseme: 'C', weight: 1.3 },
+    { pattern: 'ck', viseme: 'B', weight: 0.9 }
+  ];
 
-  // Initial rest
-  cues.push({ start: 0, end: 0.1, value: 'X' });
+  const wordDuration = (durationSeconds * 0.88) / rawWords.length;
+  let currentTime = 0.08; // Natural vocal onset pause
 
-  for (let i = 0; i < words.length; i++) {
-    const word = words[i].toLowerCase().replace(/[^a-z]/g, '');
-    if (!word) continue;
+  // Initial neutral rest cue
+  cues.push({ start: 0, end: 0.08, value: 'X' });
 
-    const chars = word.split('');
-    const charDuration = wordDuration / Math.max(1, chars.length);
+  for (let i = 0; i < rawWords.length; i++) {
+    const rawWord = rawWords[i].toLowerCase();
+    const cleanWord = rawWord.replace(/[^a-z]/g, '');
+    const hasPunctuationPause = /[,.!?:]$/.test(rawWord);
 
-    for (let c = 0; c < chars.length; c++) {
-      const char = chars[c];
-      let shape = 'B'; // default consonant
+    if (!cleanWord) continue;
 
-      if (['a', 'o'].includes(char)) shape = 'C'; // wide open
-      else if (['e', 'i', 'y'].includes(char)) shape = 'D'; // smile/teeth
-      else if (['u', 'w'].includes(char)) shape = 'E'; // rounded
-      else if (['f', 'v'].includes(char)) shape = 'F'; // lip tuck
-      else if (['l', 'r'].includes(char)) shape = 'G'; // tongue/narrow
-      else if (['m', 'p', 'b'].includes(char)) shape = 'A'; // closed lips
-      else if (['s', 't', 'd', 'k', 'g', 'z', 'c', 'n'].includes(char)) shape = 'B';
+    // Parse word into phoneme tokens (handling digraphs)
+    const tokens = [];
+    let idx = 0;
+    while (idx < cleanWord.length) {
+      const twoChar = cleanWord.slice(idx, idx + 2);
+      const match = DIGRAPH_MAP.find(d => d.pattern === twoChar);
+      if (match) {
+        tokens.push({ viseme: match.viseme, weight: match.weight });
+        idx += 2;
+      } else {
+        const char = cleanWord[idx];
+        let shape = 'B';
+        let weight = 1.0;
 
-      const start = Number(currentTime.toFixed(3));
-      const end = Number((currentTime + charDuration).toFixed(3));
-      cues.push({ start, end, value: shape });
-      currentTime += charDuration;
+        if (['a', 'o'].includes(char)) { shape = 'C'; weight = 1.35; } // open vowel gets extra duration
+        else if (['e', 'i', 'y'].includes(char)) { shape = 'D'; weight = 1.25; }
+        else if (['u', 'w'].includes(char)) { shape = 'E'; weight = 1.3; }
+        else if (['f', 'v'].includes(char)) { shape = 'F'; weight = 1.05; }
+        else if (['l', 'r'].includes(char)) { shape = 'G'; weight = 1.0; }
+        else if (['m', 'p', 'b'].includes(char)) { shape = 'A'; weight = 1.1; } // bilabial closure
+        else if (['s', 't', 'd', 'k', 'g', 'z', 'c', 'n', 'j', 'q', 'x'].includes(char)) { shape = 'B'; weight = 0.95; }
+        else if (char === 'h') { shape = 'C'; weight = 0.8; }
+
+        tokens.push({ viseme: shape, weight });
+        idx += 1;
+      }
     }
 
-    // Small word gap
-    const gap = Math.min(0.08, (durationSeconds * 0.15) / words.length);
+    const totalWeight = tokens.reduce((sum, t) => sum + t.weight, 0) || 1;
+    const effectiveWordTime = wordDuration * (hasPunctuationPause ? 1.15 : 1.0);
+
+    for (const token of tokens) {
+      const tokenDuration = (token.weight / totalWeight) * effectiveWordTime;
+      const start = Number(currentTime.toFixed(3));
+      const end = Number((currentTime + tokenDuration).toFixed(3));
+      cues.push({ start, end, value: token.viseme });
+      currentTime += tokenDuration;
+    }
+
+    // Natural inter-word or clause pause
+    const gap = hasPunctuationPause ? 0.12 : Math.min(0.06, (durationSeconds * 0.10) / rawWords.length);
     cues.push({
       start: Number(currentTime.toFixed(3)),
       end: Number((currentTime + gap).toFixed(3)),
-      value: 'B'
+      value: hasPunctuationPause ? 'X' : 'B'
     });
     currentTime += gap;
   }
 
-  // Final rest
+  // Final neutral rest
   if (currentTime < durationSeconds) {
     cues.push({
       start: Number(currentTime.toFixed(3)),

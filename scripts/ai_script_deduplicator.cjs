@@ -183,8 +183,9 @@ function checkLocalSyntacticOverlap(candidateScriptText, recentScripts = []) {
     }
   }
 
+  // Enhanced strict threshold: reject if similarity >= 24% (prevents near-duplicate themes and recycled hooks)
   return {
-    isDuplicate: maxSimilarity >= 32, // Stricter threshold: anything above 32% similarity is rejected
+    isDuplicate: maxSimilarity >= 24,
     similarityScore: Math.round(maxSimilarity),
     matchedTitle,
     reason: matchReason || 'Unique vocabulary and structure'

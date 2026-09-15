@@ -33,10 +33,12 @@ function sanitizeToken(raw) {
 
 const BUFFER_API_KEY = sanitizeToken(RAW_BUFFER_API_KEY);
 
-// Specific channel overrides (defaulting to configured Voxam Fact, bones_ceo, and TikTok)
+// Specific channel overrides (defaulting to configured Voxam Fact and bones_ceo; primary TikTok disabled per instruction)
 const BUFFER_FACEBOOK_CHANNEL_ID = String(process.env.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52').trim();
 const BUFFER_INSTAGRAM_CHANNEL_ID = String(process.env.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31c1dcd8b9c702c467a38').trim();
-const BUFFER_TIKTOK_CHANNEL_ID = String(process.env.BUFFER_TIKTOK_CHANNEL_ID || '6a9b6f3f065799be468f596b').trim();
+// User mandate: Totally stop posting Archie to the first TikTok account / mike.the.tutor
+const BUFFER_TIKTOK_CHANNEL_ID = String(process.env.BUFFER_TIKTOK_CHANNEL_ID || '').trim();
+const DISABLE_FIRST_TIKTOK = true; // Permanently stops posting Archie to first TikTok account (mike.the.tutor / 6a9b6f3f065799be468f596b)
 
 // Media upload / Cloudinary options
 const CLOUDINARY_CLOUD_NAME = String(process.env.CLOUDINARY_CLOUD_NAME || '').trim();
@@ -352,8 +354,10 @@ async function resolveTargetChannels(discovered) {
     console.warn(`[Buffer Omnichannel] ⚠️ Could not automatically resolve Instagram channel for bones_ceo.`);
   }
 
-  // 3. TikTok Account (optional - skip locked channels)
-  if (isValidChannelId(BUFFER_TIKTOK_CHANNEL_ID)) {
+  // 3. TikTok Account (user mandate: totally stop posting Archie to first TikTok account / mike.the.tutor)
+  if (DISABLE_FIRST_TIKTOK) {
+    console.log(`[Buffer Omnichannel] 🛑 Primary TikTok account (mike.the.tutor) is disabled per user directive. Omitting from broadcast.`);
+  } else if (isValidChannelId(BUFFER_TIKTOK_CHANNEL_ID)) {
     const matched = discovered.all.find(c => c.id === BUFFER_TIKTOK_CHANNEL_ID && !c.isLocked);
     targets.push(matched || { id: BUFFER_TIKTOK_CHANNEL_ID, service: 'tiktok', name: 'TikTok Account' });
   } else if (discovered.tiktok.length > 0) {
@@ -635,18 +639,18 @@ function buildOmnichannelCaption(metadata = {}, service = 'generic') {
     : ['#ArchieExplains', '#EverydayScience', '#Tech', '#AI', '#Engineering', '#HowItWorks', '#DidYouKnow'];
 
   if (service === 'tiktok') {
-    const ttTags = Array.from(new Set([...baseTags, '#TikTokTech', '#TechTok', '#FYP', '#LearnOnTikTok', '#Shorts']));
+    const ttTags = Array.from(new Set([...baseTags, '#TikTokTech', '#TechTok', '#FYP', '#LearnOnTikTok', '#ScienceFacts', '#DidYouKnow', '#ArchieLab', '#Shorts']));
     return `⚡ ${cleanTitle.toUpperCase()}\n\n${fact}\n\n${citation}\n\nWhat science or tech mystery should Archie break down next? Let us know below!\n\n${ttTags.join(' ')}`.trim();
   }
 
   if (service === 'instagram') {
-    const igTags = Array.from(new Set([...baseTags, '#ReelsInstagram', '#ScienceReels', '#TechNews', '#InstaScience', '#ViralScience', '#Shorts']));
+    const igTags = Array.from(new Set([...baseTags, '#ReelsInstagram', '#ScienceReels', '#ScienceFacts', '#DidYouKnow', '#ArchieLab', '#InstaScience', '#ViralScience', '#Shorts']));
     return `⚡ ${cleanTitle.toUpperCase()}\n\n${fact}\n\n${citation}\n\nFollow @bones_ceo for daily animated science & tech insights.\n\n${igTags.join(' ')}`.trim();
   }
 
   if (service === 'facebook') {
-    const fbTags = Array.from(new Set([...baseTags, '#FacebookReels', '#ViralTech', '#ScienceExplained', '#VoxamFact', '#Shorts']));
-    return `⚡ ${cleanTitle.toUpperCase()}\n\n${fact}\n\n${citation}\n\nFollow Voxam Fact for daily mind-blowing everyday science & engineering comparisons!\n\n${fbTags.join(' ')}`.trim();
+    const fbTags = Array.from(new Set([...baseTags, '#FacebookReels', '#ScienceFacts', '#DidYouKnow', '#ScienceExplained', '#ArchieLab', '#Shorts']));
+    return `⚡ ${cleanTitle.toUpperCase()}\n\n${fact}\n\n${citation}\n\nFollow Archie Lab for daily mind-blowing everyday science & engineering comparisons!\n\n${fbTags.join(' ')}`.trim();
   }
 
   return `⚡ ${cleanTitle.toUpperCase()}\n\n${fact}\n\n${citation}\n\n${baseTags.join(' ')}`.trim();
@@ -881,15 +885,24 @@ async function publishArchieOmnichannel(options = {}) {
     }
 
     const ttId = BUFFER_TIKTOK_CHANNEL_ID;
-    if (isValidChannelId(ttId)) {
+    if (!DISABLE_FIRST_TIKTOK && isValidChannelId(ttId)) {
       fallbackList.push({ id: ttId, service: 'tiktok', displayName: 'TikTok Account', name: 'TikTok Account' });
     }
 
     targetChannels = fallbackList;
   }
 
-  // Filter only valid channel IDs
+  // Filter out disabled TikTok and invalid channel IDs
   targetChannels = targetChannels.filter(ch => {
+    if (DISABLE_FIRST_TIKTOK && ch.service === 'tiktok') {
+      console.log(`[Buffer Omnichannel] 🛑 Excluding primary TikTok channel (${ch.name || ch.displayName}) per user instruction.`);
+      return false;
+    }
+    const nameLower = `${ch.name || ''} ${ch.displayName || ''}`.toLowerCase();
+    if (nameLower.includes('mike.the.tutor') || nameLower.includes('mikethetutor') || ch.id === '6a9b6f3f065799be468f596b') {
+      console.log(`[Buffer Omnichannel] 🛑 Omitted account "${ch.name || ch.displayName}" (mike.the.tutor) per user mandate.`);
+      return false;
+    }
     if (!isValidChannelId(ch.id)) {
       console.warn(`[Buffer Omnichannel] ⚠️ Omitted channel ${ch.name} because its ID "${ch.id}" is not a valid 24-char ObjectId.`);
       return false;
