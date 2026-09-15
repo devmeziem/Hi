@@ -1,6 +1,19 @@
 {
   "videos": [
     {
+      "id": "fin_quote_1789514966469",
+      "channelId": "finance_saas",
+      "type": "financial_quote_reel_5s",
+      "title": "Finance Mindset — Peter Lynch Quotes #Shorts",
+      "author": "Peter Lynch",
+      "credentials": "Legendary Manager, Fidelity Magellan Fund • 29.2% Annual Return",
+      "reference": "One Up on Wall Street (1989)",
+      "duration": 5,
+      "videoPath": "/home/runner/work/Hi/Hi/rendered_videos/fin_quote_5s_1789514966469.mp4",
+      "loopable": true,
+      "publishedAt": "2026-09-15T23:29:30.292Z"
+    },
+    {
       "id": "fin_quote_1789501130946",
       "channelId": "finance_saas",
       "type": "financial_quote_reel_5s",
