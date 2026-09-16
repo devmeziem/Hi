@@ -1,6 +1,19 @@
 {
   "videos": [
     {
+      "id": "fin_quote_1789587016595",
+      "channelId": "finance_saas",
+      "type": "financial_quote_reel_5s",
+      "title": "Finance Mindset — Ray Dalio Quotes #Shorts",
+      "author": "Ray Dalio",
+      "credentials": "Founder, Bridgewater Associates • Harvard Business School M.B.A.",
+      "reference": "Principles: Life and Work (Part 2)",
+      "duration": 5,
+      "videoPath": "/home/runner/work/Hi/Hi/rendered_videos/fin_quote_5s_1789587016595.mp4",
+      "loopable": true,
+      "publishedAt": "2026-09-16T19:30:20.261Z"
+    },
+    {
       "id": "fin_quote_1789557572564",
       "channelId": "finance_saas",
       "type": "financial_quote_reel_5s",
