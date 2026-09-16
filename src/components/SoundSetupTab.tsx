@@ -17,8 +17,7 @@ import {
   Info, 
   ShieldCheck,
   Zap,
-  Sliders,
-  FolderMusic
+  Sliders
 } from 'lucide-react';
 
 export const SoundSetupTab: React.FC = () => {

@@ -59,9 +59,129 @@
           "lastUpdated": "2026-09-15T17:39:43.728Z"
         }
       }
+    },
+    {
+      "date": "2026-09-16",
+      "totals": {
+        "views": 0,
+        "subscribers": 0,
+        "videoCount": 0
+      },
+      "channels": {
+        "ch1_finance": {
+          "id": "ch1_finance",
+          "name": "Fin Blueprint",
+          "handle": "@FinBlueprint",
+          "niche": "finance_saas",
+          "subscribers": 0,
+          "views": 0,
+          "videoCount": 0,
+          "lastUpdated": "2026-09-16T12:15:02.215Z"
+        },
+        "ch2_stoic": {
+          "id": "ch2_stoic",
+          "name": "The Stoic Architect",
+          "handle": "@StoicArchitect",
+          "niche": "motivation_stoicism",
+          "subscribers": 0,
+          "views": 0,
+          "videoCount": 0,
+          "lastUpdated": "2026-09-16T12:15:02.238Z"
+        },
+        "ch3_archie": {
+          "id": "ch3_archie",
+          "name": "Archie Lab",
+          "handle": "@ArchieLabFacts",
+          "niche": "cartoon_factory",
+          "subscribers": 0,
+          "views": 0,
+          "videoCount": 0,
+          "lastUpdated": "2026-09-16T12:15:02.254Z"
+        },
+        "ch4_movie_brand": {
+          "id": "ch4_movie_brand",
+          "name": "Cinema Vanguard / Episodic",
+          "handle": "@CinemaVanguard",
+          "niche": "movie_brand",
+          "subscribers": 0,
+          "views": 0,
+          "videoCount": 0,
+          "lastUpdated": "2026-09-16T12:15:02.271Z"
+        },
+        "ch5_teen_motivation": {
+          "id": "ch5_teen_motivation",
+          "name": "Apex Discipline / Teen Motivation",
+          "handle": "@ApexYouthFocus",
+          "niche": "teen_motivation",
+          "subscribers": 0,
+          "views": 0,
+          "videoCount": 0,
+          "lastUpdated": "2026-09-16T12:15:02.288Z"
+        }
+      }
+    },
+    {
+      "date": "2026-09-16",
+      "totals": {
+        "views": 0,
+        "subscribers": 0,
+        "videoCount": 0
+      },
+      "channels": {
+        "ch1_finance": {
+          "id": "ch1_finance",
+          "name": "Fin Blueprint",
+          "handle": "@FinBlueprint",
+          "niche": "finance_saas",
+          "subscribers": 0,
+          "views": 0,
+          "videoCount": 0,
+          "lastUpdated": "2026-09-16T12:15:40.380Z"
+        },
+        "ch2_stoic": {
+          "id": "ch2_stoic",
+          "name": "The Stoic Architect",
+          "handle": "@StoicArchitect",
+          "niche": "motivation_stoicism",
+          "subscribers": 0,
+          "views": 0,
+          "videoCount": 0,
+          "lastUpdated": "2026-09-16T12:15:40.405Z"
+        },
+        "ch3_archie": {
+          "id": "ch3_archie",
+          "name": "Archie Lab",
+          "handle": "@ArchieLabFacts",
+          "niche": "cartoon_factory",
+          "subscribers": 0,
+          "views": 0,
+          "videoCount": 0,
+          "lastUpdated": "2026-09-16T12:15:40.432Z"
+        },
+        "ch4_movie_brand": {
+          "id": "ch4_movie_brand",
+          "name": "Cinema Vanguard / Episodic",
+          "handle": "@CinemaVanguard",
+          "niche": "movie_brand",
+          "subscribers": 0,
+          "views": 0,
+          "videoCount": 0,
+          "lastUpdated": "2026-09-16T12:15:40.450Z"
+        },
+        "ch5_teen_motivation": {
+          "id": "ch5_teen_motivation",
+          "name": "Apex Discipline / Teen Motivation",
+          "handle": "@ApexYouthFocus",
+          "niche": "teen_motivation",
+          "subscribers": 0,
+          "views": 0,
+          "videoCount": 0,
+          "lastUpdated": "2026-09-16T12:15:40.470Z"
+        }
+      }
     }
   ],
-  "lastSync": "2026-09-15T17:39:43.604Z",
+  "lastSync": "2026-09-16T12:15:40.313Z",
   "channels": {
     "ch1_finance": {
       "id": "ch1_finance",
@@ -71,7 +191,7 @@
       "subscribers": 0,
       "views": 0,
       "videoCount": 0,
-      "lastUpdated": "2026-09-15T17:39:43.663Z"
+      "lastUpdated": "2026-09-16T12:15:40.380Z"
     },
     "ch2_stoic": {
       "id": "ch2_stoic",
@@ -81,7 +201,7 @@
       "subscribers": 0,
       "views": 0,
       "videoCount": 0,
-      "lastUpdated": "2026-09-15T17:39:43.681Z"
+      "lastUpdated": "2026-09-16T12:15:40.405Z"
     },
     "ch3_archie": {
       "id": "ch3_archie",
@@ -91,7 +211,7 @@
       "subscribers": 0,
       "views": 0,
       "videoCount": 0,
-      "lastUpdated": "2026-09-15T17:39:43.697Z"
+      "lastUpdated": "2026-09-16T12:15:40.432Z"
     },
     "ch4_movie_brand": {
       "id": "ch4_movie_brand",
@@ -101,7 +221,7 @@
       "subscribers": 0,
       "views": 0,
       "videoCount": 0,
-      "lastUpdated": "2026-09-15T17:39:43.711Z"
+      "lastUpdated": "2026-09-16T12:15:40.450Z"
     },
     "ch5_teen_motivation": {
       "id": "ch5_teen_motivation",
@@ -111,7 +231,7 @@
       "subscribers": 0,
       "views": 0,
       "videoCount": 0,
-      "lastUpdated": "2026-09-15T17:39:43.728Z"
+      "lastUpdated": "2026-09-16T12:15:40.470Z"
     }
   },
   "totals": {

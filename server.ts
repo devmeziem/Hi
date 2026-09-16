@@ -1203,6 +1203,80 @@ Respond STRICTLY with valid raw JSON without markdown:
     return;
   }
 
+  // Movie Brand Workflow: Manifest & Generator
+  if (urlPath === '/api/movie/manifest' && req.method === 'GET') {
+    try {
+      const manifestPath = path.join(__dirname, 'test_artifacts', 'movie_episodes_manifest.json');
+      if (fs.existsSync(manifestPath)) {
+        const data = fs.readFileSync(manifestPath, 'utf8');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(data);
+      } else {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify([]));
+      }
+    } catch (err: any) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
+  if (urlPath === '/api/movie/generate' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', async () => {
+      try {
+        const payload = body ? JSON.parse(body) : {};
+        const { generateMovieEpisode } = await import('./scripts/generate_movie_brand_episode.cjs');
+        const episode = await generateMovieEpisode(payload.episodeIndex || 0);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, episode }));
+      } catch (err: any) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // Teen Motivation Workflow: Manifest & Generator
+  if (urlPath === '/api/motivation/manifest' && req.method === 'GET') {
+    try {
+      const manifestPath = path.join(__dirname, 'test_artifacts', 'teen_motivation_manifest.json');
+      if (fs.existsSync(manifestPath)) {
+        const data = fs.readFileSync(manifestPath, 'utf8');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(data);
+      } else {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify([]));
+      }
+    } catch (err: any) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
+  if (urlPath === '/api/motivation/generate' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', async () => {
+      try {
+        const payload = body ? JSON.parse(body) : {};
+        const { generateTeenMotivationReel } = await import('./scripts/generate_teen_motivation_reel.cjs');
+        const reel = await generateTeenMotivationReel(payload.topicIndex || 0);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, reel }));
+      } catch (err: any) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
   // API Health Check
   if (urlPath === '/api/health' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -1211,7 +1285,7 @@ Respond STRICTLY with valid raw JSON without markdown:
   }
 
   // Rendered Videos Static & Streaming File Serving with HTTP 206 Partial Content
-  if (urlPath === '/api/stream-video' || urlPath.startsWith('/rendered_videos/') || urlPath.includes('/rendered_videos/')) {
+  if (urlPath === '/api/stream-video' || urlPath.startsWith('/rendered_videos/') || urlPath.includes('/rendered_videos/') || urlPath.includes('/test_artifacts/')) {
     let rawPath = urlPath;
     if (urlPath === '/api/stream-video') {
       const urlObj = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
@@ -1221,11 +1295,15 @@ Respond STRICTLY with valid raw JSON without markdown:
     // Sanitize and extract file name
     const cleanFileName = rawPath
       .replace(/^.*\/rendered_videos\//, '')
+      .replace(/^.*\/test_artifacts\//, '')
       .replace(/^\/+/, '')
       .split('?')[0];
 
     const possiblePaths = [
       path.join(__dirname, 'rendered_videos', cleanFileName),
+      path.join(__dirname, 'test_artifacts', cleanFileName),
+      path.join(__dirname, 'test_artifacts', 'movie_episodes', cleanFileName),
+      path.join(__dirname, 'test_artifacts', 'motivation_reels', cleanFileName),
       path.join(__dirname, cleanFileName),
       rawPath.startsWith('/') ? rawPath : path.join(__dirname, rawPath)
     ];

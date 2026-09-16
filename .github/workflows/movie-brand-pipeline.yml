@@ -1,0 +1,99 @@
+name: Cinema Vanguard - Episodic Movie Series Pipeline (Channel 4)
+
+on:
+  schedule:
+    # Daily episode release at 14:00 UTC (15:00 WAT)
+    - cron: '0 14 * * *'
+  workflow_dispatch:
+    inputs:
+      episode_index:
+        description: 'Episode Index (0 = Breach at Neon Gate, 1 = Blackout Protocol)'
+        required: false
+        default: '0'
+        type: choice
+        options:
+          - '0'
+          - '1'
+      auto_publish:
+        description: 'Publish Live to YouTube (Default FALSE: held in PENDING_REVIEW for manual check)'
+        required: true
+        default: false
+        type: boolean
+      dry_run:
+        description: 'Dry Run Mode (Do not upload or post to CDN)'
+        required: true
+        default: false
+        type: boolean
+      sound_url:
+        description: 'Custom Soundtrack Audio URL (Optional)'
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  movie_brand_pipeline:
+    name: Build & Render Episodic Mini-Movie Reel
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install FFmpeg Media Engine
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Verify FFmpeg Installation
+        run: ffmpeg -version
+
+      - name: Generate Episodic Movie Reel
+        env:
+          EPISODE_INDEX: ${{ github.event.inputs.episode_index || '0' }}
+          AUTO_PUBLISH: ${{ github.event.inputs.auto_publish || 'false' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          MOVIE_MUSIC_URL: ${{ github.event.inputs.sound_url }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH4 || secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH4 || secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH4 || secrets.YOUTUBE_REFRESH_TOKEN_CH1 }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME || 'voxawell' }}
+          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET || 'phwka7ak' }}
+        run: |
+          echo "=== 🎬 Generating Episodic Movie Reel (Index: $EPISODE_INDEX) ==="
+          node scripts/generate_movie_brand_episode.cjs
+          echo "=== Movie Episode Assembled Successfully ==="
+
+      - name: Archive Movie Video Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: movie-episode-reel
+          path: |
+            test_artifacts/movie_episodes/*.mp4
+            test_artifacts/movie_episodes_manifest.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Commit & Push Episode Manifest
+        if: always()
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -f test_artifacts/movie_episodes_manifest.json ]; then
+            git add -f test_artifacts/movie_episodes_manifest.json
+          fi
+          if git diff --staged --quiet; then
+            echo "No manifest changes staged for commit."
+          else
+            git commit -m "chore(sync): automated episodic movie manifest update [skip ci]"
+            git pull --rebase origin ${{ github.ref_name }} || true
+            git push origin HEAD:${{ github.ref_name }}
+          fi

@@ -11,20 +11,56 @@ function apiProxyPlugin(): Plugin {
       server.middlewares.use(async (req, res, next) => {
         const url = req.url?.split('?')[0] || '';
 
-        // Serve rendered_videos mp4 and media files
-        if (url.startsWith('/rendered_videos/')) {
-          const rel = url.replace('/rendered_videos/', '');
-          const filePath = path.join(process.cwd(), 'rendered_videos', rel);
-          if (fs.existsSync(filePath) && !fs.statSync(filePath).isDirectory()) {
+        // Serve rendered_videos mp4 and media files + test_artifacts + /api/stream-video
+        if (url.startsWith('/rendered_videos/') || url.startsWith('/test_artifacts/') || url === '/api/stream-video') {
+          let rel = url;
+          if (url === '/api/stream-video') {
+            const urlObj = new URL(req.url || '', 'http://localhost:3000');
+            rel = urlObj.searchParams.get('file') || urlObj.searchParams.get('path') || '';
+          }
+
+          const cleanFileName = rel
+            .replace(/^.*\/rendered_videos\//, '')
+            .replace(/^.*\/test_artifacts\//, '')
+            .replace(/^\/+/, '');
+
+          const possiblePaths = [
+            path.join(process.cwd(), 'rendered_videos', cleanFileName),
+            path.join(process.cwd(), 'test_artifacts', cleanFileName),
+            path.join(process.cwd(), 'test_artifacts', 'movie_episodes', cleanFileName),
+            path.join(process.cwd(), 'test_artifacts', 'motivation_reels', cleanFileName),
+            path.join(process.cwd(), cleanFileName),
+            rel.startsWith('/') ? rel : path.join(process.cwd(), rel)
+          ];
+
+          const filePath = possiblePaths.find(p => fs.existsSync(p) && !fs.statSync(p).isDirectory());
+
+          if (filePath && fs.existsSync(filePath)) {
             const stat = fs.statSync(filePath);
             const ext = path.extname(filePath).toLowerCase();
-            const mime = ext === '.mp4' ? 'video/mp4' : ext === '.mp3' ? 'audio/mpeg' : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'application/octet-stream';
-            res.setHeader('Content-Type', mime);
-            res.setHeader('Content-Length', stat.size);
-            res.setHeader('Accept-Ranges', 'bytes');
-            res.statusCode = 200;
-            fs.createReadStream(filePath).pipe(res);
-            return;
+            const mime = ext === '.mp4' ? 'video/mp4' : ext === '.mp3' ? 'audio/mpeg' : ext === '.wav' ? 'audio/wav' : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : ext === '.png' ? 'image/png' : 'application/octet-stream';
+            const range = req.headers.range;
+
+            if (range) {
+              const parts = range.replace(/bytes=/, '').split('-');
+              const start = parseInt(parts[0], 10);
+              const end = parts[1] ? parseInt(parts[1], 10) : stat.size - 1;
+              const chunkSize = (end - start) + 1;
+              res.statusCode = 206;
+              res.setHeader('Content-Range', `bytes ${start}-${end}/${stat.size}`);
+              res.setHeader('Accept-Ranges', 'bytes');
+              res.setHeader('Content-Length', chunkSize);
+              res.setHeader('Content-Type', mime);
+              fs.createReadStream(filePath, { start, end }).pipe(res);
+              return;
+            } else {
+              res.statusCode = 200;
+              res.setHeader('Content-Type', mime);
+              res.setHeader('Content-Length', stat.size);
+              res.setHeader('Accept-Ranges', 'bytes');
+              fs.createReadStream(filePath).pipe(res);
+              return;
+            }
           }
         }
 
@@ -713,6 +749,136 @@ Respond STRICTLY with raw JSON:
               res.setHeader('Content-Type', 'application/json');
               res.statusCode = 500;
               res.end(JSON.stringify({ error: err.message || 'YouTube Direct Publish Failed' }));
+            }
+          });
+          return;
+        }
+
+        // Daily Real-Time Channel Analytics Endpoints
+        if (url === '/api/analytics' && req.method === 'GET') {
+          try {
+            const storePath = path.join(process.cwd(), 'data', 'channel_analytics.json');
+            const fallbackPath = path.join(process.cwd(), 'test_artifacts', 'channel_analytics.json');
+            const target = fs.existsSync(storePath) ? storePath : fallbackPath;
+            if (fs.existsSync(target)) {
+              const data = JSON.parse(fs.readFileSync(target, 'utf8'));
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 200;
+              res.end(JSON.stringify(data));
+            } else {
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 200;
+              res.end(JSON.stringify({ history: [], lastSync: null }));
+            }
+          } catch (err: any) {
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: err.message }));
+          }
+          return;
+        }
+
+        if (url === '/api/analytics/sync' && req.method === 'POST') {
+          try {
+            execSync('node scripts/fetch_realtime_channel_analytics.cjs', { cwd: process.cwd(), timeout: 20000 });
+            const storePath = path.join(process.cwd(), 'data', 'channel_analytics.json');
+            const fallbackPath = path.join(process.cwd(), 'test_artifacts', 'channel_analytics.json');
+            const target = fs.existsSync(storePath) ? storePath : fallbackPath;
+            const updated = fs.existsSync(target) ? JSON.parse(fs.readFileSync(target, 'utf8')) : {};
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 200;
+            res.end(JSON.stringify({ success: true, analytics: updated }));
+          } catch (err: any) {
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 500;
+            res.end(JSON.stringify({ success: false, error: err.message }));
+          }
+          return;
+        }
+
+        // Movie Brand Episodic Series Endpoints
+        if (url === '/api/movie/manifest' && req.method === 'GET') {
+          try {
+            const manifestPath = path.join(process.cwd(), 'test_artifacts', 'movie_episodes_manifest.json');
+            if (fs.existsSync(manifestPath)) {
+              const data = fs.readFileSync(manifestPath, 'utf8');
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 200;
+              res.end(data);
+            } else {
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 200;
+              res.end(JSON.stringify([]));
+            }
+          } catch (err: any) {
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: err.message }));
+          }
+          return;
+        }
+
+        if (url === '/api/movie/generate' && req.method === 'POST') {
+          let body = '';
+          req.on('data', chunk => { body += chunk; });
+          req.on('end', async () => {
+            try {
+              const payload = body ? JSON.parse(body) : {};
+              const epIdx = payload.episodeIndex || 0;
+              execSync(`node -e "require('./scripts/generate_movie_brand_episode.cjs').generateMovieEpisode(${epIdx})"`, { cwd: process.cwd(), timeout: 60000 });
+              const manifestPath = path.join(process.cwd(), 'test_artifacts', 'movie_episodes_manifest.json');
+              const list = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, 'utf8')) : [];
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 200;
+              res.end(JSON.stringify({ success: true, episode: list[0] || null }));
+            } catch (err: any) {
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 500;
+              res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+          });
+          return;
+        }
+
+        // Teen Motivation Workflow Endpoints
+        if (url === '/api/motivation/manifest' && req.method === 'GET') {
+          try {
+            const manifestPath = path.join(process.cwd(), 'test_artifacts', 'teen_motivation_manifest.json');
+            if (fs.existsSync(manifestPath)) {
+              const data = fs.readFileSync(manifestPath, 'utf8');
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 200;
+              res.end(data);
+            } else {
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 200;
+              res.end(JSON.stringify([]));
+            }
+          } catch (err: any) {
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: err.message }));
+          }
+          return;
+        }
+
+        if (url === '/api/motivation/generate' && req.method === 'POST') {
+          let body = '';
+          req.on('data', chunk => { body += chunk; });
+          req.on('end', async () => {
+            try {
+              const payload = body ? JSON.parse(body) : {};
+              const tIdx = payload.topicIndex || 0;
+              execSync(`node -e "require('./scripts/generate_teen_motivation_reel.cjs').generateTeenMotivationReel(${tIdx})"`, { cwd: process.cwd(), timeout: 60000 });
+              const manifestPath = path.join(process.cwd(), 'test_artifacts', 'teen_motivation_manifest.json');
+              const list = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, 'utf8')) : [];
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 200;
+              res.end(JSON.stringify({ success: true, reel: list[0] || null }));
+            } catch (err: any) {
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 500;
+              res.end(JSON.stringify({ success: false, error: err.message }));
             }
           });
           return;

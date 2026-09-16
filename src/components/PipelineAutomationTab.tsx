@@ -425,6 +425,145 @@ jobs:
           BUFFER_API_KEY: \${{ github.event.inputs.buffer_token || secrets.BUFFER_API_KEY }}
         run: node scripts/list_buffer_channels.cjs`;
 
+  const workflowMovieBrandYaml = `name: Cinema Vanguard - Episodic Movie Series Pipeline (Channel 4)
+on:
+  schedule:
+    # Daily episode release at 14:00 UTC (15:00 WAT)
+    - cron: '0 14 * * *'
+  workflow_dispatch:
+    inputs:
+      episode_index:
+        description: 'Episode Index (0 = Breach at Neon Gate, 1 = Blackout Protocol)'
+        required: false
+        default: '0'
+        type: choice
+        options:
+          - '0'
+          - '1'
+      auto_publish:
+        description: 'Publish Live to YouTube (Default FALSE: held in PENDING_REVIEW for manual check)'
+        required: true
+        default: false
+        type: boolean
+      dry_run:
+        description: 'Dry Run Mode (Do not upload or post to CDN)'
+        required: true
+        default: false
+        type: boolean
+      sound_url:
+        description: 'Custom Soundtrack Audio URL (Optional)'
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  movie_brand_pipeline:
+    name: Build & Render Episodic Mini-Movie Reel
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Generate Episodic Movie Reel
+        env:
+          EPISODE_INDEX: \${{ github.event.inputs.episode_index || '0' }}
+          AUTO_PUBLISH: \${{ github.event.inputs.auto_publish || 'false' }}
+          DRY_RUN: \${{ github.event.inputs.dry_run || 'false' }}
+          MOVIE_MUSIC_URL: \${{ github.event.inputs.sound_url }}
+          GEMINI_API_KEY: \${{ secrets.GEMINI_API_KEY }}
+          YOUTUBE_CLIENT_ID: \${{ secrets.YOUTUBE_CLIENT_ID_CH4 || secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: \${{ secrets.YOUTUBE_CLIENT_SECRET_CH4 || secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: \${{ secrets.YOUTUBE_REFRESH_TOKEN_CH4 || secrets.YOUTUBE_REFRESH_TOKEN_CH1 }}
+          CLOUDINARY_CLOUD_NAME: \${{ secrets.CLOUDINARY_CLOUD_NAME || 'voxawell' }}
+          CLOUDINARY_UPLOAD_PRESET: \${{ secrets.CLOUDINARY_UPLOAD_PRESET || 'phwka7ak' }}
+        run: |
+          echo "=== 🎬 Generating Episodic Movie Reel ==="
+          node scripts/generate_movie_brand_episode.cjs
+      - name: Archive Movie Video Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: movie-episode-reel
+          path: |
+            test_artifacts/movie_episodes/*.mp4
+            test_artifacts/movie_episodes_manifest.json
+          if-no-files-found: ignore
+          retention-days: 7`;
+
+  const workflowTeenMotivationYaml = `name: Apex Discipline - Teen & Youth Motivation Pipeline (Channel 5)
+on:
+  schedule:
+    # Daily evening motivation drop at 19:00 UTC (20:00 WAT)
+    - cron: '0 19 * * *'
+  workflow_dispatch:
+    inputs:
+      topic_index:
+        description: 'Motivation Topic (0 = Dopamine Detox, 1 = Deep Study Focus, 2 = Gym & Iron Discipline)'
+        required: false
+        default: '0'
+        type: choice
+        options:
+          - '0'
+          - '1'
+          - '2'
+      auto_publish:
+        description: 'Publish Live to YouTube (Default FALSE: held in PENDING_REVIEW for manual check)'
+        required: true
+        default: false
+        type: boolean
+      dry_run:
+        description: 'Dry Run Mode (Do not upload or post to CDN)'
+        required: true
+        default: false
+        type: boolean
+      sound_url:
+        description: 'Custom Background Audio URL (Optional)'
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  teen_motivation_pipeline:
+    name: Build & Render Teen Motivation Reel
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Generate Teen Motivation Reel
+        env:
+          TOPIC_INDEX: \${{ github.event.inputs.topic_index || '0' }}
+          AUTO_PUBLISH: \${{ github.event.inputs.auto_publish || 'false' }}
+          DRY_RUN: \${{ github.event.inputs.dry_run || 'false' }}
+          MOTIVATION_MUSIC_URL: \${{ github.event.inputs.sound_url }}
+          GEMINI_API_KEY: \${{ secrets.GEMINI_API_KEY }}
+          YOUTUBE_CLIENT_ID: \${{ secrets.YOUTUBE_CLIENT_ID_CH5 || secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: \${{ secrets.YOUTUBE_CLIENT_SECRET_CH5 || secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: \${{ secrets.YOUTUBE_REFRESH_TOKEN_CH5 || secrets.YOUTUBE_REFRESH_TOKEN_CH1 }}
+          CLOUDINARY_CLOUD_NAME: \${{ secrets.CLOUDINARY_CLOUD_NAME || 'voxawell' }}
+          CLOUDINARY_UPLOAD_PRESET: \${{ secrets.CLOUDINARY_UPLOAD_PRESET || 'phwka7ak' }}
+        run: |
+          echo "=== 🔥 Generating Teen Motivation Reel ==="
+          node scripts/generate_teen_motivation_reel.cjs
+      - name: Archive Motivation Video Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: teen-motivation-reel
+          path: |
+            test_artifacts/motivation_reels/*.mp4
+            test_artifacts/teen_motivation_manifest.json
+          if-no-files-found: ignore
+          retention-days: 7`;
+
   return (
     <div className="space-y-8 w-full max-w-full min-w-0 overflow-x-hidden">
       {/* Header Banner */}
@@ -440,18 +579,18 @@ jobs:
               Autonomous GitHub Actions Factory
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-3xl leading-relaxed">
-              Every stage is decoupled to eliminate rate-limits, prevent FFmpeg crashes, and ensure strict persona compliance across all 3 channels without mixing video assets.
+              Every stage is decoupled to eliminate rate-limits, prevent FFmpeg crashes, and ensure strict persona compliance across all 5 channels without mixing video assets.
             </p>
           </div>
 
           <div className="flex flex-col gap-2 p-4 bg-slate-950/80 border border-slate-800 rounded-2xl shrink-0 font-mono text-xs text-slate-300 w-full sm:w-auto">
             <div className="flex items-center justify-between gap-4">
               <span className="text-slate-400">Daily Videos:</span>
-              <span className="text-emerald-400 font-bold">12 Total (4 / Channel)</span>
+              <span className="text-emerald-400 font-bold">14+ Total (5 Channels)</span>
             </div>
             <div className="flex items-center justify-between gap-4">
               <span className="text-slate-400">Schedule:</span>
-              <span className="text-indigo-400 font-bold">08:00, 12:00, 16:00, 20:00 WAT</span>
+              <span className="text-indigo-400 font-bold">Staggered (06:00 - 23:00 UTC)</span>
             </div>
             <div className="flex items-center justify-between gap-4">
               <span className="text-slate-400">Cloud Storage:</span>
@@ -469,20 +608,20 @@ jobs:
               <CheckCircle2 className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">Daily Production Cadence: Exactly 4 Videos / Day Per Channel</h2>
+              <h2 className="text-lg font-bold text-white">Daily Production Cadence: 5 Autonomous Brands</h2>
               <p className="text-xs text-indigo-300/80">Anti-Spam Enforced • Strict 1-Video-Per-Trigger Execution • Zero Duplicate Runs</p>
             </div>
           </div>
           <span className="px-3 py-1 bg-indigo-950 border border-indigo-800 text-indigo-300 text-xs font-mono rounded-full font-bold">
-            12 Total Daily Videos
+            14+ Total Daily Releases
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 pt-1">
           {/* Fin */}
           <div className="p-4 bg-slate-950 border border-emerald-900/40 rounded-2xl space-y-2">
             <div className="flex items-center justify-between">
-              <div className="text-sm font-bold text-emerald-300">Channel 1: Fin Blueprint</div>
+              <div className="text-sm font-bold text-emerald-300">Ch 1: Fin Blueprint</div>
               <span className="text-[11px] font-mono font-bold text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-800/60">4 Reels</span>
             </div>
             <div className="text-xs text-slate-300 font-semibold">4 Reels Daily (3s &amp; 5s Alternating)</div>
@@ -492,13 +631,13 @@ jobs:
               <li>• 16:00 UTC: 3s Quote Reel</li>
               <li>• 21:00 UTC: 5s Quote Reel</li>
             </ul>
-            <div className="text-[11px] text-emerald-400/90 pt-1">High-retention rapid wealth &amp; micro-business wisdom.</div>
+            <div className="text-[11px] text-emerald-400/90 pt-1">Rapid wealth &amp; micro-business wisdom.</div>
           </div>
 
           {/* Stoic */}
           <div className="p-4 bg-slate-950 border border-amber-900/40 rounded-2xl space-y-2">
             <div className="flex items-center justify-between">
-              <div className="text-sm font-bold text-amber-300">Channel 2: Stoic Architect</div>
+              <div className="text-sm font-bold text-amber-300">Ch 2: Stoic Architect</div>
               <span className="text-[11px] font-mono font-bold text-amber-400 bg-amber-950/80 px-2 py-0.5 rounded-full border border-amber-800/60">1 Short + 3 Reels</span>
             </div>
             <div className="text-xs text-slate-300 font-semibold">1 Full Short + 3 Reels Daily (3s / 5s)</div>
@@ -508,23 +647,55 @@ jobs:
               <li>• 17:00 UTC: 5s Mystery Reel</li>
               <li>• 22:00 UTC: 3s Mystery Reel</li>
             </ul>
-            <div className="text-[11px] text-amber-400/90 pt-1">Deep mental armor + mystery looping quote reels.</div>
+            <div className="text-[11px] text-amber-400/90 pt-1">Deep mental armor &amp; ancient discipline.</div>
           </div>
 
           {/* Archie */}
           <div className="p-4 bg-slate-950 border border-cyan-900/40 rounded-2xl space-y-2">
             <div className="flex items-center justify-between">
-              <div className="text-sm font-bold text-cyan-300">Channel 3: Archie Explains</div>
+              <div className="text-sm font-bold text-cyan-300">Ch 3: Archie Explains</div>
               <span className="text-[11px] font-mono font-bold text-cyan-400 bg-cyan-950/80 px-2 py-0.5 rounded-full border border-cyan-800/60">3 Reels + 1 Video</span>
             </div>
             <div className="text-xs text-slate-300 font-semibold">3 Reels + 1 Full Animated Video Daily</div>
             <ul className="text-xs text-slate-400 space-y-1 font-mono">
               <li>• 08:00 UTC: Everyday Fact Reel 1</li>
-              <li>• 13:00 UTC: 1 Full Animated Cartoon Video</li>
+              <li>• 13:00 UTC: 1 Full Cartoon Video</li>
               <li>• 18:00 UTC: Everyday Fact Reel 2</li>
               <li>• 23:00 UTC: Everyday Fact Reel 3</li>
             </ul>
-            <div className="text-[11px] text-cyan-400/90 pt-1">Everyday kitchen, phone, body &amp; science wonders.</div>
+            <div className="text-[11px] text-cyan-400/90 pt-1">Kitchen, phone &amp; science curiosities.</div>
+          </div>
+
+          {/* Cinema Vanguard */}
+          <div className="p-4 bg-slate-950 border border-indigo-900/40 rounded-2xl space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-bold text-indigo-300">Ch 4: Cinema Vanguard</div>
+              <span className="text-[11px] font-mono font-bold text-indigo-400 bg-indigo-950/80 px-2 py-0.5 rounded-full border border-indigo-800/60">Daily Series</span>
+            </div>
+            <div className="text-xs text-slate-300 font-semibold">Episodic Sci-Fi Mini-Movies &amp; Thrillers</div>
+            <ul className="text-xs text-slate-400 space-y-1 font-mono">
+              <li>• 14:00 UTC: Daily Serialized Act</li>
+              <li>• Deep Voice Trailer Narration</li>
+              <li>• Ken Burns 60FPS Visual Pacing</li>
+              <li>• Upload Held for Review</li>
+            </ul>
+            <div className="text-[11px] text-indigo-400/90 pt-1">Serialized cliffhanger entertainment.</div>
+          </div>
+
+          {/* Apex Discipline */}
+          <div className="p-4 bg-slate-950 border border-rose-900/40 rounded-2xl space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-bold text-rose-300">Ch 5: Apex Discipline</div>
+              <span className="text-[11px] font-mono font-bold text-rose-400 bg-rose-950/80 px-2 py-0.5 rounded-full border border-rose-800/60">Daily Reel</span>
+            </div>
+            <div className="text-xs text-slate-300 font-semibold">Youth &amp; Young Men Motivation</div>
+            <ul className="text-xs text-slate-400 space-y-1 font-mono">
+              <li>• 19:00 UTC: Dopamine / Gym Focus</li>
+              <li>• Brutal Truth Hook Pattern</li>
+              <li>• 7-Day Action Challenge Rule</li>
+              <li>• Upload Held for Review</li>
+            </ul>
+            <div className="text-[11px] text-rose-400/90 pt-1">Digital detox, gym grind &amp; exams.</div>
           </div>
         </div>
       </div>
@@ -698,6 +869,8 @@ jobs:
               { id: 7, label: '02.5: FLUX.1 Visual Enhancement' },
               { id: 3, label: '03: Motion Render' },
               { id: 8, label: '04: Cartoon & Archie 4x (Ch3)' },
+              { id: 10, label: '05: Cinema Vanguard (Ch4)' },
+              { id: 11, label: '06: Apex Discipline (Ch5)' },
               { id: 4, label: 'Test: Fin Blueprint (Ch1)' },
               { id: 5, label: 'Test: Stoic Architect (Ch2)' },
               { id: 6, label: 'Test: Tech AI (Ch3)' },
@@ -729,6 +902,8 @@ jobs:
                 {activeWorkflowTab === 7 && '.github/workflows/02.5-voxam-visual-enhancement-flux.yml'}
                 {activeWorkflowTab === 3 && '.github/workflows/03-video-motion-renderer.yml'}
                 {activeWorkflowTab === 8 && '.github/workflows/cartoon-pipeline.yml'}
+                {activeWorkflowTab === 10 && '.github/workflows/movie-brand-pipeline.yml'}
+                {activeWorkflowTab === 11 && '.github/workflows/teen-motivation-pipeline.yml'}
                 {activeWorkflowTab === 4 && '.github/workflows/test-fin-pipeline.yml'}
                 {activeWorkflowTab === 5 && '.github/workflows/test-stoic-pipeline.yml'}
                 {activeWorkflowTab === 6 && '.github/workflows/test-tech-pipeline.yml'}
@@ -744,6 +919,8 @@ jobs:
                   activeWorkflowTab === 7 ? workflowVisualEnhancementYaml :
                   activeWorkflowTab === 3 ? workflow3Yaml : 
                   activeWorkflowTab === 8 ? workflowCartoonYaml :
+                  activeWorkflowTab === 10 ? workflowMovieBrandYaml :
+                  activeWorkflowTab === 11 ? workflowTeenMotivationYaml :
                   activeWorkflowTab === 4 ? workflowTestFinYaml : 
                   activeWorkflowTab === 5 ? workflowTestStoicYaml :
                   activeWorkflowTab === 6 ? workflowTestTechYaml : workflowBufferInspectorYaml;
@@ -770,6 +947,8 @@ jobs:
                 {activeWorkflowTab === 7 && workflowVisualEnhancementYaml}
                 {activeWorkflowTab === 3 && workflow3Yaml}
                 {activeWorkflowTab === 8 && workflowCartoonYaml}
+                {activeWorkflowTab === 10 && workflowMovieBrandYaml}
+                {activeWorkflowTab === 11 && workflowTeenMotivationYaml}
                 {activeWorkflowTab === 4 && workflowTestFinYaml}
                 {activeWorkflowTab === 5 && workflowTestStoicYaml}
                 {activeWorkflowTab === 6 && workflowTestTechYaml}
