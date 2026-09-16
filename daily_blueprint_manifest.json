@@ -1,6 +1,19 @@
 {
   "videos": [
     {
+      "id": "fin_quote_1789557572564",
+      "channelId": "finance_saas",
+      "type": "financial_quote_reel_5s",
+      "title": "Finance Mindset — John C. Bogle Quotes #Shorts",
+      "author": "John C. Bogle",
+      "credentials": "Founder, The Vanguard Group • Pioneer of the First Index Fund",
+      "reference": "The Little Book of Common Sense Investing",
+      "duration": 5,
+      "videoPath": "/home/runner/work/Hi/Hi/rendered_videos/fin_quote_5s_1789557572564.mp4",
+      "loopable": true,
+      "publishedAt": "2026-09-16T11:19:36.319Z"
+    },
+    {
       "id": "fin_quote_1789514966469",
       "channelId": "finance_saas",
       "type": "financial_quote_reel_5s",
