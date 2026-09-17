@@ -1,6 +1,19 @@
 {
   "videos": [
     {
+      "id": "fin_quote_1789647718501",
+      "channelId": "finance_saas",
+      "type": "financial_quote_reel_5s",
+      "title": "Stop Trading Your Life for Dollars — Dr. Thomas J. Stanley, Ph.D. #Shorts",
+      "author": "Dr. Thomas J. Stanley, Ph.D.",
+      "credentials": "Professor of Marketing, Georgia State • Author",
+      "reference": "The Millionaire Next Door (1996)",
+      "duration": 5,
+      "videoPath": "/home/runner/work/Hi/Hi/rendered_videos/fin_quote_5s_1789647718501.mp4",
+      "loopable": true,
+      "publishedAt": "2026-09-17T12:22:02.256Z"
+    },
+    {
       "id": "fin_quote_1789601801164",
       "channelId": "finance_saas",
       "type": "financial_quote_reel_5s",
