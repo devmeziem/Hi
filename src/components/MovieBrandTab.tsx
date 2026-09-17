@@ -53,8 +53,14 @@ export const MovieBrandTab: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
-          setEpisodes(data);
-          setSelectedEpisode(data[0]);
+          const normalized = data.map((ep: EpisodeItem) => ({
+            ...ep,
+            videoPath: ep.videoPath.startsWith('/api/stream-video')
+              ? ep.videoPath
+              : `/api/stream-video?file=${encodeURIComponent(ep.videoPath)}`
+          }));
+          setEpisodes(normalized);
+          setSelectedEpisode(normalized[0]);
         }
       }
     } catch {}
@@ -195,7 +201,7 @@ export const MovieBrandTab: React.FC = () => {
             className="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-rose-600/30 flex items-center gap-2 cursor-pointer"
           >
             {isGenerating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-            <span>Render S1:E1 "Neon Gate"</span>
+            <span>Render Ep 1: Sub-Level 14</span>
           </button>
           <button
             onClick={() => handleGenerateEpisode(2)}
@@ -203,7 +209,15 @@ export const MovieBrandTab: React.FC = () => {
             className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer border border-slate-700"
           >
             {isGenerating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-            <span>Render S1:E2 "Syndicate"</span>
+            <span>Render Ep 2: The Signal</span>
+          </button>
+          <button
+            onClick={() => handleGenerateEpisode(3)}
+            disabled={isGenerating}
+            className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer border border-slate-700"
+          >
+            {isGenerating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+            <span>Render Ep 3: Core Chamber</span>
           </button>
         </div>
       </div>
@@ -327,7 +341,7 @@ export const MovieBrandTab: React.FC = () => {
           <div className="lg:col-span-5 space-y-4">
             <div className="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-white">Season 1: Neo-Sector Universe</h3>
+                <h3 className="text-sm font-bold text-white">Ghost Vault Series Catalog</h3>
                 <span className="text-[10px] font-mono text-slate-400">{episodes.length} Episodes</span>
               </div>
 
@@ -425,10 +439,10 @@ export const MovieBrandTab: React.FC = () => {
                 How Character & Environment Consistency Is Automated:
               </div>
               <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
-                1. <strong>Visual Anchor Injection</strong>: Every single act prompt locks the exact 3D character DNA (<span className="text-emerald-300">Kaelen Vance</span>, slate-black hair, cobalt-cyan bio-optic left eye, matte-black cyber-jacket with cyan seams).<br />
-                2. <strong>Non-Realistic 3D Art Engine</strong>: Strictly enforces <em>"Pixar Arcane hybrid 3D animation, Octane render 3D character, Unreal Engine 5"</em> and suppresses real human photography via negative prompts.<br />
-                3. <strong>Mathematical Seed Anchoring</strong>: The deterministic seed formula <code className="text-indigo-300">baseSeed (849201) + (Episode * 100) + (Act * 17)</code> prevents random facial drift.<br />
-                4. <strong>Sequential Auto-Advance</strong>: The workflow inspects the manifest to auto-advance from Episode 1 through Episode 5 without manual intervention.
+                1. <strong>Visual Anchor Injection</strong>: Every single act prompt locks the exact character DNA (<span className="text-emerald-300">Dax Mercer</span>, short dark cropped hair, weathered jawline, charcoal-gray hydraulic pressure suit, titanium chest armor, glowing blue scanner).<br />
+                2. <strong>Cinematic Sci-Fi Engine</strong>: Strictly enforces <em>"Unreal Engine 5 aesthetic, volumetric steam, dramatic shadows, sharp metallic reflections"</em> and suppresses low quality artifacts.<br />
+                3. <strong>Deterministic Seed Formula</strong>: <code className="text-indigo-300">baseSeed (741829) + (Episode * 100) + (Act * 17)</code> ensures photographic continuity without drift.<br />
+                4. <strong>Auto-Advancement</strong>: Automatically progresses sequentially through the Ghost Vault storyline.
               </p>
             </div>
           </div>
@@ -440,15 +454,15 @@ export const MovieBrandTab: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl bg-indigo-600/30 border border-indigo-500/50 flex items-center justify-center text-indigo-300 font-bold text-xs">
-                    KV
+                    DM
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-white">Protagonist: Kaelen Vance</h4>
-                    <span className="text-[10px] font-mono text-indigo-400">Cipher Operative // Hero DNA</span>
+                    <h4 className="text-sm font-bold text-white">Protagonist: Dax Mercer</h4>
+                    <span className="text-[10px] font-mono text-indigo-400">Deep Salvage Operative // Hero DNA</span>
                   </div>
                 </div>
                 <span className="px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800 text-[10px] font-mono">
-                  Seed: 849201
+                  Seed: 741829
                 </span>
               </div>
 
@@ -457,7 +471,7 @@ export const MovieBrandTab: React.FC = () => {
                   <label className="block text-slate-400 text-[11px] font-bold mb-1">Character Name & Title</label>
                   <input
                     type="text"
-                    value={universeBible?.protagonist?.name || 'Kaelen Vance'}
+                    value={universeBible?.protagonist?.name || 'Dax Mercer'}
                     onChange={(e) => setUniverseBible((prev: any) => ({
                       ...prev,
                       protagonist: { ...(prev?.protagonist || {}), name: e.target.value }
@@ -472,7 +486,7 @@ export const MovieBrandTab: React.FC = () => {
                   </label>
                   <textarea
                     rows={3}
-                    value={universeBible?.protagonist?.visualAnchor || '3D stylized CGI animated male hero Kaelen Vance, sleek swept dark-charcoal hair, sharp angular stylized 3D jawline, glowing cobalt-cyan bio-optic cyber-implant over left eye, wearing matte-black reinforced tactical cyber-jacket with glowing cyan energy seams along collar and sleeves, utility chest harness with blue telemetry light'}
+                    value={universeBible?.protagonist?.visualAnchor || 'Rugged male operative Dax Mercer, short dark cropped hair, weathered jawline, wearing a heavy charcoal-gray hydraulic pressure suit, reinforced titanium chest armor, glowing blue telemetry scanner over right eye, holding a high-powered halogen exploration torch'}
                     onChange={(e) => setUniverseBible((prev: any) => ({
                       ...prev,
                       protagonist: { ...(prev?.protagonist || {}), visualAnchor: e.target.value }
@@ -484,10 +498,10 @@ export const MovieBrandTab: React.FC = () => {
                 <div className="p-3 bg-slate-950 border border-slate-800/80 rounded-xl space-y-1.5">
                   <div className="text-[10px] font-mono text-slate-400 uppercase">Enforced Consistency Rules:</div>
                   <ul className="text-[11px] text-slate-300 space-y-1 list-disc list-inside">
-                    <li><strong>Hair:</strong> Swept back dark slate-black hair with subtle volume</li>
-                    <li><strong>Face / Eye:</strong> Sharp angular 3D jawline + glowing cobalt bio-optic left eye</li>
-                    <li><strong>Costume:</strong> Matte-black cyber-jacket with cyan energy seams</li>
-                    <li><strong>Rendering:</strong> Pixar/Arcane hybrid 3D style, never photorealistic</li>
+                    <li><strong>Hair:</strong> Short cropped dark hair with clean military fade</li>
+                    <li><strong>Face / Eye:</strong> Weathered jawline + glowing blue telemetry scanner over right eye</li>
+                    <li><strong>Suit:</strong> Heavy charcoal-gray pressure suit with titanium chest armor</li>
+                    <li><strong>Prop:</strong> Industrial halogen torch cutting through black water</li>
                   </ul>
                 </div>
               </div>
@@ -498,15 +512,15 @@ export const MovieBrandTab: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl bg-purple-600/30 border border-purple-500/50 flex items-center justify-center text-purple-300 font-bold text-xs">
-                    NS
+                    GV
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-white">Environment: Neo-Sector Megacity</h4>
-                    <span className="text-[10px] font-mono text-purple-400">Sub-Levels // Architectural DNA</span>
+                    <h4 className="text-sm font-bold text-white">Environment: Sub-Level 14 Flooded Tunnels</h4>
+                    <span className="text-[10px] font-mono text-purple-400">The Ghost Vault // Architectural DNA</span>
                   </div>
                 </div>
                 <span className="px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800 text-[10px] font-mono">
-                  Unreal 5 Render
+                  Unreal 5 Cinematic
                 </span>
               </div>
 
@@ -515,7 +529,7 @@ export const MovieBrandTab: React.FC = () => {
                   <label className="block text-slate-400 text-[11px] font-bold mb-1">World / Setting Name</label>
                   <input
                     type="text"
-                    value={universeBible?.environment?.worldName || 'Neo-Sector Megacity Sub-Levels'}
+                    value={universeBible?.environment?.worldName || 'Sub-Level 14 Flooded Industrial Tunnels'}
                     onChange={(e) => setUniverseBible((prev: any) => ({
                       ...prev,
                       environment: { ...(prev?.environment || {}), worldName: e.target.value }
@@ -530,7 +544,7 @@ export const MovieBrandTab: React.FC = () => {
                   </label>
                   <textarea
                     rows={3}
-                    value={universeBible?.environment?.visualAnchor || 'stylized 3D cyberpunk futuristic metropolis, towering rain-slicked holographic megastructures, wet metallic catwalks reflecting purple and cyan neon lights, volumetric atmospheric fog, Unreal Engine 5 3D architectural background'}
+                    value={universeBible?.environment?.visualAnchor || 'Massive flooded underground railway tunnels, deep black water, rusted steel beams, dripping concrete ceiling, emergency strobe lights softly glowing in the dark, dense atmospheric mist'}
                     onChange={(e) => setUniverseBible((prev: any) => ({
                       ...prev,
                       environment: { ...(prev?.environment || {}), visualAnchor: e.target.value }
@@ -545,7 +559,7 @@ export const MovieBrandTab: React.FC = () => {
                   </label>
                   <textarea
                     rows={2}
-                    value={universeBible?.artStyle || '3D stylized CGI animated film render, Pixar Arcane hybrid 3D animation style, Unreal Engine 5 render, Octane render 3D character, clean vibrant stylized aesthetic, dramatic volumetric 3D lighting, smooth 3D surfaces, cinematic 3D CGI animation'}
+                    value={universeBible?.artStyle || 'Cinematic stylized film render, Unreal Engine 5 aesthetic, volumetric steam, dramatic shadows, sharp metallic reflections, high detail vertical 9:16 frame'}
                     onChange={(e) => setUniverseBible((prev: any) => ({
                       ...prev,
                       artStyle: e.target.value
@@ -557,16 +571,16 @@ export const MovieBrandTab: React.FC = () => {
             </div>
           </div>
 
-          {/* 5-Episode Storyline Continuity Arc */}
+          {/* 3-Episode Storyline Continuity Arc */}
           <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <h4 className="text-base font-extrabold text-white flex items-center gap-2">
                   <Film className="w-5 h-5 text-rose-400" />
-                  <span>Season 1 Continuous Narrative Arc (5 Episodes)</span>
+                  <span>The Ghost Vault: 3-Episode Arc</span>
                 </h4>
                 <p className="text-xs text-slate-400">
-                  Starring Kaelen Vance across the same consistent Neo-Sector universe with continuous cliffhangers.
+                  Starring Dax Mercer across the flooded subterranean ruins with high-suspense cliffhangers.
                 </p>
               </div>
               <span className="text-xs font-mono text-emerald-400 bg-emerald-950 px-3 py-1 rounded-xl border border-emerald-800 self-start sm:self-auto">
@@ -574,19 +588,17 @@ export const MovieBrandTab: React.FC = () => {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
               {[
-                { ep: 1, title: 'The Breach at Neon Gate', status: 'Available', hook: 'Anomaly detected in the neural grid at 0300 hours.' },
-                { ep: 2, title: 'The Rogue Syndicate', status: 'Available', hook: 'Kaelen enters Sub-Level 9 to meet cipher hacker Nyx.' },
-                { ep: 3, title: 'Reactor Overdrive', status: 'Available', hook: 'Corporate gunships ambush Kaelen at the reactor junction.' },
-                { ep: 4, title: "The Architect's Ghost", status: 'Available', hook: 'Kaelen discovers the holographic avatar of his mentor.' },
-                { ep: 5, title: 'The Neon Convergence (Finale)', status: 'Season Finale', hook: 'The aerial leap across skyscrapers to broadcast master key.' }
+                { ep: 1, title: 'Sub-Level 14', status: 'Rendered & Ready', hook: 'Fresh footprints lead into the maintenance tunnel. The steel door slams shut as water rises.' },
+                { ep: 2, title: 'The Signal in the Dark', status: 'Rendered & Ready', hook: 'A radio signal pulses every three seconds. A stranger on the gantry fires a weapon at Dax.' },
+                { ep: 3, title: 'The Core Chamber', status: 'Rendered & Ready', hook: 'The intruder pulls off her tactical mask: "Dax? You were supposed to be dead."' }
               ].map((item) => (
                 <div key={item.ep} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between text-[10px] font-mono">
                       <span className="text-indigo-400 font-bold">EPISODE 0{item.ep}</span>
-                      <span className="px-2 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-800">
+                      <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">
                         {item.status}
                       </span>
                     </div>
@@ -602,7 +614,7 @@ export const MovieBrandTab: React.FC = () => {
                     className="w-full mt-3 py-2 bg-slate-900 hover:bg-rose-950/60 border border-slate-800 hover:border-rose-500/50 text-slate-200 hover:text-rose-300 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
                   >
                     <Play className="w-3.5 h-3.5 text-rose-400" />
-                    <span>Render Episode {item.ep}</span>
+                    <span>Re-Render Ep {item.ep}</span>
                   </button>
                 </div>
               ))}

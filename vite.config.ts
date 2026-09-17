@@ -797,6 +797,46 @@ Respond STRICTLY with raw JSON:
         }
 
         // Movie Brand Episodic Series Endpoints
+        if (url === '/api/movie/bible' && req.method === 'GET') {
+          try {
+            const biblePath = path.join(process.cwd(), 'movie_universe_bible.json');
+            if (fs.existsSync(biblePath)) {
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 200;
+              res.end(fs.readFileSync(biblePath, 'utf8'));
+            } else {
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 404;
+              res.end(JSON.stringify({ error: 'Bible not found' }));
+            }
+          } catch (err: any) {
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: err.message }));
+          }
+          return;
+        }
+
+        if (url === '/api/movie/bible' && req.method === 'POST') {
+          let body = '';
+          req.on('data', chunk => { body += chunk; });
+          req.on('end', () => {
+            try {
+              const parsed = JSON.parse(body);
+              const biblePath = path.join(process.cwd(), 'movie_universe_bible.json');
+              fs.writeFileSync(biblePath, JSON.stringify(parsed, null, 2), 'utf8');
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 200;
+              res.end(JSON.stringify({ success: true, bible: parsed }));
+            } catch (err: any) {
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 500;
+              res.end(JSON.stringify({ error: err.message }));
+            }
+          });
+          return;
+        }
+
         if (url === '/api/movie/manifest' && req.method === 'GET') {
           try {
             const manifestPath = path.join(process.cwd(), 'test_artifacts', 'movie_episodes_manifest.json');

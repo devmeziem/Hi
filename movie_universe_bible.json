@@ -1,19 +1,32 @@
 {
-  "seriesId": "neo_sector_2142",
-  "seriesTitle": "NEO-SECTOR: CHRONICLES OF 2142",
-  "genre": "3D Stylized Sci-Fi Action / Episodic Mini-Movie",
-  "artStyle": "3D stylized CGI animated film render, Pixar Arcane hybrid 3D animation style, Unreal Engine 5 render, Octane render 3D character, clean vibrant stylized aesthetic, dramatic volumetric 3D lighting, smooth 3D surfaces, cinematic 3D CGI animation",
-  "negativePrompt": "photorealistic, real human photography, realistic photo, real person, 35mm photo, live-action footage, grainy camera photo, flat 2D sketch, bad anatomy, deformed fingers, low poly, blurry",
+  "seriesId": "ghost_vault_protocol",
+  "seriesTitle": "PROTOCOL ZERO: THE GHOST VAULT",
+  "genre": "Cinematic Sci-Fi Thriller / Episodic Mini-Movie",
+  "artStyle": "Cinematic stylized film render, Unreal Engine 5 aesthetic, volumetric steam, dramatic shadows, sharp metallic reflections, high detail vertical 9:16 frame",
+  "negativePrompt": "blurry, low quality, deformed anatomy, oversaturated colors, flat drawing, bad hands, distorted faces",
   "protagonist": {
-    "name": "Kaelen Vance",
-    "title": "Cipher Operative Kaelen",
-    "gender": "male",
-    "visualAnchor": "3D stylized CGI animated male hero Kaelen Vance, sleek swept dark-charcoal hair, sharp angular stylized 3D jawline, glowing cobalt-cyan bio-optic cyber-implant over left eye, wearing matte-black reinforced tactical cyber-jacket with glowing cyan energy seams along collar and sleeves, utility chest harness with blue telemetry light",
-    "baseSeed": 849201
+    "name": "Dax Mercer",
+    "role": "Deep Subterranean Salvage Diver",
+    "baseSeed": 741829,
+    "visualAnchor": "Rugged male operative Dax Mercer, short dark cropped hair, weathered jawline, wearing a heavy charcoal-gray hydraulic pressure suit, reinforced titanium chest armor, glowing blue telemetry scanner over right eye, holding a high-powered halogen exploration torch",
+    "distinctiveFeatures": [
+      "Short cropped dark hair",
+      "Reinforced titanium charcoal-gray salvage suit with hydraulic shoulder seals",
+      "Glowing blue scanner over right eye",
+      "Handheld halogen industrial torch"
+    ]
   },
   "environment": {
-    "worldName": "Neo-Sector Megacity Sub-Levels",
-    "visualAnchor": "stylized 3D cyberpunk futuristic metropolis, towering rain-slicked holographic megastructures, wet metallic catwalks reflecting purple and cyan neon lights, volumetric atmospheric fog, Unreal Engine 5 3D architectural background",
-    "lighting": "vibrant neon purple and electric cyan rim lighting, high-contrast atmospheric shadows, anamorphic cinematic 3D lighting"
+    "worldName": "Sub-Level 14 Flooded Industrial Tunnels",
+    "visualAnchor": "Massive flooded underground railway tunnels, deep black water, rusted steel beams, dripping concrete ceiling, emergency strobe lights softly glowing in the dark, dense atmospheric mist",
+    "lightingPalette": "Deep shadows, bright white halogen beam, subtle dark blue and warm warning lights, high contrast cinematic rim lighting"
+  },
+  "actsPerEpisode": 5,
+  "seasonEpisodesCount": 7,
+  "consistencyEngine": {
+    "characterLocked": true,
+    "environmentLocked": true,
+    "styleLocked": true,
+    "seedProgressionFormula": "baseSeed + (episodeIndex * 100) + (actIndex * 17)"
   }
 }
