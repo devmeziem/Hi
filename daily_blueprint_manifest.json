@@ -1,6 +1,19 @@
 {
   "videos": [
     {
+      "id": "fin_quote_1789675139762",
+      "channelId": "finance_saas",
+      "type": "financial_quote_reel_5s",
+      "title": "What the 1% Do That Amateurs Don't — Charlie Munger #Shorts",
+      "author": "Charlie Munger",
+      "credentials": "Vice Chairman, Berkshire Hathaway • Harvard Law J.D.",
+      "reference": "Poor Charlie's Almanack (Talk 2)",
+      "duration": 5,
+      "videoPath": "/home/runner/work/Hi/Hi/rendered_videos/fin_quote_5s_1789675139762.mp4",
+      "loopable": true,
+      "publishedAt": "2026-09-17T19:59:02.530Z"
+    },
+    {
       "id": "fin_quote_1789647718501",
       "channelId": "finance_saas",
       "type": "financial_quote_reel_5s",
