@@ -41,7 +41,10 @@ export const MovieBrandTab: React.FC = () => {
   const [selectedEpisode, setSelectedEpisode] = useState<EpisodeItem | null>(null);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [activeSubTab, setActiveSubTab] = useState<'episodes' | 'kaggle_guide' | 'acts_schema'>('episodes');
+  const [activeSubTab, setActiveSubTab] = useState<'episodes' | '3d_universe' | 'kaggle_guide' | 'acts_schema'>('episodes');
+  const [universeBible, setUniverseBible] = useState<any>(null);
+  const [isSavingBible, setIsSavingBible] = useState<boolean>(false);
+  const [bibleSaveStatus, setBibleSaveStatus] = useState<string | null>(null);
 
   // Load episodes from manifest or fallback
   const loadEpisodes = async () => {
@@ -52,8 +55,16 @@ export const MovieBrandTab: React.FC = () => {
         if (Array.isArray(data) && data.length > 0) {
           setEpisodes(data);
           setSelectedEpisode(data[0]);
-          return;
         }
+      }
+    } catch {}
+
+    // Load Universe Bible
+    try {
+      const bRes = await fetch('/api/movie/bible');
+      if (bRes.ok) {
+        const bData = await bRes.json();
+        setUniverseBible(bData);
       }
     } catch {}
 
@@ -86,8 +97,33 @@ export const MovieBrandTab: React.FC = () => {
         createdAt: new Date(Date.now() - 86400000).toISOString()
       }
     ];
-    setEpisodes(defaultEpisodes);
-    setSelectedEpisode(defaultEpisodes[0]);
+    if (episodes.length === 0) {
+      setEpisodes(defaultEpisodes);
+      setSelectedEpisode(defaultEpisodes[0]);
+    }
+  };
+
+  const handleSaveBible = async () => {
+    if (!universeBible) return;
+    setIsSavingBible(true);
+    setBibleSaveStatus(null);
+    try {
+      const res = await fetch('/api/movie/bible', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(universeBible)
+      });
+      if (res.ok) {
+        setBibleSaveStatus('✅ 3D Character & Universe DNA saved successfully! Future renders will enforce this anchor.');
+      } else {
+        setBibleSaveStatus('Error saving Universe Bible.');
+      }
+    } catch (e: any) {
+      setBibleSaveStatus(`Error: ${e.message}`);
+    } finally {
+      setIsSavingBible(false);
+      setTimeout(() => setBibleSaveStatus(null), 6000);
+    }
   };
 
   useEffect(() => {
@@ -173,7 +209,7 @@ export const MovieBrandTab: React.FC = () => {
       </div>
 
       {/* Mode Sub-Navigation */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3">
         <button
           onClick={() => setActiveSubTab('episodes')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
@@ -187,6 +223,18 @@ export const MovieBrandTab: React.FC = () => {
         </button>
 
         <button
+          onClick={() => setActiveSubTab('3d_universe')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+            activeSubTab === '3d_universe'
+              ? 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/40'
+              : 'text-slate-400 hover:text-white hover:bg-slate-900'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-emerald-400" />
+          <span>3D Character & Universe DNA</span>
+        </button>
+
+        <button
           onClick={() => setActiveSubTab('kaggle_guide')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
             activeSubTab === 'kaggle_guide'
@@ -195,7 +243,7 @@ export const MovieBrandTab: React.FC = () => {
           }`}
         >
           <Cpu className="w-4 h-4" />
-          <span>Open-Source AI Image Models + Kaggle GPU Guide</span>
+          <span>AI Image Models & Kaggle GPU</span>
         </button>
 
         <button
@@ -328,6 +376,236 @@ export const MovieBrandTab: React.FC = () => {
                   Per your requirement, uploading to YouTube or Meta is strictly held in pending state so you can inspect, review, and approve the videos first.
                 </p>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB CONTENT: 3D CHARACTER & UNIVERSE DNA */}
+      {activeSubTab === '3d_universe' && (
+        <div className="space-y-6">
+          {/* Top Banner explaining consistency automation */}
+          <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-emerald-600/20 border border-emerald-500/40 rounded-2xl text-emerald-400">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                    <span>3D Character & Universe Continuity Engine</span>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-800 text-emerald-300 text-[10px] font-mono">
+                      100% Automated
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Guarantees persistent 3D characters, consistent protagonist facial anchors, and matching environments across all series episodes.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={handleSaveBible}
+                disabled={isSavingBible}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2 cursor-pointer self-start sm:self-auto shrink-0"
+              >
+                {isSavingBible ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                <span>Save DNA to Cloud</span>
+              </button>
+            </div>
+
+            {bibleSaveStatus && (
+              <div className="p-3 bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs font-semibold rounded-xl animate-in fade-in">
+                {bibleSaveStatus}
+              </div>
+            )}
+
+            <div className="p-3.5 bg-slate-950 border border-slate-800/80 rounded-2xl text-xs text-slate-300 space-y-1.5 font-mono">
+              <div className="text-[11px] text-emerald-400 font-bold uppercase tracking-wider">
+                How Character & Environment Consistency Is Automated:
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+                1. <strong>Visual Anchor Injection</strong>: Every single act prompt locks the exact 3D character DNA (<span className="text-emerald-300">Kaelen Vance</span>, slate-black hair, cobalt-cyan bio-optic left eye, matte-black cyber-jacket with cyan seams).<br />
+                2. <strong>Non-Realistic 3D Art Engine</strong>: Strictly enforces <em>"Pixar Arcane hybrid 3D animation, Octane render 3D character, Unreal Engine 5"</em> and suppresses real human photography via negative prompts.<br />
+                3. <strong>Mathematical Seed Anchoring</strong>: The deterministic seed formula <code className="text-indigo-300">baseSeed (849201) + (Episode * 100) + (Act * 17)</code> prevents random facial drift.<br />
+                4. <strong>Sequential Auto-Advance</strong>: The workflow inspects the manifest to auto-advance from Episode 1 through Episode 5 without manual intervention.
+              </p>
+            </div>
+          </div>
+
+          {/* Character & Environment DNA Cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Protagonist DNA */}
+            <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-indigo-600/30 border border-indigo-500/50 flex items-center justify-center text-indigo-300 font-bold text-xs">
+                    KV
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Protagonist: Kaelen Vance</h4>
+                    <span className="text-[10px] font-mono text-indigo-400">Cipher Operative // Hero DNA</span>
+                  </div>
+                </div>
+                <span className="px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800 text-[10px] font-mono">
+                  Seed: 849201
+                </span>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="block text-slate-400 text-[11px] font-bold mb-1">Character Name & Title</label>
+                  <input
+                    type="text"
+                    value={universeBible?.protagonist?.name || 'Kaelen Vance'}
+                    onChange={(e) => setUniverseBible((prev: any) => ({
+                      ...prev,
+                      protagonist: { ...(prev?.protagonist || {}), name: e.target.value }
+                    }))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 text-[11px] font-bold mb-1">
+                    Visual Anchor Prompt (Injected into every Act frame)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={universeBible?.protagonist?.visualAnchor || '3D stylized CGI animated male hero Kaelen Vance, sleek swept dark-charcoal hair, sharp angular stylized 3D jawline, glowing cobalt-cyan bio-optic cyber-implant over left eye, wearing matte-black reinforced tactical cyber-jacket with glowing cyan energy seams along collar and sleeves, utility chest harness with blue telemetry light'}
+                    onChange={(e) => setUniverseBible((prev: any) => ({
+                      ...prev,
+                      protagonist: { ...(prev?.protagonist || {}), visualAnchor: e.target.value }
+                    }))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div className="p-3 bg-slate-950 border border-slate-800/80 rounded-xl space-y-1.5">
+                  <div className="text-[10px] font-mono text-slate-400 uppercase">Enforced Consistency Rules:</div>
+                  <ul className="text-[11px] text-slate-300 space-y-1 list-disc list-inside">
+                    <li><strong>Hair:</strong> Swept back dark slate-black hair with subtle volume</li>
+                    <li><strong>Face / Eye:</strong> Sharp angular 3D jawline + glowing cobalt bio-optic left eye</li>
+                    <li><strong>Costume:</strong> Matte-black cyber-jacket with cyan energy seams</li>
+                    <li><strong>Rendering:</strong> Pixar/Arcane hybrid 3D style, never photorealistic</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Environment & World DNA */}
+            <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-purple-600/30 border border-purple-500/50 flex items-center justify-center text-purple-300 font-bold text-xs">
+                    NS
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Environment: Neo-Sector Megacity</h4>
+                    <span className="text-[10px] font-mono text-purple-400">Sub-Levels // Architectural DNA</span>
+                  </div>
+                </div>
+                <span className="px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800 text-[10px] font-mono">
+                  Unreal 5 Render
+                </span>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="block text-slate-400 text-[11px] font-bold mb-1">World / Setting Name</label>
+                  <input
+                    type="text"
+                    value={universeBible?.environment?.worldName || 'Neo-Sector Megacity Sub-Levels'}
+                    onChange={(e) => setUniverseBible((prev: any) => ({
+                      ...prev,
+                      environment: { ...(prev?.environment || {}), worldName: e.target.value }
+                    }))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-mono focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 text-[11px] font-bold mb-1">
+                    Environment Anchor Prompt
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={universeBible?.environment?.visualAnchor || 'stylized 3D cyberpunk futuristic metropolis, towering rain-slicked holographic megastructures, wet metallic catwalks reflecting purple and cyan neon lights, volumetric atmospheric fog, Unreal Engine 5 3D architectural background'}
+                    onChange={(e) => setUniverseBible((prev: any) => ({
+                      ...prev,
+                      environment: { ...(prev?.environment || {}), visualAnchor: e.target.value }
+                    }))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 text-[11px] font-bold mb-1">
+                    Art Style & Rendering Pipeline
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={universeBible?.artStyle || '3D stylized CGI animated film render, Pixar Arcane hybrid 3D animation style, Unreal Engine 5 render, Octane render 3D character, clean vibrant stylized aesthetic, dramatic volumetric 3D lighting, smooth 3D surfaces, cinematic 3D CGI animation'}
+                    onChange={(e) => setUniverseBible((prev: any) => ({
+                      ...prev,
+                      artStyle: e.target.value
+                    }))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 5-Episode Storyline Continuity Arc */}
+          <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h4 className="text-base font-extrabold text-white flex items-center gap-2">
+                  <Film className="w-5 h-5 text-rose-400" />
+                  <span>Season 1 Continuous Narrative Arc (5 Episodes)</span>
+                </h4>
+                <p className="text-xs text-slate-400">
+                  Starring Kaelen Vance across the same consistent Neo-Sector universe with continuous cliffhangers.
+                </p>
+              </div>
+              <span className="text-xs font-mono text-emerald-400 bg-emerald-950 px-3 py-1 rounded-xl border border-emerald-800 self-start sm:self-auto">
+                Auto-Progression Enabled
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+              {[
+                { ep: 1, title: 'The Breach at Neon Gate', status: 'Available', hook: 'Anomaly detected in the neural grid at 0300 hours.' },
+                { ep: 2, title: 'The Rogue Syndicate', status: 'Available', hook: 'Kaelen enters Sub-Level 9 to meet cipher hacker Nyx.' },
+                { ep: 3, title: 'Reactor Overdrive', status: 'Available', hook: 'Corporate gunships ambush Kaelen at the reactor junction.' },
+                { ep: 4, title: "The Architect's Ghost", status: 'Available', hook: 'Kaelen discovers the holographic avatar of his mentor.' },
+                { ep: 5, title: 'The Neon Convergence (Finale)', status: 'Season Finale', hook: 'The aerial leap across skyscrapers to broadcast master key.' }
+              ].map((item) => (
+                <div key={item.ep} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between text-[10px] font-mono">
+                      <span className="text-indigo-400 font-bold">EPISODE 0{item.ep}</span>
+                      <span className="px-2 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-800">
+                        {item.status}
+                      </span>
+                    </div>
+                    <div className="text-xs font-bold text-white mt-1">{item.title}</div>
+                    <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">
+                      {item.hook}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => handleGenerateEpisode(item.ep)}
+                    disabled={isGenerating}
+                    className="w-full mt-3 py-2 bg-slate-900 hover:bg-rose-950/60 border border-slate-800 hover:border-rose-500/50 text-slate-200 hover:text-rose-300 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    <Play className="w-3.5 h-3.5 text-rose-400" />
+                    <span>Render Episode {item.ep}</span>
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         </div>

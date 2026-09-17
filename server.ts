@@ -1203,7 +1203,42 @@ Respond STRICTLY with valid raw JSON without markdown:
     return;
   }
 
-  // Movie Brand Workflow: Manifest & Generator
+  // Movie Brand Workflow: Manifest & Generator & 3D Bible
+  if (urlPath === '/api/movie/bible' && req.method === 'GET') {
+    try {
+      const biblePath = path.join(__dirname, 'movie_universe_bible.json');
+      if (fs.existsSync(biblePath)) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(fs.readFileSync(biblePath, 'utf8'));
+      } else {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Bible not found' }));
+      }
+    } catch (err: any) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
+  if (urlPath === '/api/movie/bible' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const parsed = JSON.parse(body);
+        const biblePath = path.join(__dirname, 'movie_universe_bible.json');
+        fs.writeFileSync(biblePath, JSON.stringify(parsed, null, 2), 'utf8');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, bible: parsed }));
+      } catch (err: any) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
   if (urlPath === '/api/movie/manifest' && req.method === 'GET') {
     try {
       const manifestPath = path.join(__dirname, 'test_artifacts', 'movie_episodes_manifest.json');

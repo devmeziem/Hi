@@ -1,0 +1,19 @@
+{
+  "seriesId": "neo_sector_2142",
+  "seriesTitle": "NEO-SECTOR: CHRONICLES OF 2142",
+  "genre": "3D Stylized Sci-Fi Action / Episodic Mini-Movie",
+  "artStyle": "3D stylized CGI animated film render, Pixar Arcane hybrid 3D animation style, Unreal Engine 5 render, Octane render 3D character, clean vibrant stylized aesthetic, dramatic volumetric 3D lighting, smooth 3D surfaces, cinematic 3D CGI animation",
+  "negativePrompt": "photorealistic, real human photography, realistic photo, real person, 35mm photo, live-action footage, grainy camera photo, flat 2D sketch, bad anatomy, deformed fingers, low poly, blurry",
+  "protagonist": {
+    "name": "Kaelen Vance",
+    "title": "Cipher Operative Kaelen",
+    "gender": "male",
+    "visualAnchor": "3D stylized CGI animated male hero Kaelen Vance, sleek swept dark-charcoal hair, sharp angular stylized 3D jawline, glowing cobalt-cyan bio-optic cyber-implant over left eye, wearing matte-black reinforced tactical cyber-jacket with glowing cyan energy seams along collar and sleeves, utility chest harness with blue telemetry light",
+    "baseSeed": 849201
+  },
+  "environment": {
+    "worldName": "Neo-Sector Megacity Sub-Levels",
+    "visualAnchor": "stylized 3D cyberpunk futuristic metropolis, towering rain-slicked holographic megastructures, wet metallic catwalks reflecting purple and cyan neon lights, volumetric atmospheric fog, Unreal Engine 5 3D architectural background",
+    "lighting": "vibrant neon purple and electric cyan rim lighting, high-contrast atmospheric shadows, anamorphic cinematic 3D lighting"
+  }
+}

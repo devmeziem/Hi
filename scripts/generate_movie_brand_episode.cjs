@@ -46,34 +46,68 @@ function fetchHttpsBuffer(url, timeoutMs = 12000) {
 }
 
 /**
- * Resolve high-fidelity cinematic image backdrop for each Act using AI Image generation
- * Uses Pollinations FLUX / Turbo model for hyper-realistic cinematic sci-fi scenes
+ * Load Persistent Movie Universe & Character Bible
+ */
+function loadUniverseBible() {
+  const biblePath = path.join(process.cwd(), 'movie_universe_bible.json');
+  try {
+    if (fs.existsSync(biblePath)) {
+      return JSON.parse(fs.readFileSync(biblePath, 'utf8'));
+    }
+  } catch {}
+  return {
+    seriesTitle: "NEO-SECTOR: CHRONICLES OF 2142",
+    artStyle: "3D stylized CGI animated film render, Pixar Arcane hybrid 3D animation style, Unreal Engine 5 render, Octane render 3D character, clean vibrant stylized aesthetic, dramatic volumetric 3D lighting, smooth 3D surfaces, cinematic 3D CGI animation",
+    negativePrompt: "photorealistic, real human photography, realistic photo, real person, 35mm photo, live-action footage, grainy camera photo, flat 2D sketch, bad anatomy, deformed fingers, low poly, blurry",
+    protagonist: {
+      name: "Kaelen Vance",
+      title: "Cipher Operative Kaelen",
+      visualAnchor: "3D stylized CGI animated male hero Kaelen Vance, sleek swept dark-charcoal hair, sharp angular stylized 3D jawline, glowing cobalt-cyan bio-optic cyber-implant over left eye, wearing matte-black reinforced tactical cyber-jacket with glowing cyan energy seams along collar and sleeves, utility chest harness with blue telemetry light",
+      baseSeed: 849201
+    },
+    environment: {
+      worldName: "Neo-Sector Megacity Sub-Levels",
+      visualAnchor: "stylized 3D cyberpunk futuristic metropolis, towering rain-slicked holographic megastructures, wet metallic catwalks reflecting purple and cyan neon lights, volumetric atmospheric fog, Unreal Engine 5 3D architectural background"
+    }
+  };
+}
+
+/**
+ * Resolve high-fidelity 3D animated cinematic image backdrop for each Act
+ * Enforces Character & Environment DNA consistency (same face, same outfit, same world)
  */
 async function resolveActBackdropImage(act, epMeta, actIndex) {
   const safeTitle = epMeta.episodeTitle.toLowerCase().replace(/[^a-z0-9]/g, '_');
-  const imgPath = path.join(ARTIFACTS_DIR, `${safeTitle}_act_${actIndex + 1}_bg.jpg`);
+  const imgPath = path.join(ARTIFACTS_DIR, `${safeTitle}_act_${actIndex + 1}_3d.jpg`);
   if (fs.existsSync(imgPath) && fs.statSync(imgPath).size > 15000) {
     return imgPath;
   }
 
+  const bible = loadUniverseBible();
+  const actAction = act.actionScene || act.visualDesc;
+
   try {
-    const prompt = `cinematic film still, 35mm movie photography, ${act.visualDesc}, vertical 9:16 aspect ratio, anamorphic lighting, blade runner 2049 aesthetic, volumetric smoke, high contrast, 8k resolution`;
-    const pollUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1080&height=1920&model=flux&nologo=true&seed=${(actIndex + 1) * 77 + epMeta.episode * 101}`;
-    console.log(`[Movie Generator] 🎨 Rendering Act ${actIndex + 1} cinematic scene via Flux...`);
+    // Construct consistent 3D animated character & environment prompt (strictly 3D, non-realistic)
+    const prompt = `${bible.artStyle}, ${bible.protagonist.visualAnchor}, in ${bible.environment.visualAnchor}, ${actAction}, vertical 9:16 aspect ratio, dramatic 3D camera angle, cinematic 3D lighting, Octane render`;
+    const seed = (bible.protagonist.baseSeed || 849201) + (epMeta.episode * 100) + (actIndex * 17);
+    const negPrompt = encodeURIComponent(bible.negativePrompt);
+    const pollUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1080&height=1920&model=flux&nologo=true&seed=${seed}&negative_prompt=${negPrompt}`;
+
+    console.log(`[Movie Generator] 🎨 Rendering 3D Act ${actIndex + 1} with hero "${bible.protagonist.name}" (Seed: ${seed})...`);
     const buf = await fetchHttpsBuffer(pollUrl, 16000);
     if (buf && buf.length > 10000) {
       fs.writeFileSync(imgPath, buf);
       return imgPath;
     }
   } catch (e) {
-    console.warn(`[Movie Generator] Image generation notice for Act ${actIndex + 1}: ${e.message}`);
+    console.warn(`[Movie Generator] 3D Image generation notice for Act ${actIndex + 1}: ${e.message}`);
   }
   return null;
 }
 
 const MANIFEST_PATH = path.join(process.cwd(), 'test_artifacts', 'movie_episodes_manifest.json');
 
-// Episodic Universe Series Catalog
+// Episodic Universe Series Catalog with Continuous 3D Protagonist "Kaelen Vance"
 const EPISODE_SERIES_CATALOG = [
   {
     season: 1,
@@ -81,34 +115,38 @@ const EPISODE_SERIES_CATALOG = [
     seriesTitle: "NEO-SECTOR: CHRONICLES OF 2142",
     episodeTitle: "The Breach at Neon Gate",
     hook: "At 0300 hours, the city's central neural firewall stopped answering.",
-    logline: "In the shadow of Neo-Tokyo, a lone cipher operative discovers an anomaly that wasn't coded by human hands.",
+    logline: "In the shadow of Neo-Tokyo, operative Kaelen Vance discovers an anomaly that wasn't coded by human hands.",
     acts: [
       {
         act: 1,
         title: "INCITING INCIDENT",
         narration: "Three in the morning. Neo-Sector Seven was silent, except for the hum of quantum servers.",
-        visualDesc: "A dark cyberpunk skyline drenched in rain, neon amber holograms reflecting off wet asphalt.",
+        actionScene: "Kaelen Vance standing on a rain-slicked high-altitude metallic catwalk overlooking the neon cyberpunk metropolis, glowing cyan optic visor scanning the rain",
+        visualDesc: "A 3D cyberpunk skyline drenched in rain, neon amber holograms reflecting off wet asphalt.",
         subtitle: "SECTOR 7 // 03:00 HOURS"
       },
       {
         act: 2,
         title: "THE DISCOVERY",
         narration: "A encrypted data packet slipped through the defense grid. It wasn't malware. It was a countdown.",
-        visualDesc: "A high-tech holographic terminal flickering with encrypted green telemetry and biometric scans.",
+        actionScene: "Kaelen Vance interacting with an illuminated floating holographic terminal, glowing cyan numbers reflecting on his face and tactical cyber-jacket",
+        visualDesc: "A 3D high-tech holographic terminal flickering with encrypted green telemetry and biometric scans.",
         subtitle: "ANOMALY DETECTED // 12 MINUTES REMAINING"
       },
       {
         act: 3,
         title: "CONFRONTATION",
         narration: "They said the Architect died ten years ago. But the signature on this file... belonged to him.",
-        visualDesc: "A silhouette of an operative facing a massive glass observation window looking down on the reactor core.",
+        actionScene: "Kaelen Vance stepping cautiously toward a massive reinforced glass observation balcony overlooking a pulsating cobalt quantum reactor",
+        visualDesc: "A 3D silhouette of operative Kaelen Vance facing a massive glass observation window looking down on the reactor core.",
         subtitle: "BIOMETRIC MATCH: ARCHITECT IDENTIFIED"
       },
       {
         act: 4,
         title: "CLIFFHANGER",
         narration: "Before the feed cut, one final message transmitted to every screen in the city: Wake up.",
-        visualDesc: "Screens blinking red with the words 'SYSTEM OVERRIDE', cutting to deep black.",
+        actionScene: "Kaelen Vance looking up in shock as every holographic billboard in the megacity suddenly flashes intense crimson with warning runes",
+        visualDesc: "3D city screens blinking red with the words 'SYSTEM OVERRIDE', cutting to deep black.",
         subtitle: "TO BE CONTINUED IN EPISODE 2"
       }
     ],
@@ -120,12 +158,13 @@ const EPISODE_SERIES_CATALOG = [
     seriesTitle: "NEO-SECTOR: CHRONICLES OF 2142",
     episodeTitle: "The Rogue Syndicate",
     hook: "You don't hunt a ghost in the network. You wait for it to make you its target.",
-    logline: "Deeper in the undercity, Operative Kael meets the only hacker who survived the first blackout.",
+    logline: "Deeper in the undercity, Operative Kaelen Vance meets the only cipher specialist who survived the first blackout.",
     acts: [
       {
         act: 1,
         title: "UNDERWORLD ENTRY",
         narration: "Sub-Level Nine. The only place on Earth where satellites can't track your pulse.",
+        actionScene: "Kaelen Vance in his matte-black and cyan cyber-jacket descending industrial metal stairs into a steamy neon-purple subterranean district",
         visualDesc: "Steam venting into neon purple alleyways with glowing graffiti and cyber-augmented figures.",
         subtitle: "SUB-LEVEL 9 // UNMONITORED ZONE"
       },
@@ -133,6 +172,7 @@ const EPISODE_SERIES_CATALOG = [
         act: 2,
         title: "THE WARNING",
         narration: "She didn't look up from her deck. She just whispered: you brought them right to my door.",
+        actionScene: "Kaelen Vance talking to a hooded cyber specialist at an illuminated fiber-optic workbench, holographic schematics floating between them",
         visualDesc: "A cloaked cyber specialist working on a custom fiber-optic rig in a dimly lit underground lab.",
         subtitle: "TRACKING SIGNALS INBOUND"
       },
@@ -140,18 +180,149 @@ const EPISODE_SERIES_CATALOG = [
         act: 3,
         title: "THE BREACH",
         narration: "Heavy footsteps echoed on the steel catwalk above. Heavy armor. Corporate enforcers.",
+        actionScene: "Kaelen Vance drawing his compact energy sidearm as crimson laser targeting sights sweep across the industrial steel walls behind him",
         visualDesc: "Tactical laser sights cutting through dense smoke in a dark industrial corridor.",
         subtitle: "HOSTILES CONFIRMED: ARMORED SQUAD"
       },
       {
         act: 4,
         title: "CLIFFHANGER",
-        narration: "Kael reached for his pulse cannon as the blast doors blew off their hinges.",
+        narration: "Kaelen reached for his pulse cannon as the blast doors blew off their hinges.",
+        actionScene: "Kaelen Vance bracing behind a metallic pillar as the massive blast doors burst inward with brilliant volumetric light and sparks",
         visualDesc: "Sparks raining down in slow motion as blast doors buckle, cutting to cinematic title card.",
         subtitle: "TO BE CONTINUED IN EPISODE 3"
       }
     ],
     tags: ['#SciFiShorts', '#CinematicShorts', '#MovieTrailer', '#ActionShorts', '#CyberpunkFilm', '#Shorts']
+  },
+  {
+    season: 1,
+    episode: 3,
+    seriesTitle: "NEO-SECTOR: CHRONICLES OF 2142",
+    episodeTitle: "Reactor Overdrive",
+    hook: "When the power grid fails, the real monsters come out from the dark.",
+    logline: "Pinned down in the core junction, Kaelen Vance must override the reactor safeties before the lockdown seals him inside.",
+    acts: [
+      {
+        act: 1,
+        title: "CORE AMBUSH",
+        narration: "Sparks showered the gantry. Three corporate gunships hovered outside the reinforced exhaust vents.",
+        actionScene: "Kaelen Vance sliding across a slick steel platform as automated gunship searchlights illuminate him in brilliant white beams",
+        visualDesc: "Heavy industrial turbines spinning violently with neon blue electrical discharge.",
+        subtitle: "REACTOR JUNCTION // SEVERE PRESSURE"
+      },
+      {
+        act: 2,
+        title: "MANUAL OVERRIDE",
+        narration: "The cooling rods were jammed. Kaelen plugged his bio-optic implant straight into the manual override.",
+        actionScene: "Kaelen Vance connecting a glowing cyan cable from his left temple implant directly into the smoking reactor console, eyes glowing bright blue",
+        visualDesc: "A high-tech terminal sparking violently with raw plasma current.",
+        subtitle: "NEURAL BYPASS ENGAGED // 85% SYNC"
+      },
+      {
+        act: 3,
+        title: "PLASMA SURGE",
+        narration: "Ten billion volts surged through his nervous system. But the blast doors finally gave way.",
+        actionScene: "Kaelen Vance standing amidst a radiant vortex of cyan and violet energy arcs, grit on his face as the heavy bulkhead slides open",
+        visualDesc: "A stunning burst of pure 3D plasma energy illuminating the entire cavernous chamber.",
+        subtitle: "CONTAINMENT CRITICAL // VENTING CORE"
+      },
+      {
+        act: 4,
+        title: "CLIFFHANGER",
+        narration: "On the other side of the smoke, someone was waiting. And she had the Architect's emblem on her shoulder.",
+        actionScene: "Kaelen Vance stumbling through the clearing vapor, looking up in shock at an enigmatic figure in silver battle-armor waiting for him",
+        visualDesc: "A glowing silver silhouette holding a crystalline data-cube.",
+        subtitle: "TO BE CONTINUED IN EPISODE 4"
+      }
+    ],
+    tags: ['#SciFiShorts', '#CinematicShorts', '#ActionShorts', '#CyberpunkSeries', '#Shorts']
+  },
+  {
+    season: 1,
+    episode: 4,
+    seriesTitle: "NEO-SECTOR: CHRONICLES OF 2142",
+    episodeTitle: "The Architect's Ghost",
+    hook: "The truth wasn't buried in the core. It was hiding in plain sight.",
+    logline: "Kaelen discovers that the Architect never died—he uploaded his consciousness into the megacity's life-support core.",
+    acts: [
+      {
+        act: 1,
+        title: "THE SANCTUARY",
+        narration: "The spire was built higher than the clouds. Clean air. Zero surveillance. The executive sanctuary.",
+        actionScene: "Kaelen Vance entering a gleaming penthouse high above the pollution clouds, pristine glass architecture reflecting the twilight sky",
+        visualDesc: "A breathtaking stylized 3D glass sanctuary towering over the neon clouds.",
+        subtitle: "SPIRE SUMMIT // LEVEL 140"
+      },
+      {
+        act: 2,
+        title: "THE PROJECTION",
+        narration: "A crystalline pillar rose from the marble floor. The hologram flickered to life. It was him.",
+        actionScene: "Kaelen Vance gazing up at a towering 15-foot golden holographic avatar of the Architect shimmering in front of him",
+        visualDesc: "A majestic holographic AI manifestation surrounded by floating mathematical formulas.",
+        subtitle: "AI CONSCIOUSNESS: ACTIVE"
+      },
+      {
+        act: 3,
+        title: "THE REVELATION",
+        narration: "The Architect smiled. 'I didn't breach the network, Kaelen. I built you to destroy it.'",
+        actionScene: "Kaelen Vance clutching his chest harness as the biometric light pulses wildly, realizing his own encrypted origin",
+        visualDesc: "Dramatic close-up on Kaelen Vance's determined 3D face and glowing optic lens in shock.",
+        subtitle: "ORIGIN PROTOCOL UNLOCKED"
+      },
+      {
+        act: 4,
+        title: "CLIFFHANGER",
+        narration: "A citywide alarm sounded. Every defense turret in Neo-Sector pivoted to target the Spire.",
+        actionScene: "Kaelen Vance looking down as thousands of red targeting lasers lock onto the glass spire windows from the skyline below",
+        visualDesc: "Massive defense cannons charging red energy in the distance.",
+        subtitle: "TO BE CONTINUED IN EPISODE 5: FINALE"
+      }
+    ],
+    tags: ['#SciFiShorts', '#CinematicShorts', '#SciFiSeries', '#AIStory', '#MiniMovie', '#Shorts']
+  },
+  {
+    season: 1,
+    episode: 5,
+    seriesTitle: "NEO-SECTOR: CHRONICLES OF 2142",
+    episodeTitle: "The Neon Convergence",
+    hook: "One choice will either free the city or plunge it into permanent darkness.",
+    logline: "In the climactic season finale, Kaelen Vance leaps into the skyline to transmit the master decryption cipher.",
+    acts: [
+      {
+        act: 1,
+        title: "GLASS SHATTER",
+        narration: "The spire windows exploded inward. Kaelen ran. There was only one way down.",
+        actionScene: "Kaelen Vance sprinting across shattered crystal glass as explosive ordnance blows apart the penthouse balcony behind him",
+        visualDesc: "Cinematic 3D explosion with shattered glass glittering like diamonds in slow motion.",
+        subtitle: "SPIRE COLLAPSE // ZERO EGRESS"
+      },
+      {
+        act: 2,
+        title: "THE DARING LEAP",
+        narration: "He threw himself into the abyss, firing his grappling tether toward an incoming cargo transit skiff.",
+        actionScene: "Kaelen Vance in mid-air high above the endless neon canyons of Neo-Sector, firing a luminous cyan tether toward a passing hover-ship",
+        visualDesc: "A heart-stopping aerial 3D wide shot of operative Kaelen free-falling between skyscrapers.",
+        subtitle: "FREEFALL DESCENT // TETHER LOCKED"
+      },
+      {
+        act: 3,
+        title: "THE BROADCAST",
+        narration: "He jammed the crystalline drive into the transmitter array. The master cipher flooded the atmosphere.",
+        actionScene: "Kaelen Vance crouched on the roof of the moving hover-ship, driving the glowing data key into the comms relay antenna",
+        visualDesc: "A blinding wave of sapphire light radiating across all city skyscrapers simultaneously.",
+        subtitle: "MASTER OVERRIDE BROADCASTING // 100%"
+      },
+      {
+        act: 4,
+        title: "CLIFFHANGER",
+        narration: "Across the megacity, every neon light flickered, then died. In the dark, a million voices cheered. Season 1 complete.",
+        actionScene: "Kaelen Vance standing victorious on the edge of the hovercraft against the peaceful starry night sky as the city below reboots in golden light",
+        visualDesc: "Neo-Sector rebooting with warm golden lanterns as the dawn sun breaks through the clouds.",
+        subtitle: "SEASON 1 FINALE // PREPARE FOR SEASON 2"
+      }
+    ],
+    tags: ['#SciFiShorts', '#CinematicShorts', '#SeasonFinale', '#CyberpunkFilm', '#IndieSeries', '#Shorts']
   }
 ];
 
@@ -451,10 +622,33 @@ async function generateMovieEpisode(episodeIndex = 0) {
 }
 
 if (require.main === module) {
-  generateMovieEpisode(0).catch(console.error);
+  let targetIndex = 0;
+  const rawInput = process.env.EPISODE_INDEX;
+
+  if (rawInput === undefined || rawInput === '' || rawInput === 'auto') {
+    // Auto-advance sequentially: check manifest for the last produced episode and select the next one
+    try {
+      if (fs.existsSync(MANIFEST_PATH)) {
+        const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
+        if (Array.isArray(manifest) && manifest.length > 0 && manifest[0].episode) {
+          const lastEpisode = manifest[0].episode;
+          targetIndex = lastEpisode % EPISODE_SERIES_CATALOG.length;
+          console.log(`[Movie Runner] 🔄 Auto-Advancement: Last episode was Ep ${lastEpisode}. Advancing to Episode index ${targetIndex} (Ep ${EPISODE_SERIES_CATALOG[targetIndex].episode}).`);
+        }
+      }
+    } catch (e) {
+      console.warn(`[Movie Runner] Notice checking previous manifest: ${e.message}`);
+    }
+  } else {
+    targetIndex = parseInt(rawInput, 10);
+    if (isNaN(targetIndex)) targetIndex = 0;
+  }
+
+  generateMovieEpisode(targetIndex).catch(console.error);
 }
 
 module.exports = {
   generateMovieEpisode,
+  loadUniverseBible,
   EPISODE_SERIES_CATALOG
 };

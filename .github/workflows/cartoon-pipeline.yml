@@ -2,8 +2,9 @@ name: Automated Cartoon Factory (Workflow 3)
 
 on:
   schedule:
-    # 1x daily prime-time release at 14:00 UTC (15:00 WAT) to prevent algorithmic spam throttles
-    - cron: '0 14 * * *'
+    # 4x daily spaced drops: 08:00 UTC (reel), 13:00 UTC (animated episode/short), 18:00 UTC (reel), 23:00 UTC (reel)
+    # Staggered 1 hour after Fin and 2 hours after Stoic to balance runner execution and audience reach
+    - cron: '0 8,13,18,23 * * *'
   workflow_dispatch:
     inputs:
       topic:
