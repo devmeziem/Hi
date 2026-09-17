@@ -1,5 +1,25 @@
 [
   {
+    "id": "movie_s1_e2_1789670492948",
+    "seriesTitle": "PROTOCOL ZERO: THE GHOST VAULT",
+    "episodeTitle": "The Signal in the Dark",
+    "season": 1,
+    "episode": 2,
+    "videoPath": "/home/runner/work/Hi/Hi/test_artifacts/movie_episodes/movie_episode_s1_e2.mp4",
+    "narration": "The water was waist-deep now. Dax had twenty minutes of oxygen remaining. His scanner picked up a low-frequency radio signal. It was pulsing every three seconds. A second beam of light cut across the dark water. Someone was standing on the gantry above. The stranger raised a weapon and fired. Dax dropped under the freezing water as steel sparked overhead.",
+    "duration": 12,
+    "tags": [
+      "#SciFiShorts",
+      "#ActionShorts",
+      "#ThrillerSeries",
+      "#GhostVault",
+      "#MiniMovie",
+      "#Shorts"
+    ],
+    "youtubeUploadStatus": "PENDING_REVIEW (Upload hold enabled)",
+    "createdAt": "2026-09-17T18:41:32.948Z"
+  },
+  {
     "id": "movie_s1_e1_1789662349130",
     "seriesTitle": "PROTOCOL ZERO: THE GHOST VAULT",
     "episodeTitle": "Sub-Level 14",
