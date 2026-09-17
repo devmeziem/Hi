@@ -1,5 +1,25 @@
 [
   {
+    "id": "movie_s1_e3_1789678117429",
+    "seriesTitle": "PROTOCOL ZERO: THE GHOST VAULT",
+    "episodeTitle": "The Core Chamber",
+    "season": 1,
+    "episode": 3,
+    "videoPath": "/home/runner/work/Hi/Hi/test_artifacts/movie_episodes/movie_episode_s1_e3.mp4",
+    "narration": "Dax surfaced inside a massive dry chamber. Concrete walls reinforced with lead. In the center stood a cylindrical titanium reactor. It had been running untouched for fifty years. The intruder wasn't planting explosives. She was downloading the city's power grid master key. She turned toward him, pulled off her tactical mask, and whispered: 'Dax? You were supposed to be dead.'",
+    "duration": 12,
+    "tags": [
+      "#SciFiShorts",
+      "#CinematicShorts",
+      "#SciFiThriller",
+      "#GhostVault",
+      "#IndieFilm",
+      "#Shorts"
+    ],
+    "youtubeUploadStatus": "PENDING_REVIEW (Upload hold enabled)",
+    "createdAt": "2026-09-17T20:48:37.429Z"
+  },
+  {
     "id": "movie_s1_e2_1789670492948",
     "seriesTitle": "PROTOCOL ZERO: THE GHOST VAULT",
     "episodeTitle": "The Signal in the Dark",
