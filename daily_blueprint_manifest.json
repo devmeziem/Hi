@@ -1,6 +1,19 @@
 {
   "videos": [
     {
+      "id": "fin_quote_1789689076867",
+      "channelId": "finance_saas",
+      "type": "financial_quote_reel_5s",
+      "title": "The Number One Rule of Smart Money — Benjamin Graham #Shorts",
+      "author": "Benjamin Graham",
+      "credentials": "Columbia Business School • Father of Value Investing",
+      "reference": "The Intelligent Investor, Chapter 1",
+      "duration": 5,
+      "videoPath": "/home/runner/work/Hi/Hi/rendered_videos/fin_quote_5s_1789689076867.mp4",
+      "loopable": true,
+      "publishedAt": "2026-09-17T23:51:20.623Z"
+    },
+    {
       "id": "fin_quote_1789675139762",
       "channelId": "finance_saas",
       "type": "financial_quote_reel_5s",
