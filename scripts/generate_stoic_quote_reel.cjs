@@ -183,166 +183,118 @@ const WORLD_SCHOLARS_QUOTES = [
     theme: "strategy",
     communityQuestion: "What pointless argument or drama are you choosing to walk away from today?"
   },
-  // Dr. Albert Einstein, Ph.D.
+  // Zeno of Citium
   {
-    quote: "In the middle of difficulty lies opportunity.",
-    author: "Dr. Albert Einstein, Ph.D.",
-    credentials: "Theoretical Physicist • Nobel Laureate in Physics",
-    wikiSearch: "Albert_Einstein",
-    theme: "wisdom",
-    communityQuestion: "What current obstacle in your work might secretly be your greatest breakthrough?"
+    quote: "Man conquers the world by conquering himself. We have two ears and one mouth for a reason.",
+    author: "Zeno of Citium",
+    credentials: "Founder of Stoicism • The Stoa Poikile of Athens",
+    wikiSearch: "Zeno_of_Citium",
+    theme: "mastery",
+    communityQuestion: "What impulse did you conquer today before it conquered you?"
   },
+  // Musonius Rufus
   {
-    quote: "A person who never made a mistake never tried anything new.",
-    author: "Dr. Albert Einstein, Ph.D.",
-    credentials: "Theoretical Physicist • Nobel Laureate in Physics",
-    wikiSearch: "Albert_Einstein",
-    theme: "confidence",
-    communityQuestion: "What is one bold project you are holding back on out of fear of making an error?"
-  },
-  // Prof. Arthur Schopenhauer
-  {
-    quote: "A man can be himself only so long as he is alone. If he does not love solitude, he will not love freedom.",
-    author: "Prof. Arthur Schopenhauer",
-    credentials: "Metaphysician & Philosopher • University of Berlin",
-    wikiSearch: "Arthur_Schopenhauer",
+    quote: "You will earn the respect of all if you begin by earning the respect of yourself.",
+    author: "Musonius Rufus",
+    credentials: "The Roman Socrates • Stoic Teacher of Epictetus",
+    wikiSearch: "Gaius_Musonius_Rufus",
     theme: "sovereignty",
-    communityQuestion: "Do you use solitude to recharge your mind, or do you run from being alone?"
+    communityQuestion: "Did you keep the promises you made to yourself today?"
   },
-  // Dr. Richard Feynman, Ph.D.
+  // Cato the Younger
   {
-    quote: "The first principle is that you must not fool yourself, and you are the easiest person to fool.",
-    author: "Dr. Richard Feynman, Ph.D.",
-    credentials: "Theoretical Physicist • Nobel Laureate in Physics • Caltech",
-    wikiSearch: "Richard_Feynman",
-    theme: "truth",
-    communityQuestion: "Where in your life are you rationalizing instead of looking at reality objectively?"
+    quote: "I begin to speak only when I am certain what I have to say is not better left unsaid.",
+    author: "Cato the Younger",
+    credentials: "Roman Statesman & Stoic Icon • Defender of the Republic",
+    wikiSearch: "Cato_the_Younger",
+    theme: "discipline",
+    communityQuestion: "What useless argument did you have the discipline to walk away from today?"
   },
-  // Dr. Marie Curie, Ph.D.
+  // Cleanthes of Assos
   {
-    quote: "Nothing in life is to be feared, it is only to be understood. Now is the time to understand more, so that we may fear less.",
-    author: "Dr. Marie Curie, Ph.D.",
-    credentials: "Physicist & Chemist • Double Nobel Laureate • Sorbonne",
-    wikiSearch: "Marie_Curie",
+    quote: "Fate leads the willing, and drags the unwilling.",
+    author: "Cleanthes of Assos",
+    credentials: "Stoic Boxer & Successor to Zeno • Athens",
+    wikiSearch: "Cleanthes",
     theme: "fortitude",
-    communityQuestion: "What unknown challenge do you need to study and demystify rather than fear?"
+    communityQuestion: "Are you fighting unavoidable reality, or adapting and moving forward?"
   },
-  // Dr. Jane Goodall, Ph.D., DBE
+  // Chrysippus
   {
-    quote: "What you do makes a difference, and you have to decide what kind of difference you want to make.",
-    author: "Dr. Jane Goodall, Ph.D., DBE",
-    credentials: "Primatologist & Anthropologist • University of Cambridge",
-    wikiSearch: "Jane_Goodall",
-    theme: "purpose",
-    communityQuestion: "What small, honorable action will you take today that genuinely helps another person?"
-  },
-  // Dr. J. Robert Oppenheimer, Ph.D.
-  {
-    quote: "The optimist thinks this is the best of all possible worlds. The pessimist fears it is true.",
-    author: "Dr. J. Robert Oppenheimer, Ph.D.",
-    credentials: "Theoretical Physicist • Director, Institute for Advanced Study Princeton",
-    wikiSearch: "J._Robert_Oppenheimer",
+    quote: "The wise man lacks nothing, and yet needs many things; the fool needs nothing, for he knows not how to use anything.",
+    author: "Chrysippus of Soli",
+    credentials: "Third Leader of the Stoic School • Master of Logic",
+    wikiSearch: "Chrysippus",
     theme: "wisdom",
-    communityQuestion: "Are you viewing your future through clear discernment or blind assumption?"
+    communityQuestion: "Are you grateful for what you already have, or constantly chasing the next hit?"
   },
-  // Prof. Baltasar Gracián
+  // Marcus Aurelius
   {
-    quote: "A wise man gets more use from his enemies than a fool from his friends.",
-    author: "Prof. Baltasar Gracián",
-    credentials: "Philosopher & Rector • Author of The Art of Worldly Wisdom",
-    wikiSearch: "Baltasar_Graci%C3%A1n",
-    theme: "defense",
-    communityQuestion: "How can criticism from your detractors reveal blind spots you need to sharpen?"
+    quote: "Waste no more time arguing what a good man should be. Be one.",
+    author: "Marcus Aurelius",
+    credentials: "Roman Emperor & Stoic Philosopher • Meditations",
+    wikiSearch: "Marcus_Aurelius",
+    theme: "action",
+    communityQuestion: "What is one standard you will uphold today without announcing it to anyone?"
   },
-  // Dr. Alan Turing, Ph.D., OBE
   {
-    quote: "Sometimes it is the people no one can imagine anything of who do the things that no one can imagine.",
-    author: "Dr. Alan Turing, Ph.D., OBE",
-    credentials: "Mathematician, Logician & Cryptanalyst • Cambridge & Princeton",
-    wikiSearch: "Alan_Turing",
-    theme: "confidence",
-    communityQuestion: "Have you ever doubted your capabilities simply because others failed to recognize your quiet depth?"
-  },
-  // Dr. Bertrand Russell, Ph.D.
-  {
-    quote: "The whole problem with the world is that fools and fanatics are always so certain of themselves, and wiser people so full of doubts.",
-    author: "Dr. Bertrand Russell, Ph.D.",
-    credentials: "Logician, Philosopher & Nobel Laureate • Trinity College Cambridge",
-    wikiSearch: "Bertrand_Russell",
-    theme: "wisdom",
-    communityQuestion: "Why is intellectual humility the truest marker of deep knowledge?"
-  },
-  // Hypatia of Alexandria
-  {
-    quote: "Reserve your right to think, for even to think wrongly is better than not to think at all.",
-    author: "Hypatia of Alexandria",
-    credentials: "Mathematician, Astronomer & Neoplatonist Philosopher",
-    wikiSearch: "Hypatia",
-    theme: "truth",
-    communityQuestion: "Are you thinking independently, or adopting opinions handed to you by an algorithm?"
-  },
-  // Dr. Martin Luther King Jr., Ph.D.
-  {
-    quote: "The ultimate measure of a man is not where he stands in moments of comfort, but where he stands at times of challenge.",
-    author: "Dr. Martin Luther King Jr., Ph.D.",
-    credentials: "Theologian & Civil Rights Leader • Boston University",
-    wikiSearch: "Martin_Luther_King_Jr.",
+    quote: "The impediment to action advances action. What stands in the way becomes the way.",
+    author: "Marcus Aurelius",
+    credentials: "Roman Emperor & Stoic Philosopher • Meditations",
+    wikiSearch: "Marcus_Aurelius",
     theme: "fortitude",
-    communityQuestion: "When pressure hits, do you maintain your character or compromise your standards?"
+    communityQuestion: "What recent setback can you transform into your greatest training ground?"
   },
-  // Dr. Abraham Maslow, Ph.D.
+  // Seneca the Younger
   {
-    quote: "In any given moment we have two options: to step forward into growth or to step back into safety.",
-    author: "Dr. Abraham Maslow, Ph.D.",
-    credentials: "Pioneer of Humanistic Psychology • Columbia University",
-    wikiSearch: "Abraham_Maslow",
+    quote: "Luck is what happens when preparation meets opportunity.",
+    author: "Seneca the Younger",
+    credentials: "Roman Stoic Philosopher & Statesman",
+    wikiSearch: "Seneca_the_Younger",
+    theme: "preparation",
+    communityQuestion: "Are you actively training while others are waiting for luck?"
+  },
+  {
+    quote: "He is a great man who uses earthenware dishes as if they were silver; but he is equally great who uses silver as if it were earthenware.",
+    author: "Seneca the Younger",
+    credentials: "Roman Stoic Philosopher & Statesman",
+    wikiSearch: "Seneca_the_Younger",
     theme: "discipline",
-    communityQuestion: "Which choice today will represent stepping forward into growth for you?"
+    communityQuestion: "Can you remain unaffected by both poverty and luxury?"
   },
-  // Ibn Khaldun
+  // Epictetus
   {
-    quote: "Throughout history, cities have been destroyed because people placed comfort above discipline.",
-    author: "Ibn Khaldun",
-    credentials: "Historian, Sociologist & Philosopher • Author of the Muqaddimah",
-    wikiSearch: "Ibn_Khaldun",
-    theme: "discipline",
-    communityQuestion: "Where has unchecked comfort begun eroding your mental toughness?"
+    quote: "First say to yourself what you would be; and then do what you have to do.",
+    author: "Epictetus",
+    credentials: "Stoic Philosopher • Born a Slave • The Discourses",
+    wikiSearch: "Epictetus",
+    theme: "identity",
+    communityQuestion: "Do your daily actions reflect the person you claim you want to become?"
   },
-  // Confucius (Kong Fuzi)
   {
-    quote: "The man who moves a mountain begins by carrying away small stones.",
-    author: "Confucius",
-    credentials: "Grand Philosopher & Educator of Ancient China",
-    wikiSearch: "Confucius",
-    theme: "discipline",
-    communityQuestion: "What tiny stone will you move today toward your long-term goal?"
+    quote: "Wealth consists not in having great possessions, but in having few wants.",
+    author: "Epictetus",
+    credentials: "Stoic Philosopher • Born a Slave • The Enchiridion",
+    wikiSearch: "Epictetus",
+    theme: "freedom",
+    communityQuestion: "What unnecessary desire can you eliminate today to gain instant freedom?"
   },
-  // Leonardo da Vinci
+  // Miyamoto Musashi
   {
-    quote: "Simplicity is the ultimate sophistication.",
-    author: "Leonardo da Vinci",
-    credentials: "Polymath, Anatomist, Engineer & Renaissance Master",
-    wikiSearch: "Leonardo_da_Vinci",
-    theme: "wisdom",
-    communityQuestion: "What overcomplicated part of your life or work needs radical simplification?"
+    quote: "Think lightly of yourself and deeply of the world.",
+    author: "Miyamoto Musashi",
+    credentials: "Undefeated Samurai & Philosopher • The Dokkōdō",
+    wikiSearch: "Miyamoto_Musashi",
+    theme: "humility",
+    communityQuestion: "How can you drop your ego today to observe reality more clearly?"
   },
-  // Baruch Spinoza
   {
-    quote: "Peace is not an absence of war, it is a virtue, a state of mind, a disposition for benevolence.",
-    author: "Baruch Spinoza",
-    credentials: "Rationalist Philosopher & Ethicist • Amsterdam",
-    wikiSearch: "Baruch_Spinoza",
-    theme: "defense",
-    communityQuestion: "Are you cultivating inner peace, or merely avoiding difficult truths?"
-  },
-  // Dr. Max Planck, Ph.D.
-  {
-    quote: "When you change the way you look at things, the things you look at change.",
-    author: "Dr. Max Planck, Ph.D.",
-    credentials: "Nobel Laureate in Physics • Originator of Quantum Theory",
-    wikiSearch: "Max_Planck",
-    theme: "mindset",
-    communityQuestion: "What perspective shift can turn your current frustration into fuel?"
+    quote: "Step by step walk the thousand-mile road. Do not regret what you have done.",
+    author: "Miyamoto Musashi",
+    credentials: "Undefeated Samurai & Philosopher • The Book of Five Rings",
+    wikiSearch: "Miyamoto_Musashi",
+    theme: "relentless",
+    communityQuestion: "What small step did you execute today without overthinking the destination?"
   }
 ];
 
@@ -753,14 +705,41 @@ async function generateStoic5sVideo() {
   const wavPath = path.join(ARTIFACTS_DIR, `scholar_mystery_sound_${TARGET_DURATION}s.wav`);
   generateLoopyMysterySound(wavPath, TARGET_DURATION);
 
-  // 4. Prepare High-Contrast Glass Caption Overlay with Maximum Legibility
-  const quoteLines = wrapQuoteText(chosen.quote, 24);
+  // Theme Variation for Stoic Channel: Rotate Obsidian Gold, Roman Bronze, and Spartan Crimson
+  const stoicThemes = [
+    {
+      pillBg: '#1e1b4b',
+      borderColor: '#d4af37',
+      pillText: '#fef08a',
+      nameColor: '#facc15',
+      badgeTitle: '🏛️ STOIC WISDOM'
+    },
+    {
+      pillBg: '#271010',
+      borderColor: '#e11d48',
+      pillText: '#fecdd3',
+      nameColor: '#fb7185',
+      badgeTitle: '⚔️ SPARTAN DISCIPLINE'
+    },
+    {
+      pillBg: '#0f172a',
+      borderColor: '#94a3b8',
+      pillText: '#e2e8f0',
+      nameColor: '#f1f5f9',
+      badgeTitle: '🏛️ ANCIENT MASTERY'
+    }
+  ];
+  const themeIndex = Math.abs(chosen.author.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % stoicThemes.length;
+  const currentTheme = stoicThemes[themeIndex];
+
+  // 4. Prepare High-Contrast Glass Caption Overlay with Maximum Legibility (Short lines, max 3 lines)
+  const quoteLines = wrapQuoteText(chosen.quote, 22).slice(0, 3);
   const quoteTspans = quoteLines.map((line, idx) =>
-    `<tspan x="540" dy="${idx === 0 ? 0 : 62}">${escapeXml(line)}</tspan>`
+    `<tspan x="540" dy="${idx === 0 ? 0 : 70}">${escapeXml(line)}</tspan>`
   ).join('\n        ');
 
-  const cardHeight = Math.max(520, 290 + quoteLines.length * 64);
-  const cardY = 1680 - cardHeight;
+  const cardHeight = Math.max(480, 270 + quoteLines.length * 70);
+  const cardY = 1720 - cardHeight;
 
   const overlaySvgPath = path.join(ARTIFACTS_DIR, 'quote_overlay.svg');
   const overlayPngPath = path.join(ARTIFACTS_DIR, 'quote_overlay.png');
@@ -774,34 +753,34 @@ async function generateStoic5sVideo() {
         <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="1.0" />
       </filter>
       <linearGradient id="cardBg" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#020617" stop-opacity="0.94" />
-        <stop offset="100%" stop-color="#000000" stop-opacity="0.98" />
+        <stop offset="0%" stop-color="#020617" stop-opacity="0.96" />
+        <stop offset="100%" stop-color="#000000" stop-opacity="0.99" />
       </linearGradient>
     </defs>
 
-    <!-- Heavy Vignette Shading for Maximum Text Contrast -->
-    <rect x="0" y="800" width="1080" height="1120" fill="black" fill-opacity="0.65" />
+    <!-- Subtle Vignette Shading for Text Legibility while preserving face -->
+    <rect x="0" y="900" width="1080" height="1020" fill="black" fill-opacity="0.60" />
 
     <!-- High-Contrast Caption Card -->
-    <rect x="50" y="${cardY}" width="980" height="${cardHeight}" rx="28" fill="url(#cardBg)" stroke="#d4af37" stroke-width="2.5" stroke-opacity="0.75" filter="url(#cardShadow)" />
+    <rect x="50" y="${cardY}" width="980" height="${cardHeight}" rx="28" fill="url(#cardBg)" stroke="${currentTheme.borderColor}" stroke-width="2.5" stroke-opacity="0.85" filter="url(#cardShadow)" />
 
-    <!-- Gold Header Pill Badge -->
-    <rect x="360" y="${cardY + 36}" width="360" height="38" rx="19" fill="#1e1b4b" stroke="#d4af37" stroke-width="2" />
-    <text x="540" y="${cardY + 61}" font-family="sans-serif" font-size="14" font-weight="900" fill="#fef08a" letter-spacing="3" text-anchor="middle">🏛️ STOIC WISDOM</text>
+    <!-- Header Pill Badge -->
+    <rect x="340" y="${cardY + 36}" width="400" height="42" rx="21" fill="${currentTheme.pillBg}" stroke="${currentTheme.borderColor}" stroke-width="2" />
+    <text x="540" y="${cardY + 64}" font-family="sans-serif" font-size="15" font-weight="900" fill="${currentTheme.pillText}" letter-spacing="3" text-anchor="middle">${currentTheme.badgeTitle}</text>
 
-    <!-- Large High-Contrast Quote Text (42px bold white) -->
-    <text x="540" y="${cardY + 145}" font-family="serif" font-size="42" font-weight="900" fill="#ffffff" text-anchor="middle" filter="url(#textShadow)">
+    <!-- Large High-Contrast Quote Text (50px bold white) -->
+    <text x="540" y="${cardY + 155}" font-family="serif" font-size="50" font-weight="900" fill="#ffffff" text-anchor="middle" filter="url(#textShadow)">
         ${quoteTspans}
     </text>
 
     <!-- Accent Divider -->
-    <line x1="380" y1="${cardY + 175 + quoteLines.length * 62}" x2="700" y2="${cardY + 175 + quoteLines.length * 62}" stroke="#d4af37" stroke-width="2" stroke-opacity="0.8" />
+    <line x1="380" y1="${cardY + 175 + quoteLines.length * 70}" x2="700" y2="${cardY + 175 + quoteLines.length * 70}" stroke="${currentTheme.borderColor}" stroke-width="2" stroke-opacity="0.8" />
 
-    <!-- Scholar Name (26px Gold Ultra-Bold) -->
-    <text x="540" y="${cardY + 235 + quoteLines.length * 62}" font-family="sans-serif" font-size="26" font-weight="900" fill="#facc15" letter-spacing="2" text-anchor="middle" filter="url(#textShadow)">
+    <!-- Scholar Name & Credentials -->
+    <text x="540" y="${cardY + 235 + quoteLines.length * 70}" font-family="sans-serif" font-size="28" font-weight="900" fill="${currentTheme.nameColor}" letter-spacing="2" text-anchor="middle" filter="url(#textShadow)">
       — ${escapeXml(chosen.author.toUpperCase())} —
     </text>
-    <text x="540" y="${cardY + 275 + quoteLines.length * 62}" font-family="sans-serif" font-size="17" font-weight="700" fill="#cbd5e1" letter-spacing="1" text-anchor="middle">
+    <text x="540" y="${cardY + 275 + quoteLines.length * 70}" font-family="sans-serif" font-size="18" font-weight="700" fill="#cbd5e1" letter-spacing="1" text-anchor="middle">
       ${escapeXml(chosen.credentials)}
     </text>
   </svg>`;
@@ -838,9 +817,9 @@ async function generateStoic5sVideo() {
 
   const overlayInput = (fs.existsSync(overlayPngPath) && fs.statSync(overlayPngPath).size > 1000) ? overlayPngPath : overlaySvgPath;
 
-  // Zoompan formula: subtle zoom from 1.00 to 1.04 over duration, dark contrast boost
+  // Zoompan formula: subtle zoom anchored at upper third for natural bust headroom
   const filterComplex = [
-    `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0003,1.04)':d=${TOTAL_FRAMES}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=${FPS},eq=brightness=-0.10:contrast=1.14:saturation=0.88[bg]`,
+    `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920:(iw-1080)/2:0,zoompan=z='min(zoom+0.0004,1.05)':d=${TOTAL_FRAMES}:x='iw/2-(iw/zoom/2)':y='ih*0.28-(ih*0.28/zoom)':s=1080x1920:fps=${FPS},eq=brightness=-0.10:contrast=1.14:saturation=0.88[bg]`,
     `[1:v]scale=1080:1920[ov]`,
     `[bg][ov]overlay=0:0,format=yuv420p[v]`
   ].join(';');
@@ -851,7 +830,7 @@ async function generateStoic5sVideo() {
     execSync(ffmpegCmd, { maxBuffer: 50 * 1024 * 1024, stdio: ['pipe', 'pipe', 'pipe'] });
   } catch (err) {
     console.warn('[Quote Reel] Primary filter complex notice, falling back to direct overlay:', err.message);
-    const fallbackCmd = `ffmpeg -y -loglevel error -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t ${TARGET_DURATION} -i "${overlayInput}" -i "${wavPath}" -filter_complex "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,eq=brightness=-0.10:contrast=1.12[bg];[1:v]scale=1080:1920[ov];[bg][ov]overlay=0:0[v]" -map "[v]" -map 2:a -c:v libx264 -preset ultrafast -crf 22 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${TARGET_DURATION} "${finalMp4Path}"`;
+    const fallbackCmd = `ffmpeg -y -loglevel error -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t ${TARGET_DURATION} -i "${overlayInput}" -i "${wavPath}" -filter_complex "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920:(iw-1080)/2:0,eq=brightness=-0.10:contrast=1.12[bg];[1:v]scale=1080:1920[ov];[bg][ov]overlay=0:0[v]" -map "[v]" -map 2:a -c:v libx264 -preset ultrafast -crf 22 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${TARGET_DURATION} "${finalMp4Path}"`;
     execSync(fallbackCmd, { maxBuffer: 50 * 1024 * 1024, stdio: ['pipe', 'pipe', 'pipe'] });
   }
 
@@ -863,8 +842,18 @@ async function generateStoic5sVideo() {
   await saveQuoteHistory(chosen);
 
   // 5. Format High-Retention Title, Description, and Targeted Hashtags
-  const cleanAuthorName = chosen.author.replace(/^(Dr\.|Prof\.)\s*/, '').trim();
-  const viralTitle = `The Stoic Lesson Most People Learn Too Late — ${chosen.author} #Shorts`;
+  const stoicTitleHooks = [
+    `The Brutal Truth About Self-Control — ${chosen.author} #Shorts`,
+    `How To Stop Caring What People Think — ${chosen.author} #Shorts`,
+    `The Stoic Rule That Will Save Your Mind — ${chosen.author} #Shorts`,
+    `Why Most People Fail Under Pressure — ${chosen.author} #Shorts`,
+    `The Ancient Mindset You Were Never Taught — ${chosen.author} #Shorts`,
+    `Silence Your Ego Before It Destroys You — ${chosen.author} #Shorts`,
+    `The Hardest Truth About Human Nature — ${chosen.author} #Shorts`,
+    `Never Let Anyone Disrespect Your Time — ${chosen.author} #Shorts`
+  ];
+  const hookIndex = Math.abs(chosen.author.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) + Date.now()) % stoicTitleHooks.length;
+  const viralTitle = stoicTitleHooks[hookIndex];
   const initialFollowCta = formatChannelFollowCta('motivation_stoicism', process.env.YOUTUBE_HANDLE_CH2 || process.env.YOUTUBE_HANDLE_STOIC || '');
   const viralDescription = `"${chosen.quote}"
 — ${chosen.author}

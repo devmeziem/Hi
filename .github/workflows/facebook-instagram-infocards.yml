@@ -1,12 +1,9 @@
 name: Facebook & Instagram Knowledge Cards (Workflow 4)
 
 on:
-  push:
-    branches:
-      - '**'
   schedule:
-    # Twice Daily In-Depth Visual Knowledge Releases (09:00 UTC and 19:00 UTC)
-    - cron: '0 9,19 * * *'
+    # 1x Daily In-Depth Visual Knowledge Release (15:00 UTC / 16:00 WAT)
+    - cron: '0 15 * * *'
   workflow_dispatch:
     inputs:
       dry_run:

@@ -2,8 +2,8 @@ name: Cinema Vanguard - Episodic Movie Series Pipeline (Channel 4)
 
 on:
   schedule:
-    # Daily episode release at 14:00 UTC (15:00 WAT)
-    - cron: '0 14 * * *'
+    # Daily episode release at 18:00 UTC (19:00 WAT)
+    - cron: '0 18 * * *'
   workflow_dispatch:
     inputs:
       episode_index:

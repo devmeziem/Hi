@@ -524,87 +524,117 @@ function generateFinancialMysterySound(outWavPath, duration = 5.0) {
 }
 
 /**
- * Generate High-Contrast Center-Bottom Caption Card SVG (Optimized for Maximum Visibility)
+ * Generate High-Contrast Caption Card SVG (Varied Visual Themes & Low Text Density)
  */
 function buildFrostedGlassCardSvg(scholar, width = 1080, height = 1920) {
-  // Wrap text with comfortable character length for large, visible typography
-  const quoteWords = scholar.quote.split(' ');
+  // Theme Variation: Rotate between Gold-Obsidian, Emerald-Bronze, and Platinum-Navy
+  const themeSeeds = [
+    {
+      id: 'gold_obsidian',
+      badgeBg: '#f59e0b',
+      badgeBorder: '#fbbf24',
+      badgeText: '#fcd34d',
+      borderGrad: ['#f59e0b', '#fbbf24', '#d97706'],
+      nameColor: '#fbbf24',
+      badgeTitle: 'THE 1% MINDSET'
+    },
+    {
+      id: 'platinum_navy',
+      badgeBg: '#38bdf8',
+      badgeBorder: '#7dd3fc',
+      badgeText: '#e0f2fe',
+      borderGrad: ['#38bdf8', '#0284c7', '#6366f1'],
+      nameColor: '#38bdf8',
+      badgeTitle: 'WEALTH PRINCIPLE'
+    },
+    {
+      id: 'emerald_prestige',
+      badgeBg: '#10b981',
+      badgeBorder: '#34d399',
+      badgeText: '#d1fae5',
+      borderGrad: ['#10b981', '#059669', '#34d399'],
+      nameColor: '#34d399',
+      badgeTitle: 'FINANCIAL FREEDOM'
+    }
+  ];
+  
+  const themeIndex = Math.abs(scholar.author.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % themeSeeds.length;
+  const theme = themeSeeds[themeIndex];
+
+  // Wrap text with short lines (max 22 chars/line for huge, legible 54px typography)
+  const quoteWords = scholar.quote.split(/\s+/);
   const lines = [];
   let currentLine = '';
   for (const w of quoteWords) {
-    if ((currentLine + ' ' + w).length > 25) {
-      lines.push(currentLine.trim());
+    if ((currentLine + ' ' + w).trim().length > 22) {
+      if (lines.length < 3) lines.push(currentLine.trim());
       currentLine = w;
     } else {
-      currentLine += ' ' + w;
+      currentLine = (currentLine + ' ' + w).trim();
     }
   }
-  if (currentLine) lines.push(currentLine.trim());
+  if (currentLine && lines.length < 3) lines.push(currentLine.trim());
 
-  // Center vertical placement with generous contrast margin
-  const cardHeight = Math.max(540, 300 + lines.length * 70);
-  const cardY = 1740 - cardHeight;
+  const cardHeight = Math.max(500, 280 + lines.length * 75);
+  const cardY = 1760 - cardHeight;
   const cardWidth = 980;
   const cardX = 50;
 
   const quoteTspans = lines.map((line, idx) => {
-    return `<tspan x="540" dy="${idx === 0 ? 0 : 72}">${escapeXml(line)}</tspan>`;
+    return `<tspan x="540" dy="${idx === 0 ? 0 : 76}">${escapeXml(line)}</tspan>`;
   }).join('');
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
     <defs>
       <!-- Deep High-Contrast Opaque Backdrop -->
       <linearGradient id="solidContrastBg" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#050811" stop-opacity="0.98" />
-        <stop offset="50%" stop-color="#0a0e1a" stop-opacity="0.98" />
+        <stop offset="0%" stop-color="#050811" stop-opacity="0.96" />
+        <stop offset="50%" stop-color="#0a0e1a" stop-opacity="0.97" />
         <stop offset="100%" stop-color="#020409" stop-opacity="0.99" />
       </linearGradient>
 
-      <!-- Warm Gold Accent Stroke -->
-      <linearGradient id="goldBorder" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.9" />
-        <stop offset="50%" stop-color="#fbbf24" stop-opacity="1.0" />
-        <stop offset="100%" stop-color="#d97706" stop-opacity="0.9" />
+      <!-- Dynamic Border Gradient -->
+      <linearGradient id="cardAccentBorder" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="${theme.borderGrad[0]}" stop-opacity="0.9" />
+        <stop offset="50%" stop-color="${theme.borderGrad[1]}" stop-opacity="1.0" />
+        <stop offset="100%" stop-color="${theme.borderGrad[2]}" stop-opacity="0.9" />
       </linearGradient>
 
       <filter id="cardShadow" x="-10%" y="-10%" width="120%" height="120%">
-        <feDropShadow dx="0" dy="20" stdDeviation="30" flood-color="#000000" flood-opacity="0.98" />
+        <feDropShadow dx="0" dy="24" stdDeviation="32" flood-color="#000000" flood-opacity="0.98" />
       </filter>
       <filter id="textContrast" x="-15%" y="-15%" width="130%" height="130%">
         <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="1.0" />
       </filter>
     </defs>
 
-    <!-- Bottom Shading Gradient for 100% Guaranteed Text Legibility Over Any Background -->
-    <rect x="0" y="850" width="1080" height="1070" fill="#000000" fill-opacity="0.80" />
+    <!-- Subtle Cinematic Gradient: Preserves Face Clarity While Ensuring Text Legibility -->
+    <rect x="0" y="950" width="1080" height="970" fill="url(#solidContrastBg)" fill-opacity="0.75" />
 
-    <!-- High-Contrast Caption Card Outer Container -->
+    <!-- High-Contrast Caption Card Container -->
     <rect x="${cardX}" y="${cardY}" width="${cardWidth}" height="${cardHeight}" rx="32" fill="url(#solidContrastBg)" filter="url(#cardShadow)" />
-    <rect x="${cardX}" y="${cardY}" width="${cardWidth}" height="${cardHeight}" rx="32" fill="none" stroke="url(#goldBorder)" stroke-width="2.5" />
+    <rect x="${cardX}" y="${cardY}" width="${cardWidth}" height="${cardHeight}" rx="32" fill="none" stroke="url(#cardAccentBorder)" stroke-width="2.5" />
 
     <!-- Top Accent Badge Header -->
-    <rect x="90" y="${cardY + 36}" width="280" height="42" rx="21" fill="#f59e0b" fill-opacity="0.22" stroke="#fbbf24" stroke-width="2" />
-    <text x="230" y="${cardY + 63}" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="900" fill="#fcd34d" text-anchor="middle" letter-spacing="2">FINANCE MINDSET</text>
+    <rect x="90" y="${cardY + 36}" width="300" height="44" rx="22" fill="${theme.badgeBg}" fill-opacity="0.22" stroke="${theme.badgeBorder}" stroke-width="2" />
+    <text x="240" y="${cardY + 65}" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="900" fill="${theme.badgeText}" text-anchor="middle" letter-spacing="2">${theme.badgeTitle}</text>
 
     <!-- Reference Tag at Right -->
-    <text x="940" y="${cardY + 63}" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" fill="#e2e8f0" text-anchor="end">${escapeXml(scholar.reference || 'Financial Wisdom')}</text>
+    <text x="940" y="${cardY + 65}" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" fill="#cbd5e1" text-anchor="end">${escapeXml(scholar.reference || 'Financial Wisdom')}</text>
 
-    <!-- Quotation Mark -->
-    <text x="90" y="${cardY + 145}" font-family="Georgia, serif" font-size="76" font-weight="bold" fill="#f59e0b" opacity="0.7">“</text>
-
-    <!-- The Quote Body: Extra Large, Ultra-Bold, Pure White with Deep Shadow -->
-    <text x="540" y="${cardY + 150}" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="50" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="-0.5" filter="url(#textContrast)">
+    <!-- The Quote Body: Ultra-Bold White (52px, max 3 lines) -->
+    <text x="540" y="${cardY + 155}" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="52" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="-0.5" filter="url(#textContrast)">
       ${quoteTspans}
     </text>
 
     <!-- Divider Line -->
     <line x1="90" y1="${cardY + cardHeight - 105}" x2="990" y2="${cardY + cardHeight - 105}" stroke="#334155" stroke-width="1.8" opacity="0.9" />
 
-    <!-- Author Name (Vibrant Gold) & Credentials -->
-    <text x="540" y="${cardY + cardHeight - 65}" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="900" fill="#fbbf24" text-anchor="middle" letter-spacing="1.5" filter="url(#textContrast)">
+    <!-- Author Name & Credentials -->
+    <text x="540" y="${cardY + cardHeight - 65}" font-family="system-ui, -apple-system, sans-serif" font-size="30" font-weight="900" fill="${theme.nameColor}" text-anchor="middle" letter-spacing="1.5" filter="url(#textContrast)">
       ${escapeXml(scholar.author.toUpperCase())}
     </text>
-    <text x="540" y="${cardY + cardHeight - 26}" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="700" fill="#f8fafc" text-anchor="middle">
+    <text x="540" y="${cardY + cardHeight - 26}" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#94a3b8" text-anchor="middle">
       ${escapeXml(scholar.credentials)}
     </text>
   </svg>`;
@@ -683,7 +713,7 @@ async function generateFin5sVideo() {
   console.log(`[FFmpeg Compositor] Rendering 5.0-second seamless vertical reel...`);
 
   const complexFilter = `
-    [0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0007,1.06)':d=${TOTAL_FRAMES}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30[bg];
+    [0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920:(iw-1080)/2:0,zoompan=z='min(zoom+0.0006,1.05)':d=${TOTAL_FRAMES}:x='iw/2-(iw/zoom/2)':y='ih*0.3-(ih*0.3/zoom)':s=1080x1920:fps=30[bg];
     [1:v]scale=1080:1920[card];
     [bg][card]overlay=0:0[vfinal]
   `.replace(/\s+/g, ' ');
@@ -699,8 +729,19 @@ async function generateFin5sVideo() {
     throw new Error('Video generation failed or output file is empty.');
   }
 
-  // 6. Update Blueprint Manifest
-  const viralTitle = `Finance Mindset — ${chosen.author} Quotes #Shorts`;
+  // 6. Update Blueprint Manifest with Dynamic Anti-Spam Hook Titles
+  const finTitleHooks = [
+    `The Brutal Truth About Wealth — ${chosen.author} #Shorts`,
+    `Why 90% of Investors Underperform — ${chosen.author} #Shorts`,
+    `The Number One Rule of Smart Money — ${chosen.author} #Shorts`,
+    `Stop Trading Your Life for Dollars — ${chosen.author} #Shorts`,
+    `The Quiet Habit of the Ultra-Wealthy — ${chosen.author} #Shorts`,
+    `How Real Investors Think About Risk — ${chosen.author} #Shorts`,
+    `The Hardest Investing Lesson to Master — ${chosen.author} #Shorts`,
+    `What the 1% Do That Amateurs Don't — ${chosen.author} #Shorts`
+  ];
+  const hookIndex = Math.abs(chosen.author.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) + Date.now()) % finTitleHooks.length;
+  const viralTitle = finTitleHooks[hookIndex];
   const initialFollowCta = formatChannelFollowCta('finance_saas', process.env.YOUTUBE_HANDLE_CH1 || process.env.YOUTUBE_HANDLE_FIN || process.env.YOUTUBE_HANDLE || '');
   const viralDescription = `"${chosen.quote}"\n\n— ${chosen.author}\n${chosen.credentials}\nSource: ${chosen.reference}\n\n🧠 Daily finance principles to master wealth, investment discipline, and financial freedom.\n\n${initialFollowCta}\n\n#Finance #Investing #MoneyMindset #WealthMindset #PersonalFinance #FinancialFreedom #StockMarket #SmartMoney #CompoundInterest #Shorts`;
 

@@ -390,8 +390,7 @@ function buildStudioBackgroundSvg(width = 1080, height = 1920) {
 }
 
 /**
- * Generate Digital Interactive Presentation Board SVG (Right side, matches Image 2)
- * Features category tabs, bold title in golden yellow, clear explanation text, "DID YOU KNOW?" card with lightbulb, diagram, citation
+ * Generate Digital Interactive Presentation Board SVG (Varied Colors, Crisp Visuals, Low Text Density)
  */
 function buildDigitalPresentationBoardSvg(factObj, width = 1080, height = 1920) {
   const boardX = 370;
@@ -399,43 +398,73 @@ function buildDigitalPresentationBoardSvg(factObj, width = 1080, height = 1920) 
   const boardW = 670;
   const boardH = 1220;
 
-  // Text wrap for explanation body: 3-4 clean lines, max 28 chars
+  // Visual Theme Variations for Archie's Lab Board
+  const boardThemes = [
+    {
+      neonBorder: ['#38bdf8', '#0284c7', '#818cf8'],
+      activeTabBg: '#0284c7',
+      dropGlow: '#0284c7',
+      titleColor: '#facc15'
+    },
+    {
+      neonBorder: ['#34d399', '#059669', '#10b981'],
+      activeTabBg: '#059669',
+      dropGlow: '#059669',
+      titleColor: '#a7f3d0'
+    },
+    {
+      neonBorder: ['#fbbf24', '#d97706', '#f59e0b'],
+      activeTabBg: '#d97706',
+      dropGlow: '#d97706',
+      titleColor: '#fde68a'
+    },
+    {
+      neonBorder: ['#c084fc', '#9333ea', '#7e22ce'],
+      activeTabBg: '#9333ea',
+      dropGlow: '#9333ea',
+      titleColor: '#f5d0fe'
+    }
+  ];
+  const themeIndex = Math.abs(factObj.title.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % boardThemes.length;
+  const currentTheme = boardThemes[themeIndex];
+
+  // Text wrap for explanation body: 2 crisp, high-impact lines (max 32 chars)
   const words = (factObj.fact || '').split(/\s+/);
   const lines = [];
   let cur = '';
   for (const w of words) {
-    if ((cur + ' ' + w).length > 28) {
-      if (lines.length < 4) lines.push(cur.trim());
+    if ((cur + ' ' + w).length > 30) {
+      if (lines.length < 2) lines.push(cur.trim());
       cur = w;
     } else {
       cur += ' ' + w;
     }
   }
-  if (cur.trim() && lines.length < 4) lines.push(cur.trim());
+  if (cur.trim() && lines.length < 2) lines.push(cur.trim());
 
   const renderedExplanation = lines.map((l, idx) => {
-    const yPos = boardY + 265 + (idx * 42);
-    return `<text x="${boardX + 40}" y="${yPos}" font-family="system-ui, -apple-system, sans-serif" font-size="26" font-weight="600" fill="#f8fafc" letter-spacing="-0.2">• ${escapeXml(l)}</text>`;
+    const yPos = boardY + 270 + (idx * 46);
+    return `<text x="${boardX + 40}" y="${yPos}" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="700" fill="#f8fafc" letter-spacing="-0.2">• ${escapeXml(l)}</text>`;
   }).join('\n');
 
   return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <!-- Glass Board Fill -->
       <linearGradient id="boardBg" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#020617" stop-opacity="0.95" />
-        <stop offset="50%" stop-color="#0b1120" stop-opacity="0.94" />
-        <stop offset="100%" stop-color="#020617" stop-opacity="0.97" />
+        <stop offset="0%" stop-color="#020617" stop-opacity="0.96" />
+        <stop offset="50%" stop-color="#0b1120" stop-opacity="0.95" />
+        <stop offset="100%" stop-color="#020617" stop-opacity="0.98" />
       </linearGradient>
 
-      <!-- Neon Cyan Board Frame Border -->
+      <!-- Dynamic Board Frame Border -->
       <linearGradient id="boardNeonBorder" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#38bdf8" />
-        <stop offset="50%" stop-color="#0284c7" />
-        <stop offset="100%" stop-color="#818cf8" />
+        <stop offset="0%" stop-color="${currentTheme.neonBorder[0]}" />
+        <stop offset="50%" stop-color="${currentTheme.neonBorder[1]}" />
+        <stop offset="100%" stop-color="${currentTheme.neonBorder[2]}" />
       </linearGradient>
 
       <filter id="boardDrop" x="-10%" y="-10%" width="120%" height="120%">
-        <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#0284c7" flood-opacity="0.35" />
+        <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="${currentTheme.dropGlow}" flood-opacity="0.38" />
       </filter>
     </defs>
 
@@ -446,10 +475,10 @@ function buildDigitalPresentationBoardSvg(factObj, width = 1080, height = 1920) 
       <path d="M ${boardX + 35} ${boardY + 6} L ${boardX + boardW - 35} ${boardY + 6} L ${boardX + 35} ${boardY + 280} Z" fill="#ffffff" fill-opacity="0.04" />
     </g>
 
-    <!-- 2. Top Header Navigation Tabs (Science, Tech, AI, Better Together) -->
+    <!-- 2. Top Header Navigation Tabs -->
     <g transform="translate(${boardX + 35}, ${boardY + 35})">
       <!-- Active Tab: Category -->
-      <rect x="0" y="0" width="160" height="38" rx="19" fill="#0284c7" />
+      <rect x="0" y="0" width="160" height="38" rx="19" fill="${currentTheme.activeTabBg}" />
       <text x="80" y="24" font-family="system-ui, sans-serif" font-size="14" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="1">SCIENCE</text>
 
       <!-- Inactive Tabs -->
@@ -463,10 +492,10 @@ function buildDigitalPresentationBoardSvg(factObj, width = 1080, height = 1920) 
       <text x="455" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#94a3b8" text-anchor="middle">Daily Fact</text>
     </g>
 
-    <!-- 3. Big High-Impact Title in Bright Golden Yellow -->
+    <!-- 3. Big High-Impact Title -->
     <g transform="translate(${boardX + 40}, ${boardY + 95})">
       <foreignObject width="${boardW - 80}" height="120">
-        <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: system-ui, -apple-system, sans-serif; font-size: 34px; font-weight: 900; line-height: 1.25; color: #facc15; letter-spacing: -0.5px;">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: system-ui, -apple-system, sans-serif; font-size: 34px; font-weight: 900; line-height: 1.25; color: ${currentTheme.titleColor}; letter-spacing: -0.5px;">
           ${escapeXml(factObj.title)}
         </div>
       </foreignObject>
@@ -475,7 +504,7 @@ function buildDigitalPresentationBoardSvg(factObj, width = 1080, height = 1920) 
     <!-- Divider Line -->
     <line x1="${boardX + 40}" y1="${boardY + 225}" x2="${boardX + boardW - 40}" y2="${boardY + 225}" stroke="#334155" stroke-width="1.8" stroke-dasharray="6 6" />
 
-    <!-- 4. Body Explanation Bullet Points (Clean vertical spacing, zero blocking card) -->
+    <!-- 4. Body Explanation Bullet Points (Clean 2 lines, high legibility) -->
     ${renderedExplanation}
 
     <!-- 5. Schematic / Scientific Diagram Box (Spaced comfortably below text) -->
@@ -700,8 +729,18 @@ async function generateArchie5sDailyFact() {
   fs.writeFileSync(LATEST_FACT_JSON, JSON.stringify(factMetadata, null, 2), 'utf8');
   console.log(`[Metadata Engine] 📄 Saved rich metadata to: ${LATEST_FACT_JSON}`);
 
-  // 7. Format YouTube Title and Description
-  const viralTitle = `⚡ ${fact.title} #Shorts`;
+  // 7. Format YouTube Title with Dynamic Anti-Spam Hooks
+  const cleanTitle = fact.title.replace(/^(Why|How|What)\s+/i, '').trim();
+  const archieTitleHooks = [
+    `Why Nobody Realized This About ${cleanTitle} #Shorts`,
+    `The Crazy Science Behind ${cleanTitle} #Shorts`,
+    `Did You Know This About ${cleanTitle}? #Shorts`,
+    `The Hidden Secret of ${cleanTitle} #Shorts`,
+    `Science Explained: ${fact.title} #Shorts`,
+    `Mind-Blowing Truth About ${cleanTitle} #Shorts`
+  ];
+  const hookIndex = Math.abs(fact.title.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) + Date.now()) % archieTitleHooks.length;
+  const viralTitle = archieTitleHooks[hookIndex];
   const initialFollowCta = formatChannelFollowCta('cartoon_factory', process.env.YOUTUBE_HANDLE_CH3 || process.env.YOUTUBE_HANDLE_TECH || '');
   
   // Algorithm-optimized YouTube description with high-converting keyword density and clean scannable layout

@@ -1,12 +1,9 @@
 name: Automated Cartoon Factory (Workflow 3)
 
 on:
-  push:
-    branches:
-      - '**'
   schedule:
-    # Strict 4x daily Archie releases: 1 Animated Video (13:00 UTC) + 3 Everyday Science Fact Reels (08:00, 18:00, 23:00 UTC)
-    - cron: '0 8,13,18,23 * * *'
+    # 1x daily prime-time release at 14:00 UTC (15:00 WAT) to prevent algorithmic spam throttles
+    - cron: '0 14 * * *'
   workflow_dispatch:
     inputs:
       topic:

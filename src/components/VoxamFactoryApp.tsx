@@ -663,22 +663,22 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
 
   const navItems = [
     { id: 'dashboard', label: 'Overview Dashboard', icon: LayoutDashboard },
-    { id: 'sound-setup', label: 'Sound & Music Setup', icon: Headphones },
-    { id: 'movie-brand', label: 'Movie Brand (Channel 4)', icon: Film },
-    { id: 'teen-motivation', label: 'Teen Motivation (Channel 5)', icon: Flame },
-    { id: 'finance', label: 'Finance Engine (Channel 1)', icon: DollarSign },
-    { id: 'pipeline', label: '4-Stage Automation Pipeline', icon: Workflow },
-    { id: 'dj', label: 'DJ Audio & TTS Studio', icon: Headphones },
-    { id: 'playground', label: 'AI Test Lab & Grok Chat', icon: Sparkles },
-    { id: 'channels', label: 'Channels (All Accounts)', icon: Youtube },
+    { id: 'movie-brand', label: 'Cinema Vanguard (Channel 4)', icon: Film },
+    { id: 'teen-motivation', label: 'Apex Discipline (Channel 5)', icon: Flame },
+    { id: 'finance', label: 'Finance Blueprint (Channel 1)', icon: DollarSign },
+    { id: 'sound-setup', label: 'Sound & Audio Studio', icon: Headphones },
+    { id: 'pipeline', label: 'Autonomous Publishing Hub', icon: Workflow },
+    { id: 'dj', label: 'Voice & Soundboard', icon: Headphones },
+    { id: 'playground', label: 'Creative Story Lab', icon: Sparkles },
+    { id: 'channels', label: 'Channel Manager', icon: Youtube },
     { id: 'studio', label: 'Content Studio', icon: Clapperboard },
-    { id: 'queue', label: 'Job Queue & Pipeline', icon: ListOrdered },
+    { id: 'queue', label: 'Production Queue', icon: ListOrdered },
     { id: 'vault', label: 'Video Vault & History', icon: FolderLock },
-    { id: 'monetization', label: 'Ad Monetization & API Hub', icon: Share2 },
-    { id: 'affiliates', label: 'Affiliates & Sponsorships', icon: DollarSign },
-    { id: 'niches', label: 'Niche Configurations', icon: Sliders },
-    { id: 'guidelines', label: 'Content Masterclass', icon: BookOpen },
-    { id: 'settings', label: 'Settings & Integrations', icon: Settings }
+    { id: 'monetization', label: 'Monetization & Syndication', icon: Share2 },
+    { id: 'affiliates', label: 'Sponsorships & Affiliates', icon: DollarSign },
+    { id: 'niches', label: 'Audience & Strategy Settings', icon: Sliders },
+    { id: 'guidelines', label: 'Creator Masterclass', icon: BookOpen },
+    { id: 'settings', label: 'Connected Accounts & Keys', icon: Settings }
   ];
 
   return (
@@ -888,7 +888,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
               </div>
               <div>
                 <h1 className="font-extrabold text-sm text-white tracking-tight leading-none">VOXAM FACTORY</h1>
-                <span className="text-[10px] font-mono text-indigo-400">Autonomous 3-Niche Hub</span>
+                <span className="text-[10px] font-mono text-indigo-400">Autonomous Media Network</span>
               </div>
             </div>
           </div>
@@ -902,8 +902,8 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
             >
               <Atom className="w-4 h-4 text-emerald-400 shrink-0" />
               <div className="truncate">
-                <div className="text-[11px] font-bold text-emerald-300 truncate">Archie Idea Box</div>
-                <div className="text-[9px] text-slate-400 truncate">Random Student Science Facts</div>
+                <div className="text-[11px] font-bold text-emerald-300 truncate">Science Hook Generator</div>
+                <div className="text-[9px] text-slate-400 truncate">Curated High-Curiosity Science Facts</div>
               </div>
             </button>
           </div>
@@ -963,17 +963,17 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-800 text-emerald-300 text-[10px] font-mono font-bold">
-                      Burned-in Captions & Audio Ready
+                      Auto-Captioned & Audio Balanced
                     </span>
                     <span className="text-[10px] text-slate-400 font-mono">
-                      Cloudflare Aura-2 & Edge Christopher
+                      Studio-Grade Voiceover
                     </span>
                   </div>
                   <h2 className="text-sm sm:text-base font-extrabold text-white mt-1">
-                    Watch Rendered 9:16 Shorts & Test TTS Audio Engines
+                    Preview Completed Vertical Releases
                   </h2>
                   <p className="text-xs text-slate-300 mt-0.5">
-                    Stream the generated vertical MP4 clips with kinetic typography, Ken Burns motion, and voice models.
+                    Inspect generated vertical video clips with dynamic motion, clear typography, and background soundtrack.
                   </p>
                 </div>
               </div>

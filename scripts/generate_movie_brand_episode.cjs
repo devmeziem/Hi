@@ -16,11 +16,59 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const https = require('https');
 const { resolveRealMusicTrack } = require('./audio_asset_manager.cjs');
 
 const ARTIFACTS_DIR = path.join(process.cwd(), 'test_artifacts', 'movie_episodes');
 if (!fs.existsSync(ARTIFACTS_DIR)) {
   try { fs.mkdirSync(ARTIFACTS_DIR, { recursive: true }); } catch {}
+}
+
+function fetchHttpsBuffer(url, timeoutMs = 12000) {
+  return new Promise((resolve, reject) => {
+    const req = https.get(url, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        return fetchHttpsBuffer(res.headers.location, timeoutMs).then(resolve).catch(reject);
+      }
+      if (res.statusCode !== 200) {
+        return reject(new Error(`HTTP Status ${res.statusCode}`));
+      }
+      const chunks = [];
+      res.on('data', c => chunks.push(c));
+      res.on('end', () => resolve(Buffer.concat(chunks)));
+    });
+    req.setTimeout(timeoutMs, () => {
+      req.destroy();
+      reject(new Error(`Timeout after ${timeoutMs}ms`));
+    });
+    req.on('error', reject);
+  });
+}
+
+/**
+ * Resolve high-fidelity cinematic image backdrop for each Act using AI Image generation
+ * Uses Pollinations FLUX / Turbo model for hyper-realistic cinematic sci-fi scenes
+ */
+async function resolveActBackdropImage(act, epMeta, actIndex) {
+  const safeTitle = epMeta.episodeTitle.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  const imgPath = path.join(ARTIFACTS_DIR, `${safeTitle}_act_${actIndex + 1}_bg.jpg`);
+  if (fs.existsSync(imgPath) && fs.statSync(imgPath).size > 15000) {
+    return imgPath;
+  }
+
+  try {
+    const prompt = `cinematic film still, 35mm movie photography, ${act.visualDesc}, vertical 9:16 aspect ratio, anamorphic lighting, blade runner 2049 aesthetic, volumetric smoke, high contrast, 8k resolution`;
+    const pollUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1080&height=1920&model=flux&nologo=true&seed=${(actIndex + 1) * 77 + epMeta.episode * 101}`;
+    console.log(`[Movie Generator] 🎨 Rendering Act ${actIndex + 1} cinematic scene via Flux...`);
+    const buf = await fetchHttpsBuffer(pollUrl, 16000);
+    if (buf && buf.length > 10000) {
+      fs.writeFileSync(imgPath, buf);
+      return imgPath;
+    }
+  } catch (e) {
+    console.warn(`[Movie Generator] Image generation notice for Act ${actIndex + 1}: ${e.message}`);
+  }
+  return null;
 }
 
 const MANIFEST_PATH = path.join(process.cwd(), 'test_artifacts', 'movie_episodes_manifest.json');
@@ -108,14 +156,14 @@ const EPISODE_SERIES_CATALOG = [
 ];
 
 /**
- * Generate Cinematic Visual Frame (1080x1920 with 2.39:1 Anamorphic Frame & Sci-Fi Lighting)
+ * Generate Cinematic Visual Frame (1080x1920 with 2.39:1 Anamorphic Frame, Sci-Fi Lighting, and optional Photorealistic Backdrop)
  */
-function buildCinematicActSvg(act, epMeta, width = 1080, height = 1920) {
+function buildCinematicActSvg(act, epMeta, bgImageBase64 = null, width = 1080, height = 1920) {
   const isCliffhanger = act.act === 4;
   const accentColor = isCliffhanger ? '#ef4444' : '#6366f1';
   const glowColor = isCliffhanger ? 'rgba(239, 68, 68, 0.4)' : 'rgba(99, 102, 241, 0.35)';
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
   <defs>
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#020617" />
@@ -139,12 +187,13 @@ function buildCinematicActSvg(act, epMeta, width = 1080, height = 1920) {
     </filter>
   </defs>
 
-  <!-- Deep Canvas Base -->
+  <!-- Deep Canvas Base or Photorealistic AI Scene Background -->
   <rect width="${width}" height="${height}" fill="url(#bgGrad)" />
-  <rect width="${width}" height="${height}" fill="url(#centerGlow)" />
+  ${bgImageBase64 ? `<image href="${bgImageBase64}" x="0" y="280" width="${width}" height="1360" preserveAspectRatio="xMidYMid slice" opacity="0.82" />
+  <rect x="0" y="280" width="${width}" height="1360" fill="#000000" opacity="0.35" />` : `<rect width="${width}" height="${height}" fill="url(#centerGlow)" />`}
 
   <!-- Grid Tech Lines for Depth -->
-  <g stroke="rgba(255,255,255,0.04)" stroke-width="1.5">
+  <g stroke="rgba(255,255,255,0.06)" stroke-width="1.5">
     <line x1="120" y1="0" x2="120" y2="${height}" />
     <line x1="960" y1="0" x2="960" y2="${height}" />
     <line x1="0" y1="360" x2="${width}" y2="360" />
@@ -154,8 +203,8 @@ function buildCinematicActSvg(act, epMeta, width = 1080, height = 1920) {
   <!-- Anamorphic Letterbox Bars (Top and Bottom 2.39:1 Cinema Feel) -->
   <rect x="0" y="0" width="${width}" height="280" fill="#000000" />
   <rect x="0" y="1640" width="${width}" height="280" fill="#000000" />
-  <line x1="0" y1="280" x2="${width}" y2="280" stroke="rgba(99,102,241,0.5)" stroke-width="2" />
-  <line x1="0" y1="1640" x2="${width}" y2="1640" stroke="rgba(99,102,241,0.5)" stroke-width="2" />
+  <line x1="0" y1="280" x2="${width}" y2="280" stroke="${accentColor}" stroke-width="2.5" />
+  <line x1="0" y1="1640" x2="${width}" y2="1640" stroke="${accentColor}" stroke-width="2.5" />
 
   <!-- Top Cinematic Header Metadata -->
   <text x="540" y="150" font-family="Arial, sans-serif" font-weight="900" font-size="28" fill="#e2e8f0" letter-spacing="10" text-anchor="middle">
@@ -166,42 +215,40 @@ function buildCinematicActSvg(act, epMeta, width = 1080, height = 1920) {
   </text>
 
   <!-- Center Dramatic Visual Composition -->
-  <g transform="translate(140, 480)">
+  <g transform="translate(140, 520)">
     <!-- Central Cinematic Frame Card -->
-    <rect x="0" y="0" width="800" height="960" rx="24" fill="#0b1120" stroke="${accentColor}" stroke-width="2.5" stroke-opacity="0.8" />
+    <rect x="0" y="0" width="800" height="900" rx="24" fill="${bgImageBase64 ? 'rgba(11,17,32,0.65)' : '#0b1120'}" stroke="${accentColor}" stroke-width="2.5" stroke-opacity="0.9" />
     
     <!-- Geometric Sci-Fi Corner Bracket Accents -->
     <path d="M 30 50 L 30 30 L 50 30" stroke="${accentColor}" stroke-width="4" fill="none" />
     <path d="M 770 50 L 770 30 L 750 30" stroke="${accentColor}" stroke-width="4" fill="none" />
-    <path d="M 30 910 L 30 930 L 50 930" stroke="${accentColor}" stroke-width="4" fill="none" />
-    <path d="M 770 910 L 770 930 L 750 930" stroke="${accentColor}" stroke-width="4" fill="none" />
+    <path d="M 30 850 L 30 870 L 50 870" stroke="${accentColor}" stroke-width="4" fill="none" />
+    <path d="M 770 850 L 770 870 L 750 870" stroke="${accentColor}" stroke-width="4" fill="none" />
 
-    <!-- Stylized Cinematic Silhouette Vector -->
-    <circle cx="400" cy="340" r="160" fill="url(#neonCyan)" opacity="0.15" />
-    <!-- Character Silhouette Head & Shoulders -->
-    <path d="M 350 420 C 350 310, 450 310, 450 420 Z" fill="#020617" stroke="#38bdf8" stroke-width="3" />
-    <circle cx="400" cy="270" r="55" fill="#020617" stroke="#38bdf8" stroke-width="3" />
-    <!-- Cyber Visor Glow -->
-    <rect x="365" y="260" width="70" height="12" rx="4" fill="${accentColor}" filter="url(#cinematicGlow)" />
+    ${!bgImageBase64 ? `<!-- Stylized Silhouette when rendering vector only -->
+    <circle cx="400" cy="300" r="140" fill="url(#neonCyan)" opacity="0.15" />
+    <path d="M 350 380 C 350 280, 450 280, 450 380 Z" fill="#020617" stroke="#38bdf8" stroke-width="3" />
+    <circle cx="400" cy="240" r="50" fill="#020617" stroke="#38bdf8" stroke-width="3" />
+    <rect x="365" y="230" width="70" height="12" rx="4" fill="${accentColor}" filter="url(#cinematicGlow)" />` : ''}
 
     <!-- Pulse Scanline -->
-    <line x1="80" y1="520" x2="720" y2="520" stroke="${accentColor}" stroke-width="1.5" stroke-dasharray="10 8" />
+    <line x1="80" y1="480" x2="720" y2="480" stroke="${accentColor}" stroke-width="1.5" stroke-dasharray="10 8" />
 
     <!-- Act Title & Subtitle Badge -->
-    <rect x="180" y="580" width="440" height="52" rx="26" fill="#1e1b4b" stroke="#818cf8" stroke-width="1.5" />
-    <text x="400" y="614" font-family="monospace" font-weight="bold" font-size="20" fill="#c7d2fe" letter-spacing="3" text-anchor="middle">
+    <rect x="180" y="520" width="440" height="52" rx="26" fill="#1e1b4b" stroke="#818cf8" stroke-width="1.5" />
+    <text x="400" y="554" font-family="monospace" font-weight="bold" font-size="20" fill="#c7d2fe" letter-spacing="3" text-anchor="middle">
       ${act.subtitle}
     </text>
 
     <!-- Narration Caption Preview inside Frame -->
-    <text x="400" y="720" font-family="Georgia, serif" font-style="italic" font-size="30" fill="#f8fafc" text-anchor="middle">
-      "${act.narration.length > 70 ? act.narration.slice(0, 68) + '...' : act.narration}"
+    <text x="400" y="660" font-family="Georgia, serif" font-style="italic" font-size="28" fill="#f8fafc" text-anchor="middle">
+      "${act.narration.length > 68 ? act.narration.slice(0, 66) + '...' : act.narration}"
     </text>
   </g>
 
   <!-- Bottom Letterbox Area: Episode Branding & Call to Action -->
   <text x="540" y="1740" font-family="Arial, sans-serif" font-weight="800" font-size="34" fill="#ffffff" letter-spacing="3" text-anchor="middle">
-    ${isCliffhanger ? '🔥 SUBSCRIBE FOR EPISODE 2 🔥' : epMeta.episodeTitle.toUpperCase()}
+    ${isCliffhanger ? `🔥 SUBSCRIBE FOR EPISODE ${epMeta.episode + 1} 🔥` : epMeta.episodeTitle.toUpperCase()}
   </text>
   <text x="540" y="1800" font-family="monospace" font-size="20" fill="#94a3b8" letter-spacing="2" text-anchor="middle">
     AN ORIGINAL EPISODIC CINEMATIC MINI-SERIES
@@ -322,11 +369,22 @@ async function generateMovieEpisode(episodeIndex = 0) {
     }
   }
 
-  // 3. Render High-Resolution Visual Frames for Each Act
+  // 3. Render High-Resolution Visual Frames for Each Act (Hybrid 2.5D AI Scene + Cinematic Anamorphic HUD)
   const actFramePaths = [];
   for (let i = 0; i < epMeta.acts.length; i++) {
     const act = epMeta.acts[i];
-    const svgContent = buildCinematicActSvg(act, epMeta);
+    
+    // Resolve photorealistic AI backdrop for scene continuity
+    let base64Bg = null;
+    const bgImg = await resolveActBackdropImage(act, epMeta, i);
+    if (bgImg && fs.existsSync(bgImg)) {
+      try {
+        const imgBuffer = fs.readFileSync(bgImg);
+        base64Bg = `data:image/jpeg;base64,${imgBuffer.toString('base64')}`;
+      } catch {}
+    }
+
+    const svgContent = buildCinematicActSvg(act, epMeta, base64Bg);
     const svgPath = path.join(ARTIFACTS_DIR, `act_${i + 1}.svg`);
     const pngPath = path.join(ARTIFACTS_DIR, `act_${i + 1}.png`);
     fs.writeFileSync(svgPath, svgContent);

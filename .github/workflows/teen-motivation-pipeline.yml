@@ -2,8 +2,8 @@ name: Apex Discipline - Teen & Youth Motivation Pipeline (Channel 5)
 
 on:
   schedule:
-    # Daily evening motivation drop at 19:00 UTC (20:00 WAT)
-    - cron: '0 19 * * *'
+    # Daily evening motivation drop at 20:00 UTC (21:00 WAT)
+    - cron: '0 20 * * *'
   workflow_dispatch:
     inputs:
       topic_index:
