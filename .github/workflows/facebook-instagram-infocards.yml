@@ -66,27 +66,13 @@ jobs:
             test_artifacts/infocard_latest.png
             test_artifacts/infocard_latest.json
 
-      - name: Git Keepalive & History Cache Commit
+      - name: Pipeline Summary (Zero Git Commits, Low Key Database Logging)
         if: always()
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # Prevent repository schedule suspension and persist infocard deduplication
-          echo "<!-- Last automated Infocards release: $(date -u) -->" >> KEEP_ALIVE.md
-          git add KEEP_ALIVE.md
-          
-          if [ -f infocard_history.json ]; then
-            git add -f infocard_history.json
-          fi
-          
-          if git diff --staged --quiet; then
-            echo "No changes staged for commit."
-          else
-            git commit -m "chore(sync): automated infocard history cache and keepalive [skip ci]"
-            git pull --rebase origin ${{ github.ref_name }} || true
-            git push origin HEAD:${{ github.ref_name }}
-          fi
+          echo "==============================================================="
+          echo "INFOCARDS PIPELINE COMPLETED"
+          echo "Zero git commits made to repository - Low-key database logging."
+          echo "==============================================================="
 
       - name: Cleanup Local Temporary Media & Blobs
         if: always()

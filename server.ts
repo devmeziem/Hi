@@ -1241,15 +1241,74 @@ Respond STRICTLY with valid raw JSON without markdown:
 
   if (urlPath === '/api/movie/manifest' && req.method === 'GET') {
     try {
-      const manifestPath = path.join(__dirname, 'test_artifacts', 'movie_episodes_manifest.json');
-      if (fs.existsSync(manifestPath)) {
-        const data = fs.readFileSync(manifestPath, 'utf8');
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(data);
-      } else {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify([]));
+      let episodesList: any[] = [];
+      // 1. Fetch from Firestore Cloud Database (Zero Git Commits, Low Key Database Logging)
+      try {
+        const configPath = path.join(__dirname, 'firebase-applet-config.json');
+        if (fs.existsSync(configPath)) {
+          const fb = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+          const dbId = fb.firestoreDatabaseId || fb.databaseId || 'ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e';
+          const queryUrl = `https://firestore.googleapis.com/v1/projects/${fb.projectId}/databases/${dbId}/documents/movie_episodes?key=${fb.apiKey}`;
+          
+          const dbDocs = await new Promise<any[]>((resolve) => {
+            const reqFs = https.get(queryUrl, { timeout: 6000 }, (resFs) => {
+              let body = '';
+              resFs.on('data', d => body += d);
+              resFs.on('end', () => {
+                if (resFs.statusCode && resFs.statusCode >= 200 && resFs.statusCode < 300) {
+                  try {
+                    const parsed = JSON.parse(body);
+                    if (parsed.documents && Array.isArray(parsed.documents)) {
+                      const docs = parsed.documents.map((doc: any) => {
+                        const f = doc.fields || {};
+                        return {
+                          id: f.id?.stringValue || path.basename(doc.name),
+                          seriesTitle: f.seriesTitle?.stringValue || 'PROTOCOL ZERO: THE GHOST VAULT',
+                          episodeTitle: f.episodeTitle?.stringValue || '',
+                          season: parseInt(f.season?.integerValue || '1', 10),
+                          episode: parseInt(f.episode?.integerValue || '1', 10),
+                          videoPath: f.videoPath?.stringValue || '',
+                          narration: f.narration?.stringValue || '',
+                          duration: parseFloat(f.duration?.doubleValue || f.duration?.integerValue || '0'),
+                          tags: (f.tags?.arrayValue?.values || []).map((v: any) => v.stringValue || ''),
+                          youtubeUploadStatus: f.youtubeUploadStatus?.stringValue || 'PENDING_REVIEW (Upload hold enabled)',
+                          createdAt: f.createdAt?.stringValue || new Date().toISOString()
+                        };
+                      });
+                      resolve(docs);
+                      return;
+                    }
+                  } catch {}
+                }
+                resolve([]);
+              });
+            });
+            reqFs.on('error', () => resolve([]));
+            reqFs.on('timeout', () => { reqFs.destroy(); resolve([]); });
+          });
+
+          if (dbDocs.length > 0) {
+            episodesList = dbDocs;
+          }
+        }
+      } catch (dbErr: any) {
+        console.warn('[API Movie Manifest] Cloud DB read notice:', dbErr.message);
       }
+
+      // 2. If Cloud DB returned empty, merge / fallback to local manifest file
+      if (episodesList.length === 0) {
+        const manifestPath = path.join(__dirname, 'test_artifacts', 'movie_episodes_manifest.json');
+        if (fs.existsSync(manifestPath)) {
+          const data = fs.readFileSync(manifestPath, 'utf8');
+          episodesList = JSON.parse(data);
+        }
+      }
+
+      // Sort latest first
+      episodesList.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(episodesList));
     } catch (err: any) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: err.message }));

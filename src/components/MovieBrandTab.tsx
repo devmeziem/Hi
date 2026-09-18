@@ -78,27 +78,27 @@ export const MovieBrandTab: React.FC = () => {
     const defaultEpisodes: EpisodeItem[] = [
       {
         id: 'movie_s1_e1_default',
-        seriesTitle: 'NEO-SECTOR: CHRONICLES OF 2142',
-        episodeTitle: 'The Breach at Neon Gate',
+        seriesTitle: 'PROTOCOL ZERO: THE GHOST VAULT',
+        episodeTitle: 'Sub-Level 14',
         season: 1,
         episode: 1,
         videoPath: '/api/stream-video?file=test_artifacts/movie_episodes/movie_episode_s1_e1.mp4',
-        narration: 'Three in the morning. Neo-Sector Seven was silent, except for the hum of quantum servers. An encrypted data packet slipped through the defense grid. It was not malware. It was a countdown.',
-        duration: 30.97,
-        tags: ['#SciFiShorts', '#CinematicShorts', '#MiniMovie', '#Cyberpunk', '#EpisodicSeries'],
+        narration: 'Forty feet under the city. The storm water had reached the upper rails. Dax Mercer adjusted his helmet light. The metal hatch was unsealed. Someone was already inside. Footprints in the gray silt led down the maintenance tunnel. Fresh footprints. His telemetry scanner picked up a rhythm in the dark. A blue beacon pulsing every three seconds. Behind him, the heavy steel containment door slammed shut. The water level began to rise.',
+        duration: 25.4,
+        tags: ['#SciFiShorts', '#GhostVault', '#MiniMovie', '#SurvivalThriller', '#EpisodicSeries'],
         youtubeUploadStatus: 'PENDING_REVIEW (Upload hold enabled)',
         createdAt: new Date().toISOString()
       },
       {
         id: 'movie_s1_e2_default',
-        seriesTitle: 'NEO-SECTOR: CHRONICLES OF 2142',
-        episodeTitle: 'The Rogue Syndicate',
+        seriesTitle: 'PROTOCOL ZERO: THE GHOST VAULT',
+        episodeTitle: 'The Echo Turbine',
         season: 1,
         episode: 2,
         videoPath: '/api/stream-video?file=test_artifacts/movie_episodes/movie_episode_s1_e2.mp4',
-        narration: 'Sub-Level Nine. The only place on Earth where satellites cannot track your pulse. She did not look up from her deck. She just whispered: you brought them right to my door.',
-        duration: 28.5,
-        tags: ['#SciFiShorts', '#CinematicShorts', '#MovieTrailer', '#ActionShorts'],
+        narration: 'Water surged past his knees. Dax forced open the bulkhead grating. A massive decommissioned intake fan stood frozen in the dark. Beside it, a tactical cable hung down from an air vent. Someone had bypassed the main access shaft. As he stepped forward, the giant fan blades groaned and began to turn on backup power.',
+        duration: 24.8,
+        tags: ['#SciFiShorts', '#GhostVault', '#MiniMovie', '#SciFiAction', '#EpisodicSeries'],
         youtubeUploadStatus: 'PENDING_REVIEW (Upload hold enabled)',
         createdAt: new Date(Date.now() - 86400000).toISOString()
       }

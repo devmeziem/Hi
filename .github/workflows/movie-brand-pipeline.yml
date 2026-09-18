@@ -43,10 +43,13 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install FFmpeg Media Engine
+      - name: Install Dependencies
+        run: npm install --legacy-peer-deps --no-audit --no-fund
+
+      - name: Install FFmpeg Media Engine & Audio Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg
+          sudo apt-get install -y ffmpeg espeak-ng
 
       - name: Verify FFmpeg Installation
         run: ffmpeg -version
@@ -79,18 +82,12 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Commit & Push Episode Manifest
+      - name: Pipeline Summary (Zero Git Commits, Low Key Database Logging)
         if: always()
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          if [ -f test_artifacts/movie_episodes_manifest.json ]; then
-            git add -f test_artifacts/movie_episodes_manifest.json
-          fi
-          if git diff --staged --quiet; then
-            echo "No manifest changes staged for commit."
-          else
-            git commit -m "chore(sync): automated episodic movie manifest update [skip ci]"
-            git pull --rebase origin ${{ github.ref_name }} || true
-            git push origin HEAD:${{ github.ref_name }}
-          fi
+          echo "==============================================================="
+          echo "PROTOCOL ZERO EPISODIC ENGINE PIPELINE COMPLETED"
+          echo "Zero git commits made to repository - Low-key database logging."
+          echo "All episodes persisted directly to Firestore cloud database."
+          echo "Video artifact archived securely in Actions run artifacts."
+          echo "==============================================================="

@@ -126,42 +126,13 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Commit & Push Daily Blueprint Manifest & Weekly Keep-Alive
+      - name: Pipeline Summary (Zero Git Commits, Low Key Database Logging)
         if: always()
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          mkdir -p .github/activity_logs
-          LOG_FILE=".github/activity_logs/weekly_keepalive.md"
-          
-          # Perform weekly commit to keep GitHub Actions active
-          LAST_COMMIT_DATE=$(git log -1 --format=%ct)
-          NOW=$(date +%s)
-          DIFF_DAYS=$(( (NOW - LAST_COMMIT_DATE) / 86400 ))
-          DAY_OF_WEEK=$(date -u +%u) # 7 = Sunday
-          
-          if [ "$DIFF_DAYS" -ge 6 ] || [ "$DAY_OF_WEEK" -eq 7 ]; then
-            echo "Weekly keepalive commit triggered (diff: $DIFF_DAYS days, day: $DAY_OF_WEEK)..."
-            echo "# GitHub Actions Weekly Keepalive Log" > "$LOG_FILE"
-            echo "Keepalive Heartbeat: $(date -u)" >> "$LOG_FILE"
-            echo "Workflow: Stoic & Motivation (${{ github.run_number }})" >> "$LOG_FILE"
-            git add "$LOG_FILE"
-          fi
-          
-          if [ -f daily_blueprint_manifest.json ]; then
-            git add -f daily_blueprint_manifest.json
-          fi
-          if [ -f stoic_quote_history.json ]; then
-            git add -f stoic_quote_history.json
-          fi
-          
-          if git diff --staged --quiet; then
-            echo "No changes staged for commit."
-          else
-            git commit -m "chore(sync): automated stoic manifest and weekly keepalive [skip ci]"
-            git pull --rebase origin ${{ github.ref_name }} || true
-            git push origin HEAD:${{ github.ref_name }}
-          fi
+          echo "==============================================================="
+          echo "STOIC & MOTIVATION PIPELINE COMPLETED"
+          echo "Zero git commits made to repository - Low-key database logging."
+          echo "==============================================================="
 
       - name: Cleanup Local Temporary Media & Blobs
         if: always()
