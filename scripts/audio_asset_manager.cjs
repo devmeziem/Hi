@@ -121,8 +121,12 @@ function findLocalRealAudio(preferredNiche = 'all') {
       // Filter out files that are very small or explicitly synthetic
       const validFiles = files.filter(f => {
         try {
+          const lower = f.toLowerCase();
+          if (lower.includes('horror_scene_murder') || lower.includes('instrumental_mystery') || lower.includes('mystery_darkness')) {
+            return false; // Skip synthetic sine waves
+          }
           const sz = fs.statSync(path.join(dir, f)).size;
-          return sz > 30000; // at least 30KB (real music tracks are usually 500KB - 5MB)
+          return sz > 100000; // at least 100KB for real recorded music tracks
         } catch {
           return false;
         }

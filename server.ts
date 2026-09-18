@@ -1263,7 +1263,9 @@ Respond STRICTLY with valid raw JSON without markdown:
     req.on('end', async () => {
       try {
         const payload = body ? JSON.parse(body) : {};
-        const { generateMovieEpisode } = await import('./scripts/generate_movie_brand_episode.cjs');
+        const movieModule: any = await import('./scripts/generate_movie_brand_episode.cjs');
+        const generateMovieEpisode = movieModule.generateMovieEpisode || movieModule.default?.generateMovieEpisode;
+        if (!generateMovieEpisode) throw new Error('Movie episode generator function not found');
         const episode = await generateMovieEpisode(payload.episodeIndex || 0);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, episode }));

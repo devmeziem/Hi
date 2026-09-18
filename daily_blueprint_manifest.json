@@ -1,43 +1,17 @@
 {
   "videos": [
     {
-      "id": "fin_quote_1789732879534",
+      "id": "fin_quote_1789728213387",
       "channelId": "finance_saas",
       "type": "financial_quote_reel_5s",
-      "title": "Why 90% of Investors Underperform — Peter Lynch #Shorts",
-      "author": "Peter Lynch",
-      "credentials": "Legendary Manager, Fidelity Magellan Fund • Wharton M.B.A.",
-      "reference": "Beating the Street (1993)",
-      "duration": 5,
-      "videoPath": "/home/runner/work/Hi/Hi/rendered_videos/fin_quote_5s_1789732879534.mp4",
-      "loopable": true,
-      "publishedAt": "2026-09-18T12:01:23.515Z"
-    },
-    {
-      "id": "fin_quote_1789689076867",
-      "channelId": "finance_saas",
-      "type": "financial_quote_reel_5s",
-      "title": "The Number One Rule of Smart Money — Benjamin Graham #Shorts",
-      "author": "Benjamin Graham",
-      "credentials": "Columbia Business School • Father of Value Investing",
-      "reference": "The Intelligent Investor, Chapter 1",
-      "duration": 5,
-      "videoPath": "/home/runner/work/Hi/Hi/rendered_videos/fin_quote_5s_1789689076867.mp4",
-      "loopable": true,
-      "publishedAt": "2026-09-17T23:51:20.623Z"
-    },
-    {
-      "id": "fin_quote_1789675139762",
-      "channelId": "finance_saas",
-      "type": "financial_quote_reel_5s",
-      "title": "What the 1% Do That Amateurs Don't — Charlie Munger #Shorts",
+      "title": "The Number One Rule of Smart Money — Charlie Munger #Shorts",
       "author": "Charlie Munger",
       "credentials": "Vice Chairman, Berkshire Hathaway • Harvard Law J.D.",
       "reference": "Poor Charlie's Almanack (Talk 2)",
       "duration": 5,
-      "videoPath": "/home/runner/work/Hi/Hi/rendered_videos/fin_quote_5s_1789675139762.mp4",
+      "videoPath": "/app/applet/rendered_videos/fin_quote_5s_1789728213387.mp4",
       "loopable": true,
-      "publishedAt": "2026-09-17T19:59:02.530Z"
+      "publishedAt": "2026-09-18T10:43:43.157Z"
     },
     {
       "id": "fin_quote_1789647718501",
@@ -564,42 +538,29 @@
     },
     {
       "type": "scholar_quote_reel_5s",
-      "title": "How To Stop Caring What People Think — Epictetus #Shorts",
-      "description": "\"We have two ears and one mouth so that we can listen twice as much as we speak.\"\n— Epictetus\nStoic Philosopher • Founder of the Nicopolis School\n\n🏛️ Timeless Stoic wisdom and philosophy to master your emotions, build unbreakable resilience, and focus on what you can control.\n\n🏛️ Subscribe to this channel for daily Stoic wisdom, mental fortitude, and timeless philosophy.\n\n#Stoicism #MarcusAurelius #Philosophy #Wisdom #Discipline #Shorts",
-      "quote": "We have two ears and one mouth so that we can listen twice as much as we speak.",
-      "author": "Epictetus",
-      "credentials": "Stoic Philosopher • Founder of the Nicopolis School",
-      "theme": "wisdom",
+      "title": "Silence Your Ego Before It Destroys You — Musonius Rufus #Shorts",
+      "description": "\"You will earn the respect of all if you begin by earning the respect of yourself.\"\n— Musonius Rufus\nThe Roman Socrates • Stoic Teacher of Epictetus\n\n🏛️ Timeless Stoic wisdom and philosophy to master your emotions, build unbreakable resilience, and focus on what you can control.\n\n🏛️ Subscribe to this channel for daily Stoic wisdom, mental fortitude, and timeless philosophy.\n\n#Stoicism #MarcusAurelius #Philosophy #Wisdom #Discipline #Shorts",
+      "quote": "You will earn the respect of all if you begin by earning the respect of yourself.",
+      "author": "Musonius Rufus",
+      "credentials": "The Roman Socrates • Stoic Teacher of Epictetus",
+      "theme": "sovereignty",
       "duration": 5,
-      "videoPath": "/home/runner/work/Hi/Hi/rendered_videos/stoic_quote_5s_latest.mp4",
+      "videoPath": "/app/applet/rendered_videos/stoic_quote_5s_latest.mp4",
       "loopable": true,
-      "publishedAt": "2026-09-17T19:26:09.564Z"
+      "publishedAt": "2026-09-18T10:35:50.134Z"
     },
     {
       "type": "scholar_quote_reel_5s",
-      "title": "How To Stop Caring What People Think — Cato the Younger #Shorts",
-      "description": "\"I begin to speak only when I am certain what I have to say is not better left unsaid.\"\n— Cato the Younger\nRoman Statesman & Stoic Icon • Defender of the Republic\n\n🏛️ Timeless Stoic wisdom and philosophy to master your emotions, build unbreakable resilience, and focus on what you can control.\n\n🏛️ Subscribe to this channel for daily Stoic wisdom, mental fortitude, and timeless philosophy.\n\n#Stoicism #MarcusAurelius #Philosophy #Wisdom #Discipline #Shorts",
-      "quote": "I begin to speak only when I am certain what I have to say is not better left unsaid.",
-      "author": "Cato the Younger",
-      "credentials": "Roman Statesman & Stoic Icon • Defender of the Republic",
-      "theme": "discipline",
+      "title": "The Ancient Mindset You Were Never Taught — Seneca the Younger #Shorts",
+      "description": "\"Luck is what happens when preparation meets opportunity.\"\n— Seneca the Younger\nRoman Stoic Philosopher & Statesman\n\n🏛️ Timeless Stoic wisdom and philosophy to master your emotions, build unbreakable resilience, and focus on what you can control.\n\n🏛️ Subscribe to this channel for daily Stoic wisdom, mental fortitude, and timeless philosophy.\n\n#Stoicism #MarcusAurelius #Philosophy #Wisdom #Discipline #Shorts",
+      "quote": "Luck is what happens when preparation meets opportunity.",
+      "author": "Seneca the Younger",
+      "credentials": "Roman Stoic Philosopher & Statesman",
+      "theme": "preparation",
       "duration": 5,
-      "videoPath": "/home/runner/work/Hi/Hi/rendered_videos/stoic_quote_5s_latest.mp4",
+      "videoPath": "/app/applet/rendered_videos/stoic_quote_5s_latest.mp4",
       "loopable": true,
-      "publishedAt": "2026-09-17T23:16:59.201Z"
-    },
-    {
-      "type": "scholar_quote_reel_5s",
-      "title": "How To Stop Caring What People Think — Cleanthes of Assos #Shorts",
-      "description": "\"Fate leads the willing, and drags the unwilling.\"\n— Cleanthes of Assos\nStoic Boxer & Successor to Zeno • Athens\n\n🏛️ Timeless Stoic wisdom and philosophy to master your emotions, build unbreakable resilience, and focus on what you can control.\n\n🏛️ Subscribe to this channel for daily Stoic wisdom, mental fortitude, and timeless philosophy.\n\n#Stoicism #MarcusAurelius #Philosophy #Wisdom #Discipline #Shorts",
-      "quote": "Fate leads the willing, and drags the unwilling.",
-      "author": "Cleanthes of Assos",
-      "credentials": "Stoic Boxer & Successor to Zeno • Athens",
-      "theme": "fortitude",
-      "duration": 5,
-      "videoPath": "/home/runner/work/Hi/Hi/rendered_videos/stoic_quote_5s_latest.mp4",
-      "loopable": true,
-      "publishedAt": "2026-09-18T10:16:35.686Z"
+      "publishedAt": "2026-09-18T10:43:24.500Z"
     }
   ],
   "communityPost": {

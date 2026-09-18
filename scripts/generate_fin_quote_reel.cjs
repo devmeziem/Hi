@@ -561,27 +561,61 @@ function buildFrostedGlassCardSvg(scholar, width = 1080, height = 1920) {
   const themeIndex = Math.abs(scholar.author.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % themeSeeds.length;
   const theme = themeSeeds[themeIndex];
 
-  // Wrap text with short lines (max 22 chars/line for huge, legible 54px typography)
+  // Dynamic wrapping without artificial truncation
+  const quoteLen = scholar.quote.length;
+  const maxChars = quoteLen > 120 ? 28 : (quoteLen > 70 ? 25 : 22);
   const quoteWords = scholar.quote.split(/\s+/);
   const lines = [];
   let currentLine = '';
   for (const w of quoteWords) {
-    if ((currentLine + ' ' + w).trim().length > 22) {
-      if (lines.length < 3) lines.push(currentLine.trim());
+    if ((currentLine + ' ' + w).trim().length > maxChars) {
+      if (currentLine) lines.push(currentLine.trim());
       currentLine = w;
     } else {
       currentLine = (currentLine + ' ' + w).trim();
     }
   }
-  if (currentLine && lines.length < 3) lines.push(currentLine.trim());
+  if (currentLine) lines.push(currentLine.trim());
 
-  const cardHeight = Math.max(500, 280 + lines.length * 75);
-  const cardY = 1760 - cardHeight;
-  const cardWidth = 980;
-  const cardX = 50;
+  const numLines = lines.length;
+  let fontSize = 48;
+  let lineHeight = 64;
+  let authorFontSize = 28;
+  let credFontSize = 17;
+
+  if (numLines <= 2) {
+    fontSize = 52;
+    lineHeight = 72;
+  } else if (numLines === 3) {
+    fontSize = 46;
+    lineHeight = 64;
+  } else if (numLines === 4) {
+    fontSize = 40;
+    lineHeight = 56;
+    authorFontSize = 25;
+    credFontSize = 16;
+  } else {
+    fontSize = 34;
+    lineHeight = 48;
+    authorFontSize = 22;
+    credFontSize = 15;
+  }
+
+  // Exact vertical layout math inside card:
+  const quoteTextTop = 135;
+  const quoteBottom = quoteTextTop + ((numLines - 1) * lineHeight);
+  const dividerY = quoteBottom + 30;
+  const authorY = dividerY + 40;
+  const credY = authorY + 34;
+  const cardHeight = credY + 35;
+
+  // Shorts Safe Area: bottom at Y=1340, width 920px (X=80 to 1000)
+  const cardWidth = 920;
+  const cardX = 80;
+  const cardY = Math.max(760, 1340 - cardHeight);
 
   const quoteTspans = lines.map((line, idx) => {
-    return `<tspan x="540" dy="${idx === 0 ? 0 : 76}">${escapeXml(line)}</tspan>`;
+    return `<tspan x="540" dy="${idx === 0 ? 0 : lineHeight}">${escapeXml(line)}</tspan>`;
   }).join('');
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">

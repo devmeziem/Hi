@@ -153,6 +153,24 @@ async function resolveActBackdropImage(act, epMeta, actIndex) {
     return imgPath;
   }
 
+  // Check in src/assets/images for existing generated assets
+  const assetDir = path.join(process.cwd(), 'src', 'assets', 'images');
+  if (fs.existsSync(assetDir)) {
+    const files = fs.readdirSync(assetDir);
+    const keywords = [
+      act.title.toLowerCase().split(' ')[0],
+      actIndex === 0 ? 'descent' : actIndex === 1 ? 'vault' : actIndex === 2 ? 'footprints' : 'slam',
+      'dax'
+    ];
+    for (const kw of keywords) {
+      const match = files.find(f => f.toLowerCase().includes(kw) && f.endsWith('.jpg'));
+      if (match) {
+        const found = path.join(assetDir, match);
+        try { fs.copyFileSync(found, imgPath); return imgPath; } catch {}
+      }
+    }
+  }
+
   const bible = loadUniverseBible();
   const actAction = act.actionScene || act.visualDesc;
   const seed = (bible.protagonist?.baseSeed || 741829) + (epMeta.episode * 100) + (actIndex * 17);
@@ -332,38 +350,52 @@ function formatAssTimestamp(ms) {
 }
 
 /**
- * Build Karaoke ASS Subtitle File from EdgeTTS word timing metadata
- * Style:
- * - Positioned in the bottom drop box (Alignment 2, MarginV 245)
- * - Inactive text: Ash-Gray (&H009E9E9E)
- * - Active text: Brilliant High-Contrast Pure White (&H00FFFFFF)
- * - Drop box background provided by SVG overlay for smooth curved corners
+ * Build High-Impact Word-by-Word Karaoke Subtitles
+ * - Centered in safe zone (MarginV 480: above YouTube handle/title/remix UI, below visual focal center)
+ * - Crisp White text with bold black outline and vivid Gold/Amber highlight
+ * - ZERO empty background boxes
+ * - Elegant Title Hook card during first 2.5 seconds that fades out
  */
-function generateKaraokeAss(words, outAssPath) {
-  const cleanWords = (words || []).map(w => ({
+function generateKaraokeAss(words, outAssPath, epMeta, fallbackText = '', targetDurationSec = 15) {
+  let cleanWords = (words || []).map(w => ({
     text: String(w.part || '').replace(/[\r\n\t]/g, '').trim(),
     startMs: Math.round(w.start),
     endMs: Math.round(w.end)
   })).filter(w => w.text.length > 0);
 
+  // Guarantee subtitles: If word timestamps were empty, synthesize from narration text
+  if (cleanWords.length === 0 && fallbackText) {
+    const rawWords = fallbackText.split(/\s+/).filter(w => w.length > 0);
+    const totalMs = Math.max(8000, targetDurationSec * 1000 - 1500);
+    const msPerWord = totalMs / Math.max(1, rawWords.length);
+    cleanWords = rawWords.map((word, idx) => ({
+      text: word,
+      startMs: Math.round(idx * msPerWord + 300),
+      endMs: Math.round((idx + 1) * msPerWord + 250)
+    }));
+  }
+
   const lines = [];
-  const wordsPerLine = 4;
+  const wordsPerLine = 3;
 
   for (let i = 0; i < cleanWords.length; i += wordsPerLine) {
     const chunk = cleanWords.slice(i, i + wordsPerLine);
     if (chunk.length === 0) continue;
-    const startMs = Math.max(0, chunk[0].startMs - 50);
+    const startMs = Math.max(0, chunk[0].startMs - 40);
     const endMs = chunk[chunk.length - 1].endMs + 180;
     let textK = '';
     for (const w of chunk) {
       const durCs = Math.max(8, Math.round((w.endMs - w.startMs) / 10));
       textK += `{\\k${durCs}}${w.text} `;
     }
-    lines.push(`Dialogue: 0,${formatAssTimestamp(startMs)},${formatAssTimestamp(endMs)},KaraokeBox,,0,0,0,,${textK.trim()}`);
+    lines.push(`Dialogue: 0,${formatAssTimestamp(startMs)},${formatAssTimestamp(endMs)},MovieKaraoke,,0,0,0,,${textK.trim()}`);
   }
 
+  // Add subtle hook title card at the top during first 2.5s only
+  const titleLine = epMeta ? `Dialogue: 0,0:00:00.00,0:00:02.50,TitleCard,,0,0,0,,{\\fad(200,400)}${epMeta.seriesTitle.toUpperCase()} • EPISODE ${epMeta.episode}` : '';
+
   const assContent = `[Script Info]
-Title: Protocol Zero Karaoke Subtitles
+Title: Protocol Zero Cinematic Subtitles
 ScriptType: v4.00+
 WrapStyle: 0
 PlayResX: 1080
@@ -372,10 +404,12 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: KaraokeBox, Arial, 42, &H00FFFFFF, &H009E9E9E, &H00111111, &H00000000, 1, 0, 0, 0, 100, 100, 1, 0, 1, 2, 0, 2, 80, 80, 245, 1
+Style: MovieKaraoke, Liberation Sans, 52, &H0000D7FF, &H00FFFFFF, &H00000000, &H80000000, 1, 0, 0, 0, 100, 100, 1.4, 0, 1, 4.2, 2.0, 2, 80, 80, 480, 1
+Style: TitleCard, Liberation Sans, 26, &H00E2E8F0, &H00E2E8F0, &H00000000, &H80000000, 1, 0, 0, 0, 100, 100, 2.5, 0, 1, 2.0, 1.0, 8, 40, 40, 140, 1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+${titleLine}
 ${lines.join('\n')}
 `;
 
@@ -384,95 +418,10 @@ ${lines.join('\n')}
 }
 
 /**
- * Generate SVG Overlay for Curved Corner Black Drop Box
+ * Synthesize Natural Broadcast Voiceover + Word Timing Metadata
+ * Uses default pitch (+0Hz) and natural speed for crisp, human speech
  */
-function generateCaptionBoxSvg(outSvgPath, width = 1080, height = 1920) {
-  const boxWidth = 960;
-  const boxHeight = 150;
-  const boxX = (width - boxWidth) / 2; // 60
-  const boxY = 1640;
-
-  const svgContent = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <filter id="boxShadow" x="-10%" y="-20%" width="120%" height="140%">
-      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.85" />
-    </filter>
-  </defs>
-  <!-- Curved Corner Black Drop Box for Karaoke Subtitles -->
-  <rect x="${boxX}" y="${boxY}" width="${boxWidth}" height="${boxHeight}" rx="28" ry="28" fill="rgba(8, 10, 18, 0.90)" stroke="rgba(255, 255, 255, 0.18)" stroke-width="2" filter="url(#boxShadow)" />
-</svg>`;
-
-  fs.writeFileSync(outSvgPath, svgContent, 'utf8');
-  return outSvgPath;
-}
-
-/**
- * Generate Cinematic Visual Frame (1080x1920 with 2.39:1 Anamorphic Frame, Sci-Fi Lighting, and optional Photorealistic Backdrop)
- */
-function buildCinematicActSvg(act, epMeta, bgImageBase64 = null, width = 1080, height = 1920) {
-  const isCliffhanger = act.act === 4;
-  const accentColor = isCliffhanger ? '#ef4444' : '#0284c7';
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
-  <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#020617" />
-      <stop offset="50%" stop-color="#070d1d" />
-      <stop offset="100%" stop-color="#02040a" />
-    </linearGradient>
-    <radialGradient id="centerGlow" cx="50%" cy="45%" r="45%">
-      <stop offset="0%" stop-color="${accentColor}" stop-opacity="0.28" />
-      <stop offset="60%" stop-color="#020617" stop-opacity="0.0" />
-    </radialGradient>
-  </defs>
-
-  <!-- Deep Canvas Base or Photorealistic Scene Background -->
-  <rect width="${width}" height="${height}" fill="url(#bgGrad)" />
-  ${bgImageBase64 ? `<image href="${bgImageBase64}" x="0" y="240" width="${width}" height="1440" preserveAspectRatio="xMidYMid slice" opacity="0.88" />
-  <rect x="0" y="240" width="${width}" height="1440" fill="#000000" opacity="0.30" />` : `<rect width="${width}" height="${height}" fill="url(#centerGlow)" />`}
-
-  <!-- Grid Tech Lines for Depth -->
-  <g stroke="rgba(255,255,255,0.06)" stroke-width="1.5">
-    <line x1="120" y1="0" x2="120" y2="${height}" />
-    <line x1="960" y1="0" x2="960" y2="${height}" />
-    <line x1="0" y1="320" x2="${width}" y2="320" />
-    <line x1="0" y1="1600" x2="${width}" y2="1600" />
-  </g>
-
-  <!-- Anamorphic Letterbox Bars (Top and Bottom 2.39:1 Cinema Feel) -->
-  <rect x="0" y="0" width="${width}" height="240" fill="#000000" />
-  <line x1="0" y1="240" x2="${width}" y2="240" stroke="${accentColor}" stroke-width="2.5" />
-
-  <!-- Top Cinematic Header Metadata -->
-  <text x="540" y="110" font-family="Arial, sans-serif" font-weight="900" font-size="28" fill="#e2e8f0" letter-spacing="8" text-anchor="middle">
-    ${epMeta.seriesTitle.toUpperCase()}
-  </text>
-  <text x="540" y="170" font-family="monospace" font-size="20" fill="#38bdf8" letter-spacing="4" text-anchor="middle">
-    SEASON ${epMeta.season} // EPISODE ${epMeta.episode} : ACT 0${act.act} - ${act.title.toUpperCase()}
-  </text>
-
-  <!-- Act Subtitle Badge (Mid Screen Floating HUD) -->
-  <g transform="translate(140, 260)">
-    <rect x="180" y="0" width="440" height="42" rx="21" fill="rgba(8, 15, 30, 0.85)" stroke="#38bdf8" stroke-width="1.5" />
-    <text x="400" y="27" font-family="monospace" font-weight="bold" font-size="16" fill="#7dd3fc" letter-spacing="3" text-anchor="middle">
-      ${act.subtitle}
-    </text>
-  </g>
-
-  <!-- Bottom Letterbox Area: Episode Branding -->
-  <text x="540" y="1830" font-family="Arial, sans-serif" font-weight="800" font-size="28" fill="#ffffff" letter-spacing="3" text-anchor="middle">
-    ${isCliffhanger ? `🔥 SUBSCRIBE FOR EPISODE ${epMeta.episode + 1} 🔥` : epMeta.episodeTitle.toUpperCase()}
-  </text>
-  <text x="540" y="1875" font-family="monospace" font-size="16" fill="#94a3b8" letter-spacing="2" text-anchor="middle">
-    PROTOCOL ZERO: THE GHOST VAULT • 7-DAY MINI-SERIES
-  </text>
-</svg>`;
-}
-
-/**
- * Synthesize Deep Cinematic Movie Trailer Voiceover + Word Timing Metadata
- */
-async function synthesizeCinematicVoiceWithTiming(text, outWavPath, outAssPath) {
+async function synthesizeCinematicVoiceWithTiming(text, outWavPath, outAssPath, epMeta) {
   const dir = path.dirname(outWavPath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
@@ -486,31 +435,28 @@ async function synthesizeCinematicVoiceWithTiming(text, outWavPath, outAssPath) 
       voice: 'en-US-ChristopherNeural',
       lang: 'en-US',
       outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
-      pitch: '-3Hz',
-      rate: '-4%',
       saveSubtitles: true
     });
 
     await tts.ttsPromise(cleanText, tempMp3);
 
     if (fs.existsSync(tempMp3) && fs.statSync(tempMp3).size > 1500) {
-      // Apply bass boost and cinematic warmth to voice
-      execSync(`ffmpeg -y -i "${tempMp3}" -af "bass=g=4:f=120,equalizer=f=3000:t=q:w=1.2:g=1.2" -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
+      // Clean broadcast audio filter: warm highpass + presence + normalization
+      execSync(`ffmpeg -y -i "${tempMp3}" -af "highpass=f=80,lowpass=f=8500,loudnorm=I=-15:TP=-1.5:LRA=9" -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
 
-      // Read word boundary timings and build ASS
       let words = [];
       if (fs.existsSync(tempJson)) {
         try {
           words = JSON.parse(fs.readFileSync(tempJson, 'utf8'));
         } catch {}
       }
-      generateKaraokeAss(words, outAssPath);
+      generateKaraokeAss(words, outAssPath, epMeta, cleanText);
 
       try { fs.unlinkSync(tempMp3); fs.unlinkSync(tempJson); } catch {}
       return { success: true, wavPath: outWavPath, assPath: outAssPath };
     }
   } catch (err) {
-    console.warn(`[Movie Voice] EdgeTTS notice: ${err.message}, attempting alternate voice...`);
+    console.warn(`[Movie Voice] EdgeTTS notice: ${err.message}, attempting Guy voice...`);
   }
 
   // Fallback to Guy voice
@@ -520,27 +466,60 @@ async function synthesizeCinematicVoiceWithTiming(text, outWavPath, outAssPath) 
       voice: 'en-US-GuyNeural',
       lang: 'en-US',
       outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
-      pitch: '-2Hz',
-      rate: '-3%',
       saveSubtitles: true
     });
     await tts.ttsPromise(cleanText, tempMp3);
     if (fs.existsSync(tempMp3)) {
-      execSync(`ffmpeg -y -i "${tempMp3}" -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
+      execSync(`ffmpeg -y -i "${tempMp3}" -af "highpass=f=80,lowpass=f=8500,loudnorm=I=-15:TP=-1.5:LRA=9" -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
       let words = [];
       if (fs.existsSync(tempJson)) {
         try { words = JSON.parse(fs.readFileSync(tempJson, 'utf8')); } catch {}
       }
-      generateKaraokeAss(words, outAssPath);
+      generateKaraokeAss(words, outAssPath, epMeta, cleanText);
       try { fs.unlinkSync(tempMp3); fs.unlinkSync(tempJson); } catch {}
       return { success: true, wavPath: outWavPath, assPath: outAssPath };
     }
   } catch {}
 
-  // Last resort silent audio track if offline
-  execSync(`ffmpeg -y -f lavfi -i "anullsrc=r=44100:cl=stereo" -t 10 -c:a pcm_s16le "${outWavPath}" 2>/dev/null`);
-  generateKaraokeAss([], outAssPath);
+  // Safe fallback voiceover synthesis using espeak or standard audio
+  try {
+    execSync(`espeak -v en-us+m3 -s 130 -w "${outWavPath}" "${cleanText.replace(/"/g, '\\"')}" 2>/dev/null`);
+    if (fs.existsSync(outWavPath) && fs.statSync(outWavPath).size > 2000) {
+      generateKaraokeAss([], outAssPath, epMeta, cleanText, 15);
+      return { success: true, wavPath: outWavPath, assPath: outAssPath };
+    }
+  } catch {}
+
+  // Last resort audio track
+  execSync(`ffmpeg -y -f lavfi -i "sine=frequency=110:duration=15" -af "volume=0.01" -c:a pcm_s16le "${outWavPath}" 2>/dev/null`);
+  generateKaraokeAss([], outAssPath, epMeta, cleanText, 15);
   return { success: true, wavPath: outWavPath, assPath: outAssPath };
+}
+
+/**
+ * Generate Warm Cinematic Orchestral Drone + Low Heartbeat Pulse
+ * Harmonically rich C-minor chord with zero harsh sine waves
+ */
+function generateWarmCinematicSoundtrack(duration, outWavPath) {
+  const padPath = `${outWavPath}_pad.wav`;
+  const pulsePath = `${outWavPath}_pulse.wav`;
+
+  // 1. Warm harmonic pad (C1 55Hz, C2 110Hz, Eb2 155.6Hz, G2 196Hz) lowpassed at 320Hz
+  const padCmd = `ffmpeg -y -f lavfi -i "aevalsrc='(sin(2*PI*55*t)*0.22 + sin(2*PI*110*t)*0.16 + sin(2*PI*155.56*t)*0.10 + sin(2*PI*196*t)*0.08)':s=44100:d=${duration}" -af "lowpass=f=320,afade=t=in:ss=0:d=1.0,afade=t=out:st=${Math.max(0, duration - 1.5).toFixed(2)}:d=1.5,volume=0.12" -c:a pcm_s16le "${padPath}" 2>/dev/null`;
+  
+  // 2. Soft cinematic heartbeat / low throb at 60 bpm (1.0 Hz)
+  const pulseCmd = `ffmpeg -y -f lavfi -i "aevalsrc='pow(max(0,sin(2*PI*1.0*t)),8)*0.25*sin(2*PI*58.0*t)':s=44100:d=${duration}" -af "lowpass=f=180,afade=t=in:ss=0:d=1.0,afade=t=out:st=${Math.max(0, duration - 1.5).toFixed(2)}:d=1.5,volume=0.14" -c:a pcm_s16le "${pulsePath}" 2>/dev/null`;
+
+  try {
+    execSync(padCmd);
+    execSync(pulseCmd);
+    execSync(`ffmpeg -y -i "${padPath}" -i "${pulsePath}" -filter_complex "[0:a][1:a]amix=inputs=2:duration=first[out]" -map "[out]" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
+    try { fs.unlinkSync(padPath); fs.unlinkSync(pulsePath); } catch {}
+    return outWavPath;
+  } catch {
+    try { fs.unlinkSync(padPath); fs.unlinkSync(pulsePath); } catch {}
+    return null;
+  }
 }
 
 /**
@@ -559,10 +538,10 @@ async function generateMovieEpisode(episodeIndex = 0) {
   const fullNarration = epMeta.acts.map(a => a.narration).join(' ');
   console.log(`[Movie Generator] 🎙️ Narration Script (${fullNarration.length} chars)`);
 
-  // 1. Synthesize Cinematic Audio + Word Boundary Karaoke ASS
+  // 1. Synthesize Natural Voiceover + Word Boundary Karaoke ASS
   const voiceWav = path.join(ARTIFACTS_DIR, `movie_voice_s${epMeta.season}_e${epMeta.episode}.wav`);
   const subtitleAss = path.join(ARTIFACTS_DIR, `movie_karaoke_s${epMeta.season}_e${epMeta.episode}.ass`);
-  await synthesizeCinematicVoiceWithTiming(fullNarration, voiceWav, subtitleAss);
+  await synthesizeCinematicVoiceWithTiming(fullNarration, voiceWav, subtitleAss, epMeta);
 
   let voiceDuration = 12.0;
   try {
@@ -571,100 +550,99 @@ async function generateMovieEpisode(episodeIndex = 0) {
     if (!isNaN(parsed) && parsed > 2.0) voiceDuration = parsed;
   } catch {}
 
-  const totalDuration = Math.max(10.0, Number((voiceDuration + 2.0).toFixed(2)));
+  const totalDuration = Math.max(10.0, Number((voiceDuration + 1.8).toFixed(2)));
   const actDuration = Number((totalDuration / epMeta.acts.length).toFixed(2));
   console.log(`[Movie Generator] ⏱️ Voice: ${voiceDuration.toFixed(2)}s -> Target Reel: ${totalDuration}s (${epMeta.acts.length} Acts x ${actDuration}s each)`);
 
-  // 2. Resolve Cinematic Sound Track
+  // 2. Build Warm, Deep Cinematic Soundtrack
   const masterWav = path.join(ARTIFACTS_DIR, `movie_master_audio_s${epMeta.season}_e${epMeta.episode}.wav`);
-  const cinematicTrack = await resolveRealMusicTrack({
+  const soundtrackWav = path.join(ARTIFACTS_DIR, `soundtrack_s${epMeta.season}_e${epMeta.episode}.wav`);
+  
+  // Check for real music track first
+  let musicFile = await resolveRealMusicTrack({
     niche: 'movie',
     duration: totalDuration,
     soundUrl: process.env.MOVIE_MUSIC_URL || process.env.SOUND_URL
   });
 
-  if (cinematicTrack && fs.existsSync(cinematicTrack)) {
-    console.log(`[Movie Generator] 🎶 Ducking cinematic suspense soundtrack under deep voiceover...`);
-    const mixCmd = `ffmpeg -y -i "${voiceWav}" -i "${cinematicTrack}" -filter_complex "[0:a]volume=1.4[v];[1:a]volume=0.14,atrim=0:${totalDuration}[m];[v][m]amix=inputs=2:duration=longest,loudnorm=I=-16:TP=-1.5:LRA=11[out]" -map "[out]" -c:a pcm_s16le -ar 44100 -ac 2 "${masterWav}" 2>/dev/null`;
+  if (!musicFile || !fs.existsSync(musicFile)) {
+    musicFile = generateWarmCinematicSoundtrack(totalDuration, soundtrackWav);
+  }
+
+  if (musicFile && fs.existsSync(musicFile)) {
+    console.log(`[Movie Generator] 🎶 Ducking warm soundtrack under crystal-clear voiceover...`);
+    const mixCmd = `ffmpeg -y -i "${voiceWav}" -i "${musicFile}" -filter_complex "[0:a]volume=1.0[v];[1:a]volume=0.09,atrim=0:${totalDuration}[m];[v][m]amix=inputs=2:duration=first,loudnorm=I=-15:TP=-1.5:LRA=9[out]" -map "[out]" -c:a pcm_s16le -ar 44100 -ac 2 "${masterWav}" 2>/dev/null`;
     try { execSync(mixCmd); } catch { fs.copyFileSync(voiceWav, masterWav); }
   } else {
-    // Generate subtle cinematic sub-bass drone
-    const droneCmd = `ffmpeg -y -f lavfi -i "aevalsrc='(sin(2*PI*55*t)*0.15 + sin(2*PI*110*t)*0.10)':s=44100:d=${totalDuration}" -af "lowpass=f=250,volume=0.18" -c:a pcm_s16le "${masterWav}_drone.wav" 2>/dev/null`;
-    try {
-      execSync(droneCmd);
-      execSync(`ffmpeg -y -i "${voiceWav}" -i "${masterWav}_drone.wav" -filter_complex "[0:a]volume=1.35[v];[1:a]volume=0.18[d];[v][d]amix=inputs=2:duration=longest,loudnorm=I=-16:TP=-1.5[out]" -map "[out]" -c:a pcm_s16le "${masterWav}" 2>/dev/null`);
-      try { fs.unlinkSync(`${masterWav}_drone.wav`); } catch {}
-    } catch {
-      fs.copyFileSync(voiceWav, masterWav);
-    }
+    fs.copyFileSync(voiceWav, masterWav);
   }
 
-  // 3. Render High-Resolution Visual Frames for Each Act
-  const actFramePaths = [];
+  // 3. Resolve Real 9:16 High-Resolution Images for Each Act
+  const actImages = [];
   for (let i = 0; i < epMeta.acts.length; i++) {
     const act = epMeta.acts[i];
-    
-    // Resolve photorealistic AI backdrop for scene continuity
-    let base64Bg = null;
     const bgImg = await resolveActBackdropImage(act, epMeta, i);
-    if (bgImg && fs.existsSync(bgImg)) {
-      try {
-        const imgBuffer = fs.readFileSync(bgImg);
-        base64Bg = `data:image/jpeg;base64,${imgBuffer.toString('base64')}`;
-      } catch {}
+    if (bgImg && fs.existsSync(bgImg) && fs.statSync(bgImg).size > 10000) {
+      actImages.push(bgImg);
+      console.log(`[Movie Generator] 🖼️ Act ${i + 1} Image: ${path.basename(bgImg)} (${(fs.statSync(bgImg).size / 1024).toFixed(1)} KB)`);
+    } else {
+      console.warn(`[Movie Generator] Act ${i + 1} image missing, using fallback...`);
+      // Fallback: check other act images
+      const fallback = actImages.length > 0 ? actImages[0] : null;
+      if (fallback) actImages.push(fallback);
     }
-
-    const svgContent = buildCinematicActSvg(act, epMeta, base64Bg);
-    const svgPath = path.join(ARTIFACTS_DIR, `act_${i + 1}.svg`);
-    const pngPath = path.join(ARTIFACTS_DIR, `act_${i + 1}.png`);
-    fs.writeFileSync(svgPath, svgContent);
-    execSync(`ffmpeg -y -i "${svgPath}" -vf "scale=1080:1920" "${pngPath}" 2>/dev/null`);
-    actFramePaths.push(pngPath);
   }
 
-  // 4. Generate Curved Corner Black Drop Box Overlay SVG
-  const boxSvgPath = path.join(ARTIFACTS_DIR, `caption_drop_box.svg`);
-  generateCaptionBoxSvg(boxSvgPath);
+  if (actImages.length < epMeta.acts.length) {
+    throw new Error(`Insufficient act images for episode ${epMeta.episode}`);
+  }
 
-  // 5. Assemble Video with Ken Burns Slow Zoom Motion, Curved Corner Drop Box, and Karaoke ASS Subtitles
+  // 4. Assemble Full-Frame 1080x1920 Video with Distinct Cinematic Camera Choreography
   const outMp4 = path.join(ARTIFACTS_DIR, `movie_episode_s${epMeta.season}_e${epMeta.episode}.mp4`);
-  console.log(`[Movie Generator] 🎥 Assembling 1080x1920 Video with Ken Burns Motion + Karaoke Captions...`);
+  console.log(`[Movie Generator] 🎥 Assembling Clean Full-Frame 1080x1920 Video (No Clutter, Dynamic Camera, Karaoke Captions)...`);
 
-  // Build FFmpeg complex filter chaining the 4 acts with smooth zoompan, then overlay curved drop box and burn karaoke ASS
-  const filterInputs = actFramePaths.map((p) => `-loop 1 -t ${actDuration} -i "${p}"`).join(' ');
-  const boxInputIndex = actFramePaths.length;
-  const audioInputIndex = boxInputIndex + 1;
-
-  // Escape ASS path for FFmpeg filter argument
+  const actFrames = Math.round(actDuration * 30);
   const escapedAss = subtitleAss.replace(/\\/g, '/').replace(/:/g, '\\:');
 
+  // Input flags for the 4 act images
+  const inputArgs = actImages.map(img => `-loop 1 -t ${actDuration} -i "${img}"`).join(' ');
+  const audioInputIndex = actImages.length;
+
+  // Cinematic choreography per act:
+  // Act 1 (Descent): Smooth push-in down toward character
+  // Act 2 (Bulkhead): Slow tilt down from ceiling to glowing locks
+  // Act 3 (Tracks): Smooth forward tracking pan along railway
+  // Act 4 (Door Slam): Dramatic tension punch-in / snap zoom
   const filterComplex = `
-    [0:v]zoompan=z='min(zoom+0.0015,1.15)':d=${Math.round(actDuration * 30)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30,format=yuv420p[v0];
-    [1:v]zoompan=z='min(zoom+0.0015,1.15)':d=${Math.round(actDuration * 30)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30,format=yuv420p[v1];
-    [2:v]zoompan=z='min(zoom+0.0015,1.15)':d=${Math.round(actDuration * 30)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30,format=yuv420p[v2];
-    [3:v]zoompan=z='min(zoom+0.0015,1.15)':d=${Math.round(actDuration * 30)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30,format=yuv420p[v3];
+    [0:v]scale=2160:3840:force_original_aspect_ratio=increase,crop=2160:3840,setsar=1,zoompan=z='min(zoom+0.0016,1.22)':x='iw/2-(iw/zoom/2)':y='ih*0.35-(ih/zoom*0.35)':d=${actFrames}:s=1080x1920:fps=30,format=yuv420p[v0];
+    [1:v]scale=2160:3840:force_original_aspect_ratio=increase,crop=2160:3840,setsar=1,zoompan=z='min(zoom+0.0012,1.16)':x='iw/2-(iw/zoom/2)':y='(ih-ih/zoom)*(on/${actFrames})':d=${actFrames}:s=1080x1920:fps=30,format=yuv420p[v1];
+    [2:v]scale=2160:3840:force_original_aspect_ratio=increase,crop=2160:3840,setsar=1,zoompan=z='min(zoom+0.0014,1.18)':x='(iw-iw/zoom)*(on/${actFrames})':y='ih*0.45-(ih/zoom*0.45)':d=${actFrames}:s=1080x1920:fps=30,format=yuv420p[v2];
+    [3:v]scale=2160:3840:force_original_aspect_ratio=increase,crop=2160:3840,setsar=1,zoompan=z='min(zoom+0.0028,1.28)':x='iw/2-(iw/zoom/2)':y='ih*0.35-(ih/zoom*0.35)':d=${actFrames}:s=1080x1920:fps=30,format=yuv420p[v3];
     [v0][v1][v2][v3]concat=n=4:v=1:a=0[vconcat];
-    [vconcat][${boxInputIndex}:v]overlay=0:0[vwithbox];
-    [vwithbox]ass='${escapedAss}'[vout]
+    [vconcat]ass='${escapedAss}'[vout]
   `.replace(/\s+/g, ' ');
 
-  const renderCmd = `ffmpeg -y ${filterInputs} -i "${boxSvgPath}" -i "${masterWav}" -filter_complex "${filterComplex}" -map "[vout]" -map ${audioInputIndex}:a -c:v libx264 -preset fast -crf 20 -c:a aac -b:a 192k -shortest "${outMp4}" 2>/dev/null`;
-  
+  const renderCmd = `ffmpeg -y ${inputArgs} -i "${masterWav}" -filter_complex "${filterComplex}" -map "[vout]" -map ${audioInputIndex}:a -c:v libx264 -preset medium -crf 19 -c:a aac -b:a 192k -movflags +faststart -shortest "${outMp4}" 2>/dev/null`;
+
   try {
     execSync(renderCmd);
     const sz = fs.statSync(outMp4).size;
-    console.log(`[Movie Generator] ✅ SUCCESS: Episode MP4 Created with Karaoke Subtitles! (${(sz / (1024 * 1024)).toFixed(2)} MB)`);
+    console.log(`[Movie Generator] ✅ SUCCESS: Episode MP4 Created! (${(sz / (1024 * 1024)).toFixed(2)} MB)`);
     console.log(`[Movie Generator] 📁 Output: ${outMp4}`);
   } catch (err) {
-    console.error(`[Movie Generator] Video assembly error: ${err.message}`);
-    // Safe fall-through without zoompan if memory constrained
-    const simpleComplex = `
-      [0:v][1:v][2:v][3:v]concat=n=4:v=1:a=0[vconcat];
-      [vconcat][${boxInputIndex}:v]overlay=0:0[vwithbox];
-      [vwithbox]ass='${escapedAss}'[vout]
+    console.error(`[Movie Generator] Video assembly notice: ${err.message}, running standard render...`);
+    const fallbackComplex = `
+      [0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,format=yuv420p[v0];
+      [1:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,format=yuv420p[v1];
+      [2:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,format=yuv420p[v2];
+      [3:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,format=yuv420p[v3];
+      [v0][v1][v2][v3]concat=n=4:v=1:a=0[vconcat];
+      [vconcat]ass='${escapedAss}'[vout]
     `.replace(/\s+/g, ' ');
-    const simpleCmd = `ffmpeg -y ${filterInputs} -i "${boxSvgPath}" -i "${masterWav}" -filter_complex "${simpleComplex}" -map "[vout]" -map ${audioInputIndex}:a -c:v libx264 -preset fast -crf 22 -c:a aac -shortest "${outMp4}" 2>/dev/null`;
-    execSync(simpleCmd);
+    const fallbackCmd = `ffmpeg -y ${inputArgs} -i "${masterWav}" -filter_complex "${fallbackComplex}" -map "[vout]" -map ${audioInputIndex}:a -c:v libx264 -preset fast -crf 20 -c:a aac -b:a 192k -movflags +faststart -shortest "${outMp4}" 2>/dev/null`;
+    execSync(fallbackCmd);
+    const sz = fs.statSync(outMp4).size;
+    console.log(`[Movie Generator] ✅ Fallback render complete! (${(sz / (1024 * 1024)).toFixed(2)} MB)`);
   }
 
   // 6. Update Manifest (DO NOT AUTO-UPLOAD per user instructions)

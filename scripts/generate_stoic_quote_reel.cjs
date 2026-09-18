@@ -732,14 +732,66 @@ async function generateStoic5sVideo() {
   const themeIndex = Math.abs(chosen.author.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % stoicThemes.length;
   const currentTheme = stoicThemes[themeIndex];
 
-  // 4. Prepare High-Contrast Glass Caption Overlay with Maximum Legibility (Short lines, max 3 lines)
-  const quoteLines = wrapQuoteText(chosen.quote, 22).slice(0, 3);
+  // 4. Prepare High-Contrast Caption Overlay with Maximum Legibility & Safe Area Compliance
+  // NEVER truncate quotes: dynamically scale font size, line height and card height for all text
+  const quoteLen = chosen.quote.length;
+  const maxChars = quoteLen > 120 ? 28 : (quoteLen > 70 ? 25 : 22);
+  const quoteLines = wrapQuoteText(chosen.quote, maxChars);
+  const numLines = quoteLines.length;
+
+  // Dynamic typography sizing based on line count so text never clips or overflows
+  let fontSize = 48;
+  let lineHeight = 64;
+  let authorFontSize = 26;
+  let credFontSize = 17;
+
+  if (numLines <= 2) {
+    fontSize = 52;
+    lineHeight = 72;
+    authorFontSize = 28;
+    credFontSize = 18;
+  } else if (numLines === 3) {
+    fontSize = 46;
+    lineHeight = 64;
+    authorFontSize = 26;
+    credFontSize = 17;
+  } else if (numLines === 4) {
+    fontSize = 40;
+    lineHeight = 56;
+    authorFontSize = 24;
+    credFontSize = 16;
+  } else {
+    fontSize = 34;
+    lineHeight = 48;
+    authorFontSize = 22;
+    credFontSize = 15;
+  }
+
   const quoteTspans = quoteLines.map((line, idx) =>
-    `<tspan x="540" dy="${idx === 0 ? 0 : 70}">${escapeXml(line)}</tspan>`
+    `<tspan x="540" dy="${idx === 0 ? 0 : lineHeight}">${escapeXml(line)}</tspan>`
   ).join('\n        ');
 
-  const cardHeight = Math.max(480, 270 + quoteLines.length * 70);
-  const cardY = 1720 - cardHeight;
+  // Exact vertical layout math inside card:
+  // Top padding (40) + Badge (40) + Gap (45) + First line baseline = 125
+  // Quote lines block = (numLines - 1) * lineHeight
+  // Gap to divider = 30
+  // Gap to author = 36
+  // Gap to credentials = 30
+  // Bottom padding = 35
+  const quoteTextTop = 135;
+  const quoteBottom = quoteTextTop + ((numLines - 1) * lineHeight);
+  const dividerY = quoteBottom + 32;
+  const authorY = dividerY + 42;
+  const credY = authorY + 34;
+  const cardHeight = credY + 35;
+
+  // YouTube Shorts Safe Area:
+  // YouTube bottom UI (channel handle @mindwakers, video title, remix button, audio pill) starts at Y=1380
+  // Right side buttons (like, comment, share) occupy X=960 to 1080.
+  // We constrain the card bottom to Y=1340, width to 920px (X=80 to 1000).
+  const cardWidth = 920;
+  const cardX = 80;
+  const cardY = Math.max(760, 1340 - cardHeight);
 
   const overlaySvgPath = path.join(ARTIFACTS_DIR, 'quote_overlay.svg');
   const overlayPngPath = path.join(ARTIFACTS_DIR, 'quote_overlay.png');
@@ -753,34 +805,34 @@ async function generateStoic5sVideo() {
         <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="1.0" />
       </filter>
       <linearGradient id="cardBg" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#020617" stop-opacity="0.96" />
-        <stop offset="100%" stop-color="#000000" stop-opacity="0.99" />
+        <stop offset="0%" stop-color="#050814" stop-opacity="0.96" />
+        <stop offset="100%" stop-color="#010206" stop-opacity="0.99" />
       </linearGradient>
     </defs>
 
-    <!-- Subtle Vignette Shading for Text Legibility while preserving face -->
-    <rect x="0" y="900" width="1080" height="1020" fill="black" fill-opacity="0.60" />
+    <!-- Subtle Vignette Shading for Text Legibility while preserving portrait clarity -->
+    <rect x="0" y="${cardY - 60}" width="1080" height="${cardHeight + 120}" fill="black" fill-opacity="0.55" />
 
-    <!-- High-Contrast Caption Card -->
-    <rect x="50" y="${cardY}" width="980" height="${cardHeight}" rx="28" fill="url(#cardBg)" stroke="${currentTheme.borderColor}" stroke-width="2.5" stroke-opacity="0.85" filter="url(#cardShadow)" />
+    <!-- High-Contrast Caption Card strictly within Safe Zone -->
+    <rect x="${cardX}" y="${cardY}" width="${cardWidth}" height="${cardHeight}" rx="28" fill="url(#cardBg)" stroke="${currentTheme.borderColor}" stroke-width="2.5" stroke-opacity="0.85" filter="url(#cardShadow)" />
 
     <!-- Header Pill Badge -->
-    <rect x="340" y="${cardY + 36}" width="400" height="42" rx="21" fill="${currentTheme.pillBg}" stroke="${currentTheme.borderColor}" stroke-width="2" />
-    <text x="540" y="${cardY + 64}" font-family="sans-serif" font-size="15" font-weight="900" fill="${currentTheme.pillText}" letter-spacing="3" text-anchor="middle">${currentTheme.badgeTitle}</text>
+    <rect x="340" y="${cardY + 30}" width="400" height="42" rx="21" fill="${currentTheme.pillBg}" stroke="${currentTheme.borderColor}" stroke-width="2" />
+    <text x="540" y="${cardY + 58}" font-family="sans-serif" font-size="15" font-weight="900" fill="${currentTheme.pillText}" letter-spacing="3" text-anchor="middle">${currentTheme.badgeTitle}</text>
 
-    <!-- Large High-Contrast Quote Text (50px bold white) -->
-    <text x="540" y="${cardY + 155}" font-family="serif" font-size="50" font-weight="900" fill="#ffffff" text-anchor="middle" filter="url(#textShadow)">
+    <!-- Complete High-Contrast Quote Text (All lines rendered) -->
+    <text x="540" y="${cardY + quoteTextTop}" font-family="serif" font-size="${fontSize}" font-weight="900" fill="#ffffff" text-anchor="middle" filter="url(#textShadow)">
         ${quoteTspans}
     </text>
 
     <!-- Accent Divider -->
-    <line x1="380" y1="${cardY + 175 + quoteLines.length * 70}" x2="700" y2="${cardY + 175 + quoteLines.length * 70}" stroke="${currentTheme.borderColor}" stroke-width="2" stroke-opacity="0.8" />
+    <line x1="380" y1="${cardY + dividerY}" x2="700" y2="${cardY + dividerY}" stroke="${currentTheme.borderColor}" stroke-width="2" stroke-opacity="0.8" />
 
     <!-- Scholar Name & Credentials -->
-    <text x="540" y="${cardY + 235 + quoteLines.length * 70}" font-family="sans-serif" font-size="28" font-weight="900" fill="${currentTheme.nameColor}" letter-spacing="2" text-anchor="middle" filter="url(#textShadow)">
+    <text x="540" y="${cardY + authorY}" font-family="sans-serif" font-size="${authorFontSize}" font-weight="900" fill="${currentTheme.nameColor}" letter-spacing="2" text-anchor="middle" filter="url(#textShadow)">
       — ${escapeXml(chosen.author.toUpperCase())} —
     </text>
-    <text x="540" y="${cardY + 275 + quoteLines.length * 70}" font-family="sans-serif" font-size="18" font-weight="700" fill="#cbd5e1" letter-spacing="1" text-anchor="middle">
+    <text x="540" y="${cardY + credY}" font-family="sans-serif" font-size="${credFontSize}" font-weight="700" fill="#cbd5e1" letter-spacing="1" text-anchor="middle">
       ${escapeXml(chosen.credentials)}
     </text>
   </svg>`;
