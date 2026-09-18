@@ -1,6 +1,19 @@
 {
   "videos": [
     {
+      "id": "fin_quote_1789732879534",
+      "channelId": "finance_saas",
+      "type": "financial_quote_reel_5s",
+      "title": "Why 90% of Investors Underperform — Peter Lynch #Shorts",
+      "author": "Peter Lynch",
+      "credentials": "Legendary Manager, Fidelity Magellan Fund • Wharton M.B.A.",
+      "reference": "Beating the Street (1993)",
+      "duration": 5,
+      "videoPath": "/home/runner/work/Hi/Hi/rendered_videos/fin_quote_5s_1789732879534.mp4",
+      "loopable": true,
+      "publishedAt": "2026-09-18T12:01:23.515Z"
+    },
+    {
       "id": "fin_quote_1789689076867",
       "channelId": "finance_saas",
       "type": "financial_quote_reel_5s",
