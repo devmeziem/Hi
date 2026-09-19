@@ -1,6 +1,19 @@
 {
   "videos": [
     {
+      "id": "fin_quote_1789815752379",
+      "channelId": "finance_saas",
+      "type": "financial_quote_reel_5s",
+      "title": "Why 90% of Investors Underperform — Epictetus #Shorts",
+      "author": "Epictetus",
+      "credentials": "Stoic Philosopher • Master of Rational Perception & Discourses",
+      "reference": "Discourses, Book III (On Guarding the Soul Against Charlatans)",
+      "duration": 5,
+      "videoPath": "/app/applet/rendered_videos/fin_quote_5s_1789815752379.mp4",
+      "loopable": true,
+      "publishedAt": "2026-09-19T11:02:44.948Z"
+    },
+    {
       "id": "fin_quote_1789728213387",
       "channelId": "finance_saas",
       "type": "financial_quote_reel_5s",

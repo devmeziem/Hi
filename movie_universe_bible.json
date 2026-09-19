@@ -5,15 +5,15 @@
   "artStyle": "Cinematic stylized film render, Unreal Engine 5 aesthetic, volumetric steam, dramatic shadows, sharp metallic reflections, high detail vertical 9:16 frame",
   "negativePrompt": "blurry, low quality, deformed anatomy, oversaturated colors, flat drawing, bad hands, distorted faces",
   "protagonist": {
-    "name": "Dax Mercer",
-    "role": "Deep Subterranean Salvage Diver",
+    "name": "Max Vance",
+    "role": "Renowned Rogue Army Contractor & Infiltration Specialist",
     "baseSeed": 741829,
-    "visualAnchor": "Rugged male operative Dax Mercer, short dark cropped hair, weathered jawline, wearing a heavy charcoal-gray hydraulic pressure suit, reinforced titanium chest armor, glowing blue telemetry scanner over right eye, holding a high-powered halogen exploration torch",
+    "visualAnchor": "Rugged operative Max Vance, cold calculating steel-gray eyes, dark hair, weathered jawline, wearing a heavy charcoal-gray tactical infiltration suit with reinforced titanium plates, tactical rebreather harness, glowing blue ocular scanner over right eye, gripping a high-intensity combat torch",
     "distinctiveFeatures": [
-      "Short cropped dark hair",
-      "Reinforced titanium charcoal-gray salvage suit with hydraulic shoulder seals",
-      "Glowing blue scanner over right eye",
-      "Handheld halogen industrial torch"
+      "Rugged weathered jawline with combat scars",
+      "Reinforced titanium charcoal tactical infiltration suit with hydraulic joints",
+      "Glowing cobalt ocular scanner over right eye",
+      "High-powered tactical halogen combat torch"
     ]
   },
   "environment": {

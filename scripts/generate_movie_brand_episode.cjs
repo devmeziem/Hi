@@ -67,10 +67,10 @@ function loadUniverseBible() {
     artStyle: "Cinematic stylized film render, Unreal Engine 5 aesthetic, volumetric steam, dramatic shadows, sharp metallic reflections, high detail vertical 9:16 frame",
     negativePrompt: "photorealistic, real human photography, blurry, low quality, deformed anatomy, oversaturated colors, flat drawing, bad hands, distorted faces",
     protagonist: {
-      name: "Dax Mercer",
-      role: "Deep Subterranean Salvage Diver",
+      name: "Max Vance",
+      role: "Renowned Rogue Army Contractor & Infiltration Specialist",
       baseSeed: 741829,
-      visualAnchor: "Rugged male operative Dax Mercer, short dark cropped hair, weathered jawline, wearing a heavy charcoal-gray hydraulic pressure suit, reinforced titanium chest armor, glowing blue telemetry scanner over right eye, holding a high-powered halogen exploration torch"
+      visualAnchor: "Rugged operative Max Vance, cold calculating steel-gray eyes, dark hair, weathered jawline, wearing a heavy charcoal-gray tactical infiltration suit with reinforced titanium plates, tactical rebreather harness, glowing blue ocular scanner over right eye, gripping a high-intensity combat torch"
     },
     environment: {
       worldName: "Sub-Level 14 Flooded Industrial Tunnels",
@@ -256,7 +256,7 @@ function generateProceduralCinematicFrame(act, epMeta, actIndex, outPath) {
         SEC_${actIndex + 1} // ${theme.title}
       </text>
       <text x="884" y="50" font-family="'Courier New', monospace" font-size="20" fill="#94a3b8" text-anchor="end">
-        DAX_MERCER // PROTOCOL ZERO
+        MAX_VANCE // PROTOCOL ZERO
       </text>
     </g>
 
@@ -366,116 +366,116 @@ const EPISODE_SERIES_CATALOG = [
     episode: 1,
     seriesTitle: "PROTOCOL ZERO: THE GHOST VAULT",
     episodeTitle: "Sub-Level 14",
-    hook: "Forty feet under the metropolis, the flood water had reached the upper tracks.",
-    logline: "Subterranean salvage specialist Dax Mercer breaches an abandoned Cold War vault beneath the city subway, only to discover a terrifying classified operation running in the dark.",
+    hook: "The higher the payout, the darker the grave. I was given twenty million dollars and one absolute rule: Never open Vault Door Seven.",
+    logline: "Renowned former rogue army contractor Max Vance accepts an off-the-books extraction contract in an abandoned underground research facility, only to discover the forbidden vault door had already been forced open from the inside.",
     acts: [
       {
         act: 1,
-        title: "THE FLOODED DESCENT",
+        title: "THE ROGUE OPERATIVE",
         cameraMotion: "zoom_in",
-        narration: "Forty feet beneath the metropolis, storm runoff breached the abandoned subway lines. Dax Mercer stepped into the freezing dark.",
-        actionScene: "Dax Mercer in heavy charcoal-gray hydraulic pressure suit descending a rusted iron ladder into pitch-black flooded subway tracks, bright halogen torch cutting through heavy subterranean mist",
-        visualDesc: "Massive flooded concrete railway tunnels, dark murky water reflecting flickering emergency worklights.",
-        subtitle: "SUB-LEVEL 14 // RUNOFF DETECTED"
+        narration: "Before you take a twenty-million-dollar contract from an anonymous handler, remember this: the higher the payout, the darker the grave. I am Max. For twelve brutal years, I was a renowned operative in a rogue army black-ops unit. When a mission had to be erased from existence, they called me. I took the dirty, suicidal jobs nobody else had the stomach for... and I always survived.",
+        actionScene: "Max Vance standing in a dark rain-swept industrial alleyway, heavy charcoal-gray tactical infiltration armor, glowing blue ocular scanner over his right eye, cigarette smoke drifting through neon-lit mist",
+        visualDesc: "Cinematic high-contrast frame of hardened operative Max Vance, tactical ballistic vest with titanium plates, rain reflections.",
+        subtitle: "OPERATIVE: MAX VANCE // RECORD CLASSIFIED"
       },
       {
         act: 2,
-        title: "UNSEALED BULKHEAD",
+        title: "THE MIDNIGHT DELIVERY",
         cameraMotion: "pan_left",
-        narration: "The blast door was supposed to be sealed fifty years ago. But the heavy hydraulic clamps had been severed with fresh plasma.",
-        actionScene: "Dax Mercer shining his halogen beam upon a massive vault bulkhead with heavy hydraulic locks freshly torched open, molten steel dripping into black water",
-        visualDesc: "Reinforced blast door bulkhead with glowing molten steel edges, severed hydraulic lines dripping into water, blue electrical arcs.",
-        subtitle: "BULKHEAD 09 // PLASMA CUT CONFIRMED"
+        narration: "Then three nights ago, the delivery arrived at my safehouse door. No return address, no digital footprint. Inside lay a cold titanium courier cylinder, twenty million dollars in untraceable bearer bonds, and a black military data slate stamped with classified ciphers.",
+        actionScene: "Close-up of Max Vance's armored gloved hands unsealing a cold titanium courier tube on a weathered steel workbench, cyan biometric light scanning his fingerprints over stacks of black military bonds",
+        visualDesc: "High-tech military courier container open on table, glowing cryptographic slate displaying classified dossier.",
+        subtitle: "PRIORITY CONTRACT // $20M UNTRACEABLE"
       },
       {
         act: 3,
-        title: "THE SHADOWED TRACKS",
+        title: "THE FORGOTTEN COMPLEX",
         cameraMotion: "pan_right",
-        narration: "Dax adjusted his right-eye telemetry scanner. Heavy military boot prints pressed into the river silt, heading deeper into sector zero.",
-        actionScene: "Dax Mercer pointing his exploration torch down wet industrial tracks where deep combat boot impressions disturb the gray silt, blue scanner grid projecting over the ties",
-        visualDesc: "POV looking along rusted tracks, blue grid scanner projecting over deep combat boot impressions in the mud.",
-        subtitle: "TELEMETRY // COMBAT BOOT TRACKS"
+        narration: "The work was clear: descend forty feet beneath the metropolis into an abandoned Soviet-era research bunker known as Sub-Level 14. Recover a classified quantum telemetry drive left behind during the 1989 evacuation. But the contract carried one strict directive.",
+        actionScene: "Holographic tactical wireframe schematic of subterranean transit lines and forgotten research bunker glowing cyan above Max's table, highlighting a deep subterranean chamber 40 feet underground",
+        visualDesc: "Tactical tunnel schematic showing underground levels beneath subway tracks, red route highlighting Sub-Level 14.",
+        subtitle: "TARGET // RESEARCH SUB-LEVEL 14"
       },
       {
         act: 4,
-        title: "THE GENERATOR HALL",
+        title: "THE CARDINAL RULE",
         cameraMotion: "zoom_out",
-        narration: "The generator hall stretched for two hundred yards under vaulted concrete arches. Silent dynamos slumbering beneath black mirror water.",
-        actionScene: "Vast cathedral-like subterranean hall with submerged Cold War turbines, emergency beacon reflection shimmering on the dark water surface",
-        visualDesc: "Massive underground industrial dynamo station, towering concrete pylons, stagnant dark floodwater reflecting green status bulbs.",
-        subtitle: "AUX POWER // 12% SYSTEM RESIDUAL"
+        narration: "The encrypted audio was dead and robotic: 'Take the drive, Max. But whatever you do, whatever you hear calling your name through the ventilation shafts, under no circumstances must you ever approach, touch, or open Vault Door Seven.'",
+        actionScene: "Encrypted data slate flashing stark crimson warning text: 'RULE ZERO: DO NOT UNLOCK VAULT DOOR 7 UNDER ANY CIRCUMSTANCES', red ambient glow reflecting off Max Vance's cold, calculating expression",
+        visualDesc: "Grim warning terminal display, high contrast red emergency lighting illuminating Max's scarred jawline.",
+        subtitle: "MANDATE // DO NOT TOUCH VAULT 7"
       },
       {
         act: 5,
-        title: "THE RHYTHMIC BEACON",
+        title: "THE FLOODED DESCENT",
         cameraMotion: "pan_left",
-        narration: "His audio receiver caught an encrypted pulse. Four hundred and forty kilohertz, beating like an artificial heart every three seconds.",
-        actionScene: "Dax Mercer holding his wrist-mounted telemetry scanner toward submerged military server racks with rhythmic cyan LED pulses illuminating murky water",
-        visualDesc: "Submerged communications terminal with glowing cyan indicators, bubbles rising through the flooded server racks.",
-        subtitle: "FREQUENCY // 440 KHZ PULSE DETECTED"
+        narration: "Midnight storm runoff had flooded the subterranean railway lines when I pried open the maintenance grate beneath Track Four. Stepping down forty feet of rusted iron rungs into freezing waist-deep water, the stench of river silt and chemical coolant filled my rebreather.",
+        actionScene: "Max Vance in full charcoal-gray pressurized tactical dive suit descending an iron ladder into pitch-black flooded subway tracks, his halogen combat torch slicing through thick fog and murky runoff water",
+        visualDesc: "Massive flooded concrete railway tunnels, dark murky water reflecting flickering emergency worklights.",
+        subtitle: "DESCENT // -40FT BELOW TRANSIT GRID"
       },
       {
         act: 6,
-        title: "THE GANTRY SHADOW",
+        title: "THE SEVERED WIRES",
         cameraMotion: "zoom_in",
-        narration: "A shadow moved along the upper maintenance catwalk. Dax killed his torch, pressing his back against the rusted iron pillar.",
-        actionScene: "Dax Mercer ducking against an iron girder in pitch darkness, high overhead catwalk silhouetting a tactical operative carrying a suppressed carbine",
-        visualDesc: "High-contrast dark tunnel, flashlight beam cutting through mist from above, Dax concealed in heavy industrial shadow.",
-        subtitle: "THERMAL SCAN // BIOMETRIC CONTACT"
+        narration: "As my combat boots hit the submerged track bed, my ocular scanner locked onto heavy high-voltage orange conduits humming along the ceiling. This forgotten research facility wasn't dead. Someone had restored auxiliary power hours before I arrived.",
+        actionScene: "Max Vance wading through waist-deep murky water, holding his torch toward overhead steel girders where thick orange electrical busbars hum with visible electromagnetic ionization",
+        visualDesc: "Industrial power conduits glowing faint amber, moisture sizzling against high-voltage cables above black floodwater.",
+        subtitle: "AUXILIARY POWER // 4.8 MEGAWATTS ACTIVE"
       },
       {
         act: 7,
-        title: "HIGH-VOLTAGE CONDUIT",
+        title: "THE BREACHED THRESHOLD",
         cameraMotion: "pan_right",
-        narration: "Fresh high-voltage cables snaked across the concrete roof. Someone wasn't just exploring. They were drawing megawatts of power.",
-        actionScene: "Heavy orange industrial high-voltage conduits zip-tied to antique railway brackets, humming with visible electrical haze across the ceiling",
-        visualDesc: "Industrial power conduits glowing faint amber, moisture sizzling against the cables above the dark floodwater.",
-        subtitle: "POWER DRAIN // 4.8 MEGAWATTS DRAW"
+        narration: "I waded through the dark current to the containment barrier marking Sector Zero. Stenciled across the peeling steel was Vault Door Seven. But my blood ran cold. The rule had already been broken... the eight-ton blast door was standing wide open.",
+        actionScene: "High-contrast shot of Vault Door 7 looming ahead in the cavernous tunnel, its massive three-foot-thick steel door swung ajar into the blackness, dark water rippling outward into the forbidden chamber",
+        visualDesc: "Massive steel blast door standing open in pitch black, water swirling through the portal, halogen beam cutting inside.",
+        subtitle: "BREACH CONFIRMED // VAULT 7 WIDE OPEN"
       },
       {
         act: 8,
-        title: "DECRYPTED BROADCAST",
+        title: "THE CLAW TRENCHES",
         cameraMotion: "zoom_out",
-        narration: "His terminal auto-synced with a localized broadcast: 'Protocol Zero is active. Seal the perimeter. Leave no witnesses.'",
-        actionScene: "Dax Mercer's wrist-mounted tactical display showing red encrypted waveform audio decoding in real-time beneath dripping subterranean water",
-        visualDesc: "High-tech military HUD interface displaying tactical audio spectrogram and emergency priority override flags.",
-        subtitle: "DECRYPTED // PROTOCOL ZERO ACTIVE"
+        narration: "I swept my tactical halogen beam across the frame. The three-foot solid steel locking pins hadn't been picked, and no plasma torch had touched them. The reinforced bulkhead had been violently forced open from the inside... with four-inch claw trenches gouged into the solid iron floor.",
+        actionScene: "Max Vance's halogen beam illuminating deep violent gouges in the reinforced titanium floor plating, hydraulic locks sheared outward like twisted tinfoil, green bioluminescent fluid dripping into the black water",
+        visualDesc: "Extreme close-up of torn steel edges and massive claw marks etched into solid metal floor plating under water.",
+        subtitle: "ANALYSIS // FORCED FROM INSIDE"
       },
       {
         act: 9,
-        title: "THE PRESSURE SURGE",
+        title: "THE 440 HZ HEARTBEAT",
         cameraMotion: "pan_left",
-        narration: "Pipes overhead began to shudder violently. Pressure relief valves screamed as superheated steam burst into the flooded corridor.",
-        actionScene: "Violent steam venting through rusted high-pressure valves, white fog billowing over dark floodwater, water bubbling furiously around Dax's armor",
-        visualDesc: "Subterranean pressure blowout, blinding white steam, emergency strobe flashes casting red hues on water.",
-        subtitle: "PRESSURE // CRITICAL OVERPRESSURE"
+        narration: "My wrist terminal crackled through static. An encrypted telemetry pulse was transmitting at 440 kilohertz—the exact frequency of an active synthetic bio-neural core. It was pulsing like a massive mechanical heartbeat every three seconds, right inside the open vault.",
+        actionScene: "Max raising his armored wrist terminal, displaying a rhythmic audio waveform and biometric proximity radar pulsing with crimson spikes, reflecting in his suit's cobalt eye piece",
+        visualDesc: "Submerged communications terminal with glowing cyan indicators, bubbles rising through flooded server racks.",
+        subtitle: "AUDIO RADAR // 440 KHZ BIO-SYNTHETIC PULSE"
       },
       {
         act: 10,
-        title: "THE TRIPWIRE",
+        title: "THE POINT OF NO RETURN",
         cameraMotion: "zoom_in",
-        narration: "Two inches above the waterline, an infrared tripwire glowed faint crimson. Dax froze mid-step, his boot millimeters from detonation.",
-        actionScene: "Macro shot of Dax Mercer's heavy diving boot hovering centimeters from a thin crimson infrared laser wire connected to military C4 charges",
-        visualDesc: "Tense close-up, water droplets clinging to the infrared beam, high-explosive ordnance fastened to the tunnel bulkhead.",
-        subtitle: "WARNING // CONCEALED EXPLOSIVE"
+        narration: "Twenty million dollars. Every survival instinct told me to turn back. But my hand unholstered my suppressed sidearm, and I pushed forward through the black water. The second my boots crossed the threshold of Vault Seven, the floor gave a sickening hydraulic groan.",
+        actionScene: "Max Vance stepping across the threshold of Vault 7, suppressed pistol drawn with tactical light aimed forward into cavernous shadows, dark water swirling around his combat boots",
+        visualDesc: "Tense medium shot of Max entering the dark chamber, weapon raised, water parting around armored knees.",
+        subtitle: "WARNING // POINT OF NO RETURN"
       },
       {
         act: 11,
-        title: "THE CATWALK AMBUSH",
+        title: "THE CONTAINMENT SLAM",
         cameraMotion: "pan_right",
-        narration: "Above him, the intruder racked a charging handle. A laser designator painted Dax's titanium chest plate with a bright red dot.",
-        actionScene: "The operative on the high gantry aiming directly downward, crimson targeting laser reflecting sharply off Dax Mercer's wet titanium breastplate",
-        visualDesc: "Tactical operative in high-altitude rebreather gear, laser sight smoking through the humid tunnel atmosphere.",
-        subtitle: "LOCK-ON // TARGET ACQUIRED"
+        narration: "Behind me, the ceiling shuddered violently. Massive magnetic locks engaged with a blinding electrical arc. The eight-ton tungsten blast door slammed shut with thunderous, deafening finality, severing my radio link and plunging the corridor into pitch black.",
+        actionScene: "Massive blast door crashing down violently behind Max, throwing up a huge wave of black water and blinding electrical sparks, locking into place with deafening pneumatic hissing",
+        visualDesc: "Massive steel blast door locking tight with water churning violently, red emergency alarm strobe flashing.",
+        subtitle: "CRITICAL // BLAST DOOR SEALED BEHIND"
       },
       {
         act: 12,
-        title: "CONTAINMENT SLAM",
+        title: "TRAPPED IN SECTOR ZERO",
         cameraMotion: "zoom_in",
-        narration: "Behind him, the massive containment bulkhead slammed shut with thunderous finality. The drainage pumps died. The water was rising fast.",
-        actionScene: "Massive hydraulic blast door slamming down with explosive water spray, locking Dax inside the pitch-black flooded chamber as water surges past his chest",
-        visualDesc: "Massive steel blast door locking tight with water churning violently, red emergency alarm strobe flashing.",
-        subtitle: "ALERT: TRAPPED IN SECTOR 0 // TO BE CONTINUED IN EPISODE 2"
+        narration: "The drainage pumps suddenly died. Freezing floodwater began surging past my chest. And as my torch flickered back to life, two burning amber optical sensors ignited on the gantry thirty feet above me. The client hadn't hired me to retrieve a drive. I was the live bait.",
+        actionScene: "Max Vance submerged to his chest in dark swirling water, looking up with his torch beam illuminated in mist, catching two ominous glowing amber optic lenses staring down from the steel gantry above",
+        visualDesc: "Ominous amber glowing eyes staring from overhead shadows, water rising rapidly around Max's armored chest plate.",
+        subtitle: "ALERT: TRAPPED WITH THE ENTITY // TO BE CONTINUED IN EPISODE 2"
       }
     ],
     tags: ['#SciFiShorts', '#GhostVault', '#MiniMovie', '#SurvivalThriller', '#EpisodicSeries', '#Shorts']
@@ -486,14 +486,14 @@ const EPISODE_SERIES_CATALOG = [
     seriesTitle: "PROTOCOL ZERO: THE GHOST VAULT",
     episodeTitle: "The Signal in the Dark",
     hook: "You don't hear footsteps in a flooded vault. You feel the vibration in the steel.",
-    logline: "Trapped in the lower drainage canal, Dax Mercer navigates submerged Cold War aqueducts to hunt the rogue team siphoning the city's power grid.",
+    logline: "Trapped in the rising flood of Sub-Level 14, Max Vance fights his way through submerged aqueducts to uncover the entity and the rogue syndicate that engineered his contract.",
     acts: [
       {
         act: 1,
         title: "SEALED IN THE DEEP",
         cameraMotion: "zoom_in",
-        narration: "Trapped beneath eight thousand tons of reinforced granite. The flood water was rising six inches every minute.",
-        actionScene: "Dax Mercer submerged up to his chest in dark floodwater, telemetry visor flashing red decompression warnings as water rushes through overhead grates",
+        narration: "Trapped beneath eight thousand tons of reinforced granite. The flood water was rising six inches every minute. My rebreather gauge showed eighteen minutes of compressed oxygen before total suffocation.",
+        actionScene: "Max Vance submerged up to his chest in dark floodwater, telemetry visor flashing red decompression warnings as water rushes through overhead grates",
         visualDesc: "Subterranean chamber filling with black water, floating industrial debris, halogen torch beam reflecting underwater.",
         subtitle: "DRAINAGE FAILURE // 18 MIN OXYGEN"
       },
@@ -501,8 +501,8 @@ const EPISODE_SERIES_CATALOG = [
         act: 2,
         title: "THE BREACHED GRATE",
         cameraMotion: "pan_left",
-        narration: "Dax unholstered his pneumatic cutting torch. He sliced through the iron ventilation grate, slipping into the auxiliary intake.",
-        actionScene: "Dax Mercer using a high-intensity pneumatic cutting torch underwater, bright orange sparks illuminating flooded steel ventilation bars",
+        narration: "I unholstered my high-pressure pneumatic plasma torch. Submerging beneath the surface, I sliced through the iron ventilation grate, slipping my armor into the auxiliary drainage intake.",
+        actionScene: "Max Vance using a high-intensity pneumatic cutting torch underwater, bright orange sparks illuminating flooded steel ventilation bars",
         visualDesc: "Underwater cutting sparks, molten metal bubbles floating upward, severed iron bars falling into silt.",
         subtitle: "VENTILATION DUCT // AUXILIARY ACCESS"
       },
@@ -510,8 +510,8 @@ const EPISODE_SERIES_CATALOG = [
         act: 3,
         title: "THE COLD CURRENT",
         cameraMotion: "pan_right",
-        narration: "The current pulled him violently downstream through the darkness into a subterranean canal built during the Cuban Missile Crisis.",
-        actionScene: "Dax Mercer navigating a high-speed underground canal, gripping concrete reinforcement ribs as torrents of dark water push past his suit",
+        narration: "The current pulled me violently downstream through the darkness into a subterranean canal built during the Cold War. The velocity slammed my shoulder plates against concrete reinforcement ribs.",
+        actionScene: "Max Vance navigating a high-speed underground canal, gripping concrete reinforcement ribs as torrents of dark water push past his suit",
         visualDesc: "Narrow arched aqueduct, fast-moving dark current, concrete walls marked with faded civil defense stencils.",
         subtitle: "CANAL 4 // FLOW VELOCITY 8 KNOTS"
       },
@@ -519,8 +519,8 @@ const EPISODE_SERIES_CATALOG = [
         act: 4,
         title: "THE BLACK RESERVOIR",
         cameraMotion: "zoom_out",
-        narration: "He surfaced in a cavernous underground reservoir. The ceiling arched fifty feet above, lost in thick sulfurous vapor.",
-        actionScene: "Dax Mercer emerging from the calm black surface of an enormous subterranean reservoir, helmet lights casting long beams across the mist",
+        narration: "I surfaced into an enormous subterranean reservoir. The vaulted ceiling arched fifty feet above, lost in thick sulfurous vapor. Stagnant black water stretched into the void.",
+        actionScene: "Max Vance emerging from the calm black surface of an enormous subterranean reservoir, helmet lights casting long beams across the mist",
         visualDesc: "Vast subterranean lake beneath the city, ancient stone retaining walls, silent echoing cavern.",
         subtitle: "RESERVOIR // ATMOSPHERE TOXIC"
       },
@@ -528,7 +528,7 @@ const EPISODE_SERIES_CATALOG = [
         act: 5,
         title: "THE OPERATIVE'S RAFT",
         cameraMotion: "pan_left",
-        narration: "Across the black water drifted an unmanned tactical Zodiac raft, tied to a submerged pipeline with military paracord.",
+        narration: "Across the glassy water drifted a matte-black tactical Zodiac raft, tied to a submerged pipeline with military paracord. The engine was still warm to the touch.",
         actionScene: "Tactical matte-black Zodiac raft tied to industrial pipe fittings, loaded with pelican cases and satellite transceivers",
         visualDesc: "Black inflatable boat illuminated by green radio status indicators floating on glassy dark water.",
         subtitle: "ASSET DETECTED // TACTICAL ZODIAC"
@@ -537,8 +537,8 @@ const EPISODE_SERIES_CATALOG = [
         act: 6,
         title: "THE SATELLITE UPLINK",
         cameraMotion: "zoom_in",
-        narration: "Onboard sat an active phased-array uplink. It was beaming terabytes of classified telemetry to an off-shore server.",
-        actionScene: "Dax Mercer inspecting a glowing satellite uplink console mounted on the raft, data lines streaming rapidly in green phosphor",
+        narration: "Onboard sat an active phased-array uplink. It was beaming gigabytes of classified telemetry to an offshore syndicate server. The file header read: Protocol Zero - Containment Transfer.",
+        actionScene: "Max Vance inspecting a glowing satellite uplink console mounted on the raft, data lines streaming rapidly in green phosphor",
         visualDesc: "Phased-array military satellite dish, blinking data transceivers, encrypted file transfer progress bar.",
         subtitle: "DATA TRANSMISSION // MIL-SAT 7"
       },
@@ -546,7 +546,7 @@ const EPISODE_SERIES_CATALOG = [
         act: 7,
         title: "THE HOSTILE DIVER",
         cameraMotion: "pan_right",
-        narration: "Bubbles broke the surface behind him. A diver wearing rebreather gear lunged through the black water with a titanium dive knife.",
+        narration: "A sudden sound of bubbles broke the silence behind me. A black-clad diver wearing military rebreather gear lunged from the deep with a titanium combat knife aimed at my jugular.",
         actionScene: "Hostile diver in black military wetsuit and closed-circuit rebreather bursting from the water, combat knife gleaming in halogen light",
         visualDesc: "Dramatic close combat attack in subterranean water, spray freezing in flashlight glare, knife reflection.",
         subtitle: "PROXIMITY WARNING // HOSTILE DIVER"
@@ -555,8 +555,8 @@ const EPISODE_SERIES_CATALOG = [
         act: 8,
         title: "UNDERWATER STRUGGLE",
         cameraMotion: "zoom_in",
-        narration: "Dax grappled in zero visibility. He kicked off the submerged pipeline, twisting the attacker's oxygen line until the regulator snapped.",
-        actionScene: "Underwater CQC struggle, Dax Mercer wrenching the hostile operative's high-pressure rebreather hose, air bubbles clouding the frame",
+        narration: "We tumbled beneath the surface into zero visibility. I planted my heel against the submerged conduit, twisted his wrist, and ripped his high-pressure oxygen regulator clean off his harness.",
+        actionScene: "Underwater CQC struggle, Max Vance wrenching the hostile operative's high-pressure rebreather hose, air bubbles clouding the frame",
         visualDesc: "Violent underwater vortex, tactical knife dropping into the abyss, bubbles illuminated by suit telemetry.",
         subtitle: "CQC // THREAT NEUTRALIZED"
       },
@@ -564,8 +564,8 @@ const EPISODE_SERIES_CATALOG = [
         act: 9,
         title: "THE RECOVERED KEYCARD",
         cameraMotion: "zoom_out",
-        narration: "From the attacker's vest, Dax pulled an encrypted biometric keycard stamped with a crimson phoenix emblem.",
-        actionScene: "Close-up of Dax Mercer's armored glove holding a blackened titanium security card with a laser-etched crimson phoenix insignia",
+        narration: "From the diver's tactical vest, I recovered an encrypted biometric keycard stamped with a crimson phoenix emblem. It matched the cipher format on my twenty-million-dollar contract.",
+        actionScene: "Close-up of Max Vance's armored glove holding a blackened titanium security card with a laser-etched crimson phoenix insignia",
         visualDesc: "High-security cipher keycard reflecting cyan HUD light, water dripping from carbon-fiber weave vest.",
         subtitle: "ITEM SECURED // PHOENIX CIPHER KEY"
       },
@@ -573,7 +573,7 @@ const EPISODE_SERIES_CATALOG = [
         act: 10,
         title: "THE VOLTAGE SPIKE",
         cameraMotion: "pan_left",
-        narration: "The severed electrical conduits pulsed with ungodly voltage, illuminating a hidden blast door thirty feet down the canal.",
+        narration: "Suddenly, the severed electrical conduits pulsed with ungodly voltage. A wave of electric blue light washed down the canal, illuminating a reinforced blast door thirty yards away.",
         actionScene: "Electric blue arcs snapping between industrial busbars, throwing long violent shadows toward a hidden reinforced doorway",
         visualDesc: "Industrial canal wall illuminated by high-voltage sparks, showing heavy blast door hinges hidden behind vines of cables.",
         subtitle: "PRIMARY CONDUIT // VOLTAGE SPIKE"
@@ -582,8 +582,8 @@ const EPISODE_SERIES_CATALOG = [
         act: 11,
         title: "THE REACTOR ACCESS",
         cameraMotion: "pan_right",
-        narration: "He swiped the stolen card. The hydraulic locking pins retracted with a mechanical hiss that echoed across the cavern.",
-        actionScene: "Dax Mercer swiping the keycard into a heavy wall-mounted terminal, yellow confirmation LED switching to deep emerald green",
+        narration: "I pressed the stolen keycard against the reader. The heavy hydraulic locking bolts disengaged with a mechanical hiss that echoed through the cavern.",
+        actionScene: "Max Vance swiping the keycard into a heavy wall-mounted terminal, yellow confirmation LED switching to deep emerald green",
         visualDesc: "Heavy vault latch mechanisms sliding back, pressurized air escaping around the steel portal.",
         subtitle: "ACCESS GRANTED // REACTOR VAULT"
       },
@@ -591,9 +591,9 @@ const EPISODE_SERIES_CATALOG = [
         act: 12,
         title: "THE REVELATION",
         cameraMotion: "zoom_in",
-        narration: "The door swung wide, revealing a room bathed in eerie cobalt light. And standing before the reactor was someone Dax recognized.",
-        actionScene: "Heavy door swinging open into a glowing blue reactor hall, silhouetting a commander in naval officer fatigue staring straight back at Dax",
-        visualDesc: "Cobalt nuclear glow filling the doorway, reflection on Dax's visor, shocking character reveal in the shadows.",
+        narration: "The blast door swung wide, revealing an enormous chamber bathed in eerie cobalt Cherenkov glow. And standing at the master console was the man who sent the contract.",
+        actionScene: "Heavy door swinging open into a glowing blue reactor hall, silhouetting a commander in naval officer fatigue staring straight back at Max",
+        visualDesc: "Cobalt nuclear glow filling the doorway, reflection on Max's visor, shocking character reveal in the shadows.",
         subtitle: "SYSTEMS CRITICAL // TO BE CONTINUED IN EPISODE 3"
       }
     ],
@@ -605,13 +605,13 @@ const EPISODE_SERIES_CATALOG = [
     seriesTitle: "PROTOCOL ZERO: THE GHOST VAULT",
     episodeTitle: "The Core Chamber",
     hook: "The city above was sleeping. The machine below was just waking up.",
-    logline: "In the heart of the subterranean facility, Dax Mercer confronts his former squad commander before an orbital EMP grid permanently blacks out the continent.",
+    logline: "In the heart of the subterranean facility, Max Vance confronts his former black-ops commander before an orbital EMP grid permanently blacks out the continent.",
     acts: [
       {
         act: 1,
         title: "INSIDE THE SANCTUM",
         cameraMotion: "zoom_out",
-        narration: "A monolithic subterranean sphere suspended over an abyssal coolant pit. This was the Ghost Vault's beating heart.",
+        narration: "A monolithic titanium sphere was suspended over an abyssal coolant pit. Dynamos roared with terrifying power. This was the Ghost Vault's beating heart.",
         actionScene: "Enormous titanium spherical reactor housing suspended by heavy steel cables over a luminous turquoise coolant pool",
         visualDesc: "Futuristic Cold War subterranean facility, towering catwalks, coolant mist swirling over deep water.",
         subtitle: "CORE SPHERE // SECTOR ZERO"
@@ -620,7 +620,7 @@ const EPISODE_SERIES_CATALOG = [
         act: 2,
         title: "THE FAMILIAR FACE",
         cameraMotion: "zoom_in",
-        narration: "Commander Vance turned slowly from the terminal. Dax's former squad leader, presumed dead in the North Sea three years ago.",
+        narration: "Commander Vance turned slowly from the master console. My former squad commander, presumed dead in the North Sea three years ago. The man who taught me how to kill.",
         actionScene: "Commander Vance, weathered face with cybernetic right eye, standing at the master console wearing tactical black uniform",
         visualDesc: "High-contrast dramatic lighting on Vance's cold, calculated expression, reactor glow reflecting off his cybernetic eye.",
         subtitle: "IDENTITY CONFIRMED // VANCE, M."
@@ -629,7 +629,7 @@ const EPISODE_SERIES_CATALOG = [
         act: 3,
         title: "THE COLD MOTIVE",
         cameraMotion: "pan_left",
-        narration: "'They wrote us off, Mercer,' Vance spoke into the hum of the dynamos. 'This reactor doesn't power the city. It powers an orbital EMP grid.'",
+        narration: "'They threw us away, Max,' Vance's voice echoed over the turbine scream. 'This reactor doesn't power the city. It powers an orbital EMP grid designed to wipe clean the modern world.'",
         actionScene: "Holographic orbital trajectory projection showing satellites aligning over the continent, casting amber light across the gantry",
         visualDesc: "Tactical wireframe globe glowing in mid-air, showing EMP blast radiuses expanding over major cities.",
         subtitle: "PAYLOAD DECRYPT // ORBITAL EMP"
@@ -638,7 +638,7 @@ const EPISODE_SERIES_CATALOG = [
         act: 4,
         title: "THE COUNTDOWN",
         cameraMotion: "pan_right",
-        narration: "On the main console, the countdown read three minutes to global synchronization. The countdown could not be aborted from the terminal.",
+        narration: "On the terminal screen, the countdown read three minutes to global synchronization. The satellite uplink was locked. It could not be aborted from the software.",
         actionScene: "Digital master countdown display flashing '02:59:44' in stark crimson, terminal locked with military cipher key",
         visualDesc: "Console monitors flashing red alert banners, warning sirens casting rhythmic crimson light sweeps across the room.",
         subtitle: "SYNC T-MINUS 180 SECONDS"
@@ -647,7 +647,7 @@ const EPISODE_SERIES_CATALOG = [
         act: 5,
         title: "SNIPERS ON THE CATWALK",
         cameraMotion: "zoom_in",
-        narration: "A red laser swept across Dax's visor. Vance wasn't alone. Two mercenary snipers were perched on the overhead crane.",
+        narration: "A red laser painted across my visor. Vance had two sniper mercenaries perched on the high crane gantry, their rifles locked directly onto my chest.",
         actionScene: "Overhead crane girder where two black-clad tactical marksmen aim suppressed rifles downward, laser sights crisscrossing the hall",
         visualDesc: "Dramatic vertical angle looking up past steel trusses, multiple laser targeting beams piercing through coolant fog.",
         subtitle: "SNIPER LOCK // OVERHEAD GANTRY"
@@ -656,7 +656,7 @@ const EPISODE_SERIES_CATALOG = [
         act: 6,
         title: "FLASHBANG IN THE FOG",
         cameraMotion: "pan_left",
-        narration: "Dax hurled a high-intensity flare into the mist. White phosphorus blinded the crane snipers, shattering their night-vision optics.",
+        narration: "I drew a white phosphorus grenade from my belt and hurled it into the mist. The blinding explosion overloaded the snipers' night-vision optics in an instant.",
         actionScene: "Blinding magnesium flare exploding in the subterranean fog, creating overwhelming white illumination and long jagged shadows",
         visualDesc: "Intense white flare light reflecting off wet steel, snipers on the catwalk recoiling from optic overload.",
         subtitle: "OPTIC DISRUPTION // FLARE DEPLOYED"
@@ -665,8 +665,8 @@ const EPISODE_SERIES_CATALOG = [
         act: 7,
         title: "THE GANTRY SPRINT",
         cameraMotion: "pan_right",
-        narration: "Rounds tore into the steel walkway. Dax sprinted through the sparks, vaulting over the coolant rail toward the main breaker.",
-        actionScene: "Dax Mercer sprinting along narrow metal catwalk under heavy rifle fire, bullet impacts throwing orange sparks off the handrails",
+        narration: "Suppressed rounds chewed through the steel grating beneath my feet. I sprinted through the sparks, vaulting over the coolant rail toward the manual breaker tower.",
+        actionScene: "Max Vance sprinting along narrow metal catwalk under heavy rifle fire, bullet impacts throwing orange sparks off the handrails",
         visualDesc: "Dynamic action camera, motion blur on sprinting armor, sparks raining down into the turquoise coolant pool below.",
         subtitle: "TACTICAL SPRINT // FIRE UNDERWAY"
       },
@@ -674,7 +674,7 @@ const EPISODE_SERIES_CATALOG = [
         act: 8,
         title: "THE MANUAL OVERRIDE",
         cameraMotion: "zoom_out",
-        narration: "The manual emergency SCRAM switch was fifty feet above, secured behind a reinforced emergency glass housing.",
+        narration: "The manual emergency SCRAM switch sat fifty feet above, encased behind reinforced ballistic glass. It was the only way to physically drop the control rods.",
         actionScene: "Towering vertical emergency access ladder leading to an elevated control pulpit with bright red SCRAM lever",
         visualDesc: "High vertical shot showing the extreme height of the reactor chamber and the solitary emergency switch platform.",
         subtitle: "SCRAM LEVER // 50FT ELEVATION"
@@ -683,8 +683,8 @@ const EPISODE_SERIES_CATALOG = [
         act: 9,
         title: "THE CATWALK FIGHT",
         cameraMotion: "zoom_in",
-        narration: "Vance intercepted him on the gantry. Two veteran operatives trading bone-crushing blows above a boiling vortex of coolant.",
-        actionScene: "Dax Mercer and Commander Vance locked in brutal hand-to-hand combat on a narrow suspended steel bridge above the glowing reactor pit",
+        narration: "Vance intercepted me on the catwalk. Two seasoned black-ops veterans trading bone-shattering strikes forty feet above a boiling vortex of coolant.",
+        actionScene: "Max Vance and Commander Vance locked in brutal hand-to-hand combat on a narrow suspended steel bridge above the glowing reactor pit",
         visualDesc: "High-stakes hand-to-hand melee, titanium armor clashing, coolant water boiling violently forty feet below.",
         subtitle: "MELEE ENGAGEMENT // CORE GANTRY"
       },
@@ -692,8 +692,8 @@ const EPISODE_SERIES_CATALOG = [
         act: 10,
         title: "SHATTERED GLASS",
         cameraMotion: "pan_left",
-        narration: "Dax took the impact of Vance's strike, using the momentum to drive his titanium elbow through the emergency breaker housing.",
-        actionScene: "Dax Mercer smashing the reinforced tempered glass of the emergency SCRAM box with his titanium elbow guard, glass shards flying",
+        narration: "I took the full impact of Vance's carbon-fiber strike, using his momentum to smash my titanium elbow through the reinforced breaker housing.",
+        actionScene: "Max Vance smashing the reinforced tempered glass of the emergency SCRAM box with his titanium elbow guard, glass shards flying",
         visualDesc: "Explosion of glass fragments frozen in air, illuminated by emergency crimson and cobalt lights.",
         subtitle: "BREAKER GLASS SHATTERED"
       },
@@ -701,8 +701,8 @@ const EPISODE_SERIES_CATALOG = [
         act: 11,
         title: "THE SCRAM LEVER",
         cameraMotion: "zoom_in",
-        narration: "With his last ounce of strength, Dax wrenched the heavy lead lever downward. The control rods slammed into the core with a deafening roar.",
-        actionScene: "Dax Mercer gripping the heavy red mechanical SCRAM lever with both hands, throwing his entire body weight downward",
+        narration: "With my remaining strength, I wrenched the heavy lead lever downward. The control rods slammed into the core with a deafening, thunderous roar.",
+        actionScene: "Max Vance gripping the heavy red mechanical SCRAM lever with both hands, throwing his entire body weight downward",
         visualDesc: "Massive control rods plunging into the nuclear core below with huge mechanical shockwaves and steam exhaust vents.",
         subtitle: "EMERGENCY SCRAM ACTIVATED"
       },
@@ -710,9 +710,9 @@ const EPISODE_SERIES_CATALOG = [
         act: 12,
         title: "SILENCE IN THE DEEP",
         cameraMotion: "zoom_out",
-        narration: "The cobalt glow died into emergency amber. The grid was saved. But beneath the city, the true origin of Protocol Zero was just beginning.",
-        actionScene: "Dax Mercer standing battered on the high gantry in quiet amber emergency lighting, gazing down at the powering-down facility",
-        visualDesc: "Atmospheric wide frame, amber emergency beacons, steam quietly rising, Dax Mercer looking toward an unexplored tunnel leading deeper.",
+        narration: "The cobalt glow died into emergency amber. The turbines wound down into silence. The continent was saved. But deep in the dark, the true mystery of Protocol Zero was just beginning.",
+        actionScene: "Max Vance standing battered on the high gantry in quiet amber emergency lighting, gazing down at the powering-down facility",
+        visualDesc: "Atmospheric wide frame, amber emergency beacons, steam quietly rising, Max Vance looking toward an unexplored tunnel leading deeper.",
         subtitle: "END OF SEASON 1 // THE PROTOCOL NEVER SLEEPS"
       }
     ],
@@ -1013,77 +1013,57 @@ async function generateMovieEpisode(episodeIndex = 0) {
   }
 
   // 4. Assemble Full-Frame 1080x1920 Video with Distinct Cinematic Camera Choreography
+  // Render each act segment sequentially to guarantee rock-solid memory stability (no OOM kills)
   const outMp4 = path.join(ARTIFACTS_DIR, `movie_episode_s${epMeta.season}_e${epMeta.episode}.mp4`);
   console.log(`[Movie Generator] 🎥 Assembling Clean Full-Frame 1080x1920 Video (${actImages.length} Acts, Dynamic Pan/Zoom/Tilt, Karaoke Captions)...`);
 
   const actFrames = Math.round(actDuration * 30);
   const escapedAss = subtitleAss.replace(/\\/g, '/').replace(/:/g, '\\:');
-
-  // Input flags for all act images
-  const inputArgs = actImages.map(img => `-loop 1 -t ${actDuration} -i "${img}"`).join(' ');
-  const audioInputIndex = actImages.length;
-
-  // Cinematic choreography per act:
-  // Act 0 (The Descent): Push-in Zoom down into flooded darkness
-  // Act 1 (The Bulkhead): Smooth pan left-to-right scanning breached locks
-  // Act 2 (The Tracks): Tilt top-to-bottom tracking boot prints in silt
-  // Act 3 (The Signal): Smooth pan right-to-left sweeping towards pulsing blue beacon
-  // Act 4 (Containment Slam): Dramatic high-tension snap punch-in zoom
-  const vFilters = [];
-  const vConcatInputs = [];
+  const tempSegments = [];
 
   for (let i = 0; i < actImages.length; i++) {
-    const vOut = `v${i}`;
-    vConcatInputs.push(`[${vOut}]`);
-
+    const currentAct = epMeta.acts[i] || {};
+    const motion = currentAct.cameraMotion || (i % 4 === 0 ? 'zoom_in' : i % 4 === 1 ? 'pan_left' : i % 4 === 2 ? 'pan_right' : 'zoom_out');
     let motionFilter = '';
-    const motion = act.cameraMotion || (i % 4 === 0 ? 'zoom_in' : i % 4 === 1 ? 'pan_left' : i % 4 === 2 ? 'pan_right' : 'zoom_out');
     if (motion === 'zoom_in') {
-      // Push-in zoom
       motionFilter = `zoompan=z='min(zoom+0.0018,1.25)':x='iw/2-(iw/zoom/2)':y='ih*0.35-(ih/zoom*0.35)':d=${actFrames}:s=1080x1920:fps=30`;
     } else if (motion === 'pan_left') {
-      // Smooth cinematic pan right-to-left
       motionFilter = `zoompan=z='1.18':x='(iw-iw/zoom)*(1-on/${actFrames})':y='ih*0.38-(ih/zoom*0.38)':d=${actFrames}:s=1080x1920:fps=30`;
     } else if (motion === 'pan_right') {
-      // Smooth cinematic pan left-to-right
       motionFilter = `zoompan=z='1.18':x='(iw-iw/zoom)*(on/${actFrames})':y='ih*0.38-(ih/zoom*0.38)':d=${actFrames}:s=1080x1920:fps=30`;
     } else if (motion === 'zoom_out') {
-      // Pull-out zoom
       motionFilter = `zoompan=z='max(1.25-0.0018*on,1.0)':x='iw/2-(iw/zoom/2)':y='ih*0.35-(ih/zoom*0.35)':d=${actFrames}:s=1080x1920:fps=30`;
     } else {
-      // Dramatic punch
       motionFilter = `zoompan=z='min(zoom+0.0032,1.32)':x='iw/2-(iw/zoom/2)':y='ih*0.32-(ih/zoom*0.32)':d=${actFrames}:s=1080x1920:fps=30`;
     }
 
-    vFilters.push(`[${i}:v]scale=2160:3840:force_original_aspect_ratio=increase,crop=2160:3840,setsar=1,${motionFilter},format=yuv420p[${vOut}];`);
+    const segPath = path.join(epDir, `act_seg_${i}.mp4`);
+    tempSegments.push(segPath);
+
+    console.log(`[Movie Generator] 🎞️ Rendering Act ${i + 1}/${actImages.length} (${motion})...`);
+    const segCmd = `ffmpeg -y -loop 1 -t ${actDuration} -i "${actImages[i]}" -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,${motionFilter},format=yuv420p" -c:v libx264 -preset ultrafast -crf 20 -an "${segPath}" 2>/dev/null`;
+    execSync(segCmd);
   }
 
-  const filterComplex = `
-    ${vFilters.join(' ')}
-    ${vConcatInputs.join('')}concat=n=${actImages.length}:v=1:a=0[vconcat];
-    [vconcat]ass='${escapedAss}'[vout]
-  `.replace(/\s+/g, ' ');
+  // Create concat demuxer list
+  const concatListPath = path.join(epDir, 'concat_list.txt');
+  fs.writeFileSync(concatListPath, tempSegments.map(s => `file '${s.replace(/\\/g, '/')}'`).join('\n'));
 
-  const renderCmd = `ffmpeg -y ${inputArgs} -i "${masterWav}" -filter_complex "${filterComplex}" -map "[vout]" -map ${audioInputIndex}:a -c:v libx264 -preset medium -crf 19 -c:a aac -b:a 192k -movflags +faststart -shortest "${outMp4}" 2>/dev/null`;
+  // Concatenate segments, burn subtitles, and mux master audio
+  console.log(`[Movie Generator] 🎬 Final compositing: merging acts with master audio & karaoke subtitles...`);
+  const finalCmd = `ffmpeg -y -f concat -safe 0 -i "${concatListPath}" -i "${masterWav}" -vf "ass='${escapedAss}'" -c:v libx264 -preset veryfast -crf 20 -c:a aac -b:a 192k -movflags +faststart -shortest "${outMp4}" 2>/dev/null`;
 
   try {
-    execSync(renderCmd);
+    execSync(finalCmd);
     const sz = fs.statSync(outMp4).size;
     console.log(`[Movie Generator] ✅ SUCCESS: Episode MP4 Created! (${(sz / (1024 * 1024)).toFixed(2)} MB)`);
     console.log(`[Movie Generator] 📁 Output: ${outMp4}`);
   } catch (err) {
-    console.error(`[Movie Generator] Video assembly notice: ${err.message}, running standard render...`);
-    const fallbackFilters = actImages.map((_, idx) => `[${idx}:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,format=yuv420p[v${idx}];`).join(' ');
-    const fallbackConcat = actImages.map((_, idx) => `[v${idx}]`).join('');
-    const fallbackComplex = `
-      ${fallbackFilters}
-      ${fallbackConcat}concat=n=${actImages.length}:v=1:a=0[vconcat];
-      [vconcat]ass='${escapedAss}'[vout]
-    `.replace(/\s+/g, ' ');
-    const fallbackCmd = `ffmpeg -y ${inputArgs} -i "${masterWav}" -filter_complex "${fallbackComplex}" -map "[vout]" -map ${audioInputIndex}:a -c:v libx264 -preset fast -crf 20 -c:a aac -b:a 192k -movflags +faststart -shortest "${outMp4}" 2>/dev/null`;
-    execSync(fallbackCmd);
+    console.error(`[Movie Generator] Subtitle filter notice: ${err.message}, muxing direct...`);
+    const directCmd = `ffmpeg -y -f concat -safe 0 -i "${concatListPath}" -i "${masterWav}" -c:v copy -c:a aac -b:a 192k -movflags +faststart -shortest "${outMp4}" 2>/dev/null`;
+    execSync(directCmd);
     const sz = fs.statSync(outMp4).size;
-    console.log(`[Movie Generator] ✅ Fallback render complete! (${(sz / (1024 * 1024)).toFixed(2)} MB)`);
+    console.log(`[Movie Generator] ✅ Episode MP4 created via clean copy! (${(sz / (1024 * 1024)).toFixed(2)} MB)`);
   }
 
   // 6. Update Manifest & Database (Zero Git Commits, 100% Low Key)

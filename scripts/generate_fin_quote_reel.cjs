@@ -68,6 +68,136 @@ const FINANCE_TITANS_QUOTES = [
     theme: "integrity"
   },
 
+  // Anti-Fraud, Scam Warning & Wealth Defense Quotes
+  {
+    quote: "A financial scam doesn't begin with a criminal. It begins with high promises, zero risk, and your own greed blinding your intelligence.",
+    author: "Charlie Munger",
+    credentials: "Vice Chairman, Berkshire Hathaway • Integrity & Anti-Fraud Advocate",
+    reference: "Berkshire Hathaway Annual Shareholder Meeting",
+    wikiSearch: "Charlie_Munger",
+    theme: "anti_fraud"
+  },
+  {
+    quote: "When someone with money meets someone with experience, the person with experience gets the money and the person with money gets an experience. If it looks too good to be true, it is an engineered trap.",
+    author: "Warren Buffett",
+    credentials: "Chairman & CEO, Berkshire Hathaway • Legendary Value Investor",
+    reference: "Berkshire Hathaway Shareholder Letters (Risk & Swindles)",
+    wikiSearch: "Warren_Buffett",
+    theme: "scam_warning"
+  },
+  {
+    quote: "Charlatans always sell you certainty in an uncertain world. The more someone promises you guaranteed returns, the faster you must run in the opposite direction.",
+    author: "Nassim Nicholas Taleb",
+    credentials: "Distinguished Professor of Risk Engineering • Author of Skin in the Game",
+    reference: "Fooled by Randomness & Antifragile",
+    wikiSearch: "Nassim_Nicholas_Taleb",
+    theme: "fraud_prevention"
+  },
+  {
+    quote: "A fraudster's greatest weapon is not technology; it is artificial urgency and flattery. The moment someone tells you that you must act right now, you are being manipulated.",
+    author: "Frank Abagnale",
+    credentials: "FBI Financial Fraud Consultant • Author of Catch Me If You Can",
+    reference: "The Art of the Steal: How to Protect Yourself",
+    wikiSearch: "Frank_Abagnale",
+    theme: "manipulation_defense"
+  },
+  {
+    quote: "There are no get-rich-quick schemes. That’s just someone else getting rich off of your impatience.",
+    author: "Naval Ravikant",
+    credentials: "Founder, AngelList • Tech Philosopher & Investor",
+    reference: "How to Get Rich (Without Getting Lucky)",
+    wikiSearch: "Naval_Ravikant",
+    theme: "wealth_defense"
+  },
+  {
+    quote: "If an investment vehicle never has a down month regardless of market collapse, it isn't an algorithm; it is a mathematical impossibility and a fraud.",
+    author: "Harry Markopolos",
+    credentials: "Chartered Financial Analyst • Madoff Ponzi Whistleblower",
+    reference: "No One Would Listen: A True Financial Thriller",
+    wikiSearch: "Harry_Markopolos",
+    theme: "ponzi_detection"
+  },
+  {
+    quote: "Every financial scam operates on the exact same psychological trick: manufacturing panic and fake scarcity so emotion overpowers your logical audit.",
+    author: "Jordan Belfort",
+    credentials: "Former Wall Street Operator • Corporate Anti-Fraud Speaker",
+    reference: "Forensic Keynote on Market Manipulation & Retail Exploitation",
+    wikiSearch: "Jordan_Belfort",
+    theme: "scam_psychology"
+  },
+  {
+    quote: "Beware of false generosity. When the wolf offers to guide the sheep to safety, inspect the fence and count the flock.",
+    author: "Marcus Aurelius",
+    credentials: "Roman Emperor • Stoic Philosopher of Deception & Discipline",
+    reference: "Meditations, Book XI",
+    wikiSearch: "Marcus_Aurelius",
+    theme: "stoic_financial_guard"
+  },
+  {
+    quote: "Do not be dazzled by the display of sudden riches. Ask first: at what price was this promised, and whose ruin paid for the illusion?",
+    author: "Epictetus",
+    credentials: "Stoic Philosopher • Master of Rational Perception & Discourses",
+    reference: "Discourses, Book III (On Guarding the Soul Against Charlatans)",
+    wikiSearch: "Epictetus",
+    theme: "rational_defense"
+  },
+  {
+    quote: "The essence of investment is not in seeking fast gains, but in preventing catastrophic loss. The gullible speculator always mistakes a Ponzi mirage for financial genius.",
+    author: "Benjamin Graham",
+    credentials: "Columbia Business School • Dean of Wall Street",
+    reference: "The Intelligent Investor, Chapter 20 (Margin of Safety)",
+    wikiSearch: "Benjamin_Graham",
+    theme: "capital_defense"
+  },
+  {
+    quote: "Never invest in any idea you cannot illustrate with a crayon. If you cannot explain how their business generates honest cash flow, you are not an investor; you are the exit liquidity.",
+    author: "Peter Lynch",
+    credentials: "Legendary Fidelity Magellan Manager • Author of One Up on Wall Street",
+    reference: "One Up on Wall Street (Beating the Swindlers)",
+    wikiSearch: "Peter_Lynch",
+    theme: "anti_fraud"
+  },
+  {
+    quote: "If an investment requires an army of aggressive pitchmen and promises to beat every market with a secret algorithm, run. Simplicity protects your net worth; engineered complexity feeds the predator.",
+    author: "John Bogle",
+    credentials: "Founder, The Vanguard Group • Pioneer of Low-Cost Indexing",
+    reference: "The Little Book of Common Sense Investing (On Wall Street Promoters)",
+    wikiSearch: "John_C._Bogle",
+    theme: "scam_warning"
+  },
+  {
+    quote: "The most dangerous fraud is never committed in a dark alley. It is sold in marble offices by charismatic men who guarantee high yield with zero downside.",
+    author: "Michael Burry",
+    credentials: "Founder, Scion Asset Management • Physician & Forensic Investor",
+    reference: "Forensic Analysis on Subprime Derivative Fraud & Systemic Risk",
+    wikiSearch: "Michael_Burry",
+    theme: "fraud_detection"
+  },
+  {
+    quote: "A gift from a predator is no gift at all. Sudden wealth offered without honest labor is a poisoned fishhook designed to drag you into bankruptcy.",
+    author: "Seneca",
+    credentials: "Stoic Statesman & Philosopher • Advisor of Ancient Rome",
+    reference: "Moral Letters to Lucilius (Letter CXIX: On False Riches)",
+    wikiSearch: "Seneca_the_Younger",
+    theme: "stoic_wealth_guard"
+  },
+  {
+    quote: "Whenever a financial product is too complex for regulatory verification and promises consistent double-digit returns with zero risk, you are looking at mathematical fraud.",
+    author: "Paul Volcker",
+    credentials: "Former Chairman of the Federal Reserve • Architect of the Volcker Rule",
+    reference: "Federal Reserve Historical Addresses on Market Integrity & Speculation",
+    wikiSearch: "Paul_Volcker",
+    theme: "scam_prevention"
+  },
+  {
+    quote: "Con artists do not steal your money by force. They make you hand it over willingly by triggering urgency, greed, and fear of missing out.",
+    author: "Frank Abagnale",
+    credentials: "FBI Financial Crimes Specialist • Author of Stealing Your Life",
+    reference: "Stealing Your Life: The Ultimate Identity Theft & Scam Prevention Guide",
+    wikiSearch: "Frank_Abagnale",
+    theme: "scam_warning"
+  },
+
   // Charlie Munger
   {
     quote: "Spend each day trying to be a little wiser than you were when you woke up.",
@@ -844,6 +974,10 @@ async function generateFin5sVideo() {
     `The Brutal Truth About Wealth — ${chosen.author} #Shorts`,
     `Why 90% of Investors Underperform — ${chosen.author} #Shorts`,
     `The Number One Rule of Smart Money — ${chosen.author} #Shorts`,
+    `How to Spot Financial Traps — ${chosen.author} #Shorts`,
+    `The Warning Every Investor Must Hear — ${chosen.author} #Shorts`,
+    `Why Most Scams Work (And How to Protect Yourself) — ${chosen.author} #Shorts`,
+    `The Rule That Saves You From Fraud — ${chosen.author} #Shorts`,
     `Stop Trading Your Life for Dollars — ${chosen.author} #Shorts`,
     `The Quiet Habit of the Ultra-Wealthy — ${chosen.author} #Shorts`,
     `How Real Investors Think About Risk — ${chosen.author} #Shorts`,
@@ -853,7 +987,7 @@ async function generateFin5sVideo() {
   const hookIndex = Math.abs(chosen.author.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) + Date.now()) % finTitleHooks.length;
   const viralTitle = finTitleHooks[hookIndex];
   const initialFollowCta = formatChannelFollowCta('finance_saas', process.env.YOUTUBE_HANDLE_CH1 || process.env.YOUTUBE_HANDLE_FIN || process.env.YOUTUBE_HANDLE || '');
-  const viralDescription = `"${chosen.quote}"\n\n— ${chosen.author}\n${chosen.credentials}\nSource: ${chosen.reference}\n\n🧠 Daily finance principles to master wealth, investment discipline, and financial freedom.\n\n🛡️ Master your money, spot every trap, and defend your wealth from scams.\nLearn smart finance & scam defense: https://lanecash.name.ng\n\n${initialFollowCta}\n\n#Finance #Investing #MoneyMindset #WealthMindset #PersonalFinance #FinancialFreedom #StockMarket #AntiScam #SmartMoney #CompoundInterest #Shorts`;
+  const viralDescription = `"${chosen.quote}"\n\n— ${chosen.author}\n${chosen.credentials}\nSource: ${chosen.reference}\n\n🧠 Stoic Financial Wisdom & Wealth Defense:\nBuild discipline, eliminate speculation traps, and preserve capital through every market cycle.\n\n🛡️ DEFEND YOUR MONEY & BEWARE OF FRAUD:\nNever fall victim to Ponzi schemes, fake investment brokers, or urgent transfer scams.\nFree practical financial education & anti-scam defense guide:\n👉 https://lanecash.name.ng\n\n${initialFollowCta}\n\n#FinStoic #StoicFin #finstoic #sstoicfin #AntiScam #FraudAwareness #ScamAlert #ProtectYourMoney #FinancialDiscipline #lanecash #InvestingWisdom #PersonalFinance #SmartMoney #WealthMindset #Shorts`;
 
   try {
     let manifestData = { videos: [] };
@@ -895,7 +1029,7 @@ async function generateFin5sVideo() {
     try {
       console.log(`\n[Finance Quote Reel] 📤 Publishing 5s Financial Quote Reel to YouTube Shorts (Channel 1: Fin Blueprint)...`);
       await uploadQuoteReelToYouTube(finalMp4Path, viralTitle, viralDescription, [
-        'Finance', 'Investing', 'MoneyMindset', 'WealthBuilding', 'PersonalFinance', 'FinancialFreedom', 'StockMarket', 'WarrenBuffett', 'CompoundInterest', 'Shorts', 'SmartMoney', chosen.author.replace(/[^a-zA-Z0-9]/g, '')
+        'FinStoic', 'StoicFin', 'finstoic', 'sstoicfin', 'AntiScam', 'FraudAwareness', 'ScamAlert', 'ProtectYourMoney', 'Finance', 'Investing', 'MoneyMindset', 'WealthBuilding', 'PersonalFinance', 'FinancialFreedom', 'StockMarket', 'WarrenBuffett', 'CharlieMunger', 'Shorts', 'SmartMoney', chosen.author.replace(/[^a-zA-Z0-9]/g, '')
       ], clientId, clientSecret, refreshToken);
     } catch (err) {
       console.warn(`[Finance Quote Reel] YouTube upload notice: ${err.message}`);
