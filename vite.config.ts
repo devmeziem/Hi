@@ -2,6 +2,7 @@ import { defineConfig, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import fs from 'fs';
 import path from 'path';
+import https from 'https';
 import { execSync } from 'child_process';
 
 function apiProxyPlugin(): Plugin {
@@ -839,17 +840,92 @@ Respond STRICTLY with raw JSON:
 
         if (url === '/api/movie/manifest' && req.method === 'GET') {
           try {
-            const manifestPath = path.join(process.cwd(), 'test_artifacts', 'movie_episodes_manifest.json');
-            if (fs.existsSync(manifestPath)) {
-              const data = fs.readFileSync(manifestPath, 'utf8');
-              res.setHeader('Content-Type', 'application/json');
-              res.statusCode = 200;
-              res.end(data);
-            } else {
-              res.setHeader('Content-Type', 'application/json');
-              res.statusCode = 200;
-              res.end(JSON.stringify([]));
+            let episodesList: any[] = [];
+            // 1. Fetch from Firestore Cloud Database (Zero Git Commits, Low Key Database Logging)
+            try {
+              const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
+              if (fs.existsSync(configPath)) {
+                const fb = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+                const dbId = fb.firestoreDatabaseId || fb.databaseId || 'ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e';
+                const queryUrl = `https://firestore.googleapis.com/v1/projects/${fb.projectId}/databases/${dbId}/documents:runQuery?key=${fb.apiKey}`;
+                const queryPayload = JSON.stringify({
+                  structuredQuery: {
+                    from: [{ collectionId: 'movie_episodes' }]
+                  }
+                });
+
+                const dbDocs = await new Promise<any[]>((resolve) => {
+                  const reqFs = https.request(queryUrl, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Content-Length': Buffer.byteLength(queryPayload)
+                    },
+                    timeout: 6000
+                  }, (resFs) => {
+                    let body = '';
+                    resFs.on('data', d => body += d);
+                    resFs.on('end', () => {
+                      if (resFs.statusCode && resFs.statusCode >= 200 && resFs.statusCode < 300) {
+                        try {
+                          const parsed = JSON.parse(body);
+                          if (Array.isArray(parsed)) {
+                            const docs = parsed
+                              .filter((item: any) => item.document && item.document.fields && (item.document.fields.episodeTitle || item.document.fields.title))
+                              .map((item: any) => {
+                                const doc = item.document;
+                                const f = doc.fields || {};
+                                return {
+                                  id: f.id?.stringValue || path.basename(doc.name),
+                                  seriesTitle: f.seriesTitle?.stringValue || 'PROTOCOL ZERO: THE GHOST VAULT',
+                                  episodeTitle: f.episodeTitle?.stringValue || f.title?.stringValue || '',
+                                  season: parseInt(f.season?.integerValue || '1', 10),
+                                  episode: parseInt(f.episode?.integerValue || '1', 10),
+                                  videoPath: f.videoPath?.stringValue || '',
+                                  narration: f.narration?.stringValue || '',
+                                  duration: parseFloat(f.duration?.doubleValue || f.duration?.integerValue || '0'),
+                                  tags: (f.tags?.arrayValue?.values || []).map((v: any) => v.stringValue || ''),
+                                  youtubeUploadStatus: f.youtubeUploadStatus?.stringValue || 'PENDING_REVIEW (Upload hold enabled)',
+                                  createdAt: f.createdAt?.stringValue || new Date().toISOString()
+                                };
+                              });
+                            resolve(docs);
+                            return;
+                          }
+                        } catch {}
+                      }
+                      resolve([]);
+                    });
+                  });
+                  reqFs.on('error', () => resolve([]));
+                  reqFs.on('timeout', () => { reqFs.destroy(); resolve([]); });
+                  reqFs.write(queryPayload);
+                  reqFs.end();
+                });
+
+                if (dbDocs.length > 0) {
+                  episodesList = dbDocs;
+                }
+              }
+            } catch (dbErr: any) {
+              console.warn('[API Movie Manifest] Cloud DB read notice:', dbErr.message);
             }
+
+            // 2. Fallback to local manifest file if DB returned empty
+            if (episodesList.length === 0) {
+              const manifestPath = path.join(process.cwd(), 'test_artifacts', 'movie_episodes_manifest.json');
+              if (fs.existsSync(manifestPath)) {
+                const data = fs.readFileSync(manifestPath, 'utf8');
+                episodesList = JSON.parse(data);
+              }
+            }
+
+            // Sort latest first
+            episodesList.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 200;
+            res.end(JSON.stringify(episodesList));
           } catch (err: any) {
             res.setHeader('Content-Type', 'application/json');
             res.statusCode = 500;

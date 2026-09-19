@@ -885,7 +885,7 @@ async function saveEpisodeToFirestore(entry) {
     }
     const dbId = fb.firestoreDatabaseId || fb.databaseId || 'ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e';
     const docId = entry.id;
-    const url = `https://firestore.googleapis.com/v1/projects/${fb.projectId}/databases/${dbId}/documents/movie_episodes?documentId=${docId}&key=${fb.apiKey}`;
+    const url = `https://firestore.googleapis.com/v1/projects/${fb.projectId}/databases/${dbId}/documents/movie_episodes/${docId}?key=${fb.apiKey}`;
 
     const docPayload = JSON.stringify({
       fields: {
@@ -910,7 +910,7 @@ async function saveEpisodeToFirestore(entry) {
     await new Promise((resolve) => {
       const https = require('https');
       const req = https.request(url, {
-        method: 'POST',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Content-Length': Buffer.byteLength(docPayload)

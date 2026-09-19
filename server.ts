@@ -585,7 +585,7 @@ function checkAuthorization(req: http.IncomingMessage, res: http.ServerResponse,
   return true;
 }
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -1248,33 +1248,48 @@ Respond STRICTLY with valid raw JSON without markdown:
         if (fs.existsSync(configPath)) {
           const fb = JSON.parse(fs.readFileSync(configPath, 'utf8'));
           const dbId = fb.firestoreDatabaseId || fb.databaseId || 'ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e';
-          const queryUrl = `https://firestore.googleapis.com/v1/projects/${fb.projectId}/databases/${dbId}/documents/movie_episodes?key=${fb.apiKey}`;
+          const queryUrl = `https://firestore.googleapis.com/v1/projects/${fb.projectId}/databases/${dbId}/documents:runQuery?key=${fb.apiKey}`;
+          const queryPayload = JSON.stringify({
+            structuredQuery: {
+              from: [{ collectionId: 'movie_episodes' }]
+            }
+          });
           
           const dbDocs = await new Promise<any[]>((resolve) => {
-            const reqFs = https.get(queryUrl, { timeout: 6000 }, (resFs) => {
+            const reqFs = https.request(queryUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(queryPayload)
+              },
+              timeout: 6000
+            }, (resFs) => {
               let body = '';
               resFs.on('data', d => body += d);
               resFs.on('end', () => {
                 if (resFs.statusCode && resFs.statusCode >= 200 && resFs.statusCode < 300) {
                   try {
                     const parsed = JSON.parse(body);
-                    if (parsed.documents && Array.isArray(parsed.documents)) {
-                      const docs = parsed.documents.map((doc: any) => {
-                        const f = doc.fields || {};
-                        return {
-                          id: f.id?.stringValue || path.basename(doc.name),
-                          seriesTitle: f.seriesTitle?.stringValue || 'PROTOCOL ZERO: THE GHOST VAULT',
-                          episodeTitle: f.episodeTitle?.stringValue || '',
-                          season: parseInt(f.season?.integerValue || '1', 10),
-                          episode: parseInt(f.episode?.integerValue || '1', 10),
-                          videoPath: f.videoPath?.stringValue || '',
-                          narration: f.narration?.stringValue || '',
-                          duration: parseFloat(f.duration?.doubleValue || f.duration?.integerValue || '0'),
-                          tags: (f.tags?.arrayValue?.values || []).map((v: any) => v.stringValue || ''),
-                          youtubeUploadStatus: f.youtubeUploadStatus?.stringValue || 'PENDING_REVIEW (Upload hold enabled)',
-                          createdAt: f.createdAt?.stringValue || new Date().toISOString()
-                        };
-                      });
+                    if (Array.isArray(parsed)) {
+                      const docs = parsed
+                        .filter((item: any) => item.document && item.document.fields && (item.document.fields.episodeTitle || item.document.fields.title))
+                        .map((item: any) => {
+                          const doc = item.document;
+                          const f = doc.fields || {};
+                          return {
+                            id: f.id?.stringValue || path.basename(doc.name),
+                            seriesTitle: f.seriesTitle?.stringValue || 'PROTOCOL ZERO: THE GHOST VAULT',
+                            episodeTitle: f.episodeTitle?.stringValue || f.title?.stringValue || '',
+                            season: parseInt(f.season?.integerValue || '1', 10),
+                            episode: parseInt(f.episode?.integerValue || '1', 10),
+                            videoPath: f.videoPath?.stringValue || '',
+                            narration: f.narration?.stringValue || '',
+                            duration: parseFloat(f.duration?.doubleValue || f.duration?.integerValue || '0'),
+                            tags: (f.tags?.arrayValue?.values || []).map((v: any) => v.stringValue || ''),
+                            youtubeUploadStatus: f.youtubeUploadStatus?.stringValue || 'PENDING_REVIEW (Upload hold enabled)',
+                            createdAt: f.createdAt?.stringValue || new Date().toISOString()
+                          };
+                        });
                       resolve(docs);
                       return;
                     }
@@ -1285,6 +1300,8 @@ Respond STRICTLY with valid raw JSON without markdown:
             });
             reqFs.on('error', () => resolve([]));
             reqFs.on('timeout', () => { reqFs.destroy(); resolve([]); });
+            reqFs.write(queryPayload);
+            reqFs.end();
           });
 
           if (dbDocs.length > 0) {

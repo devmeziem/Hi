@@ -1,5 +1,7 @@
 {
   "projectId": "gen-lang-client-0135161700",
+  "databaseId": "ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e",
+  "firestoreDatabaseId": "ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e",
   "appId": "1:773736337217:web:0068c4b4b17f0251fedbc0",
   "apiKey": "AIzaSyDajoMYBcuzePAnf8B4dNNNeuxmlU2IfhI",
   "authDomain": "gen-lang-client-0135161700.firebaseapp.com",
