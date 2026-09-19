@@ -1981,7 +1981,7 @@ async function handleYouTubePublish(storyboard, renderResult) {
         .slice(0, 15);
 
       const MANDATORY_FINANCIAL_DISCLAIMER = '⚠️ DISCLAIMER: This video and description are for educational and informational purposes only and do not constitute financial, investment, legal, or tax advice. Always conduct independent research and consult a licensed financial professional before making financial decisions.';
-      const fullDescription = `${storyboard.description || uploadTitle}\n\nPractical money management and small-business strategies with @bones_ceo.\n\n${MANDATORY_FINANCIAL_DISCLAIMER}\n\n#FinBlueprint #Shorts #viral #trending #PersonalFinance #SmallBusiness #Wealth #Entrepreneurship #fyp`;
+      const fullDescription = `${storyboard.description || uploadTitle}\n\nPractical money management and small-business strategies with @bones_ceo.\n🛡️ Learn smart finance & anti-scam wealth defense: https://lanecash.name.ng\n\n${MANDATORY_FINANCIAL_DISCLAIMER}\n\n#FinBlueprint #Shorts #viral #trending #PersonalFinance #SmallBusiness #Wealth #Entrepreneurship #fyp`;
 
       const metadata = JSON.stringify({
         snippet: {

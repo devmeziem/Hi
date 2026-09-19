@@ -295,6 +295,159 @@ const WORLD_SCHOLARS_QUOTES = [
     wikiSearch: "Miyamoto_Musashi",
     theme: "relentless",
     communityQuestion: "What small step did you execute today without overthinking the destination?"
+  },
+  // Socrates
+  {
+    quote: "The unexamined life is not worth living. Know thyself first.",
+    author: "Socrates",
+    credentials: "Foundational Classical Greek Philosopher • Athens",
+    wikiSearch: "Socrates",
+    theme: "wisdom",
+    communityQuestion: "When was the last time you critically questioned your own deepest assumptions?"
+  },
+  // Plato
+  {
+    quote: "The first and greatest victory is to conquer yourself.",
+    author: "Plato",
+    credentials: "Founder of the Academy in Athens • Classical Philosopher",
+    wikiSearch: "Plato",
+    theme: "mastery",
+    communityQuestion: "Which internal desire are you conquering today?"
+  },
+  // Aristotle
+  {
+    quote: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.",
+    author: "Aristotle",
+    credentials: "Polymath & Philosopher • Founder of the Lyceum",
+    wikiSearch: "Aristotle",
+    theme: "discipline",
+    communityQuestion: "What single habit will you repeat today to build lifelong excellence?"
+  },
+  // Confucius
+  {
+    quote: "It does not matter how slowly you go as long as you do not stop.",
+    author: "Confucius",
+    credentials: "Ancient Sage & Philosopher • Spring and Autumn Period",
+    wikiSearch: "Confucius",
+    theme: "perseverance",
+    communityQuestion: "What long-term goal are you continuing to pursue relentlessly today?"
+  },
+  // Alexander the Great
+  {
+    quote: "There is nothing impossible to him who will try.",
+    author: "Alexander the Great",
+    credentials: "King of Macedonia & Ancient Military Strategist",
+    wikiSearch: "Alexander_the_Great",
+    theme: "audacity",
+    communityQuestion: "What bold action have you hesitated on that needs your full courage today?"
+  },
+  // Leonardo da Vinci
+  {
+    quote: "Iron rusts from disuse; stagnant water loses its purity; even so does inaction sap the vigors of the mind.",
+    author: "Leonardo da Vinci",
+    credentials: "High Renaissance Polymath, Painter & Engineer",
+    wikiSearch: "Leonardo_da_Vinci",
+    theme: "action",
+    communityQuestion: "What creative project or mental challenge will you practice today?"
+  },
+  // Ralph Waldo Emerson
+  {
+    quote: "What lies behind us and what lies before us are tiny matters compared to what lies within us.",
+    author: "Ralph Waldo Emerson",
+    credentials: "Philosopher, Essayist & Leader of Transcendentalism",
+    wikiSearch: "Ralph_Waldo_Emerson",
+    theme: "self_reliance",
+    communityQuestion: "Do you trust your inner strength more than the chaos around you?"
+  },
+  // Henry David Thoreau
+  {
+    quote: "It is not enough to be busy. The question is: what are we busy about?",
+    author: "Henry David Thoreau",
+    credentials: "Philosopher, Naturalist & Author of Walden",
+    wikiSearch: "Henry_David_Thoreau",
+    theme: "focus",
+    communityQuestion: "What low-priority distraction will you cut out of your schedule today?"
+  },
+  // Steve Jobs
+  {
+    quote: "Your time is limited, so don't waste it living someone else's life.",
+    author: "Steve Jobs",
+    credentials: "Co-Founder of Apple & Creative Visionary",
+    wikiSearch: "Steve_Jobs",
+    theme: "authenticity",
+    communityQuestion: "Are you building your own vision, or fulfilling someone else's expectations?"
+  },
+  // Kobe Bryant
+  {
+    quote: "The moment you give up is the moment you let someone else win. Rest at the end, not in the middle.",
+    author: "Kobe Bryant",
+    credentials: "5x NBA Champion • Academy Award Winner • The Mamba Mentality",
+    wikiSearch: "Kobe_Bryant",
+    theme: "relentless",
+    communityQuestion: "Are you showing up with full intensity even when no one is watching?"
+  },
+  // David Goggins
+  {
+    quote: "You are in danger of living a life so comfortable and soft that you will die without ever realizing your true potential.",
+    author: "David Goggins",
+    credentials: "Retired Navy SEAL • Ultra-Endurance Athlete • Author of Can't Hurt Me",
+    wikiSearch: "David_Goggins",
+    theme: "mental_toughness",
+    communityQuestion: "What uncomfortable task will you attack head-on today?"
+  },
+  // Arnold Schwarzenegger
+  {
+    quote: "The mind is the limit. As long as the mind can envision the fact that you can do something, you can do it.",
+    author: "Arnold Schwarzenegger",
+    credentials: "7x Mr. Olympia • Governor of California • Cultural Icon",
+    wikiSearch: "Arnold_Schwarzenegger",
+    theme: "vision",
+    communityQuestion: "What massive goal has your mind fully committed to achieving?"
+  },
+  // Naval Ravikant
+  {
+    quote: "A fit body, a calm mind, a house full of love. These things cannot be bought—they must be earned.",
+    author: "Naval Ravikant",
+    credentials: "Angel Investor, Philosopher & Co-Founder of AngelList",
+    wikiSearch: "Naval_Ravikant",
+    theme: "sovereignty",
+    communityQuestion: "Which of these three foundations did you invest time into today?"
+  },
+  // Jocko Willink
+  {
+    quote: "Discipline equals freedom. There is no shortcut, no hack. There is only the work.",
+    author: "Jocko Willink",
+    credentials: "Retired Navy SEAL Commander & Author of Extreme Ownership",
+    wikiSearch: "Jocko_Willink",
+    theme: "discipline",
+    communityQuestion: "What hard discipline gave you a sense of true freedom today?"
+  },
+  // James Clear
+  {
+    quote: "You do not rise to the level of your goals. You fall to the level of your systems.",
+    author: "James Clear",
+    credentials: "Habits Researcher & Author of Atomic Habits",
+    wikiSearch: "Atomic_Habits",
+    theme: "systems",
+    communityQuestion: "What simple system can you install today so good habits happen on autopilot?"
+  },
+  // Dr. Andrew Huberman
+  {
+    quote: "Action precedes motivation. Do not wait to feel ready. Move your body, and your neurochemistry will follow.",
+    author: "Dr. Andrew Huberman, Ph.D.",
+    credentials: "Professor of Neurobiology & Ophthalmology • Stanford University",
+    wikiSearch: "Andrew_Huberman",
+    theme: "neurobiology",
+    communityQuestion: "What is one physical action you can take right now to break mental inertia?"
+  },
+  // Alex Hormozi
+  {
+    quote: "You don't become confident by shouting affirmations. You become confident by having an undeniable stack of proof.",
+    author: "Alex Hormozi",
+    credentials: "Entrepreneur, Investor & Author of $100M Offers",
+    wikiSearch: "Alex_Hormozi",
+    theme: "confidence",
+    communityQuestion: "What proof did you add to your stack today through undeniable execution?"
   }
 ];
 
@@ -351,7 +504,41 @@ async function resolveScholarPortrait(scholar) {
       }
     }
   } catch (err) {
-    console.warn(`[Scholar Portrait] Wikipedia lookup notice: ${err.message}`);
+    console.warn(`[Scholar Portrait] Wikipedia summary notice: ${err.message}`);
+  }
+
+  // Secondary Wikipedia query search if summary did not contain a portrait
+  if (!fetchedUrl) {
+    try {
+      const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(scholar.author + ' portrait philosopher')}&prop=pageimages&pithumbsize=1080&format=json`;
+      const searchData = await new Promise((resolve, reject) => {
+        const req = https.get(searchUrl, {
+          headers: {
+            'User-Agent': 'VoxamScholarBot/2.0 (educational citation video creator; contact@voxam.ai)',
+            'Accept': 'application/json'
+          },
+          timeout: 8000
+        }, res => {
+          let raw = '';
+          res.on('data', chunk => { raw += chunk; });
+          res.on('end', () => {
+            try { resolve(JSON.parse(raw)); } catch { resolve(null); }
+          });
+        });
+        req.on('error', reject);
+        req.on('timeout', () => { req.destroy(); resolve(null); });
+      });
+
+      const pages = searchData?.query?.pages || {};
+      for (const pid of Object.keys(pages)) {
+        if (pages[pid]?.thumbnail?.source) {
+          fetchedUrl = pages[pid].thumbnail.source;
+          break;
+        }
+      }
+    } catch (err) {
+      console.warn(`[Scholar Portrait] Wikipedia search fallback notice: ${err.message}`);
+    }
   }
 
   // Download image if URL was found
@@ -389,8 +576,8 @@ async function resolveScholarPortrait(scholar) {
     }
   }
 
-  // Fallback 1: Try AI model image generation (Pollinations / Flux / Grok portrait)
-  console.log(`[Scholar Portrait] Public archive unavailable. Generating authentic likeness using AI model...`);
+  // Fallback ONLY: Try AI model image generation (Pollinations / Flux portrait only if Wikipedia fails)
+  console.log(`[Scholar Portrait] ⚠️ Public archive unavailable. Using Pollinations AI as fallback for ${scholar.author}...`);
   const aiPrompt = encodeURIComponent(`Cinematic 9:16 vertical 8k photorealistic portrait of ${scholar.author}, ${scholar.credentials}, dramatic chiaroscuro side lighting, dark obsidian and deep slate background, classical scholar atmosphere, dignified masterpiece`);
   const pollinationsUrl = `https://image.pollinations.ai/prompt/${aiPrompt}?width=1080&height=1920&model=flux&nologo=true`;
 
@@ -558,41 +745,60 @@ function generateLoopyMysterySound(outputPath, durationSeconds = 5.0) {
 
 /**
  * Deduplication Engine: Select Unique Scholar & Quote
+ * Cross-references local cache and manifest, enforces strict similarity thresholds,
+ * and rotates authors across ancient, historical, and modern motivational figures.
  */
 async function selectUniqueScholarQuote() {
   let localHistory = [];
   try {
     if (fs.existsSync(LOCAL_QUOTE_CACHE)) {
-      localHistory = JSON.parse(fs.readFileSync(LOCAL_QUOTE_CACHE, 'utf8'));
-      if (!Array.isArray(localHistory)) localHistory = [];
+      const parsed = JSON.parse(fs.readFileSync(LOCAL_QUOTE_CACHE, 'utf8'));
+      if (Array.isArray(parsed)) localHistory.push(...parsed);
     }
   } catch (e) {
     localHistory = [];
   }
 
-  const recentQuotes = localHistory.map(h => (typeof h === 'string' ? h : h.quote || ''));
-  const recentAuthors = localHistory.slice(-8).map(h => (typeof h === 'object' ? h.author : ''));
+  // Cross-reference daily manifest
+  if (fs.existsSync(MANIFEST_PATH)) {
+    try {
+      const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
+      const list = Array.isArray(manifest) ? manifest : (manifest?.videos || []);
+      for (const item of list) {
+        if (item.quote || item.title) {
+          localHistory.push({
+            quote: item.quote || item.title,
+            author: item.author || '',
+            timestamp: item.publishedAt || ''
+          });
+        }
+      }
+    } catch {}
+  }
 
-  // Filter out recently used authors and quotes
+  const recentQuotes = localHistory.map(h => (typeof h === 'string' ? h : h.quote || ''));
+  const recentAuthors = localHistory.slice(-15).map(h => (typeof h === 'object' ? h.author : '')).filter(Boolean);
+
+  // Filter out recently used authors and quotes with strict similarity threshold
   let candidates = WORLD_SCHOLARS_QUOTES.filter(entry => {
-    // Avoid same author if they were featured in last 8 runs
+    // Avoid same author if they were featured in last 15 runs
     if (recentAuthors.includes(entry.author)) return false;
 
-    // Check Jaccard similarity against all recent quotes
+    // Check Jaccard similarity against all recent quotes (strict 0.25 threshold)
     for (const prev of recentQuotes) {
-      if (calculateJaccardSimilarity(entry.quote, prev) > 0.35) {
+      if (calculateJaccardSimilarity(entry.quote, prev) > 0.25) {
         return false;
       }
     }
     return true;
   });
 
-  // If candidate pool exhausted, reset author filter but keep strict quote deduplication
+  // If candidate pool exhausted, relax author filter but keep strict quote deduplication
   if (candidates.length === 0) {
     console.log('[Deduplication] Relaxing author rotation, checking quote similarity...');
     candidates = WORLD_SCHOLARS_QUOTES.filter(entry => {
       for (const prev of recentQuotes) {
-        if (calculateJaccardSimilarity(entry.quote, prev) > 0.40) return false;
+        if (calculateJaccardSimilarity(entry.quote, prev) > 0.30) return false;
       }
       return true;
     });
@@ -602,9 +808,11 @@ async function selectUniqueScholarQuote() {
     candidates = WORLD_SCHOLARS_QUOTES;
   }
 
-  // Pick deterministic but rotating candidate based on day index
-  const dayIndex = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
-  const chosen = candidates[dayIndex % candidates.length];
+  // Pick deterministic but rotating candidate combining hour and random seed
+  const hourSlot = Math.floor(Date.now() / (1000 * 60 * 60));
+  const randomEntropy = Math.floor(Math.random() * candidates.length);
+  const seed = (hourSlot + randomEntropy + Math.floor(Date.now() / 1000)) % candidates.length;
+  const chosen = candidates[seed];
   return chosen;
 }
 

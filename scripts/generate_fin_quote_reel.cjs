@@ -255,24 +255,47 @@ const FINANCE_TITANS_QUOTES = [
  * Load and save local history to ensure variety and no repeats
  */
 function loadLocalHistory() {
+  const history = [];
   if (fs.existsSync(LOCAL_QUOTE_CACHE)) {
     try {
-      return JSON.parse(fs.readFileSync(LOCAL_QUOTE_CACHE, 'utf8'));
+      const parsed = JSON.parse(fs.readFileSync(LOCAL_QUOTE_CACHE, 'utf8'));
+      if (Array.isArray(parsed)) history.push(...parsed);
     } catch {}
   }
-  return [];
+  // Also cross-reference manifest for any recent quotes
+  if (fs.existsSync(MANIFEST_PATH)) {
+    try {
+      const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
+      const vids = Array.isArray(manifest) ? manifest : (manifest?.videos || []);
+      for (const v of vids) {
+        if (v.quote || v.title) {
+          history.push({
+            quote: v.quote || '',
+            author: v.author || '',
+            timestamp: v.publishedAt || ''
+          });
+        }
+      }
+    } catch {}
+  }
+  return history;
 }
 
 function saveLocalHistory(quoteObj) {
   try {
-    const hist = loadLocalHistory();
+    let hist = [];
+    if (fs.existsSync(LOCAL_QUOTE_CACHE)) {
+      try { hist = JSON.parse(fs.readFileSync(LOCAL_QUOTE_CACHE, 'utf8')); } catch {}
+    }
+    if (!Array.isArray(hist)) hist = [];
     hist.push({
       quote: quoteObj.quote,
       author: quoteObj.author,
+      reference: quoteObj.reference,
       timestamp: new Date().toISOString()
     });
-    // Keep last 100 quotes
-    const trimmed = hist.slice(-100);
+    // Keep last 150 quotes
+    const trimmed = hist.slice(-150);
     fs.writeFileSync(LOCAL_QUOTE_CACHE, JSON.stringify(trimmed, null, 2));
   } catch (e) {
     console.warn('[Finance Quote Reel] Notice caching quote history:', e.message);
@@ -280,22 +303,44 @@ function saveLocalHistory(quoteObj) {
 }
 
 /**
- * Select a quote that has not been used recently
+ * Select a quote that has not been used recently with strong deduplication
  */
 function selectUniqueFinanceQuote() {
   const history = loadLocalHistory();
-  const recentAuthors = history.slice(-5).map(h => h.author);
-  const recentQuotes = new Set(history.map(h => h.quote));
+  const recentAuthors = history.slice(-12).map(h => h.author).filter(Boolean);
+  const recentQuotes = new Set(history.map(h => (h.quote || '').trim().toLowerCase()));
 
   // Filter out recent quotes
-  const freshQuotes = FINANCE_TITANS_QUOTES.filter(q => !recentQuotes.has(q.quote));
+  const freshQuotes = FINANCE_TITANS_QUOTES.filter(q => {
+    const cleanQ = (q.quote || '').trim().toLowerCase();
+    if (recentQuotes.has(cleanQ)) return false;
+    // Word similarity check
+    for (const prev of history.slice(-40)) {
+      if (prev.quote && calculateSimilarity(cleanQ, prev.quote.toLowerCase()) > 0.3) {
+        return false;
+      }
+    }
+    return true;
+  });
+
   const pool = freshQuotes.length > 0 ? freshQuotes : FINANCE_TITANS_QUOTES;
 
-  // Prefer an author who hasn't appeared in the last 5 videos
+  // Prefer an author who hasn't appeared in recent videos
   const authorDiverse = pool.filter(q => !recentAuthors.includes(q.author));
   const candidatePool = authorDiverse.length > 0 ? authorDiverse : pool;
 
-  return candidatePool[Math.floor(Math.random() * candidatePool.length)];
+  // Perturb index by current hour and timestamp for deterministic multi-slot diversity
+  const seed = (Math.floor(Date.now() / (1000 * 60 * 60)) + Math.floor(Math.random() * 100)) % candidatePool.length;
+  return candidatePool[seed];
+}
+
+function calculateSimilarity(a, b) {
+  const wordsA = new Set(a.replace(/[^a-z0-9 ]/g, '').split(/\s+/).filter(Boolean));
+  const wordsB = new Set(b.replace(/[^a-z0-9 ]/g, '').split(/\s+/).filter(Boolean));
+  if (wordsA.size === 0 || wordsB.size === 0) return 0;
+  let matches = 0;
+  for (const w of wordsA) if (wordsB.has(w)) matches++;
+  return matches / Math.max(wordsA.size, wordsB.size);
 }
 
 /**
@@ -303,7 +348,12 @@ function selectUniqueFinanceQuote() {
  */
 function fetchHttpsBuffer(url, timeoutMs = 8000) {
   return new Promise((resolve, reject) => {
-    const req = https.get(url, (res) => {
+    const req = https.get(url, {
+      headers: {
+        'User-Agent': 'VoxamFinanceScholar/2.0 (citation video bot; contact@voxam.ai)',
+        'Accept': 'application/json, image/*, */*'
+      }
+    }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         return fetchHttpsBuffer(res.headers.location, timeoutMs).then(resolve).catch(reject);
       }
@@ -323,7 +373,8 @@ function fetchHttpsBuffer(url, timeoutMs = 8000) {
 }
 
 /**
- * Resolve high-definition portrait of the financial titan
+ * Resolve high-definition portrait of the financial titan via Wikipedia Search,
+ * using Pollinations as fallback ONLY if Wikipedia has no verified portrait.
  */
 async function resolveFinancialPortrait(scholar) {
   if (!fs.existsSync(PORTRAITS_DIR)) {
@@ -337,13 +388,38 @@ async function resolveFinancialPortrait(scholar) {
     return outJpgPath;
   }
 
-  // 1. Try Wikimedia Commons API
+  const wikiTitle = scholar.wikiSearch || scholar.author.replace(/\s+/g, '_');
+
+  // 1. Primary Strategy: Wikipedia REST API Summary (Instant verified portraits)
   try {
-    const title = scholar.wikiSearch || scholar.author.replace(/\s+/g, '_');
-    const apiUrl = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=pageimages&format=json&pithumbsize=1080`;
-    const buf = await fetchHttpsBuffer(apiUrl, 5000);
-    const data = JSON.parse(buf.toString('utf8'));
-    const pages = data?.query?.pages || {};
+    const summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiTitle)}`;
+    const buf = await fetchHttpsBuffer(summaryUrl, 6000);
+    const pageData = JSON.parse(buf.toString('utf8'));
+    let imageUrl = null;
+    if (pageData.originalimage && pageData.originalimage.source && !pageData.originalimage.source.endsWith('.svg')) {
+      imageUrl = pageData.originalimage.source;
+    } else if (pageData.thumbnail && pageData.thumbnail.source) {
+      imageUrl = pageData.thumbnail.source.replace(/\/\d+px-/, '/1080px-');
+    }
+
+    if (imageUrl) {
+      console.log(`[Finance Quote Reel] 🏛️ Fetched verified Wikipedia portrait for ${scholar.author}`);
+      const imgBuf = await fetchHttpsBuffer(imageUrl, 10000);
+      if (imgBuf && imgBuf.length > 8000) {
+        fs.writeFileSync(outJpgPath, imgBuf);
+        return outJpgPath;
+      }
+    }
+  } catch (e) {
+    console.warn(`[Finance Quote Reel] Wikipedia summary notice for ${scholar.author}: ${e.message}`);
+  }
+
+  // 2. Secondary Strategy: Wikipedia Query Search with Pageimages
+  try {
+    const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(scholar.author + ' investor economist')}&prop=pageimages&pithumbsize=1080&format=json`;
+    const buf = await fetchHttpsBuffer(searchUrl, 6000);
+    const searchData = JSON.parse(buf.toString('utf8'));
+    const pages = searchData?.query?.pages || {};
     let thumbUrl = null;
     for (const pid of Object.keys(pages)) {
       if (pages[pid]?.thumbnail?.source) {
@@ -353,29 +429,29 @@ async function resolveFinancialPortrait(scholar) {
     }
 
     if (thumbUrl) {
-      console.log(`[Finance Quote Reel] 🏛️ Fetched Wikimedia portrait for ${scholar.author}`);
-      const imgBuf = await fetchHttpsBuffer(thumbUrl, 8000);
+      console.log(`[Finance Quote Reel] 🏛️ Fetched Wikipedia Search portrait for ${scholar.author}`);
+      const imgBuf = await fetchHttpsBuffer(thumbUrl, 10000);
       if (imgBuf && imgBuf.length > 8000) {
         fs.writeFileSync(outJpgPath, imgBuf);
         return outJpgPath;
       }
     }
   } catch (e) {
-    console.warn(`[Finance Quote Reel] Wikimedia lookup notice for ${scholar.author}: ${e.message}`);
+    console.warn(`[Finance Quote Reel] Wikipedia search lookup notice: ${e.message}`);
   }
 
-  // 2. High-Fidelity Pollinations FLUX generation (Free, zero-key, cinematic vertical)
+  // 3. Fallback ONLY: High-Fidelity Pollinations FLUX generation (used only if Wikipedia archives fail)
   try {
+    console.log(`[Finance Quote Reel] ⚠️ Wikipedia portrait unavailable. Using Pollinations AI as fallback for ${scholar.author}...`);
     const prompt = `cinematic vertical 9:16 portrait of ${scholar.author}, iconic financial titan, thoughtful expression, dark minimalist executive background, subtle warm golden rim lighting, sharp focus, 8k vertical wallpaper`;
     const pollUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1080&height=1920&nologo=true&seed=88`;
-    console.log(`[Finance Quote Reel] 🎨 Generating AI executive portrait for ${scholar.author} via Pollinations...`);
-    const imgBuf = await fetchHttpsBuffer(pollUrl, 16000);
+    const imgBuf = await fetchHttpsBuffer(pollUrl, 14000);
     if (imgBuf && imgBuf.length > 10000) {
       fs.writeFileSync(outJpgPath, imgBuf);
       return outJpgPath;
     }
   } catch (e) {
-    console.warn(`[Finance Quote Reel] Pollinations notice: ${e.message}`);
+    console.warn(`[Finance Quote Reel] Pollinations fallback notice: ${e.message}`);
   }
 
   // 3. Resilient Local Executive Backdrop
@@ -777,7 +853,7 @@ async function generateFin5sVideo() {
   const hookIndex = Math.abs(chosen.author.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) + Date.now()) % finTitleHooks.length;
   const viralTitle = finTitleHooks[hookIndex];
   const initialFollowCta = formatChannelFollowCta('finance_saas', process.env.YOUTUBE_HANDLE_CH1 || process.env.YOUTUBE_HANDLE_FIN || process.env.YOUTUBE_HANDLE || '');
-  const viralDescription = `"${chosen.quote}"\n\n— ${chosen.author}\n${chosen.credentials}\nSource: ${chosen.reference}\n\n🧠 Daily finance principles to master wealth, investment discipline, and financial freedom.\n\n${initialFollowCta}\n\n#Finance #Investing #MoneyMindset #WealthMindset #PersonalFinance #FinancialFreedom #StockMarket #SmartMoney #CompoundInterest #Shorts`;
+  const viralDescription = `"${chosen.quote}"\n\n— ${chosen.author}\n${chosen.credentials}\nSource: ${chosen.reference}\n\n🧠 Daily finance principles to master wealth, investment discipline, and financial freedom.\n\n🛡️ Master your money, spot every trap, and defend your wealth from scams.\nLearn smart finance & scam defense: https://lanecash.name.ng\n\n${initialFollowCta}\n\n#Finance #Investing #MoneyMindset #WealthMindset #PersonalFinance #FinancialFreedom #StockMarket #AntiScam #SmartMoney #CompoundInterest #Shorts`;
 
   try {
     let manifestData = { videos: [] };
