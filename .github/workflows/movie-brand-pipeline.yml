@@ -1,9 +1,6 @@
 name: Cinema Vanguard - Episodic Movie Series Pipeline (Channel 4)
 
 on:
-  push:
-    branches:
-      - main
   schedule:
     # Daily episode release at 18:00 UTC (19:00 WAT)
     - cron: '0 18 * * *'
@@ -18,6 +15,11 @@ on:
         description: 'Publish Live to YouTube (Default FALSE: held in PENDING_REVIEW for manual check)'
         required: true
         default: false
+        type: boolean
+      publish_tiktok:
+        description: 'Publish Live to TikTok via Buffer API 2 (Default TRUE)'
+        required: false
+        default: true
         type: boolean
       dry_run:
         description: 'Dry Run Mode (Do not upload or post to CDN)'
@@ -74,17 +76,25 @@ jobs:
           node scripts/generate_movie_brand_episode.cjs
           echo "=== Movie Episode Assembled Successfully ==="
 
+      - name: Dispatch to Movie Brand TikTok Channel (Buffer API 2)
+        if: success() && (github.event.inputs.publish_tiktok != 'false')
+        env:
+          BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 || secrets.BUFFER_API_KEY }}
+          BUFFER_TIKTOK_MOVIE_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_MOVIE_CHANNEL_ID }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "=== 📱 Publishing Movie Episode to TikTok via Buffer API 2 ==="
+          node scripts/publish_buffer_second_tiktok.cjs movie_brand
+
       - name: Archive Movie Video Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: movie-episode-reel-${{ github.run_id }}
           path: |
-            test_artifacts/movie_episodes/*.mp4
-            rendered_videos/movie_episode_*.mp4
+            rendered_videos/movie_episode_latest.mp4
             test_artifacts/movie_episodes_manifest.json
-            test_artifacts/movie_episodes/*.jpg
-            test_artifacts/movie_episodes/*.ass
           if-no-files-found: warn
           retention-days: 14
 

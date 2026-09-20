@@ -840,17 +840,19 @@ async function synthesizeCinematicVoiceWithTiming(text, outWavPath, outAssPath, 
         const tts = new EdgeTTS({
           voice: voice,
           lang: 'en-US',
+          pitch: '-22Hz',
+          rate: '-3%',
           outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
           saveSubtitles: true,
-          timeout: 15000
+          timeout: 20000
         });
 
-        console.log(`[Movie Voice] 🎙️ Synthesizing voiceover with ${voice} (Attempt ${attempt})...`);
+        console.log(`[Movie Voice] 🎙️ Synthesizing deep cinematic trailer voiceover with ${voice} (pitch: -22Hz, Attempt ${attempt})...`);
         await tts.ttsPromise(cleanText, tempMp3);
 
         if (fs.existsSync(tempMp3) && fs.statSync(tempMp3).size > 2000) {
-          // Clean broadcast audio filter: warm highpass + presence + normalization
-          execSync(`ffmpeg -y -i "${tempMp3}" -af "highpass=f=80,lowpass=f=8500,loudnorm=I=-14:TP=-1.5:LRA=9" -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
+          // Hollywood cinematic trailer audio mastering: deep chest bass boost + 200Hz warm resonance + clarity + broadcast compression
+          execSync(`ffmpeg -y -i "${tempMp3}" -af "bass=g=7:f=115:w=0.5,equalizer=f=200:t=q:w=1.4:g=3.8,equalizer=f=3200:t=q:w=1.2:g=2.0,compand=attacks=0.02:decays=0.15:points=-80/-80|-30/-20|-10/-10|0/-6:gain=2,loudnorm=I=-14:TP=-1.5:LRA=8" -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
 
           let words = [];
           if (fs.existsSync(tempJson)) {
@@ -1051,7 +1053,7 @@ async function generateMovieEpisode(episodeIndex = 0) {
 
   // Concatenate segments, burn subtitles, and mux master audio
   console.log(`[Movie Generator] 🎬 Final compositing: merging acts with master audio & karaoke subtitles...`);
-  const finalCmd = `ffmpeg -y -f concat -safe 0 -i "${concatListPath}" -i "${masterWav}" -vf "ass='${escapedAss}'" -c:v libx264 -preset veryfast -crf 20 -c:a aac -b:a 192k -movflags +faststart -shortest "${outMp4}" 2>/dev/null`;
+  const finalCmd = `ffmpeg -y -f concat -safe 0 -i "${concatListPath}" -i "${masterWav}" -vf "ass='${escapedAss}'" -c:v libx264 -preset veryfast -crf 23 -c:a aac -b:a 160k -movflags +faststart -shortest "${outMp4}" 2>/dev/null`;
 
   try {
     execSync(finalCmd);
@@ -1060,11 +1062,18 @@ async function generateMovieEpisode(episodeIndex = 0) {
     console.log(`[Movie Generator] 📁 Output: ${outMp4}`);
   } catch (err) {
     console.error(`[Movie Generator] Subtitle filter notice: ${err.message}, muxing direct...`);
-    const directCmd = `ffmpeg -y -f concat -safe 0 -i "${concatListPath}" -i "${masterWav}" -c:v copy -c:a aac -b:a 192k -movflags +faststart -shortest "${outMp4}" 2>/dev/null`;
+    const directCmd = `ffmpeg -y -f concat -safe 0 -i "${concatListPath}" -i "${masterWav}" -c:v copy -c:a aac -b:a 160k -movflags +faststart -shortest "${outMp4}" 2>/dev/null`;
     execSync(directCmd);
     const sz = fs.statSync(outMp4).size;
     console.log(`[Movie Generator] ✅ Episode MP4 created via clean copy! (${(sz / (1024 * 1024)).toFixed(2)} MB)`);
   }
+
+  // Purge temporary act segment video slices and concat list so artifacts don't balloon in size
+  console.log(`[Movie Generator] 🧹 Cleaning up ${tempSegments.length} intermediate act video segments to save disk & artifact space...`);
+  for (const seg of tempSegments) {
+    try { if (fs.existsSync(seg)) fs.unlinkSync(seg); } catch {}
+  }
+  try { if (fs.existsSync(concatListPath)) fs.unlinkSync(concatListPath); } catch {}
 
   // Also make available in rendered_videos directory for global serving & artifacts
   try {

@@ -14,7 +14,7 @@
  * ==============================================================================
  */
 
-const RAW_BUFFER_API_KEY = String(process.env.BUFFER_API_KEY || '').trim();
+const RAW_BUFFER_API_KEY = String(process.env.BUFFER_API_KEY_2 || process.env.BUFFER_API_KEY || '').trim();
 
 // Automatically sanitize token: strip surrounding quotes, strip leading 'Bearer ', trim whitespace
 function sanitizeToken(raw) {
@@ -363,9 +363,23 @@ async function main() {
 
   if (categorized.tiktok.length > 0) {
     const activeTt = categorized.tiktok.find(c => !c.isDisconnected && !c.isLocked) || categorized.tiktok[0];
-    console.log(`${colors.bold}3. TikTok Channel ID:${colors.reset}`);
+    console.log(`${colors.bold}3. Primary TikTok Channel ID:${colors.reset}`);
     console.log(`   Name:  ${colors.yellow}BUFFER_TIKTOK_CHANNEL_ID${colors.reset}`);
     console.log(`   Value: ${colors.green}${activeTt.id}${colors.reset}  (${activeTt.name})\n`);
+
+    if (categorized.tiktok.length >= 2) {
+      console.log(`${colors.bold}🎬 Movie Brand TikTok (1st TikTok in 2nd Buffer API):${colors.reset}`);
+      console.log(`   Name:  ${colors.yellow}BUFFER_TIKTOK_MOVIE_CHANNEL_ID${colors.reset}`);
+      console.log(`   Value: ${colors.green}${categorized.tiktok[0].id}${colors.reset}  (${categorized.tiktok[0].name})\n`);
+
+      console.log(`${colors.bold}⚡ Teen Motivation TikTok (2nd TikTok in 2nd Buffer API):${colors.reset}`);
+      console.log(`   Name:  ${colors.yellow}BUFFER_TIKTOK_TEEN_CHANNEL_ID${colors.reset}`);
+      console.log(`   Value: ${colors.green}${categorized.tiktok[1].id}${colors.reset}  (${categorized.tiktok[1].name})\n`);
+    } else {
+      console.log(`${colors.bold}🎬 Movie Brand TikTok (1st TikTok):${colors.reset}`);
+      console.log(`   Name:  ${colors.yellow}BUFFER_TIKTOK_MOVIE_CHANNEL_ID${colors.reset}`);
+      console.log(`   Value: ${colors.green}${categorized.tiktok[0].id}${colors.reset}  (${categorized.tiktok[0].name})\n`);
+    }
   } else {
     console.log(`${colors.dim}• No TikTok account found. Connect one in Buffer to enable TikTok auto-posting.${colors.reset}\n`);
   }

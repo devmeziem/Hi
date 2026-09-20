@@ -17,6 +17,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const { resolveRealMusicTrack } = require('./audio_asset_manager.cjs');
+const { callActiveAiForJson, queryDuckDuckGo } = require('./topic_discovery_engine.cjs');
 
 const ARTIFACTS_DIR = path.join(process.cwd(), 'test_artifacts', 'motivation_reels');
 if (!fs.existsSync(ARTIFACTS_DIR)) {
@@ -24,6 +25,50 @@ if (!fs.existsSync(ARTIFACTS_DIR)) {
 }
 
 const MANIFEST_PATH = path.join(process.cwd(), 'test_artifacts', 'teen_motivation_manifest.json');
+
+// Public Philosophy, Stoic Laws & Neurobiology Seeds (Public Domain)
+const PUBLIC_WISDOM_SEEDS = [
+  {
+    source: "Marcus Aurelius (Meditations)",
+    originalPrinciple: "You have power over your mind - not outside events. Realize this, and you will find strength.",
+    domain: "Mental Armor & Emotional Control"
+  },
+  {
+    source: "Dr. Andrew Huberman (Neurobiology of Dopamine)",
+    originalPrinciple: "Constantly spiking dopamine with high-frequency digital stimulation depletes baseline dopamine, leading to chronic lethargy, lack of motivation, and brain fog.",
+    domain: "Dopamine Reset & Digital Detox"
+  },
+  {
+    source: "Kobe Bryant (The Mamba Mentality)",
+    originalPrinciple: "Greatness is not a gift, it is doing the tedious, boring basics with obsessive intensity when nobody is watching.",
+    domain: "Athletic Grit & Daily Reps"
+  },
+  {
+    source: "Epictetus (Enchiridion)",
+    originalPrinciple: "No man is free who is not master of himself. If someone irritates you, your own mind is complicit in the irritation.",
+    domain: "Peer Pressure & Independence"
+  },
+  {
+    source: "Cal Newport (Deep Work & Cognitive Science)",
+    originalPrinciple: "The ability to perform deep work without distraction is becoming increasingly rare at exactly the same time it is becoming increasingly valuable in our economy.",
+    domain: "Academic Focus & Exam Lockdown"
+  },
+  {
+    source: "Seneca (On the Shortness of Life)",
+    originalPrinciple: "It is not that we have a short time to live, but that we waste a lot of it in trivial pursuits.",
+    domain: "Time Reclamation & Screen Time"
+  },
+  {
+    source: "Carol Dweck (Mindset & Neuroplasticity)",
+    originalPrinciple: "Your brain is like a muscle: the more you struggle through difficult problems, the more neural connections you grow.",
+    domain: "Academic Comeback & Overcoming Failure"
+  },
+  {
+    source: "Sun Tzu (The Art of War)",
+    originalPrinciple: "Victorious warriors win first and then go to war, while defeated warriors go to war first and then seek to win.",
+    domain: "Daily Preparation & Morning Routine"
+  }
+];
 
 const MOTIVATION_TOPICS = [
   {
@@ -54,6 +99,83 @@ const MOTIVATION_TOPICS = [
     tags: ['#GymMotivation', '#TeenFitness', '#MindsetShift', '#HardWork', '#Brotherhood', '#Confidence', '#Shorts']
   }
 ];
+
+/**
+ * Fetch public wisdom and rewrite into punchy, relatable teen language via AI
+ */
+async function fetchAndRewriteTeenTopic(query = '') {
+  console.log(`[Teen Motivation AI] 🌐 Fetching public wisdom seed...`);
+  
+  // Select public seed
+  let seed = PUBLIC_WISDOM_SEEDS[Math.floor(Date.now() / (1000 * 60 * 60)) % PUBLIC_WISDOM_SEEDS.length];
+  let searchContext = '';
+
+  if (query) {
+    try {
+      const results = await queryDuckDuckGo(`${query} discipline youth psychology`);
+      if (results && results.length > 0) {
+        searchContext = results.slice(0, 2).map(r => `${r.title}: ${r.snippet}`).join(' | ');
+        seed = {
+          source: `Public Search: ${query}`,
+          originalPrinciple: searchContext,
+          domain: "Modern Youth Focus & Discipline"
+        };
+      }
+    } catch {}
+  }
+
+  console.log(`[Teen Motivation AI] 📜 Public Seed: "${seed.source}" (${seed.domain})`);
+
+  const prompt = `You are an elite, authentic youth & teenage performance coach. You speak to high school and college students like a trusted older brother who genuinely understands their world.
+
+PUBLIC SEED WISDOM:
+Source: "${seed.source}"
+Principle: "${seed.originalPrinciple}"
+Domain: "${seed.domain}"
+${searchContext ? `Live Context: "${searchContext}"` : ''}
+
+CRITICAL RULES:
+1. ZERO boomer lecturing or condescension.
+2. ZERO cringe fake slang (words like "skibidi", "rizz", "gyatt", "no cap" are STRICTLY BANNED).
+3. Use real psychological and athletic concepts teenagers respect:
+   - "Dopamine debt", "running on 2% battery at 1 AM", "NPC syndrome", "locking in", "academic comeback", "invisible reps", "the quiet grind".
+4. The Hook MUST be an immediate pattern interrupt (under 12 words) that stops the scroll instantly.
+5. The Lesson must be 2 clear, punchy sentences explaining the exact mechanism and mindset shift.
+6. The Action Challenge must be 1 concrete 24-hour rule in ALL CAPS (under 10 words).
+7. The Takeaway must be 1 memorable line.
+
+Return ONLY a valid JSON object matching this exact schema:
+{
+  "id": "short_snake_case_id",
+  "title": "Short YouTube Shorts Title (under 60 chars)",
+  "hook": "Punchy 1st-second scroll-stopping hook",
+  "lesson": "2-3 sentences of clear, relatable brotherly advice without preachiness",
+  "actionChallenge": "CONCRETE 24-HOUR ACTION RULE IN CAPS",
+  "takeaway": "One punchy unforgettable closing rule",
+  "tags": ["#TeenMotivation", "#Discipline", "#LockIn", "#StudyMotivation", "#Shorts"]
+}`;
+
+  try {
+    const aiResult = await callActiveAiForJson(prompt, 'gemini');
+    if (aiResult && aiResult.hook && aiResult.lesson && aiResult.actionChallenge) {
+      console.log(`[Teen Motivation AI] ✅ AI successfully translated public wisdom to teen vernacular!`);
+      return {
+        id: aiResult.id || `teen_${Date.now()}`,
+        title: aiResult.title || "How To Lock In and Level Up",
+        hook: aiResult.hook,
+        lesson: aiResult.lesson,
+        actionChallenge: aiResult.actionChallenge,
+        takeaway: aiResult.takeaway || "Discipline over mood.",
+        tags: Array.isArray(aiResult.tags) ? aiResult.tags : ['#TeenMotivation', '#Discipline', '#Shorts']
+      };
+    }
+  } catch (err) {
+    console.warn(`[Teen Motivation AI] Notice during AI rewrite: ${err.message}`);
+  }
+
+  // Graceful fallback to rich curated catalog
+  return seed.domain.includes('Exam') ? MOTIVATION_TOPICS[1] : (seed.domain.includes('Gym') ? MOTIVATION_TOPICS[2] : MOTIVATION_TOPICS[0]);
+}
 
 /**
  * Format timestamp in milliseconds to ASS timestamp format (H:MM:SS.cs)
@@ -306,14 +428,24 @@ async function synthesizeMotivationVoice(text, outWavPath, outAssPath, topic) {
 /**
  * Main Teen Motivation Reel Generator
  */
-async function generateTeenMotivationReel(topicIndex = 0) {
+async function generateTeenMotivationReel(customQueryOrIndex = '') {
   console.log('\n======================================================');
   console.log('⚡ APEX DISCIPLINE: TEEN & YOUTH MOTIVATION GENERATOR');
   console.log('======================================================\n');
 
-  const topic = MOTIVATION_TOPICS[topicIndex % MOTIVATION_TOPICS.length];
+  let topic;
+  const inputQuery = process.env.TOPIC || (typeof customQueryOrIndex === 'string' ? customQueryOrIndex : '');
+
+  if (typeof customQueryOrIndex === 'number' && !process.env.TOPIC) {
+    topic = MOTIVATION_TOPICS[customQueryOrIndex % MOTIVATION_TOPICS.length];
+  } else {
+    // Dynamic public fetch + AI rewrite for teenagers
+    topic = await fetchAndRewriteTeenTopic(inputQuery);
+  }
+
   console.log(`[Motivation Generator] 🎯 Topic: "${topic.title}"`);
   console.log(`[Motivation Generator] 💡 Hook: "${topic.hook}"`);
+  console.log(`[Motivation Generator] 🛡️ Action Challenge: "${topic.actionChallenge}"`);
 
   const speechText = `${topic.hook} ${topic.lesson} Here is your challenge: ${topic.actionChallenge}. ${topic.takeaway}`;
 
@@ -381,6 +513,17 @@ async function generateTeenMotivationReel(topicIndex = 0) {
     execSync(fallbackCmd);
   }
 
+  // Mirror to rendered_videos for easy preview
+  try {
+    const renderedDir = path.join(process.cwd(), 'rendered_videos');
+    if (!fs.existsSync(renderedDir)) fs.mkdirSync(renderedDir, { recursive: true });
+    const renderedCopy = path.join(renderedDir, path.basename(outMp4));
+    const latestCopy = path.join(renderedDir, 'teen_motivation_latest.mp4');
+    fs.copyFileSync(outMp4, renderedCopy);
+    fs.copyFileSync(outMp4, latestCopy);
+    console.log(`[Motivation Generator] 📋 Mirrored to rendered_videos: ${latestCopy}`);
+  } catch {}
+
   // 5. Update Manifest
   const manifestEntry = {
     id: `motivation_${topic.id}_${Date.now()}`,
@@ -408,7 +551,7 @@ async function generateTeenMotivationReel(topicIndex = 0) {
 }
 
 if (require.main === module) {
-  generateTeenMotivationReel(0).catch(console.error);
+  generateTeenMotivationReel(process.env.TOPIC || '').catch(console.error);
 }
 
 module.exports = {

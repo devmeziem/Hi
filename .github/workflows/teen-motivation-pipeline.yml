@@ -1,24 +1,28 @@
 name: Apex Discipline - Teen & Youth Motivation Pipeline (Channel 5)
 
 on:
+  push:
+    branches:
+      - main
   schedule:
     # Daily evening motivation drop at 20:00 UTC (21:00 WAT)
     - cron: '0 20 * * *'
   workflow_dispatch:
     inputs:
-      topic_index:
-        description: 'Motivation Topic (0 = Dopamine Detox, 1 = Deep Study Focus, 2 = Gym & Iron Discipline)'
+      topic:
+        description: 'Topic or Theme (Leave empty to auto-fetch public wisdom + AI rewrite for teens)'
         required: false
-        default: '0'
-        type: choice
-        options:
-          - '0'
-          - '1'
-          - '2'
+        default: ''
+        type: string
       auto_publish:
         description: 'Publish Live to YouTube (Default FALSE: held in PENDING_REVIEW for manual check)'
         required: true
         default: false
+        type: boolean
+      publish_tiktok:
+        description: 'Publish Live to TikTok via Buffer API 2 (Default TRUE)'
+        required: false
+        default: true
         type: boolean
       dry_run:
         description: 'Dry Run Mode (Do not upload or post to CDN)'
@@ -60,7 +64,7 @@ jobs:
 
       - name: Generate Teen Motivation Reel
         env:
-          TOPIC_INDEX: ${{ github.event.inputs.topic_index || '0' }}
+          TOPIC: ${{ github.event.inputs.topic || '' }}
           AUTO_PUBLISH: ${{ github.event.inputs.auto_publish || 'false' }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           MOTIVATION_MUSIC_URL: ${{ github.event.inputs.sound_url }}
@@ -71,9 +75,20 @@ jobs:
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME || 'voxawell' }}
           CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET || 'phwka7ak' }}
         run: |
-          echo "=== 🔥 Generating Teen Motivation Reel (Index: $TOPIC_INDEX) ==="
+          echo "=== 🔥 Generating Teen Motivation Reel (Topic: $TOPIC) ==="
           node scripts/generate_teen_motivation_reel.cjs
           echo "=== Motivation Reel Assembled Successfully ==="
+
+      - name: Dispatch to Teen Motivation TikTok Channel (Buffer API 2)
+        if: success() && (github.event.inputs.publish_tiktok != 'false')
+        env:
+          BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 || secrets.BUFFER_API_KEY }}
+          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "=== 📱 Publishing Teen Motivation Reel to TikTok via Buffer API 2 ==="
+          node scripts/publish_buffer_second_tiktok.cjs teen_motivation
 
       - name: Archive Motivation Video Artifacts
         if: always()
@@ -81,6 +96,7 @@ jobs:
         with:
           name: teen-motivation-reel
           path: |
+            rendered_videos/teen_motivation_latest.mp4
             test_artifacts/motivation_reels/*.mp4
             test_artifacts/teen_motivation_manifest.json
           if-no-files-found: ignore

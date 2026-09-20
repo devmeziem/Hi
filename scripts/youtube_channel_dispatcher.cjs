@@ -120,7 +120,7 @@ function formatChannelPinnedComment(channelKey, syncedHandle, syncedTitle) {
   } else if (channelKey === 'cartoon_factory' || channelKey === 'ch3' || channelKey === 'tech') {
     return `📌 What curious tech, AI, or science question should Archie animate next? Drop your ideas below and subscribe to ${targetLabel}!`;
   } else {
-    return `💬 Which financial principle has impacted your journey the most? Drop your thoughts below and subscribe to ${targetLabel} for daily wealth wisdom!`;
+    return `📌 Official Wealth Education & Financial Tools: https://lanecash.name.ng\n\nPreserve your hard-earned capital, master disciplined investing principles, and protect your finances against modern scams.\n\nSubscribe to ${targetLabel} for daily wealth wisdom!`;
   }
 }
 

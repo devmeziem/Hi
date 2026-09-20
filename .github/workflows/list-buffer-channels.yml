@@ -24,6 +24,6 @@ jobs:
           node-version: 20
       - name: Query Buffer API for Facebook, Instagram & TikTok IDs
         env:
-          BUFFER_API_KEY: ${{ github.event.inputs.buffer_token || secrets.BUFFER_API_KEY }}
+          BUFFER_API_KEY: ${{ github.event.inputs.buffer_token || secrets.BUFFER_API_KEY_2 || secrets.BUFFER_API_KEY }}
           BUFFER_ORGANIZATION_ID: ${{ github.event.inputs.buffer_org_id || secrets.BUFFER_ORGANIZATION_ID }}
         run: node scripts/list_buffer_channels.cjs

@@ -987,7 +987,7 @@ async function generateFin5sVideo() {
   const hookIndex = Math.abs(chosen.author.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) + Date.now()) % finTitleHooks.length;
   const viralTitle = finTitleHooks[hookIndex];
   const initialFollowCta = formatChannelFollowCta('finance_saas', process.env.YOUTUBE_HANDLE_CH1 || process.env.YOUTUBE_HANDLE_FIN || process.env.YOUTUBE_HANDLE || '');
-  const viralDescription = `"${chosen.quote}"\n\n— ${chosen.author}\n${chosen.credentials}\nSource: ${chosen.reference}\n\n🧠 Stoic Financial Wisdom & Wealth Defense:\nBuild discipline, eliminate speculation traps, and preserve capital through every market cycle.\n\n🛡️ DEFEND YOUR MONEY & BEWARE OF FRAUD:\nNever fall victim to Ponzi schemes, fake investment brokers, or urgent transfer scams.\nFree practical financial education & anti-scam defense guide:\n👉 https://lanecash.name.ng\n\n${initialFollowCta}\n\n#FinStoic #StoicFin #finstoic #sstoicfin #AntiScam #FraudAwareness #ScamAlert #ProtectYourMoney #FinancialDiscipline #lanecash #InvestingWisdom #PersonalFinance #SmartMoney #WealthMindset #Shorts`;
+  const viralDescription = `"${chosen.quote}"\n\n— ${chosen.author}\n${chosen.credentials}\nSource: ${chosen.reference}\n\n🌐 OFFICIAL WEALTH & FINANCIAL PLATFORM:\n👉 https://lanecash.name.ng\nAccess practical money management tools, smart investing principles, and daily wealth defense guides.\n\n🛡️ DEFEND YOUR CAPITAL & BEWARE OF SCAMS:\nNever fall victim to Ponzi schemes, fake crypto brokers, or urgent wire transfer scams.\nFree practical financial education & scam defense blueprint:\n👉 https://lanecash.name.ng\n\n${initialFollowCta}\n\n#Lanecash #LanecashFinance #FinStoic #StoicFin #finstoic #sstoicfin #AntiScam #FraudAwareness #ScamAlert #ProtectYourMoney #FinancialDiscipline #InvestingWisdom #PersonalFinance #SmartMoney #WealthMindset #Shorts`;
 
   try {
     let manifestData = { videos: [] };
@@ -1153,6 +1153,52 @@ async function uploadQuoteReelToYouTube(videoFilePath, title, description, tags,
   if (uploadResult.success && uploadResult.data?.id) {
     const vidId = uploadResult.data.id;
     console.log(`[Finance Quote Reel] ✅ Published to YouTube: https://www.youtube.com/shorts/${vidId}`);
+
+    // Automatic SEO Backlink Comment on YouTube video
+    try {
+      console.log(`[Finance Quote Reel] 💬 Posting SEO backlink comment to ${vidId}...`);
+      const commentPayload = JSON.stringify({
+        snippet: {
+          videoId: vidId,
+          topLevelComment: {
+            snippet: {
+              textOriginal: `📌 Official Financial Guide & Free Tools: https://lanecash.name.ng\n\nPreserve your hard-earned capital, master disciplined investing principles, and protect your finances against modern online scams.`
+            }
+          }
+        }
+      });
+      await new Promise((resolve) => {
+        const cReq = https.request('https://www.googleapis.com/youtube/v3/commentThreads?part=snippet', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Content-Length': Buffer.byteLength(commentPayload)
+          },
+          timeout: 10000
+        }, (cRes) => {
+          let cData = '';
+          cRes.on('data', c => cData += c);
+          cRes.on('end', () => {
+            if (cRes.statusCode === 200 || cRes.statusCode === 201) {
+              console.log(`[Finance Quote Reel] ✅ SEO Comment posted successfully for https://lanecash.name.ng`);
+            } else {
+              console.warn(`[Finance Quote Reel] Comment notice (HTTP ${cRes.statusCode}):`, cData.slice(0, 150));
+            }
+            resolve();
+          });
+        });
+        cReq.on('error', (e) => {
+          console.warn('[Finance Quote Reel] Comment post error:', e.message);
+          resolve();
+        });
+        cReq.write(commentPayload);
+        cReq.end();
+      });
+    } catch (commentErr) {
+      console.warn('[Finance Quote Reel] Comment dispatch notice:', commentErr.message);
+    }
+
     return vidId;
   }
 }
