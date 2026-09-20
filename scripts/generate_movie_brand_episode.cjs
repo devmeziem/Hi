@@ -1037,16 +1037,16 @@ async function generateMovieEpisode(episodeIndex = 0) {
       motionFilter = `zoompan=z='min(zoom+0.0032,1.32)':x='iw/2-(iw/zoom/2)':y='ih*0.32-(ih/zoom*0.32)':d=${actFrames}:s=1080x1920:fps=30`;
     }
 
-    const segPath = path.join(epDir, `act_seg_${i}.mp4`);
+    const segPath = path.join(ARTIFACTS_DIR, `act_seg_${i}.mp4`);
     tempSegments.push(segPath);
 
     console.log(`[Movie Generator] 🎞️ Rendering Act ${i + 1}/${actImages.length} (${motion})...`);
-    const segCmd = `ffmpeg -y -loop 1 -t ${actDuration} -i "${actImages[i]}" -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,${motionFilter},format=yuv420p" -c:v libx264 -preset ultrafast -crf 20 -an "${segPath}" 2>/dev/null`;
+    const segCmd = `ffmpeg -y -i "${actImages[i]}" -vf "${motionFilter},format=yuv420p" -c:v libx264 -preset veryfast -crf 22 -an "${segPath}" 2>/dev/null`;
     execSync(segCmd);
   }
 
   // Create concat demuxer list
-  const concatListPath = path.join(epDir, 'concat_list.txt');
+  const concatListPath = path.join(ARTIFACTS_DIR, 'concat_list.txt');
   fs.writeFileSync(concatListPath, tempSegments.map(s => `file '${s.replace(/\\/g, '/')}'`).join('\n'));
 
   // Concatenate segments, burn subtitles, and mux master audio
@@ -1064,6 +1064,19 @@ async function generateMovieEpisode(episodeIndex = 0) {
     execSync(directCmd);
     const sz = fs.statSync(outMp4).size;
     console.log(`[Movie Generator] ✅ Episode MP4 created via clean copy! (${(sz / (1024 * 1024)).toFixed(2)} MB)`);
+  }
+
+  // Also make available in rendered_videos directory for global serving & artifacts
+  try {
+    const renderedDir = path.join(process.cwd(), 'rendered_videos');
+    if (!fs.existsSync(renderedDir)) fs.mkdirSync(renderedDir, { recursive: true });
+    const renderedCopy = path.join(renderedDir, path.basename(outMp4));
+    const latestCopy = path.join(renderedDir, 'movie_episode_latest.mp4');
+    fs.copyFileSync(outMp4, renderedCopy);
+    fs.copyFileSync(outMp4, latestCopy);
+    console.log(`[Movie Generator] 📋 Mirrored to rendered_videos: ${renderedCopy}`);
+  } catch (mirrorErr) {
+    console.warn('[Movie Generator] Notice mirroring to rendered_videos:', mirrorErr.message);
   }
 
   // 6. Update Manifest & Database (Zero Git Commits, 100% Low Key)

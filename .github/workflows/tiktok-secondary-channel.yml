@@ -1,20 +1,19 @@
-name: TikTok Secondary Channel Dispatch (Workflow 5)
+name: TikTok Secondary Channel Dispatch (Workflow 5) - [DISABLED PER USER DIRECTIVE]
 
+# Workflow stopped per user instruction: "stop secondary channel post workflow"
+# The automated cron release schedule is disabled.
 on:
-  schedule:
-    # 2x Daily release schedule for secondary TikTok channel (11:00 UTC and 21:00 UTC)
-    - cron: '0 11,21 * * *'
   workflow_dispatch:
     inputs:
       topic:
-        description: 'Specific topic for secondary TikTok video'
+        description: 'Specific topic for secondary TikTok video (Workflow currently stopped)'
         required: false
         default: ''
         type: string
       dry_run:
         description: 'Dry Run Mode (Uncheck to publish live)'
         required: false
-        default: false
+        default: true
         type: boolean
 
 jobs:

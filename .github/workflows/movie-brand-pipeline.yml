@@ -78,12 +78,15 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: movie-episode-reel
+          name: movie-episode-reel-${{ github.run_id }}
           path: |
             test_artifacts/movie_episodes/*.mp4
+            rendered_videos/movie_episode_*.mp4
             test_artifacts/movie_episodes_manifest.json
-          if-no-files-found: ignore
-          retention-days: 7
+            test_artifacts/movie_episodes/*.jpg
+            test_artifacts/movie_episodes/*.ass
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Pipeline Summary (Zero Git Commits, Low Key Database Logging)
         if: always()

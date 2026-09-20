@@ -20,227 +20,167 @@ const https = require('https');
 const { uploadYouTubeShort, formatChannelFollowCta } = require('./youtube_channel_dispatcher.cjs');
 const { assembleArchieMasterAudio } = require('./archie_sound_engine.cjs');
 const { buildAllModernCharacterAssets } = require('./build_modern_tech_character.cjs');
-let discoverAndSelectTopicViaActiveAi = null;
-try {
-  ({ discoverAndSelectTopicViaActiveAi } = require('./topic_discovery_engine.cjs'));
-} catch {}
+const { 
+  discoverAndSelectTopicViaActiveAi, 
+  callActiveAiForJson, 
+  saveChosenTopicToDatabase 
+} = require('./topic_discovery_engine.cjs');
 
 const TARGET_DURATION = 5.0;
 const FPS = 30;
 const TOTAL_FRAMES = 150;
 const ARTIFACTS_DIR = path.join(process.cwd(), 'test_artifacts', 'archie_5s_reels');
 const OUTPUT_DIR = path.join(process.cwd(), 'test_artifacts');
+const RENDERED_VIDEOS_DIR = path.join(process.cwd(), 'rendered_videos');
 const FACTS_CACHE = path.join(process.cwd(), 'archie_tech_facts_cache.json');
-const LEGACY_FACTS_CACHE = path.join(process.cwd(), 'test_artifacts', 'archie_tech_facts_cache.json');
-const INFOCARD_HISTORY = path.join(process.cwd(), 'infocard_history.json');
 const LATEST_FACT_JSON = path.join(process.cwd(), 'test_artifacts', 'archie_tech_fact_latest.json');
 
-// Curated pool of high-retention everyday science & tech facts with explicit, viral titles
-const VERIFIED_TECH_FACTS = [
-  {
-    id: 'microwave_water_dipole_mug',
-    title: 'Why Microwaves Heat Soup But Not Ceramic Mugs',
-    hook: 'DID YOU KNOW?',
-    fact: 'Microwaves boil your soup but leave ceramic mugs cold because the 2.45 GHz radiation only oscillates polar water molecules, passing right through non-polar ceramic.',
-    reference: 'Industrial Microwave Heating Review / Journal of Chemical Physics',
-    category: 'Everyday Physics & Cooking',
-    tags: ['#EverydayScience', '#Microwave', '#Physics', '#LifeHacks', '#Shorts']
-  },
-  {
-    id: 'phone_touchscreen_capacitive',
-    title: 'Why Phone Touchscreens Ignore Fingernails and Gloves',
-    hook: 'DID YOU KNOW?',
-    fact: 'Your phone screen ignores fingernails and gloves because it uses capacitive sensing: your skin is 60% salty water that drains electrostatic charge to pinpoint your tap.',
-    reference: 'Operating Principles of Projected Capacitive Touchscreens / IEEE Micro',
-    category: 'Everyday Tech & Smartphones',
-    tags: ['#Smartphone', '#Touchscreen', '#TechFacts', '#Physics', '#Shorts']
-  },
-  {
-    id: 'caffeine_adenosine_blockade',
-    title: 'Why Coffee Stops Working If You Drink It Right When Waking Up',
-    hook: 'DID YOU KNOW?',
-    fact: 'Coffee gives you zero real energy: caffeine just parks inside your brain’s adenosine receptors, blinding you to tiredness while fatigue chemicals silently pile up.',
-    reference: 'Actions of Caffeine in the Brain / Pharmacological Reviews',
-    category: 'Everyday Biology & Health',
-    tags: ['#Coffee', '#Neuroscience', '#SleepScience', '#HealthHacks', '#Shorts']
-  },
-  {
-    id: 'wrinkly_fingers_nervous_drainage',
-    title: 'Why Bath Wrinkles Are Actually High-Grip Tire Treads',
-    hook: 'DID YOU KNOW?',
-    fact: 'Pruney bath fingers are not from absorbing water: your nervous system actively constricts blood vessels to carve tire treads on your fingers for better wet grip.',
-    reference: 'Changizi, M. et al. / Brain, Behavior and Evolution (2011)',
-    category: 'Everyday Human Biology',
-    tags: ['#HumanBody', '#Evolution', '#Biology', '#LifeHacks', '#Shorts']
-  },
-  {
-    id: 'static_shock_doorknob_winter',
-    title: 'Why Winter Carpets Shock You With 15,000 Volts',
-    hook: 'DID YOU KNOW?',
-    fact: 'Walking on winter carpets can charge your body up to 15,000 Volts because dry air cannot bleed electrons away until you zap a conductive metal doorknob.',
-    reference: 'Feynman Lectures on Physics / Triboelectric Series',
-    category: 'Everyday Physics',
-    tags: ['#Electrostatics', '#WinterFacts', '#Physics', '#Science', '#Shorts']
-  },
-  {
-    id: 'mirrors_flip_front_to_back',
-    title: 'Why Mirrors Do NOT Flip Left and Right (The 3D Illusion)',
-    hook: 'DID YOU KNOW?',
-    fact: 'Bathroom mirrors do not flip you left-to-right: they flip along the 3D Z-axis front-to-back, and your brain mistakenly imagines doing a 180° turn.',
-    reference: 'Gardner, M., The Ambidextrous Universe / American Journal of Physics',
-    category: 'Everyday Optics & Mind',
-    tags: ['#Optics', '#MindBlown', '#BrainFacts', '#Science', '#Shorts']
-  },
-  {
-    id: 'onions_crying_sulfuric_gas',
-    title: 'Why Cutting Onions Makes You Cry (The Acid Mist Reaction)',
-    hook: 'DID YOU KNOW?',
-    fact: 'Chopping onions makes you cry because crushed cells release volatile gas that mixes with eye moisture to create trace sulfuric acid that your eyes flush away.',
-    reference: 'Block, E., Garlic and Other Alliums / Royal Society of Chemistry',
-    category: 'Everyday Kitchen Science',
-    tags: ['#CookingScience', '#Onions', '#Chemistry', '#FoodFacts', '#Shorts']
-  },
-  {
-    id: 'potato_chip_bag_boyle_law',
-    title: 'Why Potato Chip Bags Puff Up On Mountain Road Trips',
-    hook: 'DID YOU KNOW?',
-    fact: 'Chip bags puff up like balloons on mountain road trips because external atmospheric pressure drops while the sealed gas inside expands by Boyle’s Law.',
-    reference: 'Fundamentals of Physics / Gas Thermodynamics & Boyle’s Law',
-    category: 'Everyday Physics & Travel',
-    tags: ['#RoadTrip', '#Physics', '#GasLaws', '#EverydayScience', '#Shorts']
-  },
-  {
-    id: 'cold_water_sweet_trpm5',
-    title: 'Why Ice Water Tastes Crisp and Sweet (The TRPM5 Receptor)',
-    hook: 'DID YOU KNOW?',
-    fact: 'Ice water tastes so crisp and clean because extreme cold numbs your TRPM5 taste receptors, blocking out the bitter taste of dissolved tap minerals.',
-    reference: 'Heat activation of TRPM5 / Nature Journal of Neuroscience',
-    category: 'Everyday Sensory Science',
-    tags: ['#Water', '#TasteScience', '#Biology', '#EverydayStuff', '#Shorts']
-  },
-  {
-    id: 'recorded_voice_bone_conduction',
-    title: 'Why You Hate Your Own Recorded Voice (Bone Conduction)',
-    hook: 'DID YOU KNOW?',
-    fact: 'You hate your recorded voice because you normally hear yourself through skull bone vibrations that amplify deep bass tones that air microphones miss.',
-    reference: 'Acoustic Resonance & Bone Conduction Audiometry / Acoustical Society',
-    category: 'Everyday Acoustics & Audio',
-    tags: ['#Voice', '#Acoustics', '#HumanBody', '#Psychology', '#Shorts']
-  },
-  {
-    id: 'spicy_food_capsaicin_dairy',
-    title: 'Why Water Makes Spicy Food Hotter (And Dairy Cures It)',
-    hook: 'DID YOU KNOW?',
-    fact: 'Water makes spicy food hotter because capsaicin is a non-polar oil that water spreads; only dairy with non-polar casein protein can bind and wash it away.',
-    reference: 'Capsaicin Receptor & Thermal Nociceptors / Nature',
-    category: 'Everyday Food Science',
-    tags: ['#SpicyFood', '#FoodScience', '#Chemistry', '#Shorts']
-  },
-  {
-    id: 'soda_explosion_warm_henry_law',
-    title: 'Why Warm Soda Sprays Everywhere When Opened',
-    hook: 'DID YOU KNOW?',
-    fact: 'Warm soda sprays everywhere when opened because carbon dioxide gas dissolves poorly in warm water by Henry’s Law, building massive internal vapor pressure.',
-    reference: 'Binary Solutions & Gas Thermodynamics / Physical Chemistry',
-    category: 'Everyday Chemistry',
-    tags: ['#Soda', '#Chemistry', '#ScienceTricks', '#Shorts']
-  },
-  {
-    id: 'induction_cooktop_cold_glass_archie',
-    title: 'Why Induction Stoves Boil Water Without Hot Glass',
-    hook: 'DID YOU KNOW?',
-    fact: 'Induction cooktops boil water through a cold paper towel because oscillating magnetic fields create electrical currents inside the pan itself, leaving glass completely unheated.',
-    reference: 'Faraday Induction Principles / IEEE Transactions on Magnetics',
-    category: 'Everyday Physics',
-    tags: ['#Induction', '#PhysicsFacts', '#KitchenScience', '#Shorts']
-  },
-  {
-    id: 'airplane_window_secret_hole_archie',
-    title: 'Why Every Airplane Window Has A Tiny Hole',
-    hook: 'DID YOU KNOW?',
-    fact: 'That tiny hole in your airplane window keeps you alive by bleeding cabin air into the outer window gap, forcing the ultra-thick exterior pane to bear all 8 psi of atmospheric pressure.',
-    reference: 'FAA Airframe Standards / Aerospace Safety Reviews',
-    category: 'Aviation Engineering',
-    tags: ['#Aviation', '#AirplaneFacts', '#Engineering', '#Shorts']
-  },
-  {
-    id: 'pruney_fingers_tire_treads_archie',
-    title: 'Why Fingers Prune In The Bath (High-Grip Treads)',
-    hook: 'DID YOU KNOW?',
-    fact: 'Pruney fingers in the bath are not absorbed water: your nervous system constricts blood vessels to carve tire treads on your fingertips, boosting underwater grip by 40%.',
-    reference: 'Brain, Behavior and Evolution / Neurobiology',
-    category: 'Human Biology',
-    tags: ['#HumanBody', '#Evolution', '#BiologyFacts', '#Shorts']
-  },
-  {
-    id: 'helium_balloon_moves_forward_archie',
-    title: 'Why A Helium Balloon Moves Forward When You Accelerate',
-    hook: 'DID YOU KNOW?',
-    fact: 'When your car accelerates, a floating helium balloon flies forward toward the windshield because dense cabin air stacks against the rear window, creating a forward buoyant gradient.',
-    reference: 'Feynman Lectures on Physics / Accelerated Frames',
-    category: 'Fluid Mechanics',
-    tags: ['#PhysicsOddity', '#CarTricks', '#MindBlown', '#Shorts']
-  }
-];
-
-function selectUniqueTechFact() {
-  let history = [];
-  try {
-    if (fs.existsSync(FACTS_CACHE)) {
-      history = JSON.parse(fs.readFileSync(FACTS_CACHE, 'utf8'));
-    } else if (fs.existsSync(LEGACY_FACTS_CACHE)) {
-      history = JSON.parse(fs.readFileSync(LEGACY_FACTS_CACHE, 'utf8'));
+/**
+ * Robust HTTPS Buffer Fetcher with Redirect & User-Agent Handling
+ */
+function fetchHttpsBuffer(url, timeoutMs = 8000) {
+  return new Promise((resolve, reject) => {
+    try {
+      const parsed = new URL(url);
+      const client = parsed.protocol === 'http:' ? require('http') : https;
+      const req = client.get(url, {
+        headers: { 'User-Agent': 'ArchieLabBot/1.0 (educational science shorts research; contact: lab@archie.science)' },
+        timeout: timeoutMs
+      }, (res) => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          return fetchHttpsBuffer(res.headers.location, timeoutMs).then(resolve).catch(reject);
+        }
+        if (res.statusCode !== 200) {
+          return reject(new Error(`HTTP ${res.statusCode} from ${url}`));
+        }
+        const chunks = [];
+        res.on('data', (c) => chunks.push(c));
+        res.on('end', () => resolve(Buffer.concat(chunks)));
+      });
+      req.on('timeout', () => { req.destroy(); reject(new Error(`Timeout ${timeoutMs}ms for ${url}`)); });
+      req.on('error', reject);
+    } catch (e) {
+      reject(e);
     }
-    if (!Array.isArray(history)) history = [];
-  } catch (e) {
-    history = [];
-  }
+  });
+}
 
-  // Cross-reference with infocards history so identical topics are staggered
-  let infocardUsedIds = new Set();
-  try {
-    if (fs.existsSync(INFOCARD_HISTORY)) {
-      const infoHistory = JSON.parse(fs.readFileSync(INFOCARD_HISTORY, 'utf8'));
-      if (Array.isArray(infoHistory)) {
-        infoHistory.slice(-5).forEach(item => {
-          const id = typeof item === 'string' ? item : item?.id;
-          if (id) infocardUsedIds.add(id);
-        });
+/**
+ * Fetch a Real Physical Image from Wikipedia / Wikimedia Commons
+ * Prioritizes high-resolution photography over diagrams or SVGs
+ */
+async function fetchWikipediaPhysicalImage(searchTerm, topicTitle) {
+  const candidates = [
+    searchTerm,
+    String(topicTitle || '').replace(/^(Why|How|What|The|Is|Are)\s+/i, '').replace(/[^\w\s]/g, '').trim(),
+    (searchTerm || '').split(/\s+/).slice(0, 3).join(' ')
+  ].filter(Boolean);
+
+  for (const query of candidates) {
+    try {
+      console.log(`[Archie Wiki Vision] 🔬 Searching Wikimedia Commons / Wikipedia for real specimen of: "${query}"...`);
+      const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query)}&prop=pageimages|extracts&pithumbsize=1080&format=json`;
+      const buf = await fetchHttpsBuffer(searchUrl, 7000);
+      const data = JSON.parse(buf.toString('utf8'));
+      const pages = data?.query?.pages || {};
+
+      for (const pid of Object.keys(pages)) {
+        const p = pages[pid];
+        const src = p.thumbnail?.source;
+        if (src && !src.endsWith('.svg') && !src.endsWith('.gif')) {
+          console.log(`[Archie Wiki Vision] 📸 Found verified physical photography: "${p.title}" (${src})`);
+          const imgBuf = await fetchHttpsBuffer(src, 9000);
+          if (imgBuf && imgBuf.length > 12000) {
+            const outPath = path.join(ARTIFACTS_DIR, `archie_physical_${Date.now()}.jpg`);
+            fs.writeFileSync(outPath, imgBuf);
+            return {
+              imagePath: outPath,
+              title: p.title,
+              sourceUrl: src
+            };
+          }
+        }
       }
+    } catch (err) {
+      console.warn(`[Archie Wiki Vision Notice] Query "${query}": ${err.message}`);
     }
-  } catch {}
-
-  const usedIds = new Set(history.map(h => (typeof h === 'string' ? h : h.id)));
-  let available = VERIFIED_TECH_FACTS.filter(f => !usedIds.has(f.id));
-
-  // Prefer facts not run in last 5 infocard releases
-  const nonConflicting = available.filter(f => !infocardUsedIds.has(f.id));
-  if (nonConflicting.length > 0) {
-    available = nonConflicting;
   }
+  return null;
+}
 
-  let chosen;
-  if (available.length > 0) {
-    chosen = available[0];
+/**
+ * Generate a Silky-Smooth Moving Video with Panning (Left, Right, Diagonal) & Zooming
+ * Using FFmpeg's zoompan filter directly on the physical specimen photograph
+ */
+function generateDynamicMotionVideoFromImage(imagePath, outMp4Path, duration = 5.0, motionMode = 'pan_left_right') {
+  console.log(`[Archie Motion FX] 🎬 Generating dynamic ${duration}s motion clip (${motionMode}) from physical image...`);
+  
+  let filter = '';
+  if (motionMode === 'pan_right_left') {
+    // Smooth right-to-left sweep with subtle zoom
+    filter = `[0:v]scale=1280:720,zoompan=z='min(zoom+0.0012,1.25)':x='(iw-ow)*(1-in/(30*${duration}))':y='(ih-oh)/2':d=1:s=590x340:fps=30[v]`;
+  } else if (motionMode === 'pan_diagonal_zoom') {
+    // Dynamic cinematic diagonal drift with zoom
+    filter = `[0:v]scale=1280:720,zoompan=z='min(zoom+0.0016,1.28)':x='(iw-ow)*(in/(30*${duration}))':y='(ih-oh)*(in/(30*${duration}))':d=1:s=590x340:fps=30[v]`;
+  } else if (motionMode === 'pan_oscillate') {
+    // Gentle natural floating pan left and right
+    filter = `[0:v]scale=1280:720,zoompan=z='min(zoom+0.0013,1.22)':x='(iw-ow)/2 + (iw-ow)/2.5*sin(2*3.14159*in/(30*${duration}))':y='(ih-oh)/2':d=1:s=590x340:fps=30[v]`;
   } else {
-    console.log('[Archie Facts Deduplication] All facts cycled! Refreshing cycle from oldest...');
-    chosen = VERIFIED_TECH_FACTS[0];
-    history = [];
+    // Default: smooth left-to-right sweep with zoom
+    filter = `[0:v]scale=1280:720,zoompan=z='min(zoom+0.0012,1.25)':x='(iw-ow)*(in/(30*${duration}))':y='(ih-oh)/2':d=1:s=590x340:fps=30[v]`;
   }
 
-  history.push({ id: chosen.id, title: chosen.title, timestamp: new Date().toISOString() });
-  if (history.length > 50) history = history.slice(-50);
+  const ffmpegCmd = `ffmpeg -y -loop 1 -i "${imagePath}" -t ${duration} -filter_complex "${filter}" -map "[v]" -c:v libx264 -preset fast -pix_fmt yuv420p "${outMp4Path}" 2>&1`;
+  execSync(ffmpegCmd);
 
-  try {
-    fs.writeFileSync(FACTS_CACHE, JSON.stringify(history, null, 2), 'utf8');
-    if (fs.existsSync(path.dirname(LEGACY_FACTS_CACHE))) {
-      fs.writeFileSync(LEGACY_FACTS_CACHE, JSON.stringify(history, null, 2), 'utf8');
-    }
-  } catch (e) {
-    console.warn('[Archie Facts Deduplication] Notice persisting facts cache:', e.message);
+  if (!fs.existsSync(outMp4Path) || fs.statSync(outMp4Path).size < 1000) {
+    throw new Error('Failed to render dynamic motion video from physical image');
+  }
+  return outMp4Path;
+}
+
+/**
+ * Generate Fresh AI Script with Dynamic Spoken Hook (Intro), Punchy Core Explanation, and Loop Outro
+ * Strictly ZERO synthetic fallbacks. If AI fails, throws error immediately.
+ */
+async function generateArchieAiScript(chosenTopic) {
+  const systemPrompt = `You are the master creative science writer for Archie Explains (@ArchieExplains), an ultra-popular 5-second short-form everyday science channel.
+CRITICAL USER MANDATES:
+1. NO CLICHÉ OR ROBOTIC INTROS. NEVER start with "Did you know". The intro MUST be an instant, conversational, hook-gripping spoken question or observation that stops viewers mid-scroll (under 10 words).
+2. The core explanation must be 1-2 punchy, crystal-clear sentences (under 20 words total) explaining the real physics, biology, or mechanics in plain English.
+3. The outro MUST be a clever punchline, actionable challenge, or seamless infinite loop sentence (under 8 words) that makes viewers immediately rewatch or share.
+4. Provide 1 exact physical specimen or object term to look up on Wikipedia for real physical photography (e.g. "Capacitive touchscreen", "Magnetron", "Specular reflection", "Pruney fingers").
+5. Output strictly valid JSON matching the schema. No markdown formatting.`;
+
+  const userPrompt = `TOPIC: "${chosenTopic.title}"
+DETAILS / CONTEXT: "${chosenTopic.searchDetailsUsed || chosenTopic.fact || chosenTopic.angle || chosenTopic.hook}"
+CATEGORY: "${chosenTopic.category || chosenTopic.sphereName || 'Everyday Science'}"
+
+Generate the complete script JSON:
+{
+  "spokenHook": "conversational opening question or observation (max 10 words)",
+  "coreExplanation": "crisp explanation of the scientific mechanism (max 20 words)",
+  "spokenOutro": "witty conclusion or infinite loop trigger (max 8 words)",
+  "boardHeadline": "bold 3-5 word headline for presentation board",
+  "bullet1": "key takeaway insight 1 (max 6 words)",
+  "bullet2": "key takeaway insight 2 (max 6 words)",
+  "wikiSearchTerm": "physical specimen or entity to search on Wikipedia",
+  "citationReference": "authoritative journal or scientific reference"
+}`;
+
+  console.log(`[Archie AI Script] 🧠 Formulating fresh spoken script and board layout via Active AI...`);
+  const aiResult = await callActiveAiForJson(systemPrompt, userPrompt, null, {
+    nicheKey: 'cartoon',
+    temperature: 0.7
+  });
+
+  if (!aiResult || !aiResult.data || !aiResult.data.coreExplanation) {
+    console.error('\n❌ [Archie Script Fatal] Active AI failed to formulate fresh script.');
+    console.error(' • User Directive: Synthetic fallback scripts are strictly disabled.');
+    throw new Error('[Archie Script Fatal] AI script formulation failed. Synthetic fallbacks are disabled.');
   }
 
-  return chosen;
+  return aiResult.data;
 }
 
 function escapeXml(str) {
@@ -428,24 +368,49 @@ function buildDigitalPresentationBoardSvg(factObj, width = 1080, height = 1920) 
   const themeIndex = Math.abs(factObj.title.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % boardThemes.length;
   const currentTheme = boardThemes[themeIndex];
 
-  // Text wrap for explanation body: 2 crisp, high-impact lines (max 32 chars)
-  const words = (factObj.fact || '').split(/\s+/);
-  const lines = [];
-  let cur = '';
-  for (const w of words) {
-    if ((cur + ' ' + w).length > 30) {
-      if (lines.length < 2) lines.push(cur.trim());
-      cur = w;
-    } else {
-      cur += ' ' + w;
-    }
-  }
-  if (cur.trim() && lines.length < 2) lines.push(cur.trim());
+  // Text wrap for explanation body: 2 crisp, high-impact lines
+  const line1 = scriptObj?.bullet1 || factObj.fact?.split(/\s+/).slice(0, 7).join(' ') || 'Key Principle';
+  const line2 = scriptObj?.bullet2 || factObj.fact?.split(/\s+/).slice(7, 14).join(' ') || 'Observable Reality';
 
-  const renderedExplanation = lines.map((l, idx) => {
-    const yPos = boardY + 270 + (idx * 46);
-    return `<text x="${boardX + 40}" y="${yPos}" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="700" fill="#f8fafc" letter-spacing="-0.2">• ${escapeXml(l)}</text>`;
-  }).join('\n');
+  const categoryName = (factObj.category || 'SCIENCE').toUpperCase().replace(/[^A-Z0-9\s]/g, '').slice(0, 16);
+  const headlineText = scriptObj?.boardHeadline || factObj.title || 'Science Phenomenon';
+
+  // Diagram / Physical Screen Box:
+  // Positioned at x = boardX + 40 = 410, y = boardY + 370 = 690, width = 590, height = 340
+  const screenContent = hasPhysicalVideo ? `
+    <!-- Physical Camera HUD Viewfinder -->
+    <rect x="0" y="0" width="${boardW - 80}" height="340" rx="20" fill="#030712" stroke="${currentTheme.neonBorder[1]}" stroke-width="2.5" />
+    
+    <!-- HUD High-Tech Corner Reticles -->
+    <path d="M 8 28 L 8 8 L 28 8" stroke="#38bdf8" stroke-width="3.2" fill="none" stroke-linecap="round" />
+    <path d="M 582 28 L 582 8 L 562 8" stroke="#38bdf8" stroke-width="3.2" fill="none" stroke-linecap="round" />
+    <path d="M 8 312 L 8 332 L 28 332" stroke="#38bdf8" stroke-width="3.2" fill="none" stroke-linecap="round" />
+    <path d="M 582 312 L 582 332 L 562 332" stroke="#38bdf8" stroke-width="3.2" fill="none" stroke-linecap="round" />
+    
+    <!-- Top HUD Badge -->
+    <rect x="15" y="14" width="280" height="26" rx="13" fill="#0284c7" fill-opacity="0.35" stroke="#38bdf8" stroke-width="1.2" />
+    <circle cx="27" cy="27" r="4.5" fill="#22c55e" />
+    <text x="40" y="32" font-family="system-ui, sans-serif" font-size="11" font-weight="900" fill="#e0f2fe" letter-spacing="1">PHYSICAL SPECIMEN • WIKIPEDIA</text>
+
+    <!-- Bottom HUD Specimen Label -->
+    <rect x="15" y="296" width="560" height="30" rx="10" fill="#020617" fill-opacity="0.88" />
+    <text x="28" y="316" font-family="system-ui, sans-serif" font-size="12" font-weight="800" fill="#94a3b8">Specimen: <tspan fill="#f8fafc">${escapeXml(scriptObj?.wikiSearchTerm || factObj.title)}</tspan></text>
+    <text x="560" y="316" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="#38bdf8" text-anchor="end">PANNING MOTION</text>
+  ` : `
+    <!-- Fallback High-Tech Scientific Schematic Box -->
+    <rect x="0" y="0" width="${boardW - 80}" height="340" rx="20" fill="#090d16" stroke="#1e293b" stroke-width="1.8" />
+    <text x="25" y="34" font-family="system-ui, sans-serif" font-size="13" font-weight="800" fill="#38bdf8" letter-spacing="1">SCIENTIFIC SCHEMATIC</text>
+    <g stroke="#38bdf8" stroke-width="2.5" fill="none" opacity="0.85">
+      <path d="M 40 170 Q 110 80 180 170 T 320 170 T 460 170 T 550 170" />
+    </g>
+    <g stroke="#facc15" stroke-width="2" fill="none" stroke-dasharray="4 4">
+      <path d="M 40 170 Q 110 260 180 170 T 320 170 T 460 170 T 550 170" />
+    </g>
+    <circle cx="180" cy="170" r="7" fill="#ef4444" />
+    <circle cx="320" cy="170" r="7" fill="#22c55e" />
+    <circle cx="460" cy="170" r="7" fill="#ef4444" />
+    <text x="295" y="285" font-family="system-ui, sans-serif" font-size="14" font-weight="600" fill="#94a3b8" text-anchor="middle">Physical Resonance • Observable Scientific Field</text>
+  `;
 
   return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -468,20 +433,17 @@ function buildDigitalPresentationBoardSvg(factObj, width = 1080, height = 1920) 
       </filter>
     </defs>
 
-    <!-- 1. The Big Interactive Digital Board Frame (Right side, clear of character) -->
+    <!-- 1. The Big Interactive Digital Board Frame -->
     <g filter="url(#boardDrop)">
       <rect x="${boardX}" y="${boardY}" width="${boardW}" height="${boardH}" rx="32" fill="url(#boardBg)" stroke="url(#boardNeonBorder)" stroke-width="3.5" />
-      <!-- Subtle Glass Reflection Sheen across top right corner -->
       <path d="M ${boardX + 35} ${boardY + 6} L ${boardX + boardW - 35} ${boardY + 6} L ${boardX + 35} ${boardY + 280} Z" fill="#ffffff" fill-opacity="0.04" />
     </g>
 
     <!-- 2. Top Header Navigation Tabs -->
     <g transform="translate(${boardX + 35}, ${boardY + 35})">
-      <!-- Active Tab: Category -->
       <rect x="0" y="0" width="160" height="38" rx="19" fill="${currentTheme.activeTabBg}" />
-      <text x="80" y="24" font-family="system-ui, sans-serif" font-size="14" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="1">SCIENCE</text>
+      <text x="80" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="1">${escapeXml(categoryName)}</text>
 
-      <!-- Inactive Tabs -->
       <rect x="175" y="0" width="90" height="38" rx="19" fill="#1e293b" stroke="#334155" stroke-width="1.2" />
       <text x="220" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#94a3b8" text-anchor="middle">Tech</text>
 
@@ -489,14 +451,14 @@ function buildDigitalPresentationBoardSvg(factObj, width = 1080, height = 1920) 
       <text x="315" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#94a3b8" text-anchor="middle">AI</text>
 
       <rect x="365" y="0" width="180" height="38" rx="19" fill="#1e293b" stroke="#334155" stroke-width="1.2" />
-      <text x="455" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#94a3b8" text-anchor="middle">Daily Fact</text>
+      <text x="455" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#94a3b8" text-anchor="middle">Daily Reel</text>
     </g>
 
     <!-- 3. Big High-Impact Title -->
     <g transform="translate(${boardX + 40}, ${boardY + 95})">
       <foreignObject width="${boardW - 80}" height="120">
-        <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: system-ui, -apple-system, sans-serif; font-size: 34px; font-weight: 900; line-height: 1.25; color: ${currentTheme.titleColor}; letter-spacing: -0.5px;">
-          ${escapeXml(factObj.title)}
+        <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: system-ui, -apple-system, sans-serif; font-size: 32px; font-weight: 900; line-height: 1.25; color: ${currentTheme.titleColor}; letter-spacing: -0.5px;">
+          ${escapeXml(headlineText)}
         </div>
       </foreignObject>
     </g>
@@ -504,48 +466,30 @@ function buildDigitalPresentationBoardSvg(factObj, width = 1080, height = 1920) 
     <!-- Divider Line -->
     <line x1="${boardX + 40}" y1="${boardY + 225}" x2="${boardX + boardW - 40}" y2="${boardY + 225}" stroke="#334155" stroke-width="1.8" stroke-dasharray="6 6" />
 
-    <!-- 4. Body Explanation Bullet Points (Clean 2 lines, high legibility) -->
-    ${renderedExplanation}
-
-    <!-- 5. Schematic / Scientific Diagram Box (Spaced comfortably below text) -->
-    <g transform="translate(${boardX + 40}, ${boardY + 450})">
-      <rect x="0" y="0" width="${boardW - 80}" height="320" rx="20" fill="#090d16" stroke="#1e293b" stroke-width="1.8" />
-      <text x="25" y="34" font-family="system-ui, sans-serif" font-size="14" font-weight="800" fill="#38bdf8" letter-spacing="1">SCIENTIFIC SCHEMATIC</text>
-
-      <!-- Accurate Wave / Dipole Diagram -->
-      <g stroke="#38bdf8" stroke-width="2.5" fill="none" opacity="0.85">
-        <path d="M 40 160 Q 110 70 180 160 T 320 160 T 460 160 T 560 160" />
-      </g>
-      <g stroke="#facc15" stroke-width="2" fill="none" stroke-dasharray="4 4">
-        <path d="M 40 160 Q 110 250 180 160 T 320 160 T 460 160 T 560 160" />
-      </g>
-
-      <!-- Center Node Indicators -->
-      <circle cx="180" cy="160" r="7" fill="#ef4444" />
-      <text x="180" y="195" font-family="system-ui, sans-serif" font-size="13" font-weight="800" fill="#ef4444" text-anchor="middle">NODE</text>
-
-      <circle cx="320" cy="160" r="7" fill="#22c55e" />
-      <text x="320" y="195" font-family="system-ui, sans-serif" font-size="13" font-weight="800" fill="#22c55e" text-anchor="middle">ANTINODE</text>
-
-      <circle cx="460" cy="160" r="7" fill="#ef4444" />
-      <text x="460" y="195" font-family="system-ui, sans-serif" font-size="13" font-weight="800" fill="#ef4444" text-anchor="middle">NODE</text>
-
-      <text x="295" y="275" font-family="system-ui, sans-serif" font-size="14" font-weight="600" fill="#94a3b8" text-anchor="middle">Oscillation Frequency: 2.45 GHz • Polar Molecular Resonance</text>
+    <!-- 4. Body Explanation Bullet Points -->
+    <g transform="translate(${boardX + 40}, ${boardY + 245})">
+      <text x="0" y="28" font-family="system-ui, -apple-system, sans-serif" font-size="26" font-weight="700" fill="#f8fafc">• ${escapeXml(line1)}</text>
+      <text x="0" y="70" font-family="system-ui, -apple-system, sans-serif" font-size="26" font-weight="700" fill="#f8fafc">• ${escapeXml(line2)}</text>
     </g>
 
-    <!-- 6. Verified Citation & Reference Tag (Bottom of board) -->
-    <g transform="translate(${boardX + 40}, ${boardY + 800})">
-      <rect x="0" y="0" width="${boardW - 80}" height="100" rx="18" fill="#0f172a" stroke="#334155" stroke-width="1.5" />
-      <text x="25" y="34" font-family="system-ui, sans-serif" font-size="13" font-weight="900" fill="#94a3b8" letter-spacing="1">VERIFIED SCIENTIFIC REFERENCE</text>
-      <text x="25" y="70" font-family="system-ui, sans-serif" font-size="18" font-weight="700" fill="#38bdf8">${escapeXml(factObj.reference)}</text>
+    <!-- 5. Dynamic Screen Window (Physical Specimen Video or Schematic) -->
+    <g transform="translate(${boardX + 40}, ${boardY + 370})">
+      ${screenContent}
+    </g>
+
+    <!-- 6. Verified Citation & Reference Tag -->
+    <g transform="translate(${boardX + 40}, ${boardY + 735})">
+      <rect x="0" y="0" width="${boardW - 80}" height="85" rx="18" fill="#0f172a" stroke="#334155" stroke-width="1.5" />
+      <text x="25" y="30" font-family="system-ui, sans-serif" font-size="12" font-weight="900" fill="#94a3b8" letter-spacing="1">VERIFIED SCIENTIFIC REFERENCE</text>
+      <text x="25" y="62" font-family="system-ui, sans-serif" font-size="16" font-weight="700" fill="#38bdf8">${escapeXml(scriptObj?.citationReference || factObj.reference)}</text>
     </g>
 
     <!-- 7. Dynamic Seamless Loop Replay Badge -->
-    <g transform="translate(${boardX + 40}, ${boardY + 930})">
-      <rect x="0" y="0" width="${boardW - 80}" height="65" rx="16" fill="#1e1b4b" stroke="#6366f1" stroke-width="1.5" stroke-opacity="0.6" />
-      <circle cx="40" cy="32" r="14" fill="#6366f1" fill-opacity="0.3" />
-      <text x="40" y="37" font-family="system-ui, sans-serif" font-size="14" text-anchor="middle">🔄</text>
-      <text x="70" y="38" font-family="system-ui, sans-serif" font-size="15" font-weight="800" fill="#c7d2fe">Seamless Loop • Watch again to verify</text>
+    <g transform="translate(${boardX + 40}, ${boardY + 840})">
+      <rect x="0" y="0" width="${boardW - 80}" height="60" rx="16" fill="#1e1b4b" stroke="#6366f1" stroke-width="1.5" stroke-opacity="0.6" />
+      <circle cx="35" cy="30" r="14" fill="#6366f1" fill-opacity="0.3" />
+      <text x="35" y="35" font-family="system-ui, sans-serif" font-size="14" text-anchor="middle">🔄</text>
+      <text x="65" y="36" font-family="system-ui, sans-serif" font-size="14" font-weight="800" fill="#c7d2fe">Seamless Loop • Watch again to verify</text>
     </g>
   </svg>`;
 }
@@ -561,56 +505,66 @@ async function generateArchie5sDailyFact() {
 
   if (!fs.existsSync(ARTIFACTS_DIR)) fs.mkdirSync(ARTIFACTS_DIR, { recursive: true });
   if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+  if (!fs.existsSync(RENDERED_VIDEOS_DIR)) fs.mkdirSync(RENDERED_VIDEOS_DIR, { recursive: true });
 
-  // 1. Select Unique Fact with Reference (Dynamic AI Discovery or Curated Pool)
-  let fact = null;
+  // 1. Live AI Topic Discovery & Deduplication (ZERO Synthetic Fallbacks)
+  let chosenTopic = null;
   if (process.env.TEST_TOPIC) {
-    fact = {
-      id: 'custom_input_' + Date.now(),
+    chosenTopic = {
       title: process.env.TEST_TOPIC,
-      hook: 'DID YOU KNOW?',
-      fact: process.env.TEST_FACT || `Here is the trending science fact: ${process.env.TEST_TOPIC}`,
-      reference: 'Real-Time Trending Search Observation',
       category: 'Trending Tech & Science',
-      tags: ['#ScienceFacts', '#Physics', '#EverydayTech', '#Shorts']
+      reference: 'Scientific Direct Observation',
+      searchDetailsUsed: process.env.TEST_FACT || process.env.TEST_TOPIC,
+      tags: ['#ScienceFacts', '#EverydayTech', '#Shorts']
     };
-  } else if (process.env.DISCOVER_TOPIC === 'true' && typeof discoverAndSelectTopicViaActiveAi === 'function') {
-    try {
-      console.log('[Topic Discovery] 🔎 Engaging live multi-source trend discovery (Google Trends, DuckDuckGo, Wikipedia)...');
-      const discoveryResult = await discoverAndSelectTopicViaActiveAi('cartoon');
-      if (discoveryResult && discoveryResult.chosenTopic) {
-        const t = discoveryResult.chosenTopic;
-        fact = {
-          id: 'live_discovered_' + Date.now(),
-          title: t.title.replace(/#\w+/g, '').trim(),
-          hook: 'DID YOU KNOW?',
-          fact: t.fact || t.factExplanation || t.angle || t.hook,
-          reference: t.reference || t.searchDetailsUsed || 'Peer-Reviewed Scientific Observation',
-          category: t.category || t.sphereName || 'Trending Science & Tech',
-          tags: t.tags || ['#ScienceFacts', '#EverydayPhysics', '#TechTrends', '#Shorts']
-        };
-      }
-    } catch (err) {
-      console.warn('[Topic Discovery Notice] Live search discovery skipped, using verified pool:', err.message);
+  } else {
+    console.log('[Archie Topic Discovery] 🔎 Engaging live multi-source trend discovery across Google, DDG, Wiki & Social...');
+    const discoveryResult = await discoverAndSelectTopicViaActiveAi('cartoon');
+    if (!discoveryResult || !discoveryResult.chosenTopic) {
+      console.error('\n❌ [Archie Workflow Fatal] Active AI topic discovery failed.');
+      console.error(' • User Directive: Synthetic fallback scripts are strictly disabled. Everything must be newly generated.');
+      throw new Error('[Archie Workflow Fatal] AI topic discovery failed. Synthetic fallbacks are disabled.');
     }
+    chosenTopic = discoveryResult.chosenTopic;
   }
 
-  if (!fact) {
-    fact = selectUniqueTechFact();
+  console.log(`[Tech Topic Selected]: "${chosenTopic.title}"`);
+  console.log(`[Category]: "${chosenTopic.category || chosenTopic.sphereName || 'Science'}"`);
+
+  // 2. Generate Fresh AI Script: Spoken Hook (Intro), Punchy Core Explanation, and Loop Outro
+  const script = await generateArchieAiScript(chosenTopic);
+  console.log(`[AI Intro Hook]: "${script.spokenHook}"`);
+  console.log(`[AI Core Explanation]: "${script.coreExplanation}"`);
+  console.log(`[AI Outro Loop]: "${script.spokenOutro}"`);
+  console.log(`[AI Board Headline]: "${script.boardHeadline}"`);
+  console.log(`[AI Wikipedia Subject]: "${script.wikiSearchTerm}"\n`);
+
+  // 3. Search Wikipedia / Wikimedia Commons for Physical Specimen Photography & Build Panning Motion Video
+  let motionClipPath = null;
+  const wikiResult = await fetchWikipediaPhysicalImage(script.wikiSearchTerm || chosenTopic.title, chosenTopic.title);
+  if (wikiResult && wikiResult.imagePath) {
+    const motionModes = ['pan_left_right', 'pan_right_left', 'pan_diagonal_zoom', 'pan_oscillate'];
+    const selectedMode = motionModes[Math.floor(Math.random() * motionModes.length)];
+    const outMotionMp4 = path.join(ARTIFACTS_DIR, `archie_motion_${Date.now()}.mp4`);
+    try {
+      motionClipPath = generateDynamicMotionVideoFromImage(wikiResult.imagePath, outMotionMp4, TARGET_DURATION, selectedMode);
+      console.log(`[Archie Wiki Vision] ✅ Successfully created dynamic panning video from physical photo!`);
+    } catch (motionErr) {
+      console.warn(`[Archie Wiki Vision Notice] Could not render motion clip: ${motionErr.message}`);
+    }
+  } else {
+    console.log(`[Archie Wiki Vision] ℹ️ No physical photograph found for topic. Using dynamic scientific schematic.`);
   }
+  const hasPhysicalVideo = Boolean(motionClipPath && fs.existsSync(motionClipPath));
 
-  console.log(`[Tech Fact Selected]: "${fact.title}"`);
-  console.log(`[Body]: "${fact.fact}"`);
-  console.log(`[Citation Reference]: "${fact.reference}"\n`);
-
-  // 2. Build or verify puppet assets
+  // 4. Build or verify puppet assets
   const puppetDir = path.join(process.cwd(), 'cartoon_character_assets', 'exact_puppet');
   const puppetPointIdle = path.join(puppetDir, 'puppet_standing_point_board.png');
   const puppetPointTalk1 = path.join(puppetDir, 'puppet_standing_point_board_talk.png');
   const puppetPointTalk2 = path.join(puppetDir, 'puppet_standing_point_board_talk_vowel.png');
   const puppetPointBlink = path.join(puppetDir, 'puppet_standing_point_board_blink.png');
 
-  // Hands at stomach facing audience poses (User requirement: hands down together towards stomach, staring at audience)
+  // Hands at stomach facing audience poses
   const puppetStomachIdle = path.join(puppetDir, 'puppet_hands_stomach.png');
   const puppetStomachTalk1 = path.join(puppetDir, 'puppet_hands_stomach_talk1.png');
   const puppetStomachTalk2 = path.join(puppetDir, 'puppet_hands_stomach_talk2.png');
@@ -621,89 +575,129 @@ async function generateArchie5sDailyFact() {
     buildAllModernCharacterAssets(true);
   }
 
-  // 3. Assemble Audio Engine: Neural Speech + Uplifting Science Lo-Fi Groove + Chime (Zero Drone Buzz!)
+  // 5. Assemble Audio Engine: Dynamic Intro + Core Explanation + Dynamic Outro + Uplifting Science Lo-Fi Groove
   const audioWavPath = path.join(ARTIFACTS_DIR, 'archie_master_sound.wav');
-  // Sanitize spoken text so Archie articulates cleanly with zero stumbles or raw citation URLs
-  const cleanFact = (fact.fact || '')
-    .replace(/\s*\([^)]*(?:Journal|Review|DOI|http|vol\.|p\.|arXiv)[^)]*\)/gi, '')
-    .replace(/\[\d+\]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-  const speechNarration = `${fact.hook}! ${cleanFact}`;
+  const cleanIntro = (script.spokenHook || '').trim();
+  const cleanBody = (script.coreExplanation || '').trim();
+  const cleanOutro = (script.spokenOutro || '').trim();
+  const speechNarration = `${cleanIntro} ${cleanBody} ${cleanOutro}`.replace(/\s+/g, ' ').trim();
 
-  console.log(`[Audio Engine] Synthesizing speech & mastering lo-fi science backing track...`);
+  console.log(`[Audio Engine] Synthesizing speech narration: "${speechNarration}"...`);
   const audioResult = await assembleArchieMasterAudio(speechNarration, audioWavPath, TARGET_DURATION);
   const reelDuration = typeof audioResult === 'object' && audioResult.duration ? audioResult.duration : TARGET_DURATION;
   const voiceDuration = typeof audioResult === 'object' && audioResult.voiceDuration ? audioResult.voiceDuration : (reelDuration - 0.5);
 
-  // 4. Build SVGs & Render PNGs
+  // 6. Build SVGs & Render PNGs
   const bgSvg = buildStudioBackgroundSvg();
   const bgSvgPath = path.join(ARTIFACTS_DIR, 'archie_studio_bg.svg');
   const bgPngPath = path.join(ARTIFACTS_DIR, 'archie_studio_bg.png');
   fs.writeFileSync(bgSvgPath, bgSvg);
   execSync(`ffmpeg -y -i "${bgSvgPath}" "${bgPngPath}" 2>/dev/null`);
 
-  const boardSvg = buildDigitalPresentationBoardSvg(fact);
+  const boardSvg = buildDigitalPresentationBoardSvg(chosenTopic, script, hasPhysicalVideo);
   const boardSvgPath = path.join(ARTIFACTS_DIR, 'archie_digital_board.svg');
   const boardPngPath = path.join(ARTIFACTS_DIR, 'archie_digital_board.png');
   fs.writeFileSync(boardSvgPath, boardSvg);
   execSync(`ffmpeg -y -i "${boardSvgPath}" "${boardPngPath}" 2>/dev/null`);
 
-  // 5. Composite Final Video via FFmpeg with Dynamic Pose Transitions & Natural Blinking
+  // 7. Composite Final Video via FFmpeg with Dynamic Pose Transitions & Moving Physical Specimen
   const timestamp = Date.now();
   const finalMp4Path = path.join(ARTIFACTS_DIR, `archie_tech_fact_5s_${timestamp}.mp4`);
   const latestMp4Path = path.join(OUTPUT_DIR, 'archie_tech_fact_5s_latest.mp4');
+  const mirroredMp4Path = path.join(RENDERED_VIDEOS_DIR, `archie_tech_fact_${timestamp}.mp4`);
 
-  console.log(`[FFmpeg Compositor] Rendering ${reelDuration}s video with dynamic character gestures (board point -> hands at stomach facing audience)...`);
+  console.log(`[FFmpeg Compositor] Rendering ${reelDuration}s video with character gestures & ${hasPhysicalVideo ? 'moving physical video' : 'schematic'}...`);
 
-  // Inputs:
-  // 0: bgPngPath
-  // 1: boardPngPath
-  // 2: puppetPointIdle
-  // 3: puppetPointTalk1
-  // 4: puppetPointTalk2
-  // 5: puppetStomachIdle
-  // 6: puppetStomachTalk1
-  // 7: puppetStomachTalk2
-  // 8: puppetStomachBlink
-  // 9: audioWavPath
-  const inputs = `
-    -loop 1 -t ${reelDuration} -i "${bgPngPath}"
-    -loop 1 -t ${reelDuration} -i "${boardPngPath}"
-    -loop 1 -t ${reelDuration} -i "${puppetPointIdle}"
-    -loop 1 -t ${reelDuration} -i "${puppetPointTalk1}"
-    -loop 1 -t ${reelDuration} -i "${puppetPointTalk2}"
-    -loop 1 -t ${reelDuration} -i "${puppetStomachIdle}"
-    -loop 1 -t ${reelDuration} -i "${puppetStomachTalk1}"
-    -loop 1 -t ${reelDuration} -i "${puppetStomachTalk2}"
-    -loop 1 -t ${reelDuration} -i "${puppetStomachBlink}"
-    -i "${audioWavPath}"
-  `.replace(/\s+/g, ' ').trim();
-
-  // Character positioning: x=30, y=720, scaled to height 1150
-  // Transition point from Pointing Board to Hands at Stomach facing Audience: 1.4s
   const pSwitch = 1.40;
-  const complexFilter = `
-    [0:v]scale=1080:1920[bg];
-    [1:v]scale=1080:1920[board];
-    [2:v]scale=-1:1150[pt_idle];
-    [3:v]scale=-1:1150[pt_t1];
-    [4:v]scale=-1:1150[pt_t2];
-    [5:v]scale=-1:1150[st_idle];
-    [6:v]scale=-1:1150[st_t1];
-    [7:v]scale=-1:1150[st_t2];
-    [8:v]scale=-1:1150[st_blk];
-    [bg][board]overlay=0:0[s0];
-    [s0][pt_idle]overlay=x=30:y=720:enable='lt(t,${pSwitch})'[s1];
-    [s1][pt_t1]overlay=x=30:y=720:enable='between(t,0.25,${pSwitch})*eq(mod(floor(t/0.14),2),0)'[s2];
-    [s2][pt_t2]overlay=x=30:y=720:enable='between(t,0.25,${pSwitch})*eq(mod(floor(t/0.14),2),1)'[s3];
-    [s3][st_idle]overlay=x=30:y=720:enable='gte(t,${pSwitch})'[s4];
-    [s4][st_t1]overlay=x=30:y=720:enable='between(t,${pSwitch},${voiceDuration.toFixed(2)})*eq(mod(floor((t-${pSwitch})/0.13),2),0)'[s5];
-    [s5][st_t2]overlay=x=30:y=720:enable='between(t,${pSwitch},${voiceDuration.toFixed(2)})*eq(mod(floor((t-${pSwitch})/0.13),2),1)'[s6];
-    [s6][st_blk]overlay=x=30:y=720:enable='gt(t,${pSwitch})*between(mod(t,3.5),3.0,3.15)'[vfinal]
-  `.replace(/\s+/g, ' ').trim();
+  let ffmpegCmd = '';
 
-  const ffmpegCmd = `ffmpeg -y ${inputs} -filter_complex "${complexFilter}" -map "[vfinal]" -map 9:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${reelDuration} "${finalMp4Path}" 2>&1`;
+  if (hasPhysicalVideo) {
+    // Inputs:
+    // 0: bgPngPath
+    // 1: boardPngPath
+    // 2: motionClipPath (590x340 moving physical image video)
+    // 3: puppetPointIdle
+    // 4: puppetPointTalk1
+    // 5: puppetPointTalk2
+    // 6: puppetStomachIdle
+    // 7: puppetStomachTalk1
+    // 8: puppetStomachTalk2
+    // 9: puppetStomachBlink
+    // 10: audioWavPath
+    const inputs = `
+      -loop 1 -t ${reelDuration} -i "${bgPngPath}"
+      -loop 1 -t ${reelDuration} -i "${boardPngPath}"
+      -loop 1 -t ${reelDuration} -i "${motionClipPath}"
+      -loop 1 -t ${reelDuration} -i "${puppetPointIdle}"
+      -loop 1 -t ${reelDuration} -i "${puppetPointTalk1}"
+      -loop 1 -t ${reelDuration} -i "${puppetPointTalk2}"
+      -loop 1 -t ${reelDuration} -i "${puppetStomachIdle}"
+      -loop 1 -t ${reelDuration} -i "${puppetStomachTalk1}"
+      -loop 1 -t ${reelDuration} -i "${puppetStomachTalk2}"
+      -loop 1 -t ${reelDuration} -i "${puppetStomachBlink}"
+      -i "${audioWavPath}"
+    `.replace(/\s+/g, ' ').trim();
+
+    const complexFilter = `
+      [0:v]scale=1080:1920[bg];
+      [1:v]scale=1080:1920[board];
+      [2:v]scale=590:340[motionClip];
+      [3:v]scale=-1:1150[pt_idle];
+      [4:v]scale=-1:1150[pt_t1];
+      [5:v]scale=-1:1150[pt_t2];
+      [6:v]scale=-1:1150[st_idle];
+      [7:v]scale=-1:1150[st_t1];
+      [8:v]scale=-1:1150[st_t2];
+      [9:v]scale=-1:1150[st_blk];
+      [bg][board]overlay=0:0[s_board];
+      [s_board][motionClip]overlay=410:690[s0];
+      [s0][pt_idle]overlay=x=30:y=720:enable='lt(t,${pSwitch})'[s1];
+      [s1][pt_t1]overlay=x=30:y=720:enable='between(t,0.25,${pSwitch})*eq(mod(floor(t/0.14),2),0)'[s2];
+      [s2][pt_t2]overlay=x=30:y=720:enable='between(t,0.25,${pSwitch})*eq(mod(floor(t/0.14),2),1)'[s3];
+      [s3][st_idle]overlay=x=30:y=720:enable='gte(t,${pSwitch})'[s4];
+      [s4][st_t1]overlay=x=30:y=720:enable='between(t,${pSwitch},${voiceDuration.toFixed(2)})*eq(mod(floor((t-${pSwitch})/0.13),2),0)'[s5];
+      [s5][st_t2]overlay=x=30:y=720:enable='between(t,${pSwitch},${voiceDuration.toFixed(2)})*eq(mod(floor((t-${pSwitch})/0.13),2),1)'[s6];
+      [s6][st_blk]overlay=x=30:y=720:enable='gt(t,${pSwitch})*between(mod(t,3.5),3.0,3.15)'[vfinal]
+    `.replace(/\s+/g, ' ').trim();
+
+    ffmpegCmd = `ffmpeg -y ${inputs} -filter_complex "${complexFilter}" -map "[vfinal]" -map 10:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${reelDuration} "${finalMp4Path}" 2>&1`;
+  } else {
+    // Inputs without physical motion clip
+    const inputs = `
+      -loop 1 -t ${reelDuration} -i "${bgPngPath}"
+      -loop 1 -t ${reelDuration} -i "${boardPngPath}"
+      -loop 1 -t ${reelDuration} -i "${puppetPointIdle}"
+      -loop 1 -t ${reelDuration} -i "${puppetPointTalk1}"
+      -loop 1 -t ${reelDuration} -i "${puppetPointTalk2}"
+      -loop 1 -t ${reelDuration} -i "${puppetStomachIdle}"
+      -loop 1 -t ${reelDuration} -i "${puppetStomachTalk1}"
+      -loop 1 -t ${reelDuration} -i "${puppetStomachTalk2}"
+      -loop 1 -t ${reelDuration} -i "${puppetStomachBlink}"
+      -i "${audioWavPath}"
+    `.replace(/\s+/g, ' ').trim();
+
+    const complexFilter = `
+      [0:v]scale=1080:1920[bg];
+      [1:v]scale=1080:1920[board];
+      [2:v]scale=-1:1150[pt_idle];
+      [3:v]scale=-1:1150[pt_t1];
+      [4:v]scale=-1:1150[pt_t2];
+      [5:v]scale=-1:1150[st_idle];
+      [6:v]scale=-1:1150[st_t1];
+      [7:v]scale=-1:1150[st_t2];
+      [8:v]scale=-1:1150[st_blk];
+      [bg][board]overlay=0:0[s0];
+      [s0][pt_idle]overlay=x=30:y=720:enable='lt(t,${pSwitch})'[s1];
+      [s1][pt_t1]overlay=x=30:y=720:enable='between(t,0.25,${pSwitch})*eq(mod(floor(t/0.14),2),0)'[s2];
+      [s2][pt_t2]overlay=x=30:y=720:enable='between(t,0.25,${pSwitch})*eq(mod(floor(t/0.14),2),1)'[s3];
+      [s3][st_idle]overlay=x=30:y=720:enable='gte(t,${pSwitch})'[s4];
+      [s4][st_t1]overlay=x=30:y=720:enable='between(t,${pSwitch},${voiceDuration.toFixed(2)})*eq(mod(floor((t-${pSwitch})/0.13),2),0)'[s5];
+      [s5][st_t2]overlay=x=30:y=720:enable='between(t,${pSwitch},${voiceDuration.toFixed(2)})*eq(mod(floor((t-${pSwitch})/0.13),2),1)'[s6];
+      [s6][st_blk]overlay=x=30:y=720:enable='gt(t,${pSwitch})*between(mod(t,3.5),3.0,3.15)'[vfinal]
+    `.replace(/\s+/g, ' ').trim();
+
+    ffmpegCmd = `ffmpeg -y ${inputs} -filter_complex "${complexFilter}" -map "[vfinal]" -map 9:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${reelDuration} "${finalMp4Path}" 2>&1`;
+  }
 
   execSync(ffmpegCmd);
 
@@ -712,41 +706,42 @@ async function generateArchie5sDailyFact() {
   }
 
   fs.copyFileSync(finalMp4Path, latestMp4Path);
+  fs.copyFileSync(finalMp4Path, mirroredMp4Path);
   console.log(`[FFmpeg Compositor] ✅ Generated 5s Archie Video: ${finalMp4Path} (${(fs.statSync(finalMp4Path).size / 1024).toFixed(1)} KB)`);
+  console.log(`[Artifact Mirror] 📁 Mirrored to rendered_videos: ${mirroredMp4Path}`);
 
-  // 6. Save latest fact metadata for Buffer Omnichannel Dispatch
+  // 8. Save latest fact metadata for Buffer Omnichannel Dispatch & Database Deduplication
   const factMetadata = {
-    id: fact.id,
-    title: fact.title,
-    hook: fact.hook,
-    fact: fact.fact,
-    reference: fact.reference,
-    category: fact.category,
-    tags: fact.tags,
+    id: 'archie_fact_' + timestamp,
+    title: chosenTopic.title,
+    spokenHook: script.spokenHook,
+    coreExplanation: script.coreExplanation,
+    spokenOutro: script.spokenOutro,
+    boardHeadline: script.boardHeadline,
+    reference: script.citationReference || chosenTopic.reference,
+    category: chosenTopic.category || 'Everyday Science',
+    wikiSearchTerm: script.wikiSearchTerm,
+    hasPhysicalVideo: hasPhysicalVideo,
     videoPath: latestMp4Path,
     generatedAt: new Date().toISOString()
   };
   fs.writeFileSync(LATEST_FACT_JSON, JSON.stringify(factMetadata, null, 2), 'utf8');
   console.log(`[Metadata Engine] 📄 Saved rich metadata to: ${LATEST_FACT_JSON}`);
 
-  // 7. Format YouTube Title with Dynamic Anti-Spam Hooks
-  const cleanTitle = fact.title.replace(/^(Why|How|What)\s+/i, '').trim();
-  const archieTitleHooks = [
-    `Why Nobody Realized This About ${cleanTitle} #Shorts`,
-    `The Crazy Science Behind ${cleanTitle} #Shorts`,
-    `Did You Know This About ${cleanTitle}? #Shorts`,
-    `The Hidden Secret of ${cleanTitle} #Shorts`,
-    `Science Explained: ${fact.title} #Shorts`,
-    `Mind-Blowing Truth About ${cleanTitle} #Shorts`
-  ];
-  const hookIndex = Math.abs(fact.title.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) + Date.now()) % archieTitleHooks.length;
-  const viralTitle = archieTitleHooks[hookIndex];
+  // Persist chosen topic to database for global deduplication across runs
+  try {
+    await saveChosenTopicToDatabase('cartoon', chosenTopic);
+  } catch (dbErr) {
+    console.warn(`[Archie DB Notice] Deduplication sync notice: ${dbErr.message}`);
+  }
+
+  // 9. Format YouTube Title with Dynamic Anti-Spam Hooks
+  const viralTitle = `${script.spokenHook.replace(/[?!.]+$/, '')} #Shorts`;
   const initialFollowCta = formatChannelFollowCta('cartoon_factory', process.env.YOUTUBE_HANDLE_CH3 || process.env.YOUTUBE_HANDLE_TECH || '');
   
-  // Algorithm-optimized YouTube description with high-converting keyword density and clean scannable layout
-  const viralDescription = `${fact.hook}\n\n${fact.fact}\n\n🔬 Verified Citation: ${fact.reference}\n\n${initialFollowCta}\n\n#ArchieLab #ScienceFacts #EverydayScience #DidYouKnow #MindBlown #ScienceExplained #STEM #Shorts`;
+  const viralDescription = `${script.spokenHook}\n\n${script.coreExplanation}\n\n${script.spokenOutro}\n\n🔬 Verified Citation: ${script.citationReference || chosenTopic.reference}\n\n${initialFollowCta}\n\n#ArchieLab #ScienceFacts #EverydayScience #DidYouKnow #MindBlown #ScienceExplained #STEM #Shorts`;
 
-  // 8. Publish to YouTube (Switched ON per user specification!)
+  // 10. Publish to YouTube
   const isDryRun = process.env.DRY_RUN === 'true';
   const isYouTubePaused = process.env.PAUSE_YOUTUBE === 'true' || process.env.SKIP_YOUTUBE === 'true';
   const ch3RefreshToken = process.env.YOUTUBE_REFRESH_TOKEN_CH3 || process.env.YOUTUBE_REFRESH_TOKEN_TECH || process.env.YOUTUBE_REFRESH_TOKEN_CARTOON || (process.env.ALLOW_SHARED_YOUTUBE_TOKEN === 'true' ? process.env.YOUTUBE_REFRESH_TOKEN : '');
@@ -761,10 +756,8 @@ async function generateArchie5sDailyFact() {
         title: viralTitle,
         description: viralDescription,
         tags: Array.from(new Set([
-          ...fact.tags,
           '#ArchieLab',
           '#ScienceFacts',
-          '#DidYouKnow',
           '#EverydayScience',
           '#ScienceExplained',
           '#MindBlown',
@@ -799,6 +792,6 @@ if (require.main === module) {
 
 module.exports = {
   generateArchie5sDailyFact,
-  selectUniqueTechFact,
-  VERIFIED_TECH_FACTS
+  fetchWikipediaPhysicalImage,
+  generateDynamicMotionVideoFromImage
 };

@@ -15,12 +15,12 @@ const SECONDARY_TIKTOK_ID = (process.env.BUFFER_TIKTOK_CHANNEL_ID_2 || process.e
 const IS_DRY_RUN = process.env.DRY_RUN === 'true';
 
 async function publishToSecondaryTikTok() {
-  console.log('=== [Secondary TikTok Dispatcher] Initiating Broadcast ===');
-
-  if (!BUFFER_API_KEY) {
-    console.error('❌ BUFFER_API_KEY is not configured in environment or GitHub Secrets.');
-    process.exit(1);
-  }
+  console.log('=== [Secondary TikTok Dispatcher] ===');
+  console.log('🛑 Secondary channel post workflow is STOPPED per user instruction.');
+  console.log(' • Directive: "stop secondary channel post workflow"');
+  console.log(' • All secondary channel posting actions have been disabled.');
+  return { success: false, reason: 'STOPPED_PER_USER_DIRECTIVE' };
+}
 
   // 1. Locate latest Archie MP4 video
   const searchDirs = [

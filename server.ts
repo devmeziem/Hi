@@ -1400,9 +1400,11 @@ Respond STRICTLY with valid raw JSON without markdown:
   // Rendered Videos Static & Streaming File Serving with HTTP 206 Partial Content
   if (urlPath === '/api/stream-video' || urlPath.startsWith('/rendered_videos/') || urlPath.includes('/rendered_videos/') || urlPath.includes('/test_artifacts/')) {
     let rawPath = urlPath;
+    let isDownload = false;
     if (urlPath === '/api/stream-video') {
       const urlObj = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
       rawPath = urlObj.searchParams.get('file') || urlObj.searchParams.get('path') || '';
+      isDownload = urlObj.searchParams.get('download') === 'true' || urlObj.searchParams.get('download') === '1';
     }
 
     // Sanitize and extract file name
@@ -1440,6 +1442,11 @@ Respond STRICTLY with valid raw JSON without markdown:
       const fileSize = stat.size;
       const range = req.headers.range;
 
+      const downloadHeaders: Record<string, string | number> = {};
+      if (isDownload) {
+        downloadHeaders['Content-Disposition'] = `attachment; filename="${path.basename(foundVideoPath)}"`;
+      }
+
       if (range) {
         // Range header provided (e.g. "bytes=0-1024")
         const parts = range.replace(/bytes=/, "").split("-");
@@ -1454,7 +1461,8 @@ Respond STRICTLY with valid raw JSON without markdown:
           'Content-Length': chunkSize,
           'Content-Type': 'video/mp4',
           'Access-Control-Allow-Origin': '*',
-          'Cache-Control': 'public, max-age=3600'
+          'Cache-Control': 'public, max-age=3600',
+          ...downloadHeaders
         });
         fileStream.pipe(res);
         return;
@@ -1465,7 +1473,8 @@ Respond STRICTLY with valid raw JSON without markdown:
           'Content-Type': 'video/mp4',
           'Accept-Ranges': 'bytes',
           'Access-Control-Allow-Origin': '*',
-          'Cache-Control': 'public, max-age=3600'
+          'Cache-Control': 'public, max-age=3600',
+          ...downloadHeaders
         });
         fs.createReadStream(foundVideoPath).pipe(res);
         return;

@@ -316,6 +316,20 @@ export const MovieBrandTab: React.FC = () => {
                 )}
               </div>
 
+              {/* Direct Download Action */}
+              {selectedEpisode && (
+                <div className="flex items-center justify-center gap-3">
+                  <a
+                    href={`${selectedEpisode.videoPath.includes('?') ? selectedEpisode.videoPath + '&download=true' : selectedEpisode.videoPath + '?download=true'}`}
+                    download={`movie_${selectedEpisode.episodeTitle.toLowerCase().replace(/[^a-z0-9]+/g, '_')}.mp4`}
+                    className="w-full max-w-[340px] py-2.5 px-4 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-rose-600/25 flex items-center justify-center gap-2 cursor-pointer border border-rose-500/30"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download Episode Video (MP4)</span>
+                  </a>
+                </div>
+              )}
+
               {/* Episode Script & Narration */}
               {selectedEpisode && (
                 <div className="p-4 bg-slate-950/80 border border-slate-800/80 rounded-xl space-y-2">
