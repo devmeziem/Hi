@@ -159,18 +159,18 @@ const EPISODE_ACT_ASSET_MAP = {
     'apex_robot_automaton_1789977173258.jpg'      // Act 12: Apex-7 Automaton with Crimson Optic Looming
   ],
   "1_2": [
-    'dax_fresh_footprints_1789663048583.jpg',
-    'maya_vance_tech_sister_1789977160113.jpg',
-    'terminal_vault7_warning_1789977188053.jpg',
-    'dax_operative_reveal_1789663150046.jpg',
-    'dax_reactor_chamber_1789663136077.jpg',
-    'dax_unsealed_vault_1789663029664.jpg',
-    'claw_trenches_floor_1789977203707.jpg',
-    'dax_beacon_signal_1789663106713.jpg',
-    'dax_flooded_descent_1789663014118.jpg',
-    'dax_vault_door_slam_1789663062803.jpg',
-    'apex_robot_automaton_1789977173258.jpg',
-    'dax_gantry_ambush_1789663121552.jpg'
+    'dax_gantry_ambush_1789663121552.jpg',        // Act 1: [RECAP: PREVIOUSLY ON PROTOCOL ZERO] Sub-Level 14 flooded ambush
+    'ep2_act2_breached_grate_1789986652651.jpg',   // Act 2: Plasma Torch Cutting Through Iron Drainage Grate
+    'ep2_act3_cold_current_1789986673454.jpg',    // Act 3: Swimming Through Flooded Concrete Aqueduct
+    'ep2_act4_reservoir_1789986692823.jpg',       // Act 4: Surfacing Into Vast Sulfurous Subterranean Cavern
+    'ep2_act5_zodiac_raft_1789986708616.jpg',     // Act 5: Tactical Black Zodiac Raft & Military Telemetry
+    'ep2_act6_sat_uplink_1789986724044.jpg',      // Act 6: Phased-Array Satellite Terminal & Classified Data
+    'ep2_act7_hostile_diver_1789986736801.jpg',   // Act 7: Hostile Rebreather Diver Lunging with Titanium Knife
+    'ep2_act8_underwater_cqc_1789986755672.jpg',   // Act 8: Violent Underwater Melee & Severed Oxygen Hose
+    'ep2_act9_phoenix_keycard_1789986772839.jpg', // Act 9: Close-Up Armored Glove with Crimson Phoenix Keycard
+    'ep2_act10_voltage_spike_1789986788079.jpg',  // Act 10: High-Voltage Lightning Arcs Illuminating Blast Door
+    'ep2_act11_reactor_access_1789986810426.jpg', // Act 11: Swiping Phoenix Keycard & Hydraulic Bolts Releasing
+    'ep2_act12_the_revelation_1789986829914.jpg'  // Act 12: Reactor Hall Opening in Cobalt Cherenkov Glow & Commander Vance
   ],
   "1_3": [
     'dax_reactor_chamber_1789663136077.jpg',
@@ -307,19 +307,15 @@ async function resolveActBackdropImage(act, epMeta, actIndex) {
     }
   }
 
-  // 2. Keyword fallback in asset directory
+  // 2. Specific Episode & Act Search in asset directory
   if (fs.existsSync(assetDir)) {
     const files = fs.readdirSync(assetDir);
-    const keywords = [
-      act.title.toLowerCase().split(' ')[0],
-      actIndex === 0 ? 'descent' : actIndex === 1 ? 'vault' : actIndex === 2 ? 'footprints' : 'slam'
-    ];
-    for (const kw of keywords) {
-      const match = files.find(f => f.toLowerCase().includes(kw) && f.endsWith('.jpg'));
-      if (match) {
-        const found = path.join(assetDir, match);
-        try { fs.copyFileSync(found, imgPath); return imgPath; } catch {}
-      }
+    // Try exact episode and act match (e.g., ep2_act3)
+    const epActPrefix = `ep${epMeta.episode}_act${actIndex + 1}`;
+    const epMatch = files.find(f => f.toLowerCase().includes(epActPrefix) && (f.endsWith('.jpg') || f.endsWith('.png')));
+    if (epMatch) {
+      const found = path.join(assetDir, epMatch);
+      try { fs.copyFileSync(found, imgPath); return imgPath; } catch {}
     }
   }
 
@@ -1170,7 +1166,7 @@ function renderActSegment(actImage, actAudioWav, actAssPath, actDuration, camera
     "format=yuv420p"
   ].join(',');
 
-  const renderCmd = `ffmpeg -y -i "${actImage}" -i "${actAudioWav}" -vf "${visualFilters}" -c:v libx264 -preset veryfast -crf 22 -c:a aac -b:a 160k -t ${actDuration} "${outSegmentMp4}" 2>/dev/null`;
+  const renderCmd = `ffmpeg -y -loop 1 -t ${actDuration} -i "${actImage}" -i "${actAudioWav}" -vf "${visualFilters}" -c:v libx264 -preset veryfast -crf 22 -r 30 -c:a aac -b:a 160k -shortest "${outSegmentMp4}" 2>/dev/null`;
 
   try {
     execSync(renderCmd);
@@ -1185,7 +1181,7 @@ function renderActSegment(actImage, actAudioWav, actAssPath, actDuration, camera
       "drawbox=x=0:y=ih-110:w=iw:h=110:color=black@1:t=fill",
       "format=yuv420p"
     ].join(',');
-    const fallbackCmd = `ffmpeg -y -i "${actImage}" -i "${actAudioWav}" -vf "${fallbackFilters}" -c:v libx264 -preset veryfast -crf 22 -c:a aac -b:a 160k -t ${actDuration} "${outSegmentMp4}" 2>/dev/null`;
+    const fallbackCmd = `ffmpeg -y -loop 1 -t ${actDuration} -i "${actImage}" -i "${actAudioWav}" -vf "${fallbackFilters}" -c:v libx264 -preset veryfast -crf 22 -r 30 -c:a aac -b:a 160k -shortest "${outSegmentMp4}" 2>/dev/null`;
     execSync(fallbackCmd);
   }
   return outSegmentMp4;

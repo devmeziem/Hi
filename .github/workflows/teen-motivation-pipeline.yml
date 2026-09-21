@@ -72,20 +72,22 @@ jobs:
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH5 || secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH5 || secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH5 || secrets.YOUTUBE_REFRESH_TOKEN_CH1 }}
-          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME || 'voxawell' }}
-          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET || 'phwka7ak' }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
+          BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 || secrets.BUFFER_API_KEY }}
+          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID || secrets.BUFFER_TIKTOK_TEEN_CHANNEL || secrets.BUFFER_TIKTOK_CHANNEL_ID_5 || secrets.BUFFER_TIKTOK_CHANNEL_ID_TEEN || secrets.BUFFER_TIKTOK_CHANNEL_ID_2 || secrets.BUFFER_TIKTOK_MOTIVATION_CHANNEL_ID || secrets.BUFFER_TIKTOK_YOUTH_CHANNEL_ID || secrets.BUFFER_CHANNEL_ID_TEEN || secrets.BUFFER_CHANNEL_ID_5 || secrets.TIKTOK_TEEN_CHANNEL_ID }}
         run: |
           echo "=== 🔥 Generating Teen Motivation Reel (Topic: $TOPIC) ==="
           node scripts/generate_teen_motivation_reel.cjs
           echo "=== Motivation Reel Assembled Successfully ==="
 
       - name: Dispatch to Teen Motivation TikTok Channel (Buffer API 2)
-        if: success() && (github.event.inputs.publish_tiktok != 'false')
+        if: success() && (github.event_name == 'schedule' || github.event.inputs.publish_tiktok != 'false')
         env:
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 || secrets.BUFFER_API_KEY }}
-          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID || secrets.BUFFER_TIKTOK_TEEN_CHANNEL || secrets.BUFFER_TIKTOK_CHANNEL_ID_TEEN || secrets.BUFFER_TIKTOK_CHANNEL_ID_2 || secrets.BUFFER_TIKTOK_YOUTH_CHANNEL_ID }}
-          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME || 'voxawell' }}
-          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET || 'phwka7ak' }}
+          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID || secrets.BUFFER_TIKTOK_TEEN_CHANNEL || secrets.BUFFER_TIKTOK_CHANNEL_ID_5 || secrets.BUFFER_TIKTOK_CHANNEL_ID_TEEN || secrets.BUFFER_TIKTOK_CHANNEL_ID_2 || secrets.BUFFER_TIKTOK_MOTIVATION_CHANNEL_ID || secrets.BUFFER_TIKTOK_YOUTH_CHANNEL_ID || secrets.BUFFER_CHANNEL_ID_TEEN || secrets.BUFFER_CHANNEL_ID_5 || secrets.TIKTOK_TEEN_CHANNEL_ID }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

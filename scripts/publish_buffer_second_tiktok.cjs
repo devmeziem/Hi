@@ -56,8 +56,16 @@ const BUFFER_TIKTOK_TEEN_CHANNEL_ID = String(
   process.env.BUFFER_TIKTOK_TEEN_CHANNEL ||
   process.env.BUFFER_TIKTOK_MOTIVATION_CHANNEL_ID ||
   process.env.BUFFER_TIKTOK_CHANNEL_ID_TEEN ||
+  process.env.BUFFER_TIKTOK_CHANNEL_ID_5 ||
   process.env.BUFFER_TIKTOK_CHANNEL_ID_2 ||
   process.env.BUFFER_TIKTOK_YOUTH_CHANNEL_ID ||
+  process.env.BUFFER_TIKTOK_YOUTH_CHANNEL ||
+  process.env.BUFFER_TIKTOK_CHANNEL_5 ||
+  process.env.BUFFER_TIKTOK_CHANNEL_2 ||
+  process.env.BUFFER_CHANNEL_ID_TEEN ||
+  process.env.BUFFER_CHANNEL_ID_5 ||
+  process.env.TIKTOK_TEEN_CHANNEL_ID ||
+  process.env.TIKTOK_CHANNEL_ID_5 ||
   ''
 ).trim();
 
@@ -84,7 +92,7 @@ function cleanChannelId(id) {
 
 function isValidChannelId(id) {
   const clean = cleanChannelId(id);
-  return clean.length >= 10 && !clean.includes(' ');
+  return clean.length >= 3 && !clean.includes(' ');
 }
 
 /**
@@ -555,12 +563,27 @@ async function dispatchTikTok(channelType = 'movie_brand') {
     // Select channel ID
     const cleanTeenId = cleanChannelId(BUFFER_TIKTOK_TEEN_CHANNEL_ID);
     if (isValidChannelId(cleanTeenId)) {
-      targetChannel = discoveredTikToks.find(c => cleanChannelId(c.id).toLowerCase() === cleanTeenId.toLowerCase()) || { id: cleanTeenId, name: 'Teen Motivation TikTok' };
-    } else if (discoveredTikToks.length > 1) {
-      // Second TikTok channel in account
-      targetChannel = discoveredTikToks[1];
-    } else if (discoveredTikToks.length === 1) {
-      targetChannel = discoveredTikToks[0];
+      const matched = discoveredTikToks.find(c => cleanChannelId(c.id).toLowerCase() === cleanTeenId.toLowerCase() || (c.serviceId && String(c.serviceId) === cleanTeenId));
+      targetChannel = matched || { id: cleanTeenId, name: 'Teen Motivation TikTok' };
+      console.log(`[Buffer TikTok Dispatch] 🎯 Using explicit user-configured Teen Channel ID: ${cleanTeenId}`);
+    } else {
+      // Name keyword matching across discovered TikTok channels
+      const keywords = ['teen', 'motivation', 'discipline', 'mindset', 'youth', 'apex', 'channel 5', 'ch5', 'ch 5', 'lock in'];
+      const byName = discoveredTikToks.find(c => {
+        const n = (c.name || '').toLowerCase();
+        return keywords.some(kw => n.includes(kw));
+      });
+      if (byName) {
+        targetChannel = byName;
+        console.log(`[Buffer TikTok Dispatch] 🎯 Matched TikTok channel by keyword: "${byName.name}" (${byName.id})`);
+      } else if (discoveredTikToks.length > 1) {
+        // Second TikTok channel in account (Channel 1 is Movie, Channel 2 is Teen Motivation)
+        targetChannel = discoveredTikToks[1];
+        console.log(`[Buffer TikTok Dispatch] 🎯 Selected second TikTok channel in Buffer: "${targetChannel.name}" (${targetChannel.id})`);
+      } else if (discoveredTikToks.length === 1) {
+        targetChannel = discoveredTikToks[0];
+        console.log(`[Buffer TikTok Dispatch] 🎯 Selected primary TikTok channel in Buffer: "${targetChannel.name}" (${targetChannel.id})`);
+      }
     }
 
     // Locate latest Teen Motivation video

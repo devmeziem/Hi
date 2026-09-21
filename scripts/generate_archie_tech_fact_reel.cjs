@@ -332,7 +332,7 @@ function buildStudioBackgroundSvg(width = 1080, height = 1920) {
 /**
  * Generate Digital Interactive Presentation Board SVG (Varied Colors, Crisp Visuals, Low Text Density)
  */
-function buildDigitalPresentationBoardSvg(factObj, width = 1080, height = 1920) {
+function buildDigitalPresentationBoardSvg(factObj, scriptObj = null, hasPhysicalVideo = false, width = 1080, height = 1920) {
   const boardX = 370;
   const boardY = 120;
   const boardW = 670;
