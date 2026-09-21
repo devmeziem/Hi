@@ -61,8 +61,8 @@ const BUFFER_TIKTOK_TEEN_CHANNEL_ID = String(
   ''
 ).trim();
 
-const CLOUDINARY_CLOUD_NAME = String(process.env.CLOUDINARY_CLOUD_NAME || 'voxawell').trim();
-const CLOUDINARY_UPLOAD_PRESET = String(process.env.CLOUDINARY_UPLOAD_PRESET || 'phwka7ak').trim();
+const CLOUDINARY_CLOUD_NAME = String(process.env.CLOUDINARY_CLOUD_NAME || '').trim();
+const CLOUDINARY_UPLOAD_PRESET = String(process.env.CLOUDINARY_UPLOAD_PRESET || '').trim();
 
 const IS_DRY_RUN = process.argv.includes('--dry-run') || process.env.DRY_RUN === 'true';
 const SHARE_NOW = process.env.BUFFER_SHARE_NOW !== 'false';
@@ -430,9 +430,7 @@ async function postToTikTok(channelId, videoUrl, caption) {
     ],
     metadata: {
       tiktok: {
-        isAiGenerated: true,
-        duetDisabled: false,
-        stitchDisabled: false
+        isAiGenerated: true
       }
     }
   };
@@ -447,18 +445,21 @@ async function postToTikTok(channelId, videoUrl, caption) {
     }
 
     if (result?.message) {
-      console.warn(`  ⚠️ Buffer GraphQL notice: ${result.message}. Trying classic REST...`);
+      console.warn(`  ⚠️ Buffer GraphQL notice: ${result.message}`);
     }
   } catch (gqlErr) {
-    console.warn(`  ⚠️ Buffer GraphQL failed (${gqlErr.message}). Retrying without custom metadata...`);
+    console.warn(`  ⚠️ Buffer GraphQL initial attempt failed (${gqlErr.message}). Retrying without custom metadata...`);
     try {
-      // Fallback GraphQL retry without extended metadata if schema is restrictive
-      const basicInput = { ...input, metadata: { tiktok: {} } };
-      const dataRetry = await bufferRequest(mutation, { input: basicInput });
+      // Fallback GraphQL retry without metadata if schema rejects tiktok object
+      const { metadata, ...noMetadataInput } = input;
+      const dataRetry = await bufferRequest(mutation, { input: noMetadataInput });
       if (dataRetry?.createPost?.post?.id) {
+        console.log(`  ${colors.green}✔ Successfully scheduled/posted to TikTok (standard mode)! Post ID: ${dataRetry.createPost.post.id}${colors.reset}`);
         return { success: true, id: dataRetry.createPost.post.id, status: dataRetry.createPost.post.status };
       }
-    } catch {}
+    } catch (retryErr) {
+      console.warn(`  ⚠️ Buffer GraphQL retry notice: ${retryErr.message}`);
+    }
   }
 
   // REST API Fallback
@@ -548,7 +549,7 @@ async function dispatchTikTok(channelType = 'movie_brand') {
       } catch {}
     }
 
-    caption = `🎬 ${meta.seriesTitle || 'Protocol Zero'} // Episode: ${meta.episodeTitle || 'The Breach'}\n\n${(meta.narration || '').slice(0, 180)}...\n\nFollow for daily cinematic episodes! 🍿🔥\n\n#AIGenerated #MovieTrailer #SciFi #CinemaVanguard #Cinematic #ShortFilm #ProtocolZero #TikTokMovies #Drama #AI`;
+    caption = `🎬 ${meta.seriesTitle || 'Protocol Zero'} // Episode: ${meta.episodeTitle || 'The Breach'}\n\n${(meta.narration || '').slice(0, 180)}...\n\nFollow for daily cinematic episodes! 🍿🔥\n\n#MovieTrailer #SciFi #CinemaVanguard #Cinematic #ShortFilm #ProtocolZero #TikTokMovies #Drama #Cyberpunk #Action`;
 
   } else if (channelType === 'teen_motivation') {
     // Select channel ID

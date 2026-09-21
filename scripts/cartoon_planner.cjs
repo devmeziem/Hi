@@ -487,12 +487,11 @@ async function callCloudflareAI(topic) {
   }
 
   const models = [
-    '@cf/meta/llama-3.1-8b-instruct',
-    '@cf/meta/llama-3-8b-instruct',
-    '@cf/mistral/mistral-7b-instruct-v0.1',
-    '@cf/qwen/qwen1.5-14b-chat',
     '@cf/meta/llama-3.2-3b-instruct',
-    '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
+    '@cf/meta/llama-3.2-1b-instruct',
+    '@cf/meta/llama-3-8b-instruct',
+    '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+    '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b'
   ];
 
   for (const model of models) {

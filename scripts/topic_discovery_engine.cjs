@@ -732,6 +732,7 @@ function cleanJsonText(rawText) {
 // Generic multi-provider LLM caller for JSON tasks
 async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, options = {}) {
   const preferLocalAi = options.preferLocalAi === true || options.nicheKey === 'fin';
+  const validationFn = typeof options.validationFn === 'function' ? options.validationFn : null;
 
   // Helper for Local Open-Source Ollama (localhost:11434 / candidate hosts)
   const tryLocalOllama = async () => {
@@ -1049,11 +1050,11 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
   // 6. Cloudflare Workers AI (Dedicated Fallback Tier)
   if (CLOUDFLARE_ACCOUNT_ID && CLOUDFLARE_API_TOKEN) {
     const models = [
-      '@cf/meta/llama-3.1-8b-instruct',
+      '@cf/meta/llama-3.2-3b-instruct',
+      '@cf/meta/llama-3.2-1b-instruct',
       '@cf/meta/llama-3-8b-instruct',
-      '@cf/mistral/mistral-7b-instruct-v0.1',
-      '@cf/qwen/qwen1.5-14b-chat',
-      '@cf/meta/llama-3.2-3b-instruct'
+      '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+      '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b'
     ];
     for (const model of models) {
       try {
@@ -1098,7 +1099,11 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
   // 7. Universal Free AI Tier (Pollinations.ai - Zero API Key Required)
   // Ensures every workflow always has active, working, free AI generation
   const freeAiModels = ['openai', 'mistral', 'qwen'];
-  for (const model of freeAiModels) {
+  for (let mIdx = 0; mIdx < freeAiModels.length; mIdx++) {
+    const model = freeAiModels[mIdx];
+    if (mIdx > 0) {
+      await new Promise(r => setTimeout(r, 1200)); // Stagger calls to avoid queue full
+    }
     try {
       const postData = JSON.stringify({
         messages: [

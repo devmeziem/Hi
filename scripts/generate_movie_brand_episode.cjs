@@ -490,12 +490,12 @@ const EPISODE_SERIES_CATALOG = [
     acts: [
       {
         act: 1,
-        title: "SEALED IN THE DEEP",
+        title: "RECAP // SUB-LEVEL 14",
         cameraMotion: "zoom_in",
-        narration: "Trapped beneath eight thousand tons of reinforced granite. The flood water was rising six inches every minute. My rebreather gauge showed eighteen minutes of compressed oxygen before total suffocation.",
+        narration: "Previously on Protocol Zero... The contract to breach the Ghost Vault was a setup. Sub-Level 14 flooded, sealing me in the deep. Now, in Episode 2: The Signal in the Dark... the rising flood leaves eighteen minutes of oxygen. And the real hunt begins.",
         actionScene: "Max Vance submerged up to his chest in dark floodwater, telemetry visor flashing red decompression warnings as water rushes through overhead grates",
         visualDesc: "Subterranean chamber filling with black water, floating industrial debris, halogen torch beam reflecting underwater.",
-        subtitle: "DRAINAGE FAILURE // 18 MIN OXYGEN"
+        subtitle: "EPISODE 2 RECAP // 18 MIN OXYGEN"
       },
       {
         act: 2,
@@ -782,8 +782,12 @@ function generateKaraokeAssForAct(words, outAssPath, epMeta, act, actIndex, fall
     lines.push(`Dialogue: 0,${formatAssTimestamp(startMs)},${formatAssTimestamp(endMs)},MovieKaraoke,,0,0,0,,${textK.trim()}`);
   }
 
-  // Add series title hook card during first 2.5s of Act 1 - clearly visible branding
-  const titleLine = (actIndex === 0 && epMeta) ? `Dialogue: 0,0:00:00.00,0:00:02.50,TitleCard,,0,0,0,,{\\fad(100,300)}{\\b1}${epMeta.seriesTitle.toUpperCase()}\\N{\\fs32\\c&H0000F5FF&}EPISODE ${epMeta.episode}: ${epMeta.episodeTitle.toUpperCase()}` : '';
+  // Add series title hook card during first 3.2s of Act 1 - clearly visible branding and recap alert
+  const titleLine = (actIndex === 0 && epMeta)
+    ? (epMeta.episode === 2
+        ? `Dialogue: 0,0:00:00.00,0:00:03.20,TitleCard,,0,0,0,,{\\fad(120,350)}{\\b1}${epMeta.seriesTitle.toUpperCase()}\\N{\\fs34\\c&H0000F5FF&}⚡ EPISODE 2: ${epMeta.episodeTitle.toUpperCase()}\\N{\\fs22\\c&H00E0E0E0&}[ RECAP: PREVIOUSLY ON PROTOCOL ZERO ]`
+        : `Dialogue: 0,0:00:00.00,0:00:02.50,TitleCard,,0,0,0,,{\\fad(100,300)}{\\b1}${epMeta.seriesTitle.toUpperCase()}\\N{\\fs32\\c&H0000F5FF&}EPISODE ${epMeta.episode}: ${epMeta.episodeTitle.toUpperCase()}`)
+    : '';
 
   // Add tactical Act badge at top-left for this act
   const actDurationMs = Math.round(targetDurationSec * 1000);
@@ -1014,35 +1018,71 @@ async function synthesizeActVoiceWithTiming(act, outWavPath, outAssPath, epMeta,
 
 /**
  * Generate Dramatic Movie Emotion Sound Effects for each Act
- * Imparts real cinematic weight (braams, robotic radar, slams, risers)
+ * Imparts real cinematic weight based on the specific scene and episode
  */
-function generateActSoundEffect(actIndex, duration, outSfxPath) {
+function generateActSoundEffect(actIndex, duration, outSfxPath, epMeta = null) {
   const dur = Math.max(3.0, duration);
+  const isEp2 = epMeta && Number(epMeta.episode) === 2;
+
   try {
-    if (actIndex === 0) {
-      // Act 1: Sub-bass trailer braam impact at 0.5s (The Hook)
-      execSync(`ffmpeg -y -f lavfi -i "aevalsrc='(sin(2*PI*(52-16*min(t,1.2))*t)*exp(-1.2*t)*0.8 + sin(2*PI*28*t)*exp(-0.8*t)*0.6)':s=44100:d=${dur}" -af "adelay=500|500,lowpass=f=280,volume=0.32" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
-    } else if (actIndex === 3) {
-      // Act 4: Telemetry cybernetic warning ping & digital waveform at 1.0s
-      execSync(`ffmpeg -y -f lavfi -i "aevalsrc='sin(2*PI*880*t)*exp(-6*mod(t,0.5))*0.4 + sin(2*PI*440*t)*0.15':s=44100:d=${dur}" -af "adelay=1000|1000,highpass=f=300,volume=0.25" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
-    } else if (actIndex === 6) {
-      // Act 7: Vault Door 7 wide open reveal: deep subterranean groan + shudder
-      execSync(`ffmpeg -y -f lavfi -i "aevalsrc='(sin(2*PI*(44-8*min(t,2.0))*t)*exp(-0.8*t)*0.75 + (random(0)-0.5)*exp(-1.5*t)*0.25)':s=44100:d=${dur}" -af "adelay=400|400,lowpass=f=220,volume=0.35" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
-    } else if (actIndex === 7) {
-      // Act 8: Claw trenches gouged in iron: cold metallic scrape & shudder
-      execSync(`ffmpeg -y -f lavfi -i "aevalsrc='(sin(2*PI*220*t)*0.3 + sin(2*PI*311*t)*0.25)*exp(-1.0*t)':s=44100:d=${dur}" -af "adelay=600|600,flanger,volume=0.22" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
-    } else if (actIndex === 8) {
-      // Act 9: 440 Hz bio-synthetic telemetry heartbeat pulse
-      execSync(`ffmpeg -y -f lavfi -i "aevalsrc='sin(2*PI*440*t)*pow(max(0,sin(2*PI*1.0*t)),16)*0.35':s=44100:d=${dur}" -af "lowpass=f=900,volume=0.28" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
-    } else if (actIndex === 10) {
-      // Act 11: Containment blast door slam + pneumatic air release
-      execSync(`ffmpeg -y -f lavfi -i "aevalsrc='(sin(2*PI*75*t)*exp(-4*t)*0.75 + (random(0)-0.5)*exp(-2*t)*0.45)':s=44100:d=${dur}" -af "adelay=800|800,lowpass=f=380,volume=0.38" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
-    } else if (actIndex === 11) {
-      // Act 12: Cinematic tension riser swelling up into the cliffhanger
-      execSync(`ffmpeg -y -f lavfi -i "aevalsrc='(sin(2*PI*(75+32*t*t)*t)*0.25 + sin(2*PI*(150+64*t*t)*t)*0.15)*(t/${dur})':s=44100:d=${dur}" -af "highpass=f=80,volume=0.30" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
+    if (isEp2) {
+      // Episode 2 Tailored Scene Soundscapes
+      if (actIndex === 0) {
+        // Act 1: Recap & Episode 2 Title - Trailer Braam + Low Sub Bass Swell
+        execSync(`ffmpeg -y -f lavfi -i "aevalsrc='(sin(2*PI*(54-18*min(t,1.5))*t)*exp(-0.9*t)*0.85 + sin(2*PI*28*t)*exp(-0.7*t)*0.65)':s=44100:d=${dur}" -af "adelay=400|400,lowpass=f=280,volume=0.35" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
+      } else if (actIndex === 1) {
+        // Act 2: Breached Grate - Underwater Plasma Cutting Sizzle & Molten Metal
+        execSync(`ffmpeg -y -f lavfi -i "aevalsrc='(random(0)-0.5)*0.35*exp(-0.4*t) + sin(2*PI*1200*t)*0.18*sin(2*PI*22*t)':s=44100:d=${dur}" -af "adelay=600|600,bandpass=f=1400:w=800,volume=0.28" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
+      } else if (actIndex === 2) {
+        // Act 3: The Cold Current - Torrential Subterranean Canal Rush & Concrete Impact
+        execSync(`ffmpeg -y -f lavfi -i "aevalsrc='(random(0)-0.5)*0.45*exp(-0.2*t) + sin(2*PI*48*t)*exp(-1.5*t)*0.6':s=44100:d=${dur}" -af "adelay=300|300,lowpass=f=340,volume=0.32" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
+      } else if (actIndex === 3) {
+        // Act 4: The Black Reservoir - Vast Subterranean Cavern Echo & Eerie Void Rumble
+        execSync(`ffmpeg -y -f lavfi -i "aevalsrc='sin(2*PI*38*t)*0.4 + sin(2*PI*76*t)*0.2 + (random(0)-0.5)*0.08':s=44100:d=${dur}" -af "lowpass=f=180,volume=0.25" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
+      } else if (actIndex === 4) {
+        // Act 5: The Tactical Zodiac Raft - Resonant Sub-Sonar Ping at 880Hz
+        execSync(`ffmpeg -y -f lavfi -i "aevalsrc='sin(2*PI*880*t)*exp(-3.5*mod(t,2.0))*0.38 + sin(2*PI*55*t)*0.15':s=44100:d=${dur}" -af "adelay=800|800,volume=0.26" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
+      } else if (actIndex === 5) {
+        // Act 6: Phased-Array Satellite Uplink - Encrypted Digital Telemetry Data Stream
+        execSync(`ffmpeg -y -f lavfi -i "aevalsrc='sin(2*PI*(1200+400*mod(floor(t*8),3))*t)*0.25*exp(-1.0*mod(t,0.25))':s=44100:d=${dur}" -af "adelay=600|600,highpass=f=600,volume=0.22" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
+      } else if (actIndex === 6) {
+        // Act 7: The Hostile Diver Ambush - Sudden Combat Stinger Brass Braam & Blade Slice
+        execSync(`ffmpeg -y -f lavfi -i "aevalsrc='(sin(2*PI*65*t)*exp(-2.2*t)*0.85 + (random(0)-0.5)*exp(-4*t)*0.5)':s=44100:d=${dur}" -af "adelay=200|200,lowpass=f=500,volume=0.40" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
+      } else if (actIndex === 7) {
+        // Act 8: Underwater Melee Combat - Heavy Underwater Sub-Bass Shockwave Impact
+        execSync(`ffmpeg -y -f lavfi -i "aevalsrc='sin(2*PI*52*t)*exp(-3.0*mod(t,1.2))*0.8 + (random(0)-0.5)*0.25*exp(-2*t)':s=44100:d=${dur}" -af "lowpass=f=260,volume=0.35" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
+      } else if (actIndex === 8) {
+        // Act 9: Severed Rebreather - High Pressure Air Venting Hiss & Decomp Warning
+        execSync(`ffmpeg -y -f lavfi -i "aevalsrc='(random(0)-0.5)*0.45*exp(-0.3*t) + sin(2*PI*660*t)*0.2*sin(2*PI*4*t)':s=44100:d=${dur}" -af "adelay=400|400,bandpass=f=2200:w=1200,volume=0.28" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
+      } else if (actIndex === 9) {
+        // Act 10: The Encrypted Drive - Distorted Radio Tuning Static & Voice Frequency
+        execSync(`ffmpeg -y -f lavfi -i "aevalsrc='(random(0)-0.5)*0.3*exp(-1.5*mod(t,1.0)) + sin(2*PI*440*t)*0.18*sin(2*PI*2*t)':s=44100:d=${dur}" -af "adelay=500|500,volume=0.24" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
+      } else if (actIndex === 10) {
+        // Act 11: The Submerged Vault Entrance - Colossal Hydraulic Lock Release & Steel Groan
+        execSync(`ffmpeg -y -f lavfi -i "aevalsrc='(sin(2*PI*42*t)*0.7 + (random(0)-0.5)*0.25)*exp(-0.8*t)':s=44100:d=${dur}" -af "adelay=500|500,lowpass=f=220,volume=0.36" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
+      } else {
+        // Act 12: The Entity Revealed - Dramatic Suspense Riser Swelling to Abrupt Cliffhanger
+        execSync(`ffmpeg -y -f lavfi -i "aevalsrc='(sin(2*PI*(65+40*t*t)*t)*0.32 + sin(2*PI*(130+80*t*t)*t)*0.18)*(t/${dur})':s=44100:d=${dur}" -af "highpass=f=70,volume=0.34" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
+      }
     } else {
-      // Subtle low subterranean atmospheric heartbeat
-      execSync(`ffmpeg -y -f lavfi -i "aevalsrc='pow(max(0,sin(2*PI*1.0*t)),8)*0.2*sin(2*PI*58*t)':s=44100:d=${dur}" -af "lowpass=f=180,volume=0.20" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
+      // Episode 1 / Default Dramatic Soundscapes
+      if (actIndex === 0) {
+        execSync(`ffmpeg -y -f lavfi -i "aevalsrc='(sin(2*PI*(52-16*min(t,1.2))*t)*exp(-1.2*t)*0.8 + sin(2*PI*28*t)*exp(-0.8*t)*0.6)':s=44100:d=${dur}" -af "adelay=500|500,lowpass=f=280,volume=0.32" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
+      } else if (actIndex === 3) {
+        execSync(`ffmpeg -y -f lavfi -i "aevalsrc='sin(2*PI*880*t)*exp(-6*mod(t,0.5))*0.4 + sin(2*PI*440*t)*0.15':s=44100:d=${dur}" -af "adelay=1000|1000,highpass=f=300,volume=0.25" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
+      } else if (actIndex === 6) {
+        execSync(`ffmpeg -y -f lavfi -i "aevalsrc='(sin(2*PI*(44-8*min(t,2.0))*t)*exp(-0.8*t)*0.75 + (random(0)-0.5)*exp(-1.5*t)*0.25)':s=44100:d=${dur}" -af "adelay=400|400,lowpass=f=220,volume=0.35" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
+      } else if (actIndex === 7) {
+        execSync(`ffmpeg -y -f lavfi -i "aevalsrc='(sin(2*PI*220*t)*0.3 + sin(2*PI*311*t)*0.25)*exp(-1.0*t)':s=44100:d=${dur}" -af "adelay=600|600,flanger,volume=0.22" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
+      } else if (actIndex === 8) {
+        execSync(`ffmpeg -y -f lavfi -i "aevalsrc='sin(2*PI*440*t)*pow(max(0,sin(2*PI*1.0*t)),16)*0.35':s=44100:d=${dur}" -af "lowpass=f=900,volume=0.28" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
+      } else if (actIndex === 10) {
+        execSync(`ffmpeg -y -f lavfi -i "aevalsrc='(sin(2*PI*75*t)*exp(-4*t)*0.75 + (random(0)-0.5)*exp(-2*t)*0.45)':s=44100:d=${dur}" -af "adelay=800|800,lowpass=f=380,volume=0.38" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
+      } else if (actIndex === 11) {
+        execSync(`ffmpeg -y -f lavfi -i "aevalsrc='(sin(2*PI*(75+32*t*t)*t)*0.25 + sin(2*PI*(150+64*t*t)*t)*0.15)*(t/${dur})':s=44100:d=${dur}" -af "highpass=f=80,volume=0.30" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
+      } else {
+        execSync(`ffmpeg -y -f lavfi -i "aevalsrc='pow(max(0,sin(2*PI*1.0*t)),8)*0.2*sin(2*PI*58*t)':s=44100:d=${dur}" -af "lowpass=f=180,volume=0.20" -c:a pcm_s16le "${outSfxPath}" 2>/dev/null`);
+      }
     }
   } catch {
     // Generate gentle silence fallback
@@ -1054,9 +1094,9 @@ function generateActSoundEffect(actIndex, duration, outSfxPath) {
 /**
  * Mix Act Audio: Voice + Emotional Sound Effect + Cinematic Orchestral Drone
  */
-function generateActMasterAudio(actIndex, actDuration, paddedVoiceWav, outMasterWav) {
+function generateActMasterAudio(actIndex, actDuration, paddedVoiceWav, outMasterWav, epMeta = null) {
   const sfxWav = `${outMasterWav}_sfx.wav`;
-  generateActSoundEffect(actIndex, actDuration, sfxWav);
+  generateActSoundEffect(actIndex, actDuration, sfxWav, epMeta);
 
   const droneWav = `${outMasterWav}_drone.wav`;
   generateWarmCinematicSoundtrack(actDuration, droneWav);
@@ -1118,14 +1158,34 @@ function renderActSegment(actImage, actAudioWav, actAssPath, actDuration, camera
     motionFilter = `zoompan=z='min(zoom+0.0032,1.32)':x='iw/2-(iw/zoom/2)':y='ih*0.32-(ih/zoom*0.32)':d=${actFrames}:s=1080x1920:fps=30`;
   }
 
-  // Render video with motion and burn subtitles, muxing the act master audio
-  const renderCmd = `ffmpeg -y -i "${actImage}" -i "${actAudioWav}" -vf "${motionFilter},ass='${escapedAss}',format=yuv420p" -c:v libx264 -preset veryfast -crf 22 -c:a aac -b:a 160k -t ${actDuration} "${outSegmentMp4}" 2>/dev/null`;
+  // Render video with dynamic motion, Hollywood color grading, atmospheric vignette, crisp edge unsharp, theatrical letterbox bars, and burnt subtitles
+  const visualFilters = [
+    motionFilter,
+    "eq=contrast=1.12:brightness=-0.01:saturation=1.18",
+    "vignette=PI/4.5",
+    "unsharp=5:5:0.7:5:5:0.0",
+    "drawbox=x=0:y=0:w=iw:h=110:color=black@1:t=fill",
+    "drawbox=x=0:y=ih-110:w=iw:h=110:color=black@1:t=fill",
+    `ass='${escapedAss}'`,
+    "format=yuv420p"
+  ].join(',');
+
+  const renderCmd = `ffmpeg -y -i "${actImage}" -i "${actAudioWav}" -vf "${visualFilters}" -c:v libx264 -preset veryfast -crf 22 -c:a aac -b:a 160k -t ${actDuration} "${outSegmentMp4}" 2>/dev/null`;
 
   try {
     execSync(renderCmd);
   } catch (err) {
     // Fallback without subtitle filter if libass encounters issue
-    const fallbackCmd = `ffmpeg -y -i "${actImage}" -i "${actAudioWav}" -vf "${motionFilter},format=yuv420p" -c:v libx264 -preset veryfast -crf 22 -c:a aac -b:a 160k -t ${actDuration} "${outSegmentMp4}" 2>/dev/null`;
+    const fallbackFilters = [
+      motionFilter,
+      "eq=contrast=1.12:brightness=-0.01:saturation=1.18",
+      "vignette=PI/4.5",
+      "unsharp=5:5:0.7:5:5:0.0",
+      "drawbox=x=0:y=0:w=iw:h=110:color=black@1:t=fill",
+      "drawbox=x=0:y=ih-110:w=iw:h=110:color=black@1:t=fill",
+      "format=yuv420p"
+    ].join(',');
+    const fallbackCmd = `ffmpeg -y -i "${actImage}" -i "${actAudioWav}" -vf "${fallbackFilters}" -c:v libx264 -preset veryfast -crf 22 -c:a aac -b:a 160k -t ${actDuration} "${outSegmentMp4}" 2>/dev/null`;
     execSync(fallbackCmd);
   }
   return outSegmentMp4;
@@ -1202,7 +1262,7 @@ async function generateMovieEpisode(episodeIndex = 0) {
     execSync(`ffmpeg -y -i "${actVoiceWav}" -af "apad=whole_dur=${actDuration}" -c:a pcm_s16le "${actPaddedVoiceWav}" 2>/dev/null`);
 
     // Mix emotional sound effect + orchestral drone
-    generateActMasterAudio(i, actDuration, actPaddedVoiceWav, actMasterAudioWav);
+    generateActMasterAudio(i, actDuration, actPaddedVoiceWav, actMasterAudioWav, epMeta);
 
     // Render act video segment with dynamic camera motion & subtitles
     const motion = act.cameraMotion || (i % 4 === 0 ? 'zoom_in' : i % 4 === 1 ? 'pan_left' : i % 4 === 2 ? 'pan_right' : 'zoom_out');
@@ -1378,7 +1438,7 @@ async function saveEpisodeToFirestore(entry) {
 }
 
 if (require.main === module) {
-  let targetIndex = 0;
+  let targetIndex = 1; // Default to Episode 2: The Signal in the Dark (with Recap)
   const rawInput = process.env.EPISODE_INDEX;
 
   if (rawInput === undefined || rawInput === '' || rawInput === 'auto') {

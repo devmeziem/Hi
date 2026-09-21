@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       episode_index:
-        description: 'Episode Index (0 = Breach at Neon Gate, 1 = Rogue Syndicate, auto = Next in Series)'
+        description: 'Episode Index (0 = Sub-Level 14, 1 = The Signal in the Dark / Ep 2 Recap, auto = Next in Series)'
         required: false
-        default: 'auto'
+        default: '1'
         type: string
       auto_publish:
         description: 'Publish Live to YouTube (Default FALSE: held in PENDING_REVIEW for manual check)'
@@ -61,7 +61,7 @@ jobs:
 
       - name: Generate Episodic Movie Reel
         env:
-          EPISODE_INDEX: ${{ github.event.inputs.episode_index || 'auto' }}
+          EPISODE_INDEX: ${{ github.event.inputs.episode_index || '1' }}
           AUTO_PUBLISH: ${{ github.event.inputs.auto_publish || 'false' }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           MOVIE_MUSIC_URL: ${{ github.event.inputs.sound_url }}
@@ -69,8 +69,8 @@ jobs:
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH4 || secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH4 || secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH4 || secrets.YOUTUBE_REFRESH_TOKEN_CH1 }}
-          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME || 'voxawell' }}
-          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET || 'phwka7ak' }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 || secrets.BUFFER_API_KEY }}
           BUFFER_TIKTOK_MOVIE_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_MOVIE_CHANNEL_ID }}
         run: |
@@ -83,8 +83,8 @@ jobs:
         env:
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 || secrets.BUFFER_API_KEY }}
           BUFFER_TIKTOK_MOVIE_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_MOVIE_CHANNEL_ID || secrets.BUFFER_TIKTOK_MOVIE_CHANNEL || secrets.BUFFER_TIKTOK_CHANNEL_ID_MOVIE || secrets.BUFFER_TIKTOK_CHANNEL_ID_1 }}
-          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME || 'voxawell' }}
-          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET || 'phwka7ak' }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

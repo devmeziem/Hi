@@ -510,7 +510,45 @@ function buildYouthQuoteCardSvg(entry, width = 1080, height = 1920) {
 function generateYouthDisciplineAudio(outputPath, durationSeconds = 5.0) {
   if (!fs.existsSync(path.dirname(outputPath))) fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
-  // Procedural 44.1kHz stereo audio synthesis via FFmpeg
+  // 1. Check for user-uploaded MP3 or audio files in sound_assets/motivation or sound_assets
+  const candidateDirs = [
+    path.join(process.cwd(), 'sound_assets', 'motivation'),
+    path.join(process.cwd(), 'sound_assets'),
+    path.join(process.cwd(), 'assets', 'audio')
+  ];
+
+  const foundFiles = [];
+  for (const dir of candidateDirs) {
+    if (fs.existsSync(dir)) {
+      try {
+        const files = fs.readdirSync(dir)
+          .filter(f => /\.(mp3|wav|m4a|aac|ogg)$/i.test(f))
+          .map(f => path.join(dir, f));
+        foundFiles.push(...files);
+      } catch {}
+    }
+  }
+
+  if (foundFiles.length > 0) {
+    // Pick random track or first available
+    const chosenMp3 = foundFiles[Math.floor(Math.random() * foundFiles.length)];
+    console.log(`[Youth Audio Manager] 🎵 Found uploaded audio asset: "${path.basename(chosenMp3)}"`);
+    console.log(`[Youth Audio Manager] 🎚️ Normalizing and looping to ${durationSeconds.toFixed(1)}s reel...`);
+
+    const dur = durationSeconds.toFixed(2);
+    // Loop track if shorter than target duration, trim, normalize loudness, and apply smooth fade in/out
+    const customCmd = `ffmpeg -y -stream_loop -1 -i "${chosenMp3}" -t ${dur} -af "loudnorm=I=-16:TP=-1.5:LRA=11,afade=t=in:ss=0:d=0.2,afade=t=out:st=${(durationSeconds - 0.25).toFixed(2)}:d=0.25" -c:a pcm_s16le -ar 44100 -ac 2 "${outputPath}" 2>/dev/null`;
+    try {
+      execSync(customCmd);
+      if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 1000) {
+        return outputPath;
+      }
+    } catch (e) {
+      console.warn(`[Youth Audio Manager] Notice converting custom MP3 (${e.message}), falling back to focus synth...`);
+    }
+  }
+
+  // 2. Procedural 44.1kHz stereo audio synthesis via FFmpeg fallback
   const dur = durationSeconds.toFixed(2);
   const filterExpr = [
     // Deep 50Hz sub-bass drone
