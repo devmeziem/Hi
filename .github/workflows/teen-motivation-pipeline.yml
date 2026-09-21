@@ -83,7 +83,9 @@ jobs:
         if: success() && (github.event.inputs.publish_tiktok != 'false')
         env:
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 || secrets.BUFFER_API_KEY }}
-          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID }}
+          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID || secrets.BUFFER_TIKTOK_TEEN_CHANNEL || secrets.BUFFER_TIKTOK_CHANNEL_ID_TEEN || secrets.BUFFER_TIKTOK_CHANNEL_ID_2 || secrets.BUFFER_TIKTOK_YOUTH_CHANNEL_ID }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME || 'voxawell' }}
+          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET || 'phwka7ak' }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

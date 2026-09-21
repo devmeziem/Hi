@@ -24,7 +24,6 @@ const DEFAULT_CANDIDATES = [
   'llama-3.1-8b-instant',
   'llama3-70b-8192',
   'llama3-8b-8192',
-  'allam-2-7b',
   'qwen-2.5-32b'
 ];
 

@@ -488,6 +488,9 @@ async function callCloudflareAI(topic) {
 
   const models = [
     '@cf/meta/llama-3.1-8b-instruct',
+    '@cf/meta/llama-3-8b-instruct',
+    '@cf/mistral/mistral-7b-instruct-v0.1',
+    '@cf/qwen/qwen1.5-14b-chat',
     '@cf/meta/llama-3.2-3b-instruct',
     '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
   ];
@@ -538,13 +541,66 @@ async function callCloudflareAI(topic) {
 
       const cleaned = validateAndCleanEpisode(raw, topic);
       if (cleaned) {
-        return { plan: cleaned, provider: `cloudflare/${model}` };
+        return { plan: cleaned, provider: `Cloudflare Workers AI (${model})` };
       }
     } catch (e) {
       console.warn(`[AI Planner] Cloudflare AI (${model}) failed:`, e.message);
     }
   }
   throw new Error('All Cloudflare AI models failed');
+}
+
+/**
+ * 5.5 Universal Free AI Tier (Zero Key Required)
+ */
+async function callUniversalFreeAI(topic) {
+  const models = ['openai', 'mistral', 'qwen'];
+  for (const model of models) {
+    try {
+      console.log(`[AI Planner] Requesting Universal Free AI (${model})...`);
+      const body = JSON.stringify({
+        messages: [
+          { role: 'system', content: `${SYSTEM_PROMPT}\nOutput strictly valid JSON object only.` },
+          { role: 'user', content: `Create an educational cartoon episode scene plan for: "${topic}". Return strictly valid JSON.` }
+        ],
+        model,
+        jsonMode: true
+      });
+
+      const raw = await new Promise((resolve, reject) => {
+        const req = https.request('https://text.pollinations.ai/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(body)
+          },
+          timeout: 16000
+        }, (res) => {
+          let data = '';
+          res.on('data', c => data += c);
+          res.on('end', () => {
+            if (res.statusCode >= 200 && res.statusCode < 300) {
+              resolve(data);
+            } else {
+              reject(new Error(`Free AI HTTP ${res.statusCode}: ${data.slice(0, 100)}`));
+            }
+          });
+        });
+        req.on('error', reject);
+        req.on('timeout', () => { req.destroy(); reject(new Error('Free AI request timed out')); });
+        req.write(body);
+        req.end();
+      });
+
+      const cleaned = validateAndCleanEpisode(raw, topic);
+      if (cleaned) {
+        return { plan: cleaned, provider: `Universal Free AI (${model})` };
+      }
+    } catch (e) {
+      console.warn(`[AI Planner] Universal Free AI (${model}) failed:`, e.message);
+    }
+  }
+  throw new Error('All Universal Free AI models failed');
 }
 
 /**
@@ -733,7 +789,17 @@ async function generateCartoonEpisodePlan(topic) {
     errors.push(`Cloudflare: ${err.message}`);
   }
 
-  // 6. Try Local Open-Source AI (Backup 5 - TinyLlama / Ollama)
+  // 6. Try Universal Free AI Tier (Backup 5 - Pollinations Zero Key)
+  try {
+    const res = await callUniversalFreeAI(targetTopic);
+    console.log(`[AI Planner] ✅ Successfully generated plan via ${res.provider}`);
+    setCachedResponse('cartoon_plan', targetTopic, '', res.plan);
+    return { ...res.plan, modelUsed: res.provider };
+  } catch (err) {
+    errors.push(`Universal Free AI: ${err.message}`);
+  }
+
+  // 7. Try Local Open-Source AI (Backup 6 - TinyLlama / Ollama)
   try {
     const res = await callLocalOllama(targetTopic);
     console.log(`[AI Planner] ✅ Successfully generated plan via ${res.provider}`);

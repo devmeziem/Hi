@@ -43,19 +43,26 @@ const BUFFER_API_KEY = sanitizeToken(RAW_BUFFER_API_KEY_2);
 // Target TikTok channel IDs (Optional explicit overrides in GitHub Secrets)
 const BUFFER_TIKTOK_MOVIE_CHANNEL_ID = String(
   process.env.BUFFER_TIKTOK_MOVIE_CHANNEL_ID ||
+  process.env.BUFFER_TIKTOK_MOVIE_CHANNEL ||
   process.env.BUFFER_TIKTOK_BRAND_CHANNEL_ID ||
   process.env.BUFFER_TIKTOK_CHANNEL_ID_MOVIE ||
   process.env.BUFFER_TIKTOK_CHANNEL_ID_1 ||
+  process.env.BUFFER_TIKTOK_CINEMA_CHANNEL_ID ||
   ''
 ).trim();
 
 const BUFFER_TIKTOK_TEEN_CHANNEL_ID = String(
   process.env.BUFFER_TIKTOK_TEEN_CHANNEL_ID ||
+  process.env.BUFFER_TIKTOK_TEEN_CHANNEL ||
   process.env.BUFFER_TIKTOK_MOTIVATION_CHANNEL_ID ||
   process.env.BUFFER_TIKTOK_CHANNEL_ID_TEEN ||
   process.env.BUFFER_TIKTOK_CHANNEL_ID_2 ||
+  process.env.BUFFER_TIKTOK_YOUTH_CHANNEL_ID ||
   ''
 ).trim();
+
+const CLOUDINARY_CLOUD_NAME = String(process.env.CLOUDINARY_CLOUD_NAME || 'voxawell').trim();
+const CLOUDINARY_UPLOAD_PRESET = String(process.env.CLOUDINARY_UPLOAD_PRESET || 'phwka7ak').trim();
 
 const IS_DRY_RUN = process.argv.includes('--dry-run') || process.env.DRY_RUN === 'true';
 const SHARE_NOW = process.env.BUFFER_SHARE_NOW !== 'false';
@@ -70,8 +77,14 @@ const colors = {
   magenta: '\x1b[35m'
 };
 
+function cleanChannelId(id) {
+  if (!id) return '';
+  return String(id).trim().replace(/^["']|["']$/g, '').trim();
+}
+
 function isValidChannelId(id) {
-  return typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id);
+  const clean = cleanChannelId(id);
+  return clean.length >= 10 && !clean.includes(' ');
 }
 
 /**
@@ -127,9 +140,11 @@ async function discoverTikTokChannels() {
     const orgs = orgsData?.account?.organizations || [];
 
     for (const org of orgs) {
+      let list = [];
       try {
-        const chQuery = `query GetChannels($organizationId: OrganizationId!) {
-          channels(organizationId: $organizationId) {
+        // Modern Buffer GraphQL query using ChannelsInput input wrapper
+        const chQueryModern = `query GetChannels($input: ChannelsInput!) {
+          channels(input: $input) {
             id
             name
             displayName
@@ -140,22 +155,41 @@ async function discoverTikTokChannels() {
             isLocked
           }
         }`;
-        const chData = await bufferRequest(chQuery, { organizationId: org.id });
-        const list = chData?.channels || [];
-        for (const ch of list) {
-          if ((ch.service || '').toLowerCase() === 'tiktok') {
-            tiktokChannels.push({
-              id: ch.id,
-              name: ch.displayName || ch.name || 'TikTok Channel',
-              service: 'tiktok',
-              isDisconnected: Boolean(ch.isDisconnected),
-              isLocked: Boolean(ch.isLocked),
-              orgName: org.name
-            });
-          }
+        const chDataModern = await bufferRequest(chQueryModern, { input: { organizationId: org.id } });
+        list = chDataModern?.channels || [];
+      } catch (errInput) {
+        // Fallback to legacy organizationId direct argument
+        try {
+          const chQueryLegacy = `query GetChannels($organizationId: OrganizationId!) {
+            channels(organizationId: $organizationId) {
+              id
+              name
+              displayName
+              service
+              serviceId
+              avatar
+              isDisconnected
+              isLocked
+            }
+          }`;
+          const chDataLegacy = await bufferRequest(chQueryLegacy, { organizationId: org.id });
+          list = chDataLegacy?.channels || [];
+        } catch (errLegacy) {
+          console.warn(`[Buffer TikTok Engine] Notice querying org "${org.name}": ${errInput.message}`);
         }
-      } catch (chErr) {
-        console.warn(`[Buffer TikTok Engine] Notice querying org "${org.name}": ${chErr.message}`);
+      }
+
+      for (const ch of list) {
+        if ((ch.service || '').toLowerCase() === 'tiktok') {
+          tiktokChannels.push({
+            id: ch.id,
+            name: ch.displayName || ch.name || 'TikTok Channel',
+            service: 'tiktok',
+            isDisconnected: Boolean(ch.isDisconnected),
+            isLocked: Boolean(ch.isLocked),
+            orgName: org.name
+          });
+        }
       }
     }
   } catch (gqlErr) {
@@ -231,7 +265,34 @@ async function discoverTikTokChannels() {
 async function uploadToPublicRelay(videoPath) {
   console.log(`[Buffer Media Relay] 🚀 Uploading video to public relay: ${path.basename(videoPath)}...`);
 
-  // Method 1: GitHub Release CDN (fastest & most reliable when running in Actions)
+  // Priority 1: Cloudinary CDN (Direct permanent MP4 link, standard video/mp4 MIME, zero redirect, 100% Buffer compatible)
+  if (CLOUDINARY_CLOUD_NAME && CLOUDINARY_UPLOAD_PRESET) {
+    try {
+      console.log(`[Buffer Media Relay] ☁️ Uploading to Cloudinary CDN (${CLOUDINARY_CLOUD_NAME})...`);
+      const fileBuffer = fs.readFileSync(videoPath);
+      const form = new FormData();
+      form.append('file', new Blob([fileBuffer], { type: 'video/mp4' }), path.basename(videoPath));
+      form.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+      form.append('resource_type', 'video');
+
+      const uploadUrl = `https://api.cloudinary.com/v1_1/${encodeURIComponent(CLOUDINARY_CLOUD_NAME)}/video/upload`;
+      const cRes = await fetch(uploadUrl, { method: 'POST', body: form });
+      if (cRes.ok) {
+        const cJson = await cRes.json();
+        if (cJson.secure_url) {
+          console.log(`[Buffer Media Relay] ✅ Cloudinary CDN video ready: ${cJson.secure_url}`);
+          return cJson.secure_url;
+        }
+      } else {
+        const cErrText = await cRes.text();
+        console.warn(`[Buffer Media Relay] Cloudinary notice (HTTP ${cRes.status}): ${cErrText.slice(0, 100)}`);
+      }
+    } catch (cErr) {
+      console.warn(`[Buffer Media Relay] Cloudinary error: ${cErr.message}`);
+    }
+  }
+
+  // Priority 2: GitHub Release CDN (fastest when running in Actions without Cloudinary)
   const ghToken = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
   const ghRepo = process.env.GITHUB_REPOSITORY;
 
@@ -460,8 +521,9 @@ async function dispatchTikTok(channelType = 'movie_brand') {
 
   if (channelType === 'movie_brand') {
     // Select channel ID
-    if (isValidChannelId(BUFFER_TIKTOK_MOVIE_CHANNEL_ID)) {
-      targetChannel = discoveredTikToks.find(c => c.id === BUFFER_TIKTOK_MOVIE_CHANNEL_ID) || { id: BUFFER_TIKTOK_MOVIE_CHANNEL_ID, name: 'Movie Brand TikTok' };
+    const cleanMovieId = cleanChannelId(BUFFER_TIKTOK_MOVIE_CHANNEL_ID);
+    if (isValidChannelId(cleanMovieId)) {
+      targetChannel = discoveredTikToks.find(c => cleanChannelId(c.id).toLowerCase() === cleanMovieId.toLowerCase()) || { id: cleanMovieId, name: 'Movie Brand TikTok' };
     } else if (discoveredTikToks.length > 0) {
       // First TikTok channel
       targetChannel = discoveredTikToks[0];
@@ -490,8 +552,9 @@ async function dispatchTikTok(channelType = 'movie_brand') {
 
   } else if (channelType === 'teen_motivation') {
     // Select channel ID
-    if (isValidChannelId(BUFFER_TIKTOK_TEEN_CHANNEL_ID)) {
-      targetChannel = discoveredTikToks.find(c => c.id === BUFFER_TIKTOK_TEEN_CHANNEL_ID) || { id: BUFFER_TIKTOK_TEEN_CHANNEL_ID, name: 'Teen Motivation TikTok' };
+    const cleanTeenId = cleanChannelId(BUFFER_TIKTOK_TEEN_CHANNEL_ID);
+    if (isValidChannelId(cleanTeenId)) {
+      targetChannel = discoveredTikToks.find(c => cleanChannelId(c.id).toLowerCase() === cleanTeenId.toLowerCase()) || { id: cleanTeenId, name: 'Teen Motivation TikTok' };
     } else if (discoveredTikToks.length > 1) {
       // Second TikTok channel in account
       targetChannel = discoveredTikToks[1];
@@ -538,6 +601,19 @@ async function dispatchTikTok(channelType = 'movie_brand') {
 
   const publicVideoUrl = process.env.BUFFER_VIDEO_URL || await uploadToPublicRelay(videoPath);
   const result = await postToTikTok(targetChannel.id, publicVideoUrl, caption);
+
+  if (result && result.success) {
+    console.log(`\n===============================================================`);
+    console.log(`🎉 [Buffer Dispatch Recorded] Post ID: ${result.id}`);
+    console.log(`📱 Target Channel: ${targetChannel.name} (ID: ${targetChannel.id})`);
+    console.log(`🌐 Buffer Dashboard: https://publish.buffer.com/`);
+    console.log(`💡 WHY IT MIGHT NOT BE IMMEDIATELY VISIBLE ON TIKTOK:`);
+    console.log(`   1. Direct Posting Mode: Video is queued & transcoded by Buffer/TikTok (usually 1-3 minutes).`);
+    console.log(`   2. Reminders Mode: If Buffer is set to Notification Reminders, open the Buffer or TikTok mobile app to approve the push notification!`);
+    console.log(`   3. To enable 100% automatic hands-free posting: Go to Buffer -> Channels -> TikTok Settings -> Turn ON "Direct Posting".`);
+    console.log(`===============================================================\n`);
+  }
+
   return result;
 }
 

@@ -869,7 +869,9 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
           const json = JSON.parse(res.data);
           const raw = json.candidates?.[0]?.content?.parts?.[0]?.text;
           const parsed = cleanJsonText(raw);
-          if (parsed) return { success: true, modelUsed: `Google Gemini (${model})`, data: parsed };
+          if (parsed && (!validationFn || validationFn(parsed))) {
+            return { success: true, modelUsed: `Google Gemini (${model})`, data: parsed };
+          }
         } else {
           console.warn(`[AI Inference Notice] Gemini (${model}) HTTP ${res.status}: ${res.data.slice(0, 100)}`);
         }
@@ -926,7 +928,9 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
           const json = JSON.parse(res.data);
           const raw = json.choices?.[0]?.message?.content;
           const parsed = (cleanOrJson ? cleanOrJson(raw) : null) || cleanJsonText(raw);
-          if (parsed) return { success: true, modelUsed: `OpenRouter (${model})`, data: parsed };
+          if (parsed && (!validationFn || validationFn(parsed))) {
+            return { success: true, modelUsed: `OpenRouter (${model})`, data: parsed };
+          }
         } else {
           console.warn(`[AI Inference Notice] OpenRouter (${model}) HTTP ${res.status}: ${res.data.slice(0, 100)}`);
         }
@@ -938,7 +942,7 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
 
   // 4. Groq LPU with Model Finder & Adaptive Formatting
   if (GROQ_API_KEY) {
-    let models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'deepseek-r1-distill-llama-70b', 'gemma2-9b-it'];
+    let models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-70b-8192', 'llama3-8b-8192', 'qwen-2.5-32b'];
     let formatGrPayload = null;
     let cleanGrJson = null;
     try {
@@ -983,7 +987,11 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
           const json = JSON.parse(res.data);
           const raw = json.choices?.[0]?.message?.content;
           const parsed = (cleanGrJson ? cleanGrJson(raw) : null) || cleanJsonText(raw);
-          if (parsed) return { success: true, modelUsed: `Groq LPU (${model})`, data: parsed };
+          if (parsed && (!validationFn || validationFn(parsed))) {
+            return { success: true, modelUsed: `Groq LPU (${model})`, data: parsed };
+          } else {
+            console.warn(`[AI Inference Notice] Groq (${model}) response failed candidate validation, checking next model...`);
+          }
         } else {
           console.warn(`[AI Inference Notice] Groq (${model}) HTTP ${res.status}: ${res.data.slice(0, 100)}`);
         }
@@ -1026,7 +1034,9 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
         if (res.status === 200) {
           const json = JSON.parse(res.data);
           const parsed = cleanJsonText(json.choices?.[0]?.message?.content);
-          if (parsed) return { success: true, modelUsed: `OpenAI (${model})`, data: parsed };
+          if (parsed && (!validationFn || validationFn(parsed))) {
+            return { success: true, modelUsed: `OpenAI (${model})`, data: parsed };
+          }
         } else {
           console.warn(`[AI Inference Notice] OpenAI (${model}) HTTP ${res.status}: ${res.data.slice(0, 100)}`);
         }
@@ -1036,9 +1046,15 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
     }
   }
 
-  // 6. Cloudflare Workers AI
+  // 6. Cloudflare Workers AI (Dedicated Fallback Tier)
   if (CLOUDFLARE_ACCOUNT_ID && CLOUDFLARE_API_TOKEN) {
-    const models = ['@cf/meta/llama-3.1-8b-instruct', '@cf/meta/llama-3.2-3b-instruct'];
+    const models = [
+      '@cf/meta/llama-3.1-8b-instruct',
+      '@cf/meta/llama-3-8b-instruct',
+      '@cf/mistral/mistral-7b-instruct-v0.1',
+      '@cf/qwen/qwen1.5-14b-chat',
+      '@cf/meta/llama-3.2-3b-instruct'
+    ];
     for (const model of models) {
       try {
         const postData = JSON.stringify({
@@ -1067,7 +1083,9 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
           const json = JSON.parse(res.data);
           const responseText = json.result?.response || (typeof json.result === 'string' ? json.result : null);
           const parsed = cleanJsonText(responseText);
-          if (parsed) return { success: true, modelUsed: `Cloudflare Workers AI (${model})`, data: parsed };
+          if (parsed && (!validationFn || validationFn(parsed))) {
+            return { success: true, modelUsed: `Cloudflare Workers AI (${model})`, data: parsed };
+          }
         } else {
           console.warn(`[AI Inference Notice] Cloudflare (${model}) HTTP ${res.status}: ${res.data.slice(0, 100)}`);
         }
@@ -1112,7 +1130,7 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
 
       if (res.status === 200) {
         const parsed = cleanJsonText(res.data);
-        if (parsed) {
+        if (parsed && (!validationFn || validationFn(parsed))) {
           console.log(`[AI Inference Success] ⚡ Universal Free AI (${model}) produced valid JSON.`);
           return { success: true, modelUsed: `Universal Free AI (${model})`, data: parsed };
         }
@@ -1271,13 +1289,18 @@ Then select 1 winning topic that best suits our setup and niche, explain why it 
 
 Return strictly valid JSON.`;
 
-  const aiResult = await callActiveAiForJson(systemPrompt, userPrompt, null, {
-    preferLocalAi: nicheKey === 'fin',
-    nicheKey,
-    nicheConfig,
-    searchSnippets: allSearchResults,
-    pastTopics
-  });
+  const aiResult = await callActiveAiForJson(
+    systemPrompt,
+    userPrompt,
+    (data) => Boolean(data && Array.isArray(data.candidates) && data.candidates.length > 0),
+    {
+      preferLocalAi: nicheKey === 'fin',
+      nicheKey,
+      nicheConfig,
+      searchSnippets: allSearchResults,
+      pastTopics
+    }
+  );
   let parsedData = aiResult.data;
   const modelUsed = aiResult.modelUsed;
 
