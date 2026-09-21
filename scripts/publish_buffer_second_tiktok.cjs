@@ -368,7 +368,11 @@ async function postToTikTok(channelId, videoUrl, caption) {
       }
     ],
     metadata: {
-      tiktok: {}
+      tiktok: {
+        isAiGenerated: true,
+        duetDisabled: false,
+        stitchDisabled: false
+      }
     }
   };
 
@@ -385,7 +389,15 @@ async function postToTikTok(channelId, videoUrl, caption) {
       console.warn(`  ⚠️ Buffer GraphQL notice: ${result.message}. Trying classic REST...`);
     }
   } catch (gqlErr) {
-    console.warn(`  ⚠️ Buffer GraphQL failed (${gqlErr.message}). Trying classic REST fallback...`);
+    console.warn(`  ⚠️ Buffer GraphQL failed (${gqlErr.message}). Retrying without custom metadata...`);
+    try {
+      // Fallback GraphQL retry without extended metadata if schema is restrictive
+      const basicInput = { ...input, metadata: { tiktok: {} } };
+      const dataRetry = await bufferRequest(mutation, { input: basicInput });
+      if (dataRetry?.createPost?.post?.id) {
+        return { success: true, id: dataRetry.createPost.post.id, status: dataRetry.createPost.post.status };
+      }
+    } catch {}
   }
 
   // REST API Fallback
@@ -395,6 +407,7 @@ async function postToTikTok(channelId, videoUrl, caption) {
     form.append('text', caption);
     form.append('media[video]', videoUrl);
     form.append('now', SHARE_NOW ? 'true' : 'false');
+    form.append('is_ai_generated', 'true');
 
     const res = await fetch(`https://api.bufferapp.com/1/updates/create.json?access_token=${encodeURIComponent(BUFFER_API_KEY)}`, {
       method: 'POST',
@@ -473,7 +486,7 @@ async function dispatchTikTok(channelType = 'movie_brand') {
       } catch {}
     }
 
-    caption = `🎬 ${meta.seriesTitle || 'Protocol Zero'} // Episode: ${meta.episodeTitle || 'The Breach'}\n\n${(meta.narration || '').slice(0, 180)}...\n\nFollow for daily cinematic episodes! 🍿🔥\n\n#MovieTrailer #SciFi #CinemaVanguard #Cinematic #ShortFilm #ProtocolZero #TikTokMovies #Drama`;
+    caption = `🎬 ${meta.seriesTitle || 'Protocol Zero'} // Episode: ${meta.episodeTitle || 'The Breach'}\n\n${(meta.narration || '').slice(0, 180)}...\n\nFollow for daily cinematic episodes! 🍿🔥\n\n#AIGenerated #MovieTrailer #SciFi #CinemaVanguard #Cinematic #ShortFilm #ProtocolZero #TikTokMovies #Drama #AI`;
 
   } else if (channelType === 'teen_motivation') {
     // Select channel ID

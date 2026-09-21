@@ -495,6 +495,41 @@ function buildDigitalPresentationBoardSvg(factObj, width = 1080, height = 1920) 
 }
 
 /**
+ * High-Visibility 2-Second Opening Title Card Overlay
+ * Mandated: The first 2 seconds must clearly show the show name and episode topic title
+ */
+function buildIntroTitleBadgeSvg(topic, script, width = 1080, height = 1920) {
+  const displayTitle = (topic.title || 'Everyday Science').toUpperCase().slice(0, 48);
+  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="introBadgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#020617" stop-opacity="0.96" />
+        <stop offset="50%" stop-color="#0b1329" stop-opacity="0.96" />
+        <stop offset="100%" stop-color="#020617" stop-opacity="0.98" />
+      </linearGradient>
+      <filter id="introBadgeShadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="12" stdDeviation="20" flood-color="#0284c7" flood-opacity="0.55" />
+      </filter>
+    </defs>
+    <!-- Top-Safe Zone Floating Title Header (Y=80 to Y=210) -->
+    <g filter="url(#introBadgeShadow)" transform="translate(100, 75)">
+      <rect x="0" y="0" width="880" height="135" rx="28" fill="url(#introBadgeGrad)" stroke="#38bdf8" stroke-width="3" />
+      <!-- Channel & Character Badge -->
+      <g transform="translate(36, 24)">
+        <circle cx="10" cy="12" r="7" fill="#38bdf8" />
+        <text x="28" y="18" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="900" fill="#38bdf8" letter-spacing="3">
+          ARCHIE EXPLAINS • EVERYDAY SCIENCE
+        </text>
+      </g>
+      <!-- Prominent Visible Episode Title -->
+      <text x="440" y="98" font-family="Impact, Arial Black, sans-serif" font-size="34" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="1">
+        ${escapeXml(displayTitle)}
+      </text>
+    </g>
+  </svg>`;
+}
+
+/**
  * Main Generator: Build 5-Second Archie Daily Tech Fact Video
  */
 async function generateArchie5sDailyFact() {
@@ -600,6 +635,13 @@ async function generateArchie5sDailyFact() {
   fs.writeFileSync(boardSvgPath, boardSvg);
   execSync(`ffmpeg -y -i "${boardSvgPath}" "${boardPngPath}" 2>/dev/null`);
 
+  // Build Prominent First-2-Seconds Intro Title Badge
+  const titleSvg = buildIntroTitleBadgeSvg(chosenTopic, script);
+  const titleSvgPath = path.join(ARTIFACTS_DIR, 'archie_intro_title.svg');
+  const titlePngPath = path.join(ARTIFACTS_DIR, 'archie_intro_title.png');
+  fs.writeFileSync(titleSvgPath, titleSvg);
+  execSync(`ffmpeg -y -i "${titleSvgPath}" "${titlePngPath}" 2>/dev/null`);
+
   // 7. Composite Final Video via FFmpeg with Dynamic Pose Transitions & Moving Physical Specimen
   const timestamp = Date.now();
   const finalMp4Path = path.join(ARTIFACTS_DIR, `archie_tech_fact_5s_${timestamp}.mp4`);
@@ -623,7 +665,8 @@ async function generateArchie5sDailyFact() {
     // 7: puppetStomachTalk1
     // 8: puppetStomachTalk2
     // 9: puppetStomachBlink
-    // 10: audioWavPath
+    // 10: titlePngPath
+    // 11: audioWavPath
     const inputs = `
       -loop 1 -t ${reelDuration} -i "${bgPngPath}"
       -loop 1 -t ${reelDuration} -i "${boardPngPath}"
@@ -635,6 +678,7 @@ async function generateArchie5sDailyFact() {
       -loop 1 -t ${reelDuration} -i "${puppetStomachTalk1}"
       -loop 1 -t ${reelDuration} -i "${puppetStomachTalk2}"
       -loop 1 -t ${reelDuration} -i "${puppetStomachBlink}"
+      -loop 1 -t ${reelDuration} -i "${titlePngPath}"
       -i "${audioWavPath}"
     `.replace(/\s+/g, ' ').trim();
 
@@ -649,6 +693,7 @@ async function generateArchie5sDailyFact() {
       [7:v]scale=-1:1150[st_t1];
       [8:v]scale=-1:1150[st_t2];
       [9:v]scale=-1:1150[st_blk];
+      [10:v]scale=1080:1920[title_card];
       [bg][board]overlay=0:0[s_board];
       [s_board][motionClip]overlay=410:690[s0];
       [s0][pt_idle]overlay=x=30:y=720:enable='lt(t,${pSwitch})'[s1];
@@ -657,10 +702,11 @@ async function generateArchie5sDailyFact() {
       [s3][st_idle]overlay=x=30:y=720:enable='gte(t,${pSwitch})'[s4];
       [s4][st_t1]overlay=x=30:y=720:enable='between(t,${pSwitch},${voiceDuration.toFixed(2)})*eq(mod(floor((t-${pSwitch})/0.13),2),0)'[s5];
       [s5][st_t2]overlay=x=30:y=720:enable='between(t,${pSwitch},${voiceDuration.toFixed(2)})*eq(mod(floor((t-${pSwitch})/0.13),2),1)'[s6];
-      [s6][st_blk]overlay=x=30:y=720:enable='gt(t,${pSwitch})*between(mod(t,3.5),3.0,3.15)'[vfinal]
+      [s6][st_blk]overlay=x=30:y=720:enable='gt(t,${pSwitch})*between(mod(t,3.5),3.0,3.15)'[s_body];
+      [s_body][title_card]overlay=0:0:enable='lt(t,2.2)'[vfinal]
     `.replace(/\s+/g, ' ').trim();
 
-    ffmpegCmd = `ffmpeg -y ${inputs} -filter_complex "${complexFilter}" -map "[vfinal]" -map 10:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${reelDuration} "${finalMp4Path}" 2>&1`;
+    ffmpegCmd = `ffmpeg -y ${inputs} -filter_complex "${complexFilter}" -map "[vfinal]" -map 11:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${reelDuration} "${finalMp4Path}" 2>&1`;
   } else {
     // Inputs without physical motion clip
     const inputs = `
@@ -673,6 +719,7 @@ async function generateArchie5sDailyFact() {
       -loop 1 -t ${reelDuration} -i "${puppetStomachTalk1}"
       -loop 1 -t ${reelDuration} -i "${puppetStomachTalk2}"
       -loop 1 -t ${reelDuration} -i "${puppetStomachBlink}"
+      -loop 1 -t ${reelDuration} -i "${titlePngPath}"
       -i "${audioWavPath}"
     `.replace(/\s+/g, ' ').trim();
 
@@ -686,6 +733,7 @@ async function generateArchie5sDailyFact() {
       [6:v]scale=-1:1150[st_t1];
       [7:v]scale=-1:1150[st_t2];
       [8:v]scale=-1:1150[st_blk];
+      [9:v]scale=1080:1920[title_card];
       [bg][board]overlay=0:0[s0];
       [s0][pt_idle]overlay=x=30:y=720:enable='lt(t,${pSwitch})'[s1];
       [s1][pt_t1]overlay=x=30:y=720:enable='between(t,0.25,${pSwitch})*eq(mod(floor(t/0.14),2),0)'[s2];
@@ -693,10 +741,11 @@ async function generateArchie5sDailyFact() {
       [s3][st_idle]overlay=x=30:y=720:enable='gte(t,${pSwitch})'[s4];
       [s4][st_t1]overlay=x=30:y=720:enable='between(t,${pSwitch},${voiceDuration.toFixed(2)})*eq(mod(floor((t-${pSwitch})/0.13),2),0)'[s5];
       [s5][st_t2]overlay=x=30:y=720:enable='between(t,${pSwitch},${voiceDuration.toFixed(2)})*eq(mod(floor((t-${pSwitch})/0.13),2),1)'[s6];
-      [s6][st_blk]overlay=x=30:y=720:enable='gt(t,${pSwitch})*between(mod(t,3.5),3.0,3.15)'[vfinal]
+      [s6][st_blk]overlay=x=30:y=720:enable='gt(t,${pSwitch})*between(mod(t,3.5),3.0,3.15)'[s_body];
+      [s_body][title_card]overlay=0:0:enable='lt(t,2.2)'[vfinal]
     `.replace(/\s+/g, ' ').trim();
 
-    ffmpegCmd = `ffmpeg -y ${inputs} -filter_complex "${complexFilter}" -map "[vfinal]" -map 9:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${reelDuration} "${finalMp4Path}" 2>&1`;
+    ffmpegCmd = `ffmpeg -y ${inputs} -filter_complex "${complexFilter}" -map "[vfinal]" -map 10:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${reelDuration} "${finalMp4Path}" 2>&1`;
   }
 
   execSync(ffmpegCmd);

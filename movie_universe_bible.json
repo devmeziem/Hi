@@ -4,24 +4,54 @@
   "genre": "Cinematic Sci-Fi Thriller / Episodic Mini-Movie",
   "artStyle": "Cinematic stylized film render, Unreal Engine 5 aesthetic, volumetric steam, dramatic shadows, sharp metallic reflections, high detail vertical 9:16 frame",
   "negativePrompt": "blurry, low quality, deformed anatomy, oversaturated colors, flat drawing, bad hands, distorted faces",
-  "protagonist": {
-    "name": "Max Vance",
-    "role": "Renowned Rogue Army Contractor & Infiltration Specialist",
-    "baseSeed": 741829,
-    "visualAnchor": "Rugged operative Max Vance, cold calculating steel-gray eyes, dark hair, weathered jawline, wearing a heavy charcoal-gray tactical infiltration suit with reinforced titanium plates, tactical rebreather harness, glowing blue ocular scanner over right eye, gripping a high-intensity combat torch",
-    "distinctiveFeatures": [
-      "Rugged weathered jawline with combat scars",
-      "Reinforced titanium charcoal tactical infiltration suit with hydraulic joints",
-      "Glowing cobalt ocular scanner over right eye",
-      "High-powered tactical halogen combat torch"
-    ]
+  "characters": {
+    "protagonist": {
+      "name": "Max Vance",
+      "role": "Renowned Rogue Army Contractor & Infiltration Specialist",
+      "baseSeed": 741829,
+      "visualAnchor": "Rugged operative Max Vance, cold calculating steel-gray eyes, dark hair with combat cut, tactical scar across left cheek, wearing a heavy charcoal-gray tactical infiltration suit with reinforced titanium plates, tactical rebreather harness, glowing cobalt ocular scanner over right eye, gripping a high-intensity tactical halogen combat torch",
+      "dressing": "Charcoal-gray ballistic compression suit, titanium chest plating, hydraulic knee supports, waterproof utility belt with sidearm and data decoders",
+      "distinctiveFeatures": [
+        "Rugged weathered jawline with combat scars",
+        "Reinforced titanium charcoal tactical infiltration suit with hydraulic joints",
+        "Glowing cobalt ocular scanner over right eye",
+        "High-powered tactical halogen combat torch"
+      ]
+    },
+    "sister": {
+      "name": "Maya Vance",
+      "role": "Lead Cyber-Warfare Engineer & Tactical Signals Specialist",
+      "baseSeed": 892143,
+      "visualAnchor": "Maya Vance, younger sister of Max Vance, brilliant cybernetics engineer with sharp focused facial features, dark braided hair tied back, wearing a sleek matte-black tactical tech harness with glowing cyan fiber-optic cables, biometric holographic wrist gauntlet, tactical comms headset, monitoring telemetry radar in dark bunker",
+      "dressing": "Matte-black lightweight stealth reconnaissance suit, cyan luminescent telemetry conduits, high-tech gauntlet display, insulated tactical boots",
+      "distinctiveFeatures": [
+        "Dark braided hair tied in tactical ponytail",
+        "Glowing cyan fiber-optic telemetry lines along shoulders",
+        "Biometric holographic radar wrist gauntlet",
+        "Encrypted satellite communications headset"
+      ]
+    },
+    "roboticAutomaton": {
+      "name": "Apex-7 Autonomous Security Automaton",
+      "role": "Soviet-Era Heavy Defense Android & Rogue Entity Guardian",
+      "baseSeed": 918234,
+      "visualAnchor": "Apex-7 autonomous robotic combat automaton in Sub-Level 14, heavy industrial titanium and dark steel armor plating, reinforced hydraulic servo limbs, single glowing circular crimson optical sensor eye, mounted surveillance antennas, standing on elevated steel gantry above black water",
+      "dressing": "Heavy weathered industrial metal plating, hydraulic pistons, exposed pneumatic conduits, high-voltage battery housing",
+      "distinctiveFeatures": [
+        "Single glowing circular crimson/amber cyclic optic eye",
+        "Heavy hydraulic servo limbs with massive industrial claw grip",
+        "Soviet-era Cyrillic hazard stencils 'СЕКТОР-0'",
+        "High-voltage electrical discharge arcs"
+      ]
+    }
   },
   "environment": {
-    "worldName": "Sub-Level 14 Flooded Industrial Tunnels",
+    "worldName": "Sub-Level 14 Flooded Industrial Complex",
     "visualAnchor": "Massive flooded underground railway tunnels, deep black water, rusted steel beams, dripping concrete ceiling, emergency strobe lights softly glowing in the dark, dense atmospheric mist",
-    "lightingPalette": "Deep shadows, bright white halogen beam, subtle dark blue and warm warning lights, high contrast cinematic rim lighting"
+    "vaultDoorSeven": "Massive eight-ton circular tungsten blast door, three-foot-thick solid steel locking pins, torn outward from inside with deep four-inch claw trenches gouged into the solid iron floor plating",
+    "lightingPalette": "Deep subterranean shadows, bright white halogen beam, subtle cobalt blue and amber warning beacons, high contrast cinematic rim lighting"
   },
-  "actsPerEpisode": 5,
+  "actsPerEpisode": 12,
   "seasonEpisodesCount": 7,
   "consistencyEngine": {
     "characterLocked": true,

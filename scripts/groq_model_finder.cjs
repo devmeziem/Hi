@@ -22,9 +22,10 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const DEFAULT_CANDIDATES = [
   'llama-3.3-70b-versatile',
   'llama-3.1-8b-instant',
-  'deepseek-r1-distill-llama-70b',
-  'gemma2-9b-it',
-  'mixtral-8x7b-32768'
+  'llama3-70b-8192',
+  'llama3-8b-8192',
+  'allam-2-7b',
+  'qwen-2.5-32b'
 ];
 
 /**
@@ -43,21 +44,28 @@ const MODEL_PROFILES = {
     isReasoning: false,
     maxTokens: 4096
   },
-  'deepseek-r1-distill-llama-70b': {
-    supportsJsonObject: false, // DeepSeek R1 reasoning models reject json_object response_format
-    needsColonPrompt: true,
-    isReasoning: true,
-    maxTokens: 4096
-  },
-  'gemma2-9b-it': {
-    supportsJsonObject: false,
+  'llama3-70b-8192': {
+    supportsJsonObject: true,
     needsColonPrompt: true,
     isReasoning: false,
     maxTokens: 4096
   },
-  'mixtral-8x7b-32768': {
+  'llama3-8b-8192': {
     supportsJsonObject: true,
-    needsColonPrompt: false,
+    needsColonPrompt: true,
+    isReasoning: false,
+    maxTokens: 4096
+  },
+  'allam-2-7b': {
+    supportsJsonObject: false, // allam-2-7b rejects response_format json_object
+    needsColonPrompt: true,
+    isReasoning: false,
+    maxTokens: 700, // Strict completion window limit on Groq
+    compactContext: true
+  },
+  'qwen-2.5-32b': {
+    supportsJsonObject: true,
+    needsColonPrompt: true,
     isReasoning: false,
     maxTokens: 4096
   }
@@ -68,13 +76,25 @@ const MODEL_PROFILES = {
  */
 function formatGroqPayload(model, { systemPrompt = '', userPrompt = '', jsonMode = true, temperature = 0.7, maxTokens = 2200 }) {
   const profile = MODEL_PROFILES[model] || {
-    supportsJsonObject: !model.includes('deepseek-r1') && !model.includes('gemma'),
+    supportsJsonObject: !model.includes('deepseek-r1') && !model.includes('gemma') && !model.includes('allam'),
     needsColonPrompt: true,
-    isReasoning: model.includes('r1') || model.includes('reason')
+    isReasoning: model.includes('r1') || model.includes('reason'),
+    maxTokens: model.includes('allam') ? 700 : 2048,
+    compactContext: model.includes('allam')
   };
 
   let cleanUserPrompt = userPrompt;
   let cleanSystemPrompt = systemPrompt;
+
+  // For models with small context like allam-2-7b, keep prompts compact to prevent 400 invalid_request
+  if (profile.compactContext) {
+    if (cleanSystemPrompt.length > 300) {
+      cleanSystemPrompt = cleanSystemPrompt.slice(0, 300) + ' Respond with valid JSON only.';
+    }
+    if (cleanUserPrompt.length > 1200) {
+      cleanUserPrompt = cleanUserPrompt.slice(0, 1200) + '\nOutput valid JSON object:';
+    }
+  }
 
   if (jsonMode) {
     // Ensure the word 'json' is explicitly in prompt (mandated by Groq API for json_object)
@@ -94,11 +114,13 @@ function formatGroqPayload(model, { systemPrompt = '', userPrompt = '', jsonMode
   }
   messages.push({ role: 'user', content: cleanUserPrompt });
 
+  const effectiveMaxTokens = profile.maxTokens ? Math.min(maxTokens, profile.maxTokens) : maxTokens;
+
   const payload = {
     model,
     messages,
     temperature,
-    max_tokens: maxTokens
+    max_tokens: effectiveMaxTokens
   };
 
   // Only attach response_format if the model actually supports it

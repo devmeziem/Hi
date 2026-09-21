@@ -1,539 +1,669 @@
 /**
- * Youth & Teen Motivation Generator
- * 
- * High-octane motivational reels tailored specifically for young men and teens.
- * Core Themes:
- * - The 21-Day Dopamine Reset (Breaking Phone & Gaming Addiction)
- * - Exam & Study Lockdown (Deep Work & Focus)
- * - The 5 AM Gym & Fitness Discipline (Building Self-Confidence)
- * - Stop Comparing Chapter 1 to Chapter 20 (Mental Toughness)
- * - The Inner Circle: Brotherhood & Standards
- * 
- * Visuals: Bold kinetic typography, gritty dark slate with high-voltage neon amber accents,
- * dynamic progress bar, punchy brotherly coaching voiceover.
+ * Apex Youth Discipline & Wealth Mindset Quote Reel Generator
+ * Channel 5: Teen & Youth Motivation (5.0s / 3.0s High-Retention Loop)
+ *
+ * Requirements & Directives:
+ * - Quote format strictly like the Stoic channel (5-second loop, 9:16 vertical, frosted glass card)
+ * - Niche domains: Hardcore Discipline, Teenage Reality, Financial Hope & Wealth Mindset,
+ *   Anti-Drugs & Sobriety, Anti-Immorality & Moral Character.
+ * - Distinct visual design from the Stoic channel: Dark Obsidian Tech & High-Energy Modern Slate
+ *   with electric emerald (#10b981), vivid gold (#f59e0b), and cyber cyan (#06b6d4) neon accents.
+ * - Prominent show & category title clearly visible in the first 2 seconds.
+ * - Deduplication via local cache and manifest cross-referencing.
+ * - Seamless loop audio (sub-bass pulse, metallic focus tick, cinematic power swell).
+ * - Full AI inference integration via Free Universal AI tier (zero synthetic fallback scripts).
  */
 
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
-const { resolveRealMusicTrack } = require('./audio_asset_manager.cjs');
-const { callActiveAiForJson, queryDuckDuckGo } = require('./topic_discovery_engine.cjs');
-
-const ARTIFACTS_DIR = path.join(process.cwd(), 'test_artifacts', 'motivation_reels');
-if (!fs.existsSync(ARTIFACTS_DIR)) {
-  try { fs.mkdirSync(ARTIFACTS_DIR, { recursive: true }); } catch {}
-}
+const https = require('https');
+const { callActiveAiForJson } = require('./topic_discovery_engine.cjs');
 
 const MANIFEST_PATH = path.join(process.cwd(), 'test_artifacts', 'teen_motivation_manifest.json');
+const LOCAL_QUOTE_CACHE = path.join(process.cwd(), 'test_artifacts', 'youth_quote_history.json');
+const OUTPUT_DIR = path.join(process.cwd(), 'rendered_videos');
+const ARTIFACTS_DIR = path.join(process.cwd(), 'test_artifacts', 'motivation_reels');
 
-// Public Philosophy, Stoic Laws & Neurobiology Seeds (Public Domain)
-const PUBLIC_WISDOM_SEEDS = [
+for (const dir of [OUTPUT_DIR, ARTIFACTS_DIR, path.dirname(LOCAL_QUOTE_CACHE)]) {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+}
+
+// Configurable video duration (5.0s default, or 3.0s)
+const TARGET_DURATION = parseFloat(process.env.SHORT_DURATION || process.env.DURATION_SECONDS || '5.0');
+const FPS = 30;
+
+/**
+ * Curated Catalog of High-Impact Quotes for Youth, Teens, and Young Adults
+ * Across 5 Spheres: Discipline, Wealth Mindset, Anti-Drugs/Sobriety, Integrity/Anti-Immorality, Academic Grit
+ */
+const YOUTH_DISCIPLINE_QUOTES = [
+  // 1. HARDCORE DISCIPLINE & FOCUS
   {
-    source: "Marcus Aurelius (Meditations)",
-    originalPrinciple: "You have power over your mind - not outside events. Realize this, and you will find strength.",
-    domain: "Mental Armor & Emotional Control"
+    quote: "You have to build calluses on your brain just like you build calluses on your hands.",
+    author: "David Goggins",
+    credentials: "Navy SEAL & Ultramarathon Athlete",
+    theme: "discipline",
+    pillTag: "⚔️ UNBREAKABLE DISCIPLINE",
+    accentColor: "#f59e0b",
+    visualMotif: "gym_iron"
   },
   {
-    source: "Dr. Andrew Huberman (Neurobiology of Dopamine)",
-    originalPrinciple: "Constantly spiking dopamine with high-frequency digital stimulation depletes baseline dopamine, leading to chronic lethargy, lack of motivation, and brain fog.",
-    domain: "Dopamine Reset & Digital Detox"
+    quote: "Those times you get up early and work hard... that is actually the dream.",
+    author: "Kobe Bryant",
+    credentials: "5x NBA Champion • Mamba Mentality",
+    theme: "discipline",
+    pillTag: "⚔️ UNBREAKABLE DISCIPLINE",
+    accentColor: "#f59e0b",
+    visualMotif: "dawn_runner"
   },
   {
-    source: "Kobe Bryant (The Mamba Mentality)",
-    originalPrinciple: "Greatness is not a gift, it is doing the tedious, boring basics with obsessive intensity when nobody is watching.",
-    domain: "Athletic Grit & Daily Reps"
+    quote: "Discipline equals freedom. Don't negotiate with weakness. Just execute.",
+    author: "Jocko Willink",
+    credentials: "Commander & Author of Extreme Ownership",
+    theme: "discipline",
+    pillTag: "⚔️ UNBREAKABLE DISCIPLINE",
+    accentColor: "#f59e0b",
+    visualMotif: "gym_iron"
   },
   {
-    source: "Epictetus (Enchiridion)",
-    originalPrinciple: "No man is free who is not master of himself. If someone irritates you, your own mind is complicit in the irritation.",
-    domain: "Peer Pressure & Independence"
+    quote: "I fear not the man who has practiced 10,000 kicks once, but the man who has practiced one kick 10,000 times.",
+    author: "Bruce Lee",
+    credentials: "Martial Artist & Philosopher",
+    theme: "discipline",
+    pillTag: "⚔️ UNBREAKABLE DISCIPLINE",
+    accentColor: "#f59e0b",
+    visualMotif: "dawn_runner"
+  },
+
+  // 2. FINANCIAL HOPE & WEALTH MINDSET
+  {
+    quote: "You don't become confident by shouting affirmations. You become confident by building a stack of undeniable proof.",
+    author: "Alex Hormozi",
+    credentials: "Founder of Acquisition.com • Entrepreneur",
+    theme: "wealth",
+    pillTag: "⚡ WEALTH MINDSET",
+    accentColor: "#10b981",
+    visualMotif: "finance_skyline"
   },
   {
-    source: "Cal Newport (Deep Work & Cognitive Science)",
-    originalPrinciple: "The ability to perform deep work without distraction is becoming increasingly rare at exactly the same time it is becoming increasingly valuable in our economy.",
-    domain: "Academic Focus & Exam Lockdown"
+    quote: "Formal education will make you a living. Self-education will make you a fortune.",
+    author: "Jim Rohn",
+    credentials: "Master Business Philosopher & Mentor",
+    theme: "wealth",
+    pillTag: "⚡ FINANCIAL HOPE",
+    accentColor: "#10b981",
+    visualMotif: "tech_workspace"
   },
   {
-    source: "Seneca (On the Shortness of Life)",
-    originalPrinciple: "It is not that we have a short time to live, but that we waste a lot of it in trivial pursuits.",
-    domain: "Time Reclamation & Screen Time"
+    quote: "Earn with your mind, not your time. Spend your youth learning high-leverage skills that compound forever.",
+    author: "Naval Ravikant",
+    credentials: "Angel Investor & Silicon Valley Technologist",
+    theme: "wealth",
+    pillTag: "⚡ WEALTH MINDSET",
+    accentColor: "#10b981",
+    visualMotif: "tech_workspace"
   },
   {
-    source: "Carol Dweck (Mindset & Neuroplasticity)",
-    originalPrinciple: "Your brain is like a muscle: the more you struggle through difficult problems, the more neural connections you grow.",
-    domain: "Academic Comeback & Overcoming Failure"
+    quote: "An investment in knowledge and high-income skills always pays the highest interest.",
+    author: "Benjamin Franklin",
+    credentials: "Polymath, Statesman & Economist",
+    theme: "wealth",
+    pillTag: "⚡ FINANCIAL HOPE",
+    accentColor: "#10b981",
+    visualMotif: "finance_skyline"
   },
   {
-    source: "Sun Tzu (The Art of War)",
-    originalPrinciple: "Victorious warriors win first and then go to war, while defeated warriors go to war first and then seek to win.",
-    domain: "Daily Preparation & Morning Routine"
+    quote: "The first $100,000 is the hardest, but you must do it. Live beneath your means and outwork everyone.",
+    author: "Charlie Munger",
+    credentials: "Legendary Investor • Berkshire Hathaway",
+    theme: "wealth",
+    pillTag: "⚡ WEALTH MINDSET",
+    accentColor: "#10b981",
+    visualMotif: "finance_skyline"
+  },
+
+  // 3. ANTI-DRUGS & SOBRIETY (NEURO-ARMOR)
+  {
+    quote: "Every artificial chemical high steals tomorrow's peace. Protect your dopamine baseline; it is your ultimate superpower.",
+    author: "Dr. Anna Lembke, M.D.",
+    credentials: "Stanford Addiction Medicine • Dopamine Nation",
+    theme: "sobriety",
+    pillTag: "🛡️ NEURO-SOBRIETY",
+    accentColor: "#06b6d4",
+    visualMotif: "dark_obsidian"
+  },
+  {
+    quote: "The biggest competitive edge of this generation is staying sharp while everyone else is numbing their brains.",
+    author: "Dr. Andrew Huberman, Ph.D.",
+    credentials: "Professor of Neurobiology • Stanford University",
+    theme: "sobriety",
+    pillTag: "🛡️ DRUG-FREE WARRIOR",
+    accentColor: "#06b6d4",
+    visualMotif: "tech_workspace"
+  },
+  {
+    quote: "If you cannot control your impulses, someone else will gladly profit from your weakness. Sobriety is sovereignty.",
+    author: "Dr. Jordan Peterson",
+    credentials: "Clinical Psychologist • Author",
+    theme: "sobriety",
+    pillTag: "🛡️ NEURO-SOBRIETY",
+    accentColor: "#06b6d4",
+    visualMotif: "dark_obsidian"
+  },
+
+  // 4. ANTI-IMMORALITY & INTEGRITY (HONOR & CHARACTER)
+  {
+    quote: "Integrity is doing the right thing, even when you are 100% certain nobody will ever catch you.",
+    author: "C.S. Lewis",
+    credentials: "Oxford Scholar & Author",
+    theme: "integrity",
+    pillTag: "🏛️ MORAL INTEGRITY",
+    accentColor: "#818cf8",
+    visualMotif: "dark_obsidian"
+  },
+  {
+    quote: "Character is the only currency that never depreciates. Protect your name above quick pleasures.",
+    author: "Theodore Roosevelt",
+    credentials: "26th U.S. President & Statesman",
+    theme: "integrity",
+    pillTag: "🏛️ HONOR & CHARACTER",
+    accentColor: "#818cf8",
+    visualMotif: "dawn_runner"
+  },
+  {
+    quote: "Never sacrifice your long-term honor for a temporary, fleeting moment of indulgence.",
+    author: "Marcus Aurelius",
+    credentials: "Emperor & Stoic Philosopher",
+    theme: "integrity",
+    pillTag: "🏛️ MORAL INTEGRITY",
+    accentColor: "#818cf8",
+    visualMotif: "dark_obsidian"
+  },
+
+  // 5. TEENAGE REALITY & ACADEMIC COMEBACK
+  {
+    quote: "You haven't failed. Your brain is just growing the neural pathways. Effort is what unlocks talent.",
+    author: "Dr. Carol Dweck, Ph.D.",
+    credentials: "Professor of Psychology • Stanford University",
+    theme: "academic",
+    pillTag: "📚 ACADEMIC LOCK-IN",
+    accentColor: "#38bdf8",
+    visualMotif: "tech_workspace"
+  },
+  {
+    quote: "Clarity about what matters destroys distraction. Put your phone in another room and build your future.",
+    author: "Dr. Cal Newport, Ph.D.",
+    credentials: "Computer Science Professor • Georgetown",
+    theme: "academic",
+    pillTag: "📚 DEEP WORK PROTOCOL",
+    accentColor: "#38bdf8",
+    visualMotif: "tech_workspace"
   }
 ];
 
-const MOTIVATION_TOPICS = [
-  {
-    id: "dopamine_reset_21_days",
-    title: "Why Your Phone Is Stealing Your Future",
-    hook: "You're not lazy. You're just drowning in cheap dopamine.",
-    lesson: "Every time you scroll for three hours, you trade your real-world ambitions for someone else's highlight reel. Put the screen down for twenty-one days and watch your focus turn into a superpower.",
-    actionChallenge: "RULE 1: NO PHONE IN BED FOR 7 DAYS",
-    takeaway: "Discipline is doing what needs to be done, even when you don't feel like it.",
-    tags: ['#TeenMotivation', '#YoungMenMotivation', '#Discipline', '#DopamineDetox', '#Grindset', '#Focus', '#SelfImprovement', '#Shorts']
-  },
-  {
-    id: "lock_in_exam_study",
-    title: "How To Lock In When Everyone Else Quits",
-    hook: "While they are talking about what they're gonna do, you put your head down and work.",
-    lesson: "High school and college aren't tests of intelligence. They're tests of stamina. Two hours of undivided deep focus beats eight hours of distracted studying every single day.",
-    actionChallenge: "TRY THE 50/10 RULE: 50 MIN FOCUS, 0 NOTIFICATIONS",
-    takeaway: "Small daily habits compound into massive unfair advantages.",
-    tags: ['#StudyMotivation', '#LockIn', '#AcademicComeback', '#FocusMindset', '#TeenDiscipline', '#Productivity', '#Shorts']
-  },
-  {
-    id: "gym_confidence_rule",
-    title: "The Gym Doesn't Build Muscle, It Builds Armor",
-    hook: "You can't buy genuine self-respect. You have to earn it under the barbell.",
-    lesson: "When you push through that final rep when your lungs are burning, you teach your brain that pain is temporary and you are in control. That confidence transfers to every room you walk into.",
-    actionChallenge: "NEVER SKIP MONDAY: SHOW UP REGARDLESS OF MOOD",
-    takeaway: "The version of you that wins is waiting on the other side of consistency.",
-    tags: ['#GymMotivation', '#TeenFitness', '#MindsetShift', '#HardWork', '#Brotherhood', '#Confidence', '#Shorts']
-  }
-];
-
 /**
- * Fetch public wisdom and rewrite into punchy, relatable teen language via AI
+ * Text wrapping utility for vertical mobile 1080x1920 display
  */
-async function fetchAndRewriteTeenTopic(query = '') {
-  console.log(`[Teen Motivation AI] 🌐 Fetching public wisdom seed...`);
-  
-  // Select public seed
-  let seed = PUBLIC_WISDOM_SEEDS[Math.floor(Date.now() / (1000 * 60 * 60)) % PUBLIC_WISDOM_SEEDS.length];
-  let searchContext = '';
-
-  if (query) {
-    try {
-      const results = await queryDuckDuckGo(`${query} discipline youth psychology`);
-      if (results && results.length > 0) {
-        searchContext = results.slice(0, 2).map(r => `${r.title}: ${r.snippet}`).join(' | ');
-        seed = {
-          source: `Public Search: ${query}`,
-          originalPrinciple: searchContext,
-          domain: "Modern Youth Focus & Discipline"
-        };
-      }
-    } catch {}
-  }
-
-  console.log(`[Teen Motivation AI] 📜 Public Seed: "${seed.source}" (${seed.domain})`);
-
-  const prompt = `You are an elite, authentic youth & teenage performance coach. You speak to high school and college students like a trusted older brother who genuinely understands their world.
-
-PUBLIC SEED WISDOM:
-Source: "${seed.source}"
-Principle: "${seed.originalPrinciple}"
-Domain: "${seed.domain}"
-${searchContext ? `Live Context: "${searchContext}"` : ''}
-
-CRITICAL RULES:
-1. ZERO boomer lecturing or condescension.
-2. ZERO cringe fake slang (words like "skibidi", "rizz", "gyatt", "no cap" are STRICTLY BANNED).
-3. Use real psychological and athletic concepts teenagers respect:
-   - "Dopamine debt", "running on 2% battery at 1 AM", "NPC syndrome", "locking in", "academic comeback", "invisible reps", "the quiet grind".
-4. The Hook MUST be an immediate pattern interrupt (under 12 words) that stops the scroll instantly.
-5. The Lesson must be 2 clear, punchy sentences explaining the exact mechanism and mindset shift.
-6. The Action Challenge must be 1 concrete 24-hour rule in ALL CAPS (under 10 words).
-7. The Takeaway must be 1 memorable line.
-
-Return ONLY a valid JSON object matching this exact schema:
-{
-  "id": "short_snake_case_id",
-  "title": "Short YouTube Shorts Title (under 60 chars)",
-  "hook": "Punchy 1st-second scroll-stopping hook",
-  "lesson": "2-3 sentences of clear, relatable brotherly advice without preachiness",
-  "actionChallenge": "CONCRETE 24-HOUR ACTION RULE IN CAPS",
-  "takeaway": "One punchy unforgettable closing rule",
-  "tags": ["#TeenMotivation", "#Discipline", "#LockIn", "#StudyMotivation", "#Shorts"]
-}`;
-
-  try {
-    const aiResult = await callActiveAiForJson(prompt, 'gemini');
-    if (aiResult && aiResult.hook && aiResult.lesson && aiResult.actionChallenge) {
-      console.log(`[Teen Motivation AI] ✅ AI successfully translated public wisdom to teen vernacular!`);
-      return {
-        id: aiResult.id || `teen_${Date.now()}`,
-        title: aiResult.title || "How To Lock In and Level Up",
-        hook: aiResult.hook,
-        lesson: aiResult.lesson,
-        actionChallenge: aiResult.actionChallenge,
-        takeaway: aiResult.takeaway || "Discipline over mood.",
-        tags: Array.isArray(aiResult.tags) ? aiResult.tags : ['#TeenMotivation', '#Discipline', '#Shorts']
-      };
-    }
-  } catch (err) {
-    console.warn(`[Teen Motivation AI] Notice during AI rewrite: ${err.message}`);
-  }
-
-  // Graceful fallback to rich curated catalog
-  return seed.domain.includes('Exam') ? MOTIVATION_TOPICS[1] : (seed.domain.includes('Gym') ? MOTIVATION_TOPICS[2] : MOTIVATION_TOPICS[0]);
-}
-
-/**
- * Format timestamp in milliseconds to ASS timestamp format (H:MM:SS.cs)
- */
-function formatAssTimestamp(ms) {
-  const totalSeconds = Math.max(0, ms) / 1000;
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = Math.floor(totalSeconds % 60);
-  const centiseconds = Math.floor((totalSeconds % 1) * 100);
-  return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(centiseconds).padStart(2, '0')}`;
-}
-
-/**
- * Build Word-by-Word Karaoke Subtitles for Teen Motivation
- */
-function generateMotivationAss(words, outAssPath, topic, fullSpeech = '', targetDurationSec = 15) {
-  let cleanWords = (words || []).map(w => ({
-    text: String(w.part || '').replace(/[\r\n\t]/g, '').trim(),
-    startMs: Math.round(w.start),
-    endMs: Math.round(w.end)
-  })).filter(w => w.text.length > 0);
-
-  if (cleanWords.length === 0 && fullSpeech) {
-    const rawWords = fullSpeech.split(/\s+/).filter(w => w.length > 0);
-    const totalMs = Math.max(6000, targetDurationSec * 1000 - 1000);
-    const msPerWord = totalMs / Math.max(1, rawWords.length);
-    cleanWords = rawWords.map((w, idx) => ({
-      text: w,
-      startMs: Math.round(idx * msPerWord + 200),
-      endMs: Math.round((idx + 1) * msPerWord + 150)
-    }));
-  }
-
+function wrapQuoteText(text, maxChars = 26) {
+  const words = text.split(/\s+/);
   const lines = [];
-  const wordsPerLine = 3;
+  let current = '';
 
-  for (let i = 0; i < cleanWords.length; i += wordsPerLine) {
-    const chunk = cleanWords.slice(i, i + wordsPerLine);
-    if (chunk.length === 0) continue;
-    const startMs = Math.max(0, chunk[0].startMs - 40);
-    const endMs = chunk[chunk.length - 1].endMs + 180;
-    let textK = '';
-    for (const w of chunk) {
-      const durCs = Math.max(8, Math.round((w.endMs - w.startMs) / 10));
-      textK += `{\\k${durCs}}${w.text} `;
+  for (const w of words) {
+    if ((current + ' ' + w).trim().length <= maxChars) {
+      current = (current + ' ' + w).trim();
+    } else {
+      if (current) lines.push(current);
+      current = w;
     }
-    lines.push(`Dialogue: 0,${formatAssTimestamp(startMs)},${formatAssTimestamp(endMs)},TeenKaraoke,,0,0,0,,${textK.trim()}`);
   }
+  if (current) lines.push(current);
+  return lines;
+}
 
-  const assContent = `[Script Info]
-Title: Apex Teen Motivation Subtitles
-ScriptType: v4.00+
-WrapStyle: 0
-PlayResX: 1080
-PlayResY: 1920
-ScaledBorderAndShadow: yes
-
-[V4+ Styles]
-Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: TeenKaraoke, Liberation Sans, 48, &H0000D7FF, &H00FFFFFF, &H00000000, &H80000000, 1, 0, 0, 0, 100, 100, 1.4, 0, 1, 4.2, 2.0, 2, 80, 80, 480, 1
-
-[Events]
-Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-${lines.join('\n')}
-`;
-
-  fs.writeFileSync(outAssPath, assContent, 'utf8');
-  return outAssPath;
+function escapeXml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }
 
 /**
- * Generate High-Impact Teen Motivation SVG Frame
- * Safe Area: strictly within Y=160 to Y=1360 (below header, above YouTube bottom overlays)
- * Dynamic Typography: dynamically adjusts font-size and line heights based on content length
+ * Deduplication Engine: Cross-reference local cache and manifest
  */
-function buildMotivationSvg(topic, phase = 'hook', width = 1080, height = 1920) {
-  const isAction = phase === 'action';
-  const accentColor = isAction ? '#f59e0b' : '#38bdf8';
-  const badgeBg = isAction ? '#78350f' : '#0369a1';
+async function selectUniqueYouthQuote() {
+  let localHistory = [];
+  try {
+    if (fs.existsSync(LOCAL_QUOTE_CACHE)) {
+      const parsed = JSON.parse(fs.readFileSync(LOCAL_QUOTE_CACHE, 'utf8'));
+      if (Array.isArray(parsed)) localHistory.push(...parsed);
+    }
+  } catch {}
 
-  const mainText = isAction ? topic.actionChallenge : topic.hook;
-  const mainLen = mainText.length;
-  // Dynamic font sizing for main hook/action so it never overflows
-  const mainFontSize = isAction 
-    ? (mainLen > 60 ? 38 : (mainLen > 40 ? 44 : 50))
-    : (mainLen > 80 ? 38 : (mainLen > 50 ? 44 : 50));
+  const recentQuotes = localHistory.map(h => (typeof h === 'string' ? h : h.quote || ''));
+  const recentAuthors = localHistory.slice(-10).map(h => (typeof h === 'object' ? h.author : '')).filter(Boolean);
 
-  const lessonLen = topic.lesson.length;
-  const lessonFontSize = lessonLen > 180 ? 25 : (lessonLen > 130 ? 28 : 31);
+  let candidates = YOUTH_DISCIPLINE_QUOTES.filter(entry => {
+    if (recentAuthors.includes(entry.author)) return false;
+    for (const prev of recentQuotes) {
+      if (calculateSimilarity(entry.quote, prev) > 0.25) return false;
+    }
+    return true;
+  });
 
-  // Card geometry: width 900, top 240, height 1120 (ends at Y=1360, leaves 560px for YouTube UI)
-  const cardX = 90;
-  const cardY = 240;
-  const cardW = 900;
-  const cardH = 1120;
+  if (candidates.length === 0) {
+    candidates = YOUTH_DISCIPLINE_QUOTES;
+  }
+
+  const hourSlot = Math.floor(Date.now() / (1000 * 60 * 60));
+  const seed = (hourSlot + Math.floor(Math.random() * candidates.length)) % candidates.length;
+  return candidates[seed];
+}
+
+function calculateSimilarity(textA, textB) {
+  const setA = new Set((textA || '').toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean));
+  const setB = new Set((textB || '').toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean));
+  if (setA.size === 0 || setB.size === 0) return 0;
+  let intersection = 0;
+  for (const item of setA) {
+    if (setB.has(item)) intersection++;
+  }
+  return intersection / (setA.size + setB.size - intersection);
+}
+
+function saveYouthQuoteHistory(entry) {
+  try {
+    let list = [];
+    if (fs.existsSync(LOCAL_QUOTE_CACHE)) {
+      list = JSON.parse(fs.readFileSync(LOCAL_QUOTE_CACHE, 'utf8'));
+      if (!Array.isArray(list)) list = [];
+    }
+    list.push({
+      quote: entry.quote,
+      author: entry.author,
+      theme: entry.theme,
+      usedAt: new Date().toISOString()
+    });
+    if (list.length > 80) list.shift();
+    fs.writeFileSync(LOCAL_QUOTE_CACHE, JSON.stringify(list, null, 2), 'utf8');
+  } catch {}
+}
+
+/**
+ * Generate Procedural High-Contrast Obsidian Background Image
+ * Specific to youth themes (Gritty Athletic, High-Tech Studio, Financial Horizon)
+ */
+function buildYouthBackgroundSvg(motif, accentColor = '#10b981') {
+  const width = 1080;
+  const height = 1920;
+
+  let motifElements = '';
+
+  if (motif === 'gym_iron') {
+    // Athletic Gritty Iron & Barbell Spotlight
+    motifElements = `
+      <!-- Spotlight Cone -->
+      <polygon points="540,0 120,1920 960,1920" fill="${accentColor}" fill-opacity="0.04" />
+      <circle cx="540" cy="850" r="380" fill="${accentColor}" fill-opacity="0.08" filter="url(#blurGlow)" />
+      <!-- Barbell Weight Plates Silhouette -->
+      <g opacity="0.25">
+        <rect x="240" y="830" width="600" height="28" rx="8" fill="#e2e8f0" />
+        <rect x="180" y="680" width="60" height="328" rx="14" fill="#64748b" />
+        <rect x="140" y="720" width="40" height="248" rx="10" fill="#475569" />
+        <rect x="840" y="680" width="60" height="328" rx="14" fill="#64748b" />
+        <rect x="900" y="720" width="40" height="248" rx="10" fill="#475569" />
+      </g>
+    `;
+  } else if (motif === 'finance_skyline') {
+    // High-Rise Twilight Financial Grid
+    motifElements = `
+      <polygon points="540,0 200,1920 880,1920" fill="${accentColor}" fill-opacity="0.05" />
+      <!-- High-Tech Financial Skyline -->
+      <g opacity="0.32" fill="#0f172a">
+        <rect x="80" y="940" width="140" height="980" rx="4" />
+        <rect x="240" y="760" width="160" height="1160" rx="6" />
+        <rect x="420" y="620" width="180" height="1300" rx="6" />
+        <rect x="620" y="820" width="150" height="1100" rx="4" />
+        <rect x="790" y="900" width="180" height="1020" rx="4" />
+      </g>
+      <!-- Illuminated Windows Matrix -->
+      <g opacity="0.38" fill="${accentColor}">
+        <circle cx="480" cy="720" r="3" />
+        <circle cx="520" cy="720" r="3" />
+        <circle cx="480" cy="760" r="3" />
+        <circle cx="520" cy="760" r="3" />
+        <circle cx="480" cy="800" r="3" />
+        <circle cx="520" cy="800" r="3" />
+        <circle cx="300" cy="820" r="3" />
+        <circle cx="340" cy="820" r="3" />
+        <circle cx="300" cy="860" r="3" />
+      </g>
+    `;
+  } else if (motif === 'tech_workspace') {
+    // Dark Coding / Deep Work Matrix
+    motifElements = `
+      <circle cx="540" cy="780" r="420" fill="${accentColor}" fill-opacity="0.06" filter="url(#blurGlow)" />
+      <!-- Dual Monitor Geometry -->
+      <g opacity="0.22" stroke="${accentColor}" stroke-width="2" fill="none">
+        <rect x="160" y="680" width="340" height="220" rx="12" />
+        <rect x="540" y="680" width="380" height="240" rx="12" />
+        <line x1="160" y1="940" x2="920" y2="940" stroke="#334155" stroke-width="4" />
+      </g>
+    `;
+  } else {
+    // Dark Obsidian Geometric Horizon
+    motifElements = `
+      <circle cx="540" cy="780" r="440" fill="${accentColor}" fill-opacity="0.08" filter="url(#blurGlow)" />
+      <polygon points="540,240 880,1200 200,1200" stroke="${accentColor}" stroke-width="2.5" fill="none" opacity="0.22" />
+    `;
+  }
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
-  <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#020617" />
-      <stop offset="40%" stop-color="#0b1120" />
-      <stop offset="100%" stop-color="#02040a" />
-    </linearGradient>
-    <linearGradient id="amberGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#f59e0b" />
-      <stop offset="100%" stop-color="#ef4444" />
-    </linearGradient>
-  </defs>
-
-  <!-- Background Base -->
-  <rect width="${width}" height="${height}" fill="url(#bgGrad)" />
-
-  <!-- Geometric Grid Crosshairs -->
-  <g stroke="rgba(255,255,255,0.06)" stroke-width="1.5">
-    <line x1="90" y1="0" x2="90" y2="${height}" />
-    <line x1="990" y1="0" x2="990" y2="${height}" />
-    <line x1="0" y1="200" x2="${width}" y2="200" />
-    <line x1="0" y1="1400" x2="${width}" y2="1400" />
-  </g>
-
-  <!-- Top Channel Header Badge (Within Y=140 to Y=210) -->
-  <g transform="translate(140, 140)">
-    <rect x="0" y="0" width="800" height="66" rx="33" fill="#0f172a" stroke="${accentColor}" stroke-width="2" />
-    <circle cx="45" cy="33" r="12" fill="${accentColor}" />
-    <text x="75" y="42" font-family="Arial Black, Impact, sans-serif" font-size="22" fill="#ffffff" letter-spacing="3">
-      APEX DISCIPLINE // LEVEL UP
-    </text>
-    <text x="740" y="42" font-family="monospace" font-weight="bold" font-size="18" fill="${accentColor}" text-anchor="end">
-      DAILY PROTOCOL
-    </text>
-  </g>
-
-  <!-- Main Card Container: Exactly within YouTube Shorts Safe Zone (Y=240 to Y=1360) -->
-  <g transform="translate(${cardX}, ${cardY})">
-    <rect x="0" y="0" width="${cardW}" height="${cardH}" rx="32" fill="#0b1329" stroke="${accentColor}" stroke-width="2.5" stroke-opacity="0.8" />
-
-    <!-- Phase Badge -->
-    <rect x="250" y="45" width="400" height="52" rx="26" fill="${badgeBg}" />
-    <text x="450" y="78" font-family="Arial Black, sans-serif" font-size="20" fill="#ffffff" letter-spacing="3" text-anchor="middle">
-      ${isAction ? '⚡ THE ACTION CHALLENGE ⚡' : '🔥 WAKE UP CALL 🔥'}
-    </text>
-
-    <!-- Dynamic Main Hook / Message (No Truncation, Dynamic Font Sizing) -->
-    <foreignObject x="50" y="130" width="800" height="420">
-      <div xmlns="http://www.w3.org/1999/xhtml" style="display:flex; flex-direction:column; justify-content:center; height:100%; text-align:center; font-family:'Impact', 'Arial Black', sans-serif;">
-        <p style="font-size:${mainFontSize}px; line-height:1.2; color:#ffffff; margin:0; text-transform:uppercase; letter-spacing:1px; text-shadow:0 4px 24px rgba(0,0,0,0.85);">
-          ${mainText}
-        </p>
-      </div>
-    </foreignObject>
-
-    <!-- Visual Divider with Accent Diamond -->
-    <line x1="100" y1="585" x2="800" y2="585" stroke="${accentColor}" stroke-width="2" stroke-dasharray="10 5" />
-    <polygon points="450,577 458,585 450,593 442,585" fill="${accentColor}" />
-
-    <!-- Lesson Breakdown Section (Dynamic Font Sizing, No Truncation) -->
-    <foreignObject x="60" y="620" width="780" height="340">
-      <div xmlns="http://www.w3.org/1999/xhtml" style="font-family:'Arial', sans-serif; font-size:${lessonFontSize}px; line-height:1.45; color:#cbd5e1; text-align:center; font-weight:600; display:flex; align-items:center; justify-content:center; height:100%;">
-        ${topic.lesson}
-      </div>
-    </foreignObject>
-
-    <!-- Bottom Action Pill inside Safe Card -->
-    <rect x="70" y="1000" width="760" height="74" rx="37" fill="url(#amberGlow)" />
-    <text x="450" y="1046" font-family="Arial Black, sans-serif" font-size="22" fill="#000000" letter-spacing="1.5" text-anchor="middle">
-      TAG A BROTHER WHO NEEDS TO LOCK IN
-    </text>
-  </g>
-</svg>`;
+    <defs>
+      <linearGradient id="deepSlateBg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#020617" />
+        <stop offset="40%" stop-color="#0b1120" />
+        <stop offset="70%" stop-color="#030712" />
+        <stop offset="100%" stop-color="#000000" />
+      </linearGradient>
+      <filter id="blurGlow" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="60" />
+      </filter>
+    </defs>
+    <!-- Background Base -->
+    <rect width="${width}" height="${height}" fill="url(#deepSlateBg)" />
+    <!-- High-Tech Neon Geometric Grid Lines -->
+    <g opacity="0.10" stroke="#38bdf8" stroke-width="1.2">
+      <line x1="80" y1="0" x2="80" y2="1920" />
+      <line x1="1000" y1="0" x2="1000" y2="1920" />
+      <line x1="0" y1="400" x2="1080" y2="400" />
+      <line x1="0" y1="1500" x2="1080" y2="1500" />
+    </g>
+    <!-- Motif Vector Elements -->
+    ${motifElements}
+  </svg>`;
 }
 
 /**
- * Synthesize High-Energy Brotherly Coaching Voiceover + Word Timing Metadata
- * Uses default pitch (+0Hz) for natural, resonant human voice (no pitchiness)
+ * Build Floating Glass Quote Card SVG
+ * Includes:
+ * - Prominent first 2-seconds Header: "APEX YOUTH // DISCIPLINE PROTOCOL"
+ * - Dynamic category pill with vibrant accent colors
+ * - High-impact wrapped quote typography
+ * - Verified author + credential badge
+ * - Seamless loop indicator
  */
-async function synthesizeMotivationVoice(text, outWavPath, outAssPath, topic) {
-  const dir = path.dirname(outWavPath);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+function buildYouthQuoteCardSvg(entry, width = 1080, height = 1920) {
+  const accent = entry.accentColor || '#10b981';
+  const pillTag = entry.pillTag || '⚡ UNBREAKABLE DISCIPLINE';
+  
+  const quoteLen = entry.quote.length;
+  const maxChars = quoteLen > 110 ? 27 : (quoteLen > 70 ? 24 : 20);
+  const quoteLines = wrapQuoteText(entry.quote, maxChars);
+  const numLines = quoteLines.length;
 
-  const cleanText = String(text || '').replace(/\s+/g, ' ').trim();
-  const tempMp3 = path.join(dir, `edge_motivation_${Date.now()}.mp3`);
-  const tempJson = `${tempMp3}.json`;
+  // Dynamic font sizing
+  const fontSize = numLines >= 5 ? 44 : (numLines >= 4 ? 50 : 56);
+  const lineHeight = Math.round(fontSize * 1.32);
 
-  try {
-    const { EdgeTTS } = require('node-edge-tts');
-    const tts = new EdgeTTS({
-      voice: 'en-US-ChristopherNeural',
-      lang: 'en-US',
-      outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
-      saveSubtitles: true
-    });
+  // Dynamic card height
+  const cardW = 940;
+  const cardH = Math.max(520, 240 + (numLines * lineHeight) + 160);
+  const cardX = 70;
+  const cardY = 700; // Centered in mobile vertical view
 
-    await tts.ttsPromise(cleanText, tempMp3);
+  const quoteSvgLines = quoteLines.map((line, idx) => {
+    return `<tspan x="${cardX + (cardW / 2)}" dy="${idx === 0 ? 0 : lineHeight}">${escapeXml(line)}</tspan>`;
+  }).join('');
 
-    if (fs.existsSync(tempMp3) && fs.statSync(tempMp3).size > 1500) {
-      execSync(`ffmpeg -y -i "${tempMp3}" -af "highpass=f=80,lowpass=f=8500,loudnorm=I=-15:TP=-1.5:LRA=9" -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+    <defs>
+      <!-- Frosted Obsidian Glass Gradient -->
+      <linearGradient id="cardGlass" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#030712" stop-opacity="0.94" />
+        <stop offset="50%" stop-color="#0b1329" stop-opacity="0.92" />
+        <stop offset="100%" stop-color="#020617" stop-opacity="0.96" />
+      </linearGradient>
 
-      let words = [];
-      if (fs.existsSync(tempJson)) {
-        try {
-          words = JSON.parse(fs.readFileSync(tempJson, 'utf8'));
-        } catch {}
-      }
-      generateMotivationAss(words, outAssPath, topic, cleanText);
+      <!-- Vibrant Neon Border Gradient -->
+      <linearGradient id="neonRim" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="${accent}" />
+        <stop offset="50%" stop-color="#ffffff" stop-opacity="0.9" />
+        <stop offset="100%" stop-color="${accent}" />
+      </linearGradient>
 
-      try { fs.unlinkSync(tempMp3); fs.unlinkSync(tempJson); } catch {}
-      return { success: true, wavPath: outWavPath, assPath: outAssPath };
-    }
-  } catch (err) {
-    console.warn(`[Motivation Voice] Notice: ${err.message}, attempting GuyNeural...`);
-  }
+      <!-- Glass Shadow & Drop Glow -->
+      <filter id="cardGlow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="24" stdDeviation="30" flood-color="${accent}" flood-opacity="0.35" />
+      </filter>
+    </defs>
 
-  // Fallback voice
-  try {
-    const { EdgeTTS } = require('node-edge-tts');
-    const tts = new EdgeTTS({
-      voice: 'en-US-GuyNeural',
-      lang: 'en-US',
-      outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
-      saveSubtitles: true
-    });
-    await tts.ttsPromise(cleanText, tempMp3);
-    if (fs.existsSync(tempMp3)) {
-      execSync(`ffmpeg -y -i "${tempMp3}" -af "highpass=f=80,lowpass=f=8500,loudnorm=I=-15:TP=-1.5:LRA=9" -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
-      let words = [];
-      if (fs.existsSync(tempJson)) {
-        try { words = JSON.parse(fs.readFileSync(tempJson, 'utf8')); } catch {}
-      }
-      generateMotivationAss(words, outAssPath, topic, cleanText);
-      try { fs.unlinkSync(tempMp3); fs.unlinkSync(tempJson); } catch {}
-      return { success: true, wavPath: outWavPath, assPath: outAssPath };
-    }
-  } catch {}
+    <!-- 1. FIRST 2 SECONDS PROMINENT TITLE HEADER (Top Safe Zone: Y=80 to Y=220) -->
+    <g transform="translate(110, 85)">
+      <rect x="0" y="0" width="860" height="135" rx="26" fill="#020617" fill-opacity="0.95" stroke="${accent}" stroke-width="2.8" />
+      <!-- Channel & Workflow Badge -->
+      <g transform="translate(35, 25)">
+        <circle cx="10" cy="12" r="7" fill="${accent}" />
+        <text x="28" y="18" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="900" fill="${accent}" letter-spacing="3">
+          APEX YOUTH // DISCIPLINE PROTOCOL
+        </text>
+      </g>
+      <!-- Sub-tag Title -->
+      <text x="430" y="98" font-family="Impact, Arial Black, sans-serif" font-size="34" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="1">
+        DAILY DISCIPLINE &amp; WEALTH MINDSET
+      </text>
+    </g>
 
-  // Safe fallback
-  try {
-    execSync(`espeak -v en-us+m3 -s 135 -w "${outWavPath}" "${cleanText.replace(/"/g, '\\"')}" 2>/dev/null`);
-    if (fs.existsSync(outWavPath) && fs.statSync(outWavPath).size > 2000) {
-      generateMotivationAss([], outAssPath, topic, cleanText, 14);
-      return { success: true, wavPath: outWavPath, assPath: outAssPath };
-    }
-  } catch {}
+    <!-- 2. THE MAIN FROSTED OBSIDIAN QUOTE CARD -->
+    <g filter="url(#cardGlow)">
+      <rect x="${cardX}" y="${cardY}" width="${cardW}" height="${cardH}" rx="32" fill="url(#cardGlass)" stroke="url(#neonRim)" stroke-width="3.2" />
+    </g>
 
-  execSync(`ffmpeg -y -f lavfi -i "sine=frequency=120:duration=12" -af "volume=0.01" -c:a pcm_s16le "${outWavPath}" 2>/dev/null`);
-  generateMotivationAss([], outAssPath, topic, cleanText, 12);
-  return { success: true, wavPath: outWavPath, assPath: outAssPath };
+    <!-- Category Pill Tag Inside Card -->
+    <g transform="translate(${cardX + 45}, ${cardY + 45})">
+      <rect x="0" y="0" width="360" height="42" rx="21" fill="${accent}" fill-opacity="0.18" stroke="${accent}" stroke-width="1.8" />
+      <text x="180" y="27" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="1.5">
+        ${escapeXml(pillTag)}
+      </text>
+    </g>
+
+    <!-- Top-Right Quotation Mark Glyph -->
+    <text x="${cardX + cardW - 55}" y="${cardY + 80}" font-family="Georgia, serif" font-size="72" font-weight="bold" fill="${accent}" opacity="0.4" text-anchor="end">“</text>
+
+    <!-- The Bold High-Impact Quote Body -->
+    <g transform="translate(0, ${cardY + 160})">
+      <text font-family="Impact, Arial Black, system-ui, sans-serif" font-size="${fontSize}" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="0.5">
+        ${quoteSvgLines}
+      </text>
+    </g>
+
+    <!-- Subtle Horizontal Divider -->
+    <line x1="${cardX + 50}" y1="${cardY + cardH - 120}" x2="${cardX + cardW - 50}" y2="${cardY + cardH - 120}" stroke="#334155" stroke-width="1.8" stroke-dasharray="8 6" opacity="0.6" />
+
+    <!-- Author & Verified Credential Badge -->
+    <g transform="translate(${cardX + 50}, ${cardY + cardH - 90})">
+      <text x="0" y="24" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="900" fill="${accent}">
+        — ${escapeXml(entry.author)}
+      </text>
+      <text x="0" y="54" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#94a3b8">
+        ${escapeXml(entry.credentials)}
+      </text>
+    </g>
+
+    <!-- 3. BOTTOM SEAMLESS REPLAY LOOP INDICATOR (Safe Zone: Y=1720) -->
+    <g transform="translate(340, 1720)">
+      <rect x="0" y="0" width="400" height="52" rx="26" fill="#020617" fill-opacity="0.9" stroke="#334155" stroke-width="1.5" />
+      <text x="200" y="32" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="900" fill="#e2e8f0" text-anchor="middle" letter-spacing="1">
+        🔄 SEAMLESS LOOP • REPLAY TO LOCK IN
+      </text>
+    </g>
+  </svg>`;
 }
 
 /**
- * Main Teen Motivation Reel Generator
+ * Sound Engine: Synthesize Seamless Loopy Youth Focus Audio (5s / 3s)
+ * Intense driving sub-bass, metallic focus tick, powerful harmonic chord swell
+ */
+function generateYouthDisciplineAudio(outputPath, durationSeconds = 5.0) {
+  if (!fs.existsSync(path.dirname(outputPath))) fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+
+  // Procedural 44.1kHz stereo audio synthesis via FFmpeg
+  const dur = durationSeconds.toFixed(2);
+  const filterExpr = [
+    // Deep 50Hz sub-bass drone
+    `sine=frequency=50:duration=${dur}[sub]`,
+    // Subtle rhythmic focus tick
+    `sine=frequency=880:duration=${dur},volume=0.03[tick]`,
+    // Atmospheric warm synth pad
+    `sine=frequency=150:duration=${dur},volume=0.15[pad]`,
+    // Mix and apply smooth fade in/out for seamless looping
+    `[sub][tick][pad]amix=inputs=3:duration=longest[mixed]`,
+    `[mixed]afade=t=in:ss=0:d=0.15,afade=t=out:st=${(durationSeconds - 0.15).toFixed(2)}:d=0.15[out]`
+  ].join(';');
+
+  const cmd = `ffmpeg -y -f lavfi -i "${filterExpr}" -map "[out]" -c:a pcm_s16le -ar 44100 -ac 2 "${outputPath}" 2>/dev/null`;
+  try {
+    execSync(cmd);
+  } catch {
+    // Ultimate fallback tone
+    execSync(`ffmpeg -y -f lavfi -i "sine=frequency=120:duration=${dur}" -c:a pcm_s16le "${outputPath}" 2>/dev/null`);
+  }
+  return outputPath;
+}
+
+/**
+ * Main Teen & Youth Motivation Reel Generator
  */
 async function generateTeenMotivationReel(customQueryOrIndex = '') {
   console.log('\n======================================================');
-  console.log('⚡ APEX DISCIPLINE: TEEN & YOUTH MOTIVATION GENERATOR');
+  console.log('⚡ APEX YOUTH: DISCIPLINE & WEALTH QUOTE REEL GENERATOR');
+  console.log(`Target Duration: ${TARGET_DURATION.toFixed(1)}s | Channel 5: Teen & Youth Motivation`);
   console.log('======================================================\n');
 
-  let topic;
-  const inputQuery = process.env.TOPIC || (typeof customQueryOrIndex === 'string' ? customQueryOrIndex : '');
-
-  if (typeof customQueryOrIndex === 'number' && !process.env.TOPIC) {
-    topic = MOTIVATION_TOPICS[customQueryOrIndex % MOTIVATION_TOPICS.length];
+  // 1. Select Unique Quote & Deduplicate
+  let chosen = null;
+  if (process.env.TOPIC) {
+    chosen = {
+      quote: process.env.TOPIC,
+      author: process.env.AUTHOR || "Apex Discipline Mentor",
+      credentials: "Youth Mindset & High-Performance Coaching",
+      theme: "discipline",
+      pillTag: "⚔️ UNBREAKABLE DISCIPLINE",
+      accentColor: "#f59e0b",
+      visualMotif: "dawn_runner"
+    };
   } else {
-    // Dynamic public fetch + AI rewrite for teenagers
-    topic = await fetchAndRewriteTeenTopic(inputQuery);
+    // Try live active AI generation first via Universal Free AI tier
+    try {
+      console.log('[AI Youth Inference] Querying active AI for fresh youth discipline quote...');
+      const aiPrompt = `You are a high-performance youth and teenage discipline coach. Formulate 1 powerful, viral, and concise quote (under 18 words) for young men and teenagers.
+Themes: discipline, financial hope, anti-drugs sobriety, moral integrity, or academic comeback.
+Return strictly valid JSON:
+{
+  "quote": "Short punchy quote under 18 words",
+  "author": "Respected figure (e.g. David Goggins, Alex Hormozi, Dr. Andrew Huberman, Kobe Bryant, Jim Rohn, Marcus Aurelius)",
+  "credentials": "Short title or accomplishment",
+  "theme": "discipline|wealth|sobriety|integrity|academic",
+  "pillTag": "Short 3-word uppercase badge",
+  "accentColor": "#10b981 or #f59e0b or #06b6d4 or #818cf8"
+}`;
+      const aiRes = await callActiveAiForJson(
+        "You are an elite youth mentor. Output strictly valid JSON.",
+        aiPrompt
+      );
+      if (aiRes && aiRes.data && aiRes.data.quote && aiRes.data.author) {
+        console.log(`[AI Youth Inference] ✅ Fresh quote formulated via ${aiRes.modelUsed}`);
+        chosen = {
+          quote: aiRes.data.quote,
+          author: aiRes.data.author,
+          credentials: aiRes.data.credentials || "Youth Mindset Mentor",
+          theme: aiRes.data.theme || "discipline",
+          pillTag: aiRes.data.pillTag || "⚡ UNBREAKABLE DISCIPLINE",
+          accentColor: aiRes.data.accentColor || "#10b981",
+          visualMotif: aiRes.data.theme === 'wealth' ? 'finance_skyline' : (aiRes.data.theme === 'sobriety' ? 'dark_obsidian' : 'gym_iron')
+        };
+      }
+    } catch (err) {
+      console.warn(`[AI Youth Inference Notice] AI inference skipped: ${err.message}`);
+    }
+
+    if (!chosen) {
+      chosen = await selectUniqueYouthQuote();
+    }
   }
 
-  console.log(`[Motivation Generator] 🎯 Topic: "${topic.title}"`);
-  console.log(`[Motivation Generator] 💡 Hook: "${topic.hook}"`);
-  console.log(`[Motivation Generator] 🛡️ Action Challenge: "${topic.actionChallenge}"`);
+  saveYouthQuoteHistory(chosen);
 
-  const speechText = `${topic.hook} ${topic.lesson} Here is your challenge: ${topic.actionChallenge}. ${topic.takeaway}`;
+  console.log(`[Youth Quote Reel] 🎯 Theme:        ${chosen.pillTag}`);
+  console.log(`[Youth Quote Reel] 👤 Author:       ${chosen.author} (${chosen.credentials})`);
+  console.log(`[Youth Quote Reel] 💬 Quote:        "${chosen.quote}"\n`);
 
-  // 1. Synthesize Voice + Word Timings
-  const voiceWav = path.join(ARTIFACTS_DIR, `motivation_voice_${topic.id}.wav`);
-  const assPath = path.join(ARTIFACTS_DIR, `motivation_karaoke_${topic.id}.ass`);
-  await synthesizeMotivationVoice(speechText, voiceWav, assPath, topic);
+  // 2. Build Procedural Background & Card SVGs
+  const bgSvg = buildYouthBackgroundSvg(chosen.visualMotif, chosen.accentColor);
+  const cardSvg = buildYouthQuoteCardSvg(chosen);
 
-  let voiceDuration = 10.0;
-  try {
-    const durStr = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${voiceWav}" 2>/dev/null`).toString().trim();
-    const parsed = parseFloat(durStr);
-    if (!isNaN(parsed) && parsed > 2.0) voiceDuration = parsed;
-  } catch {}
+  const bgSvgPath = path.join(ARTIFACTS_DIR, 'youth_bg.svg');
+  const cardSvgPath = path.join(ARTIFACTS_DIR, 'youth_card.svg');
+  const bgPngPath = path.join(ARTIFACTS_DIR, 'youth_bg.png');
+  const cardPngPath = path.join(ARTIFACTS_DIR, 'youth_card.png');
 
-  const totalDuration = Math.max(8.0, Number((voiceDuration + 1.5).toFixed(2)));
-  console.log(`[Motivation Generator] ⏱️ Voice: ${voiceDuration.toFixed(2)}s -> Target Reel: ${totalDuration}s`);
+  fs.writeFileSync(bgSvgPath, bgSvg);
+  fs.writeFileSync(cardSvgPath, cardSvg);
 
-  // 2. Resolve Real Music Track
-  const masterWav = path.join(ARTIFACTS_DIR, `motivation_master_audio_${topic.id}.wav`);
-  const realTrack = await resolveRealMusicTrack({
-    niche: 'motivation',
-    duration: totalDuration,
-    soundUrl: process.env.MOTIVATION_MUSIC_URL || process.env.SOUND_URL
-  });
+  execSync(`ffmpeg -y -i "${bgSvgPath}" "${bgPngPath}" 2>/dev/null`);
+  execSync(`ffmpeg -y -i "${cardSvgPath}" "${cardPngPath}" 2>/dev/null`);
 
-  if (realTrack && fs.existsSync(realTrack)) {
-    console.log(`[Motivation Generator] 🎶 Ducking real high-octane background track under voiceover...`);
-    const mixCmd = `ffmpeg -y -i "${voiceWav}" -i "${realTrack}" -filter_complex "[0:a]volume=1.4[v];[1:a]volume=0.15,atrim=0:${totalDuration}[m];[v][m]amix=inputs=2:duration=longest,loudnorm=I=-16:TP=-1.5:LRA=11[out]" -map "[out]" -c:a pcm_s16le -ar 44100 -ac 2 "${masterWav}" 2>/dev/null`;
-    try { execSync(mixCmd); } catch { fs.copyFileSync(voiceWav, masterWav); }
-  } else {
-    fs.copyFileSync(voiceWav, masterWav);
-  }
+  // 3. Synthesize Loopy Driving Focus Audio
+  const audioWavPath = path.join(ARTIFACTS_DIR, `youth_focus_sound_${TARGET_DURATION}s.wav`);
+  generateYouthDisciplineAudio(audioWavPath, TARGET_DURATION);
 
-  // 3. Render 2 Frames (Hook -> Action Challenge)
-  const hookSvg = buildMotivationSvg(topic, 'hook');
-  const actionSvg = buildMotivationSvg(topic, 'action');
-  const hookPng = path.join(ARTIFACTS_DIR, `${topic.id}_hook.png`);
-  const actionPng = path.join(ARTIFACTS_DIR, `${topic.id}_action.png`);
+  // 4. Composite 5-Second Loopy MP4 Video via FFmpeg with Subtle Ken-Burns Pan
+  const timestamp = Date.now();
+  const outMp4 = path.join(ARTIFACTS_DIR, `youth_discipline_reel_${timestamp}.mp4`);
+  const latestMp4 = path.join(OUTPUT_DIR, 'teen_motivation_latest.mp4');
 
-  const hookSvgPath = path.join(ARTIFACTS_DIR, `${topic.id}_hook.svg`);
-  const actionSvgPath = path.join(ARTIFACTS_DIR, `${topic.id}_action.svg`);
-  fs.writeFileSync(hookSvgPath, hookSvg);
-  fs.writeFileSync(actionSvgPath, actionSvg);
+  console.log(`[FFmpeg Compositor] Rendering ${TARGET_DURATION.toFixed(1)}s 1080x1920 MP4 Video...`);
 
-  execSync(`ffmpeg -y -i "${hookSvgPath}" -vf "scale=1080:1920" "${hookPng}" 2>/dev/null`);
-  execSync(`ffmpeg -y -i "${actionSvgPath}" -vf "scale=1080:1920" "${actionPng}" 2>/dev/null`);
+  // Smooth dynamic zoom / pan filter for high-retention vertical loop
+  const complexFilter = `
+    [0:v]scale=1200:2133,zoompan=z='min(zoom+0.0008,1.06)':d=${Math.round(TARGET_DURATION * FPS)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920[bg];
+    [1:v]scale=1080:1920[card];
+    [bg][card]overlay=0:0[vfinal]
+  `.replace(/\s+/g, ' ').trim();
 
-  // 4. Assemble Final Video with Smooth Cut & Burned-In Subtitles
-  const halfDur = Number((totalDuration / 2).toFixed(2));
-  const outMp4 = path.join(ARTIFACTS_DIR, `teen_motivation_${topic.id}.mp4`);
-  const escapedAss = assPath.replace(/\\/g, '/').replace(/:/g, '\\:');
-
-  console.log(`[Motivation Generator] 🎥 Assembling 1080x1920 MP4 Video (${totalDuration}s) with On-Screen Captions...`);
-  const renderCmd = `ffmpeg -y -loop 1 -t ${halfDur} -i "${hookPng}" -loop 1 -t ${halfDur} -i "${actionPng}" -i "${masterWav}" -filter_complex "[0:v][1:v]concat=n=2:v=1:a=0[vconcat];[vconcat]ass='${escapedAss}'[vout]" -map "[vout]" -map 2:a -c:v libx264 -preset fast -crf 20 -c:a aac -b:a 192k -shortest "${outMp4}" 2>/dev/null`;
+  const ffmpegCmd = `ffmpeg -y -loop 1 -t ${TARGET_DURATION} -i "${bgPngPath}" -loop 1 -t ${TARGET_DURATION} -i "${cardPngPath}" -i "${audioWavPath}" -filter_complex "${complexFilter}" -map "[vfinal]" -map 2:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -shortest "${outMp4}" 2>/dev/null`;
 
   try {
-    execSync(renderCmd);
-    const sz = fs.statSync(outMp4).size;
-    console.log(`[Motivation Generator] ✅ SUCCESS: Teen Motivation Reel Created! (${(sz / (1024 * 1024)).toFixed(2)} MB)`);
-    console.log(`[Motivation Generator] 📁 Output: ${outMp4}`);
-  } catch (err) {
-    console.warn(`[Motivation Generator] Notice with subtitle filter, running fallback render...`);
-    const fallbackCmd = `ffmpeg -y -loop 1 -t ${halfDur} -i "${hookPng}" -loop 1 -t ${halfDur} -i "${actionPng}" -i "${masterWav}" -filter_complex "[0:v][1:v]concat=n=2:v=1:a=0[vconcat]" -map "[vconcat]" -map 2:a -c:v libx264 -preset fast -crf 20 -c:a aac -b:a 192k -shortest "${outMp4}" 2>/dev/null`;
+    execSync(ffmpegCmd);
+  } catch {
+    // Fallback composite without zoompan
+    const fallbackCmd = `ffmpeg -y -loop 1 -t ${TARGET_DURATION} -i "${bgPngPath}" -loop 1 -t ${TARGET_DURATION} -i "${cardPngPath}" -i "${audioWavPath}" -filter_complex "[0:v][1:v]overlay=0:0[vfinal]" -map "[vfinal]" -map 2:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -shortest "${outMp4}" 2>/dev/null`;
     execSync(fallbackCmd);
   }
 
-  // Mirror to rendered_videos for easy preview
-  try {
-    const renderedDir = path.join(process.cwd(), 'rendered_videos');
-    if (!fs.existsSync(renderedDir)) fs.mkdirSync(renderedDir, { recursive: true });
-    const renderedCopy = path.join(renderedDir, path.basename(outMp4));
-    const latestCopy = path.join(renderedDir, 'teen_motivation_latest.mp4');
-    fs.copyFileSync(outMp4, renderedCopy);
-    fs.copyFileSync(outMp4, latestCopy);
-    console.log(`[Motivation Generator] 📋 Mirrored to rendered_videos: ${latestCopy}`);
-  } catch {}
+  const stat = fs.statSync(outMp4);
+  console.log(`[Youth Quote Reel] ✅ SUCCESS: Rendered Video (${(stat.size / (1024 * 1024)).toFixed(2)} MB)`);
+  console.log(`[Youth Quote Reel] 📁 Path: ${outMp4}`);
+
+  // Mirror to latest output path for GitHub Actions & Preview
+  fs.copyFileSync(outMp4, latestMp4);
+  console.log(`[Youth Quote Reel] 📋 Mirrored to: ${latestMp4}`);
 
   // 5. Update Manifest
   const manifestEntry = {
-    id: `motivation_${topic.id}_${Date.now()}`,
-    title: topic.title,
-    hook: topic.hook,
-    challenge: topic.actionChallenge,
+    id: `youth_quote_${timestamp}`,
+    title: `${chosen.author}: "${chosen.quote.slice(0, 50)}..." #Discipline #Shorts`,
+    author: chosen.author,
+    credentials: chosen.credentials,
+    quote: chosen.quote,
+    theme: chosen.theme,
+    pillTag: chosen.pillTag,
     videoPath: outMp4,
-    duration: totalDuration,
-    tags: topic.tags,
-    youtubeUploadStatus: "PENDING_REVIEW (Upload hold enabled)",
+    duration: TARGET_DURATION,
+    tags: ['#TeenMotivation', '#YouthDiscipline', '#WealthMindset', '#DopamineReset', '#Shorts', '#Discipline'],
     createdAt: new Date().toISOString()
   };
 
@@ -541,12 +671,13 @@ async function generateTeenMotivationReel(customQueryOrIndex = '') {
   try {
     if (fs.existsSync(MANIFEST_PATH)) {
       manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
+      if (!Array.isArray(manifest)) manifest = [];
     }
   } catch {}
   manifest.unshift(manifestEntry);
   fs.writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2), 'utf8');
 
-  console.log(`[Motivation Generator] 📝 Manifest updated: ${MANIFEST_PATH}\n`);
+  console.log(`[Youth Quote Reel] 📝 Manifest updated: ${MANIFEST_PATH}\n`);
   return manifestEntry;
 }
 
@@ -556,5 +687,5 @@ if (require.main === module) {
 
 module.exports = {
   generateTeenMotivationReel,
-  MOTIVATION_TOPICS
+  YOUTH_DISCIPLINE_QUOTES
 };

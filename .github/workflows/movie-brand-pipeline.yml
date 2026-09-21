@@ -71,13 +71,15 @@ jobs:
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH4 || secrets.YOUTUBE_REFRESH_TOKEN_CH1 }}
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME || 'voxawell' }}
           CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET || 'phwka7ak' }}
+          BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 || secrets.BUFFER_API_KEY }}
+          BUFFER_TIKTOK_MOVIE_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_MOVIE_CHANNEL_ID }}
         run: |
           echo "=== 🎬 Generating Episodic Movie Reel (Index: $EPISODE_INDEX) ==="
           node scripts/generate_movie_brand_episode.cjs
           echo "=== Movie Episode Assembled Successfully ==="
 
       - name: Dispatch to Movie Brand TikTok Channel (Buffer API 2)
-        if: success() && (github.event.inputs.publish_tiktok != 'false')
+        if: success() && (github.event_name == 'schedule' || github.event.inputs.publish_tiktok != 'false')
         env:
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 || secrets.BUFFER_API_KEY }}
           BUFFER_TIKTOK_MOVIE_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_MOVIE_CHANNEL_ID }}
