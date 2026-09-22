@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       episode_index:
-        description: 'Episode Index (0 = Sub-Level 14, 1 = The Signal in the Dark / Ep 2 Recap, auto = Next in Series)'
+        description: 'Episode Index (0 = Ep 1, 1 = Ep 2, 2 = The Core Chamber [Ep 3], 3 = The Abyssal Trench [Ep 4 Finale], auto = Next in Series)'
         required: false
-        default: '1'
+        default: '2'
         type: string
       auto_publish:
         description: 'Publish Live to YouTube (Default FALSE: held in PENDING_REVIEW for manual check)'

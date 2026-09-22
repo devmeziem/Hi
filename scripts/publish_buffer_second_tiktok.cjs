@@ -94,9 +94,98 @@ function cleanChannelId(id) {
   return String(id).trim().replace(/^["']|["']$/g, '').trim();
 }
 
+function isBufferHexId(id) {
+  if (!id) return false;
+  return /^[0-9a-fA-F]{24}$/.test(cleanChannelId(id));
+}
+
 function isValidChannelId(id) {
   const clean = cleanChannelId(id);
   return clean.length >= 3 && !clean.includes(' ');
+}
+
+function resolveTargetChannel(discoveredTikToks, userInputId, channelType) {
+  const clean = cleanChannelId(userInputId);
+  const cleanNoAt = clean.replace(/^@/, '').toLowerCase();
+
+  // 1. Direct ID match
+  if (clean) {
+    const byId = discoveredTikToks.find(c => cleanChannelId(c.id).toLowerCase() === clean.toLowerCase());
+    if (byId) {
+      console.log(`[Buffer TikTok Dispatch] 🎯 Matched TikTok channel by direct Channel ID: "${byId.name}" (${byId.id})`);
+      return byId;
+    }
+
+    // 2. Name / Handle match (e.g., user passed 'archie.the.explorer6' or '@bonesceo')
+    const byName = discoveredTikToks.find(c => {
+      const n = (c.name || '').replace(/^@/, '').toLowerCase();
+      const d = (c.displayName || '').replace(/^@/, '').toLowerCase();
+      return n === cleanNoAt || d === cleanNoAt;
+    });
+    if (byName) {
+      console.log(`[Buffer TikTok Dispatch] 🎯 Matched TikTok channel by handle/name "${clean}": "${byName.name}" (${byName.id})`);
+      return byName;
+    }
+
+    // 3. Service ID match
+    const byService = discoveredTikToks.find(c => c.serviceId && String(c.serviceId).toLowerCase() === clean.toLowerCase());
+    if (byService) {
+      console.log(`[Buffer TikTok Dispatch] 🎯 Matched TikTok channel by serviceId "${clean}": "${byService.name}" (${byService.id})`);
+      return byService;
+    }
+  }
+
+  // 4. If user ID is a valid 24-character hexadecimal MongoDB ObjectId, use it directly
+  if (isBufferHexId(clean)) {
+    console.log(`[Buffer TikTok Dispatch] 🎯 Using explicit 24-hex Buffer Channel ID: ${clean}`);
+    return { id: clean, name: channelType === 'teen_motivation' ? 'Teen Motivation TikTok' : 'Movie Brand TikTok' };
+  }
+
+  if (clean) {
+    console.warn(`[Buffer TikTok Dispatch] ⚠️ Specified value "${clean}" is not a 24-character Buffer Channel ID and does not match any connected channel.`);
+  }
+
+  // 5. Smart routing based on discovered channels and channelType
+  if (channelType === 'teen_motivation') {
+    const teenKeywords = ['teen', 'motivation', 'discipline', 'mindset', 'youth', 'apex', 'ch5', 'ch 5', 'lock in'];
+    const matchedKeyword = discoveredTikToks.find(c => {
+      const n = (c.name || '').toLowerCase();
+      return teenKeywords.some(kw => n.includes(kw));
+    });
+    if (matchedKeyword) {
+      console.log(`[Buffer TikTok Dispatch] 🎯 Selected TikTok channel by keyword: "${matchedKeyword.name}" (${matchedKeyword.id})`);
+      return matchedKeyword;
+    }
+    // Channel 2 is Teen Motivation when 2 TikToks are present on Buffer
+    if (discoveredTikToks.length > 1) {
+      const ch2 = discoveredTikToks[1];
+      console.log(`[Buffer TikTok Dispatch] 🎯 Selected secondary TikTok channel on Buffer: "${ch2.name}" (${ch2.id})`);
+      return ch2;
+    }
+    if (discoveredTikToks.length === 1) {
+      const ch1 = discoveredTikToks[0];
+      console.log(`[Buffer TikTok Dispatch] 🎯 Selected sole connected TikTok channel on Buffer: "${ch1.name}" (${ch1.id})`);
+      return ch1;
+    }
+  } else {
+    // movie_brand
+    const movieKeywords = ['movie', 'cinema', 'bonesceo', 'film', 'zero', 'vault'];
+    const matchedMovie = discoveredTikToks.find(c => {
+      const n = (c.name || '').toLowerCase();
+      return movieKeywords.some(kw => n.includes(kw));
+    });
+    if (matchedMovie) {
+      console.log(`[Buffer TikTok Dispatch] 🎯 Selected Movie TikTok channel by keyword: "${matchedMovie.name}" (${matchedMovie.id})`);
+      return matchedMovie;
+    }
+    if (discoveredTikToks.length > 0) {
+      const primary = discoveredTikToks[0];
+      console.log(`[Buffer TikTok Dispatch] 🎯 Selected primary TikTok channel for Movie Brand: "${primary.name}" (${primary.id})`);
+      return primary;
+    }
+  }
+
+  return clean ? { id: clean, name: 'TikTok Channel' } : null;
 }
 
 /**
@@ -408,7 +497,7 @@ async function uploadToPublicRelay(videoPath) {
 /**
  * Dispatch video to TikTok via Buffer
  */
-async function postToTikTok(channelId, videoUrl, caption) {
+async function postToTikTok(channelId, videoUrl, caption, fallbackChannelId = null) {
   const mode = SHARE_NOW ? 'shareNow' : 'addToQueue';
   console.log(`[Buffer TikTok Dispatch] 🚀 Dispatching to TikTok Channel ID: ${channelId} (Mode: ${mode})...`);
 
@@ -442,7 +531,10 @@ async function postToTikTok(channelId, videoUrl, caption) {
     ],
     metadata: {
       tiktok: {
-        isAiGenerated: true
+        isAiGenerated: true,
+        allowComments: true,
+        allowDuet: true,
+        allowStitch: true
       }
     }
   };
@@ -460,6 +552,12 @@ async function postToTikTok(channelId, videoUrl, caption) {
       console.warn(`  ⚠️ Buffer GraphQL notice: ${result.message}`);
     }
   } catch (gqlErr) {
+    const isChannelIdError = gqlErr.message && (gqlErr.message.includes('Invalid ChannelId format') || gqlErr.message.includes('channelId'));
+    if (isChannelIdError && fallbackChannelId && fallbackChannelId !== channelId) {
+      console.warn(`  ⚠️ Buffer Channel ID "${channelId}" rejected by GraphQL API (${gqlErr.message}). Automatically retrying with verified connected channel "${fallbackChannelId}"...`);
+      return postToTikTok(fallbackChannelId, videoUrl, caption, null);
+    }
+
     console.warn(`  ⚠️ Buffer GraphQL initial attempt failed (${gqlErr.message}). Retrying without custom metadata...`);
     try {
       // Fallback GraphQL retry without metadata if schema rejects tiktok object
@@ -471,6 +569,10 @@ async function postToTikTok(channelId, videoUrl, caption) {
       }
     } catch (retryErr) {
       console.warn(`  ⚠️ Buffer GraphQL retry notice: ${retryErr.message}`);
+      if (fallbackChannelId && fallbackChannelId !== channelId && retryErr.message.includes('channelId')) {
+        console.warn(`  ⚠️ Retrying with verified fallback channel "${fallbackChannelId}"...`);
+        return postToTikTok(fallbackChannelId, videoUrl, caption, null);
+      }
     }
   }
 
@@ -533,14 +635,7 @@ async function dispatchTikTok(channelType = 'movie_brand') {
   let caption = '';
 
   if (channelType === 'movie_brand') {
-    // Select channel ID
-    const cleanMovieId = cleanChannelId(BUFFER_TIKTOK_MOVIE_CHANNEL_ID);
-    if (isValidChannelId(cleanMovieId)) {
-      targetChannel = discoveredTikToks.find(c => cleanChannelId(c.id).toLowerCase() === cleanMovieId.toLowerCase()) || { id: cleanMovieId, name: 'Movie Brand TikTok' };
-    } else if (discoveredTikToks.length > 0) {
-      // First TikTok channel
-      targetChannel = discoveredTikToks[0];
-    }
+    targetChannel = resolveTargetChannel(discoveredTikToks, BUFFER_TIKTOK_MOVIE_CHANNEL_ID, 'movie_brand');
 
     // Locate latest Movie video
     const movieCandidates = [
@@ -561,34 +656,10 @@ async function dispatchTikTok(channelType = 'movie_brand') {
       } catch {}
     }
 
-    caption = `🎬 ${meta.seriesTitle || 'Protocol Zero'} // Episode: ${meta.episodeTitle || 'The Breach'}\n\n${(meta.narration || '').slice(0, 180)}...\n\nFollow for daily cinematic episodes! 🍿🔥\n\n#MovieTrailer #SciFi #CinemaVanguard #Cinematic #ShortFilm #ProtocolZero #TikTokMovies #Drama #Cyberpunk #Action`;
+    caption = `🎬 ${meta.seriesTitle || 'Protocol Zero'} // Episode: ${meta.episodeTitle || 'The Breach'}\n\n${(meta.narration || '').slice(0, 180)}...\n\nFollow for daily cinematic episodes! 🍿🔥\n\n#MovieTrailer #SciFi #CinemaVanguard #Cinematic #ShortFilm #ProtocolZero #TikTokMovies #Drama #Cyberpunk #Action #AIGenerated #AI`;
 
   } else if (channelType === 'teen_motivation') {
-    // Select channel ID
-    const cleanTeenId = cleanChannelId(BUFFER_TIKTOK_TEEN_CHANNEL_ID);
-    if (isValidChannelId(cleanTeenId)) {
-      const matched = discoveredTikToks.find(c => cleanChannelId(c.id).toLowerCase() === cleanTeenId.toLowerCase() || (c.serviceId && String(c.serviceId) === cleanTeenId));
-      targetChannel = matched || { id: cleanTeenId, name: 'Teen Motivation TikTok' };
-      console.log(`[Buffer TikTok Dispatch] 🎯 Using explicit user-configured Teen Channel ID: ${cleanTeenId}`);
-    } else {
-      // Name keyword matching across discovered TikTok channels
-      const keywords = ['teen', 'motivation', 'discipline', 'mindset', 'youth', 'apex', 'channel 5', 'ch5', 'ch 5', 'lock in'];
-      const byName = discoveredTikToks.find(c => {
-        const n = (c.name || '').toLowerCase();
-        return keywords.some(kw => n.includes(kw));
-      });
-      if (byName) {
-        targetChannel = byName;
-        console.log(`[Buffer TikTok Dispatch] 🎯 Matched TikTok channel by keyword: "${byName.name}" (${byName.id})`);
-      } else if (discoveredTikToks.length > 1) {
-        // Second TikTok channel in account (Channel 1 is Movie, Channel 2 is Teen Motivation)
-        targetChannel = discoveredTikToks[1];
-        console.log(`[Buffer TikTok Dispatch] 🎯 Selected second TikTok channel in Buffer: "${targetChannel.name}" (${targetChannel.id})`);
-      } else if (discoveredTikToks.length === 1) {
-        targetChannel = discoveredTikToks[0];
-        console.log(`[Buffer TikTok Dispatch] 🎯 Selected primary TikTok channel in Buffer: "${targetChannel.name}" (${targetChannel.id})`);
-      }
-    }
+    targetChannel = resolveTargetChannel(discoveredTikToks, BUFFER_TIKTOK_TEEN_CHANNEL_ID, 'teen_motivation');
 
     // Locate latest Teen Motivation video
     const teenCandidates = [
@@ -628,7 +699,8 @@ async function dispatchTikTok(channelType = 'movie_brand') {
   console.log(`📝 Caption:\n${caption}\n`);
 
   const publicVideoUrl = process.env.BUFFER_VIDEO_URL || await uploadToPublicRelay(videoPath);
-  const result = await postToTikTok(targetChannel.id, publicVideoUrl, caption);
+  const fallbackChannel = discoveredTikToks.find(c => c.id !== targetChannel.id) || (discoveredTikToks.length > 0 ? discoveredTikToks[0] : null);
+  const result = await postToTikTok(targetChannel.id, publicVideoUrl, caption, fallbackChannel?.id);
 
   if (result && result.success) {
     console.log(`\n===============================================================`);

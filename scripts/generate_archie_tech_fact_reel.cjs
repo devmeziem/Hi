@@ -670,7 +670,7 @@ async function generateArchie5sDailyFact() {
     const inputs = `
       -loop 1 -t ${reelDuration} -i "${bgPngPath}"
       -loop 1 -t ${reelDuration} -i "${boardPngPath}"
-      -loop 1 -t ${reelDuration} -i "${motionClipPath}"
+      -stream_loop -1 -t ${reelDuration} -i "${motionClipPath}"
       -loop 1 -t ${reelDuration} -i "${puppetPointIdle}"
       -loop 1 -t ${reelDuration} -i "${puppetPointTalk1}"
       -loop 1 -t ${reelDuration} -i "${puppetPointTalk2}"
@@ -685,7 +685,7 @@ async function generateArchie5sDailyFact() {
     const complexFilter = `
       [0:v]scale=1080:1920[bg];
       [1:v]scale=1080:1920[board];
-      [2:v]scale=590:340[motionClip];
+      [2:v]setsar=1,scale=590:340[motionClip];
       [3:v]scale=-1:1150[pt_idle];
       [4:v]scale=-1:1150[pt_t1];
       [5:v]scale=-1:1150[pt_t2];
