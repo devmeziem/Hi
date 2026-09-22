@@ -779,7 +779,7 @@ async function generateArchie5sDailyFact() {
 
   // Persist chosen topic to database for global deduplication across runs
   try {
-    await saveChosenTopicToDatabase('cartoon', chosenTopic);
+    await saveChosenTopicToDatabase(chosenTopic, 'cartoon', 'AI Core');
   } catch (dbErr) {
     console.warn(`[Archie DB Notice] Deduplication sync notice: ${dbErr.message}`);
   }

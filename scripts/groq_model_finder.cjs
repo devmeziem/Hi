@@ -22,9 +22,9 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const DEFAULT_CANDIDATES = [
   'llama-3.3-70b-versatile',
   'llama-3.1-8b-instant',
-  'llama3-70b-8192',
-  'llama3-8b-8192',
-  'qwen-2.5-32b'
+  'llama-3.2-3b-preview',
+  'llama-3.2-1b-preview',
+  'mixtral-8x7b-32768'
 ];
 
 /**
@@ -43,13 +43,19 @@ const MODEL_PROFILES = {
     isReasoning: false,
     maxTokens: 4096
   },
-  'llama3-70b-8192': {
+  'llama-3.2-3b-preview': {
     supportsJsonObject: true,
     needsColonPrompt: true,
     isReasoning: false,
     maxTokens: 4096
   },
-  'llama3-8b-8192': {
+  'llama-3.2-1b-preview': {
+    supportsJsonObject: true,
+    needsColonPrompt: true,
+    isReasoning: false,
+    maxTokens: 4096
+  },
+  'mixtral-8x7b-32768': {
     supportsJsonObject: true,
     needsColonPrompt: true,
     isReasoning: false,

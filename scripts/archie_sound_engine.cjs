@@ -13,6 +13,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const { execSync } = require('child_process');
+const { resolveRealMusicTrack } = require('./audio_asset_manager.cjs');
 
 const SOUNDS_DIR = path.join(process.cwd(), 'assets', 'sounds');
 if (!fs.existsSync(SOUNDS_DIR)) {
@@ -263,8 +264,6 @@ function generateChimeSound(outWavPath, duration = 1.0) {
   }
 }
 
-const { resolveRealMusicTrack } = require('./audio_asset_manager.cjs');
-
 /**
  * Master Archie's Reel Audio: Clean Voice + Ducked Real Background Music
  * Features dynamic duration calculation so speech is NEVER cut off!
@@ -294,11 +293,12 @@ async function assembleArchieMasterAudio(spokenText, outMasterWav, options = {})
   const masterDuration = Math.max(6.0, Number((voiceDuration + 1.8).toFixed(2)));
   console.log(`[Archie Sound Master] ⏱️ Spoken voice: ${voiceDuration.toFixed(2)}s -> Target reel duration: ${masterDuration}s (Zero cutoffs!)`);
 
-  // 2. Resolve real music track (from URL, local real mp3/wav, or Pixabay)
+  // 2. Resolve real music track (from URL, local real mp3/wav, or sound_assets/cartoon/)
+  const customSoundUrl = (typeof options === 'object' && options ? options.soundUrl : '') || process.env.ARCHIE_MUSIC_URL || process.env.SOUND_URL || process.env.MUSIC_URL;
   const realMusicWav = await resolveRealMusicTrack({
     niche: 'cartoon',
     duration: masterDuration,
-    soundUrl: options.soundUrl || process.env.ARCHIE_MUSIC_URL || process.env.SOUND_URL || process.env.MUSIC_URL
+    soundUrl: customSoundUrl
   });
 
   generateChimeSound(chimeWav, 1.0);

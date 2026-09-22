@@ -844,7 +844,7 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
 
   // 2. Google Gemini
   if (GEMINI_API_KEY) {
-    const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-2.0-flash-exp', 'gemini-1.5-flash'];
     for (const model of models) {
       try {
         const postData = JSON.stringify({
@@ -943,7 +943,7 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
 
   // 4. Groq LPU with Model Finder & Adaptive Formatting
   if (GROQ_API_KEY) {
-    let models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-70b-8192', 'llama3-8b-8192', 'qwen-2.5-32b'];
+    let models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama-3.2-3b-preview', 'llama-3.2-1b-preview', 'mixtral-8x7b-32768'];
     let formatGrPayload = null;
     let cleanGrJson = null;
     try {
@@ -1098,11 +1098,11 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
 
   // 7. Universal Free AI Tier (Pollinations.ai - Zero API Key Required)
   // Ensures every workflow always has active, working, free AI generation
-  const freeAiModels = ['openai', 'mistral', 'qwen'];
+  const freeAiModels = ['openai-fast', 'openai'];
   for (let mIdx = 0; mIdx < freeAiModels.length; mIdx++) {
     const model = freeAiModels[mIdx];
     if (mIdx > 0) {
-      await new Promise(r => setTimeout(r, 1200)); // Stagger calls to avoid queue full
+      await new Promise(r => setTimeout(r, 1500)); // Stagger calls to avoid queue full
     }
     try {
       const postData = JSON.stringify({
@@ -1121,7 +1121,7 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
             'Content-Type': 'application/json',
             'Content-Length': Buffer.byteLength(postData)
           },
-          timeout: 14000
+          timeout: 35000
         }, (r) => {
           let d = '';
           r.on('data', c => d += c);
@@ -1335,6 +1335,51 @@ Return strictly valid JSON.`;
       }
       return true;
     });
+  }
+
+  // Enhanced Multi-Layer Deduplication Engine: Verify zero duplicate themes or high similarity with past history
+  if (Array.isArray(pastTopics) && pastTopics.length > 0) {
+    const isTopicDuplicate = (candidate, history) => {
+      const cTitle = (candidate.title || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').trim();
+      const cWords = new Set(cTitle.split(/\s+/).filter(w => w.length > 2));
+      if (cWords.size === 0) return { isDup: false };
+
+      for (const prev of history) {
+        const pTitle = (prev.title || prev.topic || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').trim();
+        if (!pTitle) continue;
+        if (cTitle === pTitle) {
+          return { isDup: true, match: pTitle, reason: 'Exact match' };
+        }
+        const pWords = new Set(pTitle.split(/\s+/).filter(w => w.length > 2));
+        if (pWords.size === 0) continue;
+
+        let overlap = 0;
+        for (const w of cWords) {
+          if (pWords.has(w)) overlap++;
+        }
+        const similarity = overlap / Math.max(cWords.size, pWords.size);
+        if (similarity >= 0.25) {
+          return { isDup: true, match: pTitle, similarity, reason: `Word similarity ${(similarity * 100).toFixed(0)}%` };
+        }
+      }
+      return { isDup: false };
+    };
+
+    const uniqueCandidates = parsedData.candidates.filter(c => {
+      const dup = isTopicDuplicate(c, pastTopics);
+      if (dup.isDup) {
+        console.warn(`[Anti-Spam Dedup] 🛡️ Filtered candidate #${c.id} ("${c.title}") -> Similar to past topic: "${dup.match}" (${dup.reason})`);
+        return false;
+      }
+      return true;
+    });
+
+    if (uniqueCandidates.length > 0) {
+      console.log(`[Anti-Spam Dedup] ✅ Kept ${uniqueCandidates.length} 100% unique candidates after strict deduplication.`);
+      parsedData.candidates = uniqueCandidates;
+    } else {
+      console.log(`[Anti-Spam Dedup] ℹ️ All candidates had partial overlaps; keeping candidates with lowest similarity.`);
+    }
   }
 
   console.log(`\n${colors.bright}📋 5 Candidate Topics Formulated by ${colors.green}${modelUsed}${colors.reset}:`);
