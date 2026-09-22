@@ -984,8 +984,9 @@ Respond STRICTLY with raw JSON:
           req.on('end', async () => {
             try {
               const payload = body ? JSON.parse(body) : {};
-              const tIdx = payload.topicIndex || 0;
-              execSync(`node -e "require('./scripts/generate_teen_motivation_reel.cjs').generateTeenMotivationReel(${tIdx})"`, { cwd: process.cwd(), timeout: 60000 });
+              const format = payload.format || (payload.duration === 15 ? '15s_slam' : 'auto');
+              const tIdx = payload.topicIndex !== undefined ? payload.topicIndex : 'null';
+              execSync(`node -e "process.env.TEEN_FORMAT='${format}'; require('./scripts/generate_teen_motivation_reel.cjs').generateTeenMotivationReel(${tIdx})"`, { cwd: process.cwd(), timeout: 120000 });
               const manifestPath = path.join(process.cwd(), 'test_artifacts', 'teen_motivation_manifest.json');
               const list = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, 'utf8')) : [];
               res.setHeader('Content-Type', 'application/json');
@@ -997,6 +998,110 @@ Respond STRICTLY with raw JSON:
               res.end(JSON.stringify({ success: false, error: err.message }));
             }
           });
+          return;
+        }
+
+        // Universal Audio Assets Management (/api/audio-assets)
+        if (url.startsWith('/api/audio-assets') && req.method === 'GET') {
+          try {
+            const urlObj = new URL(req.url || '', 'http://localhost:3000');
+            const channel = urlObj.searchParams.get('channel') || 'motivation_15s';
+            const cleanChannel = channel.replace(/[^a-zA-Z0-9_-]/g, '');
+            const targetDir = path.join(process.cwd(), 'sound_assets', cleanChannel);
+
+            if (!fs.existsSync(targetDir)) {
+              fs.mkdirSync(targetDir, { recursive: true });
+            }
+
+            const files = fs.readdirSync(targetDir)
+              .filter(f => /\.(mp3|wav|m4a|aac|ogg)$/i.test(f))
+              .map(filename => {
+                const fullPath = path.join(targetDir, filename);
+                const stat = fs.statSync(fullPath);
+                return {
+                  filename,
+                  sizeBytes: stat.size,
+                  sizeFormatted: `${(stat.size / (1024 * 1024)).toFixed(2)} MB`,
+                  uploadedAt: stat.mtime.toISOString(),
+                  streamUrl: `/api/stream-video?file=sound_assets/${cleanChannel}/${filename}`
+                };
+              });
+
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 200;
+            res.end(JSON.stringify({ success: true, channel: cleanChannel, files }));
+          } catch (err: any) {
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 500;
+            res.end(JSON.stringify({ success: false, error: err.message }));
+          }
+          return;
+        }
+
+        if (url === '/api/audio-assets/upload' && req.method === 'POST') {
+          let body = '';
+          req.on('data', chunk => { body += chunk; });
+          req.on('end', async () => {
+            try {
+              const { channel = 'motivation_15s', filename = `audio_${Date.now()}.mp3`, dataBase64 } = JSON.parse(body || '{}');
+              if (!dataBase64) {
+                res.setHeader('Content-Type', 'application/json');
+                res.statusCode = 400;
+                res.end(JSON.stringify({ success: false, error: 'dataBase64 required' }));
+                return;
+              }
+
+              const cleanChannel = channel.replace(/[^a-zA-Z0-9_-]/g, '');
+              const cleanFilename = path.basename(filename).replace(/[^a-zA-Z0-9_.-]/g, '_');
+              const targetDir = path.join(process.cwd(), 'sound_assets', cleanChannel);
+              if (!fs.existsSync(targetDir)) {
+                fs.mkdirSync(targetDir, { recursive: true });
+              }
+
+              const filePath = path.join(targetDir, cleanFilename);
+              const buffer = Buffer.from(dataBase64.replace(/^data:audio\/[a-z0-9]+;base64,/, ''), 'base64');
+              fs.writeFileSync(filePath, buffer);
+
+              console.log(`[Audio Upload] Saved new sound asset: ${filePath} (${(buffer.length / (1024 * 1024)).toFixed(2)} MB)`);
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 200;
+              res.end(JSON.stringify({
+                success: true,
+                filename: cleanFilename,
+                sizeBytes: buffer.length,
+                streamUrl: `/api/stream-video?file=sound_assets/${cleanChannel}/${cleanFilename}`
+              }));
+            } catch (err: any) {
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 500;
+              res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+          });
+          return;
+        }
+
+        if (url.startsWith('/api/audio-assets') && req.method === 'DELETE') {
+          try {
+            const urlObj = new URL(req.url || '', 'http://localhost:3000');
+            const channel = urlObj.searchParams.get('channel') || 'motivation_15s';
+            const filename = urlObj.searchParams.get('filename') || '';
+            const cleanChannel = channel.replace(/[^a-zA-Z0-9_-]/g, '');
+            const cleanFilename = path.basename(filename);
+            const targetPath = path.join(process.cwd(), 'sound_assets', cleanChannel, cleanFilename);
+
+            if (fs.existsSync(targetPath)) {
+              fs.unlinkSync(targetPath);
+              console.log(`[Audio Asset] Removed: ${targetPath}`);
+            }
+
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 200;
+            res.end(JSON.stringify({ success: true, deleted: cleanFilename }));
+          } catch (err: any) {
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 500;
+            res.end(JSON.stringify({ success: false, error: err.message }));
+          }
           return;
         }
 

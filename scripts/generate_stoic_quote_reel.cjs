@@ -21,6 +21,8 @@ const path = require('path');
 const { execSync } = require('child_process');
 const https = require('https');
 const { getSyncedChannelProfile, formatChannelFollowCta } = require('./youtube_channel_dispatcher.cjs');
+const { resolveChannelAudio } = require('./audio_asset_manager.cjs');
+const { selectDeduplicatedCandidate, recordPostedCandidate } = require('./channel_dedup_service.cjs');
 
 const MANIFEST_PATH = path.join(process.cwd(), 'daily_blueprint_manifest.json');
 const LOCAL_QUOTE_CACHE = path.join(process.cwd(), 'stoic_quote_history.json');
@@ -899,8 +901,8 @@ async function generateStoic5sVideo() {
   if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   if (!fs.existsSync(ARTIFACTS_DIR)) fs.mkdirSync(ARTIFACTS_DIR, { recursive: true });
 
-  // 1. Select Unique Scholar & Quote
-  const chosen = await selectUniqueScholarQuote();
+  // 1. Select Unique Scholar & Quote with Anti-Spam Cross-Runner Deduplication
+  const chosen = await selectDeduplicatedCandidate('stoic', WORLD_SCHOLARS_QUOTES, q => q.quote, q => q.author);
   console.log(`[Quote Reel] Scholar:      ${chosen.author}`);
   console.log(`[Quote Reel] Credentials:  ${chosen.credentials}`);
   console.log(`[Quote Reel] Theme:        ${chosen.theme.toUpperCase()}`);
@@ -909,9 +911,9 @@ async function generateStoic5sVideo() {
   // 2. Resolve Scholar Portrait via Public Search / AI
   const portraitPath = await resolveScholarPortrait(chosen);
 
-  // 3. Synthesize Seamless Loopy Audio
+  // 3. Resolve Seamless Loopy Audio from sound_assets/stoic/ or procedural synth
   const wavPath = path.join(ARTIFACTS_DIR, `scholar_mystery_sound_${TARGET_DURATION}s.wav`);
-  generateLoopyMysterySound(wavPath, TARGET_DURATION);
+  resolveChannelAudio('stoic', TARGET_DURATION, wavPath);
 
   // Theme Variation for Stoic Channel: Rotate Obsidian Gold, Roman Bronze, and Spartan Crimson
   const stoicThemes = [
@@ -1100,6 +1102,7 @@ async function generateStoic5sVideo() {
 
   fs.copyFileSync(finalMp4Path, artifactMp4Path);
   await saveQuoteHistory(chosen);
+  await recordPostedCandidate('stoic', chosen.quote, chosen.author, { theme: chosen.theme, duration: TARGET_DURATION });
 
   // 5. Format High-Retention Title, Description, and Targeted Hashtags
   const stoicTitleHooks = [

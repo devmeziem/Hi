@@ -1,217 +1,177 @@
 /**
- * Audio Asset Manager — Real Music & Sound Fetcher, Cacher & Ducking Engine
- * 
- * Supports:
- * 1. Direct Sound URLs (from Pixabay, Freesound, CDN, YouTube Audio Library, etc.)
- * 2. Automatic Pixabay Music / Sound Search & Download via PIXABAY_API_KEY
- * 3. Local Real Audio Dropping (drops in assets/sounds/ or src/assets/sounds/)
- * 4. Professional Ducking & Normalization (voice loud & clear, music subtley underneath)
+ * Universal Audio Asset Manager for Automated Content Channels
+ *
+ * Supports dedicated sound upload folders:
+ * - sound_assets/motivation_5s/  (5-second teen/youth motivation reels)
+ * - sound_assets/motivation_15s/ (15-second teen public opinion vs reality reels)
+ * - sound_assets/stoic/          (Stoic & World Scholars quote reels)
+ * - sound_assets/finance/        (Financial Blueprint quote reels)
+ *
+ * Behavior:
+ * - Scans designated folder for audio files (.mp3, .wav, .m4a, .aac, .ogg)
+ * - Randomly selects an uploaded sound track if multiple exist
+ * - Applies FFmpeg loudness normalization, seamless looping, and fades
+ * - Provides procedural synthesis fallback if no custom audio is uploaded yet
  */
 
 const fs = require('fs');
 const path = require('path');
-const http = require('http');
-const https = require('https');
 const { execSync } = require('child_process');
 
-const ASSETS_SOUNDS_DIR = path.join(process.cwd(), 'assets', 'sounds');
-const CACHE_SOUNDS_DIR = path.join(process.cwd(), 'assets', 'sounds', 'cache');
+const AUDIO_EXTENSIONS = /\.(mp3|wav|m4a|aac|ogg|flac)$/i;
 
-[ASSETS_SOUNDS_DIR, CACHE_SOUNDS_DIR].forEach(dir => {
-  if (!fs.existsSync(dir)) {
-    try { fs.mkdirSync(dir, { recursive: true }); } catch {}
+/**
+ * Resolve and render normalized audio track for a channel and duration
+ * @param {string} channelKey - 'motivation_5s' | 'motivation_15s' | 'stoic' | 'finance'
+ * @param {number} durationSeconds - Target duration in seconds
+ * @param {string} outputPath - Path to write the output WAV/AAC audio file
+ */
+function resolveChannelAudio(channelKey, durationSeconds, outputPath) {
+  if (!fs.existsSync(path.dirname(outputPath))) {
+    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   }
-});
 
-/**
- * Download a remote sound file from any HTTP/HTTPS URL
- */
-async function downloadSoundFromUrl(url, outFilePath, maxRedirects = 5) {
-  if (!url || !url.startsWith('http')) return false;
-
-  return new Promise((resolve) => {
-    if (maxRedirects <= 0) return resolve(false);
-
-    const client = url.startsWith('https') ? https : http;
-    const req = client.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }, timeout: 15000 }, (res) => {
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        let redirectUrl = res.headers.location;
-        if (!redirectUrl.startsWith('http')) {
-          const parsed = new URL(url);
-          redirectUrl = `${parsed.protocol}//${parsed.host}${redirectUrl}`;
-        }
-        return resolve(downloadSoundFromUrl(redirectUrl, outFilePath, maxRedirects - 1));
-      }
-
-      if (res.statusCode !== 200) {
-        return resolve(false);
-      }
-
-      const file = fs.createWriteStream(outFilePath);
-      res.pipe(file);
-      file.on('finish', () => {
-        file.close();
-        if (fs.existsSync(outFilePath) && fs.statSync(outFilePath).size > 1000) {
-          resolve(true);
-        } else {
-          resolve(false);
-        }
-      });
-      file.on('error', () => resolve(false));
-    });
-
-    req.on('error', () => resolve(false));
-    req.on('timeout', () => { req.destroy(); resolve(false); });
-  });
-}
-
-/**
- * Search Pixabay Music API for royalty-free tracks
- */
-async function fetchPixabayMusicTrack(query = 'technology', outWavPath) {
-  const apiKey = (process.env.PIXABAY_API_KEY || '').trim();
-  if (!apiKey) return null;
-
-  try {
-    const apiUrl = `https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(query)}&type=music`;
-    return new Promise((resolve) => {
-      https.get(apiUrl, (res) => {
-        let data = '';
-        res.on('data', chunk => data += chunk);
-        res.on('end', async () => {
-          try {
-            const json = JSON.parse(data);
-            if (json.hits && json.hits.length > 0) {
-              const hit = json.hits[0];
-              const downloadUrl = hit.audio || hit.preview_url || hit.mp3_url;
-              if (downloadUrl) {
-                const tempMp3 = path.join(CACHE_SOUNDS_DIR, `pixabay_${hit.id || Date.now()}.mp3`);
-                const ok = await downloadSoundFromUrl(downloadUrl, tempMp3);
-                if (ok && fs.existsSync(tempMp3)) {
-                  execSync(`ffmpeg -y -i "${tempMp3}" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
-                  try { fs.unlinkSync(tempMp3); } catch {}
-                  return resolve(outWavPath);
-                }
-              }
-            }
-          } catch {}
-          resolve(null);
-        });
-      }).on('error', () => resolve(null));
-    });
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Discover any real local MP3/WAV/M4A sound in assets folders
- */
-function findLocalRealAudio(preferredNiche = 'all') {
-  const scanDirs = [
-    ASSETS_SOUNDS_DIR,
-    path.join(process.cwd(), 'src', 'assets', 'sounds'),
-    path.join(process.cwd(), 'public', 'sounds'),
-    path.join(process.cwd(), 'test_artifacts', 'sounds')
+  const primaryDir = path.join(process.cwd(), 'sound_assets', channelKey);
+  const fallbackDirs = [
+    path.join(process.cwd(), 'sound_assets'),
+    path.join(process.cwd(), 'assets', 'sounds'),
+    path.join(process.cwd(), 'assets', 'audio')
   ];
 
-  for (const dir of scanDirs) {
-    if (fs.existsSync(dir)) {
-      const files = fs.readdirSync(dir).filter(f => f.match(/\.(mp3|wav|ogg|m4a|flac)$/i));
-      // Filter out files that are very small or explicitly synthetic
-      const validFiles = files.filter(f => {
-        try {
-          const lower = f.toLowerCase();
-          if (lower.includes('horror_scene_murder') || lower.includes('instrumental_mystery') || lower.includes('mystery_darkness')) {
-            return false; // Skip synthetic sine waves
-          }
-          const sz = fs.statSync(path.join(dir, f)).size;
-          return sz > 100000; // at least 100KB for real recorded music tracks
-        } catch {
-          return false;
-        }
-      });
+  if (channelKey.startsWith('motivation')) {
+    fallbackDirs.unshift(path.join(process.cwd(), 'sound_assets', 'motivation'));
+  }
 
-      if (validFiles.length > 0) {
-        // Look for match by niche in filename
-        const match = validFiles.find(f => f.toLowerCase().includes(preferredNiche.toLowerCase()));
-        return path.join(dir, match || validFiles[0]);
+  // Check designated directory first
+  let candidates = [];
+  if (fs.existsSync(primaryDir)) {
+    try {
+      const files = fs.readdirSync(primaryDir)
+        .filter(f => AUDIO_EXTENSIONS.test(f))
+        .map(f => path.join(primaryDir, f))
+        .filter(f => {
+          try { return fs.statSync(f).size > 1024; } catch { return false; }
+        });
+      candidates.push(...files);
+    } catch (e) {
+      console.warn(`[Audio Asset Manager] Warning reading ${primaryDir}:`, e.message);
+    }
+  }
+
+  // Fallback to secondary directories if designated folder has no audio
+  if (candidates.length === 0) {
+    for (const dir of fallbackDirs) {
+      if (fs.existsSync(dir)) {
+        try {
+          const files = fs.readdirSync(dir)
+            .filter(f => AUDIO_EXTENSIONS.test(f))
+            .map(f => path.join(dir, f))
+            .filter(f => {
+              try { return fs.statSync(f).size > 1024; } catch { return false; }
+            });
+          candidates.push(...files);
+          if (candidates.length > 0) break;
+        } catch {}
       }
     }
   }
-  return null;
+
+  // If uploaded sound file(s) found: pick randomly!
+  if (candidates.length > 0) {
+    const chosenTrack = candidates[Math.floor(Math.random() * candidates.length)];
+    console.log(`[Audio Asset Manager] 🎵 Channel: [${channelKey}] -> Randomly selected track (${candidates.length} available): "${path.basename(chosenTrack)}"`);
+    console.log(`[Audio Asset Manager] 🎚️ Normalizing loudness & formatting to ${durationSeconds.toFixed(1)}s loop...`);
+
+    const dur = durationSeconds.toFixed(2);
+    const fadeIn = Math.min(0.2, durationSeconds * 0.05).toFixed(2);
+    const fadeOut = Math.min(0.3, durationSeconds * 0.06).toFixed(2);
+    const fadeOutStart = (durationSeconds - parseFloat(fadeOut)).toFixed(2);
+
+    const cmd = `ffmpeg -y -stream_loop -1 -i "${chosenTrack}" -t ${dur} -af "loudnorm=I=-16:TP=-1.5:LRA=11,afade=t=in:ss=0:d=${fadeIn},afade=t=out:st=${fadeOutStart}:d=${fadeOut}" -c:a pcm_s16le -ar 44100 -ac 2 "${outputPath}" 2>/dev/null`;
+
+    try {
+      execSync(cmd);
+      if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 2000) {
+        return outputPath;
+      }
+    } catch (err) {
+      console.warn(`[Audio Asset Manager] Processing uploaded track failed (${err.message}). Using procedural synth.`);
+    }
+  } else {
+    console.log(`[Audio Asset Manager] ℹ️ No uploaded audio files found in sound_assets/${channelKey}/. Using procedural cinematic synthesis.`);
+  }
+
+  // Procedural Synthesis Fallback tailored to channel aesthetics
+  synthesizeProceduralAudio(channelKey, durationSeconds, outputPath);
+  return outputPath;
 }
 
 /**
- * Resolve Real Music Track
- * 
- * Priority:
- * 1. Explicit sound URL passed via options.soundUrl or env SOUND_URL / MUSIC_URL
- * 2. Real local audio dropped in assets/sounds/
- * 3. Pixabay Music API if key available
- * 4. Graceful silence / null (avoids bad synthesizer beeps!)
+ * Procedural Audio Synthesis Fallback
  */
-async function resolveRealMusicTrack(options = {}) {
-  const {
-    niche = 'tech',
-    duration = 10.0,
-    soundUrl = options.soundUrl || process.env.SOUND_URL || process.env.MUSIC_URL || process.env.AUDIO_URL || null,
-    outWavPath = path.join(CACHE_SOUNDS_DIR, `resolved_music_${Date.now()}.wav`)
-  } = options;
+function synthesizeProceduralAudio(channelKey, durationSeconds, outputPath) {
+  const dur = durationSeconds.toFixed(2);
+  const fadeOutStart = (durationSeconds - 0.25).toFixed(2);
 
-  // 1. Check explicit URL
-  if (soundUrl && soundUrl.startsWith('http')) {
-    console.log(`[Audio Asset Manager] 🌐 Downloading real sound from provided URL: ${soundUrl}`);
-    const tempDownload = path.join(CACHE_SOUNDS_DIR, `remote_audio_${Date.now()}`);
-    const ok = await downloadSoundFromUrl(soundUrl, tempDownload);
-    if (ok && fs.existsSync(tempDownload)) {
-      try {
-        execSync(
-          `ffmpeg -y -stream_loop -1 -i "${tempDownload}" -t ${duration} -af "afade=t=in:ss=0:d=0.3,afade=t=out:st=${Math.max(0, duration - 0.5).toFixed(2)}:d=0.5" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`
-        );
-        try { fs.unlinkSync(tempDownload); } catch {}
-        if (fs.existsSync(outWavPath) && fs.statSync(outWavPath).size > 5000) {
-          console.log(`[Audio Asset Manager] ✅ Real sound from URL prepared successfully! (${duration}s)`);
-          return outWavPath;
-        }
-      } catch (err) {
-        console.warn(`[Audio Asset Manager] Error processing remote sound URL: ${err.message}`);
-      }
-    }
+  let filterExpr = '';
+  if (channelKey === 'motivation_15s') {
+    // 15-second cinematic arc:
+    // 0-7s: Eerie suspense drone + atmospheric frequency riser
+    // 7-8s: Silence during the black screen
+    // 8-15s: Explosive 808 sub-bass slam impact + driving focus pulse
+    filterExpr = [
+      // Part 1: Suspense drone (0-7s)
+      `sine=frequency=55:duration=7.0,volume=0.35,afade=t=out:st=6.6:d=0.4[drone1]`,
+      `sine=frequency=110:duration=7.0,volume=0.15,afade=t=out:st=6.6:d=0.4[pad1]`,
+      // Part 2: Dead silence (7-8s)
+      `anullsrc=r=44100:cl=stereo:d=1.0[silence]`,
+      // Part 3: Slam impact at 8s (sub-drop + driving power beat)
+      `sine=frequency=42:duration=7.0,volume=0.45,afade=t=in:ss=0:d=0.08,afade=t=out:st=6.7:d=0.3[slamSub]`,
+      `sine=frequency=880:duration=7.0,volume=0.04[tick]`,
+      `[drone1][pad1]amix=inputs=2[p1]`,
+      `[slamSub][tick]amix=inputs=2[p3]`,
+      `[p1][silence][p3]concat=n=3:v=0:a=1[concatted]`,
+      `[concatted]afade=t=in:ss=0:d=0.2,afade=t=out:st=${fadeOutStart}:d=0.25[out]`
+    ].join(';');
+  } else if (channelKey === 'motivation_5s') {
+    // 5-second intense focus sub-bass pulse + metallic tick
+    filterExpr = [
+      `sine=frequency=48:duration=${dur},volume=0.4[sub]`,
+      `sine=frequency=120:duration=${dur},volume=0.2[body]`,
+      `sine=frequency=880:duration=${dur},volume=0.03[tick]`,
+      `[sub][body][tick]amix=inputs=3[mixed]`,
+      `[mixed]afade=t=in:ss=0:d=0.15,afade=t=out:st=${fadeOutStart}:d=0.2[out]`
+    ].join(';');
+  } else if (channelKey === 'stoic') {
+    // Ancient cavernous mystery drone
+    filterExpr = [
+      `sine=frequency=43:duration=${dur},volume=0.35[abyss]`,
+      `sine=frequency=108:duration=${dur},volume=0.2[minor]`,
+      `sine=frequency=216:duration=${dur},volume=0.1[overtone]`,
+      `[abyss][minor][overtone]amix=inputs=3[mixed]`,
+      `[mixed]afade=t=in:ss=0:d=0.2,afade=t=out:st=${fadeOutStart}:d=0.2[out]`
+    ].join(';');
+  } else {
+    // Finance: low-frequency institutional pulse
+    filterExpr = [
+      `sine=frequency=52:duration=${dur},volume=0.4[sub]`,
+      `sine=frequency=156:duration=${dur},volume=0.18[mid]`,
+      `[sub][mid]amix=inputs=2[mixed]`,
+      `[mixed]afade=t=in:ss=0:d=0.15,afade=t=out:st=${fadeOutStart}:d=0.2[out]`
+    ].join(';');
   }
 
-  // 2. Check local real audio files in assets/sounds/
-  const localFile = findLocalRealAudio(niche);
-  if (localFile) {
-    console.log(`[Audio Asset Manager] 🎵 Found real audio track in assets: ${path.basename(localFile)}`);
-    try {
-      execSync(
-        `ffmpeg -y -stream_loop -1 -i "${localFile}" -t ${duration} -af "afade=t=in:ss=0:d=0.3,afade=t=out:st=${Math.max(0, duration - 0.5).toFixed(2)}:d=0.5" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`
-      );
-      if (fs.existsSync(outWavPath) && fs.statSync(outWavPath).size > 5000) {
-        return outWavPath;
-      }
-    } catch {}
+  const cmd = `ffmpeg -y -f lavfi -i "${filterExpr}" -map "[out]" -c:a pcm_s16le -ar 44100 -ac 2 "${outputPath}" 2>/dev/null`;
+  try {
+    execSync(cmd);
+  } catch (e) {
+    // Fallback simple sine
+    execSync(`ffmpeg -y -f lavfi -i "sine=frequency=80:duration=${dur}" -c:a pcm_s16le -ar 44100 -ac 2 "${outputPath}" 2>/dev/null`);
   }
-
-  // 3. Check Pixabay Music API
-  if (process.env.PIXABAY_API_KEY) {
-    const pTrack = await fetchPixabayMusicTrack(niche === 'cartoon' ? 'upbeat technology science groove' : 'suspense corporate finance', outWavPath);
-    if (pTrack) {
-      console.log(`[Audio Asset Manager] 🎶 Auto-fetched real track via Pixabay Music API!`);
-      return pTrack;
-    }
-  }
-
-  // 4. Return null: better to have clean voice only than bad synthesizer beeps!
-  return null;
+  return outputPath;
 }
 
 module.exports = {
-  downloadSoundFromUrl,
-  fetchPixabayMusicTrack,
-  findLocalRealAudio,
-  resolveRealMusicTrack,
-  ASSETS_SOUNDS_DIR,
-  CACHE_SOUNDS_DIR
+  resolveChannelAudio,
+  AUDIO_EXTENSIONS
 };

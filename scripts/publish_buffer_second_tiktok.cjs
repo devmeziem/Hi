@@ -66,6 +66,10 @@ const BUFFER_TIKTOK_TEEN_CHANNEL_ID = String(
   process.env.BUFFER_CHANNEL_ID_5 ||
   process.env.TIKTOK_TEEN_CHANNEL_ID ||
   process.env.TIKTOK_CHANNEL_ID_5 ||
+  // Generic fallbacks only if distinct from movie channel
+  (process.env.BUFFER_TIKTOK_CHANNEL_ID && process.env.BUFFER_TIKTOK_CHANNEL_ID !== process.env.BUFFER_TIKTOK_MOVIE_CHANNEL_ID ? process.env.BUFFER_TIKTOK_CHANNEL_ID : '') ||
+  (process.env.BUFFER_CHANNEL_ID && process.env.BUFFER_CHANNEL_ID !== process.env.BUFFER_TIKTOK_MOVIE_CHANNEL_ID ? process.env.BUFFER_CHANNEL_ID : '') ||
+  (process.env.TIKTOK_CHANNEL_ID && process.env.TIKTOK_CHANNEL_ID !== process.env.BUFFER_TIKTOK_MOVIE_CHANNEL_ID ? process.env.TIKTOK_CHANNEL_ID : '') ||
   ''
 ).trim();
 

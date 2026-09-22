@@ -18,6 +18,8 @@ const path = require('path');
 const { execSync } = require('child_process');
 const https = require('https');
 const { getSyncedChannelProfile, formatChannelFollowCta } = require('./youtube_channel_dispatcher.cjs');
+const { resolveChannelAudio } = require('./audio_asset_manager.cjs');
+const { selectDeduplicatedCandidate, recordPostedCandidate } = require('./channel_dedup_service.cjs');
 
 const MANIFEST_PATH = path.join(process.cwd(), 'daily_blueprint_manifest.json');
 const LOCAL_QUOTE_CACHE = path.join(process.cwd(), 'fin_quote_history.json');
@@ -901,8 +903,8 @@ async function generateFin5sVideo() {
   if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   if (!fs.existsSync(ARTIFACTS_DIR)) fs.mkdirSync(ARTIFACTS_DIR, { recursive: true });
 
-  // 1. Select Unique Quote
-  const chosen = selectUniqueFinanceQuote();
+  // 1. Select Unique Quote with Anti-Spam Cross-Runner Deduplication
+  const chosen = await selectDeduplicatedCandidate('finance', FINANCE_TITANS_QUOTES, q => q.quote, q => q.author);
   console.log(`[Quote Selected]: "${chosen.quote}"`);
   console.log(`[Author]: ${chosen.author} (${chosen.credentials})`);
   console.log(`[Citation]: ${chosen.reference}\n`);
@@ -912,9 +914,9 @@ async function generateFin5sVideo() {
   // 2. Resolve Portrait
   const portraitPath = await resolveFinancialPortrait(chosen);
 
-  // 3. Synthesize Mystery Drone Sound
+  // 3. Resolve Mystery Drone Audio from sound_assets/finance/ or procedural synth
   const mysteryWavPath = path.join(ARTIFACTS_DIR, 'finance_mystery_drone.wav');
-  generateFinancialMysterySound(mysteryWavPath, TARGET_DURATION);
+  resolveChannelAudio('finance', TARGET_DURATION, mysteryWavPath);
 
   // 4. Build High-Contrast Caption Card SVG & Rasterize Safely
   const cardSvg = buildFrostedGlassCardSvg(chosen);
@@ -1018,6 +1020,8 @@ async function generateFin5sVideo() {
   } catch (e) {
     console.warn('[Finance Quote Reel] Manifest sync notice:', e.message);
   }
+
+  await recordPostedCandidate('finance', chosen.quote, chosen.author, { reference: chosen.reference, duration: TARGET_DURATION });
 
   // 7. Publish to YouTube (Channel 1: Fin Blueprint)
   const isDryRun = process.env.DRY_RUN === 'true';

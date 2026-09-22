@@ -1,16 +1,25 @@
 name: Apex Discipline - Teen & Youth Motivation Pipeline (Channel 5)
 
 on:
-  push:
-    branches:
-      - main
   schedule:
-    # Daily evening motivation drop at 20:00 UTC (21:00 WAT)
-    - cron: '0 20 * * *'
+    # 3 Posts Daily:
+    # 08:00 UTC (09:00 WAT) -> 5s straight-to-point reel
+    # 14:00 UTC (15:00 WAT) -> 15s public opinion vs reality slam reel
+    # 20:00 UTC (21:00 WAT) -> 5s straight-to-point reel
+    - cron: '0 8,14,20 * * *'
   workflow_dispatch:
     inputs:
+      video_type:
+        description: 'Video Format (auto = slot-based 3/day: 2x 5s + 1x 15s, 5s_reel = 5s punchline, 15s_slam = 15s debate slam)'
+        required: false
+        default: 'auto'
+        type: choice
+        options:
+          - 'auto'
+          - '5s_reel'
+          - '15s_slam'
       topic:
-        description: 'Topic or Theme (Leave empty to auto-fetch public wisdom + AI rewrite for teens)'
+        description: 'Topic or Theme (Optional - auto picks high-impact teen wisdom & psychology)'
         required: false
         default: ''
         type: string
@@ -64,20 +73,22 @@ jobs:
 
       - name: Generate Teen Motivation Reel
         env:
+          VIDEO_TYPE: ${{ github.event.inputs.video_type || 'auto' }}
           TOPIC: ${{ github.event.inputs.topic || '' }}
           AUTO_PUBLISH: ${{ github.event.inputs.auto_publish || 'false' }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          SKIP_BUFFER_DISPATCH: 'true'
           MOTIVATION_MUSIC_URL: ${{ github.event.inputs.sound_url }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH5 || secrets.YOUTUBE_CLIENT_ID }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH5 || secrets.YOUTUBE_CLIENT_SECRET }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH5 || secrets.YOUTUBE_REFRESH_TOKEN_CH1 }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH5 || secrets.YOUTUBE_CLIENT_ID_TEEN || secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH5 || secrets.YOUTUBE_CLIENT_SECRET_TEEN || secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH5 || secrets.YOUTUBE_REFRESH_TOKEN_TEEN || secrets.YOUTUBE_REFRESH_TOKEN_CH1 }}
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 || secrets.BUFFER_API_KEY }}
-          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID || secrets.BUFFER_TIKTOK_TEEN_CHANNEL || secrets.BUFFER_TIKTOK_CHANNEL_ID_5 || secrets.BUFFER_TIKTOK_CHANNEL_ID_TEEN || secrets.BUFFER_TIKTOK_CHANNEL_ID_2 || secrets.BUFFER_TIKTOK_MOTIVATION_CHANNEL_ID || secrets.BUFFER_TIKTOK_YOUTH_CHANNEL_ID || secrets.BUFFER_CHANNEL_ID_TEEN || secrets.BUFFER_CHANNEL_ID_5 || secrets.TIKTOK_TEEN_CHANNEL_ID }}
+          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID || secrets.BUFFER_TIKTOK_TEEN_CHANNEL || secrets.BUFFER_TIKTOK_CHANNEL_ID_TEEN || secrets.BUFFER_TIKTOK_CHANNEL_ID_5 || secrets.BUFFER_TIKTOK_CHANNEL_ID_2 || secrets.BUFFER_TIKTOK_CHANNEL_ID || secrets.BUFFER_TIKTOK_MOTIVATION_CHANNEL_ID || secrets.BUFFER_TIKTOK_YOUTH_CHANNEL_ID || secrets.BUFFER_CHANNEL_ID_TEEN || secrets.BUFFER_CHANNEL_ID_5 || secrets.BUFFER_CHANNEL_ID || secrets.TIKTOK_TEEN_CHANNEL_ID || secrets.TIKTOK_CHANNEL_ID }}
         run: |
-          echo "=== 🔥 Generating Teen Motivation Reel (Topic: $TOPIC) ==="
+          echo "=== 🔥 Generating Teen Motivation Reel (Type: $VIDEO_TYPE, Topic: $TOPIC) ==="
           node scripts/generate_teen_motivation_reel.cjs
           echo "=== Motivation Reel Assembled Successfully ==="
 
@@ -85,7 +96,7 @@ jobs:
         if: success() && (github.event_name == 'schedule' || github.event.inputs.publish_tiktok != 'false')
         env:
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 || secrets.BUFFER_API_KEY }}
-          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID || secrets.BUFFER_TIKTOK_TEEN_CHANNEL || secrets.BUFFER_TIKTOK_CHANNEL_ID_5 || secrets.BUFFER_TIKTOK_CHANNEL_ID_TEEN || secrets.BUFFER_TIKTOK_CHANNEL_ID_2 || secrets.BUFFER_TIKTOK_MOTIVATION_CHANNEL_ID || secrets.BUFFER_TIKTOK_YOUTH_CHANNEL_ID || secrets.BUFFER_CHANNEL_ID_TEEN || secrets.BUFFER_CHANNEL_ID_5 || secrets.TIKTOK_TEEN_CHANNEL_ID }}
+          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID || secrets.BUFFER_TIKTOK_TEEN_CHANNEL || secrets.BUFFER_TIKTOK_CHANNEL_ID_TEEN || secrets.BUFFER_TIKTOK_CHANNEL_ID_5 || secrets.BUFFER_TIKTOK_CHANNEL_ID_2 || secrets.BUFFER_TIKTOK_CHANNEL_ID || secrets.BUFFER_TIKTOK_MOTIVATION_CHANNEL_ID || secrets.BUFFER_TIKTOK_YOUTH_CHANNEL_ID || secrets.BUFFER_CHANNEL_ID_TEEN || secrets.BUFFER_CHANNEL_ID_5 || secrets.BUFFER_CHANNEL_ID || secrets.TIKTOK_TEEN_CHANNEL_ID || secrets.TIKTOK_CHANNEL_ID }}
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
@@ -98,7 +109,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: teen-motivation-reel
+          name: teen-motivation-reel-${{ github.run_id }}
           path: |
             rendered_videos/teen_motivation_latest.mp4
             test_artifacts/motivation_reels/*.mp4
@@ -111,6 +122,7 @@ jobs:
         run: |
           echo "==============================================================="
           echo "TEEN MOTIVATION REELS PIPELINE COMPLETED"
+          echo "3 Posts Daily: 2x 5s punchline reels + 1x 15s slam debate reel"
           echo "Zero git commits made to repository - Low-key database logging."
           echo "Video artifact archived securely in Actions run artifacts."
           echo "==============================================================="

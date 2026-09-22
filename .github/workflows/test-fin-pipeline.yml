@@ -105,15 +105,8 @@ jobs:
             echo "▶️ Generating 1 Fin Reel (5 Seconds Duration, Slot: $CURRENT_HOUR UTC)..."
             SHORT_DURATION=5.0 node scripts/generate_fin_quote_reel.cjs
           elif [ "$VIDEO_MODE" = "all_daily_4" ]; then
-            echo "▶️ Generating Full Daily 4-Reel Suite (Two 3s Reels + Two 5s Reels)..."
-            echo "--- Slot 1: 3-Second Reel ---"
-            SHORT_DURATION=3.0 node scripts/generate_fin_quote_reel.cjs || true
-            echo "--- Slot 2: 5-Second Reel ---"
-            SHORT_DURATION=5.0 node scripts/generate_fin_quote_reel.cjs || true
-            echo "--- Slot 3: 3-Second Reel ---"
-            SHORT_DURATION=3.0 node scripts/generate_fin_quote_reel.cjs || true
-            echo "--- Slot 4: 5-Second Reel ---"
-            SHORT_DURATION=5.0 node scripts/generate_fin_quote_reel.cjs || true
+            echo "▶️ Spaced Slot Trigger: Generating exactly 1 fresh, non-repeating fin reel for current slot..."
+            SHORT_DURATION=5.0 node scripts/generate_fin_quote_reel.cjs
           else
             echo "▶️ Defaulting to 5-Second Fin Reel..."
             SHORT_DURATION=5.0 node scripts/generate_fin_quote_reel.cjs
