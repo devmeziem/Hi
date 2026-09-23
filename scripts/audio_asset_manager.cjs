@@ -23,12 +23,17 @@ const { execSync } = require('child_process');
 const AUDIO_EXTENSIONS = /\.(mp3|wav|m4a|aac|ogg|flac)$/i;
 
 const SOUND_DIRECTORIES = {
+  mindrush: path.join(process.cwd(), 'sound_assets', 'mindrush'),
+  mindrush_15s: path.join(process.cwd(), 'sound_assets', 'mindrush'),
+  mindrush_5s: path.join(process.cwd(), 'sound_assets', 'mindrush'),
   cartoon: path.join(process.cwd(), 'sound_assets', 'cartoon'),
   movie_brand: path.join(process.cwd(), 'sound_assets', 'movie_brand'),
   movie: path.join(process.cwd(), 'sound_assets', 'movie_brand'),
   motivation_5s: path.join(process.cwd(), 'sound_assets', 'motivation_5s'),
   motivation_15s: path.join(process.cwd(), 'sound_assets', 'motivation_15s'),
   motivation: path.join(process.cwd(), 'sound_assets', 'motivation'),
+  teen_motivation: path.join(process.cwd(), 'sound_assets', 'motivation_15s'),
+  teen: path.join(process.cwd(), 'sound_assets', 'motivation_15s'),
   stoic: path.join(process.cwd(), 'sound_assets', 'stoic'),
   finance: path.join(process.cwd(), 'sound_assets', 'finance'),
   fin: path.join(process.cwd(), 'sound_assets', 'finance')
@@ -135,11 +140,25 @@ function findAudioCandidates(primaryDir, fallbackDirs = []) {
     }
   }
 
-  // If primaryDir has tracks, prioritize them
+  // Priority 1: If primaryDir has tracks, prioritize custom uploaded audio first
   if (primaryDir && fs.existsSync(primaryDir)) {
     const primaryTracks = Array.from(found).filter(f => f.startsWith(primaryDir));
-    if (primaryTracks.length > 0) return primaryTracks;
+    if (primaryTracks.length > 0) {
+      const customTracks = primaryTracks.filter(f => {
+        const base = path.basename(f).toLowerCase();
+        return !base.startsWith('horror_') && !base.startsWith('mystery_') && !base.startsWith('instrumental_');
+      });
+      if (customTracks.length > 0) return customTracks;
+      return primaryTracks;
+    }
   }
+
+  // Priority 2: Check all scanned directories for custom uploaded audio
+  const allCustomTracks = Array.from(found).filter(f => {
+    const base = path.basename(f).toLowerCase();
+    return !base.startsWith('horror_') && !base.startsWith('mystery_') && !base.startsWith('instrumental_');
+  });
+  if (allCustomTracks.length > 0) return allCustomTracks;
 
   return Array.from(found);
 }
@@ -262,7 +281,15 @@ function resolveChannelAudio(channelKey, durationSeconds, outputPath) {
   const candidates = findAudioCandidates(primaryDir, fallbackDirs);
 
   if (candidates.length > 0) {
-    const chosenTrack = candidates[Math.floor(Math.random() * candidates.length)];
+    let matchingCandidates = candidates;
+    if (durationSeconds >= 10) {
+      const match15 = candidates.filter(c => /15s?/i.test(path.basename(c)));
+      if (match15.length > 0) matchingCandidates = match15;
+    } else if (durationSeconds <= 7) {
+      const match5 = candidates.filter(c => /5s?/i.test(path.basename(c)));
+      if (match5.length > 0) matchingCandidates = match5;
+    }
+    const chosenTrack = matchingCandidates[Math.floor(Math.random() * matchingCandidates.length)];
     console.log(`[Audio Asset Manager] 🎵 Channel: [${channelKey}] -> Selected repository track: "${path.basename(chosenTrack)}"`);
     const dur = durationSeconds.toFixed(2);
     const fadeIn = Math.min(0.2, durationSeconds * 0.05).toFixed(2);

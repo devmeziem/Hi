@@ -671,7 +671,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
   const navItems = [
     { id: 'dashboard', label: 'Overview Dashboard', icon: LayoutDashboard },
     { id: 'movie-brand', label: 'Cinema Vanguard (Channel 4)', icon: Film },
-    { id: 'teen-motivation', label: 'Apex Discipline (Channel 5)', icon: Flame },
+    { id: 'teen-motivation', label: 'MindRush (Channel 5)', icon: Flame },
     { id: 'finance', label: 'Finance Blueprint (Channel 1)', icon: DollarSign },
     { id: 'sound-setup', label: 'Sound & Audio Studio', icon: Headphones },
     { id: 'pipeline', label: 'Autonomous Publishing Hub', icon: Workflow },

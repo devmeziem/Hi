@@ -48,7 +48,7 @@ export const TeenMotivationTab: React.FC = () => {
   const [toast, setToast] = useState<string | null>(null);
 
   // Audio Vault State
-  const [audioChannel, setAudioChannel] = useState<'motivation_15s' | 'motivation_5s'>('motivation_15s');
+  const [audioChannel, setAudioChannel] = useState<'mindrush' | 'motivation_15s' | 'motivation_5s'>('mindrush');
   const [audioAssets, setAudioAssets] = useState<AudioAsset[]>([]);
   const [isLoadingAudio, setIsLoadingAudio] = useState<boolean>(false);
   const [isUploadingAudio, setIsUploadingAudio] = useState<boolean>(false);
@@ -118,7 +118,7 @@ export const TeenMotivationTab: React.FC = () => {
     loadAudioAssets(audioChannel);
   }, []);
 
-  const handleChannelSwitch = (channelKey: 'motivation_15s' | 'motivation_5s') => {
+  const handleChannelSwitch = (channelKey: 'mindrush' | 'motivation_15s' | 'motivation_5s') => {
     setAudioChannel(channelKey);
     if (audioPlayerRef.current) {
       audioPlayerRef.current.pause();
@@ -253,21 +253,24 @@ export const TeenMotivationTab: React.FC = () => {
       )}
 
       {/* Header Banner */}
-      <div id="teen-header-banner" className="p-6 bg-gradient-to-r from-slate-900 via-amber-950/40 to-slate-900 border border-slate-800 rounded-3xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
+      <div id="teen-header-banner" className="p-6 bg-gradient-to-r from-slate-900 via-cyan-950/40 to-slate-900 border border-slate-800 rounded-3xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
         <div className="space-y-1.5">
           <div className="flex items-center gap-2.5">
-            <div className="p-2.5 bg-amber-600/20 border border-amber-500/40 rounded-2xl text-amber-400">
+            <div className="p-2.5 bg-cyan-600/20 border border-cyan-500/40 rounded-2xl text-cyan-400">
               <Flame className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-xl font-black text-white tracking-tight">Apex Discipline: Teen & Youth Motivation</h2>
+                <h2 className="text-xl font-black text-white tracking-tight">MindRush: Pure Aura & 3D Mystery Discipline</h2>
+                <span className="px-2.5 py-0.5 rounded-full bg-cyan-950 border border-cyan-800 text-cyan-300 text-[10px] font-mono font-bold">
+                  MindRush • 3 Posts Daily
+                </span>
                 <span className="px-2.5 py-0.5 rounded-full bg-amber-950 border border-amber-800 text-amber-300 text-[10px] font-mono font-bold">
-                  Channel 5 • 3 Posts Daily
+                  3D AI Visuals & Custom Sound
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Ken Burns pan/zoom, sound-driven 15s Opinion vs Reality debate slams, and 5s straight-to-point punchlines.
+                Dynamic Cloudflare AI 3D imagery (cool characters, anthropomorphic animals, studio), intense debate slams, high-contrast typography, and custom user audio.
               </p>
             </div>
           </div>
@@ -386,6 +389,17 @@ export const TeenMotivationTab: React.FC = () => {
               {/* Folder Selector Tabs */}
               <div className="flex items-center gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800 shrink-0">
                 <button
+                  id="tab-audio-mindrush"
+                  onClick={() => handleChannelSwitch('mindrush')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    audioChannel === 'mindrush'
+                      ? 'bg-cyan-500 text-slate-950 shadow-md'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  ⚡ MindRush Audio
+                </button>
+                <button
                   id="tab-audio-15s"
                   onClick={() => handleChannelSwitch('motivation_15s')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
@@ -394,7 +408,7 @@ export const TeenMotivationTab: React.FC = () => {
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  15s Debate Sounds
+                  15s Slams
                 </button>
                 <button
                   id="tab-audio-5s"
@@ -405,7 +419,7 @@ export const TeenMotivationTab: React.FC = () => {
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  5s Impact Sounds
+                  5s Clips
                 </button>
               </div>
             </div>

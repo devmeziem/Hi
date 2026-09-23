@@ -951,7 +951,7 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
 
   // 4. Groq LPU with Model Finder & Adaptive Formatting
   if (GROQ_API_KEY) {
-    let models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama-3.2-3b-preview', 'llama-3.2-1b-preview', 'mixtral-8x7b-32768'];
+    let models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama-3.2-11b-vision-preview', 'llama-3.2-3b-preview', 'qwen/qwen-2.5-32b', 'deepseek-r1-distill-llama-70b'];
     let formatGrPayload = null;
     let cleanGrJson = null;
     try {
@@ -1058,10 +1058,12 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
   // 6. Cloudflare Workers AI (Dedicated Fallback Tier)
   if (CLOUDFLARE_ACCOUNT_ID && CLOUDFLARE_API_TOKEN) {
     const models = [
+      '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+      '@cf/meta/llama-3.1-8b-instruct',
       '@cf/meta/llama-3.2-3b-instruct',
       '@cf/meta/llama-3.2-1b-instruct',
-      '@cf/meta/llama-3-8b-instruct',
-      '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+      '@cf/mistral/mistral-7b-instruct-v0.2',
+      '@cf/qwen/qwen2.5-7b-instruct',
       '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b'
     ];
     for (const model of models) {

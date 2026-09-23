@@ -96,8 +96,19 @@ function resolveTargetChannel(discoveredTikToks, userInputId, channelType) {
   const clean = cleanChannelId(userInputId);
   const cleanNoAt = clean.replace(/^@/, '').toLowerCase();
 
-  // If Teen Motivation, enforce strict priority for bonesceo / 6ab05677ea19ca0bde9c3ffb
-  if (channelType === 'teen_motivation') {
+  // If Teen Motivation or MindRush, enforce strict priority
+  if (channelType === 'teen_motivation' || channelType === 'mindrush' || channelType === 'mindrush_reel') {
+    // 0. Direct match on 'mindrush'
+    const byMindrush = discoveredTikToks.find(c => {
+      const n = (c.name || '').replace(/^@/, '').toLowerCase();
+      const d = (c.displayName || '').replace(/^@/, '').toLowerCase();
+      return n.includes('mindrush') || d.includes('mindrush');
+    });
+    if (byMindrush) {
+      console.log(`[Buffer TikTok Dispatch] 🎯 Matched MindRush TikTok channel: "${byMindrush.name}" (${byMindrush.id})`);
+      return byMindrush;
+    }
+
     // 1. Direct match on hardcoded Teen Motivation TikTok Channel ID (6ab05677ea19ca0bde9c3ffb)
     const byExactTeenId = discoveredTikToks.find(c => cleanChannelId(c.id).toLowerCase() === HARDCODED_TEEN_TIKTOK_CHANNEL_ID.toLowerCase());
     if (byExactTeenId) {
@@ -116,8 +127,8 @@ function resolveTargetChannel(discoveredTikToks, userInputId, channelType) {
       return byBonesName;
     }
 
-    // 3. Match on teen/discipline keywords (never movie)
-    const teenKeywords = ['teen', 'motivation', 'discipline', 'mindset', 'youth', 'apex', 'ch5', 'ch 5', 'lock in'];
+    // 3. Match on teen/discipline/mindrush keywords (never movie)
+    const teenKeywords = ['mindrush', 'mind', 'teen', 'motivation', 'discipline', 'mindset', 'youth', 'apex', 'ch5', 'ch 5', 'lock in'];
     const matchedKeyword = discoveredTikToks.find(c => {
       const n = (c.name || '').toLowerCase();
       return teenKeywords.some(kw => n.includes(kw));

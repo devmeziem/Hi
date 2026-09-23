@@ -765,8 +765,7 @@ async function postToBufferChannel(channel, mediaUrl, caption, postTitle = '') {
     if (svc === 'facebook') {
       const fbPostType = (process.env.BUFFER_FACEBOOK_POST_TYPE || 'reel').toLowerCase();
       metadata.facebook = {
-        type: fbPostType,
-        title: postTitle || 'Archie Explains: Everyday Science & Tech'
+        type: fbPostType
       };
     } else if (svc === 'instagram') {
       const igPostType = (process.env.BUFFER_INSTAGRAM_POST_TYPE || 'reel').toLowerCase();

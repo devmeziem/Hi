@@ -1,25 +1,30 @@
 /**
- * Apex Youth Motivation Reel Generator (Channel 5: Teen & Youth Motivation)
+ * MindRush Reel Generator (Channel: MindRush - Pure Aura, 3D Mystery & Discipline)
  *
- * Daily Schedule: 3 Posts Daily
- * - 2 Posts of 5.0 Seconds (Straight to point, one image, Ken Burns zoom/pan,
- *   clean bold floating typography matching user reference image, NO voiceover)
- * - 1 Post of 15.0 Seconds (Public opinion/doubt vs reality proof:
- *   Them/Opinion -> 3s break with blinking cursor -> 1s pitch-black screen ->
- *   New image SLAMS out from center carrying the Me/Reality counter with everyday words + 1 rare word, NO voiceover)
+ * Daily Schedule:
+ * - 5.0s Wisdom Reels (Straight to point, 3D mystery aura background, high contrast, NO voiceover)
+ * - 15.0s Public Opinion vs Reality Slam Reels:
+ *   Them/Opinion (7.0s) -> 0.8s pitch-black tension ->
+ *   EXPLOSIVE SLAM (7.2s): White impact flash, violent punch zoom, camera tremor,
+ *   crisp dark-backed text card, glowing rare word, user-uploaded phonk/bass soundtrack.
  *
  * Audio Management:
- * - 5s sound picked randomly from `sound_assets/motivation_5s/`
- * - 15s sound picked randomly from `sound_assets/motivation_15s/`
- * - Procedural cinematic synthesis fallback if folders are empty
+ * - Direct resolution via `sound_assets/mindrush/` & `sound_assets/uploads/`
+ * - Prioritizes user uploaded audio (BangersOnly) over generic ambient loops.
  *
- * Deduplication:
- * - Integrated with Firestore cloud persistent database + local cache + calendar hashing
- *   to ensure ZERO duplicate posts.
+ * Visual Engine:
+ * - Dynamic Cloudflare Workers AI 3D Image Generation (@cf/black-forest-labs/flux-1-schnell & @cf/bytedance/stable-diffusion-xl-lightning)
+ * - 3 Themes: 3D Mystery Boy with pure aura, 3D Anthropomorphic Animals looking human, 3D Minimalist Dark Studio
+ * - High-resolution local 3D assets fallback (Zero generic hikers).
+ *
+ * Typography & Layout:
+ * - Auto-wrapped multi-line SVG engine with high-contrast obsidian-slate translucent backdrop cards
+ * - 100% visibility guaranteed on all devices and TikTok UI overlays.
  */
 
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
 const { execSync } = require('child_process');
 const { resolveChannelAudio } = require('./audio_asset_manager.cjs');
 const { selectDeduplicatedCandidate, recordPostedCandidate } = require('./channel_dedup_service.cjs');
@@ -32,227 +37,256 @@ for (const dir of [OUTPUT_DIR, ARTIFACTS_DIR]) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
-// Visual Image Assets Available
-const MOTIVATION_IMAGES = {
-  summitDawn: path.join(process.cwd(), 'src', 'assets', 'images', 'teen_summit_dawn_1790064326003.jpg'),
-  doubtRain: path.join(process.cwd(), 'src', 'assets', 'images', 'teen_doubt_rain_1790064342836.jpg'),
-  slamPower: path.join(process.cwd(), 'src', 'assets', 'images', 'teen_slam_power_1790064359930.jpg'),
-  lateStudy: path.join(process.cwd(), 'src', 'assets', 'images', 'teen_late_study_1789986858935.jpg'),
-  gymGrit: path.join(process.cwd(), 'src', 'assets', 'images', 'teen_gym_grit_1789986874331.jpg'),
-  dawnAthlete: path.join(process.cwd(), 'src', 'assets', 'images', 'teen_dawn_athlete_1789986845460.jpg'),
-  rainStreet: path.join(process.cwd(), 'src', 'assets', 'images', 'teen_rain_street_1789986889074.jpg')
+// Cloudflare Workers AI Credentials
+const CLOUDFLARE_ACCOUNT_ID = (process.env.CLOUDFLARE_ACCOUNT_ID || '').trim().replace(/^https?:\/\/[^\/]+\//, '').replace(/\/$/, '');
+const CLOUDFLARE_API_TOKEN = (process.env.CLOUDFLARE_API_TOKEN || '').trim();
+
+// Local 3D Mystery Assets with Pure Aura (Permanently replaces generic outdoor photos)
+const LOCAL_3D_MYSTERY_IMAGES = {
+  boy: path.join(process.cwd(), 'src', 'assets', 'images', 'mindrush_mystery_boy_1790164693177.jpg'),
+  panther: path.join(process.cwd(), 'src', 'assets', 'images', 'mindrush_animal_human_1790164705789.jpg'),
+  wolf: path.join(process.cwd(), 'src', 'assets', 'images', 'mindrush_wolf_human_1790164730412.jpg'),
+  studio: path.join(process.cwd(), 'src', 'assets', 'images', 'mindrush_studio_bg_1790164717832.jpg')
 };
 
-// 1. Curated Catalog of 5-Second High-Impact Punchlines (3-Line Clean Reference Format)
+// Aliases for backwards compatibility with legacy catalogs
+const MOTIVATION_IMAGES = {
+  summitDawn: LOCAL_3D_MYSTERY_IMAGES.boy,
+  doubtRain: LOCAL_3D_MYSTERY_IMAGES.panther,
+  slamPower: LOCAL_3D_MYSTERY_IMAGES.wolf,
+  lateStudy: LOCAL_3D_MYSTERY_IMAGES.studio,
+  gymGrit: LOCAL_3D_MYSTERY_IMAGES.panther,
+  dawnAthlete: LOCAL_3D_MYSTERY_IMAGES.boy,
+  rainStreet: LOCAL_3D_MYSTERY_IMAGES.studio
+};
+
+// 3 Curated Prompt Pools for Live Cloudflare AI Image Synthesis
+const MYSTERY_3D_POOLS = {
+  boy: [
+    "3D octane render of a cool mysterious teen boy character with pure aura, dark streetwear hoodie, glowing cyan and electric purple neon rim light, sharp disciplined eyes looking at camera, misty volumetric atmosphere, dark cinematic mood, sleek and stylish, unreal engine 5 render, vertical 9:16",
+    "3D cinematic render of an enigmatic cool teen boy standing in atmospheric dark haze, intense golden aura rim light, black oversized techwear hoodie, ultra-detailed, pure aura, 8k vertical 9:16",
+    "3D render of a stoic teen boy with glowing electric blue aura, dark shadow silhouette, glowing eyes, cinematic mist, pure aura, high detail 3D character, vertical 9:16"
+  ],
+  animal_human: [
+    "3D octane render of a cool anthropomorphic black panther looking human dressed in an obsidian tailored luxury suit, glowing emerald and amber eyes, smoking cool atmosphere, pure aura, intense disciplined expression, hyper-detailed 3D character, dark cinematic mystery, vertical 9:16",
+    "3D octane render of a stoic anthropomorphic silver wolf character looking human in a dark urban techwear streetwear jacket, glowing icy blue neon eyes, misty rain reflections, pure aura, intense cool mood, octane render 8k vertical 9:16",
+    "3D render of a royal anthropomorphic lion looking human dressed in dark obsidian velvet trench coat, golden rim light, glowing amber eyes, pure aura, hyper-detailed 3d character, cinematic mystery, vertical 9:16"
+  ],
+  studio: [
+    "3D render of a cool minimalist dark luxury studio stage, dramatic overhead volumetric light spotlight, glowing floating geometric neon prism, deep cyan and gold rim illumination, moody dark mystery, pure aura, sleek dark reflective floor, 8k vertical 9:16 cinematic studio background",
+    "3D brutalist dark vault studio, dramatic single overhead spotlight, floating glowing particles, pure aura, sleek reflective metallic floor, hyper-cinematic mystery 8k vertical 9:16",
+    "3D high-end futuristic dark studio showroom with glowing neon frame, soft ambient haze, polished obsidian reflection, pure aura, architectural mystery, 8k vertical 9:16"
+  ]
+};
+
+/**
+ * Dynamically Generate 3D Mystery Image via Cloudflare Workers AI
+ */
+async function generateCloudflareMysteryImage(prompt) {
+  if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_API_TOKEN) {
+    return null;
+  }
+
+  const candidateModels = [
+    '@cf/black-forest-labs/flux-1-schnell',
+    '@cf/bytedance/stable-diffusion-xl-lightning'
+  ];
+
+  for (const model of candidateModels) {
+    try {
+      const seed = Math.floor(Math.random() * 99999999);
+      const postData = JSON.stringify({
+        prompt: `${prompt}, 3d octane render, pure aura, moody cinematic mystery, ultra high resolution 9:16 vertical, photorealistic 8k, hyper-detailed`,
+        num_steps: 4,
+        seed
+      });
+
+      const buffer = await new Promise((resolve) => {
+        const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${model}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(postData)
+          },
+          timeout: 18000
+        }, (res) => {
+          const chunks = [];
+          res.on('data', c => chunks.push(c));
+          res.on('end', () => {
+            if (res.statusCode === 200) {
+              const full = Buffer.concat(chunks);
+              try {
+                const json = JSON.parse(full.toString('utf8'));
+                if (json.result?.image) {
+                  return resolve(Buffer.from(json.result.image, 'base64'));
+                }
+              } catch {}
+              if (full.length > 2000) return resolve(full);
+            }
+            resolve(null);
+          });
+        });
+        req.on('error', () => resolve(null));
+        req.on('timeout', () => { req.destroy(); resolve(null); });
+        req.write(postData);
+        req.end();
+      });
+
+      if (buffer && buffer.length > 2000) {
+        const outPath = path.join(ARTIFACTS_DIR, `mindrush_cf_${Date.now()}_${seed}.jpg`);
+        fs.writeFileSync(outPath, buffer);
+        console.log(`[MindRush AI Images] 🎨 Generated 3D Mystery Image via Cloudflare AI (${model})`);
+        return outPath;
+      }
+    } catch (e) {
+      console.warn(`[MindRush AI Images] Cloudflare image notice: ${e.message}`);
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Resolve 3D Mystery Visual (Cloudflare AI Dynamic Generation -> Local 3D Fallback)
+ */
+async function resolve3dMysteryImage(category = 'auto') {
+  const categories = ['boy', 'animal_human', 'studio'];
+  const cat = category === 'auto' || !categories.includes(category)
+    ? categories[Math.floor(Math.random() * categories.length)]
+    : category;
+
+  const pool = MYSTERY_3D_POOLS[cat] || MYSTERY_3D_POOLS.boy;
+  const prompt = pool[Math.floor(Math.random() * pool.length)];
+
+  console.log(`[MindRush AI Images] 🔮 Visual Theme: [${cat.toUpperCase()}]`);
+
+  // 1. Live Cloudflare AI synthesis
+  const cfImage = await generateCloudflareMysteryImage(prompt);
+  if (cfImage && fs.existsSync(cfImage)) {
+    return cfImage;
+  }
+
+  // 2. High-grade 3D local assets fallback
+  if (cat === 'boy' && fs.existsSync(LOCAL_3D_MYSTERY_IMAGES.boy)) {
+    return LOCAL_3D_MYSTERY_IMAGES.boy;
+  }
+  if (cat === 'animal_human') {
+    const animal = Math.random() > 0.5 ? LOCAL_3D_MYSTERY_IMAGES.wolf : LOCAL_3D_MYSTERY_IMAGES.panther;
+    if (fs.existsSync(animal)) return animal;
+  }
+  if (cat === 'studio' && fs.existsSync(LOCAL_3D_MYSTERY_IMAGES.studio)) {
+    return LOCAL_3D_MYSTERY_IMAGES.studio;
+  }
+
+  const allFallbacks = Object.values(LOCAL_3D_MYSTERY_IMAGES).filter(f => fs.existsSync(f));
+  return allFallbacks[Math.floor(Math.random() * allFallbacks.length)] || LOCAL_3D_MYSTERY_IMAGES.boy;
+}
+
+// 1. Curated Catalog of 5-Second High-Impact Punchlines
 const CATALOG_5S_QUOTES = [
   {
     line1: "Nobody is coming.",
     line2: "Build yourself",
     line3: "anyway.",
-    author: "Apex Protocol",
-    imageKey: "summitDawn",
+    author: "MindRush",
     theme: "self_reliance"
   },
   {
     line1: "Work in silence.",
     line2: "Shock everyone",
     line3: "with your results.",
-    author: "Mamba Mentality",
-    imageKey: "gymGrit",
+    author: "MindRush",
     theme: "execution"
   },
   {
     line1: "You're not behind.",
     line2: "You just started",
     line3: "the real work.",
-    author: "Youth Resilience",
-    imageKey: "lateStudy",
+    author: "MindRush",
     theme: "focus"
   },
   {
     line1: "Kill your excuses.",
     line2: "Build undeniable",
     line3: "self-respect.",
-    author: "Goggins Protocol",
-    imageKey: "dawnAthlete",
+    author: "MindRush",
     theme: "discipline"
   },
   {
-    line1: "Disappear for 6 months.",
-    line2: "Reappear with a",
-    line3: "different life.",
-    author: "High Performance",
-    imageKey: "summitDawn",
-    theme: "transformation"
+    line1: "Don't tell them.",
+    line2: "Show them with",
+    line3: "ruthless output.",
+    author: "MindRush",
+    theme: "unapologetic"
   },
   {
-    line1: "Don't announce it.",
-    line2: "Let your discipline",
-    line3: "speak for you.",
-    author: "Stoic Youth",
-    imageKey: "rainStreet",
-    theme: "sovereignty"
-  },
-  {
-    line1: "Nobody cares about potential.",
-    line2: "Show them the",
-    line3: "finished product.",
-    author: "Execution Code",
-    imageKey: "gymGrit",
-    theme: "mastery"
-  },
-  {
-    line1: "Comfort is a trap.",
-    line2: "Fall in love",
-    line3: "with the friction.",
-    author: "Apex Grind",
-    imageKey: "dawnAthlete",
-    theme: "grit"
-  },
-  {
-    line1: "They want you distracted.",
-    line2: "Stay locked in",
-    line3: "and sovereign.",
-    author: "Focus Protocol",
-    imageKey: "lateStudy",
-    theme: "focus"
-  },
-  {
-    line1: "One hard year.",
-    line2: "Decades of",
-    line3: "complete freedom.",
-    author: "Wealth Mindset",
-    imageKey: "summitDawn",
-    theme: "freedom"
-  },
-  {
-    line1: "Stop waiting for mood.",
-    line2: "Action creates",
-    line3: "motivation.",
-    author: "Neuro-Discipline",
-    imageKey: "rainStreet",
-    theme: "action"
-  },
-  {
-    line1: "Be so good",
-    line2: "they can no longer",
-    line3: "ignore you.",
-    author: "Unbreakable Will",
-    imageKey: "slamPower",
+    line1: "Pain is temporary.",
+    line2: "Being average is",
+    line3: "forever.",
+    author: "MindRush",
     theme: "excellence"
+  },
+  {
+    line1: "They want you soft.",
+    line2: "Choose discipline",
+    line3: "every single time.",
+    author: "MindRush",
+    theme: "grit"
   }
 ];
 
-// 2. Curated Catalog of 15-Second Public Opinion vs Reality Proofs
-// Structure: Doubt -> 3s break with cursor -> 1s black screen -> Image SLAM with Reality Counter
+// 2. Curated Catalog of 15-Second Public Opinion vs Reality Slam Debates
 const CATALOG_15S_DEBATES = [
   {
-    format: "them_me",
-    speaker1Label: "Them:",
-    speaker1Text: "You're never going to happen.",
-    speaker2Label: "Me:",
-    speaker2Line1: "Quietly building an",
-    speaker2Highlight: "unassailable",
-    speaker2Line2: "reality while you wait for permission.",
-    image1Key: "doubtRain",
-    image2Key: "summitDawn",
-    theme: "unassailable_proof"
-  },
-  {
-    format: "they_said",
-    speaker1Label: "They said:",
-    speaker1Text: "Nobody works this hard in secret.",
-    speaker2Label: "The reality:",
-    speaker2Line1: "Compounding",
-    speaker2Highlight: "inexorable",
-    speaker2Line2: "leverage while you beg for temporary attention.",
-    image1Key: "rainStreet",
-    image2Key: "slamPower",
-    theme: "inexorable_leverage"
-  },
-  {
-    format: "crowd_discipline",
-    speaker1Label: "The crowd:",
-    speaker1Text: "You think you're better than everyone.",
-    speaker2Label: "The discipline:",
-    speaker2Line1: "I compete with no one; I am simply eradicating my",
-    speaker2Highlight: "recalcitrant",
-    speaker2Line2: "weaknesses.",
-    image1Key: "doubtRain",
-    image2Key: "gymGrit",
-    theme: "recalcitrant_weakness"
-  },
-  {
-    format: "public_proof",
-    speaker1Label: "Public opinion:",
-    speaker1Text: "You're wasting your youth on discipline.",
-    speaker2Label: "The proof:",
+    format: "doubt_execution",
+    speaker1Label: "Public Opinion:",
+    speaker1Text: "You are wasting your prime years working so hard.",
+    speaker2Label: "The Reality:",
     speaker2Line1: "Trading cheap dopamine for an",
     speaker2Highlight: "indomitable",
     speaker2Line2: "life you can neither ignore nor replicate.",
-    image1Key: "lateStudy",
-    image2Key: "summitDawn",
     theme: "indomitable_life"
   },
   {
     format: "doubt_execution",
-    speaker1Label: "The doubt:",
-    speaker1Text: "Be realistic, that dream is impossible.",
-    speaker2Label: "The execution:",
-    speaker2Line1: "Stacking undeniable proof until your doubts become completely",
-    speaker2Highlight: "obsolete.",
-    speaker2Line2: "No excuses.",
-    image1Key: "rainStreet",
-    image2Key: "slamPower",
-    theme: "obsolete_doubt"
-  },
-  {
-    format: "them_me",
-    speaker1Label: "Them:",
-    speaker1Text: "You changed. You don't hang out anymore.",
-    speaker2Label: "Me:",
-    speaker2Line1: "Refusing",
-    speaker2Highlight: "perfunctory",
-    speaker2Line2: "distractions to construct a sovereign future in peace.",
-    image1Key: "doubtRain",
-    image2Key: "lateStudy",
-    theme: "sovereign_peace"
-  },
-  {
-    format: "they_said",
     speaker1Label: "They said:",
-    speaker1Text: "You're sacrificing everything for a gamble.",
-    speaker2Label: "The reality:",
-    speaker2Line1: "Investing in compound skills while you settle for",
-    speaker2Highlight: "evanescent",
-    speaker2Line2: "internet trends.",
-    image1Key: "rainStreet",
-    image2Key: "summitDawn",
-    theme: "evanescent_trends"
+    speaker1Text: "Just relax and enjoy your youth like everyone else.",
+    speaker2Label: "The Proof:",
+    speaker2Line1: "Refusing mediocrity to build an",
+    speaker2Highlight: "unshakeable",
+    speaker2Line2: "foundation while they sleep on their potential.",
+    theme: "unshakeable_foundation"
   },
   {
-    format: "crowd_discipline",
+    format: "doubt_execution",
+    speaker1Label: "Them:",
+    speaker1Text: "Why are you obsessed? It's not that deep.",
+    speaker2Label: "Me:",
+    speaker2Line1: "Forging daily habits with",
+    speaker2Highlight: "relentless",
+    speaker2Line2: "precision so failure is never an option.",
+    theme: "relentless_precision"
+  },
+  {
+    format: "doubt_execution",
     speaker1Label: "The crowd:",
-    speaker1Text: "Just relax, you're stressing yourself out.",
-    speaker2Label: "The discipline:",
-    speaker2Line1: "Cultivating unyielding",
-    speaker2Highlight: "equanimity",
-    speaker2Line2: "while executing the hard work you run away from.",
-    image1Key: "doubtRain",
-    image2Key: "slamPower",
-    theme: "equanimity_grind"
+    speaker1Text: "You will burn out if you never party.",
+    speaker2Label: "The truth:",
+    speaker2Line1: "Channeling pure hunger into an",
+    speaker2Highlight: "invincible",
+    speaker2Line2: "craft that leaves no room for regret.",
+    theme: "invincible_craft"
   },
   {
-    format: "public_proof",
-    speaker1Label: "Public opinion:",
-    speaker1Text: "You'll never get rich starting from zero.",
-    speaker2Label: "The proof:",
-    speaker2Line1: "Mastering high-leverage craftsmanship to render your doubts entirely",
-    speaker2Highlight: "superfluous.",
-    speaker2Line2: "Watch the execution.",
-    image1Key: "lateStudy",
-    image2Key: "summitDawn",
-    theme: "superfluous_doubts"
+    format: "doubt_execution",
+    speaker1Label: "They think:",
+    speaker1Text: "Success is just luck and who you know.",
+    speaker2Label: "Reality check:",
+    speaker2Line1: "Stacking undeniable wins through",
+    speaker2Highlight: "uncompromising",
+    speaker2Line2: "execution day after day.",
+    theme: "uncompromising_execution"
   },
   {
     format: "doubt_execution",
@@ -262,8 +296,6 @@ const CATALOG_15S_DEBATES = [
     speaker2Line1: "Transforming daily discipline into an",
     speaker2Highlight: "immutable",
     speaker2Line2: "identity rather than a temporary mood.",
-    image1Key: "rainStreet",
-    image2Key: "slamPower",
     theme: "immutable_identity"
   }
 ];
@@ -278,13 +310,28 @@ function escapeXml(unsafe) {
 }
 
 /**
- * Build 5-Second Video Overlay SVG
- * Matching User Uploaded Reference Image:
- * - Upper center placement (Y: 360-580)
- * - Line 1: Bold clean white with drop shadow
- * - Line 2: Bold radiant golden yellow (#facc15)
- * - Line 3: Bold clean white
- * - No heavy boxes or cards — pure cinematic typography floating on photography
+ * Text Auto-Wrapping Helper to prevent horizontal overflow on vertical 1080x1920 video
+ */
+function wrapTextToLines(text, maxCharsPerLine = 24) {
+  if (!text) return [];
+  const words = String(text).trim().split(/\s+/);
+  const lines = [];
+  let currentLine = '';
+
+  for (const word of words) {
+    if ((currentLine + ' ' + word).trim().length <= maxCharsPerLine) {
+      currentLine = (currentLine + ' ' + word).trim();
+    } else {
+      if (currentLine) lines.push(currentLine);
+      currentLine = word;
+    }
+  }
+  if (currentLine) lines.push(currentLine);
+  return lines;
+}
+
+/**
+ * Build 5-Second Video Overlay SVG with high-contrast backing card
  */
 function build5sOverlaySvg(entry) {
   const width = 1080;
@@ -292,42 +339,49 @@ function build5sOverlaySvg(entry) {
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
     <defs>
-      <!-- Deep cinematic drop shadow for pristine legibility over photos -->
-      <filter id="cinematicGlow" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="6" stdDeviation="12" flood-color="#000000" flood-opacity="0.95" />
-        <feDropShadow dx="0" dy="14" stdDeviation="28" flood-color="#000000" flood-opacity="0.85" />
+      <filter id="cinematicGlow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="12" stdDeviation="24" flood-color="#000000" flood-opacity="0.98" />
+        <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#000000" flood-opacity="1" />
       </filter>
+      <linearGradient id="cardGrad5" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#020617" stop-opacity="0.94"/>
+        <stop offset="100%" stop-color="#0b1120" stop-opacity="0.90"/>
+      </linearGradient>
     </defs>
 
-    <!-- Top Discreet Brand Watermark (Y=140) -->
+    <!-- Top Channel Badge (Y=140) -->
     <g transform="translate(540, 140)" filter="url(#cinematicGlow)">
-      <text font-family="system-ui, -apple-system, 'SF Pro Display', sans-serif" font-size="20" font-weight="800" fill="#f8fafc" text-anchor="middle" letter-spacing="4" opacity="0.85">
-        APEX PROTOCOL
+      <rect x="-160" y="-30" width="320" height="56" rx="28" fill="#030712" fill-opacity="0.94" stroke="#06b6d4" stroke-width="2.5" />
+      <text y="7" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="900" fill="#38bdf8" text-anchor="middle" letter-spacing="4">
+        ⚡ MINDRUSH
       </text>
     </g>
 
-    <!-- Main Bold 3-Line Typography (Upper Center: Y=440 - Y=680) -->
-    <g filter="url(#cinematicGlow)" text-anchor="middle">
+    <!-- Main Typography Card (Centered Safe Zone) -->
+    <g transform="translate(540, 520)" filter="url(#cinematicGlow)" text-anchor="middle">
+      <rect x="-460" y="-70" width="920" height="390" rx="32" fill="url(#cardGrad5)" stroke="#06b6d4" stroke-width="2" stroke-opacity="0.75" />
+
       <!-- Line 1: Pure White Bold Display -->
-      <text x="540" y="460" font-family="system-ui, -apple-system, 'Segoe UI', Impact, Arial Black, sans-serif" font-size="76" font-weight="900" fill="#ffffff" letter-spacing="0.5">
+      <text x="0" y="30" font-family="system-ui, -apple-system, 'Segoe UI', Impact, Arial Black, sans-serif" font-size="70" font-weight="900" fill="#ffffff" letter-spacing="0.5">
         ${escapeXml(entry.line1)}
       </text>
 
       <!-- Line 2: Radiant Golden Yellow Accent (#facc15) -->
-      <text x="540" y="555" font-family="system-ui, -apple-system, 'Segoe UI', Impact, Arial Black, sans-serif" font-size="82" font-weight="900" fill="#facc15" letter-spacing="0.5">
+      <text x="0" y="130" font-family="system-ui, -apple-system, 'Segoe UI', Impact, Arial Black, sans-serif" font-size="78" font-weight="900" fill="#facc15" letter-spacing="0.5">
         ${escapeXml(entry.line2)}
       </text>
 
       <!-- Line 3: Pure White Bold Display -->
-      <text x="540" y="650" font-family="system-ui, -apple-system, 'Segoe UI', Impact, Arial Black, sans-serif" font-size="76" font-weight="900" fill="#ffffff" letter-spacing="0.5">
+      <text x="0" y="230" font-family="system-ui, -apple-system, 'Segoe UI', Impact, Arial Black, sans-serif" font-size="70" font-weight="900" fill="#ffffff" letter-spacing="0.5">
         ${escapeXml(entry.line3)}
       </text>
     </g>
 
     <!-- Bottom Seamless Loop Indicator (Y=1760) -->
     <g transform="translate(540, 1760)" filter="url(#cinematicGlow)">
-      <text font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#e2e8f0" text-anchor="middle" letter-spacing="3" opacity="0.75">
-        REPLAY TO LOCK IN • SEAMLESS LOOP
+      <rect x="-220" y="-26" width="440" height="50" rx="25" fill="#030712" fill-opacity="0.90" stroke="#334155" stroke-width="1.5" />
+      <text y="6" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#e2e8f0" text-anchor="middle" letter-spacing="3" opacity="0.9">
+        REPLAY TO LOCK IN • MINDRUSH
       </text>
     </g>
   </svg>`;
@@ -335,35 +389,61 @@ function build5sOverlaySvg(entry) {
 
 /**
  * Build 15-Second Segment 1 (Them / Opinion with Typewriter & Blinking Cursor)
- * Duration: 7.0 seconds
  */
 function build15sSegment1OverlaySvg(debate, cursorChar = '|') {
   const width = 1080;
   const height = 1920;
 
+  const lines = wrapTextToLines(debate.speaker1Text, 22);
+  const cardHeight = Math.max(260, lines.length * 75 + 130);
+
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
     <defs>
-      <filter id="shadow1" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#000000" flood-opacity="0.95" />
+      <filter id="shadow1" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="12" stdDeviation="22" flood-color="#000000" flood-opacity="0.98" />
+        <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#000000" flood-opacity="1" />
       </filter>
+      <linearGradient id="cardGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#020617" stop-opacity="0.94"/>
+        <stop offset="100%" stop-color="#0f172a" stop-opacity="0.90"/>
+      </linearGradient>
     </defs>
 
     <!-- Top Channel Indicator -->
-    <g transform="translate(540, 150)" filter="url(#shadow1)">
-      <text font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="800" fill="#94a3b8" text-anchor="middle" letter-spacing="4">
-        REALITY PROTOCOL
+    <g transform="translate(540, 140)" filter="url(#shadow1)">
+      <rect x="-160" y="-30" width="320" height="56" rx="28" fill="#030712" fill-opacity="0.94" stroke="#06b6d4" stroke-width="2.5" />
+      <text y="7" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="900" fill="#38bdf8" text-anchor="middle" letter-spacing="4">
+        ⚡ MINDRUSH
       </text>
     </g>
 
-    <!-- Speaker 1 Label (e.g., "Them:" or "They said:") -->
+    <!-- Speaker 1 Card (Them / Public Opinion) -->
     <g transform="translate(540, 520)" filter="url(#shadow1)" text-anchor="middle">
-      <text font-family="system-ui, -apple-system, sans-serif" font-size="34" font-weight="900" fill="#94a3b8" letter-spacing="3">
+      <rect x="-460" y="-70" width="920" height="${cardHeight}" rx="32" fill="url(#cardGrad1)" stroke="#475569" stroke-width="2" />
+
+      <!-- Speaker 1 Badge -->
+      <rect x="-170" y="-52" width="340" height="52" rx="26" fill="#1e293b" stroke="#64748b" stroke-width="1.5" />
+      <text y="-18" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="900" fill="#94a3b8" letter-spacing="4">
         ${escapeXml(debate.speaker1Label.toUpperCase())}
       </text>
 
-      <!-- The Doubt Statement with Blinking Cursor -->
-      <text x="0" y="90" font-family="system-ui, -apple-system, Impact, Arial Black, sans-serif" font-size="64" font-weight="900" fill="#ffffff" letter-spacing="0.5">
-        “${escapeXml(debate.speaker1Text)}”<tspan fill="#facc15" font-weight="bold"> ${escapeXml(cursorChar)}</tspan>
+      <!-- Wrapped Doubt Statement with Blinking Cursor -->
+      ${lines.map((l, i) => {
+        const isLast = i === lines.length - 1;
+        const lineContent = (i === 0 ? `“` : ``) + l + (isLast ? `”` : ``);
+        return `
+          <text x="0" y="${50 + i * 72}" font-family="system-ui, -apple-system, Impact, Arial Black, sans-serif" font-size="62" font-weight="900" fill="#ffffff" letter-spacing="0.5">
+            ${escapeXml(lineContent)}${isLast ? `<tspan fill="#38bdf8" font-weight="bold"> ${escapeXml(cursorChar)}</tspan>` : ''}
+          </text>
+        `;
+      }).join('')}
+    </g>
+
+    <!-- Bottom Hook Tag (Y=1760) -->
+    <g transform="translate(540, 1760)" filter="url(#shadow1)">
+      <rect x="-210" y="-26" width="420" height="50" rx="25" fill="#030712" fill-opacity="0.90" stroke="#334155" stroke-width="1.5" />
+      <text y="6" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#94a3b8" text-anchor="middle" letter-spacing="3" opacity="0.9">
+        LISTEN CAREFULLY • WAIT FOR IT
       </text>
     </g>
   </svg>`;
@@ -371,61 +451,91 @@ function build15sSegment1OverlaySvg(debate, cursorChar = '|') {
 
 /**
  * Build 15-Second Segment 3 (The Me / Reality Counter Slam)
- * Duration: 7.0 seconds
+ * High-contrast dark glassmorphism card prevents text illegibility over images
  */
 function build15sSegment3OverlaySvg(debate) {
   const width = 1080;
   const height = 1920;
 
+  const lines1 = wrapTextToLines(debate.speaker2Line1, 24);
+  const lines2 = wrapTextToLines(debate.speaker2Line2, 24);
+
+  const startY = 460;
+  const totalContentHeight = (lines1.length * 68) + 95 + (lines2.length * 62) + 120;
+
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
     <defs>
-      <filter id="slamGlow" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#000000" flood-opacity="0.95" />
-        <feDropShadow dx="0" dy="18" stdDeviation="32" flood-color="#000000" flood-opacity="0.85" />
+      <!-- Deep cinematic drop shadow and impact neon rim -->
+      <filter id="slamGlow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="12" stdDeviation="22" flood-color="#000000" flood-opacity="0.98" />
+        <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#000000" flood-opacity="1" />
       </filter>
+      <linearGradient id="cardGrad3" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#020617" stop-opacity="0.95"/>
+        <stop offset="100%" stop-color="#090d16" stop-opacity="0.90"/>
+      </linearGradient>
+      <linearGradient id="goldText" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#fef08a"/>
+        <stop offset="50%" stop-color="#facc15"/>
+        <stop offset="100%" stop-color="#f59e0b"/>
+      </linearGradient>
     </defs>
 
-    <!-- Speaker 2 Label (e.g. "ME:" or "THE REALITY:") -->
-    <g transform="translate(540, 480)" filter="url(#slamGlow)" text-anchor="middle">
-      <!-- Glow Tag Pill -->
-      <rect x="-160" y="-45" width="320" height="58" rx="29" fill="#0f172a" fill-opacity="0.9" stroke="#facc15" stroke-width="2.5" />
-      <text x="0" y="-8" font-family="system-ui, -apple-system, sans-serif" font-size="26" font-weight="900" fill="#facc15" letter-spacing="4">
-        ${escapeXml(debate.speaker2Label.toUpperCase())}
-      </text>
-
-      <!-- Line 1 of retort -->
-      <text x="0" y="85" font-family="system-ui, -apple-system, Impact, Arial Black, sans-serif" font-size="58" font-weight="900" fill="#ffffff" letter-spacing="0.5">
-        ${escapeXml(debate.speaker2Line1)}
-      </text>
-
-      <!-- Rare Highlighted Word in Golden Radiant Glow -->
-      <text x="0" y="165" font-family="system-ui, -apple-system, Impact, Arial Black, sans-serif" font-size="74" font-weight="900" fill="#facc15" letter-spacing="1">
-        ${escapeXml(debate.speaker2Highlight.toUpperCase())}
-      </text>
-
-      <!-- Line 2 of retort -->
-      <text x="0" y="245" font-family="system-ui, -apple-system, Impact, Arial Black, sans-serif" font-size="52" font-weight="900" fill="#f1f5f9" letter-spacing="0.5">
-        ${escapeXml(debate.speaker2Line2)}
+    <!-- Top Channel Indicator (Y=140) -->
+    <g transform="translate(540, 140)" filter="url(#slamGlow)">
+      <rect x="-160" y="-30" width="320" height="56" rx="28" fill="#030712" fill-opacity="0.94" stroke="#06b6d4" stroke-width="2.5" />
+      <text y="7" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="900" fill="#38bdf8" text-anchor="middle" letter-spacing="4">
+        ⚡ MINDRUSH
       </text>
     </g>
 
-    <!-- Bottom Authority Tag -->
+    <!-- Central High-Contrast Glass Backdrop Plate -->
+    <g transform="translate(540, ${startY})" filter="url(#slamGlow)" text-anchor="middle">
+      <rect x="-470" y="-70" width="940" height="${totalContentHeight}" rx="32" fill="url(#cardGrad3)" stroke="#38bdf8" stroke-width="2.5" stroke-opacity="0.65" />
+
+      <!-- Speaker 2 Pill Badge (e.g. THE REALITY / THE PROOF / ME) -->
+      <rect x="-180" y="-50" width="360" height="56" rx="28" fill="#1e1b4b" fill-opacity="0.95" stroke="#facc15" stroke-width="2.5" />
+      <text x="0" y="-14" font-family="system-ui, -apple-system, sans-serif" font-size="26" font-weight="900" fill="#facc15" letter-spacing="4">
+        ${escapeXml(debate.speaker2Label.toUpperCase())}
+      </text>
+
+      <!-- Line 1 of retort (Auto-Wrapped, Bold Clean White) -->
+      ${lines1.map((l, i) => `
+        <text x="0" y="${40 + i * 66}" font-family="system-ui, -apple-system, Impact, Arial Black, sans-serif" font-size="56" font-weight="900" fill="#ffffff" letter-spacing="0.5">
+          ${escapeXml(l)}
+        </text>
+      `).join('')}
+
+      <!-- Highlight Word in Radiant Golden Glow (Auto-Scaled) -->
+      <text x="0" y="${40 + lines1.length * 66 + 60}" font-family="system-ui, -apple-system, Impact, Arial Black, sans-serif" font-size="78" font-weight="900" fill="url(#goldText)" letter-spacing="2">
+        ${escapeXml(debate.speaker2Highlight.toUpperCase())}
+      </text>
+
+      <!-- Line 2 of retort (Auto-Wrapped, Crisp Ice White) -->
+      ${lines2.map((l, i) => `
+        <text x="0" y="${40 + lines1.length * 66 + 125 + i * 62}" font-family="system-ui, -apple-system, Impact, Arial Black, sans-serif" font-size="52" font-weight="900" fill="#f1f5f9" letter-spacing="0.5">
+          ${escapeXml(l)}
+        </text>
+      `).join('')}
+    </g>
+
+    <!-- Bottom Authority Tag (Y=1760) -->
     <g transform="translate(540, 1760)" filter="url(#slamGlow)">
-      <text font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#facc15" text-anchor="middle" letter-spacing="3" opacity="0.85">
-        UNDENIABLE EXECUTION • NO REGRETS
+      <rect x="-240" y="-26" width="480" height="50" rx="25" fill="#030712" fill-opacity="0.90" stroke="#334155" stroke-width="1.5" />
+      <text y="6" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#facc15" text-anchor="middle" letter-spacing="3" opacity="0.95">
+        MINDRUSH • DISCIPLINE OVER MOOD
       </text>
     </g>
   </svg>`;
 }
 
 /**
- * Generate 5-Second Teen Motivation Reel (2 Posts Daily)
- * Features Ken Burns zoom/pan, single photo background, clean bold typography
+ * Generate 5-Second MindRush Wisdom Reel
  */
 async function render5sTeenReel(customQuote = null) {
   const duration = 5.0;
   console.log(`\n======================================================`);
-  console.log(`⚡ [TEEN REEL 5s] GENERATING STRAIGHT-TO-POINT VIDEO (${duration}s)`);
+  console.log(`⚡ [MINDRUSH 5s] GENERATING WISDOM REEL (${duration}s)`);
   console.log(`======================================================\n`);
 
   // 1. Select Deduplicated Candidate
@@ -439,16 +549,13 @@ async function render5sTeenReel(customQuote = null) {
   console.log(`[5s Reel] Line 3:  "${chosen.line3}"`);
   console.log(`[5s Reel] Theme:   ${chosen.theme}\n`);
 
-  // 2. Resolve Background Image
-  let bgImagePath = MOTIVATION_IMAGES[chosen.imageKey] || MOTIVATION_IMAGES.summitDawn;
-  if (!fs.existsSync(bgImagePath)) {
-    bgImagePath = MOTIVATION_IMAGES.summitDawn;
-  }
-  console.log(`[5s Reel] 🖼️ Photographic Asset: ${path.basename(bgImagePath)}`);
+  // 2. Resolve Dynamic 3D Mystery Image (Cloudflare AI -> Local 3D Asset)
+  const bgImagePath = await resolve3dMysteryImage('auto');
+  console.log(`[5s Reel] 🖼️ 3D Visual Asset: ${path.basename(bgImagePath)}`);
 
-  // 3. Resolve Random Audio Asset from sound_assets/motivation_5s/
+  // 3. Resolve Random Audio Asset from sound_assets/mindrush/ (User Uploaded BangersOnly)
   const audioWavPath = path.join(ARTIFACTS_DIR, `teen_5s_audio_${Date.now()}.wav`);
-  resolveChannelAudio('motivation_5s', duration, audioWavPath);
+  resolveChannelAudio('mindrush_5s', duration, audioWavPath);
 
   // 4. Render Overlay SVG & Rasterize
   const overlaySvg = build5sOverlaySvg(chosen);
@@ -459,7 +566,6 @@ async function render5sTeenReel(customQuote = null) {
   try {
     execSync(`ffmpeg -y -i "${overlaySvgPath}" "${overlayPngPath}" 2>/dev/null`);
   } catch {
-    // If ffmpeg direct rasterization fails, rsvg fallback
     execSync(`rsvg-convert -w 1080 -h 1920 -o "${overlayPngPath}" "${overlaySvgPath}" 2>/dev/null || true`);
   }
 
@@ -489,7 +595,6 @@ async function render5sTeenReel(customQuote = null) {
     console.log(`[5s Reel] ✅ SUCCESS: Rendered ${(fs.statSync(outMp4).size / (1024 * 1024)).toFixed(2)} MB`);
     console.log(`[5s Reel] 📁 Latest Video: ${latestMp4}`);
 
-    // Record to persistent Firestore deduplication
     await recordPostedCandidate('teen', `${chosen.line1} ${chosen.line2} ${chosen.line3}`, chosen.author, {
       theme: chosen.theme,
       duration: 5.0
@@ -500,17 +605,17 @@ async function render5sTeenReel(customQuote = null) {
 }
 
 /**
- * Generate 15-Second Teen Public Opinion vs Reality Slam Reel (1 Post Daily)
- * Structure:
- * - 0.0s - 7.0s: Scene 1 (Moody background, doubt statement with blinking cursor |)
- * - 7.0s - 8.0s: Scene 2 (Pitch-black screen blackout for 1.0s)
- * - 8.0s - 15.0s: Scene 3 (New image SLAMS out from center carrying the Me counter with everyday words + 1 rare word)
- * - Sound randomly picked from sound_assets/motivation_15s/, NO voiceover
+ * Generate 15-Second MindRush Public Opinion vs Reality Slam Reel
+ * Features:
+ * - 0.0s - 7.0s: Scene 1 (3D Mystery Visual 1, doubt statement with blinking cursor)
+ * - 7.0s - 7.8s: Scene 2 (Pitch-black suspense tension)
+ * - 7.8s - 15.0s: Scene 3 (INTENSE SLAM: 2-frame impact flash, violent punch zoom, screen tremor,
+ *   Me/Reality counter slam with auto-wrapped text on dark glass backing card, BangersOnly music drop)
  */
 async function render15sTeenReel(customDebate = null) {
   const duration = 15.0;
   console.log(`\n======================================================`);
-  console.log(`⚡ [TEEN REEL 15s] GENERATING PUBLIC OPINION VS REALITY SLAM REEL (${duration}s)`);
+  console.log(`⚡ [MINDRUSH 15s] GENERATING INTENSE REALITY SLAM REEL (${duration}s)`);
   console.log(`======================================================\n`);
 
   // 1. Select Deduplicated Candidate
@@ -523,13 +628,17 @@ async function render15sTeenReel(customDebate = null) {
   console.log(`[15s Slam] Speaker 2: ${chosen.speaker2Label} "${chosen.speaker2Line1} [${chosen.speaker2Highlight}] ${chosen.speaker2Line2}"`);
   console.log(`[15s Slam] Rare Word: "${chosen.speaker2Highlight.toUpperCase()}"\n`);
 
-  // 2. Resolve Images
-  const img1Path = MOTIVATION_IMAGES[chosen.image1Key] || MOTIVATION_IMAGES.doubtRain;
-  const img2Path = MOTIVATION_IMAGES[chosen.image2Key] || MOTIVATION_IMAGES.slamPower;
+  // 2. Resolve Dynamic 3D Mystery Images (Cloudflare AI -> Local 3D Assets)
+  // Scene 1: Boy or Studio; Scene 3 (Slam): Anthropomorphic Animal or Studio
+  const img1Path = await resolve3dMysteryImage('boy');
+  const img2Path = await resolve3dMysteryImage('animal_human');
 
-  // 3. Resolve Random Audio Asset from sound_assets/motivation_15s/
+  console.log(`[15s Slam] 🖼️ Scene 1 Asset: ${path.basename(img1Path)}`);
+  console.log(`[15s Slam] 🖼️ Scene 3 Slam Asset: ${path.basename(img2Path)}`);
+
+  // 3. Resolve Random Audio Asset from sound_assets/mindrush/ (User Uploaded BangersOnly)
   const audioWavPath = path.join(ARTIFACTS_DIR, `teen_15s_audio_${Date.now()}.wav`);
-  resolveChannelAudio('motivation_15s', duration, audioWavPath);
+  resolveChannelAudio('mindrush', duration, audioWavPath);
 
   // 4. Render Overlays for Scene 1 and Scene 3
   const seg1Svg = build15sSegment1OverlaySvg(chosen, '|');
@@ -557,26 +666,33 @@ async function render15sTeenReel(customDebate = null) {
   const seg2Mp4 = path.join(ARTIFACTS_DIR, `teen_seg2_${Date.now()}.mp4`);
   const seg3Mp4 = path.join(ARTIFACTS_DIR, `teen_seg3_${Date.now()}.mp4`);
 
-  console.log(`[15s Slam] Rendering Scene 1 (0-7s: Doubt + Blinking Cursor with smooth Ken Burns pan)...`);
-  // Segment 1 (7.0s = 210 frames): Ken Burns slow dynamic drift on image 1
-  const seg1Filter = `[0:v]scale=-2:2160,zoompan=z='min(zoom+0.0009,1.18)':d=210:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=${fps}[bg];[bg][1:v]overlay=0:0[v]`;
+  console.log(`[15s Slam] Rendering Scene 1 (0-7.0s: Doubt + Blinking Cursor with slow mysterious drift)...`);
+  const seg1Filter = `[0:v]scale=-2:2160,zoompan=z='min(zoom+0.0008,1.15)':d=210:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=${fps}[bg];[bg][1:v]overlay=0:0[v]`;
   try {
     execSync(`ffmpeg -y -loop 1 -i "${img1Path}" -loop 1 -t 7.0 -i "${seg1PngPath}" -filter_complex "${seg1Filter}" -map "[v]" -t 7.0 -c:v libx264 -preset fast -pix_fmt yuv420p "${seg1Mp4}" 2>/dev/null`);
   } catch (err) {
     execSync(`ffmpeg -y -loop 1 -t 7.0 -i "${img1Path}" -loop 1 -t 7.0 -i "${seg1PngPath}" -filter_complex "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg];[bg][1:v]overlay=0:0[v]" -map "[v]" -t 7.0 -c:v libx264 -preset fast -pix_fmt yuv420p "${seg1Mp4}" 2>/dev/null`);
   }
 
-  console.log(`[15s Slam] Rendering Scene 2 (7-8s: 1-Second Blackout Screen)...`);
-  // Segment 2 (1.0s): Pure black screen
-  execSync(`ffmpeg -y -f lavfi -i color=c=black:s=1080x1920:d=1.0:r=${fps} -c:v libx264 -preset fast -pix_fmt yuv420p "${seg2Mp4}" 2>/dev/null`);
+  console.log(`[15s Slam] Rendering Scene 2 (7.0-7.8s: 0.8-Second Blackout Screen for dramatic suspense)...`);
+  // Segment 2 (0.8s = 24 frames): Pure pitch black
+  execSync(`ffmpeg -y -f lavfi -i color=c=black:s=1080x1920:d=0.8:r=${fps} -c:v libx264 -preset fast -pix_fmt yuv420p "${seg2Mp4}" 2>/dev/null`);
 
-  console.log(`[15s Slam] Rendering Scene 3 (8-15s: Explosive Center Slam + Retort)...`);
-  // Segment 3 (7.0s = 210 frames): Dynamic impact slam zoom rush into smooth creep
-  const seg3Filter = `[0:v]scale=-2:2160,zoompan=z='if(lte(on,25),1.28-on*0.009,1.05+(on-25)*0.0004)':d=210:x='iw/2-(iw/zoom/2)':y='ih*0.38-(ih*0.38/zoom)':s=1080x1920:fps=${fps}[bg];[bg][1:v]overlay=0:0[v]`;
+  console.log(`[15s Slam] Rendering Scene 3 (7.8-15.0s: Explosive Center Slam + Violent Camera Punch)...`);
+  // Segment 3 (7.2s = 216 frames):
+  // 1. Violent camera punch: Starts at 1.50 zoom, crashes down to 1.06 in 10 frames with screen shake jitter
+  // 2. White impact flash on frame 0-2 (drawbox)
+  // 3. Crisp dark-backed text overlay composited on top
+  const seg3Filter = `[0:v]scale=-2:2160,zoompan=z='if(lte(on,10),1.50-on*0.044,1.06+(on-10)*0.0003)':d=216:x='iw/2-(iw/zoom/2)+if(lte(on,8),(mod(on,2)*2-1)*16*(8-on)/8,0)':y='ih*0.4-(ih*0.4/zoom)+if(lte(on,8),(mod(on,3)-1)*12*(8-on)/8,0)':s=1080x1920:fps=${fps}[bg];` +
+    `[bg]drawbox=x=0:y=0:w=1080:h=1920:color=white@0.80:t=fill:enable='lte(n,2)'[bgflash];` +
+    `[bgflash][1:v]overlay=0:0[v]`;
+
   try {
-    execSync(`ffmpeg -y -loop 1 -i "${img2Path}" -loop 1 -t 7.0 -i "${seg3PngPath}" -filter_complex "${seg3Filter}" -map "[v]" -t 7.0 -c:v libx264 -preset fast -pix_fmt yuv420p "${seg3Mp4}" 2>/dev/null`);
+    execSync(`ffmpeg -y -loop 1 -i "${img2Path}" -loop 1 -t 7.2 -i "${seg3PngPath}" -filter_complex "${seg3Filter}" -map "[v]" -t 7.2 -c:v libx264 -preset fast -pix_fmt yuv420p "${seg3Mp4}" 2>/dev/null`);
   } catch (err) {
-    execSync(`ffmpeg -y -loop 1 -t 7.0 -i "${img2Path}" -loop 1 -t 7.0 -i "${seg3PngPath}" -filter_complex "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg];[bg][1:v]overlay=0:0[v]" -map "[v]" -t 7.0 -c:v libx264 -preset fast -pix_fmt yuv420p "${seg3Mp4}" 2>/dev/null`);
+    console.warn(`[15s Slam] Notice on intense filter, applying standard punch: ${err.message}`);
+    const fallbackSlamFilter = `[0:v]scale=1200:2133:force_original_aspect_ratio=increase,crop=1080:1920[bg];[bg][1:v]overlay=0:0[v]`;
+    execSync(`ffmpeg -y -loop 1 -t 7.2 -i "${img2Path}" -loop 1 -t 7.2 -i "${seg3PngPath}" -filter_complex "${fallbackSlamFilter}" -map "[v]" -t 7.2 -c:v libx264 -preset fast -pix_fmt yuv420p "${seg3Mp4}" 2>/dev/null`);
   }
 
   // 6. Concatenate Segments and Map 15-Second Audio
@@ -584,7 +700,7 @@ async function render15sTeenReel(customDebate = null) {
   const outMp4 = path.join(ARTIFACTS_DIR, `teen_motivation_15s_${timestamp}.mp4`);
   const latestMp4 = path.join(OUTPUT_DIR, 'teen_motivation_latest.mp4');
 
-  console.log(`[15s Slam] 🎬 Concatenating 15-Second Master Reel with Soundtrack...`);
+  console.log(`[15s Slam] 🎬 Concatenating Master Reel with User-Uploaded Soundtrack...`);
   const concatFilter = `[0:v]setsar=1[v0];[1:v]setsar=1[v1];[2:v]setsar=1[v2];[v0][v1][v2]concat=n=3:v=1:a=0[vcat]`;
   const finalCmd = `ffmpeg -y -i "${seg1Mp4}" -i "${seg2Mp4}" -i "${seg3Mp4}" -i "${audioWavPath}" -filter_complex "${concatFilter}" -map "[vcat]" -map 3:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t 15.0 -shortest "${outMp4}" 2>/dev/null`;
 
@@ -592,39 +708,27 @@ async function render15sTeenReel(customDebate = null) {
 
   if (fs.existsSync(outMp4) && fs.statSync(outMp4).size > 10000) {
     fs.copyFileSync(outMp4, latestMp4);
-    console.log(`[15s Slam] ✅ SUCCESS: Rendered 15s Video (${(fs.statSync(outMp4).size / (1024 * 1024)).toFixed(2)} MB)`);
+    console.log(`[15s Slam] ✅ SUCCESS: Rendered MindRush 15s Video (${(fs.statSync(outMp4).size / (1024 * 1024)).toFixed(2)} MB)`);
     console.log(`[15s Slam] 📁 Latest Video: ${latestMp4}`);
 
-    // Record to persistent Firestore deduplication
     await recordPostedCandidate('teen_15s', `${chosen.speaker1Text} -> ${chosen.speaker2Highlight}`, chosen.speaker2Label, {
       theme: chosen.theme,
       duration: 15.0
     });
   }
 
-  // Cleanup temporary segment blobs
-  try {
-    if (fs.existsSync(seg1Mp4)) fs.unlinkSync(seg1Mp4);
-    if (fs.existsSync(seg2Mp4)) fs.unlinkSync(seg2Mp4);
-    if (fs.existsSync(seg3Mp4)) fs.unlinkSync(seg3Mp4);
-  } catch {}
-
   return { outMp4, latestMp4, chosen, duration: 15.0 };
 }
 
 /**
- * Main Teen Motivation Dispatcher:
- * Supports:
- * - '5s_reel' -> Renders 5-second punchline
- * - '15s_slam' -> Renders 15-second opinion vs reality slam
- * - 'auto' -> Intelligent rotation (alternates between 5s and 15s so both are regularly produced)
+ * Main MindRush Reel Dispatcher
  */
 async function generateTeenMotivationReel(customMode = '') {
   let mode = (typeof customMode === 'string' && customMode ? customMode : '') || process.env.TEEN_FORMAT || process.env.VIDEO_MODE || process.env.VIDEO_TYPE || 'auto';
   const utcHour = new Date().getUTCHours();
 
   console.log(`\n======================================================`);
-  console.log(`⚡ APEX TEEN MOTIVATION ENGINE (Mode: ${mode}, UTC Hour: ${utcHour})`);
+  console.log(`⚡ MINDRUSH PRODUCTION ENGINE (Mode: ${mode}, UTC Hour: ${utcHour})`);
   console.log(`======================================================\n`);
 
   let result = null;
@@ -646,10 +750,10 @@ async function generateTeenMotivationReel(customMode = '') {
     }
 
     if (!lastWas15s || (utcHour >= 13 && utcHour <= 17)) {
-      console.log(`[Teen Engine] 🎯 Auto Mode: Triggering 15-second Public Opinion vs Reality Slam Reel...`);
+      console.log(`[MindRush] 🎯 Auto Mode: Triggering 15-second Public Opinion vs Reality Slam Reel...`);
       result = await render15sTeenReel();
     } else {
-      console.log(`[Teen Engine] 🎯 Auto Mode: Triggering 5-second Straight-to-Point Wisdom Reel...`);
+      console.log(`[MindRush] 🎯 Auto Mode: Triggering 5-second Straight-to-Point Wisdom Reel...`);
       result = await render5sTeenReel();
     }
   }
@@ -661,10 +765,10 @@ async function generateTeenMotivationReel(customMode = '') {
       try { manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8')); } catch {}
     }
     const manifestEntry = {
-      id: `teen_quote_${Date.now()}`,
+      id: `mindrush_${Date.now()}`,
       title: result.duration === 15.0
-        ? `${result.chosen.speaker1Label} "${result.chosen.speaker1Text}" vs ${result.chosen.speaker2Label} #Shorts #Discipline`
-        : `"${result.chosen.line1} ${result.chosen.line2} ${result.chosen.line3}" #Shorts #Discipline`,
+        ? `${result.chosen.speaker1Label} "${result.chosen.speaker1Text}" vs ${result.chosen.speaker2Label} #MindRush #Discipline #Shorts`
+        : `"${result.chosen.line1} ${result.chosen.line2} ${result.chosen.line3}" #MindRush #Discipline #Shorts`,
       duration: result.duration,
       videoPath: result.outMp4,
       createdAt: new Date().toISOString()
@@ -672,22 +776,22 @@ async function generateTeenMotivationReel(customMode = '') {
     manifest.unshift(manifestEntry);
     fs.writeFileSync(MANIFEST_PATH, JSON.stringify(manifest.slice(0, 50), null, 2));
   } catch (e) {
-    console.warn('[Teen Engine] Manifest update notice:', e.message);
+    console.warn('[MindRush] Manifest update notice:', e.message);
   }
 
-  // Automatic Dispatch to TikTok via Buffer API 2 (Matching Movie Workflow)
-  const shouldAutoPublish = process.env.AUTO_PUBLISH === 'true' || 
-                            process.env.BUFFER_API_KEY_2 || 
-                            process.env.BUFFER_API_KEY || 
+  // Auto-Publish to TikTok via Buffer API 2
+  const shouldAutoPublish = process.env.AUTO_PUBLISH === 'true' ||
+                            process.env.BUFFER_API_KEY_2 ||
+                            process.env.BUFFER_API_KEY ||
                             process.env.PUBLISH_TIKTOK === 'true';
 
   if (shouldAutoPublish && process.env.SKIP_BUFFER_DISPATCH !== 'true') {
     try {
-      console.log(`[Teen Engine] 🚀 Auto-Dispatching completed reel to TikTok via Buffer API 2...`);
+      console.log(`[MindRush] 🚀 Auto-Dispatching completed reel to TikTok...`);
       const { dispatchTikTok } = require('./publish_buffer_second_tiktok.cjs');
-      await dispatchTikTok('teen_motivation');
+      await dispatchTikTok('mindrush');
     } catch (pubErr) {
-      console.warn(`[Teen Engine] Buffer dispatch notice: ${pubErr.message}`);
+      console.warn(`[MindRush] Buffer dispatch notice: ${pubErr.message}`);
     }
   }
 
@@ -696,7 +800,7 @@ async function generateTeenMotivationReel(customMode = '') {
 
 if (require.main === module) {
   generateTeenMotivationReel(process.argv[2]).catch(err => {
-    console.error('Fatal in teen motivation reel generator:', err);
+    console.error('Fatal in MindRush reel generator:', err);
     process.exit(1);
   });
 }
