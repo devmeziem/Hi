@@ -1053,23 +1053,27 @@ Respond STRICTLY with raw JSON:
 
               const cleanChannel = channel.replace(/[^a-zA-Z0-9_-]/g, '');
               const cleanFilename = path.basename(filename).replace(/[^a-zA-Z0-9_.-]/g, '_');
-              const targetDir = path.join(process.cwd(), 'sound_assets', cleanChannel);
-              if (!fs.existsSync(targetDir)) {
-                fs.mkdirSync(targetDir, { recursive: true });
-              }
+              const incomingDir = path.join(process.cwd(), 'test_artifacts', 'incoming_audio');
+              if (!fs.existsSync(incomingDir)) fs.mkdirSync(incomingDir, { recursive: true });
 
-              const filePath = path.join(targetDir, cleanFilename);
+              const tempPath = path.join(incomingDir, cleanFilename);
               const buffer = Buffer.from(dataBase64.replace(/^data:audio\/[a-z0-9]+;base64,/, ''), 'base64');
-              fs.writeFileSync(filePath, buffer);
+              fs.writeFileSync(tempPath, buffer);
 
-              console.log(`[Audio Upload] Saved new sound asset: ${filePath} (${(buffer.length / (1024 * 1024)).toFixed(2)} MB)`);
+              console.log(`[Audio Upload] Auto-Cutting: ${cleanFilename} (${(buffer.length / (1024 * 1024)).toFixed(2)} MB) for channel: ${cleanChannel}`);
+
+              const nodeCmd = `node -e "const { processUploadedAudio } = require('./scripts/audio_cutter_service.cjs'); const res = processUploadedAudio('${tempPath}', '${cleanFilename}', '${cleanChannel}'); console.log(JSON.stringify(res));"`;
+              const outStr = execSync(nodeCmd, { cwd: process.cwd(), encoding: 'utf8' }).trim();
+              const result = JSON.parse(outStr.split('\n').pop() || '{}');
+
               res.setHeader('Content-Type', 'application/json');
               res.statusCode = 200;
               res.end(JSON.stringify({
                 success: true,
                 filename: cleanFilename,
                 sizeBytes: buffer.length,
-                streamUrl: `/api/stream-video?file=sound_assets/${cleanChannel}/${cleanFilename}`
+                result,
+                streamUrl: `/api/stream-video?file=sound_assets/${cleanChannel}/${path.basename(result.cuts?.cut15?.path || cleanFilename)}`
               }));
             } catch (err: any) {
               res.setHeader('Content-Type', 'application/json');
@@ -1077,6 +1081,20 @@ Respond STRICTLY with raw JSON:
               res.end(JSON.stringify({ success: false, error: err.message }));
             }
           });
+          return;
+        }
+
+        if (url === '/api/audio-assets/synthesize' && req.method === 'POST') {
+          try {
+            execSync('node scripts/audio_cutter_service.cjs', { cwd: process.cwd(), timeout: 60000 });
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 200;
+            res.end(JSON.stringify({ success: true, message: 'Studio audio stems synthesized' }));
+          } catch (err: any) {
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 500;
+            res.end(JSON.stringify({ success: false, error: err.message }));
+          }
           return;
         }
 

@@ -1486,6 +1486,143 @@ Respond STRICTLY with valid raw JSON without markdown:
     }
   }
 
+  // SOUND & AUDIO STUDIO ENDPOINTS
+
+  // 1. List audio tracks across all channels
+  if (urlPath === '/api/sounds/list' && req.method === 'GET') {
+    try {
+      const soundsDir = path.join(__dirname, 'sound_assets');
+      const channels = ['teen_motivation', 'finance', 'stoic', 'movie_brand'];
+      const result: Record<string, any[]> = {};
+
+      const channelMapping: Record<string, string[]> = {
+        teen_motivation: ['motivation_15s', 'motivation_5s', 'motivation'],
+        finance: ['finance'],
+        stoic: ['stoic'],
+        movie_brand: ['movie_brand']
+      };
+
+      for (const ch of channels) {
+        result[ch] = [];
+        const subDirs = channelMapping[ch] || [ch];
+        const seen = new Set<string>();
+
+        for (const sub of subDirs) {
+          const dirPath = path.join(soundsDir, sub);
+          if (fs.existsSync(dirPath)) {
+            const files = fs.readdirSync(dirPath);
+            for (const file of files) {
+              if (/\.(wav|mp3|m4a|ogg)$/i.test(file) && !seen.has(file)) {
+                seen.add(file);
+                const fullPath = path.join(dirPath, file);
+                const stat = fs.statSync(fullPath);
+                result[ch].push({
+                  filename: file,
+                  channel: ch,
+                  folder: sub,
+                  size: stat.size,
+                  path: `/api/sounds/stream?file=${encodeURIComponent(sub + '/' + file)}`,
+                  is15s: file.includes('15s') || file.includes('15'),
+                  is5s: file.includes('5s') || file.includes('5'),
+                  isPhonk: /phonk|drift|workout|beat/i.test(file),
+                  isTension: /tension|drone|suspense|clock|investigation|horror|mystery/i.test(file),
+                  isPiano: /piano|reflective|wisdom/i.test(file)
+                });
+              }
+            }
+          }
+        }
+      }
+
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify({ success: true, sounds: result }));
+    } catch (err: any) {
+      res.writeHead(500, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify({ success: false, error: err.message }));
+    }
+    return;
+  }
+
+  // 2. Upload & auto-cut audio at sweet spot
+  if (urlPath === '/api/sounds/upload' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(body);
+        const { base64Data, filename, channel = 'teen_motivation' } = payload;
+        if (!base64Data || !filename) {
+          res.writeHead(400, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+          res.end(JSON.stringify({ success: false, error: 'Missing base64Data or filename' }));
+          return;
+        }
+
+        const buffer = Buffer.from(base64Data.replace(/^data:audio\/[a-z0-9]+;base64,/, ''), 'base64');
+        const tempUploadDir = path.join(__dirname, 'test_artifacts', 'incoming_audio');
+        if (!fs.existsSync(tempUploadDir)) fs.mkdirSync(tempUploadDir, { recursive: true });
+
+        const safeOriginalName = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const tempPath = path.join(tempUploadDir, safeOriginalName);
+        fs.writeFileSync(tempPath, buffer);
+
+        const { processUploadedAudio } = await import('./scripts/audio_cutter_service.cjs');
+        const result = processUploadedAudio(tempPath, safeOriginalName, channel);
+
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        res.end(JSON.stringify({ success: true, result }));
+      } catch (err: any) {
+        res.writeHead(500, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // 3. Audio stream player endpoint
+  if (urlPath === '/api/sounds/stream' && req.method === 'GET') {
+    const urlObj = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
+    const relFile = urlObj.searchParams.get('file') || '';
+    const safeRelFile = relFile.replace(/\.\./g, '');
+    const candidatePaths = [
+      path.join(__dirname, 'sound_assets', safeRelFile),
+      path.join(__dirname, 'src', 'assets', 'sounds', path.basename(safeRelFile)),
+      path.join(__dirname, 'test_artifacts', safeRelFile)
+    ];
+
+    const soundPath = candidatePaths.find(p => fs.existsSync(p) && !fs.statSync(p).isDirectory());
+    if (soundPath) {
+      const ext = path.extname(soundPath).toLowerCase();
+      const contentType = ext === '.mp3' ? 'audio/mpeg' : (ext === '.wav' ? 'audio/wav' : 'audio/ogg');
+      const stat = fs.statSync(soundPath);
+      res.writeHead(200, {
+        'Content-Type': contentType,
+        'Content-Length': stat.size,
+        'Accept-Ranges': 'bytes',
+        'Access-Control-Allow-Origin': '*'
+      });
+      fs.createReadStream(soundPath).pipe(res);
+      return;
+    } else {
+      res.writeHead(404, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify({ error: 'Audio track not found', requested: safeRelFile }));
+      return;
+    }
+  }
+
+  // 4. Regenerate / Synthesize Studio Stems
+  if (urlPath === '/api/sounds/synthesize' && req.method === 'POST') {
+    try {
+      const { synthesizeStudioAssets } = await import('./scripts/audio_cutter_service.cjs');
+      synthesizeStudioAssets();
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify({ success: true, message: 'Studio audio stems synthesized successfully' }));
+    } catch (err: any) {
+      res.writeHead(500, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify({ success: false, error: err.message }));
+    }
+    return;
+  }
+
   // Static file serving
   let filePath = path.join(DIST_DIR, urlPath === '/' ? 'index.html' : urlPath);
   if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {

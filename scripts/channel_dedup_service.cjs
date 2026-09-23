@@ -28,24 +28,55 @@ function getFirestoreConfig() {
       }
     } catch {}
   }
-  if (process.env.FIRESTORE_PROJECT_ID && process.env.FIRESTORE_API_KEY) {
+  if (process.env.FIREBASE_CONFIG_JSON) {
+    try {
+      const fb = JSON.parse(process.env.FIREBASE_CONFIG_JSON);
+      if (fb && fb.projectId && fb.apiKey) {
+        return {
+          projectId: fb.projectId,
+          databaseId: fb.firestoreDatabaseId || fb.databaseId || 'ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e',
+          apiKey: fb.apiKey
+        };
+      }
+    } catch {}
+  }
+  if (process.env.FIRESTORE_PROJECT_ID && (process.env.FIRESTORE_API_KEY || process.env.FIREBASE_API_KEY)) {
     return {
       projectId: process.env.FIRESTORE_PROJECT_ID,
       databaseId: process.env.FIRESTORE_DATABASE_ID || 'ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e',
-      apiKey: process.env.FIRESTORE_API_KEY
+      apiKey: process.env.FIRESTORE_API_KEY || process.env.FIREBASE_API_KEY
+    };
+  }
+  if (process.env.VITE_FIREBASE_PROJECT_ID && process.env.VITE_FIREBASE_API_KEY) {
+    return {
+      projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+      databaseId: 'ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e',
+      apiKey: process.env.VITE_FIREBASE_API_KEY
     };
   }
   return null;
 }
 
 /**
- * Fetch recent quote history from Firestore REST API
+ * Fetch recent quote history from Firestore REST API with cross-channel awareness
  */
 async function fetchRemoteHistory(channelKey) {
   const config = getFirestoreConfig();
   if (!config) return [];
 
   const url = `https://firestore.googleapis.com/v1/projects/${config.projectId}/databases/${config.databaseId}/documents/channel_post_history?pageSize=100&key=${config.apiKey}`;
+
+  // Channels to cross-check: For finance, also check stoic so no overlap occurs
+  const relevantChannels = new Set([channelKey]);
+  if (channelKey === 'finance' || channelKey === 'fin') {
+    relevantChannels.add('finance');
+    relevantChannels.add('stoic');
+    relevantChannels.add('fin');
+  } else if (channelKey === 'stoic') {
+    relevantChannels.add('stoic');
+    relevantChannels.add('finance');
+    relevantChannels.add('fin');
+  }
 
   return new Promise((resolve) => {
     const req = https.get(url, { timeout: 7000 }, (res) => {
@@ -60,7 +91,7 @@ async function fetchRemoteHistory(channelKey) {
             for (const doc of docs) {
               const f = doc.fields || {};
               const ch = f.channel?.stringValue || '';
-              if (!ch || ch === channelKey) {
+              if (!ch || relevantChannels.has(ch)) {
                 results.push({
                   quote: f.quote?.stringValue || '',
                   author: f.author?.stringValue || '',

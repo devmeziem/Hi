@@ -144,6 +144,13 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
   const [tempChannelForm, setTempChannelForm] = useState<Partial<ChannelMetrics>>({});
   const [isQueryingLiveChannel, setIsQueryingLiveChannel] = useState<boolean>(false);
 
+  // Non-blocking app toast notifications (replaces window.alert)
+  const [appToast, setAppToast] = useState<{ text: string; isError?: boolean } | null>(null);
+  const showAppToast = (text: string, isError: boolean = false) => {
+    setAppToast({ text, isError });
+    setTimeout(() => setAppToast(null), 4000);
+  };
+
   // Load live YouTube metrics for all 3 channels in parallel
   const refreshAllChannelsLive = async () => {
     const defaultClientId = keys.youtubeClientId || DEFAULT_KEYS.youtubeClientId || '';
@@ -303,7 +310,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
       level: 'info',
       message: 'Updated API Keys and Cloudinary unsigned preset configurations.'
     });
-    alert('Integration settings and Cloudinary presets saved successfully!');
+    showAppToast('Integration settings and Cloudinary presets saved successfully!');
   };
 
   const handleApproveUser = async () => {
@@ -375,10 +382,10 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
         const current3 = channelNum === 3 ? updatedChannelData : channel3Data;
         await dbAdapter.saveChannels([current1, current2, current3]);
 
-        alert(`Successfully fetched live data for "${fetched.title}" (${fetched.customUrl}) with ${fetched.subscriberCount} subscribers!`);
+        showAppToast(`Fetched live data for "${fetched.title}" with ${fetched.subscriberCount} subscribers!`);
       }
     } catch (e: any) {
-      alert(`YouTube live fetch error: ${e.message || String(e)}`);
+      showAppToast(`YouTube live fetch error: ${e.message || String(e)}`, true);
     } finally {
       setIsQueryingLiveChannel(false);
     }
@@ -683,6 +690,16 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row w-full max-w-full overflow-x-hidden">
+      {/* Toast Notification */}
+      {appToast && (
+        <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-xs font-semibold animate-in fade-in ${
+          appToast.isError ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'
+        }`}>
+          {appToast.isError ? <AlertCircle className="w-4 h-4 shrink-0" /> : <CheckCircle2 className="w-4 h-4 shrink-0" />}
+          <span className="truncate max-w-xs sm:max-w-md">{appToast.text}</span>
+        </div>
+      )}
+
       {/* MOBILE TOP BAR WITH HAMBURGER DRAWER BUTTON */}
       <header className="md:hidden flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800 shrink-0 w-full z-30">
         <div className="flex items-center gap-2.5 min-w-0">
@@ -1344,7 +1361,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                   <button
                     onClick={async () => {
                       await dbAdapter.saveChannels([channel1Data, channel2Data, channel3Data]);
-                      alert("Channels configuration synced and persisted to cloud database!");
+                      showAppToast("Channels configuration synced and persisted to cloud database!");
                     }}
                     className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-colors shadow-lg shadow-emerald-950/40"
                   >

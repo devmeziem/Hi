@@ -89,26 +89,59 @@ async function downloadRemoteAudio(url, destPath) {
 }
 
 /**
- * Scan directory and its immediate subdirectories for audio tracks
+ * Scan directory and its subdirectories comprehensively for audio tracks
  */
 function findAudioCandidates(primaryDir, fallbackDirs = []) {
-  const dirs = [primaryDir, ...fallbackDirs].filter(Boolean);
-  const found = [];
+  const dirs = [
+    primaryDir,
+    ...fallbackDirs,
+    path.join(process.cwd(), 'src', 'assets', 'sounds'),
+    path.join(process.cwd(), 'src', 'assets', 'audio'),
+    path.join(process.cwd(), 'src', 'assets', 'music'),
+    path.join(process.cwd(), 'assets', 'sounds'),
+    path.join(process.cwd(), 'assets', 'audio'),
+    path.join(process.cwd(), 'assets', 'music'),
+    path.join(process.cwd(), 'sound_assets'),
+    path.join(process.cwd(), 'sounds'),
+    path.join(process.cwd(), 'audio'),
+    path.join(process.cwd(), 'music')
+  ].filter(Boolean);
+
+  const found = new Set();
+
   for (const d of dirs) {
     if (fs.existsSync(d)) {
       try {
-        const files = fs.readdirSync(d)
-          .filter(f => AUDIO_EXTENSIONS.test(f))
-          .map(f => path.join(d, f))
-          .filter(f => {
-            try { return fs.statSync(f).size > 1024; } catch { return false; }
-          });
-        found.push(...files);
-        if (found.length > 0) break;
+        const scan = (currentDir, depth = 0) => {
+          if (depth > 4) return;
+          const entries = fs.readdirSync(currentDir, { withFileTypes: true });
+          for (const ent of entries) {
+            if (ent.isDirectory()) {
+              if (ent.name !== 'node_modules' && ent.name !== '.git' && ent.name !== 'dist') {
+                scan(path.join(currentDir, ent.name), depth + 1);
+              }
+            } else if (ent.isFile() && AUDIO_EXTENSIONS.test(ent.name)) {
+              const fullPath = path.join(currentDir, ent.name);
+              try {
+                if (fs.statSync(fullPath).size > 1024) {
+                  found.add(fullPath);
+                }
+              } catch {}
+            }
+          }
+        };
+        scan(d);
       } catch {}
     }
   }
-  return found;
+
+  // If primaryDir has tracks, prioritize them
+  if (primaryDir && fs.existsSync(primaryDir)) {
+    const primaryTracks = Array.from(found).filter(f => f.startsWith(primaryDir));
+    if (primaryTracks.length > 0) return primaryTracks;
+  }
+
+  return Array.from(found);
 }
 
 /**
@@ -119,20 +152,33 @@ function findAudioCandidates(primaryDir, fallbackDirs = []) {
  * @param {string} [options.soundUrl] - Optional direct audio URL to download and use
  * @param {string} [options.outputPath] - Optional destination file path
  */
-async function resolveRealMusicTrack(options = {}) {
-  const niche = options.niche || 'cartoon';
-  const duration = Number(options.duration) || 6.0;
+async function resolveRealMusicTrack(options = {}, maybeDuration) {
+  let niche = 'cartoon';
+  let duration = 6.0;
+  let soundUrl = undefined;
+  let outputPath = undefined;
+
+  if (typeof options === 'string') {
+    niche = options;
+    duration = Number(maybeDuration) || 6.0;
+  } else if (typeof options === 'object' && options !== null) {
+    niche = options.niche || 'cartoon';
+    duration = Number(options.duration) || 6.0;
+    soundUrl = options.soundUrl;
+    outputPath = options.outputPath;
+  }
+
   const tempDir = path.join(process.cwd(), 'test_artifacts');
   if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
-  const outputPath = options.outputPath || path.join(tempDir, `real_music_${niche}_${Date.now()}.wav`);
+  outputPath = outputPath || path.join(tempDir, `real_music_${niche}_${Date.now()}.wav`);
 
   // 1. Check if user provided an explicit audio URL (via parameter or environment variable)
-  const soundUrl = options.soundUrl || process.env.SOUND_URL || process.env.MUSIC_URL || (niche === 'cartoon' ? process.env.ARCHIE_MUSIC_URL : process.env.MOTIVATION_MUSIC_URL);
-  if (soundUrl && typeof soundUrl === 'string' && soundUrl.startsWith('http')) {
-    console.log(`[Audio Asset Manager] 🌐 Downloading custom audio from URL for [${niche}]: ${soundUrl.slice(0, 70)}...`);
+  const resolvedSoundUrl = soundUrl || process.env.SOUND_URL || process.env.MUSIC_URL || (niche === 'cartoon' ? process.env.ARCHIE_MUSIC_URL : process.env.MOTIVATION_MUSIC_URL);
+  if (resolvedSoundUrl && typeof resolvedSoundUrl === 'string' && resolvedSoundUrl.startsWith('http')) {
+    console.log(`[Audio Asset Manager] 🌐 Downloading custom audio from URL for [${niche}]: ${resolvedSoundUrl.slice(0, 70)}...`);
     const downloadedRaw = path.join(tempDir, `downloaded_audio_${Date.now()}.bin`);
-    const success = await downloadRemoteAudio(soundUrl, downloadedRaw);
+    const success = await downloadRemoteAudio(resolvedSoundUrl, downloadedRaw);
     if (success && fs.existsSync(downloadedRaw)) {
       try {
         const dur = duration.toFixed(2);
@@ -198,6 +244,11 @@ async function resolveRealMusicTrack(options = {}) {
  * (Backwards compatibility wrapper)
  */
 function resolveChannelAudio(channelKey, durationSeconds, outputPath) {
+  if (!outputPath) {
+    const artDir = path.join(process.cwd(), 'test_artifacts', 'audio_renders');
+    if (!fs.existsSync(artDir)) fs.mkdirSync(artDir, { recursive: true });
+    outputPath = path.join(artDir, `${channelKey}_audio_${Date.now()}_${Math.random().toString(36).substring(7)}.wav`);
+  }
   const primaryDir = SOUND_DIRECTORIES[channelKey] || path.join(process.cwd(), 'sound_assets', channelKey);
   const fallbackDirs = [
     path.join(process.cwd(), 'sound_assets'),

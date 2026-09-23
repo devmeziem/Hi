@@ -280,6 +280,13 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
     }
   };
 
+  const [playgroundToast, setPlaygroundToast] = useState<{ message: string; isError?: boolean } | null>(null);
+
+  const showPlaygroundToast = (message: string, isError: boolean = false) => {
+    setPlaygroundToast({ message, isError });
+    setTimeout(() => setPlaygroundToast(null), 4500);
+  };
+
   // Generate Image
   const handleGenerateImage = async () => {
     if (!imagePrompt.trim() || isGeneratingImage) return;
@@ -328,7 +335,7 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
         setGeneratedImageUrl(url);
       }
     } catch (err: any) {
-      alert(`Image generation error: ${err.message || String(err)}`);
+      showPlaygroundToast(`Image generation error: ${err.message || String(err)}`, true);
     } finally {
       setIsGeneratingImage(false);
     }
@@ -350,8 +357,9 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
 
       const hostedUrl = await uploadToCloudinaryUnsigned(blob, cloudName, uploadPreset);
       setCloudinaryUploadResult(hostedUrl);
+      showPlaygroundToast('Asset uploaded to Cloudinary successfully!');
     } catch (err: any) {
-      alert(`Cloudinary upload failed: ${err.message || String(err)}`);
+      showPlaygroundToast(`Cloudinary upload failed: ${err.message || String(err)}`, true);
     } finally {
       setIsUploadingToCloudinary(false);
     }
@@ -602,7 +610,7 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
         throw new Error(data.error || 'Failed to synthesize audio');
       }
     } catch (err: any) {
-      alert(`TTS Synthesis Error: ${err.message || String(err)}`);
+      showPlaygroundToast(`TTS Synthesis Error: ${err.message || String(err)}`, true);
     } finally {
       setIsGeneratingTTS(false);
     }
@@ -622,8 +630,9 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
 
       const hostedUrl = await uploadToCloudinaryUnsigned(blob, cloudName, uploadPreset);
       setTtsCloudinaryResult(hostedUrl);
+      showPlaygroundToast('Voice asset uploaded to Cloudinary successfully!');
     } catch (err: any) {
-      alert(`Cloudinary Audio upload failed: ${err.message || String(err)}`);
+      showPlaygroundToast(`Cloudinary Audio upload failed: ${err.message || String(err)}`, true);
     } finally {
       setIsUploadingTtsToCloudinary(false);
     }
@@ -1032,6 +1041,15 @@ Format your response strictly as a JSON array of 3 strings, with no markdown cod
 
   return (
     <div className="space-y-6 w-full max-w-full min-w-0 overflow-x-hidden">
+      {/* Toast Notification */}
+      {playgroundToast && (
+        <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-xs font-semibold animate-in fade-in ${
+          playgroundToast.isError ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'
+        }`}>
+          <span>{playgroundToast.message}</span>
+        </div>
+      )}
+
       {/* Header Banner */}
       <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

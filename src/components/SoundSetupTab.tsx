@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ChannelAudioStudio } from './ChannelAudioStudio';
 import { 
   Music, 
   Headphones, 
@@ -460,6 +461,9 @@ export const SoundSetupTab: React.FC = () => {
           Save Audio Preferences
         </button>
       </div>
+
+      {/* Channel Audio Vault & Smart Cutter */}
+      <ChannelAudioStudio />
 
       {/* Steps List */}
       <div className="space-y-4">

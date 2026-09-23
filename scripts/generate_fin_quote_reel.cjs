@@ -128,20 +128,20 @@ const FINANCE_TITANS_QUOTES = [
     theme: "scam_psychology"
   },
   {
-    quote: "Beware of false generosity. When the wolf offers to guide the sheep to safety, inspect the fence and count the flock.",
-    author: "Marcus Aurelius",
-    credentials: "Roman Emperor • Stoic Philosopher of Deception & Discipline",
-    reference: "Meditations, Book XI",
-    wikiSearch: "Marcus_Aurelius",
-    theme: "stoic_financial_guard"
+    quote: "It takes character to sit there with all that cash and do nothing. I didn’t get to where I am by going after mediocre opportunities.",
+    author: "Charlie Munger",
+    credentials: "Vice Chairman, Berkshire Hathaway • Master of Mental Models",
+    reference: "Poor Charlie’s Almanack (The Psychology of Human Misjudgment)",
+    wikiSearch: "Charlie_Munger",
+    theme: "discipline"
   },
   {
-    quote: "Do not be dazzled by the display of sudden riches. Ask first: at what price was this promised, and whose ruin paid for the illusion?",
-    author: "Epictetus",
-    credentials: "Stoic Philosopher • Master of Rational Perception & Discourses",
-    reference: "Discourses, Book III (On Guarding the Soul Against Charlatans)",
-    wikiSearch: "Epictetus",
-    theme: "rational_defense"
+    quote: "He who lives by the crystal ball will die by eating shattered glass. Diversify your risks or the market will violently humble you.",
+    author: "Ray Dalio",
+    credentials: "Founder, Bridgewater Associates • Author of Principles",
+    reference: "Principles for Navigating Big Debt Crises",
+    wikiSearch: "Ray_Dalio",
+    theme: "risk_management"
   },
   {
     quote: "The essence of investment is not in seeking fast gains, but in preventing catastrophic loss. The gullible speculator always mistakes a Ponzi mirage for financial genius.",
@@ -176,12 +176,12 @@ const FINANCE_TITANS_QUOTES = [
     theme: "fraud_detection"
   },
   {
-    quote: "A gift from a predator is no gift at all. Sudden wealth offered without honest labor is a poisoned fishhook designed to drag you into bankruptcy.",
-    author: "Seneca",
-    credentials: "Stoic Statesman & Philosopher • Advisor of Ancient Rome",
-    reference: "Moral Letters to Lucilius (Letter CXIX: On False Riches)",
-    wikiSearch: "Seneca_the_Younger",
-    theme: "stoic_wealth_guard"
+    quote: "There are no solutions in economics. There are only trade-offs. Anyone promising you cost-free riches is either completely ignorant or attempting to swindle you.",
+    author: "Thomas Sowell",
+    credentials: "Senior Fellow, Hoover Institution • Stanford University Economist",
+    reference: "Basic Economics: A Common Sense Guide to the Economy",
+    wikiSearch: "Thomas_Sowell",
+    theme: "wealth_defense"
   },
   {
     quote: "Whenever a financial product is too complex for regulatory verification and promises consistent double-digit returns with zero risk, you are looking at mathematical fraud.",

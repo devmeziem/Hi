@@ -86,7 +86,7 @@ jobs:
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 || secrets.BUFFER_API_KEY }}
-          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID || secrets.BUFFER_TIKTOK_TEEN_CHANNEL || secrets.BUFFER_TIKTOK_CHANNEL_ID_TEEN || secrets.BUFFER_TIKTOK_CHANNEL_ID_5 || secrets.BUFFER_TIKTOK_CHANNEL_ID_2 || secrets.BUFFER_TIKTOK_CHANNEL_ID || secrets.BUFFER_TIKTOK_MOTIVATION_CHANNEL_ID || secrets.BUFFER_TIKTOK_YOUTH_CHANNEL_ID || secrets.BUFFER_CHANNEL_ID_TEEN || secrets.BUFFER_CHANNEL_ID_5 || secrets.BUFFER_CHANNEL_ID || secrets.TIKTOK_TEEN_CHANNEL_ID || secrets.TIKTOK_CHANNEL_ID }}
+          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID || secrets.BUFFER_TIKTOK_TEEN_CHANNEL || secrets.BUFFER_TIKTOK_CHANNEL_ID_TEEN || secrets.BUFFER_TIKTOK_MOTIVATION_CHANNEL_ID || '6ab05677ea19ca0bde9c3ffb' }}
         run: |
           echo "=== 🔥 Generating Teen Motivation Reel (Type: $VIDEO_TYPE, Topic: $TOPIC) ==="
           node scripts/generate_teen_motivation_reel.cjs
@@ -96,7 +96,7 @@ jobs:
         if: success() && (github.event_name == 'schedule' || github.event.inputs.publish_tiktok != 'false')
         env:
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 || secrets.BUFFER_API_KEY }}
-          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID || secrets.BUFFER_TIKTOK_TEEN_CHANNEL || secrets.BUFFER_TIKTOK_CHANNEL_ID_TEEN || secrets.BUFFER_TIKTOK_CHANNEL_ID_5 || secrets.BUFFER_TIKTOK_CHANNEL_ID_2 || secrets.BUFFER_TIKTOK_CHANNEL_ID || secrets.BUFFER_TIKTOK_MOTIVATION_CHANNEL_ID || secrets.BUFFER_TIKTOK_YOUTH_CHANNEL_ID || secrets.BUFFER_CHANNEL_ID_TEEN || secrets.BUFFER_CHANNEL_ID_5 || secrets.BUFFER_CHANNEL_ID || secrets.TIKTOK_TEEN_CHANNEL_ID || secrets.TIKTOK_CHANNEL_ID }}
+          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID || secrets.BUFFER_TIKTOK_TEEN_CHANNEL || secrets.BUFFER_TIKTOK_CHANNEL_ID_TEEN || secrets.BUFFER_TIKTOK_MOTIVATION_CHANNEL_ID || '6ab05677ea19ca0bde9c3ffb' }}
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}

@@ -587,8 +587,8 @@ export const DjSoundboardTab: React.FC<DjSoundboardTabProps> = ({ keys }) => {
 
   // Speak Script via Web Speech API
   const handleSpeakVoice = () => {
-    if (!('speechSynthesis' in window)) {
-      alert('Speech Synthesis API is not available in this environment. Please use Google Chrome or Safari.');
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      console.warn('Speech Synthesis API is not available in this environment.');
       return;
     }
 

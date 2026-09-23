@@ -470,16 +470,17 @@ async function render5sTeenReel(customQuote = null) {
   const fps = 30;
   const totalFrames = Math.round(duration * fps);
 
-  console.log(`[5s Reel] 🎥 Rendering MP4 with Ken Burns zoom/pan...`);
-  const complexFilter = `[0:v]scale=1200:2133:force_original_aspect_ratio=increase,crop=1200:2133,zoompan=z='min(zoom+0.0008,1.12)':d=1:x='iw/2-(iw/zoom/2)':y='ih*0.35-(ih*0.35/zoom)':s=1080x1920:fps=${fps}[bg];[bg][1:v]overlay=0:0[v]`;
+  console.log(`[5s Reel] 🎥 Rendering MP4 with Ken Burns zoom/pan (${totalFrames} frames)...`);
+  const complexFilter = `[0:v]scale=-2:2160,zoompan=z='min(zoom+0.0018,1.25)':d=${totalFrames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=${fps}[bg];[bg][1:v]overlay=0:0[v]`;
 
-  const ffmpegCmd = `ffmpeg -y -loop 1 -framerate ${fps} -t ${duration} -i "${bgImagePath}" -loop 1 -framerate ${fps} -t ${duration} -i "${overlayPngPath}" -i "${audioWavPath}" -filter_complex "${complexFilter}" -map "[v]" -map 2:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -shortest "${outMp4}" 2>/dev/null`;
+  const ffmpegCmd = `ffmpeg -y -loop 1 -i "${bgImagePath}" -loop 1 -t ${duration} -i "${overlayPngPath}" -i "${audioWavPath}" -filter_complex "${complexFilter}" -map "[v]" -map 2:a -t ${duration} -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k "${outMp4}" 2>/dev/null`;
 
   try {
     execSync(ffmpegCmd);
   } catch (e) {
-    console.warn(`[5s Reel] Advanced filter warning, using fallback scale overlay: ${e.message}`);
-    const fallbackCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgImagePath}" -loop 1 -t ${duration} -i "${overlayPngPath}" -i "${audioWavPath}" -filter_complex "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg];[bg][1:v]overlay=0:0[v]" -map "[v]" -map 2:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -shortest "${outMp4}" 2>/dev/null`;
+    console.warn(`[5s Reel] Notice on dynamic zoompan: ${e.message}, retrying smooth pan...`);
+    const fallbackFilter = `[0:v]scale=1200:2133:force_original_aspect_ratio=increase,crop=1080:1920[bg];[bg][1:v]overlay=0:0[v]`;
+    const fallbackCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgImagePath}" -loop 1 -t ${duration} -i "${overlayPngPath}" -i "${audioWavPath}" -filter_complex "${fallbackFilter}" -map "[v]" -map 2:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outMp4}" 2>/dev/null`;
     execSync(fallbackCmd);
   }
 
@@ -556,20 +557,27 @@ async function render15sTeenReel(customDebate = null) {
   const seg2Mp4 = path.join(ARTIFACTS_DIR, `teen_seg2_${Date.now()}.mp4`);
   const seg3Mp4 = path.join(ARTIFACTS_DIR, `teen_seg3_${Date.now()}.mp4`);
 
-  console.log(`[15s Slam] Rendering Scene 1 (0-7s: Doubt + Blinking Cursor)...`);
-  // Segment 1 (7.0s): Ken Burns drift on image 1
-  const seg1Filter = `[0:v]scale=1200:2133:force_original_aspect_ratio=increase,crop=1200:2133,zoompan=z='min(zoom+0.0006,1.08)':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=${fps}[bg];[bg][1:v]overlay=0:0[v]`;
-  execSync(`ffmpeg -y -loop 1 -framerate ${fps} -t 7.0 -i "${img1Path}" -loop 1 -framerate ${fps} -t 7.0 -i "${seg1PngPath}" -filter_complex "${seg1Filter}" -map "[v]" -c:v libx264 -preset fast -pix_fmt yuv420p "${seg1Mp4}" 2>/dev/null`);
+  console.log(`[15s Slam] Rendering Scene 1 (0-7s: Doubt + Blinking Cursor with smooth Ken Burns pan)...`);
+  // Segment 1 (7.0s = 210 frames): Ken Burns slow dynamic drift on image 1
+  const seg1Filter = `[0:v]scale=-2:2160,zoompan=z='min(zoom+0.0009,1.18)':d=210:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=${fps}[bg];[bg][1:v]overlay=0:0[v]`;
+  try {
+    execSync(`ffmpeg -y -loop 1 -i "${img1Path}" -loop 1 -t 7.0 -i "${seg1PngPath}" -filter_complex "${seg1Filter}" -map "[v]" -t 7.0 -c:v libx264 -preset fast -pix_fmt yuv420p "${seg1Mp4}" 2>/dev/null`);
+  } catch (err) {
+    execSync(`ffmpeg -y -loop 1 -t 7.0 -i "${img1Path}" -loop 1 -t 7.0 -i "${seg1PngPath}" -filter_complex "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg];[bg][1:v]overlay=0:0[v]" -map "[v]" -t 7.0 -c:v libx264 -preset fast -pix_fmt yuv420p "${seg1Mp4}" 2>/dev/null`);
+  }
 
   console.log(`[15s Slam] Rendering Scene 2 (7-8s: 1-Second Blackout Screen)...`);
   // Segment 2 (1.0s): Pure black screen
   execSync(`ffmpeg -y -f lavfi -i color=c=black:s=1080x1920:d=1.0:r=${fps} -c:v libx264 -preset fast -pix_fmt yuv420p "${seg2Mp4}" 2>/dev/null`);
 
   console.log(`[15s Slam] Rendering Scene 3 (8-15s: Explosive Center Slam + Retort)...`);
-  // Segment 3 (7.0s): Image slams out from center! Fast initial zoom-in scale rush then smooth Ken Burns
-  // Slam formula: zooms down from 1.35x to 1.05x in first 20 frames (0.66s), then holds and slowly creeps
-  const seg3Filter = `[0:v]scale=1300:2311:force_original_aspect_ratio=increase,crop=1300:2311,zoompan=z='if(lte(on,20),1.35-on*0.015,1.05+(on-20)*0.0003)':d=1:x='iw/2-(iw/zoom/2)':y='ih*0.35-(ih*0.35/zoom)':s=1080x1920:fps=${fps}[bg];[bg][1:v]overlay=0:0[v]`;
-  execSync(`ffmpeg -y -loop 1 -framerate ${fps} -t 7.0 -i "${img2Path}" -loop 1 -framerate ${fps} -t 7.0 -i "${seg3PngPath}" -filter_complex "${seg3Filter}" -map "[v]" -c:v libx264 -preset fast -pix_fmt yuv420p "${seg3Mp4}" 2>/dev/null`);
+  // Segment 3 (7.0s = 210 frames): Dynamic impact slam zoom rush into smooth creep
+  const seg3Filter = `[0:v]scale=-2:2160,zoompan=z='if(lte(on,25),1.28-on*0.009,1.05+(on-25)*0.0004)':d=210:x='iw/2-(iw/zoom/2)':y='ih*0.38-(ih*0.38/zoom)':s=1080x1920:fps=${fps}[bg];[bg][1:v]overlay=0:0[v]`;
+  try {
+    execSync(`ffmpeg -y -loop 1 -i "${img2Path}" -loop 1 -t 7.0 -i "${seg3PngPath}" -filter_complex "${seg3Filter}" -map "[v]" -t 7.0 -c:v libx264 -preset fast -pix_fmt yuv420p "${seg3Mp4}" 2>/dev/null`);
+  } catch (err) {
+    execSync(`ffmpeg -y -loop 1 -t 7.0 -i "${img2Path}" -loop 1 -t 7.0 -i "${seg3PngPath}" -filter_complex "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg];[bg][1:v]overlay=0:0[v]" -map "[v]" -t 7.0 -c:v libx264 -preset fast -pix_fmt yuv420p "${seg3Mp4}" 2>/dev/null`);
+  }
 
   // 6. Concatenate Segments and Map 15-Second Audio
   const timestamp = Date.now();
@@ -609,13 +617,10 @@ async function render15sTeenReel(customDebate = null) {
  * Supports:
  * - '5s_reel' -> Renders 5-second punchline
  * - '15s_slam' -> Renders 15-second opinion vs reality slam
- * - 'auto' -> Picks based on UTC hour:
- *      07:00 UTC -> 5s reel
- *      14:00 UTC -> 15s slam reel
- *      21:00 UTC -> 5s reel
+ * - 'auto' -> Intelligent rotation (alternates between 5s and 15s so both are regularly produced)
  */
 async function generateTeenMotivationReel(customMode = '') {
-  const mode = (typeof customMode === 'string' && customMode ? customMode : '') || process.env.TEEN_FORMAT || process.env.VIDEO_MODE || process.env.VIDEO_TYPE || 'auto';
+  let mode = (typeof customMode === 'string' && customMode ? customMode : '') || process.env.TEEN_FORMAT || process.env.VIDEO_MODE || process.env.VIDEO_TYPE || 'auto';
   const utcHour = new Date().getUTCHours();
 
   console.log(`\n======================================================`);
@@ -623,12 +628,30 @@ async function generateTeenMotivationReel(customMode = '') {
   console.log(`======================================================\n`);
 
   let result = null;
-  if (mode === '15s_slam' || (mode === 'auto' && (utcHour >= 13 && utcHour <= 17))) {
-    // Afternoon slot: 15-second Public Opinion vs Reality Slam
+  if (mode === '15s_slam' || mode === '15s' || mode === '15') {
     result = await render15sTeenReel();
-  } else {
-    // Morning or Evening slots: 5-second Straight-to-point reel
+  } else if (mode === '5s_reel' || mode === '5s' || mode === '5') {
     result = await render5sTeenReel();
+  } else {
+    // Mode is 'auto': Check if last generated video was 5s or if afternoon slot
+    let lastWas15s = false;
+    if (fs.existsSync(MANIFEST_PATH)) {
+      try {
+        const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
+        const first = Array.isArray(manifest) ? manifest[0] : null;
+        if (first && (first.duration === 15 || first.duration === 15.0)) {
+          lastWas15s = true;
+        }
+      } catch {}
+    }
+
+    if (!lastWas15s || (utcHour >= 13 && utcHour <= 17)) {
+      console.log(`[Teen Engine] 🎯 Auto Mode: Triggering 15-second Public Opinion vs Reality Slam Reel...`);
+      result = await render15sTeenReel();
+    } else {
+      console.log(`[Teen Engine] 🎯 Auto Mode: Triggering 5-second Straight-to-Point Wisdom Reel...`);
+      result = await render5sTeenReel();
+    }
   }
 
   // Update Manifest
@@ -672,7 +695,7 @@ async function generateTeenMotivationReel(customMode = '') {
 }
 
 if (require.main === module) {
-  generateTeenMotivationReel().catch(err => {
+  generateTeenMotivationReel(process.argv[2]).catch(err => {
     console.error('Fatal in teen motivation reel generator:', err);
     process.exit(1);
   });

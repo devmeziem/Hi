@@ -549,11 +549,16 @@ async function fetchPastTopicsDatabase(niche = 'fin') {
     } catch {}
   }
 
-  // 3. Query Firestore /chosen_topics if available
+  // 3. Query Firestore /chosen_topics and /channel_post_history if available
   try {
     const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
     let fb = null;
-    if (fs.existsSync(configPath)) fb = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    if (fs.existsSync(configPath)) {
+      try { fb = JSON.parse(fs.readFileSync(configPath, 'utf8')); } catch {}
+    }
+    if (!fb && process.env.FIREBASE_CONFIG_JSON) {
+      try { fb = JSON.parse(process.env.FIREBASE_CONFIG_JSON); } catch {}
+    }
     const projectId = process.env.FIRESTORE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || fb?.projectId;
     const apiKey = process.env.FIRESTORE_API_KEY || process.env.VITE_FIREBASE_API_KEY || fb?.apiKey;
     const databaseId = process.env.FIRESTORE_DATABASE_ID || process.env.VITE_FIRESTORE_DATABASE_ID || fb?.firestoreDatabaseId || fb?.databaseId || 'ai-studio-voxam-a00cf6de-bee8-48db-97c4-0c43daab8a7e';
@@ -731,8 +736,11 @@ function cleanJsonText(rawText) {
 
 // Generic multi-provider LLM caller for JSON tasks
 async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, options = {}) {
+  if (typeof activeGrok === 'object' && activeGrok !== null && !options.nicheKey && !options.preferLocalAi) {
+    options = { ...activeGrok, ...options };
+  }
   const preferLocalAi = options.preferLocalAi === true || options.nicheKey === 'fin';
-  const validationFn = typeof options.validationFn === 'function' ? options.validationFn : null;
+  const validationFn = typeof activeGrok === 'function' ? activeGrok : (typeof options.validationFn === 'function' ? options.validationFn : null);
 
   // Helper for Local Open-Source Ollama (localhost:11434 / candidate hosts)
   const tryLocalOllama = async () => {
@@ -1308,6 +1316,33 @@ Return strictly valid JSON.`;
   );
   let parsedData = aiResult.data;
   const modelUsed = aiResult.modelUsed;
+
+  // Intelligent normalizer for diverse LLM output shapes
+  if (parsedData && typeof parsedData === 'object') {
+    if (!Array.isArray(parsedData.candidates)) {
+      parsedData.candidates = parsedData.topics || parsedData.candidateTopics || parsedData.candidate_topics || parsedData.items || [];
+    }
+    if (Array.isArray(parsedData.candidates)) {
+      parsedData.candidates = parsedData.candidates.map((c, idx) => {
+        if (typeof c === 'string') {
+          return {
+            id: idx + 1,
+            title: c,
+            sphereName: nicheConfig.channelName,
+            angle: 'Educational breakdown',
+            coreHook: c
+          };
+        }
+        return {
+          id: c.id || idx + 1,
+          title: c.title || c.topic || c.name || `Topic ${idx + 1}`,
+          sphereName: c.sphereName || c.sphere || c.category || nicheConfig.channelName,
+          angle: c.angle || c.description || 'Educational breakdown',
+          coreHook: c.coreHook || c.hook || c.spokenHook || c.title || ''
+        };
+      });
+    }
+  }
 
   // Strict enforcement: Do NOT generate synthetic/preset scripts if AI fails!
   if (!parsedData || !Array.isArray(parsedData.candidates) || parsedData.candidates.length === 0) {
