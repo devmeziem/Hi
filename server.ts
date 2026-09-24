@@ -1390,6 +1390,46 @@ Respond STRICTLY with valid raw JSON without markdown:
     return;
   }
 
+  // Stoic & Psychology Workflow: Manifest & Generator
+  if (urlPath === '/api/stoic/manifest' && req.method === 'GET') {
+    try {
+      let videos: any[] = [];
+      const manifestPath = path.join(__dirname, 'daily_blueprint_manifest.json');
+      if (fs.existsSync(manifestPath)) {
+        try {
+          const raw = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+          const list = Array.isArray(raw) ? raw : (raw.videos || []);
+          videos = list.filter((v: any) => v.type === 'scholar_quote_reel_5s' || (v.channelId && v.channelId.includes('stoic')));
+        } catch {}
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(videos));
+    } catch (err: any) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
+  if (urlPath === '/api/stoic/generate' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', async () => {
+      try {
+        const stoicModule: any = await import('./scripts/generate_stoic_quote_reel.cjs');
+        const generateStoic5sVideo = stoicModule.generateStoic5sVideo || stoicModule.default?.generateStoic5sVideo;
+        if (!generateStoic5sVideo) throw new Error('generateStoic5sVideo function not found');
+        const videoPath = await generateStoic5sVideo();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, videoPath, videoUrl: '/rendered_videos/stoic_quote_5s_latest.mp4' }));
+      } catch (err: any) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
   // API Health Check
   if (urlPath === '/api/health' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });

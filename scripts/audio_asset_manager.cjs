@@ -265,8 +265,11 @@ async function resolveRealMusicTrack(options = {}, maybeDuration) {
 function resolveChannelAudio(channelKey, durationSeconds, outputPath) {
   if (!outputPath) {
     const artDir = path.join(process.cwd(), 'test_artifacts', 'audio_renders');
-    if (!fs.existsSync(artDir)) fs.mkdirSync(artDir, { recursive: true });
     outputPath = path.join(artDir, `${channelKey}_audio_${Date.now()}_${Math.random().toString(36).substring(7)}.wav`);
+  }
+  const targetDir = path.dirname(outputPath);
+  if (!fs.existsSync(targetDir)) {
+    try { fs.mkdirSync(targetDir, { recursive: true }); } catch {}
   }
   const primaryDir = SOUND_DIRECTORIES[channelKey] || path.join(process.cwd(), 'sound_assets', channelKey);
   const fallbackDirs = [
@@ -274,11 +277,25 @@ function resolveChannelAudio(channelKey, durationSeconds, outputPath) {
     path.join(process.cwd(), 'assets', 'sounds')
   ];
 
-  if (channelKey.startsWith('motivation')) {
-    fallbackDirs.unshift(path.join(process.cwd(), 'sound_assets', 'motivation'));
+  if (channelKey.startsWith('motivation') || channelKey.startsWith('mindrush') || channelKey === 'teen') {
+    fallbackDirs.unshift(path.join(process.cwd(), 'sound_assets', 'mindrush'));
+    fallbackDirs.unshift(path.join(process.cwd(), 'sound_assets', 'motivation_15s'));
+    fallbackDirs.unshift(path.join(process.cwd(), 'sound_assets', 'motivation_5s'));
   }
 
-  const candidates = findAudioCandidates(primaryDir, fallbackDirs);
+  let candidates = findAudioCandidates(primaryDir, fallbackDirs);
+
+  // If no candidates found, run production audio vault auto-fetcher
+  if (candidates.length === 0) {
+    try {
+      console.log(`[Audio Asset Manager] ⚠️ No local audio found for [${channelKey}]. Running auto-fetcher...`);
+      const { fetchAllProductionAudios } = require('./fetch_production_audio_vault.cjs');
+      fetchAllProductionAudios();
+      candidates = findAudioCandidates(primaryDir, fallbackDirs);
+    } catch (e) {
+      console.warn(`[Audio Asset Manager] Auto-fetcher notice: ${e.message}`);
+    }
+  }
 
   if (candidates.length > 0) {
     let matchingCandidates = candidates;
@@ -290,19 +307,26 @@ function resolveChannelAudio(channelKey, durationSeconds, outputPath) {
       if (match5.length > 0) matchingCandidates = match5;
     }
     const chosenTrack = matchingCandidates[Math.floor(Math.random() * matchingCandidates.length)];
-    console.log(`[Audio Asset Manager] 🎵 Channel: [${channelKey}] -> Selected repository track: "${path.basename(chosenTrack)}"`);
+    console.log(`[Audio Asset Manager] 🎵 Channel: [${channelKey}] -> Selected real track: "${path.basename(chosenTrack)}"`);
     const dur = durationSeconds.toFixed(2);
-    const fadeIn = Math.min(0.2, durationSeconds * 0.05).toFixed(2);
-    const fadeOut = Math.min(0.3, durationSeconds * 0.06).toFixed(2);
+    const fadeIn = Math.min(0.12, durationSeconds * 0.03).toFixed(2);
+    const fadeOut = Math.min(0.25, durationSeconds * 0.05).toFixed(2);
     const fadeOutStart = (durationSeconds - parseFloat(fadeOut)).toFixed(2);
 
-    const cmd = `ffmpeg -y -stream_loop -1 -i "${chosenTrack}" -t ${dur} -af "loudnorm=I=-16:TP=-1.5:LRA=11,afade=t=in:ss=0:d=${fadeIn},afade=t=out:st=${fadeOutStart}:d=${fadeOut}" -c:a pcm_s16le -ar 44100 -ac 2 "${outputPath}" 2>/dev/null`;
+    const isPhonk = channelKey.includes('mindrush') || channelKey.includes('motivation') || /phonk|drift/i.test(chosenTrack);
+    const filter = isPhonk
+      ? `afade=t=in:ss=0:d=${fadeIn},afade=t=out:st=${fadeOutStart}:d=${fadeOut},volume=1.35`
+      : `loudnorm=I=-16:TP=-1.5:LRA=11,afade=t=in:ss=0:d=${fadeIn},afade=t=out:st=${fadeOutStart}:d=${fadeOut}`;
+
+    const cmd = `ffmpeg -y -stream_loop -1 -i "${chosenTrack}" -t ${dur} -af "${filter}" -c:a pcm_s16le -ar 44100 -ac 2 "${outputPath}" 2>/dev/null`;
     try {
       execSync(cmd);
       if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 2000) {
         return outputPath;
       }
-    } catch {}
+    } catch (err) {
+      console.warn(`[Audio Asset Manager] FFmpeg normalize notice: ${err.message}`);
+    }
   }
 
   synthesizeProceduralAudio(channelKey, durationSeconds, outputPath);
@@ -317,7 +341,7 @@ function synthesizeProceduralAudio(channelKey, durationSeconds, outputPath) {
   const fadeOutStart = Math.max(0.5, (durationSeconds - 0.3)).toFixed(2);
 
   let filterExpr = '';
-  if (channelKey === 'motivation_15s') {
+  if (channelKey === 'motivation_15s' || channelKey === 'mindrush' || channelKey === 'mindrush_15s' || channelKey === 'teen') {
     filterExpr = [
       `sine=frequency=55:duration=7.0,volume=0.35,afade=t=out:st=6.6:d=0.4[drone1]`,
       `sine=frequency=110:duration=7.0,volume=0.15,afade=t=out:st=6.6:d=0.4[pad1]`,
@@ -329,7 +353,7 @@ function synthesizeProceduralAudio(channelKey, durationSeconds, outputPath) {
       `[p1][silence][p3]concat=n=3:v=0:a=1[concatted]`,
       `[concatted]afade=t=in:ss=0:d=0.2,afade=t=out:st=${fadeOutStart}:d=0.25[out]`
     ].join(';');
-  } else if (channelKey === 'motivation_5s' || channelKey === 'motivation') {
+  } else if (channelKey === 'motivation_5s' || channelKey === 'motivation' || channelKey === 'mindrush_5s') {
     filterExpr = [
       `sine=frequency=48:duration=${dur},volume=0.4[sub]`,
       `sine=frequency=120:duration=${dur},volume=0.2[body]`,
@@ -365,7 +389,7 @@ function synthesizeProceduralAudio(channelKey, durationSeconds, outputPath) {
       `[mixed]afade=t=in:ss=0:d=0.2,afade=t=out:st=${fadeOutStart}:d=0.2[out]`
     ].join(';');
   } else {
-    // Finance
+    // Finance / General ambient (never empty)
     filterExpr = [
       `sine=frequency=52:duration=${dur},volume=0.4[sub]`,
       `sine=frequency=156:duration=${dur},volume=0.18[mid]`,

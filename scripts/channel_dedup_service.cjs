@@ -76,6 +76,8 @@ async function fetchRemoteHistory(channelKey) {
     relevantChannels.add('stoic');
     relevantChannels.add('finance');
     relevantChannels.add('fin');
+  } else if (['mindrush', 'mindrush_15s', 'mindrush_5s', 'teen', 'teen_15s', 'motivation'].includes(channelKey)) {
+    ['mindrush', 'mindrush_15s', 'mindrush_5s', 'teen', 'teen_15s', 'motivation'].forEach(c => relevantChannels.add(c));
   }
 
   return new Promise((resolve) => {
@@ -131,7 +133,7 @@ function calculateJaccardSimilarity(textA, textB) {
 /**
  * Select a strictly unique, non-repetitive quote candidate
  */
-async function selectDeduplicatedCandidate(channelKey, candidatePool, getQuoteFn, getAuthorFn) {
+async function selectDeduplicatedCandidate(channelKey, candidatePool, getQuoteFn, getAuthorFn, dynamicFetchFn = null) {
   const localCachePath = path.join(process.cwd(), 'test_artifacts', `${channelKey}_history_cache.json`);
   let combinedHistory = [];
 
@@ -156,23 +158,40 @@ async function selectDeduplicatedCandidate(channelKey, candidatePool, getQuoteFn
 
   const recentQuotes = combinedHistory.map(h => (typeof h === 'string' ? h : h.quote || '')).filter(Boolean);
   const recentAuthors = combinedHistory.slice(-15).map(h => (typeof h === 'object' ? h.author : '')).filter(Boolean);
+  const genericAuthors = new Set(['mindrush', 'mindrush discipline', 'mindrush grit', 'mindrush execution', 'mindrush armor', 'me:', 'the reality:', 'the slam:', 'cold fact:', 'reality check:', 'anonymous']);
 
-  // 3. Strict filter: No identical or similar quotes, no recent authors
+  // 3. Strict filter: No identical or similar quotes, no recent authors (unless generic)
   let filtered = candidatePool.filter(item => {
     const q = getQuoteFn(item);
     const a = getAuthorFn(item);
 
-    // Skip recently featured author
-    if (recentAuthors.includes(a)) return false;
+    // Skip recently featured author if not generic
+    if (a && !genericAuthors.has(a.toLowerCase()) && recentAuthors.includes(a)) {
+      return false;
+    }
 
-    // Strict similarity threshold (< 0.25 Jaccard overlap)
+    // Strict similarity threshold (< 0.20 Jaccard overlap)
     for (const prev of recentQuotes) {
-      if (calculateJaccardSimilarity(q, prev) > 0.25) {
+      if (calculateJaccardSimilarity(q, prev) > 0.20) {
         return false;
       }
     }
     return true;
   });
+
+  // If pool exhausted and dynamic fetch function provided, try generating a brand new candidate
+  if (filtered.length === 0 && typeof dynamicFetchFn === 'function') {
+    try {
+      console.log(`[Anti-Spam Engine] 🤖 Local pool exhausted. Invoking dynamic auto-fetcher for [${channelKey}]...`);
+      const dynamicCandidate = await dynamicFetchFn(recentQuotes);
+      if (dynamicCandidate) {
+        console.log(`[Anti-Spam Engine] ✨ Successfully auto-fetched brand-new unique candidate.`);
+        return dynamicCandidate;
+      }
+    } catch (e) {
+      console.warn(`[Anti-Spam Engine] Dynamic fetch notice: ${e.message}`);
+    }
+  }
 
   // If pool exhausted due to author saturation, relax author filter but maintain strict quote deduplication
   if (filtered.length === 0) {
@@ -180,7 +199,7 @@ async function selectDeduplicatedCandidate(channelKey, candidatePool, getQuoteFn
     filtered = candidatePool.filter(item => {
       const q = getQuoteFn(item);
       for (const prev of recentQuotes) {
-        if (calculateJaccardSimilarity(q, prev) > 0.30) {
+        if (calculateJaccardSimilarity(q, prev) > 0.28) {
           return false;
         }
       }
@@ -188,8 +207,20 @@ async function selectDeduplicatedCandidate(channelKey, candidatePool, getQuoteFn
     });
   }
 
+  // If still exhausted, sort candidate pool by oldest in history (least recently used)
   if (filtered.length === 0) {
-    filtered = candidatePool;
+    console.log(`[Anti-Spam Engine] Finding least-recently used candidate from pool...`);
+    const scoredPool = candidatePool.map(item => {
+      const q = getQuoteFn(item);
+      let maxSim = 0;
+      for (let i = recentQuotes.length - 1; i >= 0; i--) {
+        const sim = calculateJaccardSimilarity(q, recentQuotes[i]);
+        if (sim > maxSim) maxSim = sim;
+      }
+      return { item, maxSim };
+    });
+    scoredPool.sort((a, b) => a.maxSim - b.maxSim);
+    filtered = scoredPool.slice(0, Math.max(3, Math.floor(candidatePool.length / 2))).map(s => s.item);
   }
 
   // 4. Deterministic non-repeating mathematical seed

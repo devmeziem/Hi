@@ -74,38 +74,10 @@ export const MovieBrandTab: React.FC = () => {
       }
     } catch {}
 
-    // Fallback default episode
-    const defaultEpisodes: EpisodeItem[] = [
-      {
-        id: 'movie_s1_e1_default',
-        seriesTitle: 'PROTOCOL ZERO: THE GHOST VAULT',
-        episodeTitle: 'Sub-Level 14',
-        season: 1,
-        episode: 1,
-        videoPath: '/api/stream-video?file=test_artifacts/movie_episodes/movie_episode_s1_e1.mp4',
-        narration: 'Forty feet under the city. The storm water had reached the upper rails. Dax Mercer adjusted his helmet light. The metal hatch was unsealed. Someone was already inside. Footprints in the gray silt led down the maintenance tunnel. Fresh footprints. His telemetry scanner picked up a rhythm in the dark. A blue beacon pulsing every three seconds. Behind him, the heavy steel containment door slammed shut. The water level began to rise.',
-        duration: 25.4,
-        tags: ['#SciFiShorts', '#GhostVault', '#MiniMovie', '#SurvivalThriller', '#EpisodicSeries'],
-        youtubeUploadStatus: 'PENDING_REVIEW (Upload hold enabled)',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'movie_s1_e2_default',
-        seriesTitle: 'PROTOCOL ZERO: THE GHOST VAULT',
-        episodeTitle: 'The Echo Turbine',
-        season: 1,
-        episode: 2,
-        videoPath: '/api/stream-video?file=test_artifacts/movie_episodes/movie_episode_s1_e2.mp4',
-        narration: 'Water surged past his knees. Dax forced open the bulkhead grating. A massive decommissioned intake fan stood frozen in the dark. Beside it, a tactical cable hung down from an air vent. Someone had bypassed the main access shaft. As he stepped forward, the giant fan blades groaned and began to turn on backup power.',
-        duration: 24.8,
-        tags: ['#SciFiShorts', '#GhostVault', '#MiniMovie', '#SciFiAction', '#EpisodicSeries'],
-        youtubeUploadStatus: 'PENDING_REVIEW (Upload hold enabled)',
-        createdAt: new Date(Date.now() - 86400000).toISOString()
-      }
-    ];
+    // Only real episodes from Firestore or local render (all seed mock episodes deleted)
     if (episodes.length === 0) {
-      setEpisodes(defaultEpisodes);
-      setSelectedEpisode(defaultEpisodes[0]);
+      setEpisodes([]);
+      setSelectedEpisode(null);
     }
   };
 
@@ -218,6 +190,14 @@ export const MovieBrandTab: React.FC = () => {
           >
             {isGenerating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
             <span>Render Ep 3: Core Chamber</span>
+          </button>
+          <button
+            onClick={() => handleGenerateEpisode(4)}
+            disabled={isGenerating}
+            className="px-4 py-2.5 bg-gradient-to-r from-rose-600 to-indigo-600 hover:from-rose-500 hover:to-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-indigo-600/30 flex items-center gap-2 cursor-pointer"
+          >
+            {isGenerating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+            <span>Render Ep 4: Abyssal Trench (Finale)</span>
           </button>
         </div>
       </div>
@@ -602,11 +582,12 @@ export const MovieBrandTab: React.FC = () => {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
               {[
-                { ep: 1, title: 'Sub-Level 14', status: 'Rendered & Ready', hook: 'Fresh footprints lead into the maintenance tunnel. The steel door slams shut as water rises.' },
-                { ep: 2, title: 'The Signal in the Dark', status: 'Rendered & Ready', hook: 'A radio signal pulses every three seconds. A stranger on the gantry fires a weapon at Dax.' },
-                { ep: 3, title: 'The Core Chamber', status: 'Rendered & Ready', hook: 'The intruder pulls off her tactical mask: "Dax? You were supposed to be dead."' }
+                { ep: 1, title: 'Sub-Level 14', status: 'Episode 1', hook: 'Fresh footprints lead into the maintenance tunnel. The steel door slams shut as water rises.' },
+                { ep: 2, title: 'The Signal in the Dark', status: 'Episode 2', hook: 'A radio signal pulses every three seconds. A stranger on the gantry fires a weapon at Dax.' },
+                { ep: 3, title: 'The Core Chamber', status: 'Episode 3', hook: 'The intruder pulls off her tactical mask: "Dax? You were supposed to be dead."' },
+                { ep: 4, title: 'The Abyssal Trench', status: 'Series Finale', hook: 'Beneath our boots, the colossal submarine blast gates grind open. The final descent into the abyss.' }
               ].map((item) => (
                 <div key={item.ep} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2 flex flex-col justify-between">
                   <div>

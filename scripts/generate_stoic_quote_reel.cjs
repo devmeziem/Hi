@@ -1,19 +1,16 @@
 /**
- * Stoic & World Scholars 5-Second / 3-Second Quote Reel Generator (Daily 5th Video)
+ * Stoic & Psychology Impact Quote Reel Generator (Channel 2: The Stoic Architect)
  *
- * Requirements:
- * - Configurable duration: 5.0s (default) or 3.0s
- * - Exactly 1 cinematic 9:16 vertical image of the author/scholar (auto-fetched via public search / Wikimedia or AI generated)
- * - Royalty-free loopable mystery sound matching Pixabay archetypes:
- *     1. Horror Scene Murder Mystery (eerie sub-drone, minor second dissonance, metallic shimmer)
- *     2. Instrumental Mystery (suspended minor chord, cavernous echo, hypnotic pulse)
- *     3. Mystery Darkness (abyssal 43Hz sub-bass, cold atmospheric ambient)
- * - Quotes from world scholars across history (psychologists, philosophers, Nobel laureates, scientists, ancient masters)
- * - Transparent, frosted center-bottom glass caption card with exact scholar reference & credentials (PhD, MD, field)
- * - Deduplicated via Firestore + local history cache (Jaccard similarity + author rotation)
- * - Seamless loop design for YouTube Shorts & TikTok
- * - Better title, description, and hashtags
- * - Generates daily YouTube Community Post (text + 1080x1080 image)
+ * Implements exact visual aesthetic from user reference screenshots:
+ * - High Psychological Impact quotes (Machiavelli, Schopenhauer, Jung, Greene, Nietzsche, Dostoevsky, Freud, Kafka, Aurelius, Seneca, Epictetus, Sun Tzu, Pascal, Gracián, Kierkegaard, Frankl)
+ * - Zero-Pill Discipline: No clunky cardboard boxes or generic pill buttons.
+ * - Feathered cinematic dark vignette background preserving full portrait visibility.
+ * - Elegant Georgia serif typography with drop-shadow glow and warm amber quotation mark.
+ * - Minimalist dashed author attribution and refined academic/historical credentials.
+ * - Subtle ambient audio credit: "Hans Zimmer · S.T.A.Y." style deep psychological soundscapes.
+ * - Slow hypnotic Ken Burns zoom pushing into the thinker's face.
+ * - Curated viral hashtags (#stoic #stoicism #psychology #mindset #motivation #quotes #wisdom #philosophy #shorts #darkpsychology #power #humanbehavior).
+ * - Full deduplication via Firestore and local cache.
  */
 
 const fs = require('fs');
@@ -23,6 +20,7 @@ const https = require('https');
 const { getSyncedChannelProfile, formatChannelFollowCta } = require('./youtube_channel_dispatcher.cjs');
 const { resolveChannelAudio } = require('./audio_asset_manager.cjs');
 const { selectDeduplicatedCandidate, recordPostedCandidate } = require('./channel_dedup_service.cjs');
+const { CURATED_PSYCHOLOGY_QUOTES, VIRAL_PSYCHOLOGY_TAGS, generatePsychologyViralTitle } = require('./stoic_psychology_vault.cjs');
 
 const MANIFEST_PATH = path.join(process.cwd(), 'daily_blueprint_manifest.json');
 const LOCAL_QUOTE_CACHE = path.join(process.cwd(), 'stoic_quote_history.json');
@@ -35,427 +33,11 @@ const TARGET_DURATION = parseFloat(process.env.SHORT_DURATION || process.env.DUR
 const FPS = 30;
 const TOTAL_FRAMES = Math.round(TARGET_DURATION * FPS);
 
-/**
- * Curated Catalog of World Scholars, Nobel Laureates, Philosophers, and Polymaths
- * with Full Names, Academic Credentials, Institutional Chairs, and Quotations.
- */
-const WORLD_SCHOLARS_QUOTES = [
-  // Dr. Viktor Frankl, M.D., Ph.D.
-  {
-    quote: "When we are no longer able to change a situation, we are challenged to change ourselves.",
-    author: "Dr. Viktor Frankl, M.D., Ph.D.",
-    credentials: "Neurologist & Psychiatrist • University of Vienna",
-    wikiSearch: "Viktor_Frankl",
-    theme: "defense",
-    communityQuestion: "What is one situation in your life where changing your internal reaction matters more than trying to force the external outcome?"
-  },
-  {
-    quote: "Between stimulus and response there is a space. In that space is our power to choose our response.",
-    author: "Dr. Viktor Frankl, M.D., Ph.D.",
-    credentials: "Neurologist & Psychiatrist • University of Vienna",
-    wikiSearch: "Viktor_Frankl",
-    theme: "discipline",
-    communityQuestion: "When was the last time you took a deep breath and paused in that space before reacting?"
-  },
-  // Dr. Carl Jung, M.D.
-  {
-    quote: "Until you make the unconscious conscious, it will direct your life and you will call it fate.",
-    author: "Dr. Carl Jung, M.D.",
-    credentials: "Founder of Analytical Psychology • Psychiatrist",
-    wikiSearch: "Carl_Jung",
-    theme: "mastery",
-    communityQuestion: "What hidden habit or fear is silently directing your daily decisions?"
-  },
-  {
-    quote: "I am not what happened to me, I am what I choose to become.",
-    author: "Dr. Carl Jung, M.D.",
-    credentials: "Founder of Analytical Psychology • Psychiatrist",
-    wikiSearch: "Carl_Jung",
-    theme: "confidence",
-    communityQuestion: "What past event have you finally decided will no longer define your future?"
-  },
-  // Prof. Friedrich Nietzsche
-  {
-    quote: "He who has a why to live can bear almost any how.",
-    author: "Prof. Friedrich Nietzsche",
-    credentials: "Chair of Classical Philology • University of Basel",
-    wikiSearch: "Friedrich_Nietzsche",
-    theme: "fortitude",
-    communityQuestion: "What is the single 'why' that gets you out of bed even on the hardest mornings?"
-  },
-  {
-    quote: "No price is too high to pay for the privilege of owning yourself.",
-    author: "Prof. Friedrich Nietzsche",
-    credentials: "Chair of Classical Philology • University of Basel",
-    wikiSearch: "Friedrich_Nietzsche",
-    theme: "sovereignty",
-    communityQuestion: "What distraction or bad habit are you sacrificing to fully own your daily focus?"
-  },
-  // Marcus Aurelius
-  {
-    quote: "You have power over your mind, not outside events. Realize this, and you will find strength.",
-    author: "Marcus Aurelius",
-    credentials: "Roman Emperor & Stoic Philosopher • Author of Meditations",
-    wikiSearch: "Marcus_Aurelius",
-    theme: "sovereignty",
-    communityQuestion: "Which outside noise or circumstance will you consciously stop worrying about today?"
-  },
-  {
-    quote: "The soul becomes dyed with the color of its thoughts.",
-    author: "Marcus Aurelius",
-    credentials: "Roman Emperor & Stoic Philosopher • Author of Meditations",
-    wikiSearch: "Marcus_Aurelius",
-    theme: "discipline",
-    communityQuestion: "What recurring thought will you replace with calm conviction today?"
-  },
-  // Epictetus
-  {
-    quote: "No man is free who is not master of himself.",
-    author: "Epictetus",
-    credentials: "Stoic Philosopher • Founder of the Nicopolis School",
-    wikiSearch: "Epictetus",
-    theme: "mastery",
-    communityQuestion: "In which area of your life does your discipline need to match your ambition?"
-  },
-  {
-    quote: "We have two ears and one mouth so that we can listen twice as much as we speak.",
-    author: "Epictetus",
-    credentials: "Stoic Philosopher • Founder of the Nicopolis School",
-    wikiSearch: "Epictetus",
-    theme: "wisdom",
-    communityQuestion: "Who in your life needs your quiet, undivided listening today rather than advice?"
-  },
-  // Seneca the Younger
-  {
-    quote: "We suffer more often in imagination than in reality.",
-    author: "Seneca the Younger",
-    credentials: "Roman Statesman, Dramatist & Stoic Moralist",
-    wikiSearch: "Seneca_the_Younger",
-    theme: "defense",
-    communityQuestion: "What worst-case scenario have you been replaying that hasn't actually happened?"
-  },
-  {
-    quote: "Difficulties strengthen the mind, as labor does the body.",
-    author: "Seneca the Younger",
-    credentials: "Roman Statesman, Dramatist & Stoic Moralist",
-    wikiSearch: "Seneca_the_Younger",
-    theme: "fortitude",
-    communityQuestion: "What recent struggle taught you an invaluable lesson about your own resilience?"
-  },
-  // Miyamoto Musashi
-  {
-    quote: "Do nothing that is of no use. Polish your spirit daily through relentless devotion.",
-    author: "Miyamoto Musashi",
-    credentials: "Master Swordsman & Philosopher • The Book of Five Rings",
-    wikiSearch: "Miyamoto_Musashi",
-    theme: "discipline",
-    communityQuestion: "What is one low-value activity you can ruthlessly cut from your routine today?"
-  },
-  {
-    quote: "There is nothing outside of yourself that can ever enable you to get better. Everything is within.",
-    author: "Miyamoto Musashi",
-    credentials: "Master Swordsman & Philosopher • The Book of Five Rings",
-    wikiSearch: "Miyamoto_Musashi",
-    theme: "confidence",
-    communityQuestion: "Do you look for external approval, or do you build quiet internal certainty?"
-  },
-  // Lao Tzu
-  {
-    quote: "He who conquers others is strong; he who conquers himself is mighty.",
-    author: "Lao Tzu",
-    credentials: "Ancient Sage & Philosopher • Author of the Tao Te Ching",
-    wikiSearch: "Laozi",
-    theme: "mastery",
-    communityQuestion: "What impulse or reaction did you successfully master today?"
-  },
-  {
-    quote: "Silence is a source of great strength. In stillness, all conflict dissolves.",
-    author: "Lao Tzu",
-    credentials: "Ancient Sage & Philosopher • Author of the Tao Te Ching",
-    wikiSearch: "Laozi",
-    theme: "defense",
-    communityQuestion: "How often do you sit in complete silence with zero screens or notifications?"
-  },
-  // Sun Tzu
-  {
-    quote: "He will win who knows when to fight and when not to fight.",
-    author: "Sun Tzu",
-    credentials: "General, Strategist & Philosopher • Author of The Art of War",
-    wikiSearch: "Sun_Tzu",
-    theme: "strategy",
-    communityQuestion: "What pointless argument or drama are you choosing to walk away from today?"
-  },
-  // Zeno of Citium
-  {
-    quote: "Man conquers the world by conquering himself. We have two ears and one mouth for a reason.",
-    author: "Zeno of Citium",
-    credentials: "Founder of Stoicism • The Stoa Poikile of Athens",
-    wikiSearch: "Zeno_of_Citium",
-    theme: "mastery",
-    communityQuestion: "What impulse did you conquer today before it conquered you?"
-  },
-  // Musonius Rufus
-  {
-    quote: "You will earn the respect of all if you begin by earning the respect of yourself.",
-    author: "Musonius Rufus",
-    credentials: "The Roman Socrates • Stoic Teacher of Epictetus",
-    wikiSearch: "Gaius_Musonius_Rufus",
-    theme: "sovereignty",
-    communityQuestion: "Did you keep the promises you made to yourself today?"
-  },
-  // Cato the Younger
-  {
-    quote: "I begin to speak only when I am certain what I have to say is not better left unsaid.",
-    author: "Cato the Younger",
-    credentials: "Roman Statesman & Stoic Icon • Defender of the Republic",
-    wikiSearch: "Cato_the_Younger",
-    theme: "discipline",
-    communityQuestion: "What useless argument did you have the discipline to walk away from today?"
-  },
-  // Cleanthes of Assos
-  {
-    quote: "Fate leads the willing, and drags the unwilling.",
-    author: "Cleanthes of Assos",
-    credentials: "Stoic Boxer & Successor to Zeno • Athens",
-    wikiSearch: "Cleanthes",
-    theme: "fortitude",
-    communityQuestion: "Are you fighting unavoidable reality, or adapting and moving forward?"
-  },
-  // Chrysippus
-  {
-    quote: "The wise man lacks nothing, and yet needs many things; the fool needs nothing, for he knows not how to use anything.",
-    author: "Chrysippus of Soli",
-    credentials: "Third Leader of the Stoic School • Master of Logic",
-    wikiSearch: "Chrysippus",
-    theme: "wisdom",
-    communityQuestion: "Are you grateful for what you already have, or constantly chasing the next hit?"
-  },
-  // Marcus Aurelius
-  {
-    quote: "Waste no more time arguing what a good man should be. Be one.",
-    author: "Marcus Aurelius",
-    credentials: "Roman Emperor & Stoic Philosopher • Meditations",
-    wikiSearch: "Marcus_Aurelius",
-    theme: "action",
-    communityQuestion: "What is one standard you will uphold today without announcing it to anyone?"
-  },
-  {
-    quote: "The impediment to action advances action. What stands in the way becomes the way.",
-    author: "Marcus Aurelius",
-    credentials: "Roman Emperor & Stoic Philosopher • Meditations",
-    wikiSearch: "Marcus_Aurelius",
-    theme: "fortitude",
-    communityQuestion: "What recent setback can you transform into your greatest training ground?"
-  },
-  // Seneca the Younger
-  {
-    quote: "Luck is what happens when preparation meets opportunity.",
-    author: "Seneca the Younger",
-    credentials: "Roman Stoic Philosopher & Statesman",
-    wikiSearch: "Seneca_the_Younger",
-    theme: "preparation",
-    communityQuestion: "Are you actively training while others are waiting for luck?"
-  },
-  {
-    quote: "He is a great man who uses earthenware dishes as if they were silver; but he is equally great who uses silver as if it were earthenware.",
-    author: "Seneca the Younger",
-    credentials: "Roman Stoic Philosopher & Statesman",
-    wikiSearch: "Seneca_the_Younger",
-    theme: "discipline",
-    communityQuestion: "Can you remain unaffected by both poverty and luxury?"
-  },
-  // Epictetus
-  {
-    quote: "First say to yourself what you would be; and then do what you have to do.",
-    author: "Epictetus",
-    credentials: "Stoic Philosopher • Born a Slave • The Discourses",
-    wikiSearch: "Epictetus",
-    theme: "identity",
-    communityQuestion: "Do your daily actions reflect the person you claim you want to become?"
-  },
-  {
-    quote: "Wealth consists not in having great possessions, but in having few wants.",
-    author: "Epictetus",
-    credentials: "Stoic Philosopher • Born a Slave • The Enchiridion",
-    wikiSearch: "Epictetus",
-    theme: "freedom",
-    communityQuestion: "What unnecessary desire can you eliminate today to gain instant freedom?"
-  },
-  // Miyamoto Musashi
-  {
-    quote: "Think lightly of yourself and deeply of the world.",
-    author: "Miyamoto Musashi",
-    credentials: "Undefeated Samurai & Philosopher • The Dokkōdō",
-    wikiSearch: "Miyamoto_Musashi",
-    theme: "humility",
-    communityQuestion: "How can you drop your ego today to observe reality more clearly?"
-  },
-  {
-    quote: "Step by step walk the thousand-mile road. Do not regret what you have done.",
-    author: "Miyamoto Musashi",
-    credentials: "Undefeated Samurai & Philosopher • The Book of Five Rings",
-    wikiSearch: "Miyamoto_Musashi",
-    theme: "relentless",
-    communityQuestion: "What small step did you execute today without overthinking the destination?"
-  },
-  // Socrates
-  {
-    quote: "The unexamined life is not worth living. Know thyself first.",
-    author: "Socrates",
-    credentials: "Foundational Classical Greek Philosopher • Athens",
-    wikiSearch: "Socrates",
-    theme: "wisdom",
-    communityQuestion: "When was the last time you critically questioned your own deepest assumptions?"
-  },
-  // Plato
-  {
-    quote: "The first and greatest victory is to conquer yourself.",
-    author: "Plato",
-    credentials: "Founder of the Academy in Athens • Classical Philosopher",
-    wikiSearch: "Plato",
-    theme: "mastery",
-    communityQuestion: "Which internal desire are you conquering today?"
-  },
-  // Aristotle
-  {
-    quote: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.",
-    author: "Aristotle",
-    credentials: "Polymath & Philosopher • Founder of the Lyceum",
-    wikiSearch: "Aristotle",
-    theme: "discipline",
-    communityQuestion: "What single habit will you repeat today to build lifelong excellence?"
-  },
-  // Confucius
-  {
-    quote: "It does not matter how slowly you go as long as you do not stop.",
-    author: "Confucius",
-    credentials: "Ancient Sage & Philosopher • Spring and Autumn Period",
-    wikiSearch: "Confucius",
-    theme: "perseverance",
-    communityQuestion: "What long-term goal are you continuing to pursue relentlessly today?"
-  },
-  // Alexander the Great
-  {
-    quote: "There is nothing impossible to him who will try.",
-    author: "Alexander the Great",
-    credentials: "King of Macedonia & Ancient Military Strategist",
-    wikiSearch: "Alexander_the_Great",
-    theme: "audacity",
-    communityQuestion: "What bold action have you hesitated on that needs your full courage today?"
-  },
-  // Leonardo da Vinci
-  {
-    quote: "Iron rusts from disuse; stagnant water loses its purity; even so does inaction sap the vigors of the mind.",
-    author: "Leonardo da Vinci",
-    credentials: "High Renaissance Polymath, Painter & Engineer",
-    wikiSearch: "Leonardo_da_Vinci",
-    theme: "action",
-    communityQuestion: "What creative project or mental challenge will you practice today?"
-  },
-  // Ralph Waldo Emerson
-  {
-    quote: "What lies behind us and what lies before us are tiny matters compared to what lies within us.",
-    author: "Ralph Waldo Emerson",
-    credentials: "Philosopher, Essayist & Leader of Transcendentalism",
-    wikiSearch: "Ralph_Waldo_Emerson",
-    theme: "self_reliance",
-    communityQuestion: "Do you trust your inner strength more than the chaos around you?"
-  },
-  // Henry David Thoreau
-  {
-    quote: "It is not enough to be busy. The question is: what are we busy about?",
-    author: "Henry David Thoreau",
-    credentials: "Philosopher, Naturalist & Author of Walden",
-    wikiSearch: "Henry_David_Thoreau",
-    theme: "focus",
-    communityQuestion: "What low-priority distraction will you cut out of your schedule today?"
-  },
-  // Steve Jobs
-  {
-    quote: "Your time is limited, so don't waste it living someone else's life.",
-    author: "Steve Jobs",
-    credentials: "Co-Founder of Apple & Creative Visionary",
-    wikiSearch: "Steve_Jobs",
-    theme: "authenticity",
-    communityQuestion: "Are you building your own vision, or fulfilling someone else's expectations?"
-  },
-  // Kobe Bryant
-  {
-    quote: "The moment you give up is the moment you let someone else win. Rest at the end, not in the middle.",
-    author: "Kobe Bryant",
-    credentials: "5x NBA Champion • Academy Award Winner • The Mamba Mentality",
-    wikiSearch: "Kobe_Bryant",
-    theme: "relentless",
-    communityQuestion: "Are you showing up with full intensity even when no one is watching?"
-  },
-  // David Goggins
-  {
-    quote: "You are in danger of living a life so comfortable and soft that you will die without ever realizing your true potential.",
-    author: "David Goggins",
-    credentials: "Retired Navy SEAL • Ultra-Endurance Athlete • Author of Can't Hurt Me",
-    wikiSearch: "David_Goggins",
-    theme: "mental_toughness",
-    communityQuestion: "What uncomfortable task will you attack head-on today?"
-  },
-  // Arnold Schwarzenegger
-  {
-    quote: "The mind is the limit. As long as the mind can envision the fact that you can do something, you can do it.",
-    author: "Arnold Schwarzenegger",
-    credentials: "7x Mr. Olympia • Governor of California • Cultural Icon",
-    wikiSearch: "Arnold_Schwarzenegger",
-    theme: "vision",
-    communityQuestion: "What massive goal has your mind fully committed to achieving?"
-  },
-  // Naval Ravikant
-  {
-    quote: "A fit body, a calm mind, a house full of love. These things cannot be bought—they must be earned.",
-    author: "Naval Ravikant",
-    credentials: "Angel Investor, Philosopher & Co-Founder of AngelList",
-    wikiSearch: "Naval_Ravikant",
-    theme: "sovereignty",
-    communityQuestion: "Which of these three foundations did you invest time into today?"
-  },
-  // Jocko Willink
-  {
-    quote: "Discipline equals freedom. There is no shortcut, no hack. There is only the work.",
-    author: "Jocko Willink",
-    credentials: "Retired Navy SEAL Commander & Author of Extreme Ownership",
-    wikiSearch: "Jocko_Willink",
-    theme: "discipline",
-    communityQuestion: "What hard discipline gave you a sense of true freedom today?"
-  },
-  // James Clear
-  {
-    quote: "You do not rise to the level of your goals. You fall to the level of your systems.",
-    author: "James Clear",
-    credentials: "Habits Researcher & Author of Atomic Habits",
-    wikiSearch: "Atomic_Habits",
-    theme: "systems",
-    communityQuestion: "What simple system can you install today so good habits happen on autopilot?"
-  },
-  // Dr. Andrew Huberman
-  {
-    quote: "Action precedes motivation. Do not wait to feel ready. Move your body, and your neurochemistry will follow.",
-    author: "Dr. Andrew Huberman, Ph.D.",
-    credentials: "Professor of Neurobiology & Ophthalmology • Stanford University",
-    wikiSearch: "Andrew_Huberman",
-    theme: "neurobiology",
-    communityQuestion: "What is one physical action you can take right now to break mental inertia?"
-  },
-  // Alex Hormozi
-  {
-    quote: "You don't become confident by shouting affirmations. You become confident by having an undeniable stack of proof.",
-    author: "Alex Hormozi",
-    credentials: "Entrepreneur, Investor & Author of $100M Offers",
-    wikiSearch: "Alex_Hormozi",
-    theme: "confidence",
-    communityQuestion: "What proof did you add to your stack today through undeniable execution?"
-  }
-];
+const WORLD_SCHOLARS_QUOTES = CURATED_PSYCHOLOGY_QUOTES;
 
 /**
  * Public Search: Resolve Scholar Portrait Image from Wikipedia / Wikimedia Commons
- * If public search fails or times out, uses AI / stylized fallback generator.
+ * Prioritizes direct high-res Wikimedia URLs, falls back to Wikipedia REST API, then Pollinations FLUX.
  */
 async function resolveScholarPortrait(scholar) {
   if (!fs.existsSync(PORTRAITS_DIR)) fs.mkdirSync(PORTRAITS_DIR, { recursive: true });
@@ -469,51 +51,49 @@ async function resolveScholarPortrait(scholar) {
     return portraitPath;
   }
 
-  console.log(`[Scholar Portrait] Searching public Wikimedia/Wikipedia archives for: "${scholar.wikiSearch}"...`);
+  console.log(`[Scholar Portrait] Sourcing portrait for: "${scholar.author}"...`);
 
-  let fetchedUrl = null;
+  let fetchedUrl = scholar.directUrl || null;
 
-  try {
-    const summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(scholar.wikiSearch)}`;
-    const pageData = await new Promise((resolve, reject) => {
-      const req = https.get(summaryUrl, {
-        headers: {
-          'User-Agent': 'VoxamScholarBot/2.0 (educational citation video creator; contact@voxam.ai)',
-          'Accept': 'application/json'
-        },
-        timeout: 8000
-      }, res => {
-        let raw = '';
-        res.on('data', chunk => { raw += chunk; });
-        res.on('end', () => {
-          try {
-            resolve(JSON.parse(raw));
-          } catch (e) {
-            resolve(null);
-          }
+  // If no direct URL, query Wikipedia REST API summary
+  if (!fetchedUrl) {
+    try {
+      const summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(scholar.wikiSearch)}`;
+      const pageData = await new Promise((resolve) => {
+        const req = https.get(summaryUrl, {
+          headers: {
+            'User-Agent': 'VoxamScholarBot/2.0 (educational citation video creator; contact@voxam.ai)',
+            'Accept': 'application/json'
+          },
+          timeout: 8000
+        }, res => {
+          let raw = '';
+          res.on('data', chunk => { raw += chunk; });
+          res.on('end', () => {
+            try { resolve(JSON.parse(raw)); } catch { resolve(null); }
+          });
         });
+        req.on('error', () => resolve(null));
+        req.on('timeout', () => { req.destroy(); resolve(null); });
       });
-      req.on('error', reject);
-      req.on('timeout', () => { req.destroy(); resolve(null); });
-    });
 
-    if (pageData) {
-      if (pageData.originalimage && pageData.originalimage.source && !pageData.originalimage.source.endsWith('.svg')) {
-        fetchedUrl = pageData.originalimage.source;
-      } else if (pageData.thumbnail && pageData.thumbnail.source) {
-        // Upgrade thumbnail size if possible
-        fetchedUrl = pageData.thumbnail.source.replace(/\/\d+px-/, '/1080px-');
+      if (pageData) {
+        if (pageData.originalimage && pageData.originalimage.source && !pageData.originalimage.source.endsWith('.svg')) {
+          fetchedUrl = pageData.originalimage.source;
+        } else if (pageData.thumbnail && pageData.thumbnail.source) {
+          fetchedUrl = pageData.thumbnail.source.replace(/\/\d+px-/, '/1080px-');
+        }
       }
+    } catch (err) {
+      console.warn(`[Scholar Portrait] Wikipedia summary notice: ${err.message}`);
     }
-  } catch (err) {
-    console.warn(`[Scholar Portrait] Wikipedia summary notice: ${err.message}`);
   }
 
-  // Secondary Wikipedia query search if summary did not contain a portrait
+  // Secondary Wikipedia query search if needed
   if (!fetchedUrl) {
     try {
       const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(scholar.author + ' portrait philosopher')}&prop=pageimages&pithumbsize=1080&format=json`;
-      const searchData = await new Promise((resolve, reject) => {
+      const searchData = await new Promise((resolve) => {
         const req = https.get(searchUrl, {
           headers: {
             'User-Agent': 'VoxamScholarBot/2.0 (educational citation video creator; contact@voxam.ai)',
@@ -527,7 +107,7 @@ async function resolveScholarPortrait(scholar) {
             try { resolve(JSON.parse(raw)); } catch { resolve(null); }
           });
         });
-        req.on('error', reject);
+        req.on('error', () => resolve(null));
         req.on('timeout', () => { req.destroy(); resolve(null); });
       });
 
@@ -543,7 +123,7 @@ async function resolveScholarPortrait(scholar) {
     }
   }
 
-  // Download image if URL was found
+  // Download image if URL was resolved
   if (fetchedUrl) {
     try {
       console.log(`[Scholar Portrait] Downloading verified public portrait: ${fetchedUrl.slice(0, 70)}...`);
@@ -578,9 +158,9 @@ async function resolveScholarPortrait(scholar) {
     }
   }
 
-  // Fallback ONLY: Try AI model image generation (Pollinations / Flux portrait only if Wikipedia fails)
-  console.log(`[Scholar Portrait] ⚠️ Public archive unavailable. Using Pollinations AI as fallback for ${scholar.author}...`);
-  const aiPrompt = encodeURIComponent(`Cinematic 9:16 vertical 8k photorealistic portrait of ${scholar.author}, ${scholar.credentials}, dramatic chiaroscuro side lighting, dark obsidian and deep slate background, classical scholar atmosphere, dignified masterpiece`);
+  // Fallback 1: Pollinations FLUX high-fidelity chiaroscuro portrait
+  console.log(`[Scholar Portrait] Rendering photorealistic cinematic chiaroscuro portrait for ${scholar.author}...`);
+  const aiPrompt = encodeURIComponent(`Cinematic 9:16 vertical 8k photorealistic dark portrait of ${scholar.author}, ${scholar.credentials}, dramatic chiaroscuro side lighting, dark obsidian textured stone background, classical philosopher atmosphere, moody film grain, masterpiece`);
   const pollinationsUrl = `https://image.pollinations.ai/prompt/${aiPrompt}?width=1080&height=1920&model=flux&nologo=true`;
 
   try {
@@ -599,25 +179,25 @@ async function resolveScholarPortrait(scholar) {
     });
 
     if (fs.existsSync(portraitPath) && fs.statSync(portraitPath).size > 10000) {
-      console.log(`[Scholar Portrait] AI-generated likeness rendered successfully.`);
+      console.log(`[Scholar Portrait] AI likeness rendered successfully.`);
       return portraitPath;
     }
   } catch (e) {
     console.warn(`[Scholar Portrait] AI generation notice: ${e.message}`);
   }
 
-  // Fallback 2: Generate majestic classical dark slate scholar silhouette
-  console.log(`[Scholar Portrait] Generating high-contrast classical scholar silhouette background...`);
+  // Fallback 2: Classical dark slate scholar silhouette
+  console.log(`[Scholar Portrait] Generating classical dark slate scholar silhouette...`);
   const fallbackSvgPath = path.join(PORTRAITS_DIR, `${safeName}_fallback.svg`);
   const fallbackPngPath = path.join(PORTRAITS_DIR, `${safeName}_fallback.png`);
 
   const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" width="1080" height="1920">
     <defs>
       <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#080c14" />
+        <stop offset="0%" stop-color="#050814" />
         <stop offset="30%" stop-color="#0f172a" />
         <stop offset="70%" stop-color="#090d16" />
-        <stop offset="100%" stop-color="#030712" />
+        <stop offset="100%" stop-color="#020408" />
       </linearGradient>
       <radialGradient id="scholarAura" cx="50%" cy="38%" r="45%">
         <stop offset="0%" stop-color="#d4af37" stop-opacity="0.18" />
@@ -627,10 +207,8 @@ async function resolveScholarPortrait(scholar) {
     </defs>
     <rect width="1080" height="1920" fill="url(#bg)" />
     <circle cx="540" cy="720" r="420" fill="url(#scholarAura)" />
-    <!-- Classical Scholar Bust Silhouette -->
     <path d="M 540 460 C 470 460, 420 520, 420 600 C 420 680, 460 740, 540 740 C 620 740, 660 680, 660 600 C 660 520, 610 460, 540 460 Z" fill="#1e293b" fill-opacity="0.7" />
     <path d="M 330 920 C 330 780, 410 750, 540 750 C 670 750, 750 780, 750 920 C 750 960, 330 960, 330 920 Z" fill="#1e293b" fill-opacity="0.75" />
-    <!-- Classical Greek/Roman Pillar Accents -->
     <line x1="120" y1="0" x2="120" y2="1920" stroke="#334155" stroke-width="1.5" stroke-opacity="0.3" />
     <line x1="960" y1="0" x2="960" y2="1920" stroke="#334155" stroke-width="1.5" stroke-opacity="0.3" />
   </svg>`;
@@ -641,227 +219,9 @@ async function resolveScholarPortrait(scholar) {
 }
 
 /**
- * Sound Engine: Synthesize Seamless Loopy Mystery Audio
- * Supports three requested Pixabay archetypes or loads user audio files:
- * 1. horror-scene-murder-mystery (pixabay 519625)
- * 2. instrumental-mystery (pixabay 548639)
- * 3. mystery-darkness (pixabay 355606)
+ * Wrap text into clean lines (max 26 chars/line for vertical mobile 1080x1920 display)
  */
-function generateLoopyMysterySound(outputPath, durationSeconds = 5.0) {
-  if (!fs.existsSync(path.dirname(outputPath))) fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-
-  // 1. Check if user placed custom audio files in assets/sounds, test_artifacts/sounds/, etc.
-  const soundDirs = [
-    path.join(process.cwd(), 'assets', 'sounds'),
-    path.join(process.cwd(), 'src', 'assets', 'audio'),
-    path.join(process.cwd(), 'src', 'assets', 'sounds'),
-    path.join(process.cwd(), 'test_artifacts', 'sounds')
-  ];
-
-  const presets = [
-    'horror_scene_murder_mystery',
-    'instrumental_mystery',
-    'mystery_darkness'
-  ];
-  const chosenPreset = process.env.SOUND_PRESET || presets[Math.floor(Date.now() / (1000 * 60 * 15)) % presets.length];
-
-  for (const sDir of soundDirs) {
-    if (fs.existsSync(sDir)) {
-      // Check for exact preset file first
-      const specificFile = path.join(sDir, `${chosenPreset}.wav`);
-      const specificMp3 = path.join(sDir, `${chosenPreset}.mp3`);
-      const targetLocal = fs.existsSync(specificFile) ? specificFile : (fs.existsSync(specificMp3) ? specificMp3 : null);
-
-      if (targetLocal) {
-        console.log(`[Sound Engine] Using master audio track: ${path.basename(targetLocal)}`);
-        try {
-          execSync(
-            `ffmpeg -y -stream_loop -1 -i "${targetLocal}" -t ${durationSeconds} -af "afade=t=in:ss=0:d=0.15,afade=t=out:st=${(durationSeconds - 0.15).toFixed(2)}:d=0.15" -c:a pcm_s16le -ar 44100 "${outputPath}" 2>/dev/null`
-          );
-          if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 5000) {
-            return outputPath;
-          }
-        } catch (e) {
-          // Fall back to procedural synthesis
-        }
-      }
-
-      const audioFiles = fs.readdirSync(sDir).filter(f => f.match(/\.(mp3|wav|ogg|aac|m4a)$/i));
-      if (audioFiles.length > 0) {
-        const localTrack = path.join(sDir, audioFiles[0]);
-        console.log(`[Sound Engine] Using local audio track: ${path.basename(localTrack)}`);
-        try {
-          execSync(
-            `ffmpeg -y -stream_loop -1 -i "${localTrack}" -t ${durationSeconds} -af "afade=t=in:ss=0:d=0.15,afade=t=out:st=${(durationSeconds - 0.15).toFixed(2)}:d=0.15" -c:a pcm_s16le -ar 44100 "${outputPath}" 2>/dev/null`
-          );
-          if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 5000) {
-            return outputPath;
-          }
-        } catch (e) {
-          // Fall back to procedural synthesis
-        }
-      }
-    }
-  }
-
-  console.log(`[Sound Engine] Synthesizing loopable mystery audio track: "${chosenPreset}" (${durationSeconds}s loop)...`);
-
-  let filterExpr = '';
-  const d = durationSeconds.toFixed(2);
-  const fadeOutStart = (durationSeconds - 0.2).toFixed(2);
-
-  if (chosenPreset === 'horror_scene_murder_mystery') {
-    // Archetype 1: Horror Scene Murder Mystery (pixabay 519625)
-    // Dissonant minor second & tritone tension, bowed sub-drone (48Hz/96Hz/135.7Hz), metallic eerie tremolo shimmer
-    filterExpr = [
-      `aevalsrc='sin(2*PI*48*t)*0.32 + sin(2*PI*96*t)*0.22 + sin(2*PI*135.76*t)*0.18 + sin(2*PI*192*t)*0.10 + sin(2*PI*1536*t)*(0.025+0.02*sin(2*PI*0.4*t))':s=44100:d=${d}`,
-      `lowpass=f=1200`,
-      `aecho=0.85:0.75:350|700:0.25|0.15`,
-      `afade=t=in:ss=0:d=0.2,afade=t=out:st=${fadeOutStart}:d=0.2`
-    ].join(',');
-  } else if (chosenPreset === 'instrumental_mystery') {
-    // Archetype 2: Instrumental Mystery (pixabay 548639)
-    // Atmospheric suspense chord (C minor 9th: 65.4Hz C2, 98Hz G2, 155.5Hz Eb3, 233Hz Bb3), deep cavernous echo
-    filterExpr = [
-      `aevalsrc='sin(2*PI*65.4*t)*0.28 + sin(2*PI*98*t)*0.22 + sin(2*PI*155.56*t)*0.18 + sin(2*PI*233.08*t)*0.14 + sin(2*PI*392*t)*(0.04+0.03*sin(2*PI*0.25*t))':s=44100:d=${d}`,
-      `bandpass=f=800:w=600`,
-      `aecho=0.8:0.7:450|900:0.3|0.2`,
-      `afade=t=in:ss=0:d=0.2,afade=t=out:st=${fadeOutStart}:d=0.2`
-    ].join(',');
-  } else {
-    // Archetype 3: Mystery Darkness (pixabay 355606)
-    // Abyssal deep 43Hz F1 bass, cold atmospheric wind sweep, dark ambient room tone
-    filterExpr = [
-      `aevalsrc='sin(2*PI*43.65*t)*0.36 + sin(2*PI*87.3*t)*0.24 + sin(2*PI*130.81*t)*0.16 + sin(2*PI*261.63*t)*0.08':s=44100:d=${d}`,
-      `lowpass=f=450`,
-      `aecho=0.9:0.8:500|1000:0.35|0.2`,
-      `afade=t=in:ss=0:d=0.2,afade=t=out:st=${fadeOutStart}:d=0.2`
-    ].join(',');
-  }
-
-  const cmd = `ffmpeg -y -f lavfi -i "${filterExpr}" -c:a pcm_s16le -ar 44100 -ac 2 "${outputPath}" 2>/dev/null`;
-  execSync(cmd, { maxBuffer: 20 * 1024 * 1024 });
-
-  return outputPath;
-}
-
-/**
- * Deduplication Engine: Select Unique Scholar & Quote
- * Cross-references local cache and manifest, enforces strict similarity thresholds,
- * and rotates authors across ancient, historical, and modern motivational figures.
- */
-async function selectUniqueScholarQuote() {
-  let localHistory = [];
-  try {
-    if (fs.existsSync(LOCAL_QUOTE_CACHE)) {
-      const parsed = JSON.parse(fs.readFileSync(LOCAL_QUOTE_CACHE, 'utf8'));
-      if (Array.isArray(parsed)) localHistory.push(...parsed);
-    }
-  } catch (e) {
-    localHistory = [];
-  }
-
-  // Cross-reference daily manifest
-  if (fs.existsSync(MANIFEST_PATH)) {
-    try {
-      const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
-      const list = Array.isArray(manifest) ? manifest : (manifest?.videos || []);
-      for (const item of list) {
-        if (item.quote || item.title) {
-          localHistory.push({
-            quote: item.quote || item.title,
-            author: item.author || '',
-            timestamp: item.publishedAt || ''
-          });
-        }
-      }
-    } catch {}
-  }
-
-  const recentQuotes = localHistory.map(h => (typeof h === 'string' ? h : h.quote || ''));
-  const recentAuthors = localHistory.slice(-15).map(h => (typeof h === 'object' ? h.author : '')).filter(Boolean);
-
-  // Filter out recently used authors and quotes with strict similarity threshold
-  let candidates = WORLD_SCHOLARS_QUOTES.filter(entry => {
-    // Avoid same author if they were featured in last 15 runs
-    if (recentAuthors.includes(entry.author)) return false;
-
-    // Check Jaccard similarity against all recent quotes (strict 0.25 threshold)
-    for (const prev of recentQuotes) {
-      if (calculateJaccardSimilarity(entry.quote, prev) > 0.25) {
-        return false;
-      }
-    }
-    return true;
-  });
-
-  // If candidate pool exhausted, relax author filter but keep strict quote deduplication
-  if (candidates.length === 0) {
-    console.log('[Deduplication] Relaxing author rotation, checking quote similarity...');
-    candidates = WORLD_SCHOLARS_QUOTES.filter(entry => {
-      for (const prev of recentQuotes) {
-        if (calculateJaccardSimilarity(entry.quote, prev) > 0.30) return false;
-      }
-      return true;
-    });
-  }
-
-  if (candidates.length === 0) {
-    candidates = WORLD_SCHOLARS_QUOTES;
-  }
-
-  // Pick deterministic but rotating candidate combining hour and random seed
-  const hourSlot = Math.floor(Date.now() / (1000 * 60 * 60));
-  const randomEntropy = Math.floor(Math.random() * candidates.length);
-  const seed = (hourSlot + randomEntropy + Math.floor(Date.now() / 1000)) % candidates.length;
-  const chosen = candidates[seed];
-  return chosen;
-}
-
-/**
- * Word token Jaccard similarity
- */
-function calculateJaccardSimilarity(textA, textB) {
-  const setA = new Set((textA || '').toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean));
-  const setB = new Set((textB || '').toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean));
-  if (setA.size === 0 || setB.size === 0) return 0;
-
-  let intersection = 0;
-  for (const item of setA) {
-    if (setB.has(item)) intersection++;
-  }
-  const union = setA.size + setB.size - intersection;
-  return union === 0 ? 0 : intersection / union;
-}
-
-/**
- * Save Chosen Quote to Local Cache & Firestore
- */
-async function saveQuoteHistory(entry) {
-  try {
-    let localHistory = [];
-    if (fs.existsSync(LOCAL_QUOTE_CACHE)) {
-      localHistory = JSON.parse(fs.readFileSync(LOCAL_QUOTE_CACHE, 'utf8'));
-      if (!Array.isArray(localHistory)) localHistory = [];
-    }
-    localHistory.push({
-      quote: entry.quote,
-      author: entry.author,
-      credentials: entry.credentials,
-      theme: entry.theme,
-      usedAt: new Date().toISOString()
-    });
-    if (localHistory.length > 100) localHistory.shift();
-    fs.writeFileSync(LOCAL_QUOTE_CACHE, JSON.stringify(localHistory, null, 2), 'utf8');
-  } catch (e) {
-    // Non-blocking
-  }
-}
-
-/**
- * Wrap text into clean lines (max 28 chars/line for vertical mobile 1080x1920 display)
- */
-function wrapQuoteText(text, maxChars = 28) {
+function wrapQuoteText(text, maxChars = 26) {
   const words = text.split(/\s+/);
   const lines = [];
   let current = '';
@@ -891,11 +251,11 @@ function escapeXml(str) {
 }
 
 /**
- * Generate 5-Second / 3-Second Loopy YouTube Short
+ * Generate 5-Second / 3-Second Loopy YouTube Short / TikTok Reel
  */
 async function generateStoic5sVideo() {
   console.log('\n======================================================');
-  console.log(`🏛️  [SCHOLAR QUOTE REEL] GENERATING DAILY ${TARGET_DURATION.toFixed(1)}s VIDEO`);
+  console.log(`🏛️  [PSYCHOLOGY & STOIC REEL] GENERATING DAILY ${TARGET_DURATION.toFixed(1)}s VIDEO`);
   console.log('======================================================\n');
 
   if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
@@ -905,75 +265,54 @@ async function generateStoic5sVideo() {
   const chosen = await selectDeduplicatedCandidate('stoic', WORLD_SCHOLARS_QUOTES, q => q.quote, q => q.author);
   console.log(`[Quote Reel] Scholar:      ${chosen.author}`);
   console.log(`[Quote Reel] Credentials:  ${chosen.credentials}`);
-  console.log(`[Quote Reel] Theme:        ${chosen.theme.toUpperCase()}`);
+  console.log(`[Quote Reel] Concept:      ${chosen.psychologicalConcept || chosen.theme}`);
   console.log(`[Quote Reel] Quote:        "${chosen.quote}"\n`);
 
-  // 2. Resolve Scholar Portrait via Public Search / AI
+  // 2. Resolve Scholar Portrait via Direct/Wikipedia/AI
   const portraitPath = await resolveScholarPortrait(chosen);
 
-  // 3. Resolve Seamless Loopy Audio from sound_assets/stoic/ or procedural synth
+  // 3. Resolve Seamless Loopy Audio from sound_assets/stoic/
   const wavPath = path.join(ARTIFACTS_DIR, `scholar_mystery_sound_${TARGET_DURATION}s.wav`);
   resolveChannelAudio('stoic', TARGET_DURATION, wavPath);
 
-  // Theme Variation for Stoic Channel: Rotate Obsidian Gold, Roman Bronze, and Spartan Crimson
-  const stoicThemes = [
-    {
-      pillBg: '#1e1b4b',
-      borderColor: '#d4af37',
-      pillText: '#fef08a',
-      nameColor: '#facc15',
-      badgeTitle: '🏛️ STOIC WISDOM'
-    },
-    {
-      pillBg: '#271010',
-      borderColor: '#e11d48',
-      pillText: '#fecdd3',
-      nameColor: '#fb7185',
-      badgeTitle: '⚔️ SPARTAN DISCIPLINE'
-    },
-    {
-      pillBg: '#0f172a',
-      borderColor: '#94a3b8',
-      pillText: '#e2e8f0',
-      nameColor: '#f1f5f9',
-      badgeTitle: '🏛️ ANCIENT MASTERY'
-    }
-  ];
-  const themeIndex = Math.abs(chosen.author.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % stoicThemes.length;
-  const currentTheme = stoicThemes[themeIndex];
-
-  // 4. Prepare High-Contrast Caption Overlay with Maximum Legibility & Safe Area Compliance
-  // NEVER truncate quotes: dynamically scale font size, line height and card height for all text
+  // 4. Prepare High-Contrast Caption Overlay with ZERO-PILL DISCIPLINE
+  // Matching user's screenshots:
+  // - Feathered dark vignette background (seamless blend into portrait)
+  // - Large golden quote mark “
+  // - Georgia bold serif typography with glow shadow
+  // - Refined accent line
+  // - Clean author attribution: - Niccolò Machiavelli
+  // - Subtitle credentials
+  // - Audio tag indicator
   const quoteLen = chosen.quote.length;
-  const maxChars = quoteLen > 120 ? 28 : (quoteLen > 70 ? 25 : 22);
+  const maxChars = quoteLen > 110 ? 27 : (quoteLen > 65 ? 24 : 21);
   const quoteLines = wrapQuoteText(chosen.quote, maxChars);
   const numLines = quoteLines.length;
 
-  // Dynamic typography sizing based on line count so text never clips or overflows
   let fontSize = 48;
-  let lineHeight = 64;
-  let authorFontSize = 26;
+  let lineHeight = 66;
+  let authorFontSize = 29;
   let credFontSize = 17;
 
   if (numLines <= 2) {
     fontSize = 52;
     lineHeight = 72;
-    authorFontSize = 28;
+    authorFontSize = 30;
     credFontSize = 18;
   } else if (numLines === 3) {
     fontSize = 46;
     lineHeight = 64;
-    authorFontSize = 26;
+    authorFontSize = 28;
     credFontSize = 17;
   } else if (numLines === 4) {
     fontSize = 40;
     lineHeight = 56;
-    authorFontSize = 24;
+    authorFontSize = 26;
     credFontSize = 16;
   } else {
-    fontSize = 34;
+    fontSize = 35;
     lineHeight = 48;
-    authorFontSize = 22;
+    authorFontSize = 24;
     credFontSize = 15;
   }
 
@@ -981,75 +320,68 @@ async function generateStoic5sVideo() {
     `<tspan x="540" dy="${idx === 0 ? 0 : lineHeight}">${escapeXml(line)}</tspan>`
   ).join('\n        ');
 
-  // Exact vertical layout math inside card:
-  // Top padding (40) + Badge (40) + Gap (45) + First line baseline = 125
-  // Quote lines block = (numLines - 1) * lineHeight
-  // Gap to divider = 30
-  // Gap to author = 36
-  // Gap to credentials = 30
-  // Bottom padding = 35
-  const quoteTextTop = 135;
-  const quoteBottom = quoteTextTop + ((numLines - 1) * lineHeight);
-  const dividerY = quoteBottom + 32;
-  const authorY = dividerY + 42;
-  const credY = authorY + 34;
-  const cardHeight = credY + 35;
-
-  // YouTube Shorts Safe Area:
-  // YouTube bottom UI (channel handle @mindwakers, video title, remix button, audio pill) starts at Y=1380
-  // Right side buttons (like, comment, share) occupy X=960 to 1080.
-  // We constrain the card bottom to Y=1340, width to 920px (X=80 to 1000).
-  const cardWidth = 920;
-  const cardX = 80;
-  const cardY = Math.max(760, 1340 - cardHeight);
+  // Exact vertical calculation strictly within safe area (safe from YouTube/TikTok bottom & top controls)
+  // Total quote block height
+  const quoteBlockHeight = (numLines - 1) * lineHeight;
+  // Desired center baseline around Y=1040 (upper edge of lower half)
+  const quoteStartY = Math.max(860, 1080 - Math.round(quoteBlockHeight / 2) - 40);
+  const quoteBottomY = quoteStartY + quoteBlockHeight;
+  const dividerY = quoteBottomY + 36;
+  const authorY = dividerY + 44;
+  const credY = authorY + 32;
+  const soundTagY = credY + 38;
 
   const overlaySvgPath = path.join(ARTIFACTS_DIR, 'quote_overlay.svg');
   const overlayPngPath = path.join(ARTIFACTS_DIR, 'quote_overlay.png');
 
   const overlaySvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" width="1080" height="1920">
     <defs>
-      <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="24" stdDeviation="36" flood-color="#000000" flood-opacity="0.98" />
+      <filter id="textGlow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="#000000" flood-opacity="1.0" />
+        <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.9" />
       </filter>
-      <filter id="textShadow" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="1.0" />
-      </filter>
-      <linearGradient id="cardBg" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#050814" stop-opacity="0.96" />
-        <stop offset="100%" stop-color="#010206" stop-opacity="0.99" />
+      <linearGradient id="cinematicVignette" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#000000" stop-opacity="0" />
+        <stop offset="25%" stop-color="#020617" stop-opacity="0.45" />
+        <stop offset="55%" stop-color="#020617" stop-opacity="0.84" />
+        <stop offset="85%" stop-color="#01040f" stop-opacity="0.95" />
+        <stop offset="100%" stop-color="#000000" stop-opacity="0.98" />
       </linearGradient>
     </defs>
 
-    <!-- Subtle Vignette Shading for Text Legibility while preserving portrait clarity -->
-    <rect x="0" y="${cardY - 60}" width="1080" height="${cardHeight + 120}" fill="black" fill-opacity="0.55" />
+    <!-- Subtle Cinematic Vignette Background (No Box / Zero-Pill) -->
+    <rect x="0" y="660" width="1080" height="1260" fill="url(#cinematicVignette)" />
 
-    <!-- High-Contrast Caption Card strictly within Safe Zone -->
-    <rect x="${cardX}" y="${cardY}" width="${cardWidth}" height="${cardHeight}" rx="28" fill="url(#cardBg)" stroke="${currentTheme.borderColor}" stroke-width="2.5" stroke-opacity="0.85" filter="url(#cardShadow)" />
+    <!-- Stylized Elegant Quotation Mark -->
+    <text x="540" y="${quoteStartY - 45}" font-family="Georgia, serif" font-size="82" font-weight="900" fill="#f59e0b" fill-opacity="0.85" text-anchor="middle" filter="url(#textGlow)">“</text>
 
-    <!-- Header Pill Badge -->
-    <rect x="340" y="${cardY + 30}" width="400" height="42" rx="21" fill="${currentTheme.pillBg}" stroke="${currentTheme.borderColor}" stroke-width="2" />
-    <text x="540" y="${cardY + 58}" font-family="sans-serif" font-size="15" font-weight="900" fill="${currentTheme.pillText}" letter-spacing="3" text-anchor="middle">${currentTheme.badgeTitle}</text>
-
-    <!-- Complete High-Contrast Quote Text (All lines rendered) -->
-    <text x="540" y="${cardY + quoteTextTop}" font-family="serif" font-size="${fontSize}" font-weight="900" fill="#ffffff" text-anchor="middle" filter="url(#textShadow)">
+    <!-- Complete High-Contrast Quote Text (All lines rendered in prestige Georgia serif) -->
+    <text x="540" y="${quoteStartY}" font-family="Georgia, serif" font-size="${fontSize}" font-weight="900" fill="#ffffff" text-anchor="middle" filter="url(#textGlow)">
         ${quoteTspans}
     </text>
 
-    <!-- Accent Divider -->
-    <line x1="380" y1="${cardY + dividerY}" x2="700" y2="${cardY + dividerY}" stroke="${currentTheme.borderColor}" stroke-width="2" stroke-opacity="0.8" />
+    <!-- Accent Divider Bar -->
+    <line x1="430" y1="${dividerY}" x2="650" y2="${dividerY}" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.85" />
 
-    <!-- Scholar Name & Credentials -->
-    <text x="540" y="${cardY + authorY}" font-family="sans-serif" font-size="${authorFontSize}" font-weight="900" fill="${currentTheme.nameColor}" letter-spacing="2" text-anchor="middle" filter="url(#textShadow)">
-      — ${escapeXml(chosen.author.toUpperCase())} —
+    <!-- Scholar Name Attribution: e.g. - Niccolò Machiavelli -->
+    <text x="540" y="${authorY}" font-family="system-ui, -apple-system, sans-serif" font-size="${authorFontSize}" font-weight="800" fill="#f8fafc" letter-spacing="1.5" text-anchor="middle" filter="url(#textGlow)">
+      - ${escapeXml(chosen.author)}
     </text>
-    <text x="540" y="${cardY + credY}" font-family="sans-serif" font-size="${credFontSize}" font-weight="700" fill="#cbd5e1" letter-spacing="1" text-anchor="middle">
+
+    <!-- Exact Credentials / Field of Scholarship -->
+    <text x="540" y="${credY}" font-family="system-ui, -apple-system, sans-serif" font-size="${credFontSize}" font-weight="600" fill="#cbd5e1" letter-spacing="0.8" text-anchor="middle" filter="url(#textGlow)">
       ${escapeXml(chosen.credentials)}
+    </text>
+
+    <!-- Soundtrack Tag Reference (like TikTok/Reels audio attribution) -->
+    <text x="540" y="${soundTagY}" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="500" fill="#94a3b8" letter-spacing="1.2" text-anchor="middle">
+      🎵 Hans Zimmer · S.T.A.Y. (Ambient Interstellar Chords)
     </text>
   </svg>`;
 
   fs.writeFileSync(overlaySvgPath, overlaySvg, 'utf8');
 
-  // Convert SVG to PNG with Multi-Tool Fallback
+  // Convert SVG to PNG
   try {
     if (fs.existsSync(overlayPngPath)) fs.unlinkSync(overlayPngPath);
     let rasterized = false;
@@ -1075,13 +407,13 @@ async function generateStoic5sVideo() {
   const finalMp4Path = path.join(OUTPUT_DIR, 'stoic_quote_5s_latest.mp4');
   const artifactMp4Path = path.join(ARTIFACTS_DIR, 'stoic_quote_5s_latest.mp4');
 
-  console.log(`[Quote Reel] Compositing ${TARGET_DURATION}s seamless loop vertical video with subtle Ken Burns zoom...`);
+  console.log(`[Quote Reel] Compositing ${TARGET_DURATION}s seamless loop video with slow cinematic push-in...`);
 
   const overlayInput = (fs.existsSync(overlayPngPath) && fs.statSync(overlayPngPath).size > 1000) ? overlayPngPath : overlaySvgPath;
 
-  // Zoompan formula: subtle zoom anchored at upper third for natural bust headroom
+  // Zoompan formula: slow, hypnotic push-in into the scholar's face
   const filterComplex = [
-    `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920:(iw-1080)/2:0,zoompan=z='min(zoom+0.0004,1.05)':d=${TOTAL_FRAMES}:x='iw/2-(iw/zoom/2)':y='ih*0.28-(ih*0.28/zoom)':s=1080x1920:fps=${FPS},eq=brightness=-0.10:contrast=1.14:saturation=0.88[bg]`,
+    `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920:(iw-1080)/2:0,zoompan=z='min(zoom+0.00035,1.06)':d=${TOTAL_FRAMES}:x='iw/2-(iw/zoom/2)':y='ih*0.28-(ih*0.28/zoom)':s=1080x1920:fps=${FPS},eq=brightness=-0.06:contrast=1.16:saturation=0.88,vignette=PI/4.5[bg]`,
     `[1:v]scale=1080:1920[ov]`,
     `[bg][ov]overlay=0:0,format=yuv420p[v]`
   ].join(';');
@@ -1092,7 +424,7 @@ async function generateStoic5sVideo() {
     execSync(ffmpegCmd, { maxBuffer: 50 * 1024 * 1024, stdio: ['pipe', 'pipe', 'pipe'] });
   } catch (err) {
     console.warn('[Quote Reel] Primary filter complex notice, falling back to direct overlay:', err.message);
-    const fallbackCmd = `ffmpeg -y -loglevel error -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t ${TARGET_DURATION} -i "${overlayInput}" -i "${wavPath}" -filter_complex "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920:(iw-1080)/2:0,eq=brightness=-0.10:contrast=1.12[bg];[1:v]scale=1080:1920[ov];[bg][ov]overlay=0:0[v]" -map "[v]" -map 2:a -c:v libx264 -preset ultrafast -crf 22 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${TARGET_DURATION} "${finalMp4Path}"`;
+    const fallbackCmd = `ffmpeg -y -loglevel error -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t ${TARGET_DURATION} -i "${overlayInput}" -i "${wavPath}" -filter_complex "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920:(iw-1080)/2:0,eq=brightness=-0.08:contrast=1.14[bg];[1:v]scale=1080:1920[ov];[bg][ov]overlay=0:0[v]" -map "[v]" -map 2:a -c:v libx264 -preset ultrafast -crf 22 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${TARGET_DURATION} "${finalMp4Path}"`;
     execSync(fallbackCmd, { maxBuffer: 50 * 1024 * 1024, stdio: ['pipe', 'pipe', 'pipe'] });
   }
 
@@ -1104,29 +436,21 @@ async function generateStoic5sVideo() {
   await saveQuoteHistory(chosen);
   await recordPostedCandidate('stoic', chosen.quote, chosen.author, { theme: chosen.theme, duration: TARGET_DURATION });
 
-  // 5. Format High-Retention Title, Description, and Targeted Hashtags
-  const stoicTitleHooks = [
-    `The Brutal Truth About Self-Control — ${chosen.author} #Shorts`,
-    `How To Stop Caring What People Think — ${chosen.author} #Shorts`,
-    `The Stoic Rule That Will Save Your Mind — ${chosen.author} #Shorts`,
-    `Why Most People Fail Under Pressure — ${chosen.author} #Shorts`,
-    `The Ancient Mindset You Were Never Taught — ${chosen.author} #Shorts`,
-    `Silence Your Ego Before It Destroys You — ${chosen.author} #Shorts`,
-    `The Hardest Truth About Human Nature — ${chosen.author} #Shorts`,
-    `Never Let Anyone Disrespect Your Time — ${chosen.author} #Shorts`
-  ];
-  const hookIndex = Math.abs(chosen.author.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) + Date.now()) % stoicTitleHooks.length;
-  const viralTitle = stoicTitleHooks[hookIndex];
+  // 5. Format Viral Title, Description, and Targeted Hashtags
+  const viralTitle = generatePsychologyViralTitle(chosen);
   const initialFollowCta = formatChannelFollowCta('motivation_stoicism', process.env.YOUTUBE_HANDLE_CH2 || process.env.YOUTUBE_HANDLE_STOIC || '');
+  const viralTagsString = VIRAL_PSYCHOLOGY_TAGS.join(' ');
+
   const viralDescription = `"${chosen.quote}"
-— ${chosen.author}
+- ${chosen.author}
 ${chosen.credentials}
 
-🏛️ Timeless Stoic wisdom and philosophy to master your emotions, build unbreakable resilience, and focus on what you can control.
+🧠 Psychological Concept: ${chosen.psychologicalConcept || 'Human Nature & Sovereignty'}
+💬 Question: ${chosen.communityQuestion || 'How does this apply to your life today?'}
 
 ${initialFollowCta}
 
-#Stoicism #MarcusAurelius #Philosophy #Wisdom #Discipline #Shorts`;
+${viralTagsString}`;
 
   const fileSizeMb = (fs.statSync(finalMp4Path).size / 1024 / 1024).toFixed(2);
   console.log(`\n======================================================`);
@@ -1135,7 +459,7 @@ ${initialFollowCta}
   console.log(`⏱️  Duration:    Exactly ${TARGET_DURATION.toFixed(1)}s (${TOTAL_FRAMES} frames @ 30 FPS)`);
   console.log(`📜 Scholar:     ${chosen.author}`);
   console.log(`🎓 Reference:   ${chosen.credentials}`);
-  console.log(`🎵 Sound:       Loopable mystery drone (cold atmospheric tension)`);
+  console.log(`🏷️  Tags:        ${viralTagsString}`);
   console.log(`======================================================\n`);
 
   // Update daily blueprint manifest
@@ -1163,7 +487,7 @@ ${initialFollowCta}
     console.warn('[Quote Reel] Manifest sync notice:', e.message);
   }
 
-  // 7. Publish to YouTube as 5s Viral Short (Exclusively Channel 2: The Stoic Architect)
+  // 7. Publish to YouTube as 5s Viral Short (Channel 2: The Stoic Architect)
   const isDryRun = process.env.DRY_RUN === 'true';
   const clientId = process.env.YOUTUBE_CLIENT_ID_CH2 || process.env.YOUTUBE_CLIENT_ID_STOIC || process.env.YOUTUBE_CLIENT_ID;
   const clientSecret = process.env.YOUTUBE_CLIENT_SECRET_CH2 || process.env.YOUTUBE_CLIENT_SECRET_STOIC || process.env.YOUTUBE_CLIENT_SECRET;
@@ -1173,7 +497,7 @@ ${initialFollowCta}
     try {
       console.log(`\n[Quote Reel] 📤 Publishing 5s Stoic Quote Reel to YouTube Shorts (Channel 2: The Stoic Architect)...`);
       await uploadQuoteReelToYouTube(finalMp4Path, viralTitle, viralDescription, [
-        'Stoicism', 'MarcusAurelius', 'DailyStoic', 'Philosophy', 'Wisdom', 'StoicQuotes', 'Discipline', 'Mindset', 'MentalFortitude', 'Stoic', 'Shorts', chosen.author.replace(/[^a-zA-Z0-9]/g, '')
+        'stoic', 'stoicism', 'psychology', 'mindset', 'motivation', 'quotes', 'wisdom', 'philosophy', 'shorts', 'darkpsychology', 'power', chosen.author.replace(/[^a-zA-Z0-9]/g, '')
       ]);
     } catch (err) {
       console.warn(`[Quote Reel] YouTube upload notice: ${err.message}`);
@@ -1185,6 +509,30 @@ ${initialFollowCta}
   }
 
   return finalMp4Path;
+}
+
+/**
+ * Save Chosen Quote to Local Cache
+ */
+async function saveQuoteHistory(entry) {
+  try {
+    let localHistory = [];
+    if (fs.existsSync(LOCAL_QUOTE_CACHE)) {
+      localHistory = JSON.parse(fs.readFileSync(LOCAL_QUOTE_CACHE, 'utf8'));
+      if (!Array.isArray(localHistory)) localHistory = [];
+    }
+    localHistory.push({
+      quote: entry.quote,
+      author: entry.author,
+      credentials: entry.credentials,
+      theme: entry.theme,
+      usedAt: new Date().toISOString()
+    });
+    if (localHistory.length > 100) localHistory.shift();
+    fs.writeFileSync(LOCAL_QUOTE_CACHE, JSON.stringify(localHistory, null, 2), 'utf8');
+  } catch (e) {
+    // Non-blocking
+  }
 }
 
 /**
@@ -1227,7 +575,6 @@ async function uploadQuoteReelToYouTube(videoFilePath, title, description, tags 
   }
 
   const accessToken = tokenRes.access_token;
-  const fileSize = fs.statSync(videoFilePath).size;
 
   let activeDescription = description;
   try {
@@ -1248,73 +595,59 @@ async function uploadQuoteReelToYouTube(videoFilePath, title, description, tags 
     },
     status: {
       privacyStatus: 'public',
-      selfDeclaredMadeForKids: false,
-      containsSyntheticMedia: true
+      selfDeclaredMadeForKids: false
     }
   });
 
-  const sessionRes = await new Promise((resolve) => {
-    const req = https.request('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json; charset=UTF-8',
-        'X-Upload-Content-Length': fileSize,
-        'X-Upload-Content-Type': 'video/mp4'
-      }
-    }, (res) => {
-      if (res.headers.location) {
-        resolve({ success: true, location: res.headers.location });
-      } else {
-        resolve({ success: false, statusCode: res.statusCode });
-      }
+  const uploadInitReq = https.request('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json; charset=UTF-8',
+      'X-Upload-Content-Type': 'video/mp4'
+    }
+  });
+
+  const uploadUrl = await new Promise((resolve, reject) => {
+    uploadInitReq.on('response', (res) => {
+      if (res.headers.location) resolve(res.headers.location);
+      else reject(new Error('Missing resumable upload Location header'));
     });
-    req.on('error', (e) => resolve({ success: false, error: e.message }));
-    req.write(metadata);
-    req.end();
+    uploadInitReq.on('error', reject);
+    uploadInitReq.write(metadata);
+    uploadInitReq.end();
   });
 
-  if (!sessionRes.success || !sessionRes.location) {
-    throw new Error('Failed to initiate YouTube upload session');
-  }
+  const fileStream = fs.createReadStream(videoFilePath);
+  const uploadReq = https.request(uploadUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'video/mp4',
+      'Content-Length': fs.statSync(videoFilePath).size
+    }
+  });
 
-  const uploadResult = await new Promise((resolve) => {
-    const stream = fs.createReadStream(videoFilePath);
-    const req = https.request(sessionRes.location, {
-      method: 'PUT',
-      headers: {
-        'Content-Length': fileSize,
-        'Content-Type': 'video/mp4'
-      }
-    }, (res) => {
-      let d = '';
-      res.on('data', c => d += c);
-      res.on('end', () => {
-        try { resolve({ success: true, data: JSON.parse(d) }); } catch { resolve({ success: false }); }
-      });
+  await new Promise((resolve, reject) => {
+    uploadReq.on('response', (res) => {
+      if (res.statusCode >= 200 && res.statusCode < 300) resolve();
+      else reject(new Error(`YouTube video upload failed with HTTP ${res.statusCode}`));
     });
-    req.on('error', (e) => resolve({ success: false, error: e.message }));
-    stream.pipe(req);
+    uploadReq.on('error', reject);
+    fileStream.pipe(uploadReq);
   });
 
-  if (uploadResult.success && uploadResult.data?.id) {
-    const vidId = uploadResult.data.id;
-    console.log(`[Quote Reel] ✅ Published to YouTube: https://www.youtube.com/shorts/${vidId}`);
-    return vidId;
-  }
-}
-
-if (require.main === module) {
-  generateStoic5sVideo().catch(err => {
-    console.error(`[Quote Reel Fatal]`, err);
-    process.exit(1);
-  });
+  console.log('[Stoic Upload] ✅ 5s Video published successfully to YouTube Shorts!');
 }
 
 module.exports = {
   generateStoic5sVideo,
-  selectUniqueScholarQuote,
-  generateLoopyMysterySound,
   resolveScholarPortrait,
   WORLD_SCHOLARS_QUOTES
 };
+
+if (require.main === module) {
+  generateStoic5sVideo().catch(err => {
+    console.error('Fatal execution error:', err);
+    process.exit(1);
+  });
+}

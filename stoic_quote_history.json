@@ -280,5 +280,19 @@
     "credentials": "Stoic Boxer & Successor to Zeno • Athens",
     "theme": "fortitude",
     "usedAt": "2026-09-18T14:43:05.069Z"
+  },
+  {
+    "quote": "A wise prince should establish himself on that which is in his own control and not in that of others.",
+    "author": "Niccolò Machiavelli",
+    "credentials": "Author of The Prince • Diplomat & Political Philosopher",
+    "theme": "power",
+    "usedAt": "2026-09-24T13:21:18.497Z"
+  },
+  {
+    "quote": "No price is too high to pay for the privilege of owning yourself.",
+    "author": "Prof. Friedrich Nietzsche",
+    "credentials": "Chair of Classical Philology • University of Basel",
+    "theme": "sovereignty",
+    "usedAt": "2026-09-24T13:21:38.611Z"
   }
 ]

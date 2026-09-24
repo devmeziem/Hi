@@ -74,8 +74,8 @@ function formatViralShortsTitle(rawHeadline, nicheOrCategory = 'stoic', isDeepDi
   // 2. Select curated viral & trending hashtags for this niche
   const lower = (nicheOrCategory || '').toLowerCase();
   let tagPool = [];
-  if (lower.includes('stoic') || lower.includes('mind') || lower.includes('discipline') || lower.includes('motivation')) {
-    tagPool = ['#Shorts', '#viral', '#trending', '#stoic', '#mindset', '#discipline', '#motivation', '#fyp'];
+  if (lower.includes('stoic') || lower.includes('mind') || lower.includes('discipline') || lower.includes('motivation') || lower.includes('psycholog')) {
+    tagPool = ['#Shorts', '#stoic', '#stoicism', '#psychology', '#mindset', '#motivation', '#quotes', '#wisdom', '#philosophy', '#darkpsychology', '#viral', '#fyp'];
   } else if (lower.includes('fin') || lower.includes('money') || lower.includes('business') || lower.includes('wealth')) {
     tagPool = ['#Shorts', '#viral', '#trending', '#money', '#finance', '#wealth', '#business', '#fyp'];
   } else if (lower.includes('tech') || lower.includes('ai') || lower.includes('code') || lower.includes('developer')) {

@@ -35,6 +35,12 @@ const RENDERED_VIDEOS_DIR = path.join(process.cwd(), 'rendered_videos');
 const FACTS_CACHE = path.join(process.cwd(), 'archie_tech_facts_cache.json');
 const LATEST_FACT_JSON = path.join(process.cwd(), 'test_artifacts', 'archie_tech_fact_latest.json');
 
+for (const dir of [ARTIFACTS_DIR, OUTPUT_DIR, RENDERED_VIDEOS_DIR]) {
+  if (!fs.existsSync(dir)) {
+    try { fs.mkdirSync(dir, { recursive: true }); } catch {}
+  }
+}
+
 /**
  * Robust HTTPS Buffer Fetcher with Redirect & User-Agent Handling
  */

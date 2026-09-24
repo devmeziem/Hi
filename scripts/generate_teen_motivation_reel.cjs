@@ -28,6 +28,12 @@ const https = require('https');
 const { execSync } = require('child_process');
 const { resolveChannelAudio } = require('./audio_asset_manager.cjs');
 const { selectDeduplicatedCandidate, recordPostedCandidate } = require('./channel_dedup_service.cjs');
+const {
+  CURATED_15S_CONFRONTATIONS,
+  CURATED_5S_WISDOM,
+  autoFetchDynamicConfrontation,
+  autoFetchDynamic5sWisdom
+} = require('./mindrush_content_engine.cjs');
 
 const OUTPUT_DIR = path.join(process.cwd(), 'rendered_videos');
 const ARTIFACTS_DIR = path.join(process.cwd(), 'test_artifacts', 'motivation_reels');
@@ -236,69 +242,9 @@ const CATALOG_5S_QUOTES = [
   }
 ];
 
-// 2. Curated Catalog of 15-Second Public Opinion vs Reality Slam Debates
-const CATALOG_15S_DEBATES = [
-  {
-    format: "doubt_execution",
-    speaker1Label: "Public Opinion:",
-    speaker1Text: "You are wasting your prime years working so hard.",
-    speaker2Label: "The Reality:",
-    speaker2Line1: "Trading cheap dopamine for an",
-    speaker2Highlight: "indomitable",
-    speaker2Line2: "life you can neither ignore nor replicate.",
-    theme: "indomitable_life"
-  },
-  {
-    format: "doubt_execution",
-    speaker1Label: "They said:",
-    speaker1Text: "Just relax and enjoy your youth like everyone else.",
-    speaker2Label: "The Proof:",
-    speaker2Line1: "Refusing mediocrity to build an",
-    speaker2Highlight: "unshakeable",
-    speaker2Line2: "foundation while they sleep on their potential.",
-    theme: "unshakeable_foundation"
-  },
-  {
-    format: "doubt_execution",
-    speaker1Label: "Them:",
-    speaker1Text: "Why are you obsessed? It's not that deep.",
-    speaker2Label: "Me:",
-    speaker2Line1: "Forging daily habits with",
-    speaker2Highlight: "relentless",
-    speaker2Line2: "precision so failure is never an option.",
-    theme: "relentless_precision"
-  },
-  {
-    format: "doubt_execution",
-    speaker1Label: "The crowd:",
-    speaker1Text: "You will burn out if you never party.",
-    speaker2Label: "The truth:",
-    speaker2Line1: "Channeling pure hunger into an",
-    speaker2Highlight: "invincible",
-    speaker2Line2: "craft that leaves no room for regret.",
-    theme: "invincible_craft"
-  },
-  {
-    format: "doubt_execution",
-    speaker1Label: "They think:",
-    speaker1Text: "Success is just luck and who you know.",
-    speaker2Label: "Reality check:",
-    speaker2Line1: "Stacking undeniable wins through",
-    speaker2Highlight: "uncompromising",
-    speaker2Line2: "execution day after day.",
-    theme: "uncompromising_execution"
-  },
-  {
-    format: "doubt_execution",
-    speaker1Label: "The doubt:",
-    speaker1Text: "Nobody stays consistent forever.",
-    speaker2Label: "The execution:",
-    speaker2Line1: "Transforming daily discipline into an",
-    speaker2Highlight: "immutable",
-    speaker2Line2: "identity rather than a temporary mood.",
-    theme: "immutable_identity"
-  }
-];
+// 2. Curated Catalog of 15-Second Personalized Confrontations & Throwback Slams
+// (Zero generic "Public Opinion" — Strictly personalized fictional personas + toxic jabs vs lethal comeback)
+const CATALOG_15S_DEBATES = CURATED_15S_CONFRONTATIONS;
 
 function escapeXml(unsafe) {
   return String(unsafe)
@@ -538,10 +484,11 @@ async function render5sTeenReel(customQuote = null) {
   console.log(`⚡ [MINDRUSH 5s] GENERATING WISDOM REEL (${duration}s)`);
   console.log(`======================================================\n`);
 
-  // 1. Select Deduplicated Candidate
+  // 1. Select Deduplicated Candidate with Dynamic Auto-Fetch
   let chosen = customQuote;
   if (!chosen) {
-    chosen = await selectDeduplicatedCandidate('teen', CATALOG_5S_QUOTES, q => `${q.line1} ${q.line2} ${q.line3}`, q => q.author);
+    const combined5sPool = [...CURATED_5S_WISDOM, ...CATALOG_5S_QUOTES];
+    chosen = await selectDeduplicatedCandidate('mindrush_5s', combined5sPool, q => `${q.line1} ${q.line2} ${q.line3}`, q => q.author, autoFetchDynamic5sWisdom);
   }
 
   console.log(`[5s Reel] Line 1:  "${chosen.line1}"`);
@@ -569,22 +516,22 @@ async function render5sTeenReel(customQuote = null) {
     execSync(`rsvg-convert -w 1080 -h 1920 -o "${overlayPngPath}" "${overlaySvgPath}" 2>/dev/null || true`);
   }
 
-  // 5. Composite MP4 with Ken Burns Effect
+  // 5. Composite MP4 with Beat-Synced Ken Burns Effect (~130 BPM Pulse Rhythm)
   const timestamp = Date.now();
   const outMp4 = path.join(ARTIFACTS_DIR, `teen_motivation_5s_${timestamp}.mp4`);
   const latestMp4 = path.join(OUTPUT_DIR, 'teen_motivation_latest.mp4');
   const fps = 30;
   const totalFrames = Math.round(duration * fps);
 
-  console.log(`[5s Reel] 🎥 Rendering MP4 with Ken Burns zoom/pan (${totalFrames} frames)...`);
-  const complexFilter = `[0:v]scale=-2:2160,zoompan=z='min(zoom+0.0018,1.25)':d=${totalFrames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=${fps}[bg];[bg][1:v]overlay=0:0[v]`;
+  console.log(`[5s Reel] 🎥 Rendering MP4 with Beat-Synced camera pan/zoom (${totalFrames} frames)...`);
+  const complexFilter = `[0:v]scale=-2:2160,zoompan=z='min(zoom+0.0012 + 0.008*sin(2*PI*on/14),1.25)':d=${totalFrames}:x='iw/2-(iw/zoom/2) + sin(2*PI*on/28)*12':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=${fps}[bg];[bg][1:v]overlay=0:0[v]`;
 
   const ffmpegCmd = `ffmpeg -y -loop 1 -i "${bgImagePath}" -loop 1 -t ${duration} -i "${overlayPngPath}" -i "${audioWavPath}" -filter_complex "${complexFilter}" -map "[v]" -map 2:a -t ${duration} -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k "${outMp4}" 2>/dev/null`;
 
   try {
     execSync(ffmpegCmd);
   } catch (e) {
-    console.warn(`[5s Reel] Notice on dynamic zoompan: ${e.message}, retrying smooth pan...`);
+    console.warn(`[5s Reel] Notice on beat-synced zoompan: ${e.message}, retrying smooth pan...`);
     const fallbackFilter = `[0:v]scale=1200:2133:force_original_aspect_ratio=increase,crop=1080:1920[bg];[bg][1:v]overlay=0:0[v]`;
     const fallbackCmd = `ffmpeg -y -loop 1 -t ${duration} -i "${bgImagePath}" -loop 1 -t ${duration} -i "${overlayPngPath}" -i "${audioWavPath}" -filter_complex "${fallbackFilter}" -map "[v]" -map 2:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${duration} "${outMp4}" 2>/dev/null`;
     execSync(fallbackCmd);
@@ -595,7 +542,7 @@ async function render5sTeenReel(customQuote = null) {
     console.log(`[5s Reel] ✅ SUCCESS: Rendered ${(fs.statSync(outMp4).size / (1024 * 1024)).toFixed(2)} MB`);
     console.log(`[5s Reel] 📁 Latest Video: ${latestMp4}`);
 
-    await recordPostedCandidate('teen', `${chosen.line1} ${chosen.line2} ${chosen.line3}`, chosen.author, {
+    await recordPostedCandidate('mindrush_5s', `${chosen.line1} ${chosen.line2} ${chosen.line3}`, chosen.author, {
       theme: chosen.theme,
       duration: 5.0
     });
@@ -618,10 +565,11 @@ async function render15sTeenReel(customDebate = null) {
   console.log(`⚡ [MINDRUSH 15s] GENERATING INTENSE REALITY SLAM REEL (${duration}s)`);
   console.log(`======================================================\n`);
 
-  // 1. Select Deduplicated Candidate
+  // 1. Select Deduplicated Candidate with Dynamic Auto-Fetch
   let chosen = customDebate;
   if (!chosen) {
-    chosen = await selectDeduplicatedCandidate('teen_15s', CATALOG_15S_DEBATES, d => `${d.speaker1Text} ${d.speaker2Highlight}`, d => d.speaker2Label);
+    const combined15sPool = [...CURATED_15S_CONFRONTATIONS, ...CATALOG_15S_DEBATES];
+    chosen = await selectDeduplicatedCandidate('mindrush_15s', combined15sPool, d => `${d.speaker1Text} ${d.speaker2Highlight} ${d.speaker2Line2 || ''}`, d => d.speaker2Label, autoFetchDynamicConfrontation);
   }
 
   console.log(`[15s Slam] Speaker 1: ${chosen.speaker1Label} "${chosen.speaker1Text}"`);
@@ -660,14 +608,14 @@ async function render15sTeenReel(customDebate = null) {
     execSync(`rsvg-convert -w 1080 -h 1920 -o "${seg3PngPath}" "${seg3SvgPath}" 2>/dev/null || true`);
   }
 
-  // 5. Render Video Segments
+  // 5. Render Video Segments with Beat-Synced Camera Motions
   const fps = 30;
   const seg1Mp4 = path.join(ARTIFACTS_DIR, `teen_seg1_${Date.now()}.mp4`);
   const seg2Mp4 = path.join(ARTIFACTS_DIR, `teen_seg2_${Date.now()}.mp4`);
   const seg3Mp4 = path.join(ARTIFACTS_DIR, `teen_seg3_${Date.now()}.mp4`);
 
-  console.log(`[15s Slam] Rendering Scene 1 (0-7.0s: Doubt + Blinking Cursor with slow mysterious drift)...`);
-  const seg1Filter = `[0:v]scale=-2:2160,zoompan=z='min(zoom+0.0008,1.15)':d=210:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=${fps}[bg];[bg][1:v]overlay=0:0[v]`;
+  console.log(`[15s Slam] Rendering Scene 1 (0-7.0s: Doubt + Blinking Cursor with beat-synced mysterious drift)...`);
+  const seg1Filter = `[0:v]scale=-2:2160,zoompan=z='min(zoom+0.0006 + 0.004*sin(2*PI*on/14),1.18)':d=210:x='iw/2-(iw/zoom/2) + sin(2*PI*on/28)*12':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=${fps}[bg];[bg][1:v]overlay=0:0[v]`;
   try {
     execSync(`ffmpeg -y -loop 1 -i "${img1Path}" -loop 1 -t 7.0 -i "${seg1PngPath}" -filter_complex "${seg1Filter}" -map "[v]" -t 7.0 -c:v libx264 -preset fast -pix_fmt yuv420p "${seg1Mp4}" 2>/dev/null`);
   } catch (err) {
@@ -678,13 +626,14 @@ async function render15sTeenReel(customDebate = null) {
   // Segment 2 (0.8s = 24 frames): Pure pitch black
   execSync(`ffmpeg -y -f lavfi -i color=c=black:s=1080x1920:d=0.8:r=${fps} -c:v libx264 -preset fast -pix_fmt yuv420p "${seg2Mp4}" 2>/dev/null`);
 
-  console.log(`[15s Slam] Rendering Scene 3 (7.8-15.0s: Explosive Center Slam + Violent Camera Punch)...`);
+  console.log(`[15s Slam] Rendering Scene 3 (7.8-15.0s: Explosive Center Slam + Beat-Synced 808 Camera Pulse)...`);
   // Segment 3 (7.2s = 216 frames):
-  // 1. Violent camera punch: Starts at 1.50 zoom, crashes down to 1.06 in 10 frames with screen shake jitter
-  // 2. White impact flash on frame 0-2 (drawbox)
-  // 3. Crisp dark-backed text overlay composited on top
-  const seg3Filter = `[0:v]scale=-2:2160,zoompan=z='if(lte(on,10),1.50-on*0.044,1.06+(on-10)*0.0003)':d=216:x='iw/2-(iw/zoom/2)+if(lte(on,8),(mod(on,2)*2-1)*16*(8-on)/8,0)':y='ih*0.4-(ih*0.4/zoom)+if(lte(on,8),(mod(on,3)-1)*12*(8-on)/8,0)':s=1080x1920:fps=${fps}[bg];` +
-    `[bg]drawbox=x=0:y=0:w=1080:h=1920:color=white@0.80:t=fill:enable='lte(n,2)'[bgflash];` +
+  // 1. Violent camera punch: Starts at 1.50 zoom, crashes down to 1.06 in 10 frames with screen tremor jitter
+  // 2. Continuous beat-synced 808 bass-pulse zoom (sin 14 frames ~130 BPM)
+  // 3. White impact flash on frame 0-2 (drawbox)
+  // 4. Crisp dark-backed text overlay composited on top
+  const seg3Filter = `[0:v]scale=-2:2160,zoompan=z='if(lte(on,10),1.50-on*0.044,1.06+(on-10)*0.0003 + 0.012*sin(2*PI*(on-10)/14))':d=216:x='iw/2-(iw/zoom/2)+if(lte(on,8),(mod(on,2)*2-1)*16*(8-on)/8,sin(2*PI*(on-10)/28)*15)':y='ih*0.4-(ih*0.4/zoom)+if(lte(on,8),(mod(on,3)-1)*12*(8-on)/8,0)':s=1080x1920:fps=${fps}[bg];` +
+    `[bg]drawbox=x=0:y=0:w=1080:h=1920:color=white@0.85:t=fill:enable='lte(n,2)'[bgflash];` +
     `[bgflash][1:v]overlay=0:0[v]`;
 
   try {
@@ -700,7 +649,7 @@ async function render15sTeenReel(customDebate = null) {
   const outMp4 = path.join(ARTIFACTS_DIR, `teen_motivation_15s_${timestamp}.mp4`);
   const latestMp4 = path.join(OUTPUT_DIR, 'teen_motivation_latest.mp4');
 
-  console.log(`[15s Slam] 🎬 Concatenating Master Reel with User-Uploaded Soundtrack...`);
+  console.log(`[15s Slam] 🎬 Concatenating Master Reel with Real Phonk Soundtrack...`);
   const concatFilter = `[0:v]setsar=1[v0];[1:v]setsar=1[v1];[2:v]setsar=1[v2];[v0][v1][v2]concat=n=3:v=1:a=0[vcat]`;
   const finalCmd = `ffmpeg -y -i "${seg1Mp4}" -i "${seg2Mp4}" -i "${seg3Mp4}" -i "${audioWavPath}" -filter_complex "${concatFilter}" -map "[vcat]" -map 3:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t 15.0 -shortest "${outMp4}" 2>/dev/null`;
 
@@ -711,7 +660,7 @@ async function render15sTeenReel(customDebate = null) {
     console.log(`[15s Slam] ✅ SUCCESS: Rendered MindRush 15s Video (${(fs.statSync(outMp4).size / (1024 * 1024)).toFixed(2)} MB)`);
     console.log(`[15s Slam] 📁 Latest Video: ${latestMp4}`);
 
-    await recordPostedCandidate('teen_15s', `${chosen.speaker1Text} -> ${chosen.speaker2Highlight}`, chosen.speaker2Label, {
+    await recordPostedCandidate('mindrush_15s', `${chosen.speaker1Text} -> ${chosen.speaker2Highlight} -> ${chosen.speaker2Line2 || ''}`, chosen.speaker2Label, {
       theme: chosen.theme,
       duration: 15.0
     });

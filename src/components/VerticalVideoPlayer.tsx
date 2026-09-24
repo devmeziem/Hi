@@ -700,6 +700,38 @@ export const VerticalVideoPlayer: React.FC<VerticalVideoPlayerProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button
                 onClick={() => {
+                  setVideoSrc('/rendered_videos/stoic_quote_5s_latest.mp4');
+                  setPlayerMode('video');
+                  setIsPlaying(true);
+                }}
+                className={`p-2.5 rounded-xl border text-left text-xs transition-all cursor-pointer ${
+                  videoSrc === '/rendered_videos/stoic_quote_5s_latest.mp4' && playerMode === 'video'
+                    ? 'bg-amber-950/80 border-amber-500 text-white shadow-md'
+                    : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                }`}
+              >
+                <div className="font-bold font-mono text-[11px] text-amber-400 mb-0.5">Stoic & Psychology: Latest Reel</div>
+                <div className="text-[10px] text-slate-400 line-clamp-1">Machiavelli / Schopenhauer / Nietzsche · S.T.A.Y. Ambient</div>
+              </button>
+
+              <button
+                onClick={() => {
+                  setVideoSrc('/rendered_videos/movie_episode_latest.mp4');
+                  setPlayerMode('video');
+                  setIsPlaying(true);
+                }}
+                className={`p-2.5 rounded-xl border text-left text-xs transition-all cursor-pointer ${
+                  videoSrc === '/rendered_videos/movie_episode_latest.mp4' && playerMode === 'video'
+                    ? 'bg-rose-950/80 border-rose-500 text-white shadow-md'
+                    : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                }`}
+              >
+                <div className="font-bold font-mono text-[11px] text-rose-400 mb-0.5">Cinema Vanguard: Ep 4 Finale</div>
+                <div className="text-[10px] text-slate-400 line-clamp-1">The Abyssal Trench · 12-Act Master Mini-Movie</div>
+              </button>
+
+              <button
+                onClick={() => {
                   setVideoSrc('/rendered_videos/stoic_test_cloudflare_aura2.mp4');
                   setPlayerMode('video');
                   setIsPlaying(true);
