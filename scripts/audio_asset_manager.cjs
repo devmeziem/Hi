@@ -140,25 +140,22 @@ function findAudioCandidates(primaryDir, fallbackDirs = []) {
     }
   }
 
-  // Priority 1: If primaryDir has tracks, prioritize custom uploaded audio first
+  // Priority 1: If primaryDir has tracks, prioritize channel-specific audio first
   if (primaryDir && fs.existsSync(primaryDir)) {
     const primaryTracks = Array.from(found).filter(f => f.startsWith(primaryDir));
     if (primaryTracks.length > 0) {
-      const customTracks = primaryTracks.filter(f => {
-        const base = path.basename(f).toLowerCase();
-        return !base.startsWith('horror_') && !base.startsWith('mystery_') && !base.startsWith('instrumental_');
-      });
-      if (customTracks.length > 0) return customTracks;
       return primaryTracks;
     }
   }
 
-  // Priority 2: Check all scanned directories for custom uploaded audio
-  const allCustomTracks = Array.from(found).filter(f => {
-    const base = path.basename(f).toLowerCase();
-    return !base.startsWith('horror_') && !base.startsWith('mystery_') && !base.startsWith('instrumental_');
+  // Priority 2: User uploaded audio in src/assets/sounds, src/assets/audio, or assets/sounds
+  const userRepoTracks = Array.from(found).filter(f => {
+    const p = f.replace(/\\/g, '/');
+    return p.includes('src/assets/sounds') || p.includes('src/assets/audio') || p.includes('assets/sounds');
   });
-  if (allCustomTracks.length > 0) return allCustomTracks;
+  if (userRepoTracks.length > 0) {
+    return userRepoTracks;
+  }
 
   return Array.from(found);
 }

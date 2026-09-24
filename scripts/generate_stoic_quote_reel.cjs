@@ -407,13 +407,19 @@ async function generateStoic5sVideo() {
   const finalMp4Path = path.join(OUTPUT_DIR, 'stoic_quote_5s_latest.mp4');
   const artifactMp4Path = path.join(ARTIFACTS_DIR, 'stoic_quote_5s_latest.mp4');
 
-  console.log(`[Quote Reel] Compositing ${TARGET_DURATION}s seamless loop video with slow cinematic push-in...`);
+  console.log(`[Quote Reel] Compositing ${TARGET_DURATION}s seamless loop video with cinematic Ken Burns camera panning...`);
 
   const overlayInput = (fs.existsSync(overlayPngPath) && fs.statSync(overlayPngPath).size > 1000) ? overlayPngPath : overlaySvgPath;
 
-  // Zoompan formula: slow, hypnotic push-in into the scholar's face
+  // Determine dynamic pan direction (smooth Left->Right or Right->Left based on scholar/quote)
+  const isPanRight = (chosen.quote.length % 2 === 0);
+  const panXFormula = isPanRight
+    ? `(iw-iw/zoom)*(0.18+0.64*(on/${TOTAL_FRAMES}))`
+    : `(iw-iw/zoom)*(0.82-0.64*(on/${TOTAL_FRAMES}))`;
+
+  // Ken Burns formula: 1280x2276 canvas allows 200px horizontal panning margin, smoothly sliding across scholar's face
   const filterComplex = [
-    `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920:(iw-1080)/2:0,zoompan=z='min(zoom+0.00035,1.06)':d=${TOTAL_FRAMES}:x='iw/2-(iw/zoom/2)':y='ih*0.28-(ih*0.28/zoom)':s=1080x1920:fps=${FPS},eq=brightness=-0.06:contrast=1.16:saturation=0.88,vignette=PI/4.5[bg]`,
+    `[0:v]scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276,zoompan=z='1.08+0.0006*on':d=${TOTAL_FRAMES}:x='${panXFormula}':y='(ih-ih/zoom)*0.24':s=1080x1920:fps=${FPS},eq=brightness=-0.04:contrast=1.14:saturation=0.90,vignette=PI/4.5[bg]`,
     `[1:v]scale=1080:1920[ov]`,
     `[bg][ov]overlay=0:0,format=yuv420p[v]`
   ].join(';');
@@ -423,8 +429,8 @@ async function generateStoic5sVideo() {
   try {
     execSync(ffmpegCmd, { maxBuffer: 50 * 1024 * 1024, stdio: ['pipe', 'pipe', 'pipe'] });
   } catch (err) {
-    console.warn('[Quote Reel] Primary filter complex notice, falling back to direct overlay:', err.message);
-    const fallbackCmd = `ffmpeg -y -loglevel error -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t ${TARGET_DURATION} -i "${overlayInput}" -i "${wavPath}" -filter_complex "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920:(iw-1080)/2:0,eq=brightness=-0.08:contrast=1.14[bg];[1:v]scale=1080:1920[ov];[bg][ov]overlay=0:0[v]" -map "[v]" -map 2:a -c:v libx264 -preset ultrafast -crf 22 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${TARGET_DURATION} "${finalMp4Path}"`;
+    console.warn('[Quote Reel] Primary filter complex notice, falling back to safe pan overlay:', err.message);
+    const fallbackCmd = `ffmpeg -y -loglevel error -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t ${TARGET_DURATION} -i "${overlayInput}" -i "${wavPath}" -filter_complex "[0:v]scale=1180:2098:force_original_aspect_ratio=increase,crop=1180:2098,zoompan=z='1.06':d=${TOTAL_FRAMES}:x='(iw-iw/zoom)*0.5':y='(ih-ih/zoom)*0.2':s=1080x1920:fps=${FPS},eq=brightness=-0.06:contrast=1.12[bg];[1:v]scale=1080:1920[ov];[bg][ov]overlay=0:0[v]" -map "[v]" -map 2:a -c:v libx264 -preset ultrafast -crf 22 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${TARGET_DURATION} "${finalMp4Path}"`;
     execSync(fallbackCmd, { maxBuffer: 50 * 1024 * 1024, stdio: ['pipe', 'pipe', 'pipe'] });
   }
 

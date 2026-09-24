@@ -1538,6 +1538,26 @@ async function generateMovieEpisode(episodeIndex = 0) {
     console.log(`[Movie Generator] ℹ️ Buffer publish ready (Set BUFFER_API_KEY_2 to trigger live publishing)`);
   }
 
+  // 6. Post-upload video file deletion if requested or Episode 4 finale
+  const shouldDeleteVideo = process.env.DELETE_AFTER_UPLOAD === 'true' || 
+                            process.env.AUTO_DELETE === 'true' || 
+                            targetEpisode.episode === 4;
+  if (shouldDeleteVideo) {
+    console.log(`[Movie Generator] 🗑️ Post-upload cleanup: Deleting Episode ${targetEpisode.episode} local video file as requested...`);
+    try {
+      if (fs.existsSync(fullMoviePath)) {
+        fs.unlinkSync(fullMoviePath);
+        console.log(`[Movie Generator] ✅ Deleted local master video: ${path.basename(fullMoviePath)}`);
+      }
+      const latestPath = path.join(process.cwd(), 'rendered_videos', 'movie_episode_latest.mp4');
+      if (fs.existsSync(latestPath)) {
+        fs.unlinkSync(latestPath);
+      }
+    } catch (delErr) {
+      console.warn(`[Movie Generator] Cleanup notice: ${delErr.message}`);
+    }
+  }
+
   return manifestEntry;
 }
 

@@ -523,33 +523,90 @@ const VIRAL_PSYCHOLOGY_TAGS = [
 ];
 
 /**
- * Generate viral title with strong psychological hook
+ * Generate viral title with strong, accurate psychological hook in context with the quote
  */
 function generatePsychologyViralTitle(scholar) {
-  const psychologyHooks = [
-    `The Cold Psychology of Human Nature — ${scholar.author} #Shorts`,
-    `The 3 Stages of Truth — ${scholar.author} #Shorts`,
-    `How Your Unconscious Dictates Your Life — ${scholar.author} #Shorts`,
-    `Why Most People Suffer More in Their Minds — ${scholar.author} #Shorts`,
-    `The Power Dynamic You Were Never Taught — ${scholar.author} #Shorts`,
-    `Silence Your Ego Before It Destroys You — ${scholar.author} #Shorts`,
-    `The Brutal Truth About Self-Control — ${scholar.author} #Shorts`,
-    `Master Your Emotions Before They Master You — ${scholar.author} #Shorts`,
-    `Never Disrespect Your Own Time — ${scholar.author} #Shorts`,
-    `The Hardest Reality of Power — ${scholar.author} #Shorts`
-  ];
-
-  const seed = Math.abs(scholar.author.split('').reduce((a, c) => a + c.charCodeAt(0), 0) + scholar.quote.length);
-  let baseTitle = psychologyHooks[seed % psychologyHooks.length];
-
-  // Append core viral tags while keeping within YouTube 100 char limit
-  const extraTags = ['#stoic', '#psychology', '#philosophy'];
-  for (const tag of extraTags) {
-    if (!baseTitle.includes(tag) && (baseTitle + ' ' + tag).length <= 98) {
-      baseTitle += ' ' + tag;
-    }
+  if (scholar.contextTitle && typeof scholar.contextTitle === 'string') {
+    let t = scholar.contextTitle;
+    if (!t.includes('#Shorts')) t += ' #Shorts';
+    return t.length > 100 ? t.slice(0, 97) + '...' : t;
   }
-  return baseTitle;
+
+  const authorShort = (scholar.author || '').replace(/^Dr\.\s*/, '');
+  const quoteLower = (scholar.quote || '').toLowerCase();
+  const conceptLower = (scholar.psychologicalConcept || '').toLowerCase();
+  const themeLower = (scholar.theme || '').toLowerCase();
+
+  let hook = '';
+
+  if (quoteLower.includes('wise prince') || (quoteLower.includes('control') && authorShort.includes('Machiavelli'))) {
+    hook = `The Brutal Rule of Self-Reliance — ${scholar.author}`;
+  } else if (quoteLower.includes('appear to be') || quoteLower.includes('sees what you appear')) {
+    hook = `The Cold Psychology of Perception — ${scholar.author}`;
+  } else if (quoteLower.includes('intelligence of a ruler') || quoteLower.includes('men he has around him')) {
+    hook = `The Psychology of Who You Keep Close — ${scholar.author}`;
+  } else if (quoteLower.includes('conduct with the times') || conceptLower.includes('cognitive flexibility')) {
+    hook = `The Law of Ruthless Adaptation — ${scholar.author}`;
+  } else if (quoteLower.includes('three stages') || quoteLower.includes('ridiculed')) {
+    hook = `The 3 Stages of Truth — ${scholar.author}`;
+  } else if (quoteLower.includes('solitude') || (quoteLower.includes('alone') && quoteLower.includes('freedom'))) {
+    hook = `Why Solitude Is Your Only True Freedom — ${scholar.author}`;
+  } else if (quoteLower.includes('talent hits a target') || quoteLower.includes('genius')) {
+    hook = `The Difference Between Talent & Genius — ${scholar.author}`;
+  } else if (quoteLower.includes('contributes much more to his happiness than what he has')) {
+    hook = `What You Are vs What You Own — ${scholar.author}`;
+  } else if (quoteLower.includes('unconscious') || quoteLower.includes('call it fate')) {
+    hook = `How Your Unconscious Secretly Controls Your Fate — ${scholar.author}`;
+  } else if (quoteLower.includes('accept oneself completely')) {
+    hook = `The Hardest Truth About Self-Acceptance — ${scholar.author}`;
+  } else if (quoteLower.includes('irritates us') || conceptLower.includes('projection')) {
+    hook = `The Mirror Effect: Why Others Irritate You — ${scholar.author}`;
+  } else if (quoteLower.includes('thinking is difficult') || quoteLower.includes('most people judge')) {
+    hook = `Why Most People Choose to Judge Instead of Think — ${scholar.author}`;
+  } else if (quoteLower.includes('suffer more often in imagination') || conceptLower.includes('imagined catastrophe')) {
+    hook = `Why You Suffer More in Your Head Than Reality — ${scholar.author}`;
+  } else if (quoteLower.includes('short time to live') || quoteLower.includes('waste a lot of it')) {
+    hook = `Stop Disrespecting Your Own Time — ${scholar.author}`;
+  } else if (quoteLower.includes('power over your mind') || quoteLower.includes('outside events')) {
+    hook = `You Have Power Over Your Mind — ${scholar.author}`;
+  } else if (quoteLower.includes('waste no more time arguing what a good man')) {
+    hook = `Stop Debating What a Good Man Should Be — ${scholar.author}`;
+  } else if (quoteLower.includes('master of himself') || (quoteLower.includes('free') && authorShort.includes('Epictetus'))) {
+    hook = `The Only Real Definition of Freedom — ${scholar.author}`;
+  } else if (quoteLower.includes('show yourself to the world') || (conceptLower.includes('envy') && authorShort.includes('Greene'))) {
+    hook = `The Danger of Displaying Your Power — ${scholar.author}`;
+  } else if (quoteLower.includes('room alone') || authorShort.includes('Pascal')) {
+    hook = `Why Humans Cannot Sit Quietly in a Room — ${scholar.author}`;
+  } else if (quoteLower.includes('abyss') || authorShort.includes('Nietzsche')) {
+    hook = `When You Gaze Into the Abyss — ${scholar.author}`;
+  } else if (quoteLower.includes('subdue the enemy') || authorShort.includes('Sun Tzu')) {
+    hook = `The Highest Art of Psychological Warfare — ${scholar.author}`;
+  } else if (quoteLower.includes('unexpressed emotions') || authorShort.includes('Freud')) {
+    hook = `The Dark Truth of Buried Emotions — ${scholar.author}`;
+  } else if (conceptLower.includes('shadow') || themeLower === 'shadow') {
+    hook = `${scholar.author} on Shadow Integration & Darkness`;
+  } else if (conceptLower.includes('locus of control') || themeLower === 'power') {
+    hook = `The Psychology of Sovereign Power — ${scholar.author}`;
+  } else if (conceptLower.includes('solitude') || themeLower === 'solitude') {
+    hook = `The Power of Strategic Solitude — ${scholar.author}`;
+  } else if (conceptLower.includes('time') || themeLower === 'time') {
+    hook = `Master Your Time Before It Vanishes — ${scholar.author}`;
+  } else if (scholar.psychologicalConcept) {
+    const cleanConcept = scholar.psychologicalConcept.split('&')[0].split('•')[0].split(',')[0].trim();
+    hook = `${cleanConcept} — ${scholar.author}`;
+  } else {
+    hook = `The Psychology of Self-Mastery — ${scholar.author}`;
+  }
+
+  // Ensure title stays under 100 characters for YouTube Shorts
+  let title = `${hook} #Shorts`;
+  if (title.length + 12 <= 98) {
+    title += ` #psychology`;
+  }
+  if (title.length + 7 <= 98) {
+    title += ` #stoic`;
+  }
+  return title.slice(0, 100);
 }
 
 module.exports = {
