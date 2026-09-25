@@ -158,6 +158,10 @@ export const MovieBrandTab: React.FC = () => {
                 <span className="px-2.5 py-0.5 rounded-full bg-rose-950 border border-rose-800 text-rose-300 text-[10px] font-mono font-bold">
                   Channel 4
                 </span>
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-950/80 border border-amber-700/60 text-amber-300 text-[10px] font-mono font-bold flex items-center gap-1">
+                  <Pause className="w-3 h-3 text-amber-400" />
+                  PAUSED (S1 Finale Complete)
+                </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
                 Serialized mini-movies, thriller cliffhangers, 2.39:1 anamorphic styling, and AI trailer voiceover.

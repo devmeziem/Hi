@@ -1,20 +1,24 @@
 name: Cinema Vanguard - Episodic Movie Series Pipeline (Channel 4)
 
 on:
-  schedule:
-    # Daily episode release at 18:00 UTC (19:00 WAT)
-    - cron: '0 18 * * *'
+  push:
+    branches:
+      - main
+      - master
+  # MOVIE CHANNEL PAUSED: Scheduled releases paused for now (Season 1 Finale Episode 4 complete)
+  # schedule:
+  #   - cron: '0 18 * * *'
   workflow_dispatch:
     inputs:
       episode_index:
-        description: 'Episode Index (0 = Ep 1, 1 = Ep 2, 2 = The Core Chamber [Ep 3], 3 = The Abyssal Trench [Ep 4 Finale], auto = Next in Series)'
+        description: 'Episode Index (0 = Ep 1, 1 = Ep 2, 2 = Ep 3, 3 = The Abyssal Trench [Ep 4 Finale])'
         required: false
-        default: '2'
+        default: '3'
         type: string
       auto_publish:
-        description: 'Publish Live to YouTube (Default FALSE: held in PENDING_REVIEW for manual check)'
+        description: 'Publish Live to YouTube & TikTok (Default TRUE for Push & Manual)'
         required: true
-        default: false
+        default: true
         type: boolean
       publish_tiktok:
         description: 'Publish Live to TikTok via Buffer API 2 (Default TRUE)'
@@ -61,8 +65,9 @@ jobs:
 
       - name: Generate Episodic Movie Reel
         env:
-          EPISODE_INDEX: ${{ github.event.inputs.episode_index || '1' }}
-          AUTO_PUBLISH: ${{ github.event.inputs.auto_publish || 'false' }}
+          EPISODE_INDEX: ${{ github.event.inputs.episode_index || '3' }}
+          AUTO_PUBLISH: ${{ github.event_name == 'push' && 'true' || github.event.inputs.auto_publish || 'true' }}
+          DELETE_AFTER_UPLOAD: 'true'
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           MOVIE_MUSIC_URL: ${{ github.event.inputs.sound_url }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -74,12 +79,12 @@ jobs:
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 || secrets.BUFFER_API_KEY }}
           BUFFER_TIKTOK_MOVIE_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_MOVIE_CHANNEL_ID }}
         run: |
-          echo "=== 🎬 Generating Episodic Movie Reel (Index: $EPISODE_INDEX) ==="
+          echo "=== 🎬 Generating Episodic Movie Reel (Episode 4 Finale / Index: $EPISODE_INDEX) ==="
           node scripts/generate_movie_brand_episode.cjs
-          echo "=== Movie Episode Assembled Successfully ==="
+          echo "=== Movie Episode Assembled & Processed Successfully ==="
 
       - name: Dispatch to Movie Brand TikTok Channel (Buffer API 2)
-        if: success() && (github.event_name == 'schedule' || github.event.inputs.publish_tiktok != 'false')
+        if: success() && (github.event_name == 'push' || github.event_name == 'schedule' || github.event.inputs.publish_tiktok != 'false')
         env:
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 || secrets.BUFFER_API_KEY }}
           BUFFER_TIKTOK_MOVIE_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_MOVIE_CHANNEL_ID || secrets.BUFFER_TIKTOK_MOVIE_CHANNEL || secrets.BUFFER_TIKTOK_CHANNEL_ID_MOVIE || secrets.BUFFER_TIKTOK_CHANNEL_ID_1 }}
@@ -91,15 +96,21 @@ jobs:
           echo "=== 📱 Publishing Movie Episode to TikTok via Buffer API 2 ==="
           node scripts/publish_buffer_second_tiktok.cjs movie_brand
 
+      - name: Delete Episode 4 Video Files Post-Upload
+        if: always()
+        run: |
+          echo "=== 🗑️ Post-Upload Cleanup: Deleting Episode 4 video files as requested ==="
+          rm -f rendered_videos/movie_episode* test_artifacts/movie_episodes/*.mp4 test_artifacts/movie_episodes/*.wav
+          echo "=== Episode 4 Video Files Deleted Post-Upload ==="
+
       - name: Archive Movie Video Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: movie-episode-reel-${{ github.run_id }}
           path: |
-            rendered_videos/movie_episode_latest.mp4
             test_artifacts/movie_episodes_manifest.json
-          if-no-files-found: warn
+          if-no-files-found: ignore
           retention-days: 14
 
       - name: Pipeline Summary (Zero Git Commits, Low Key Database Logging)

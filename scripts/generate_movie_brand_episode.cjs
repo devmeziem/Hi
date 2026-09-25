@@ -1639,7 +1639,7 @@ async function saveEpisodeToFirestore(entry) {
 }
 
 if (require.main === module) {
-  let targetIndex = 2; // Default to Episode 3: The Core Chamber
+  let targetIndex = 3; // Default to Episode 4: The Abyssal Trench (Finale)
   const rawInput = process.env.EPISODE_INDEX;
 
   const epArgIndex = process.argv.indexOf('--episode');
@@ -1650,22 +1650,12 @@ if (require.main === module) {
       targetIndex = foundIdx;
     }
   } else if (rawInput === undefined || rawInput === '' || rawInput === 'auto') {
-    // Auto-advance sequentially: check manifest for the last produced episode and select the next one
-    try {
-      if (fs.existsSync(MANIFEST_PATH)) {
-        const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
-        if (Array.isArray(manifest) && manifest.length > 0 && manifest[0].episode) {
-          const lastEpisode = manifest[0].episode;
-          targetIndex = lastEpisode % EPISODE_SERIES_CATALOG.length;
-          console.log(`[Movie Runner] 🔄 Auto-Advancement: Last episode was Ep ${lastEpisode}. Advancing to Episode index ${targetIndex} (Ep ${EPISODE_SERIES_CATALOG[targetIndex].episode}).`);
-        }
-      }
-    } catch (e) {
-      console.warn(`[Movie Runner] Notice checking previous manifest: ${e.message}`);
-    }
+    // Default to Episode 4 (Index 3 Finale) unless specified otherwise
+    targetIndex = 3;
+    console.log(`[Movie Runner] 🎬 Target Episode Index: 3 (Ep 4: The Abyssal Trench Finale).`);
   } else {
     targetIndex = parseInt(rawInput, 10);
-    if (isNaN(targetIndex)) targetIndex = 2;
+    if (isNaN(targetIndex)) targetIndex = 3;
   }
 
   generateMovieEpisode(targetIndex).catch(console.error);
