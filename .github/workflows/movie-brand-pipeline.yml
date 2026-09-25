@@ -1,13 +1,8 @@
 name: Cinema Vanguard - Episodic Movie Series Pipeline (Channel 4)
 
+# MOVIE CHANNEL FULLY PAUSED (Season 1 Finale Episode 4 Released & Closed)
+# Push & Schedule triggers disabled to prevent automated runs / spam.
 on:
-  push:
-    branches:
-      - main
-      - master
-  # MOVIE CHANNEL PAUSED: Scheduled releases paused for now (Season 1 Finale Episode 4 complete)
-  # schedule:
-  #   - cron: '0 18 * * *'
   workflow_dispatch:
     inputs:
       episode_index:
@@ -47,41 +42,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js Environment
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install Dependencies
-        run: npm install --legacy-peer-deps --no-audit --no-fund
-
-      - name: Install FFmpeg Media Engine & Audio Tools
+      - name: Movie Series Status Check (Channel 4 Paused & Video Seed Deleted)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg espeak-ng
-
-      - name: Verify FFmpeg Installation
-        run: ffmpeg -version
-
-      - name: Generate Episodic Movie Reel
-        env:
-          EPISODE_INDEX: ${{ github.event.inputs.episode_index || '3' }}
-          AUTO_PUBLISH: ${{ github.event_name == 'push' && 'true' || github.event.inputs.auto_publish || 'true' }}
-          DELETE_AFTER_UPLOAD: 'true'
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
-          MOVIE_MUSIC_URL: ${{ github.event.inputs.sound_url }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH4 || secrets.YOUTUBE_CLIENT_ID }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH4 || secrets.YOUTUBE_CLIENT_SECRET }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH4 || secrets.YOUTUBE_REFRESH_TOKEN_CH1 }}
-          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
-          BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 || secrets.BUFFER_API_KEY }}
-          BUFFER_TIKTOK_MOVIE_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_MOVIE_CHANNEL_ID }}
-        run: |
-          echo "=== 🎬 Generating Episodic Movie Reel (Episode 4 Finale / Index: $EPISODE_INDEX) ==="
-          node scripts/generate_movie_brand_episode.cjs
-          echo "=== Movie Episode Assembled & Processed Successfully ==="
+          echo "=== ⏸️ Cinema Vanguard (Channel 4) is permanently paused. ==="
+          echo "Season 1 Finale (Episode 4) has been posted. Video seed & auto generation completely deleted."
+          exit 0
 
       - name: Dispatch to Movie Brand TikTok Channel (Buffer API 2)
         if: success() && (github.event_name == 'push' || github.event_name == 'schedule' || github.event.inputs.publish_tiktok != 'false')

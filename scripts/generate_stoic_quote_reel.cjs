@@ -45,13 +45,70 @@ async function resolveScholarPortrait(scholar) {
   const safeName = scholar.wikiSearch || scholar.author.replace(/[^a-zA-Z0-9]/g, '_');
   const portraitPath = path.join(PORTRAITS_DIR, `${safeName}.jpg`);
 
-  // Check cached image first
+  console.log(`[Scholar Portrait] Sourcing portrait for: "${scholar.author}"...`);
+
+  // 1. Primary Strategy: Cloudflare Workers AI Low-Cost Dynamic Generation (Zero static seeds)
+  const cfAccountId = (process.env.CLOUDFLARE_ACCOUNT_ID || '').trim().replace(/^https?:\/\/[^\/]+\//, '').replace(/\/$/, '');
+  const cfApiToken = (process.env.CLOUDFLARE_API_TOKEN || '').trim();
+  if (cfAccountId && cfApiToken) {
+    const cfModels = [
+      '@cf/bytedance/stable-diffusion-xl-lightning',
+      '@cf/stabilityai/stable-diffusion-xl-base-1.0'
+    ];
+    for (const model of cfModels) {
+      try {
+        const randomSeed = Math.floor(Math.random() * 99999999);
+        const postData = JSON.stringify({
+          prompt: `Cinematic 9:16 vertical 8k photorealistic dark portrait of ${scholar.author}, ${scholar.credentials}, dramatic chiaroscuro side lighting, dark obsidian textured stone background, classical philosopher atmosphere, moody film grain, masterpiece`,
+          num_steps: 4,
+          seed: randomSeed
+        });
+        const cfBuf = await new Promise((resolve) => {
+          const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/${model}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${cfApiToken}`,
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 18000
+          }, (res) => {
+            const chunks = [];
+            res.on('data', c => chunks.push(c));
+            res.on('end', () => {
+              if (res.statusCode === 200) {
+                const full = Buffer.concat(chunks);
+                try {
+                  const json = JSON.parse(full.toString('utf8'));
+                  if (json.result?.image) return resolve(Buffer.from(json.result.image, 'base64'));
+                } catch {}
+                if (full.length > 2000) return resolve(full);
+              }
+              resolve(null);
+            });
+          });
+          req.on('error', () => resolve(null));
+          req.on('timeout', () => { req.destroy(); resolve(null); });
+          req.write(postData);
+          req.end();
+        });
+
+        if (cfBuf && cfBuf.length > 5000) {
+          fs.writeFileSync(portraitPath, cfBuf);
+          console.log(`[Scholar Portrait] 🎨 Synthesized dynamic portrait via Cloudflare AI (${model})`);
+          return portraitPath;
+        }
+      } catch (cfErr) {
+        console.warn(`[Scholar Portrait] Cloudflare AI notice: ${cfErr.message}`);
+      }
+    }
+  }
+
+  // Check cached image if Cloudflare AI is unavailable
   if (fs.existsSync(portraitPath) && fs.statSync(portraitPath).size > 10000) {
     console.log(`[Scholar Portrait] Using cached portrait for ${scholar.author}`);
     return portraitPath;
   }
-
-  console.log(`[Scholar Portrait] Sourcing portrait for: "${scholar.author}"...`);
 
   let fetchedUrl = scholar.directUrl || null;
 
@@ -158,10 +215,68 @@ async function resolveScholarPortrait(scholar) {
     }
   }
 
-  // Fallback 1: Pollinations FLUX high-fidelity chiaroscuro portrait
-  console.log(`[Scholar Portrait] Rendering photorealistic cinematic chiaroscuro portrait for ${scholar.author}...`);
+  // Cloudflare Workers AI Low-Cost Dynamic Generation (Zero static seeds)
+  const cfAccountId = (process.env.CLOUDFLARE_ACCOUNT_ID || '').trim().replace(/^https?:\/\/[^\/]+\//, '').replace(/\/$/, '');
+  const cfApiToken = (process.env.CLOUDFLARE_API_TOKEN || '').trim();
+  if (cfAccountId && cfApiToken) {
+    const cfModels = [
+      '@cf/bytedance/stable-diffusion-xl-lightning',
+      '@cf/stabilityai/stable-diffusion-xl-base-1.0'
+    ];
+    for (const model of cfModels) {
+      try {
+        const randomSeed = Math.floor(Math.random() * 99999999);
+        const postData = JSON.stringify({
+          prompt: `Cinematic 9:16 vertical 8k photorealistic dark portrait of ${scholar.author}, ${scholar.credentials}, dramatic chiaroscuro side lighting, dark obsidian textured stone background, classical philosopher atmosphere, moody film grain, masterpiece`,
+          num_steps: 4,
+          seed: randomSeed
+        });
+        const cfBuf = await new Promise((resolve) => {
+          const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/${model}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${cfApiToken}`,
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 18000
+          }, (res) => {
+            const chunks = [];
+            res.on('data', c => chunks.push(c));
+            res.on('end', () => {
+              if (res.statusCode === 200) {
+                const full = Buffer.concat(chunks);
+                try {
+                  const json = JSON.parse(full.toString('utf8'));
+                  if (json.result?.image) return resolve(Buffer.from(json.result.image, 'base64'));
+                } catch {}
+                if (full.length > 2000) return resolve(full);
+              }
+              resolve(null);
+            });
+          });
+          req.on('error', () => resolve(null));
+          req.on('timeout', () => { req.destroy(); resolve(null); });
+          req.write(postData);
+          req.end();
+        });
+
+        if (cfBuf && cfBuf.length > 5000) {
+          fs.writeFileSync(portraitPath, cfBuf);
+          console.log(`[Scholar Portrait] 🎨 Synthesized dynamic portrait via Cloudflare AI (${model})`);
+          return portraitPath;
+        }
+      } catch (cfErr) {
+        console.warn(`[Scholar Portrait] Cloudflare AI notice: ${cfErr.message}`);
+      }
+    }
+  }
+
+  // Fallback 1: Pollinations FLUX high-fidelity chiaroscuro portrait (Dynamic seed)
+  const randomSeed = Math.floor(Math.random() * 99999999);
+  console.log(`[Scholar Portrait] Rendering photorealistic cinematic portrait for ${scholar.author} (Seed: ${randomSeed})...`);
   const aiPrompt = encodeURIComponent(`Cinematic 9:16 vertical 8k photorealistic dark portrait of ${scholar.author}, ${scholar.credentials}, dramatic chiaroscuro side lighting, dark obsidian textured stone background, classical philosopher atmosphere, moody film grain, masterpiece`);
-  const pollinationsUrl = `https://image.pollinations.ai/prompt/${aiPrompt}?width=1080&height=1920&model=flux&nologo=true`;
+  const pollinationsUrl = `https://image.pollinations.ai/prompt/${aiPrompt}?width=1080&height=1920&model=flux&nologo=true&seed=${randomSeed}`;
 
   try {
     await new Promise((resolve, reject) => {
@@ -404,34 +519,129 @@ async function generateStoic5sVideo() {
     console.warn('[Quote Reel] SVG rasterizer notice:', err.message);
   }
 
-  const finalMp4Path = path.join(OUTPUT_DIR, 'stoic_quote_5s_latest.mp4');
-  const artifactMp4Path = path.join(ARTIFACTS_DIR, 'stoic_quote_5s_latest.mp4');
+function buildStoicDeepBeat2Svg(scholar, width = 1080, height = 1920) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+    <defs>
+      <filter id="textGlow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="#000000" flood-opacity="1.0" />
+      </filter>
+      <linearGradient id="cinematicVignette" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#000000" stop-opacity="0" />
+        <stop offset="25%" stop-color="#020617" stop-opacity="0.5" />
+        <stop offset="55%" stop-color="#020617" stop-opacity="0.9" />
+        <stop offset="100%" stop-color="#000000" stop-opacity="0.99" />
+      </linearGradient>
+    </defs>
+    <rect x="0" y="660" width="1080" height="1260" fill="url(#cinematicVignette)" />
+    <text x="540" y="930" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="900" fill="#f59e0b" letter-spacing="5" text-anchor="middle" filter="url(#textGlow)">
+      ⚡ THE PSYCHOLOGICAL ILLUSION
+    </text>
+    <text x="540" y="1030" font-family="Georgia, serif" font-size="44" font-weight="900" fill="#ffffff" text-anchor="middle" filter="url(#textGlow)">
+      <tspan x="540" dy="0">Announcing your ambitions tricks</tspan>
+      <tspan x="540" dy="64">your brain into cheap dopamine.</tspan>
+      <tspan x="540" dy="64">The ego feels accomplishment</tspan>
+      <tspan x="540" dy="64">while reality remains untouched.</tspan>
+    </text>
+    <line x1="430" y1="1310" x2="650" y2="1310" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" />
+    <text x="540" y="1360" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="800" fill="#94a3b8" letter-spacing="2" text-anchor="middle" filter="url(#textGlow)">
+      - THE EGO'S FAVORITE TRAP
+    </text>
+  </svg>`;
+}
 
-  console.log(`[Quote Reel] Compositing ${TARGET_DURATION}s seamless loop video with cinematic Ken Burns camera panning...`);
+function buildStoicDeepBeat3Svg(scholar, width = 1080, height = 1920) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+    <defs>
+      <filter id="textGlow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="4" stdDeviation="14" flood-color="#000000" flood-opacity="1.0" />
+      </filter>
+      <linearGradient id="cinematicVignette" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#000000" stop-opacity="0" />
+        <stop offset="25%" stop-color="#020617" stop-opacity="0.5" />
+        <stop offset="55%" stop-color="#020617" stop-opacity="0.9" />
+        <stop offset="100%" stop-color="#000000" stop-opacity="0.99" />
+      </linearGradient>
+    </defs>
+    <rect x="0" y="660" width="1080" height="1260" fill="url(#cinematicVignette)" />
+    <text x="540" y="930" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="900" fill="#f59e0b" letter-spacing="5" text-anchor="middle" filter="url(#textGlow)">
+      ⚡ THE HARSH PSYCHOLOGICAL LAW
+    </text>
+    <text x="540" y="1030" font-family="Georgia, serif" font-size="44" font-weight="900" fill="#ffffff" text-anchor="middle" filter="url(#textGlow)">
+      <tspan x="540" dy="0">What you say has zero impact</tspan>
+      <tspan x="540" dy="64">on your future. Only the cold,</tspan>
+      <tspan x="540" dy="64">unrelenting physical actions you take</tspan>
+      <tspan x="540" dy="64">will reshape your reality. Silence.</tspan>
+    </text>
+    <line x1="430" y1="1310" x2="650" y2="1310" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" />
+    <text x="540" y="1360" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="800" fill="#cbd5e1" letter-spacing="2" text-anchor="middle" filter="url(#textGlow)">
+      - THE STOIC ARCHITECT • ACTION IS EVERYTHING
+    </text>
+  </svg>`;
+}
+
+  const isLongForm = TARGET_DURATION >= 20;
+  const videoFileName = isLongForm ? 'stoic_psychology_30s_latest.mp4' : 'stoic_quote_5s_latest.mp4';
+  const finalMp4Path = path.join(OUTPUT_DIR, videoFileName);
+  const artifactMp4Path = path.join(ARTIFACTS_DIR, videoFileName);
+
+  console.log(`[Quote Reel] Compositing ${TARGET_DURATION}s video with cinematic Ken Burns camera panning...`);
 
   const overlayInput = (fs.existsSync(overlayPngPath) && fs.statSync(overlayPngPath).size > 1000) ? overlayPngPath : overlaySvgPath;
 
-  // Determine dynamic pan direction (smooth Left->Right or Right->Left based on scholar/quote)
-  const isPanRight = (chosen.quote.length % 2 === 0);
-  const panXFormula = isPanRight
-    ? `(iw-iw/zoom)*(0.18+0.64*(on/${TOTAL_FRAMES}))`
-    : `(iw-iw/zoom)*(0.82-0.64*(on/${TOTAL_FRAMES}))`;
+  if (isLongForm) {
+    // 30-Second Deep Psychological Video with 3 Narrative Beats
+    const beat2Svg = buildStoicDeepBeat2Svg(chosen);
+    const beat3Svg = buildStoicDeepBeat3Svg(chosen);
+    const beat2SvgPath = path.join(ARTIFACTS_DIR, 'stoic_deep_beat2.svg');
+    const beat2PngPath = path.join(ARTIFACTS_DIR, 'stoic_deep_beat2.png');
+    const beat3SvgPath = path.join(ARTIFACTS_DIR, 'stoic_deep_beat3.svg');
+    const beat3PngPath = path.join(ARTIFACTS_DIR, 'stoic_deep_beat3.png');
+    fs.writeFileSync(beat2SvgPath, beat2Svg);
+    fs.writeFileSync(beat3SvgPath, beat3Svg);
 
-  // Ken Burns formula: 1280x2276 canvas allows 200px horizontal panning margin, smoothly sliding across scholar's face
-  const filterComplex = [
-    `[0:v]scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276,zoompan=z='1.08+0.0006*on':d=${TOTAL_FRAMES}:x='${panXFormula}':y='(ih-ih/zoom)*0.24':s=1080x1920:fps=${FPS},eq=brightness=-0.04:contrast=1.14:saturation=0.90,vignette=PI/4.5[bg]`,
-    `[1:v]scale=1080:1920[ov]`,
-    `[bg][ov]overlay=0:0,format=yuv420p[v]`
-  ].join(';');
+    try {
+      execSync(`rsvg-convert -w 1080 -h 1920 "${beat2SvgPath}" -o "${beat2PngPath}" 2>/dev/null || ffmpeg -y -i "${beat2SvgPath}" "${beat2PngPath}" 2>/dev/null`);
+      execSync(`rsvg-convert -w 1080 -h 1920 "${beat3SvgPath}" -o "${beat3PngPath}" 2>/dev/null || ffmpeg -y -i "${beat3SvgPath}" "${beat3PngPath}" 2>/dev/null`);
+    } catch {}
 
-  const ffmpegCmd = `ffmpeg -y -loglevel error -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t ${TARGET_DURATION} -i "${overlayInput}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 2:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${TARGET_DURATION} "${finalMp4Path}"`;
+    const ov1 = overlayInput;
+    const ov2 = fs.existsSync(beat2PngPath) ? beat2PngPath : beat2SvgPath;
+    const ov3 = fs.existsSync(beat3PngPath) ? beat3PngPath : beat3SvgPath;
 
-  try {
-    execSync(ffmpegCmd, { maxBuffer: 50 * 1024 * 1024, stdio: ['pipe', 'pipe', 'pipe'] });
-  } catch (err) {
-    console.warn('[Quote Reel] Primary filter complex notice, falling back to safe pan overlay:', err.message);
-    const fallbackCmd = `ffmpeg -y -loglevel error -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t ${TARGET_DURATION} -i "${overlayInput}" -i "${wavPath}" -filter_complex "[0:v]scale=1180:2098:force_original_aspect_ratio=increase,crop=1180:2098,zoompan=z='1.06':d=${TOTAL_FRAMES}:x='(iw-iw/zoom)*0.5':y='(ih-ih/zoom)*0.2':s=1080x1920:fps=${FPS},eq=brightness=-0.06:contrast=1.12[bg];[1:v]scale=1080:1920[ov];[bg][ov]overlay=0:0[v]" -map "[v]" -map 2:a -c:v libx264 -preset ultrafast -crf 22 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${TARGET_DURATION} "${finalMp4Path}"`;
-    execSync(fallbackCmd, { maxBuffer: 50 * 1024 * 1024, stdio: ['pipe', 'pipe', 'pipe'] });
+    const complexFilter = [
+      `[0:v]scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276,zoompan=z='1.06+0.00014*on':d=${TOTAL_FRAMES}:x='(iw-iw/zoom)*(0.2+0.6*(on/${TOTAL_FRAMES}))':y='(ih-ih/zoom)*0.22':s=1080x1920:fps=${FPS},eq=brightness=-0.04:contrast=1.14:saturation=0.90,vignette=PI/4.5[bg]`,
+      `[1:v]scale=1080:1920[ov1]`,
+      `[2:v]scale=1080:1920[ov2]`,
+      `[3:v]scale=1080:1920[ov3]`,
+      `[bg][ov1]overlay=0:0:enable='between(t,0,8)'[v1]`,
+      `[v1][ov2]overlay=0:0:enable='between(t,8,18)'[v2]`,
+      `[v2][ov3]overlay=0:0:enable='gte(t,18)'[vfinal]`
+    ].join(';');
+
+    const ffmpegCmd = `ffmpeg -y -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t 8 -i "${ov1}" -loop 1 -t 10 -i "${ov2}" -loop 1 -t 12 -i "${ov3}" -i "${wavPath}" -filter_complex "${complexFilter}" -map "[vfinal]" -map 4:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${TARGET_DURATION} "${finalMp4Path}"`;
+    execSync(ffmpegCmd);
+  } else {
+    // 5-Second Quote Reel
+    const isPanRight = (chosen.quote.length % 2 === 0);
+    const panXFormula = isPanRight
+      ? `(iw-iw/zoom)*(0.18+0.64*(on/${TOTAL_FRAMES}))`
+      : `(iw-iw/zoom)*(0.82-0.64*(on/${TOTAL_FRAMES}))`;
+
+    const filterComplex = [
+      `[0:v]scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276,zoompan=z='1.08+0.0006*on':d=${TOTAL_FRAMES}:x='${panXFormula}':y='(ih-ih/zoom)*0.24':s=1080x1920:fps=${FPS},eq=brightness=-0.04:contrast=1.14:saturation=0.90,vignette=PI/4.5[bg]`,
+      `[1:v]scale=1080:1920[ov]`,
+      `[bg][ov]overlay=0:0,format=yuv420p[v]`
+    ].join(';');
+
+    const ffmpegCmd = `ffmpeg -y -loglevel error -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t ${TARGET_DURATION} -i "${overlayInput}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 2:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${TARGET_DURATION} "${finalMp4Path}"`;
+
+    try {
+      execSync(ffmpegCmd, { maxBuffer: 50 * 1024 * 1024, stdio: ['pipe', 'pipe', 'pipe'] });
+    } catch (err) {
+      console.warn('[Quote Reel] Primary filter complex notice, falling back to safe pan overlay:', err.message);
+      const fallbackCmd = `ffmpeg -y -loglevel error -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t ${TARGET_DURATION} -i "${overlayInput}" -i "${wavPath}" -filter_complex "[0:v]scale=1180:2098:force_original_aspect_ratio=increase,crop=1180:2098,zoompan=z='1.06':d=${TOTAL_FRAMES}:x='(iw-iw/zoom)*0.5':y='(ih-ih/zoom)*0.2':s=1080x1920:fps=${FPS},eq=brightness=-0.06:contrast=1.12[bg];[1:v]scale=1080:1920[ov];[bg][ov]overlay=0:0[v]" -map "[v]" -map 2:a -c:v libx264 -preset ultrafast -crf 22 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${TARGET_DURATION} "${finalMp4Path}"`;
+      execSync(fallbackCmd, { maxBuffer: 50 * 1024 * 1024, stdio: ['pipe', 'pipe', 'pipe'] });
+    }
   }
 
   if (!fs.existsSync(finalMp4Path) || fs.statSync(finalMp4Path).size < 10000) {

@@ -2,9 +2,9 @@ name: Test Stoic & Motivation Pipeline
 
 on:
   schedule:
-    # 4x daily spaced drops: 06:00 UTC (3s reel), 11:00 UTC (5s reel), 16:00 UTC (3s reel), 21:00 UTC (5s reel / short)
-    # Spaced 5 hours apart to prevent algorithmic spam throttling while maintaining 4 daily posts
-    - cron: '0 6,11,16,21 * * *'
+    # 5x daily spaced drops: 03:00 UTC (30s deep psychology), 06:00 UTC (3s reel), 11:00 UTC (5s reel), 16:00 UTC (3s reel), 21:00 UTC (5s reel)
+    # 5 daily drops maintaining optimal algorithm cadence and deep viewer psychological impact
+    - cron: '0 3,6,11,16,21 * * *'
   workflow_dispatch:
     inputs:
       topic:
@@ -13,16 +13,17 @@ on:
         default: ''
         type: string
       video_mode:
-        description: 'Video Generation Mode (auto | short | 3s_reel | 5s_reel | all_daily_4)'
+        description: 'Video Generation Mode (auto | short | 3s_reel | 5s_reel | psychology_short_30s | all_daily_5)'
         required: false
         default: 'auto'
         type: choice
         options:
           - auto
+          - psychology_short_30s
           - short
           - 3s_reel
           - 5s_reel
-          - all_daily_4
+          - all_daily_5
       dry_run:
         description: 'Dry Run Mode (Uncheck for live YouTube upload)'
         required: true
@@ -91,7 +92,10 @@ jobs:
           CURRENT_HOUR=$(date -u +%-H)
           echo "=== Processing Stoic Video Dispatch (Mode: $VIDEO_MODE, Hour: $CURRENT_HOUR UTC) ==="
           
-          if [ "$VIDEO_MODE" = "short" ]; then
+          if [ "$VIDEO_MODE" = "psychology_short_30s" ] || { [ "$VIDEO_MODE" = "auto" ] && [ "$CURRENT_HOUR" -eq 3 ]; }; then
+            echo "▶️ Generating 1 Stoic Deep Psychological Video (25-35s Action Law, Slot: $CURRENT_HOUR UTC)..."
+            SHORT_DURATION=30.0 node scripts/generate_stoic_quote_reel.cjs
+          elif [ "$VIDEO_MODE" = "short" ]; then
             echo "▶️ Generating 1 Stoic Animated Video Short..."
             node scripts/test_stoic_runner.cjs
           elif [ "$VIDEO_MODE" = "3s_reel" ] || { [ "$VIDEO_MODE" = "auto" ] && { [ "$CURRENT_HOUR" -eq 6 ] || [ "$CURRENT_HOUR" -eq 16 ]; }; }; then
@@ -100,7 +104,7 @@ jobs:
           elif [ "$VIDEO_MODE" = "5s_reel" ] || { [ "$VIDEO_MODE" = "auto" ] && { [ "$CURRENT_HOUR" -eq 11 ] || [ "$CURRENT_HOUR" -eq 21 ]; }; }; then
             echo "▶️ Generating 1 Stoic 5-Second Mystery Quote Reel (Slot: $CURRENT_HOUR UTC)..."
             SHORT_DURATION=5.0 node scripts/generate_stoic_quote_reel.cjs
-          elif [ "$VIDEO_MODE" = "all_daily_4" ]; then
+          elif [ "$VIDEO_MODE" = "all_daily_5" ] || [ "$VIDEO_MODE" = "all_daily_4" ]; then
             echo "▶️ Spaced Slot Trigger: Generating exactly 1 fresh, non-repeating video for current slot..."
             SHORT_DURATION=5.0 node scripts/generate_stoic_quote_reel.cjs
           else

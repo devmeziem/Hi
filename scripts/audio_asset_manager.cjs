@@ -20,7 +20,34 @@ const https = require('https');
 const http = require('http');
 const { execSync } = require('child_process');
 
-const AUDIO_EXTENSIONS = /\.(mp3|wav|m4a|aac|ogg|flac)$/i;
+const AUDIO_EXTENSIONS = /\.(mp3|wav|wave|m4a|aac|ogg|flac)$/i;
+
+/**
+ * Detect audio file by magic header bytes even if file lacks an extension
+ */
+function isAudioFile(filePath, filename) {
+  if (AUDIO_EXTENSIONS.test(filename)) return true;
+  try {
+    if (!fs.existsSync(filePath)) return false;
+    const stat = fs.statSync(filePath);
+    if (stat.size < 512) return false;
+    const fd = fs.openSync(filePath, 'r');
+    const buf = Buffer.alloc(12);
+    fs.readSync(fd, buf, 0, 12, 0);
+    fs.closeSync(fd);
+    // RIFF .... WAVE (WAV audio)
+    if (buf.toString('utf8', 0, 4) === 'RIFF' && buf.toString('utf8', 8, 12) === 'WAVE') return true;
+    // ID3 (MP3 audio)
+    if (buf.toString('utf8', 0, 3) === 'ID3') return true;
+    // MP3 sync frame
+    if (buf[0] === 0xFF && (buf[1] & 0xE0) === 0xE0) return true;
+    // OggS (OGG container)
+    if (buf.toString('utf8', 0, 4) === 'OggS') return true;
+    // fLaC (FLAC audio)
+    if (buf.toString('utf8', 0, 4) === 'fLaC') return true;
+  } catch {}
+  return false;
+}
 
 const SOUND_DIRECTORIES = {
   mindrush: path.join(process.cwd(), 'sound_assets', 'mindrush'),
@@ -125,13 +152,15 @@ function findAudioCandidates(primaryDir, fallbackDirs = []) {
               if (ent.name !== 'node_modules' && ent.name !== '.git' && ent.name !== 'dist') {
                 scan(path.join(currentDir, ent.name), depth + 1);
               }
-            } else if (ent.isFile() && AUDIO_EXTENSIONS.test(ent.name)) {
+            } else if (ent.isFile()) {
               const fullPath = path.join(currentDir, ent.name);
-              try {
-                if (fs.statSync(fullPath).size > 1024) {
-                  found.add(fullPath);
-                }
-              } catch {}
+              if (!ent.name.startsWith('.') && !ent.name.startsWith('test_') && !ent.name.startsWith('real_music_') && isAudioFile(fullPath, ent.name)) {
+                try {
+                  if (fs.statSync(fullPath).size > 1024) {
+                    found.add(fullPath);
+                  }
+                } catch {}
+              }
             }
           }
         };
@@ -295,16 +324,8 @@ function resolveChannelAudio(channelKey, durationSeconds, outputPath) {
   }
 
   if (candidates.length > 0) {
-    let matchingCandidates = candidates;
-    if (durationSeconds >= 10) {
-      const match15 = candidates.filter(c => /15s?/i.test(path.basename(c)));
-      if (match15.length > 0) matchingCandidates = match15;
-    } else if (durationSeconds <= 7) {
-      const match5 = candidates.filter(c => /5s?/i.test(path.basename(c)));
-      if (match5.length > 0) matchingCandidates = match5;
-    }
-    const chosenTrack = matchingCandidates[Math.floor(Math.random() * matchingCandidates.length)];
-    console.log(`[Audio Asset Manager] 🎵 Channel: [${channelKey}] -> Selected real track: "${path.basename(chosenTrack)}"`);
+    const chosenTrack = candidates[Math.floor(Math.random() * candidates.length)];
+    console.log(`[Audio Asset Manager] 🎵 Channel: [${channelKey}] -> Selected real user track (${candidates.length} available): "${path.basename(chosenTrack)}"`);
     const dur = durationSeconds.toFixed(2);
     const fadeIn = Math.min(0.12, durationSeconds * 0.03).toFixed(2);
     const fadeOut = Math.min(0.25, durationSeconds * 0.05).toFixed(2);
@@ -334,6 +355,32 @@ function resolveChannelAudio(channelKey, durationSeconds, outputPath) {
  * Procedural Audio Synthesis Fallback
  */
 function synthesizeProceduralAudio(channelKey, durationSeconds, outputPath) {
+  // Check if any real audio file exists across user directories before generating tones
+  const allUserDirs = [
+    path.join(process.cwd(), 'src', 'assets', 'sounds'),
+    path.join(process.cwd(), 'sound_assets', channelKey),
+    path.join(process.cwd(), 'sound_assets')
+  ];
+  for (const uDir of allUserDirs) {
+    if (fs.existsSync(uDir)) {
+      try {
+        const files = fs.readdirSync(uDir).filter(f => AUDIO_EXTENSIONS.test(f) || isAudioFile(path.join(uDir, f), f));
+        if (files.length > 0) {
+          const selected = path.join(uDir, files[Math.floor(Math.random() * files.length)]);
+          const dur = durationSeconds.toFixed(2);
+          const fadeIn = Math.min(0.15, durationSeconds * 0.04).toFixed(2);
+          const fadeOut = Math.min(0.3, durationSeconds * 0.06).toFixed(2);
+          const fadeOutStart = (durationSeconds - parseFloat(fadeOut)).toFixed(2);
+          execSync(`ffmpeg -y -stream_loop -1 -i "${selected}" -t ${dur} -af "loudnorm=I=-16:TP=-1.5:LRA=11,afade=t=in:ss=0:d=${fadeIn},afade=t=out:st=${fadeOutStart}:d=${fadeOut}" -c:a pcm_s16le -ar 44100 -ac 2 "${outputPath}" 2>/dev/null`);
+          if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 2000) {
+            console.log(`[Audio Asset Manager] ✅ Successfully utilized user uploaded audio: "${files[0]}"`);
+            return outputPath;
+          }
+        }
+      } catch {}
+    }
+  }
+
   const dur = durationSeconds.toFixed(2);
   const fadeOutStart = Math.max(0.5, (durationSeconds - 0.3)).toFixed(2);
 

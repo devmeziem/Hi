@@ -86,16 +86,17 @@ const MYSTERY_3D_POOLS = {
 };
 
 /**
- * Dynamically Generate 3D Mystery Image via Cloudflare Workers AI
+ * Dynamically Generate 3D Mystery Image via Cloudflare Workers AI Low-Cost Models
  */
 async function generateCloudflareMysteryImage(prompt) {
   if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_API_TOKEN) {
     return null;
   }
 
+  // Low cost Cloudflare Workers AI models (lightning fast & high dynamic range)
   const candidateModels = [
-    '@cf/black-forest-labs/flux-1-schnell',
-    '@cf/bytedance/stable-diffusion-xl-lightning'
+    '@cf/bytedance/stable-diffusion-xl-lightning',
+    '@cf/stabilityai/stable-diffusion-xl-base-1.0'
   ];
 
   for (const model of candidateModels) {
@@ -154,7 +155,41 @@ async function generateCloudflareMysteryImage(prompt) {
 }
 
 /**
- * Resolve 3D Mystery Visual (Cloudflare AI Dynamic Generation -> Local 3D Fallback)
+ * Dynamic Pollinations FLUX Engine Fallback (Never uses static seed images)
+ */
+async function generatePollinationsDynamicImage(prompt) {
+  try {
+    const seed = Math.floor(Math.random() * 99999999);
+    const encPrompt = encodeURIComponent(`${prompt}, 3d octane render, intense aura, volumetric dark lighting, 9:16 vertical 8k`);
+    const url = `https://image.pollinations.ai/prompt/${encPrompt}?width=1080&height=1920&nologo=true&model=flux&seed=${seed}`;
+    const outPath = path.join(ARTIFACTS_DIR, `mindrush_dynamic_${Date.now()}_${seed}.jpg`);
+    const buf = await new Promise((resolve) => {
+      https.get(url, { timeout: 20000 }, (res) => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          return https.get(res.headers.location, { timeout: 20000 }, (r2) => {
+            const c = [];
+            r2.on('data', d => c.push(d));
+            r2.on('end', () => resolve(Buffer.concat(c)));
+          }).on('error', () => resolve(null));
+        }
+        const c = [];
+        res.on('data', d => c.push(d));
+        res.on('end', () => resolve(Buffer.concat(c)));
+      }).on('error', () => resolve(null));
+    });
+    if (buf && buf.length > 2000) {
+      fs.writeFileSync(outPath, buf);
+      console.log(`[MindRush AI Images] 🎨 Dynamically synthesized 3D visual via FLUX (${(buf.length / 1024).toFixed(1)} KB)`);
+      return outPath;
+    }
+  } catch (err) {
+    console.warn(`[MindRush AI Images] Dynamic visual generation notice: ${err.message}`);
+  }
+  return null;
+}
+
+/**
+ * Resolve 3D Mystery Visual (Always dynamically generated via AI - No static seeds)
  */
 async function resolve3dMysteryImage(category = 'auto') {
   const categories = ['boy', 'animal_human', 'studio'];
@@ -165,28 +200,21 @@ async function resolve3dMysteryImage(category = 'auto') {
   const pool = MYSTERY_3D_POOLS[cat] || MYSTERY_3D_POOLS.boy;
   const prompt = pool[Math.floor(Math.random() * pool.length)];
 
-  console.log(`[MindRush AI Images] 🔮 Visual Theme: [${cat.toUpperCase()}]`);
+  console.log(`[MindRush AI Images] 🔮 Generating dynamic 3D visual via AI (Zero static seeds): [${cat.toUpperCase()}]`);
 
-  // 1. Live Cloudflare AI synthesis
+  // 1. Live Cloudflare Workers AI low cost models
   const cfImage = await generateCloudflareMysteryImage(prompt);
-  if (cfImage && fs.existsSync(cfImage)) {
+  if (cfImage && fs.existsSync(cfImage) && fs.statSync(cfImage).size > 2000) {
     return cfImage;
   }
 
-  // 2. High-grade 3D local assets fallback
-  if (cat === 'boy' && fs.existsSync(LOCAL_3D_MYSTERY_IMAGES.boy)) {
-    return LOCAL_3D_MYSTERY_IMAGES.boy;
-  }
-  if (cat === 'animal_human') {
-    const animal = Math.random() > 0.5 ? LOCAL_3D_MYSTERY_IMAGES.wolf : LOCAL_3D_MYSTERY_IMAGES.panther;
-    if (fs.existsSync(animal)) return animal;
-  }
-  if (cat === 'studio' && fs.existsSync(LOCAL_3D_MYSTERY_IMAGES.studio)) {
-    return LOCAL_3D_MYSTERY_IMAGES.studio;
+  // 2. Dynamic Pollinations FLUX Engine (Never uses static seed images)
+  const dynamicImage = await generatePollinationsDynamicImage(prompt);
+  if (dynamicImage && fs.existsSync(dynamicImage) && fs.statSync(dynamicImage).size > 2000) {
+    return dynamicImage;
   }
 
-  const allFallbacks = Object.values(LOCAL_3D_MYSTERY_IMAGES).filter(f => fs.existsSync(f));
-  return allFallbacks[Math.floor(Math.random() * allFallbacks.length)] || LOCAL_3D_MYSTERY_IMAGES.boy;
+  return cfImage || dynamicImage;
 }
 
 // 1. Curated Catalog of 5-Second High-Impact Punchlines
@@ -277,7 +305,7 @@ function wrapTextToLines(text, maxCharsPerLine = 24) {
 }
 
 /**
- * Build 5-Second Video Overlay SVG with high-contrast backing card
+ * Build 5-Second Video Overlay SVG with Stoic-Style Prestige Zero-Box Layout
  */
 function build5sOverlaySvg(entry) {
   const width = 1080;
@@ -285,119 +313,105 @@ function build5sOverlaySvg(entry) {
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
     <defs>
-      <filter id="cinematicGlow" x="-30%" y="-30%" width="160%" height="160%">
-        <feDropShadow dx="0" dy="12" stdDeviation="24" flood-color="#000000" flood-opacity="0.98" />
-        <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#000000" flood-opacity="1" />
+      <filter id="textGlow5" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="4" stdDeviation="14" flood-color="#000000" flood-opacity="1.0" />
+        <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#000000" flood-opacity="0.9" />
       </filter>
-      <linearGradient id="cardGrad5" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stop-color="#020617" stop-opacity="0.94"/>
-        <stop offset="100%" stop-color="#0b1120" stop-opacity="0.90"/>
+      <linearGradient id="teenVignette5" x1="0%" y1="0%" x2="0%" y2="1">
+        <stop offset="0%" stop-color="#000000" stop-opacity="0" />
+        <stop offset="25%" stop-color="#020617" stop-opacity="0.45" />
+        <stop offset="55%" stop-color="#020617" stop-opacity="0.86" />
+        <stop offset="85%" stop-color="#01040f" stop-opacity="0.96" />
+        <stop offset="100%" stop-color="#000000" stop-opacity="0.99" />
       </linearGradient>
     </defs>
 
-    <!-- Top Channel Badge (Y=140) -->
-    <g transform="translate(540, 140)" filter="url(#cinematicGlow)">
-      <rect x="-160" y="-30" width="320" height="56" rx="28" fill="#030712" fill-opacity="0.94" stroke="#06b6d4" stroke-width="2.5" />
-      <text y="7" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="900" fill="#38bdf8" text-anchor="middle" letter-spacing="4">
-        ⚡ MINDRUSH
-      </text>
-    </g>
+    <!-- Seamless Obsidian Vignette Background (No Box / Zero-Pill) -->
+    <rect x="0" y="700" width="1080" height="1220" fill="url(#teenVignette5)" />
 
-    <!-- Main Typography Card (Centered Safe Zone) -->
-    <g transform="translate(540, 520)" filter="url(#cinematicGlow)" text-anchor="middle">
-      <rect x="-460" y="-70" width="920" height="390" rx="32" fill="url(#cardGrad5)" stroke="#06b6d4" stroke-width="2" stroke-opacity="0.75" />
+    <!-- Stylized Electric Symbol -->
+    <text x="540" y="930" font-family="system-ui, -apple-system, sans-serif" font-size="70" font-weight="900" fill="#facc15" text-anchor="middle" filter="url(#textGlow5)">⚡</text>
 
-      <!-- Line 1: Pure White Bold Display -->
-      <text x="0" y="30" font-family="system-ui, -apple-system, 'Segoe UI', Impact, Arial Black, sans-serif" font-size="70" font-weight="900" fill="#ffffff" letter-spacing="0.5">
-        ${escapeXml(entry.line1)}
-      </text>
+    <!-- Line 1: Pure White Display -->
+    <text x="540" y="1030" font-family="system-ui, -apple-system, Impact, Arial Black, sans-serif" font-size="72" font-weight="900" fill="#ffffff" letter-spacing="1" text-anchor="middle" filter="url(#textGlow5)">
+      ${escapeXml(entry.line1.toUpperCase())}
+    </text>
 
-      <!-- Line 2: Radiant Golden Yellow Accent (#facc15) -->
-      <text x="0" y="130" font-family="system-ui, -apple-system, 'Segoe UI', Impact, Arial Black, sans-serif" font-size="78" font-weight="900" fill="#facc15" letter-spacing="0.5">
-        ${escapeXml(entry.line2)}
-      </text>
+    <!-- Line 2: Radiant Gold / Cyan Glow Accent -->
+    <text x="540" y="1125" font-family="system-ui, -apple-system, Impact, Arial Black, sans-serif" font-size="80" font-weight="900" fill="#facc15" letter-spacing="1.5" text-anchor="middle" filter="url(#textGlow5)">
+      ${escapeXml(entry.line2.toUpperCase())}
+    </text>
 
-      <!-- Line 3: Pure White Bold Display -->
-      <text x="0" y="230" font-family="system-ui, -apple-system, 'Segoe UI', Impact, Arial Black, sans-serif" font-size="70" font-weight="900" fill="#ffffff" letter-spacing="0.5">
-        ${escapeXml(entry.line3)}
-      </text>
-    </g>
+    <!-- Line 3: Pure White Display -->
+    <text x="540" y="1220" font-family="system-ui, -apple-system, Impact, Arial Black, sans-serif" font-size="72" font-weight="900" fill="#ffffff" letter-spacing="1" text-anchor="middle" filter="url(#textGlow5)">
+      ${escapeXml(entry.line3.toUpperCase())}
+    </text>
 
-    <!-- Bottom Seamless Loop Indicator (Y=1760) -->
-    <g transform="translate(540, 1760)" filter="url(#cinematicGlow)">
-      <rect x="-220" y="-26" width="440" height="50" rx="25" fill="#030712" fill-opacity="0.90" stroke="#334155" stroke-width="1.5" />
-      <text y="6" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#e2e8f0" text-anchor="middle" letter-spacing="3" opacity="0.9">
-        REPLAY TO LOCK IN • MINDRUSH
-      </text>
-    </g>
+    <!-- Fine Accent Divider Line -->
+    <line x1="420" y1="1285" x2="660" y2="1285" stroke="#facc15" stroke-width="3" stroke-linecap="round" stroke-opacity="0.9" />
+
+    <!-- Channel Tagline -->
+    <text x="540" y="1340" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="800" fill="#cbd5e1" letter-spacing="3" text-anchor="middle" filter="url(#textGlow5)">
+      - MINDRUSH • APEX DISCIPLINE
+    </text>
   </svg>`;
 }
 
 /**
- * Build 15-Second Segment 1 (Them / Opinion with Typewriter & Blinking Cursor)
+ * Build 15-Second Segment 1 (Them / Public Opinion with Stoic Prestige Zero-Box Layout)
  */
 function build15sSegment1OverlaySvg(debate, cursorChar = '|') {
   const width = 1080;
   const height = 1920;
 
   const lines = wrapTextToLines(debate.speaker1Text, 22);
-  const cardHeight = Math.max(260, lines.length * 75 + 130);
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
     <defs>
       <filter id="shadow1" x="-30%" y="-30%" width="160%" height="160%">
-        <feDropShadow dx="0" dy="12" stdDeviation="22" flood-color="#000000" flood-opacity="0.98" />
-        <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#000000" flood-opacity="1" />
+        <feDropShadow dx="0" dy="4" stdDeviation="14" flood-color="#000000" flood-opacity="1.0" />
+        <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#000000" flood-opacity="0.9" />
       </filter>
-      <linearGradient id="cardGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stop-color="#020617" stop-opacity="0.94"/>
-        <stop offset="100%" stop-color="#0f172a" stop-opacity="0.90"/>
+      <linearGradient id="vignette1" x1="0%" y1="0%" x2="0%" y2="1">
+        <stop offset="0%" stop-color="#000000" stop-opacity="0" />
+        <stop offset="25%" stop-color="#020617" stop-opacity="0.45" />
+        <stop offset="55%" stop-color="#020617" stop-opacity="0.86" />
+        <stop offset="85%" stop-color="#01040f" stop-opacity="0.96" />
+        <stop offset="100%" stop-color="#000000" stop-opacity="0.99" />
       </linearGradient>
     </defs>
 
-    <!-- Top Channel Indicator -->
-    <g transform="translate(540, 140)" filter="url(#shadow1)">
-      <rect x="-160" y="-30" width="320" height="56" rx="28" fill="#030712" fill-opacity="0.94" stroke="#06b6d4" stroke-width="2.5" />
-      <text y="7" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="900" fill="#38bdf8" text-anchor="middle" letter-spacing="4">
-        ⚡ MINDRUSH
-      </text>
-    </g>
+    <!-- Seamless Obsidian Vignette Background (No Box / Zero-Pill) -->
+    <rect x="0" y="680" width="1080" height="1240" fill="url(#vignette1)" />
 
-    <!-- Speaker 1 Card (Them / Public Opinion) -->
-    <g transform="translate(540, 520)" filter="url(#shadow1)" text-anchor="middle">
-      <rect x="-460" y="-70" width="920" height="${cardHeight}" rx="32" fill="url(#cardGrad1)" stroke="#475569" stroke-width="2" />
+    <!-- Speaker 1 Label (e.g. THEY SAID:) -->
+    <text x="540" y="940" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="900" fill="#94a3b8" letter-spacing="6" text-anchor="middle" filter="url(#shadow1)">
+      ⚡ ${escapeXml(debate.speaker1Label.toUpperCase())}
+    </text>
 
-      <!-- Speaker 1 Badge -->
-      <rect x="-170" y="-52" width="340" height="52" rx="26" fill="#1e293b" stroke="#64748b" stroke-width="1.5" />
-      <text y="-18" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="900" fill="#94a3b8" letter-spacing="4">
-        ${escapeXml(debate.speaker1Label.toUpperCase())}
-      </text>
+    <!-- Wrapped Doubt Statement with Blinking Cursor -->
+    ${lines.map((l, i) => {
+      const isLast = i === lines.length - 1;
+      const lineContent = (i === 0 ? `“` : ``) + l + (isLast ? `”` : ``);
+      return `
+        <text x="540" y="${1040 + i * 78}" font-family="system-ui, -apple-system, Impact, Arial Black, sans-serif" font-size="68" font-weight="900" fill="#ffffff" letter-spacing="1" text-anchor="middle" filter="url(#shadow1)">
+          ${escapeXml(lineContent)}${isLast ? `<tspan fill="#38bdf8" font-weight="bold"> ${escapeXml(cursorChar)}</tspan>` : ''}
+        </text>
+      `;
+    }).join('')}
 
-      <!-- Wrapped Doubt Statement with Blinking Cursor -->
-      ${lines.map((l, i) => {
-        const isLast = i === lines.length - 1;
-        const lineContent = (i === 0 ? `“` : ``) + l + (isLast ? `”` : ``);
-        return `
-          <text x="0" y="${50 + i * 72}" font-family="system-ui, -apple-system, Impact, Arial Black, sans-serif" font-size="62" font-weight="900" fill="#ffffff" letter-spacing="0.5">
-            ${escapeXml(lineContent)}${isLast ? `<tspan fill="#38bdf8" font-weight="bold"> ${escapeXml(cursorChar)}</tspan>` : ''}
-          </text>
-        `;
-      }).join('')}
-    </g>
+    <!-- Fine Accent Divider Line -->
+    <line x1="420" y1="${1050 + lines.length * 78}" x2="660" y2="${1050 + lines.length * 78}" stroke="#475569" stroke-width="2.5" stroke-linecap="round" />
 
-    <!-- Bottom Hook Tag (Y=1760) -->
-    <g transform="translate(540, 1760)" filter="url(#shadow1)">
-      <rect x="-210" y="-26" width="420" height="50" rx="25" fill="#030712" fill-opacity="0.90" stroke="#334155" stroke-width="1.5" />
-      <text y="6" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#94a3b8" text-anchor="middle" letter-spacing="3" opacity="0.9">
-        LISTEN CAREFULLY • WAIT FOR IT
-      </text>
-    </g>
+    <!-- Suspense Prompt -->
+    <text x="540" y="${1100 + lines.length * 78}" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="800" fill="#38bdf8" letter-spacing="4" text-anchor="middle" filter="url(#shadow1)">
+      WAIT FOR IT...
+    </text>
   </svg>`;
 }
 
 /**
- * Build 15-Second Segment 3 (The Me / Reality Counter Slam)
- * High-contrast dark glassmorphism card prevents text illegibility over images
+ * Build 15-Second Segment 3 (The Me / Reality Counter Slam with Stoic Prestige Zero-Box Layout)
  */
 function build15sSegment3OverlaySvg(debate) {
   const width = 1080;
@@ -406,19 +420,18 @@ function build15sSegment3OverlaySvg(debate) {
   const lines1 = wrapTextToLines(debate.speaker2Line1, 24);
   const lines2 = wrapTextToLines(debate.speaker2Line2, 24);
 
-  const startY = 460;
-  const totalContentHeight = (lines1.length * 68) + 95 + (lines2.length * 62) + 120;
-
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
     <defs>
-      <!-- Deep cinematic drop shadow and impact neon rim -->
       <filter id="slamGlow" x="-30%" y="-30%" width="160%" height="160%">
-        <feDropShadow dx="0" dy="12" stdDeviation="22" flood-color="#000000" flood-opacity="0.98" />
-        <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#000000" flood-opacity="1" />
+        <feDropShadow dx="0" dy="4" stdDeviation="16" flood-color="#000000" flood-opacity="1.0" />
+        <feDropShadow dx="0" dy="2" stdDeviation="8" flood-color="#000000" flood-opacity="0.95" />
       </filter>
-      <linearGradient id="cardGrad3" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stop-color="#020617" stop-opacity="0.95"/>
-        <stop offset="100%" stop-color="#090d16" stop-opacity="0.90"/>
+      <linearGradient id="vignette3" x1="0%" y1="0%" x2="0%" y2="1">
+        <stop offset="0%" stop-color="#000000" stop-opacity="0" />
+        <stop offset="25%" stop-color="#020617" stop-opacity="0.48" />
+        <stop offset="55%" stop-color="#020617" stop-opacity="0.88" />
+        <stop offset="85%" stop-color="#01040f" stop-opacity="0.97" />
+        <stop offset="100%" stop-color="#000000" stop-opacity="0.99" />
       </linearGradient>
       <linearGradient id="goldText" x1="0%" y1="0%" x2="100%" y2="0%">
         <stop offset="0%" stop-color="#fef08a"/>
@@ -427,51 +440,40 @@ function build15sSegment3OverlaySvg(debate) {
       </linearGradient>
     </defs>
 
-    <!-- Top Channel Indicator (Y=140) -->
-    <g transform="translate(540, 140)" filter="url(#slamGlow)">
-      <rect x="-160" y="-30" width="320" height="56" rx="28" fill="#030712" fill-opacity="0.94" stroke="#06b6d4" stroke-width="2.5" />
-      <text y="7" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="900" fill="#38bdf8" text-anchor="middle" letter-spacing="4">
-        ⚡ MINDRUSH
+    <!-- Seamless Obsidian Vignette Background (No Box / Zero-Pill) -->
+    <rect x="0" y="620" width="1080" height="1300" fill="url(#vignette3)" />
+
+    <!-- Speaker 2 Label (e.g. THE REALITY:) -->
+    <text x="540" y="900" font-family="system-ui, -apple-system, sans-serif" font-size="30" font-weight="900" fill="#facc15" letter-spacing="6" text-anchor="middle" filter="url(#slamGlow)">
+      ⚡ ${escapeXml(debate.speaker2Label.toUpperCase())}
+    </text>
+
+    <!-- Line 1 of retort (Auto-Wrapped, Bold Clean White) -->
+    ${lines1.map((l, i) => `
+      <text x="540" y="${980 + i * 72}" font-family="system-ui, -apple-system, Impact, Arial Black, sans-serif" font-size="62" font-weight="900" fill="#ffffff" letter-spacing="1" text-anchor="middle" filter="url(#slamGlow)">
+        ${escapeXml(l.toUpperCase())}
       </text>
-    </g>
+    `).join('')}
 
-    <!-- Central High-Contrast Glass Backdrop Plate -->
-    <g transform="translate(540, ${startY})" filter="url(#slamGlow)" text-anchor="middle">
-      <rect x="-470" y="-70" width="940" height="${totalContentHeight}" rx="32" fill="url(#cardGrad3)" stroke="#38bdf8" stroke-width="2.5" stroke-opacity="0.65" />
+    <!-- Highlight Word in Radiant Golden Glow (Massive 84px Impact) -->
+    <text x="540" y="${1000 + lines1.length * 72 + 65}" font-family="system-ui, -apple-system, Impact, Arial Black, sans-serif" font-size="86" font-weight="900" fill="url(#goldText)" letter-spacing="3" text-anchor="middle" filter="url(#slamGlow)">
+      ${escapeXml(debate.speaker2Highlight.toUpperCase())}
+    </text>
 
-      <!-- Speaker 2 Pill Badge (e.g. THE REALITY / THE PROOF / ME) -->
-      <rect x="-180" y="-50" width="360" height="56" rx="28" fill="#1e1b4b" fill-opacity="0.95" stroke="#facc15" stroke-width="2.5" />
-      <text x="0" y="-14" font-family="system-ui, -apple-system, sans-serif" font-size="26" font-weight="900" fill="#facc15" letter-spacing="4">
-        ${escapeXml(debate.speaker2Label.toUpperCase())}
+    <!-- Line 2 of retort (Auto-Wrapped, Crisp Ice White) -->
+    ${lines2.map((l, i) => `
+      <text x="540" y="${1000 + lines1.length * 72 + 135 + i * 66}" font-family="system-ui, -apple-system, Impact, Arial Black, sans-serif" font-size="56" font-weight="900" fill="#f1f5f9" letter-spacing="1" text-anchor="middle" filter="url(#slamGlow)">
+        ${escapeXml(l.toUpperCase())}
       </text>
+    `).join('')}
 
-      <!-- Line 1 of retort (Auto-Wrapped, Bold Clean White) -->
-      ${lines1.map((l, i) => `
-        <text x="0" y="${40 + i * 66}" font-family="system-ui, -apple-system, Impact, Arial Black, sans-serif" font-size="56" font-weight="900" fill="#ffffff" letter-spacing="0.5">
-          ${escapeXml(l)}
-        </text>
-      `).join('')}
+    <!-- Fine Accent Divider Bar -->
+    <line x1="420" y1="${1020 + lines1.length * 72 + 145 + lines2.length * 66}" x2="660" y2="${1020 + lines1.length * 72 + 145 + lines2.length * 66}" stroke="#facc15" stroke-width="3" stroke-linecap="round" />
 
-      <!-- Highlight Word in Radiant Golden Glow (Auto-Scaled) -->
-      <text x="0" y="${40 + lines1.length * 66 + 60}" font-family="system-ui, -apple-system, Impact, Arial Black, sans-serif" font-size="78" font-weight="900" fill="url(#goldText)" letter-spacing="2">
-        ${escapeXml(debate.speaker2Highlight.toUpperCase())}
-      </text>
-
-      <!-- Line 2 of retort (Auto-Wrapped, Crisp Ice White) -->
-      ${lines2.map((l, i) => `
-        <text x="0" y="${40 + lines1.length * 66 + 125 + i * 62}" font-family="system-ui, -apple-system, Impact, Arial Black, sans-serif" font-size="52" font-weight="900" fill="#f1f5f9" letter-spacing="0.5">
-          ${escapeXml(l)}
-        </text>
-      `).join('')}
-    </g>
-
-    <!-- Bottom Authority Tag (Y=1760) -->
-    <g transform="translate(540, 1760)" filter="url(#slamGlow)">
-      <rect x="-240" y="-26" width="480" height="50" rx="25" fill="#030712" fill-opacity="0.90" stroke="#334155" stroke-width="1.5" />
-      <text y="6" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#facc15" text-anchor="middle" letter-spacing="3" opacity="0.95">
-        MINDRUSH • DISCIPLINE OVER MOOD
-      </text>
-    </g>
+    <!-- Channel Tagline -->
+    <text x="540" y="${1070 + lines1.length * 72 + 145 + lines2.length * 66}" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="800" fill="#cbd5e1" letter-spacing="3" text-anchor="middle" filter="url(#slamGlow)">
+      - MINDRUSH • APEX DISCIPLINE
+    </text>
   </svg>`;
 }
 
@@ -622,26 +624,47 @@ async function render15sTeenReel(customDebate = null) {
     execSync(`ffmpeg -y -loop 1 -t 7.0 -i "${img1Path}" -loop 1 -t 7.0 -i "${seg1PngPath}" -filter_complex "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg];[bg][1:v]overlay=0:0[v]" -map "[v]" -t 7.0 -c:v libx264 -preset fast -pix_fmt yuv420p "${seg1Mp4}" 2>/dev/null`);
   }
 
-  console.log(`[15s Slam] Rendering Scene 2 (7.0-7.8s: 0.8-Second Blackout Screen for dramatic suspense)...`);
-  // Segment 2 (0.8s = 24 frames): Pure pitch black
-  execSync(`ffmpeg -y -f lavfi -i color=c=black:s=1080x1920:d=0.8:r=${fps} -c:v libx264 -preset fast -pix_fmt yuv420p "${seg2Mp4}" 2>/dev/null`);
+  console.log(`[15s Slam] Rendering Scene 2 (7.0-8.0s: 1.0-Second Blackout Screen with "WAIT FOR IT..." text)...`);
+  // Segment 2 (1.0s = 30 frames): Blackout screen with glowing suspense text
+  const blackoutSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" width="1080" height="1920">
+    <rect width="1080" height="1920" fill="#000000" />
+    <defs>
+      <filter id="glowWait" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="#ffffff" flood-opacity="0.95" />
+        <feDropShadow dx="0" dy="0" stdDeviation="28" flood-color="#38bdf8" flood-opacity="0.75" />
+      </filter>
+    </defs>
+    <!-- Centered Dramatic Suspense Text -->
+    <text x="540" y="960" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="900" fill="#ffffff" letter-spacing="8" text-anchor="middle" filter="url(#glowWait)">
+      WAIT FOR IT...
+    </text>
+  </svg>`;
+  const blackoutSvgPath = path.join(ARTIFACTS_DIR, 'teen_15s_blackout.svg');
+  const blackoutPngPath = path.join(ARTIFACTS_DIR, 'teen_15s_blackout.png');
+  fs.writeFileSync(blackoutSvgPath, blackoutSvg);
+  try {
+    execSync(`ffmpeg -y -i "${blackoutSvgPath}" "${blackoutPngPath}" 2>/dev/null`);
+  } catch {
+    execSync(`rsvg-convert -w 1080 -h 1920 -o "${blackoutPngPath}" "${blackoutSvgPath}" 2>/dev/null || true`);
+  }
+  execSync(`ffmpeg -y -loop 1 -t 1.0 -i "${blackoutPngPath}" -c:v libx264 -preset fast -pix_fmt yuv420p "${seg2Mp4}" 2>/dev/null`);
 
-  console.log(`[15s Slam] Rendering Scene 3 (7.8-15.0s: Explosive Center Slam + Beat-Synced 808 Camera Pulse)...`);
-  // Segment 3 (7.2s = 216 frames):
+  console.log(`[15s Slam] Rendering Scene 3 (8.0-15.0s: Explosive Center Slam + Beat-Synced 808 Camera Pulse)...`);
+  // Segment 3 (7.0s = 210 frames):
   // 1. Violent camera punch: Starts at 1.50 zoom, crashes down to 1.06 in 10 frames with screen tremor jitter
   // 2. Continuous beat-synced 808 bass-pulse zoom (sin 14 frames ~130 BPM)
   // 3. White impact flash on frame 0-2 (drawbox)
   // 4. Crisp dark-backed text overlay composited on top
-  const seg3Filter = `[0:v]scale=-2:2160,zoompan=z='if(lte(on,10),1.50-on*0.044,1.06+(on-10)*0.0003 + 0.012*sin(2*PI*(on-10)/14))':d=216:x='iw/2-(iw/zoom/2)+if(lte(on,8),(mod(on,2)*2-1)*16*(8-on)/8,sin(2*PI*(on-10)/28)*15)':y='ih*0.4-(ih*0.4/zoom)+if(lte(on,8),(mod(on,3)-1)*12*(8-on)/8,0)':s=1080x1920:fps=${fps}[bg];` +
+  const seg3Filter = `[0:v]scale=-2:2160,zoompan=z='if(lte(on,10),1.50-on*0.044,1.06+(on-10)*0.0003 + 0.012*sin(2*PI*(on-10)/14))':d=210:x='iw/2-(iw/zoom/2)+if(lte(on,8),(mod(on,2)*2-1)*16*(8-on)/8,sin(2*PI*(on-10)/28)*15)':y='ih*0.4-(ih*0.4/zoom)+if(lte(on,8),(mod(on,3)-1)*12*(8-on)/8,0)':s=1080x1920:fps=${fps}[bg];` +
     `[bg]drawbox=x=0:y=0:w=1080:h=1920:color=white@0.85:t=fill:enable='lte(n,2)'[bgflash];` +
     `[bgflash][1:v]overlay=0:0[v]`;
 
   try {
-    execSync(`ffmpeg -y -loop 1 -i "${img2Path}" -loop 1 -t 7.2 -i "${seg3PngPath}" -filter_complex "${seg3Filter}" -map "[v]" -t 7.2 -c:v libx264 -preset fast -pix_fmt yuv420p "${seg3Mp4}" 2>/dev/null`);
+    execSync(`ffmpeg -y -loop 1 -i "${img2Path}" -loop 1 -t 7.0 -i "${seg3PngPath}" -filter_complex "${seg3Filter}" -map "[v]" -t 7.0 -c:v libx264 -preset fast -pix_fmt yuv420p "${seg3Mp4}" 2>/dev/null`);
   } catch (err) {
     console.warn(`[15s Slam] Notice on intense filter, applying standard punch: ${err.message}`);
     const fallbackSlamFilter = `[0:v]scale=1200:2133:force_original_aspect_ratio=increase,crop=1080:1920[bg];[bg][1:v]overlay=0:0[v]`;
-    execSync(`ffmpeg -y -loop 1 -t 7.2 -i "${img2Path}" -loop 1 -t 7.2 -i "${seg3PngPath}" -filter_complex "${fallbackSlamFilter}" -map "[v]" -t 7.2 -c:v libx264 -preset fast -pix_fmt yuv420p "${seg3Mp4}" 2>/dev/null`);
+    execSync(`ffmpeg -y -loop 1 -t 7.0 -i "${img2Path}" -loop 1 -t 7.0 -i "${seg3PngPath}" -filter_complex "${fallbackSlamFilter}" -map "[v]" -t 7.0 -c:v libx264 -preset fast -pix_fmt yuv420p "${seg3Mp4}" 2>/dev/null`);
   }
 
   // 6. Concatenate Segments and Map 15-Second Audio

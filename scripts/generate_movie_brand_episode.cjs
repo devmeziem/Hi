@@ -1639,6 +1639,12 @@ async function saveEpisodeToFirestore(entry) {
 }
 
 if (require.main === module) {
+  if (process.env.RUN_MOVIE !== 'true' && !process.argv.includes('--force')) {
+    console.log(`[Movie Channel] ⏸️ Channel 4 is PAUSED. Season 1 Finale (Episode 4: The Abyssal Trench) is completed and all seed files are deleted.`);
+    console.log(`[Movie Channel] To force manual generation, run with --force or set RUN_MOVIE=true.`);
+    process.exit(0);
+  }
+
   let targetIndex = 3; // Default to Episode 4: The Abyssal Trench (Finale)
   const rawInput = process.env.EPISODE_INDEX;
 

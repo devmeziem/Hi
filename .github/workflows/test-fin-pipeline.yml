@@ -2,21 +2,22 @@ name: Test Fin Blueprint Pipeline
 
 on:
   schedule:
-    # 4x daily spaced drops: 07:00 UTC (3s reel), 12:00 UTC (5s reel), 17:00 UTC (3s reel), 22:00 UTC (5s reel)
+    # 5x daily spaced drops: 04:00 UTC (30s deep financial psychology), 07:00 UTC (3s reel), 12:00 UTC (5s reel), 17:00 UTC (3s reel), 22:00 UTC (5s reel)
     # Staggered 1 hour after Stoic drops to prevent API congestion & maintain ideal audience distribution
-    - cron: '0 7,12,17,22 * * *'
+    - cron: '0 4,7,12,17,22 * * *'
   workflow_dispatch:
     inputs:
       video_mode:
-        description: 'Video Mode (auto | 3s_reel | 5s_reel | all_daily_4)'
+        description: 'Video Mode (auto | fin_psychology_30s | 3s_reel | 5s_reel | all_daily_5)'
         required: false
         default: 'auto'
         type: choice
         options:
           - auto
+          - fin_psychology_30s
           - 3s_reel
           - 5s_reel
-          - all_daily_4
+          - all_daily_5
       topic:
         description: 'Video Topic / Theme (Optional)'
         required: false
@@ -98,13 +99,16 @@ jobs:
           CURRENT_HOUR=$(date -u +%-H)
           echo "=== Processing Video Dispatch (Mode: $VIDEO_MODE, Current UTC Hour: $CURRENT_HOUR) ==="
           
-          if [ "$VIDEO_MODE" = "3s_reel" ] || { [ "$VIDEO_MODE" = "auto" ] && { [ "$CURRENT_HOUR" -eq 7 ] || [ "$CURRENT_HOUR" -eq 17 ]; }; }; then
+          if [ "$VIDEO_MODE" = "fin_psychology_30s" ] || { [ "$VIDEO_MODE" = "auto" ] && [ "$CURRENT_HOUR" -eq 4 ]; }; then
+            echo "▶️ Generating 1 Fin Deep Psychological Video (25-35s Action Law, Slot: $CURRENT_HOUR UTC)..."
+            SHORT_DURATION=30.0 node scripts/generate_fin_quote_reel.cjs
+          elif [ "$VIDEO_MODE" = "3s_reel" ] || { [ "$VIDEO_MODE" = "auto" ] && { [ "$CURRENT_HOUR" -eq 7 ] || [ "$CURRENT_HOUR" -eq 17 ]; }; }; then
             echo "▶️ Generating 1 Fin Reel (3 Seconds Duration, Slot: $CURRENT_HOUR UTC)..."
             SHORT_DURATION=3.0 node scripts/generate_fin_quote_reel.cjs
           elif [ "$VIDEO_MODE" = "5s_reel" ] || { [ "$VIDEO_MODE" = "auto" ] && { [ "$CURRENT_HOUR" -eq 12 ] || [ "$CURRENT_HOUR" -eq 22 ]; }; }; then
             echo "▶️ Generating 1 Fin Reel (5 Seconds Duration, Slot: $CURRENT_HOUR UTC)..."
             SHORT_DURATION=5.0 node scripts/generate_fin_quote_reel.cjs
-          elif [ "$VIDEO_MODE" = "all_daily_4" ]; then
+          elif [ "$VIDEO_MODE" = "all_daily_5" ] || [ "$VIDEO_MODE" = "all_daily_4" ]; then
             echo "▶️ Spaced Slot Trigger: Generating exactly 1 fresh, non-repeating fin reel for current slot..."
             SHORT_DURATION=5.0 node scripts/generate_fin_quote_reel.cjs
           else

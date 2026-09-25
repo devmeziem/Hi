@@ -516,6 +516,63 @@ async function resolveFinancialPortrait(scholar) {
   const safeName = scholar.author.toLowerCase().replace(/[^a-z0-9]/g, '_');
   const outJpgPath = path.join(PORTRAITS_DIR, `${safeName}_portrait.jpg`);
 
+  // 1. Primary Strategy: Cloudflare Workers AI Low-Cost Dynamic Generation (Zero static seeds)
+  const cfAccountId = (process.env.CLOUDFLARE_ACCOUNT_ID || '').trim().replace(/^https?:\/\/[^\/]+\//, '').replace(/\/$/, '');
+  const cfApiToken = (process.env.CLOUDFLARE_API_TOKEN || '').trim();
+  if (cfAccountId && cfApiToken) {
+    const cfModels = [
+      '@cf/bytedance/stable-diffusion-xl-lightning',
+      '@cf/stabilityai/stable-diffusion-xl-base-1.0'
+    ];
+    for (const model of cfModels) {
+      try {
+        const randomSeed = Math.floor(Math.random() * 99999999);
+        const postData = JSON.stringify({
+          prompt: `Cinematic vertical 9:16 dark portrait of ${scholar.author}, iconic financial titan, thoughtful intense expression, dark obsidian executive boardroom background, subtle warm golden rim lighting, 8k resolution vertical masterpiece`,
+          num_steps: 4,
+          seed: randomSeed
+        });
+        const cfBuf = await new Promise((resolve) => {
+          const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/${model}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${cfApiToken}`,
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 18000
+          }, (res) => {
+            const chunks = [];
+            res.on('data', c => chunks.push(c));
+            res.on('end', () => {
+              if (res.statusCode === 200) {
+                const full = Buffer.concat(chunks);
+                try {
+                  const json = JSON.parse(full.toString('utf8'));
+                  if (json.result?.image) return resolve(Buffer.from(json.result.image, 'base64'));
+                } catch {}
+                if (full.length > 2000) return resolve(full);
+              }
+              resolve(null);
+            });
+          });
+          req.on('error', () => resolve(null));
+          req.on('timeout', () => { req.destroy(); resolve(null); });
+          req.write(postData);
+          req.end();
+        });
+
+        if (cfBuf && cfBuf.length > 5000) {
+          fs.writeFileSync(outJpgPath, cfBuf);
+          console.log(`[Finance Quote Reel] 🎨 Synthesized dynamic portrait via Cloudflare AI (${model})`);
+          return outJpgPath;
+        }
+      } catch (cfErr) {
+        console.warn(`[Finance Quote Reel] Cloudflare AI portrait notice: ${cfErr.message}`);
+      }
+    }
+  }
+
   if (fs.existsSync(outJpgPath) && fs.statSync(outJpgPath).size > 15000) {
     return outJpgPath;
   }
@@ -572,11 +629,12 @@ async function resolveFinancialPortrait(scholar) {
     console.warn(`[Finance Quote Reel] Wikipedia search lookup notice: ${e.message}`);
   }
 
-  // 3. Fallback ONLY: High-Fidelity Pollinations FLUX generation (used only if Wikipedia archives fail)
+  // 3. Dynamic Pollinations FLUX generation (Always dynamic random seed)
   try {
-    console.log(`[Finance Quote Reel] ⚠️ Wikipedia portrait unavailable. Using Pollinations AI as fallback for ${scholar.author}...`);
+    const randomSeed = Math.floor(Math.random() * 99999999);
+    console.log(`[Finance Quote Reel] ⚠️ Generating dynamic portrait for ${scholar.author} (Seed: ${randomSeed})...`);
     const prompt = `cinematic vertical 9:16 portrait of ${scholar.author}, iconic financial titan, thoughtful expression, dark minimalist executive background, subtle warm golden rim lighting, sharp focus, 8k vertical wallpaper`;
-    const pollUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1080&height=1920&nologo=true&seed=88`;
+    const pollUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1080&height=1920&nologo=true&model=flux&seed=${randomSeed}`;
     const imgBuf = await fetchHttpsBuffer(pollUrl, 14000);
     if (imgBuf && imgBuf.length > 10000) {
       fs.writeFileSync(outJpgPath, imgBuf);
@@ -586,25 +644,23 @@ async function resolveFinancialPortrait(scholar) {
     console.warn(`[Finance Quote Reel] Pollinations fallback notice: ${e.message}`);
   }
 
-  // 3. Resilient Local Executive Backdrop
+  // 5. Resilient Local Executive Backdrop (Chiaroscuro Obsidian Silhouette)
   const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" width="1080" height="1920">
     <defs>
       <linearGradient id="execBg" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stop-color="#020617" />
-        <stop offset="50%" stop-color="#0f172a" />
-        <stop offset="100%" stop-color="#02040a" />
+        <stop offset="35%" stop-color="#0b1329" />
+        <stop offset="70%" stop-color="#060a17" />
+        <stop offset="100%" stop-color="#010308" />
       </linearGradient>
-      <radialGradient id="goldAura" cx="50%" cy="40%" r="60%">
-        <stop offset="0%" stop-color="#eab308" stop-opacity="0.18" />
-        <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+      <radialGradient id="goldAura" cx="50%" cy="38%" r="55%">
+        <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.18" />
+        <stop offset="60%" stop-color="#000000" stop-opacity="0.85" />
+        <stop offset="100%" stop-color="#000000" stop-opacity="0.98" />
       </radialGradient>
     </defs>
     <rect width="1080" height="1920" fill="url(#execBg)" />
     <rect width="1080" height="1920" fill="url(#goldAura)" />
-    <circle cx="540" cy="650" r="180" fill="#1e293b" stroke="#334155" stroke-width="4" />
-    <circle cx="540" cy="580" r="80" fill="#334155" />
-    <path d="M 400 780 C 400 700, 680 700, 680 780 Z" fill="#334155" />
-    <text x="540" y="930" fill="#e2e8f0" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="bold" text-anchor="middle">${scholar.author}</text>
   </svg>`;
   const svgPath = path.join(PORTRAITS_DIR, `${safeName}_fallback.svg`);
   fs.writeFileSync(svgPath, fallbackSvg);
@@ -641,137 +697,25 @@ function generateFinancialMysterySound(outWavPath, duration = 5.0) {
     }
   }
 
-  // 1. Check local audio assets directories
-  const soundDirs = [
-    path.join(process.cwd(), 'assets', 'sounds'),
-    path.join(process.cwd(), 'src', 'assets', 'sounds'),
-    path.join(process.cwd(), 'test_artifacts', 'sounds')
-  ];
-
-  const presets = [
-    'horror_scene_murder_mystery',
-    'instrumental_mystery',
-    'mystery_darkness'
-  ];
-  const runSeed = Math.floor(Date.now() / (1000 * 60 * 15)); // change every 15 mins or run
-  const chosenPreset = process.env.SOUND_PRESET || presets[runSeed % presets.length];
-
-  for (const sDir of soundDirs) {
-    if (fs.existsSync(sDir)) {
-      // Check for exact preset file first
-      const specificFile = path.join(sDir, `${chosenPreset}.wav`);
-      const specificMp3 = path.join(sDir, `${chosenPreset}.mp3`);
-      const targetLocal = fs.existsSync(specificFile) ? specificFile : (fs.existsSync(specificMp3) ? specificMp3 : null);
-
-      if (targetLocal) {
-        console.log(`[Sound Engine] Using master audio track: ${path.basename(targetLocal)}`);
-        try {
-          execSync(
-            `ffmpeg -y -stream_loop -1 -i "${targetLocal}" -t ${duration} -af "afade=t=in:ss=0:d=0.2,afade=t=out:st=${(duration - 0.2).toFixed(2)}:d=0.2" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`
-          );
-          if (fs.existsSync(outWavPath) && fs.statSync(outWavPath).size > 5000) {
-            return outWavPath;
-          }
-        } catch (e) {
-          // Fall through to procedural
-        }
-      }
-
-      // Check any available audio in folder
-      const allAudios = fs.readdirSync(sDir).filter(f => f.match(/\.(mp3|wav|ogg|m4a)$/i));
-      if (allAudios.length > 0) {
-        const anyAudio = path.join(sDir, allAudios[0]);
-        console.log(`[Sound Engine] Using available audio track: ${path.basename(anyAudio)}`);
-        try {
-          execSync(
-            `ffmpeg -y -stream_loop -1 -i "${anyAudio}" -t ${duration} -af "afade=t=in:ss=0:d=0.2,afade=t=out:st=${(duration - 0.2).toFixed(2)}:d=0.2" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`
-          );
-          if (fs.existsSync(outWavPath) && fs.statSync(outWavPath).size > 5000) {
-            return outWavPath;
-          }
-        } catch (e) {
-          // Fall through
-        }
-      }
-    }
-  }
-
-  console.log(`[Sound Engine] Synthesizing loopable mystery audio track: "${chosenPreset}" (${duration}s)...`);
-  const d = duration.toFixed(2);
-  const fadeOutStart = (duration - 0.2).toFixed(2);
-  let filterExpr = '';
-
-  if (chosenPreset === 'horror_scene_murder_mystery') {
-    // Archetype 1: Horror Scene Murder Mystery (dissonant tension, 48Hz/96Hz/135Hz drone + tremolo)
-    filterExpr = [
-      `aevalsrc='sin(2*PI*48*t)*0.32 + sin(2*PI*96*t)*0.22 + sin(2*PI*135.76*t)*0.18 + sin(2*PI*192*t)*0.10 + sin(2*PI*1536*t)*(0.025+0.02*sin(2*PI*0.4*t))':s=44100:d=${d}`,
-      `lowpass=f=1200`,
-      `aecho=0.85:0.75:350|700:0.25|0.15`,
-      `afade=t=in:ss=0:d=0.2,afade=t=out:st=${fadeOutStart}:d=0.2`
-    ].join(',');
-  } else if (chosenPreset === 'instrumental_mystery') {
-    // Archetype 2: Instrumental Mystery (C minor 9th suspense: 65.4Hz C2, 98Hz G2, 155.5Hz Eb3, 233Hz Bb3)
-    filterExpr = [
-      `aevalsrc='sin(2*PI*65.4*t)*0.28 + sin(2*PI*98*t)*0.22 + sin(2*PI*155.56*t)*0.18 + sin(2*PI*233.08*t)*0.14 + sin(2*PI*392*t)*(0.04+0.03*sin(2*PI*0.25*t))':s=44100:d=${d}`,
-      `bandpass=f=800:w=600`,
-      `aecho=0.8:0.7:450|900:0.3|0.2`,
-      `afade=t=in:ss=0:d=0.2,afade=t=out:st=${fadeOutStart}:d=0.2`
-    ].join(',');
-  } else {
-    // Archetype 3: Mystery Darkness (abyssal deep 43Hz F1 bass, cold room tone)
-    filterExpr = [
-      `aevalsrc='sin(2*PI*43.65*t)*0.36 + sin(2*PI*87.3*t)*0.24 + sin(2*PI*130.81*t)*0.16 + sin(2*PI*261.63*t)*0.08':s=44100:d=${d}`,
-      `lowpass=f=450`,
-      `aecho=0.9:0.8:500|1000:0.35|0.2`,
-      `afade=t=in:ss=0:d=0.2,afade=t=out:st=${fadeOutStart}:d=0.2`
-    ].join(',');
-  }
-
-  execSync(`ffmpeg -y -f lavfi -i "${filterExpr}" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
-  return outWavPath;
+  // Resolve user uploaded track from sound_assets/finance/ or src/assets/sounds/
+  return resolveChannelAudio('finance', duration, outWavPath);
 }
 
 /**
- * Generate High-Contrast Caption Card SVG (Varied Visual Themes & Low Text Density)
+ * Build Stoic-Style Prestige Zero-Box Captions Overlay for Financial Titans
+ * Exact same layout and typographic discipline as Stoic channel:
+ * - Zero-Pill Discipline: No box, no card border, no badge.
+ * - Feathered dark cinematic vignette gradient preserving portrait visibility.
+ * - Stylized golden quote mark “ in #f59e0b.
+ * - Prestige Georgia bold serif typography with #textGlow drop shadow.
+ * - Warm gold accent divider bar.
+ * - Minimalist dashed author attribution (- Warren Buffett).
+ * - Exact academic/financial credentials.
+ * - Subtle ambient audio tag.
  */
-function buildFrostedGlassCardSvg(scholar, width = 1080, height = 1920) {
-  // Theme Variation: Rotate between Gold-Obsidian, Emerald-Bronze, and Platinum-Navy
-  const themeSeeds = [
-    {
-      id: 'gold_obsidian',
-      badgeBg: '#f59e0b',
-      badgeBorder: '#fbbf24',
-      badgeText: '#fcd34d',
-      borderGrad: ['#f59e0b', '#fbbf24', '#d97706'],
-      nameColor: '#fbbf24',
-      badgeTitle: 'THE 1% MINDSET'
-    },
-    {
-      id: 'platinum_navy',
-      badgeBg: '#38bdf8',
-      badgeBorder: '#7dd3fc',
-      badgeText: '#e0f2fe',
-      borderGrad: ['#38bdf8', '#0284c7', '#6366f1'],
-      nameColor: '#38bdf8',
-      badgeTitle: 'WEALTH PRINCIPLE'
-    },
-    {
-      id: 'emerald_prestige',
-      badgeBg: '#10b981',
-      badgeBorder: '#34d399',
-      badgeText: '#d1fae5',
-      borderGrad: ['#10b981', '#059669', '#34d399'],
-      nameColor: '#34d399',
-      badgeTitle: 'FINANCIAL FREEDOM'
-    }
-  ];
-  
-  const themeIndex = Math.abs(scholar.author.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % themeSeeds.length;
-  const theme = themeSeeds[themeIndex];
-
-  // Dynamic wrapping without artificial truncation
+function buildFinStoicOverlaySvg(scholar, width = 1080, height = 1920) {
   const quoteLen = scholar.quote.length;
-  const maxChars = quoteLen > 120 ? 28 : (quoteLen > 70 ? 25 : 22);
+  const maxChars = quoteLen > 110 ? 27 : (quoteLen > 65 ? 24 : 21);
   const quoteWords = scholar.quote.split(/\s+/);
   const lines = [];
   let currentLine = '';
@@ -787,99 +731,153 @@ function buildFrostedGlassCardSvg(scholar, width = 1080, height = 1920) {
 
   const numLines = lines.length;
   let fontSize = 48;
-  let lineHeight = 64;
-  let authorFontSize = 28;
+  let lineHeight = 66;
+  let authorFontSize = 29;
   let credFontSize = 17;
 
   if (numLines <= 2) {
     fontSize = 52;
     lineHeight = 72;
+    authorFontSize = 30;
+    credFontSize = 18;
   } else if (numLines === 3) {
     fontSize = 46;
     lineHeight = 64;
+    authorFontSize = 28;
+    credFontSize = 17;
   } else if (numLines === 4) {
     fontSize = 40;
     lineHeight = 56;
-    authorFontSize = 25;
+    authorFontSize = 26;
     credFontSize = 16;
   } else {
-    fontSize = 34;
+    fontSize = 35;
     lineHeight = 48;
-    authorFontSize = 22;
+    authorFontSize = 24;
     credFontSize = 15;
   }
 
-  // Exact vertical layout math inside card:
-  const quoteTextTop = 135;
-  const quoteBottom = quoteTextTop + ((numLines - 1) * lineHeight);
-  const dividerY = quoteBottom + 30;
-  const authorY = dividerY + 40;
-  const credY = authorY + 34;
-  const cardHeight = credY + 35;
+  const quoteTspans = lines.map((line, idx) =>
+    `<tspan x="540" dy="${idx === 0 ? 0 : lineHeight}">${escapeXml(line)}</tspan>`
+  ).join('\n        ');
 
-  // Shorts Safe Area: bottom at Y=1340, width 920px (X=80 to 1000)
-  const cardWidth = 920;
-  const cardX = 80;
-  const cardY = Math.max(760, 1340 - cardHeight);
-
-  const quoteTspans = lines.map((line, idx) => {
-    return `<tspan x="540" dy="${idx === 0 ? 0 : lineHeight}">${escapeXml(line)}</tspan>`;
-  }).join('');
+  const quoteBlockHeight = (numLines - 1) * lineHeight;
+  const quoteStartY = Math.max(860, 1080 - Math.round(quoteBlockHeight / 2) - 40);
+  const quoteBottomY = quoteStartY + quoteBlockHeight;
+  const dividerY = quoteBottomY + 36;
+  const authorY = dividerY + 44;
+  const credY = authorY + 32;
+  const soundTagY = credY + 38;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
     <defs>
-      <!-- Deep High-Contrast Opaque Backdrop -->
-      <linearGradient id="solidContrastBg" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#050811" stop-opacity="0.96" />
-        <stop offset="50%" stop-color="#0a0e1a" stop-opacity="0.97" />
-        <stop offset="100%" stop-color="#020409" stop-opacity="0.99" />
-      </linearGradient>
-
-      <!-- Dynamic Border Gradient -->
-      <linearGradient id="cardAccentBorder" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0%" stop-color="${theme.borderGrad[0]}" stop-opacity="0.9" />
-        <stop offset="50%" stop-color="${theme.borderGrad[1]}" stop-opacity="1.0" />
-        <stop offset="100%" stop-color="${theme.borderGrad[2]}" stop-opacity="0.9" />
-      </linearGradient>
-
-      <filter id="cardShadow" x="-10%" y="-10%" width="120%" height="120%">
-        <feDropShadow dx="0" dy="24" stdDeviation="32" flood-color="#000000" flood-opacity="0.98" />
+      <filter id="textGlow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="#000000" flood-opacity="1.0" />
+        <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.9" />
       </filter>
-      <filter id="textContrast" x="-15%" y="-15%" width="130%" height="130%">
-        <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="1.0" />
-      </filter>
+      <linearGradient id="cinematicVignette" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#000000" stop-opacity="0" />
+        <stop offset="25%" stop-color="#020617" stop-opacity="0.45" />
+        <stop offset="55%" stop-color="#020617" stop-opacity="0.84" />
+        <stop offset="85%" stop-color="#01040f" stop-opacity="0.95" />
+        <stop offset="100%" stop-color="#000000" stop-opacity="0.98" />
+      </linearGradient>
     </defs>
 
-    <!-- Subtle Cinematic Gradient: Preserves Face Clarity While Ensuring Text Legibility -->
-    <rect x="0" y="950" width="1080" height="970" fill="url(#solidContrastBg)" fill-opacity="0.75" />
+    <!-- Subtle Cinematic Vignette Background (No Box / Zero-Pill) -->
+    <rect x="0" y="660" width="1080" height="1260" fill="url(#cinematicVignette)" />
 
-    <!-- High-Contrast Caption Card Container -->
-    <rect x="${cardX}" y="${cardY}" width="${cardWidth}" height="${cardHeight}" rx="32" fill="url(#solidContrastBg)" filter="url(#cardShadow)" />
-    <rect x="${cardX}" y="${cardY}" width="${cardWidth}" height="${cardHeight}" rx="32" fill="none" stroke="url(#cardAccentBorder)" stroke-width="2.5" />
+    <!-- Stylized Elegant Quotation Mark -->
+    <text x="540" y="${quoteStartY - 45}" font-family="Georgia, serif" font-size="82" font-weight="900" fill="#f59e0b" fill-opacity="0.85" text-anchor="middle" filter="url(#textGlow)">“</text>
 
-    <!-- Top Accent Badge Header -->
-    <rect x="90" y="${cardY + 36}" width="300" height="44" rx="22" fill="${theme.badgeBg}" fill-opacity="0.22" stroke="${theme.badgeBorder}" stroke-width="2" />
-    <text x="240" y="${cardY + 65}" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="900" fill="${theme.badgeText}" text-anchor="middle" letter-spacing="2">${theme.badgeTitle}</text>
-
-    <!-- Reference Tag at Right -->
-    <text x="940" y="${cardY + 65}" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" fill="#cbd5e1" text-anchor="end">${escapeXml(scholar.reference || 'Financial Wisdom')}</text>
-
-    <!-- The Quote Body: Ultra-Bold White (52px, max 3 lines) -->
-    <text x="540" y="${cardY + 155}" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="52" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="-0.5" filter="url(#textContrast)">
-      ${quoteTspans}
+    <!-- Complete High-Contrast Quote Text (Georgia bold serif) -->
+    <text x="540" y="${quoteStartY}" font-family="Georgia, serif" font-size="${fontSize}" font-weight="900" fill="#ffffff" text-anchor="middle" filter="url(#textGlow)">
+        ${quoteTspans}
     </text>
 
-    <!-- Divider Line -->
-    <line x1="90" y1="${cardY + cardHeight - 105}" x2="990" y2="${cardY + cardHeight - 105}" stroke="#334155" stroke-width="1.8" opacity="0.9" />
+    <!-- Accent Divider Bar in Warm Gold -->
+    <line x1="430" y1="${dividerY}" x2="650" y2="${dividerY}" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.85" />
 
-    <!-- Author Name & Credentials -->
-    <text x="540" y="${cardY + cardHeight - 65}" font-family="system-ui, -apple-system, sans-serif" font-size="30" font-weight="900" fill="${theme.nameColor}" text-anchor="middle" letter-spacing="1.5" filter="url(#textContrast)">
-      ${escapeXml(scholar.author.toUpperCase())}
+    <!-- Titan Name Attribution -->
+    <text x="540" y="${authorY}" font-family="system-ui, -apple-system, sans-serif" font-size="${authorFontSize}" font-weight="800" fill="#f8fafc" letter-spacing="1.5" text-anchor="middle" filter="url(#textGlow)">
+      - ${escapeXml(scholar.author)}
     </text>
-    <text x="540" y="${cardY + cardHeight - 26}" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#94a3b8" text-anchor="middle">
+
+    <!-- Credentials / Institution -->
+    <text x="540" y="${credY}" font-family="system-ui, -apple-system, sans-serif" font-size="${credFontSize}" font-weight="600" fill="#cbd5e1" letter-spacing="0.8" text-anchor="middle" filter="url(#textGlow)">
       ${escapeXml(scholar.credentials)}
     </text>
+
+    <!-- Soundtrack Tag Reference -->
+    <text x="540" y="${soundTagY}" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="500" fill="#94a3b8" letter-spacing="1.2" text-anchor="middle">
+      🎵 Sovereign Capital · Deep Ambient Chords
+    </text>
   </svg>`;
+}
+
+function buildFinDeepBeat2Svg(scholar, width = 1080, height = 1920) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+    <defs>
+      <filter id="textGlow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="#000000" flood-opacity="1.0" />
+      </filter>
+      <linearGradient id="cinematicVignette" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#000000" stop-opacity="0" />
+        <stop offset="25%" stop-color="#020617" stop-opacity="0.5" />
+        <stop offset="55%" stop-color="#020617" stop-opacity="0.9" />
+        <stop offset="100%" stop-color="#000000" stop-opacity="0.99" />
+      </linearGradient>
+    </defs>
+    <rect x="0" y="660" width="1080" height="1260" fill="url(#cinematicVignette)" />
+    <text x="540" y="930" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="900" fill="#f59e0b" letter-spacing="5" text-anchor="middle" filter="url(#textGlow)">
+      ⚡ THE PSYCHOLOGICAL TRAP
+    </text>
+    <text x="540" y="1030" font-family="Georgia, serif" font-size="44" font-weight="900" fill="#ffffff" text-anchor="middle" filter="url(#textGlow)">
+      <tspan x="540" dy="0">Announcing financial goals gives</tspan>
+      <tspan x="540" dy="64">you cheap, premature dopamine.</tspan>
+      <tspan x="540" dy="64">The ego feels rich while your</tspan>
+      <tspan x="540" dy="64">bank account remains unchanged.</tspan>
+    </text>
+    <line x1="430" y1="1310" x2="650" y2="1310" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" />
+    <text x="540" y="1360" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="800" fill="#94a3b8" letter-spacing="2" text-anchor="middle" filter="url(#textGlow)">
+      - SPEECH PAYS ZERO DIVIDENDS
+    </text>
+  </svg>`;
+}
+
+function buildFinDeepBeat3Svg(scholar, width = 1080, height = 1920) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+    <defs>
+      <filter id="textGlow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="4" stdDeviation="14" flood-color="#000000" flood-opacity="1.0" />
+      </filter>
+      <linearGradient id="cinematicVignette" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#000000" stop-opacity="0" />
+        <stop offset="25%" stop-color="#020617" stop-opacity="0.5" />
+        <stop offset="55%" stop-color="#020617" stop-opacity="0.9" />
+        <stop offset="100%" stop-color="#000000" stop-opacity="0.99" />
+      </linearGradient>
+    </defs>
+    <rect x="0" y="660" width="1080" height="1260" fill="url(#cinematicVignette)" />
+    <text x="540" y="930" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="900" fill="#f59e0b" letter-spacing="5" text-anchor="middle" filter="url(#textGlow)">
+      ⚡ THE COLD LAW OF CAPITAL
+    </text>
+    <text x="540" y="1030" font-family="Georgia, serif" font-size="44" font-weight="900" fill="#ffffff" text-anchor="middle" filter="url(#textGlow)">
+      <tspan x="540" dy="0">What you say has zero impact</tspan>
+      <tspan x="540" dy="64">on the market. Only the actions</tspan>
+      <tspan x="540" dy="64">you take towards your capital</tspan>
+      <tspan x="540" dy="64">will compound. Execute in silence.</tspan>
+    </text>
+    <line x1="430" y1="1310" x2="650" y2="1310" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" />
+    <text x="540" y="1360" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="800" fill="#cbd5e1" letter-spacing="2" text-anchor="middle" filter="url(#textGlow)">
+      - FINANCIAL BLUEPRINT • ACTION IS WEALTH
+    </text>
+  </svg>`;
+}
+
+function buildFrostedGlassCardSvg(scholar, width = 1080, height = 1920) {
+  // Alias to Stoic setup per user directive
+  return buildFinStoicOverlaySvg(scholar, width, height);
 }
 
 function escapeXml(str) {
@@ -945,28 +943,67 @@ async function generateFin5sVideo() {
 
   const cardInput = (fs.existsSync(cardPngPath) && fs.statSync(cardPngPath).size > 1000) ? cardPngPath : cardSvgPath;
 
-  // 5. Composite Final 5-Second Video via FFmpeg
-  // Slow subtle cinematic Ken Burns push-in zoom on the portrait
+  // 5. Composite Final Video via FFmpeg with Smooth Ken Burns Motion
   const timestamp = Date.now();
-  const videoFileName = `fin_quote_5s_${timestamp}.mp4`;
+  const isLongForm = TARGET_DURATION >= 20;
+  const videoFileName = isLongForm ? `fin_psychology_30s_${timestamp}.mp4` : `fin_quote_5s_${timestamp}.mp4`;
   const finalMp4Path = path.join(OUTPUT_DIR, videoFileName);
-  const latestMp4Path = path.join(OUTPUT_DIR, 'fin_quote_5s_latest.mp4');
+  const latestMp4Path = path.join(OUTPUT_DIR, isLongForm ? 'fin_psychology_latest.mp4' : 'fin_quote_5s_latest.mp4');
 
-  console.log(`[FFmpeg Compositor] Rendering 5.0-second seamless vertical reel...`);
+  console.log(`[FFmpeg Compositor] Rendering ${TARGET_DURATION.toFixed(1)}s seamless vertical reel (Ken Burns pan & zoom)...`);
 
-  const complexFilter = `
-    [0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920:(iw-1080)/2:0,zoompan=z='min(zoom+0.0006,1.05)':d=${TOTAL_FRAMES}:x='iw/2-(iw/zoom/2)':y='ih*0.3-(ih*0.3/zoom)':s=1080x1920:fps=30[bg];
-    [1:v]scale=1080:1920[card];
-    [bg][card]overlay=0:0[vfinal]
-  `.replace(/\s+/g, ' ');
+  if (isLongForm) {
+    // 30-Second Deep Financial Psychology Video with 3 Narrative Beats
+    const beat2Svg = buildFinDeepBeat2Svg(chosen);
+    const beat3Svg = buildFinDeepBeat3Svg(chosen);
+    const beat2SvgPath = path.join(ARTIFACTS_DIR, 'fin_deep_beat2.svg');
+    const beat2PngPath = path.join(ARTIFACTS_DIR, 'fin_deep_beat2.png');
+    const beat3SvgPath = path.join(ARTIFACTS_DIR, 'fin_deep_beat3.svg');
+    const beat3PngPath = path.join(ARTIFACTS_DIR, 'fin_deep_beat3.png');
+    fs.writeFileSync(beat2SvgPath, beat2Svg);
+    fs.writeFileSync(beat3SvgPath, beat3Svg);
 
-  const ffmpegCmd = `ffmpeg -y -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t ${TARGET_DURATION} -i "${cardInput}" -i "${mysteryWavPath}" -filter_complex "${complexFilter}" -map "[vfinal]" -map 2:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -shortest "${finalMp4Path}" 2>&1`;
+    try {
+      execSync(`rsvg-convert -w 1080 -h 1920 "${beat2SvgPath}" -o "${beat2PngPath}" 2>/dev/null || ffmpeg -y -i "${beat2SvgPath}" "${beat2PngPath}" 2>/dev/null`);
+      execSync(`rsvg-convert -w 1080 -h 1920 "${beat3SvgPath}" -o "${beat3PngPath}" 2>/dev/null || ffmpeg -y -i "${beat3SvgPath}" "${beat3PngPath}" 2>/dev/null`);
+    } catch {}
 
-  execSync(ffmpegCmd);
+    const ov1 = cardInput;
+    const ov2 = fs.existsSync(beat2PngPath) ? beat2PngPath : beat2SvgPath;
+    const ov3 = fs.existsSync(beat3PngPath) ? beat3PngPath : beat3SvgPath;
+
+    const complexFilter = [
+      `[0:v]scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276,zoompan=z='1.06+0.00014*on':d=${TOTAL_FRAMES}:x='(iw-iw/zoom)*(0.2+0.6*(on/${TOTAL_FRAMES}))':y='(ih-ih/zoom)*0.22':s=1080x1920:fps=30,eq=brightness=-0.04:contrast=1.14:saturation=0.90,vignette=PI/4.5[bg]`,
+      `[1:v]scale=1080:1920[ov1]`,
+      `[2:v]scale=1080:1920[ov2]`,
+      `[3:v]scale=1080:1920[ov3]`,
+      `[bg][ov1]overlay=0:0:enable='between(t,0,8)'[v1]`,
+      `[v1][ov2]overlay=0:0:enable='between(t,8,18)'[v2]`,
+      `[v2][ov3]overlay=0:0:enable='gte(t,18)'[vfinal]`
+    ].join(';');
+
+    const ffmpegCmd = `ffmpeg -y -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t 8 -i "${ov1}" -loop 1 -t 10 -i "${ov2}" -loop 1 -t 12 -i "${ov3}" -i "${mysteryWavPath}" -filter_complex "${complexFilter}" -map "[vfinal]" -map 4:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${TARGET_DURATION} "${finalMp4Path}" 2>&1`;
+    execSync(ffmpegCmd);
+  } else {
+    // 5-Second Quote Reel with Dynamic Ken Burns Camera Pan
+    const isPanRight = (chosen.quote.length % 2 === 0);
+    const panXFormula = isPanRight
+      ? `(iw-iw/zoom)*(0.18+0.64*(on/${TOTAL_FRAMES}))`
+      : `(iw-iw/zoom)*(0.82-0.64*(on/${TOTAL_FRAMES}))`;
+
+    const complexFilter = [
+      `[0:v]scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276,zoompan=z='1.08+0.0006*on':d=${TOTAL_FRAMES}:x='${panXFormula}':y='(ih-ih/zoom)*0.24':s=1080x1920:fps=30,eq=brightness=-0.04:contrast=1.14:saturation=0.90,vignette=PI/4.5[bg]`,
+      `[1:v]scale=1080:1920[card]`,
+      `[bg][card]overlay=0:0[vfinal]`
+    ].join(';');
+
+    const ffmpegCmd = `ffmpeg -y -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t ${TARGET_DURATION} -i "${cardInput}" -i "${mysteryWavPath}" -filter_complex "${complexFilter}" -map "[vfinal]" -map 2:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${TARGET_DURATION} "${finalMp4Path}" 2>&1`;
+    execSync(ffmpegCmd);
+  }
 
   if (fs.existsSync(finalMp4Path) && fs.statSync(finalMp4Path).size > 50000) {
     fs.copyFileSync(finalMp4Path, latestMp4Path);
-    console.log(`[FFmpeg Compositor] ✅ Successfully generated 5s video: ${finalMp4Path} (${(fs.statSync(finalMp4Path).size / 1024).toFixed(1)} KB)`);
+    console.log(`[FFmpeg Compositor] ✅ Successfully generated video: ${finalMp4Path} (${(fs.statSync(finalMp4Path).size / 1024).toFixed(1)} KB)`);
   } else {
     throw new Error('Video generation failed or output file is empty.');
   }
