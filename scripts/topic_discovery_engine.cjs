@@ -951,7 +951,7 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
 
   // 4. Groq LPU with Model Finder & Adaptive Formatting
   if (GROQ_API_KEY) {
-    let models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama-3.2-11b-vision-preview', 'llama-3.2-3b-preview', 'qwen/qwen-2.5-32b', 'deepseek-r1-distill-llama-70b'];
+    let models = ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile', 'gemma2-9b-it', 'llama3-8b-8192'];
     let formatGrPayload = null;
     let cleanGrJson = null;
     try {
@@ -1058,13 +1058,11 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
   // 6. Cloudflare Workers AI (Dedicated Fallback Tier)
   if (CLOUDFLARE_ACCOUNT_ID && CLOUDFLARE_API_TOKEN) {
     const models = [
-      '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
       '@cf/meta/llama-3.1-8b-instruct',
+      '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
       '@cf/meta/llama-3.2-3b-instruct',
       '@cf/meta/llama-3.2-1b-instruct',
-      '@cf/mistral/mistral-7b-instruct-v0.2',
-      '@cf/qwen/qwen2.5-7b-instruct',
-      '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b'
+      '@cf/qwen/qwen2.5-7b-instruct'
     ];
     for (const model of models) {
       try {
@@ -1238,23 +1236,39 @@ async function discoverAndSelectTopicViaActiveAi(nicheKey = 'fin', options = {})
     ? gTrendsResults.slice(0, 3).map(t => `• ${t.title}: ${t.newsTitle || ''}`).join('\n')
     : 'Active everyday tech & science trends.';
 
-  const systemPrompt = `You are an elite educational content creator and viral scriptwriter for a multi-social channel with a dedicated niche in education, science/physics, and "Did you know?" facts.
+  const isCartoon = nicheKey === 'cartoon';
+  const systemPrompt = isCartoon
+    ? `You are the lead science explainer writer for Archie Explains (@ArchieExplains).
+CORE DIRECTIVES:
+1. TOPICS MUST BE REAL-LIFE EXAMPLES ONLY: Tangible, observable everyday phenomena that students and regular people see in real life (e.g., cold can sweating after pouring ice water, mirrors fogging in hot showers, sliced apples turning brown, toast turning crunchy, car tires deflating in cold weather, bath fingers wrinkling).
+2. HOOK FORMAT (MANDATORY): The opening hook MUST start with: "Ever wondered why [observable phenomenon]? Let's break it down."
+3. LAYMAN EXPLANATION: Explain the scientific mechanism in the simplest, easiest layman terms so any student without prior knowledge understands completely. Zero jargon.
+4. PROMPT COMPACTNESS: Keep outputs crisp and concise.
+
+Return valid JSON:
+{
+  "candidates": [
+    {
+      "id": 1,
+      "sphereId": "everyday_physics",
+      "sphereName": "Everyday Science",
+      "title": "Why Cold Cans Sweat Water",
+      "angle": "Condensation physics",
+      "coreHook": "Ever wondered why your can gets wet after you pour ice water into it? Let's break it down.",
+      "factExplanation": "Air has invisible water gas. Cold metal chills that air and turns it into liquid drops on the outside.",
+      "searchDetailsUsed": "Water vapor condensation",
+      "isUnique": true,
+      "loopyHookConcept": "Loops back to cold cans"
+    }
+  ],
+  "chosenWinnerId": 1,
+  "deduplicationAnalysis": "Unique real-life observation",
+  "selectionRationale": "Relatable real-life everyday example for students",
+  "discardedNotes": [{ "candidateId": 2, "reason": "Less relatable than winner" }]
+}`
+    : `You are an elite educational content creator and viral scriptwriter for a multi-social channel with a dedicated niche in education, science/physics, and "Did you know?" facts.
 Channel: "${nicheConfig.channelName}" (${nicheConfig.channelHandle}).
 Target Audience: ${nicheConfig.targetAudience}
-
-CORE DIRECTIVES:
-1. CONTENT CREATOR ARCHETYPE: You are a content creator for a multi-social channel with niche on education and "did you know" facts.
-2. AUTOMATED SEARCH & NICHE MATCHING: Using the real-time search results, Wikipedia insights, and Google Trends gathered today, automatically choose and formulate topics that best suit our setup and channel niche.
-3. FORMULATE 5 STRONG CANDIDATES:
-   - Each candidate must feature an irresistible "Did you know?" or "Why does...?" spoken hook.
-   - Grounded in mind-blowing, relatable mechanics (how everyday things work, unexpected physics/science/tech principles, or practical daily realities).
-   - Clear educational explanation that an everyday person or student will immediately grasp.
-   - Loopy ending concept that seamlessly loops back into the opening hook for high replay retention.
-4. AI DATABASE SIMILARITY & DEDUPLICATION:
-   Compare each candidate topic against EVERY previously saved topic in our database.
-   Verify that there are zero duplicate themes, keywords, or angles. Only accept topics that are 100% fresh and unique.
-5. CHOOSE 1 WINNER & DISCARD 4:
-   Select the 1 winning topic that best suits our setup and niche. Provide a selection rationale and state specific reasons for discarding the other 4 candidates.
 
 Return strictly valid JSON with this exact schema:
 {
@@ -1263,46 +1277,35 @@ Return strictly valid JSON with this exact schema:
       "id": 1,
       "sphereId": "sphere_id",
       "sphereName": "Sphere Name",
-      "title": "High-Impact Topic Headline #Shorts #viral",
-      "angle": "Unique tactical or scientific breakdown angle",
-      "coreHook": "Opening spoken hook sentence (e.g., 'Did you know...?' or 'Why does...?')",
-      "factExplanation": "Clear, mind-blowing educational explanation of the fact and why it happens",
-      "searchDetailsUsed": "Specific insight or trend details from today's search used here",
-      "similarityCheck": "Verified non-similar to past database topics",
+      "title": "High-Impact Topic Headline #Shorts",
+      "angle": "Unique breakdown angle",
+      "coreHook": "Opening spoken hook sentence",
+      "factExplanation": "Clear educational explanation",
+      "searchDetailsUsed": "Insight used",
       "isUnique": true,
-      "loopyHookConcept": "How the ending seamlessly loops back into the opening hook"
+      "loopyHookConcept": "Loop concept"
     }
   ],
   "chosenWinnerId": 1,
-  "deduplicationAnalysis": "Detailed verification report proving zero similarity to previously saved database topics",
-  "selectionRationale": "Why this specific topic is chosen based on today's search trends and verified uniqueness",
-  "discardedNotes": [
-    { "candidateId": 2, "reason": "Reason candidate 2 was eliminated" }
-  ]
+  "deduplicationAnalysis": "Zero similarity to previous topics",
+  "selectionRationale": "Why this topic won",
+  "discardedNotes": [{ "candidateId": 2, "reason": "Eliminated" }]
 }`;
 
-  const userPrompt = `You're a content creator for a multi social channel with niche on education and did you know facts. Using this fresh information gathered today from real-time searches:
+  const userPrompt = isCartoon
+    ? `Formulate 5 fresh candidate topics for Archie Explains.
+MANDATORY RULES:
+- Topics must be REAL-LIFE EXAMPLES only (things you touch, see, or experience daily).
+- Hooks MUST start with: "Ever wondered why [real life phenomenon]? Let's break it down."
+- Explanations must be plain layman English for everyday students.
+Past Topics to avoid:
+${pastTopics.slice(0, 5).map(h => `- ${h.topic || h.title}`).join('\n') || 'None'}
 
-=== TODAY'S REFRESHED REAL-TIME SEARCH RESULTS (Google Search, DuckDuckGo, Wikipedia, Social) ===
-${searchContextStr || 'Fresh daily search queries in education, everyday science, and practical facts.'}
-
-=== GOOGLE TRENDS DAILY BREAKING FEED (trends.google.com) ===
-${googleTrendsStr}
-
-=== 21+ THEMATIC SCOPES & SPHERES ===
-${spheresJsonStr}
-
-=== DATABASE OF PREVIOUSLY SAVED TOPICS (CHECK FOR SIMILARITIES - REJECT ANY DUPLICATES) ===
-${pastTopicsListStr || 'None yet.'}
-
-Using this information, choose the ones that suit our setup and niche:
-• Channel: ${nicheConfig.channelName} (${nicheConfig.channelHandle})
-• Format: Educational short-form video & reels (hook -> "did you know" core fact -> relatable explanation / mechanics -> loopy conclusion).
-
-Create 5 distinct candidate topics from this fresh trend data. Compare each candidate against our database of past topics to verify 100% uniqueness (zero duplicate concepts).
-Then select 1 winning topic that best suits our setup and niche, explain why it was chosen based on today's trends, and discard the other 4 candidates with clear reasons.
-
-Return strictly valid JSON.`;
+Return strictly valid JSON with 5 candidates and select 1 winner.`
+    : `You're a content creator for ${nicheConfig.channelName}. Formulate 5 candidate topics.
+Search context: ${allSearchResults.slice(0, 2).map(r => r.title).join('; ') || 'Daily trends'}
+Past topics: ${pastTopics.slice(0, 5).map(h => h.topic || h.title).join('; ') || 'None'}
+Return strictly valid JSON with 5 candidates and select 1 winner.`;
 
   const aiResult = await callActiveAiForJson(
     systemPrompt,

@@ -875,9 +875,140 @@ function buildFinDeepBeat3Svg(scholar, width = 1080, height = 1920) {
   </svg>`;
 }
 
+/**
+ * Authentic High-Status Frosted Glass Luxury Card for Financial Blueprint (@bones_ceo)
+ * Restores the signature aesthetic that drove high retention:
+ * - Sleek translucent floating glass card with cyan & gold glowing edge highlights
+ * - Official "FINANCIAL BLUEPRINT • WEALTH TITAN" institutional badge with glowing dot
+ * - High-contrast modern typography with subtle drop shadow
+ * - Gold accent divider rule
+ * - Full scholar credentials & source citation
+ * - Official channel watermark (@bones_ceo)
+ */
 function buildFrostedGlassCardSvg(scholar, width = 1080, height = 1920) {
-  // Alias to Stoic setup per user directive
-  return buildFinStoicOverlaySvg(scholar, width, height);
+  const quoteLen = scholar.quote.length;
+  const maxChars = quoteLen > 110 ? 27 : (quoteLen > 65 ? 24 : 21);
+  const quoteWords = scholar.quote.split(/\s+/);
+  const lines = [];
+  let currentLine = '';
+  for (const w of quoteWords) {
+    if ((currentLine + ' ' + w).trim().length > maxChars) {
+      if (currentLine) lines.push(currentLine.trim());
+      currentLine = w;
+    } else {
+      currentLine = (currentLine + ' ' + w).trim();
+    }
+  }
+  if (currentLine) lines.push(currentLine.trim());
+
+  const numLines = lines.length;
+  let fontSize = 48;
+  let lineHeight = 68;
+
+  if (numLines <= 2) {
+    fontSize = 54;
+    lineHeight = 74;
+  } else if (numLines === 3) {
+    fontSize = 48;
+    lineHeight = 66;
+  } else if (numLines === 4) {
+    fontSize = 42;
+    lineHeight = 58;
+  } else {
+    fontSize = 36;
+    lineHeight = 50;
+  }
+
+  const quoteTspans = lines.map((line, idx) =>
+    `<tspan x="540" dy="${idx === 0 ? 0 : lineHeight}">${escapeXml(line)}</tspan>`
+  ).join('\n        ');
+
+  const cardHeight = Math.max(760, 480 + (numLines * lineHeight));
+  const cardY = 1760 - cardHeight;
+  const badgeY = cardY + 50;
+  const quoteStartY = badgeY + 110;
+  const quoteBottomY = quoteStartY + ((numLines - 1) * lineHeight);
+  const dividerY = quoteBottomY + 38;
+  const authorY = dividerY + 50;
+  const credY = authorY + 34;
+  const refY = credY + 30;
+  const watermarkY = cardY + cardHeight - 34;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+    <defs>
+      <filter id="glassDropShadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="20" stdDeviation="30" flood-color="#000000" flood-opacity="0.95" />
+        <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="#0284c7" flood-opacity="0.30" />
+      </filter>
+      <filter id="finTextGlow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#000000" flood-opacity="1.0" />
+      </filter>
+      <linearGradient id="finCardBg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#090f1f" stop-opacity="0.94" />
+        <stop offset="50%" stop-color="#0f172a" stop-opacity="0.95" />
+        <stop offset="100%" stop-color="#020617" stop-opacity="0.98" />
+      </linearGradient>
+      <linearGradient id="finCardBorder" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.9" />
+        <stop offset="45%" stop-color="#f59e0b" stop-opacity="0.6" />
+        <stop offset="80%" stop-color="#38bdf8" stop-opacity="0.4" />
+        <stop offset="100%" stop-color="#ffffff" stop-opacity="0.2" />
+      </linearGradient>
+      <linearGradient id="bottomShadowVignette" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#000000" stop-opacity="0" />
+        <stop offset="40%" stop-color="#020617" stop-opacity="0.6" />
+        <stop offset="80%" stop-color="#000000" stop-opacity="0.95" />
+        <stop offset="100%" stop-color="#000000" stop-opacity="0.99" />
+      </linearGradient>
+    </defs>
+
+    <!-- Background Vignette ensuring card separation from background photo -->
+    <rect x="0" y="700" width="1080" height="1220" fill="url(#bottomShadowVignette)" />
+
+    <!-- 1. Floating Frosted Glass Luxury Card Container -->
+    <rect x="60" y="${cardY}" width="960" height="${cardHeight}" rx="36" fill="url(#finCardBg)" stroke="url(#finCardBorder)" stroke-width="2.5" filter="url(#glassDropShadow)" />
+
+    <!-- 2. Institutional Badge -->
+    <g transform="translate(540, ${badgeY})">
+      <rect x="-190" y="-18" width="380" height="38" rx="19" fill="#0369a1" fill-opacity="0.28" stroke="#38bdf8" stroke-width="1.6" />
+      <circle cx="-160" cy="1" r="5" fill="#38bdf8" />
+      <text x="5" y="6" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="900" fill="#38bdf8" letter-spacing="3.5" text-anchor="middle">
+        FINANCIAL BLUEPRINT
+      </text>
+    </g>
+
+    <!-- Stylized Modern Gold Quotation Mark -->
+    <text x="540" y="${quoteStartY - 40}" font-family="Georgia, serif" font-size="76" font-weight="900" fill="#f59e0b" fill-opacity="0.9" text-anchor="middle" filter="url(#finTextGlow)">“</text>
+
+    <!-- High-Contrast Quote Text -->
+    <text x="540" y="${quoteStartY}" font-family="Georgia, serif" font-size="${fontSize}" font-weight="900" fill="#ffffff" text-anchor="middle" filter="url(#finTextGlow)">
+        ${quoteTspans}
+    </text>
+
+    <!-- Accent Divider Bar in Warm Gold / Cyan -->
+    <line x1="410" y1="${dividerY}" x2="670" y2="${dividerY}" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.9" />
+
+    <!-- Titan Author Attribution with Verified Badge -->
+    <text x="540" y="${authorY}" font-family="system-ui, -apple-system, sans-serif" font-size="30" font-weight="900" fill="#f8fafc" letter-spacing="1.5" text-anchor="middle" filter="url(#finTextGlow)">
+      — ${escapeXml(scholar.author)} <tspan fill="#38bdf8" font-size="24">✓</tspan>
+    </text>
+
+    <!-- Institutional Credentials -->
+    <text x="540" y="${credY}" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#cbd5e1" letter-spacing="0.8" text-anchor="middle">
+      ${escapeXml(scholar.credentials)}
+    </text>
+
+    <!-- Source Reference Citation -->
+    ${scholar.reference ? `
+    <text x="540" y="${refY}" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="500" fill="#94a3b8" letter-spacing="0.6" text-anchor="middle">
+      ${escapeXml(scholar.reference)}
+    </text>` : ''}
+
+    <!-- Channel Watermark & Signature -->
+    <text x="540" y="${watermarkY}" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#64748b" letter-spacing="3" text-anchor="middle">
+      @BONES_CEO • THE WEALTH FORMULA
+    </text>
+  </svg>`;
 }
 
 function escapeXml(str) {

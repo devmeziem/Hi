@@ -11,6 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const { execSync } = require('child_process');
+const { getDistinctClassroomSvg } = require('./cartoon_classrooms.cjs');
 
 /**
  * Fetch image buffer from HTTPS with timeout
@@ -424,6 +425,24 @@ async function getSceneBackground(sceneIndex, topic = '', style = '', objects = 
   const rawBgPath = path.join(dir, `scene_${sceneIndex}_raw_ai.png`);
   const propsOverlaySvg = path.join(dir, `scene_${sceneIndex}_props.svg`);
   const seed = (Math.abs(hashString(topic)) % 10000) + sceneIndex * 100;
+
+  // Check if style is one of the 5 distinct classroom environments or cartoon explainer
+  const isClassroomStyle = ['cyber_stem', 'ivy_hall', 'scandi_science', 'planetarium', 'chem_lab'].includes(style);
+  
+  if (isClassroomStyle || style.includes('classroom') || style.includes('school') || style.includes('lecture') || style.includes('lab')) {
+    console.log(`[Background Engine] 🏫 Rendering distinct classroom environment (${style || 'thematic'}) for Scene ${sceneIndex}...`);
+    const classroomResult = getDistinctClassroomSvg(style || sceneIndex - 1, 1080, 1920, topic);
+    const svgPath = path.join(dir, `scene_${sceneIndex}_classroom.svg`);
+    fs.writeFileSync(svgPath, classroomResult.svg, 'utf8');
+    try {
+      execSync(`ffmpeg -y -i "${svgPath}" "${finalPngPath}" 2>/dev/null`);
+      if (fs.existsSync(finalPngPath) && fs.statSync(finalPngPath).size > 5000) {
+        return finalPngPath;
+      }
+    } catch (err) {
+      console.warn(`[Background Engine] Notice rasterizing classroom: ${err.message}`);
+    }
+  }
 
   // 1. User Directive: Pollinations AI background removed (watermark free, clean algorithm friendly)
   // Render pristine, watermark-free drawn modern interface backdrop directly

@@ -2,20 +2,22 @@ name: Apex Discipline - Teen & Youth Motivation Pipeline (Channel 5)
 
 on:
   schedule:
-    # 3 Posts Daily:
+    # 4 Posts Daily:
+    # 04:00 UTC (05:00 WAT) -> 32s Emotionally Impactful Long-Form Video (Soft Piano + Dark Blank Quote Ending Screen)
     # 08:00 UTC (09:00 WAT) -> 5s straight-to-point reel
     # 14:00 UTC (15:00 WAT) -> 15s public opinion vs reality slam reel
     # 20:00 UTC (21:00 WAT) -> 5s straight-to-point reel
-    - cron: '0 8,14,20 * * *'
+    - cron: '0 4,8,14,20 * * *'
   workflow_dispatch:
     inputs:
       video_type:
-        description: 'Video Format (auto = slot-based 3/day: 2x 5s + 1x 15s, 5s_reel = 5s punchline, 15s_slam = 15s debate slam)'
+        description: 'Video Format (auto = slot-based 4/day, long_form = 32s emotional narrative with soft piano, 5s_reel = 5s punchline, 15s_slam = 15s debate slam)'
         required: false
         default: 'auto'
         type: choice
         options:
           - 'auto'
+          - 'long_form'
           - '5s_reel'
           - '15s_slam'
       topic:

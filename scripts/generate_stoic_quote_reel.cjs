@@ -21,6 +21,7 @@ const { getSyncedChannelProfile, formatChannelFollowCta } = require('./youtube_c
 const { resolveChannelAudio } = require('./audio_asset_manager.cjs');
 const { selectDeduplicatedCandidate, recordPostedCandidate } = require('./channel_dedup_service.cjs');
 const { CURATED_PSYCHOLOGY_QUOTES, VIRAL_PSYCHOLOGY_TAGS, generatePsychologyViralTitle } = require('./stoic_psychology_vault.cjs');
+const { selectEmotionalNarrative, buildNarrativeSlideSvg, buildEndingBlankQuoteCardSvg } = require('./emotional_impact_engine.cjs');
 
 const MANIFEST_PATH = path.join(process.cwd(), 'daily_blueprint_manifest.json');
 const LOCAL_QUOTE_CACHE = path.join(process.cwd(), 'stoic_quote_history.json');
@@ -215,9 +216,7 @@ async function resolveScholarPortrait(scholar) {
     }
   }
 
-  // Cloudflare Workers AI Low-Cost Dynamic Generation (Zero static seeds)
-  const cfAccountId = (process.env.CLOUDFLARE_ACCOUNT_ID || '').trim().replace(/^https?:\/\/[^\/]+\//, '').replace(/\/$/, '');
-  const cfApiToken = (process.env.CLOUDFLARE_API_TOKEN || '').trim();
+  // Cloudflare Workers AI Low-Cost Dynamic Generation (Zero static seeds fallback)
   if (cfAccountId && cfApiToken) {
     const cfModels = [
       '@cf/bytedance/stable-diffusion-xl-lightning',
@@ -386,9 +385,14 @@ async function generateStoic5sVideo() {
   // 2. Resolve Scholar Portrait via Direct/Wikipedia/AI
   const portraitPath = await resolveScholarPortrait(chosen);
 
-  // 3. Resolve Seamless Loopy Audio from sound_assets/stoic/
-  const wavPath = path.join(ARTIFACTS_DIR, `scholar_mystery_sound_${TARGET_DURATION}s.wav`);
-  resolveChannelAudio('stoic', TARGET_DURATION, wavPath);
+  const isLongForm = TARGET_DURATION >= 20;
+  // 3. Resolve Audio (Soft piano instrument for emotional longform video, deep mystery for short reels)
+  const wavPath = path.join(ARTIFACTS_DIR, isLongForm ? `stoic_longform_piano_${TARGET_DURATION}s.wav` : `scholar_mystery_sound_${TARGET_DURATION}s.wav`);
+  if (isLongForm) {
+    resolveChannelAudio('piano', TARGET_DURATION, wavPath);
+  } else {
+    resolveChannelAudio('stoic', TARGET_DURATION, wavPath);
+  }
 
   // 4. Prepare High-Contrast Caption Overlay with ZERO-PILL DISCIPLINE
   // Matching user's screenshots:
@@ -579,7 +583,6 @@ function buildStoicDeepBeat3Svg(scholar, width = 1080, height = 1920) {
   </svg>`;
 }
 
-  const isLongForm = TARGET_DURATION >= 20;
   const videoFileName = isLongForm ? 'stoic_psychology_30s_latest.mp4' : 'stoic_quote_5s_latest.mp4';
   const finalMp4Path = path.join(OUTPUT_DIR, videoFileName);
   const artifactMp4Path = path.join(ARTIFACTS_DIR, videoFileName);
@@ -589,37 +592,71 @@ function buildStoicDeepBeat3Svg(scholar, width = 1080, height = 1920) {
   const overlayInput = (fs.existsSync(overlayPngPath) && fs.statSync(overlayPngPath).size > 1000) ? overlayPngPath : overlaySvgPath;
 
   if (isLongForm) {
-    // 30-Second Deep Psychological Video with 3 Narrative Beats
-    const beat2Svg = buildStoicDeepBeat2Svg(chosen);
-    const beat3Svg = buildStoicDeepBeat3Svg(chosen);
-    const beat2SvgPath = path.join(ARTIFACTS_DIR, 'stoic_deep_beat2.svg');
-    const beat2PngPath = path.join(ARTIFACTS_DIR, 'stoic_deep_beat2.png');
-    const beat3SvgPath = path.join(ARTIFACTS_DIR, 'stoic_deep_beat3.svg');
-    const beat3PngPath = path.join(ARTIFACTS_DIR, 'stoic_deep_beat3.png');
-    fs.writeFileSync(beat2SvgPath, beat2Svg);
-    fs.writeFileSync(beat3SvgPath, beat3Svg);
+    // 32-Second Emotionally Impactful Long-Form Video (Relentora Viral Format)
+    // 5 Progressive Contrast Slides + Black Blank Screen with Fin-Channel Card Aesthetics (but dark) + Backup Quote + Watermark
+    console.log(`[Emotional Impact Engine] 🎭 Generating 6-Slide Contrast Narrative & Dark Blank Ending Card...`);
+    const narrative = selectEmotionalNarrative('stoic');
+    const channelWatermark = process.env.YOUTUBE_HANDLE_CH2 || process.env.YOUTUBE_HANDLE_STOIC || '@TheStoicArchitect';
 
+    const slidePngPaths = [];
+    for (let i = 0; i < narrative.slides.length; i++) {
+      const slideSvg = buildNarrativeSlideSvg(narrative.slides[i], i + 1, narrative.slides.length, 'stoic');
+      const slideSvgPath = path.join(ARTIFACTS_DIR, `stoic_slide_${i + 1}.svg`);
+      const slidePngPath = path.join(ARTIFACTS_DIR, `stoic_slide_${i + 1}.png`);
+      fs.writeFileSync(slideSvgPath, slideSvg, 'utf8');
+      try {
+        execSync(`rsvg-convert -w 1080 -h 1920 "${slideSvgPath}" -o "${slidePngPath}" 2>/dev/null || ffmpeg -y -i "${slideSvgPath}" "${slidePngPath}" 2>/dev/null`);
+      } catch {}
+      slidePngPaths.push(slidePngPath);
+    }
+
+    // Ending Card: Black Blank Screen with Dark Fin-Channel Aesthetics + Backup Quote + Watermark
+    const endingCardSvg = buildEndingBlankQuoteCardSvg(narrative.backupQuote, 'stoic', channelWatermark);
+    const endingSvgPath = path.join(ARTIFACTS_DIR, 'stoic_ending_card.svg');
+    const endingPngPath = path.join(ARTIFACTS_DIR, 'stoic_ending_card.png');
+    fs.writeFileSync(endingSvgPath, endingCardSvg, 'utf8');
     try {
-      execSync(`rsvg-convert -w 1080 -h 1920 "${beat2SvgPath}" -o "${beat2PngPath}" 2>/dev/null || ffmpeg -y -i "${beat2SvgPath}" "${beat2PngPath}" 2>/dev/null`);
-      execSync(`rsvg-convert -w 1080 -h 1920 "${beat3SvgPath}" -o "${beat3PngPath}" 2>/dev/null || ffmpeg -y -i "${beat3SvgPath}" "${beat3PngPath}" 2>/dev/null`);
+      execSync(`rsvg-convert -w 1080 -h 1920 "${endingSvgPath}" -o "${endingPngPath}" 2>/dev/null || ffmpeg -y -i "${endingSvgPath}" "${endingPngPath}" 2>/dev/null`);
     } catch {}
 
-    const ov1 = overlayInput;
-    const ov2 = fs.existsSync(beat2PngPath) ? beat2PngPath : beat2SvgPath;
-    const ov3 = fs.existsSync(beat3PngPath) ? beat3PngPath : beat3SvgPath;
-
-    const complexFilter = [
-      `[0:v]scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276,zoompan=z='1.06+0.00014*on':d=${TOTAL_FRAMES}:x='(iw-iw/zoom)*(0.2+0.6*(on/${TOTAL_FRAMES}))':y='(ih-ih/zoom)*0.22':s=1080x1920:fps=${FPS},eq=brightness=-0.04:contrast=1.14:saturation=0.90,vignette=PI/4.5[bg]`,
-      `[1:v]scale=1080:1920[ov1]`,
-      `[2:v]scale=1080:1920[ov2]`,
-      `[3:v]scale=1080:1920[ov3]`,
-      `[bg][ov1]overlay=0:0:enable='between(t,0,8)'[v1]`,
-      `[v1][ov2]overlay=0:0:enable='between(t,8,18)'[v2]`,
-      `[v2][ov3]overlay=0:0:enable='gte(t,18)'[vfinal]`
+    // Render Part 1 (0 - 25s: 5 slides @ 5.0s each)
+    const part1Mp4 = path.join(ARTIFACTS_DIR, `stoic_part1_${Date.now()}.mp4`);
+    const part1Filter = [
+      `[0:v]scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276,zoompan=z='1.05+0.00018*on':d=750:x='(iw-iw/zoom)*(0.3+0.4*(on/750))':y='(ih-ih/zoom)*0.2':s=1080x1920:fps=30,eq=brightness=-0.06:contrast=1.15:saturation=0.88,vignette=PI/4.5[bg]`,
+      `[1:v]scale=1080:1920[s1]`,
+      `[2:v]scale=1080:1920[s2]`,
+      `[3:v]scale=1080:1920[s3]`,
+      `[4:v]scale=1080:1920[s4]`,
+      `[5:v]scale=1080:1920[s5]`,
+      `[bg][s1]overlay=0:0:enable='between(t,0,5)'[v1]`,
+      `[v1][s2]overlay=0:0:enable='between(t,5,10)'[v2]`,
+      `[v2][s3]overlay=0:0:enable='between(t,10,15)'[v3]`,
+      `[v3][s4]overlay=0:0:enable='between(t,15,20)'[v4]`,
+      `[v4][s5]overlay=0:0:enable='between(t,20,25)'[vfinal]`
     ].join(';');
 
-    const ffmpegCmd = `ffmpeg -y -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t 8 -i "${ov1}" -loop 1 -t 10 -i "${ov2}" -loop 1 -t 12 -i "${ov3}" -i "${wavPath}" -filter_complex "${complexFilter}" -map "[vfinal]" -map 4:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${TARGET_DURATION} "${finalMp4Path}"`;
-    execSync(ffmpegCmd);
+    const part1Cmd = `ffmpeg -y -loop 1 -t 25.0 -i "${portraitPath}" ` +
+      slidePngPaths.map(p => `-loop 1 -t 5.0 -i "${p}"`).join(' ') +
+      ` -filter_complex "${part1Filter}" -map "[vfinal]" -t 25.0 -c:v libx264 -preset fast -pix_fmt yuv420p "${part1Mp4}" 2>/dev/null`;
+    execSync(part1Cmd);
+
+    // Render Part 2 (25 - 32s: 7.0s Black Blank Screen with Dark Fin-Card Backup Quote)
+    const part2Mp4 = path.join(ARTIFACTS_DIR, `stoic_part2_${Date.now()}.mp4`);
+    const part2Cmd = `ffmpeg -y -f lavfi -i "color=c=black:s=1080x1920:d=7.0:r=30" -loop 1 -t 7.0 -i "${endingPngPath}" -filter_complex "[0:v][1:v]overlay=0:0,format=yuv420p[v]" -map "[v]" -t 7.0 -c:v libx264 -preset fast -pix_fmt yuv420p "${part2Mp4}" 2>/dev/null`;
+    execSync(part2Cmd);
+
+    // Concatenate Part 1 + Part 2 and merge with Soft Piano Soundtrack (32.0s total)
+    const concatListPath = path.join(ARTIFACTS_DIR, `stoic_concat_${Date.now()}.txt`);
+    fs.writeFileSync(concatListPath, `file '${part1Mp4}'\nfile '${part2Mp4}'\n`, 'utf8');
+
+    const finalCmd = `ffmpeg -y -f concat -safe 0 -i "${concatListPath}" -stream_loop -1 -i "${wavPath}" -c:v copy -c:a aac -b:a 192k -t 32.0 "${finalMp4Path}"`;
+    execSync(finalCmd);
+
+    // Attach backup quote metadata to chosen for title & description
+    chosen.quote = narrative.backupQuote.quote;
+    chosen.author = narrative.backupQuote.author;
+    chosen.credentials = narrative.backupQuote.title;
+    chosen.psychologicalConcept = narrative.theme;
   } else {
     // 5-Second Quote Reel
     const isPanRight = (chosen.quote.length % 2 === 0);

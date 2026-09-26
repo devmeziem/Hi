@@ -1,213 +1,167 @@
 /**
  * MindRush Dynamic Content Engine & Confrontation Vault
  *
- * Generates personalized confrontations (Scene 1: Dismissive Fictional Entity / Persona + Toxic Insult)
- * against (Scene 3: Lethal Throwback Insult + Fix + Glowing Rare Word).
- *
- * Never uses generic "Public Opinion".
- * Integrates live dynamic AI auto-fetching with Gemini / fallback generator for infinite non-duplicate variety.
+ * Implements User Directives:
+ * 1. Insultive throwback in common daily spoken words (roasting the naysayer/hater).
+ * 2. Exactly ONE uncommon/rare power word, with definition provided for the video description.
+ * 3. Clear Framing: Protagonist is talking back / clapping back at the toxic naysayer (never insulting the viewer).
+ * 4. Integrates live dynamic AI auto-fetching via Gemini SDK / OpenRouter / Groq.
  */
 
 const fs = require('fs');
 const path = require('path');
 
-// 1. Massive Curated Library of Personalized 15-Second Confrontations
+// 1. Curated Library of Raw 15-Second Naysayer Confrontations & Insultive Clackbacks
 const CURATED_15S_CONFRONTATIONS = [
   {
     id: 'mindrush_conf_1',
-    format: 'doubt_execution',
-    speaker1Label: 'The Bitter Roommate:',
-    speaker1Text: 'You look miserable rotting alone in your room on a Friday night, we are out living our best youth.',
-    speaker2Label: 'Me:',
-    speaker2Line1: 'Waking up hungover with empty pockets on Sunday isn\'t living—I turned isolation into an',
-    speaker2Highlight: 'EMPIRE',
-    speaker2Line2: 'while you beg your parents for rent money.',
-    theme: 'empire_building'
+    format: 'naysayer_clapback',
+    speaker1Label: 'The Broke Critic',
+    speaker1Text: 'You look miserable locked in your room grinding on a Friday night while we are out partying.',
+    speaker2Label: 'How I Clapped Back',
+    speaker2Line1: 'Waking up broke with a hangover isn\'t winning—I built an',
+    speaker2Highlight: 'INDEFATIGABLE',
+    speaker2Line2: 'machine while you beg your parents for rent money.',
+    rareWord: 'INDEFATIGABLE',
+    rareWordDefinition: 'Persisting tirelessly without giving up or becoming fatigued.',
+    theme: 'tireless_grit'
   },
   {
     id: 'mindrush_conf_2',
-    format: 'doubt_execution',
-    speaker1Label: 'The Guy Who Peaked at 18:',
-    speaker1Text: 'You used to be cool, now you\'re just a boring antisocial robot with zero friends.',
-    speaker2Label: 'The Reality:',
-    speaker2Line1: 'Peaking in high school must be exhausting—I traded temporary clout for an',
-    speaker2Highlight: 'UNTOUCHABLE',
-    speaker2Line2: 'future you can neither reach nor comprehend.',
-    theme: 'untouchable_status'
+    format: 'naysayer_clapback',
+    speaker1Label: 'The Couch Skeptic',
+    speaker1Text: 'You really think you\'re special with your gym pass and your little alarm clock?',
+    speaker2Label: 'My Answer to Him',
+    speaker2Line1: 'Moving from the bed to the couch is your only daily milestone—I forged an',
+    speaker2Highlight: 'INVIOLABLE',
+    speaker2Line2: 'work ethic while you watched my highlights from the cheap seats.',
+    rareWord: 'INVIOLABLE',
+    rareWordDefinition: 'Never to be broken, infringed, or dishonored; completely untouchable.',
+    theme: 'unbreakable_will'
   },
   {
     id: 'mindrush_conf_3',
-    format: 'doubt_execution',
-    speaker1Label: 'The 9-to-5 Zombie:',
-    speaker1Text: 'Why grind yourself to the bone? You\'ll just die anyway, stop trying so hard to be special.',
-    speaker2Label: 'Cold Fact:',
-    speaker2Line1: 'Trading 40 years for cubicle panic attacks was your choice—I engineered an',
-    speaker2Highlight: 'ANOMALY',
-    speaker2Line2: 'while you clock in to build someone else\'s dream.',
-    theme: 'the_anomaly'
+    format: 'naysayer_clapback',
+    speaker1Label: 'The Toxic Hater',
+    speaker1Text: 'You act like you\'re above everyone now just because you stopped hanging out with us.',
+    speaker2Label: 'Me Talking Back',
+    speaker2Line1: 'I didn\'t change, I just quit drinking away my potential—I kept my',
+    speaker2Highlight: 'EQUILIBRIUM',
+    speaker2Line2: 'while you stayed complaining in the exact same spot.',
+    rareWord: 'EQUILIBRIUM',
+    rareWordDefinition: 'A state of perfect mental balance, composure, and emotional calm.',
+    theme: 'mental_balance'
   },
   {
     id: 'mindrush_conf_4',
-    format: 'doubt_execution',
-    speaker1Label: 'The Couch Critic:',
-    speaker1Text: 'You think you\'re Batman? You\'re just an insecure nobody with a gym pass and an alarm clock.',
-    speaker2Label: 'The Slam:',
-    speaker2Line1: 'Your biggest daily milestone is moving from the bed to the couch—I forged an',
-    speaker2Highlight: 'INDOMITABLE',
-    speaker2Line2: 'willpower while you watched my highlights from the cheap seats.',
-    theme: 'indomitable_grit'
+    format: 'naysayer_clapback',
+    speaker1Label: 'The Sneering Doubter',
+    speaker1Text: '99% of people who try this fail. Your little hustle is honestly embarrassing to watch.',
+    speaker2Label: 'Putting Him In His Place',
+    speaker2Line1: 'Giving up before you even step onto the field is your specialty—I possess an',
+    speaker2Highlight: 'INEXORABLE',
+    speaker2Line2: 'drive that makes your pathetic excuses completely irrelevant.',
+    rareWord: 'INEXORABLE',
+    rareWordDefinition: 'Impossible to stop, prevent, or turn aside; relentless.',
+    theme: 'relentless_drive'
   },
   {
     id: 'mindrush_conf_5',
-    format: 'doubt_execution',
-    speaker1Label: 'The Broke Gossip:',
-    speaker1Text: 'Look at him acting all mysterious on Instagram, he thinks he\'s the main character in an anime.',
-    speaker2Label: 'Reality Check:',
-    speaker2Line1: 'Whispering behind people\'s backs is the only workout your jaw gets—I generated',
-    speaker2Highlight: 'COLOSSAL',
-    speaker2Line2: 'proof while you talked about everyone who actually made it.',
-    theme: 'colossal_proof'
+    format: 'naysayer_clapback',
+    speaker1Label: 'The 2 AM Doomscroller',
+    speaker1Text: 'You look exhausted waking up at 5 AM, nobody cares how hard you make life for yourself.',
+    speaker2Label: 'How I Answered',
+    speaker2Line1: 'Scrolling TikTok until your brain rots is your whole life—I took a',
+    speaker2Highlight: 'SURREPTITIOUS',
+    speaker2Line2: 'lead while you slept away your twenties in the dark.',
+    rareWord: 'SURREPTITIOUS',
+    rareWordDefinition: 'Done secretly, stealthily, or without attracting public attention.',
+    theme: 'stealth_advantage'
   },
   {
     id: 'mindrush_conf_6',
-    format: 'doubt_execution',
-    speaker1Label: 'The Comfort-Zone Addict:',
-    speaker1Text: 'Just relax bro, life is too short to work 14 hours, you look like a walking zombie.',
-    speaker2Label: 'Me:',
-    speaker2Line1: 'Scrolling TikTok 9 hours a day until your brain turns to mush isn\'t living—I turned discipline into an',
-    speaker2Highlight: 'IMMUTABLE',
-    speaker2Line2: 'weapon that will buy back my family\'s absolute freedom.',
-    theme: 'immutable_freedom'
+    format: 'naysayer_clapback',
+    speaker1Label: 'The Fake Friend',
+    speaker1Text: 'You\'re going to burn out and end up with zero friends because you\'re obsessed.',
+    speaker2Label: 'Me Clapping Back',
+    speaker2Line1: 'Surrounding myself with cowards who only celebrate distractions is worse—your',
+    speaker2Highlight: 'PUSILLANIMOUS',
+    speaker2Line2: 'mindset would have kept me broke and trapped forever.',
+    rareWord: 'PUSILLANIMOUS',
+    rareWordDefinition: 'Lacking courage, timid, faint-hearted, or cowardly.',
+    theme: 'fearless_standard'
   },
   {
     id: 'mindrush_conf_7',
-    format: 'doubt_execution',
-    speaker1Label: 'The Jealous Ex-Friend:',
-    speaker1Text: 'You changed so much, you think you\'re too good for the old crew just because you read books.',
-    speaker2Label: 'The Truth:',
-    speaker2Line1: 'I didn\'t change, I just stopped accepting mediocrity as a lifestyle—I constructed a',
-    speaker2Highlight: 'FORTRESS',
-    speaker2Line2: 'of results while you stayed complaining in the exact same spot.',
-    theme: 'fortress_results'
+    format: 'naysayer_clapback',
+    speaker1Label: 'The Weekend Partier',
+    speaker1Text: 'Working on a Saturday night? You have zero personality outside of working out and studying.',
+    speaker2Label: 'Talking Back to the Naysayer',
+    speaker2Line1: 'Flexing rented bottles on maxed-out credit cards isn\'t a personality—I have a',
+    speaker2Highlight: 'BELLIGERENT',
+    speaker2Line2: 'hunger for winning that terrifies lazy people like you.',
+    rareWord: 'BELLIGERENT',
+    rareWordDefinition: 'Aggressively determined, fiercely combative, or fighting without retreat.',
+    theme: 'combative_discipline'
   },
   {
     id: 'mindrush_conf_8',
-    format: 'doubt_execution',
-    speaker1Label: 'The Cynical Dropout:',
-    speaker1Text: '99% of people fail at your age. Your little obsession is honestly embarrassing to watch.',
-    speaker2Label: 'The Slam:',
-    speaker2Line1: 'Accepting defeat before even stepping onto the field is your specialty—I created a',
-    speaker2Highlight: 'RELENTLESS',
-    speaker2Line2: 'standard that renders your pathetic odds completely irrelevant.',
-    theme: 'relentless_standard'
+    format: 'naysayer_clapback',
+    speaker1Label: 'The Envious Gossip',
+    speaker1Text: 'Look at him trying to act all mysterious online, who does he think he is?',
+    speaker2Label: 'How I Roasted Him',
+    speaker2Line1: 'Whispering about winners is the only workout your jaw gets—my',
+    speaker2Highlight: 'PERVICACIOUS',
+    speaker2Line2: 'focus stays locked on results while you beg for gossip.',
+    rareWord: 'PERVICACIOUS',
+    rareWordDefinition: 'Stubbornly persistent, obstinate, and refusing to bend to outside pressure.',
+    theme: 'stubborn_persistence'
   },
   {
     id: 'mindrush_conf_9',
-    format: 'doubt_execution',
-    speaker1Label: 'The Weekend Partier:',
-    speaker1Text: 'Working out on a Saturday night? You have zero personality outside of lifting weights.',
-    speaker2Label: 'Reality Check:',
-    speaker2Line1: 'Flexing rented bottles on maxed-out credit cards isn\'t a personality—I carved an',
-    speaker2Highlight: 'UNSHAKEABLE',
-    speaker2Line2: 'body and mind while you paid to poison your organs.',
-    theme: 'unshakeable_mind'
+    format: 'naysayer_clapback',
+    speaker1Label: 'The Comfort-Zone Addict',
+    speaker1Text: 'Just relax bro, life is too short to work 12 hours a day, stop trying so hard.',
+    speaker2Label: 'My Direct Response',
+    speaker2Line1: 'Dying average with a pile of regret is your life plan—I am',
+    speaker2Highlight: 'RECALCITRANT',
+    speaker2Line2: 'against every lazy habit that turned you into a spectator.',
+    rareWord: 'RECALCITRANT',
+    rareWordDefinition: 'Obstinately defiant of authority, convention, or mediocrity.',
+    theme: 'defiance_of_mediocrity'
   },
   {
     id: 'mindrush_conf_10',
-    format: 'doubt_execution',
-    speaker1Label: 'The Fake Guru:',
-    speaker1Text: 'You\'ll burn out in two months without my $997 shortcut system, you\'re doing it all wrong.',
-    speaker2Label: 'Cold Fact:',
-    speaker2Line1: 'Selling recycled cliches from your studio apartment won\'t save you—I deployed',
-    speaker2Highlight: 'UNCOMPROMISING',
-    speaker2Line2: 'effort that obliterates your cheap tricks every single morning.',
-    theme: 'uncompromising_effort'
-  },
-  {
-    id: 'mindrush_conf_11',
-    format: 'doubt_execution',
-    speaker1Label: 'Them:',
-    speaker1Text: 'Nobody cares about your little routine, stop acting like you\'re on some sacred mission.',
-    speaker2Label: 'Me:',
-    speaker2Line1: 'They don\'t care now because they\'re asleep, but I am constructing an',
-    speaker2Highlight: 'INVINCIBLE',
-    speaker2Line2: 'legacy that will force them to pay attention later.',
-    theme: 'invincible_legacy'
-  },
-  {
-    id: 'mindrush_conf_12',
-    format: 'doubt_execution',
-    speaker1Label: 'The Armchair Philosopher:',
-    speaker1Text: 'You don\'t need money or success to be happy, you\'re just trapped in a capitalist rat race.',
-    speaker2Label: 'The Reality:',
-    speaker2Line1: 'Romanticizing poverty because you\'re too lazy to build is pure delusion—I acquired',
-    speaker2Highlight: 'SOVEREIGN',
-    speaker2Line2: 'capability while you rationalized being completely powerless.',
-    theme: 'sovereign_power'
-  },
-  {
-    id: 'mindrush_conf_13',
-    format: 'doubt_execution',
-    speaker1Label: 'The Midnight Doomscroller:',
-    speaker1Text: 'You look exhausted waking up at 5 AM, nobody is grading you on how miserable you make yourself.',
-    speaker2Label: 'The Slam:',
-    speaker2Line1: 'Sleeping until noon and complaining you have no time is your daily loop—I seized an',
-    speaker2Highlight: 'UNYIELDING',
-    speaker2Line2: 'head start while you drowned in useless blue light.',
-    theme: 'unyielding_start'
-  },
-  {
-    id: 'mindrush_conf_14',
-    format: 'doubt_execution',
-    speaker1Label: 'The Fair-Weather Circle:',
-    speaker1Text: 'You never come out anymore, you\'re going to wake up at forty completely alone with your money.',
-    speaker2Label: 'Cold Fact:',
-    speaker2Line1: 'Surrounding myself with people who only celebrate distractions is worse than solitude—I forged a',
-    speaker2Highlight: 'TITANIC',
-    speaker2Line2: 'purpose that filters out fake friends automatically.',
-    theme: 'titanic_purpose'
-  },
-  {
-    id: 'mindrush_conf_15',
-    format: 'doubt_execution',
-    speaker1Label: 'The Discount Hustler:',
-    speaker1Text: 'Why write code and lift heavy when you can just drop-ship and chill on the beach?',
-    speaker2Label: 'Me:',
-    speaker2Line1: 'Chasing cheap digital gimmicks until your account gets banned isn\'t freedom—I engineered a',
-    speaker2Highlight: 'MONUMENTAL',
-    speaker2Line2: 'foundation of real mastery that nobody can turn off.',
-    theme: 'monumental_foundation'
-  },
-  {
-    id: 'mindrush_conf_16',
-    format: 'doubt_execution',
-    speaker1Label: 'The Town Skeptic:',
-    speaker1Text: 'People from this area don\'t make it big, keep your feet on the ground before you fall flat on your face.',
-    speaker2Label: 'The Slam:',
-    speaker2Line1: 'Using your zip code as a permanent excuse for being ordinary is pathetic—I unleashed an',
-    speaker2Highlight: 'APEX',
-    speaker2Line2: 'drive that refuses to be contained by your small horizons.',
-    theme: 'apex_drive'
+    format: 'naysayer_clapback',
+    speaker1Label: 'The Arrogant Skeptic',
+    speaker1Text: 'People from around here never make it big, keep your feet on the ground before you drop.',
+    speaker2Label: 'How I Silenced Him',
+    speaker2Line1: 'Using your hometown as an excuse to stay broke is pathetic—I showed',
+    speaker2Highlight: 'MAGNANIMOUS',
+    speaker2Line2: 'pity by letting you talk while I bought the entire block.',
+    rareWord: 'MAGNANIMOUS',
+    rareWordDefinition: 'Generous or forgiving, especially toward a rival or someone less powerful.',
+    theme: 'sovereign_triumph'
   }
 ];
 
-// 2. High-Aura 5-Second Wisdom Punchlines (Non-Generic, Pure Punch)
+// 2. High-Aura 5-Second Wisdom Punchlines (Punchy, Clean, Disciplined)
 const CURATED_5S_WISDOM = [
   {
     id: 'mindrush_5s_1',
-    line1: "Kill your excuses.",
-    line2: "Build undeniable",
-    line3: "self-respect.",
-    author: "MindRush Discipline",
-    theme: "discipline"
-  },
-  {
-    id: 'mindrush_5s_2',
     line1: "Nobody is coming to save you.",
     line2: "Become the monster",
     line3: "who solves it.",
     author: "MindRush Grit",
     theme: "sovereignty"
+  },
+  {
+    id: 'mindrush_5s_2',
+    line1: "Kill your excuses.",
+    line2: "Build undeniable",
+    line3: "self-respect.",
+    author: "MindRush Discipline",
+    theme: "discipline"
   },
   {
     id: 'mindrush_5s_3',
@@ -240,43 +194,11 @@ const CURATED_5S_WISDOM = [
     line3: "impossible to break.",
     author: "MindRush Armor",
     theme: "indomitable"
-  },
-  {
-    id: 'mindrush_5s_7',
-    line1: "Stop explaining your vision.",
-    line2: "Build the proof",
-    line3: "in obsidian silence.",
-    author: "MindRush Stealth",
-    theme: "stealth_grind"
-  },
-  {
-    id: 'mindrush_5s_8',
-    line1: "Pain is a down payment.",
-    line2: "Greatness is the deed.",
-    line3: "Pay it in full.",
-    author: "MindRush Tenacity",
-    theme: "payment"
-  },
-  {
-    id: 'mindrush_5s_9',
-    line1: "Never trade self-respect",
-    line2: "for temporary validation.",
-    line3: "Stay dangerous.",
-    author: "MindRush Standard",
-    theme: "standard"
-  },
-  {
-    id: 'mindrush_5s_10',
-    line1: "The crowd seeks comfort.",
-    line2: "The wolf seeks the hunt.",
-    line3: "Remember who you are.",
-    author: "MindRush Predator",
-    theme: "apex"
   }
 ];
 
 /**
- * Dynamically Auto-Fetch / Synthesize a Brand New 15s Confrontation using Gemini SDK
+ * Dynamically Auto-Fetch / Synthesize a Brand New 15s Confrontation using Active AI
  */
 async function autoFetchDynamicConfrontation(recentQuotes = []) {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -286,34 +208,35 @@ async function autoFetchDynamicConfrontation(recentQuotes = []) {
     const { GoogleGenAI } = require('@google/genai');
     const ai = new GoogleGenAI({ apiKey });
 
-    const prompt = `You are the lead viral scriptwriter for MindRush (TikTok & YouTube Shorts motivation for teens and young grinders).
-Write 1 short, ultra-viral 15-second counter-slam debate between a petty fictional persona and our gritty protagonist.
+    const prompt = `You are the lead viral scriptwriter for MindRush (high-aura youth motivation).
+Write 1 intense 15-second counter-slam debate where our protagonist brutally roasts a toxic naysayer / hater.
 
-RULES:
-1. "speaker1Label" MUST be a specific, funny or petty fictional persona / entity (e.g. "The Bitter Roommate:", "The Guy Who Peaked at 18:", "The 9-to-5 Zombie:", "The Broke Gossip:", "The Couch Critic:", "The Comfort-Zone Fiend:"). NEVER use "Public Opinion".
-2. "speaker1Text": An insulting, condescending, toxic jab from them attacking our protagonist's discipline or grind (max 18 words).
-3. "speaker2Label": "Me:" or "Reality Check:" or "The Slam:"
-4. "speaker2Line1": An insult back that roasts their mediocrity and fixes our reality (8-14 words).
-5. "speaker2Highlight": EXACTLY ONE single uppercase power word (e.g. "ANOMALY", "EMPIRE", "FORTRESS", "UNTOUCHABLE", "COLOSSAL", "INDOMITABLE", "TITANIC", "SOVEREIGN").
-6. "speaker2Line2": The lethal punchline throwing their toxic insult right back at them (8-14 words).
+CRITICAL RULES:
+1. "speaker1Label": A specific, toxic naysayer persona (e.g. "The Broke Critic", "The Couch Skeptic", "The Sneering Doubter", "The 2 AM Doomscroller").
+2. "speaker1Text": An insulting, petty doubt attacking our protagonist's discipline (common daily words, max 16 words).
+3. "speaker2Label": Must clearly show the protagonist is TALKING BACK AT THE NAYSAYER (e.g. "How I Clapped Back", "My Answer to the Naysayer", "Me Talking Back"). Never leave it ambiguous so viewer doesn't feel insulted!
+4. "speaker2Line1": Raw insult roasting their lazy mediocrity using everyday street words (8-14 words).
+5. "speaker2Highlight": EXACTLY ONE single uncommon/rare power word in UPPERCASE (e.g. "INDEFATIGABLE", "PUSILLANIMOUS", "BELLIGERENT", "INEXORABLE", "SURREPTITIOUS", "EQUILIBRIUM", "RECALCITRANT", "MAGNANIMOUS", "INVIOLABLE", "PERVICACIOUS").
+6. "speaker2Line2": The lethal punchline throwing their insult right back at them (8-14 words).
+7. "rareWordDefinition": A crystal-clear 1-sentence definition of the rare word for the video description.
 
-Respond ONLY with clean valid JSON, no markdown, no code fences:
+Respond ONLY with clean valid JSON, no markdown:
 {
-  "speaker1Label": "The Bitter Roommate:",
+  "speaker1Label": "The Couch Skeptic",
   "speaker1Text": "...",
-  "speaker2Label": "Me:",
+  "speaker2Label": "How I Clapped Back",
   "speaker2Line1": "...",
   "speaker2Highlight": "WORD",
   "speaker2Line2": "...",
+  "rareWord": "WORD",
+  "rareWordDefinition": "...",
   "theme": "..."
 }`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
-      config: {
-        temperature: 0.85
-      }
+      config: { temperature: 0.85 }
     });
 
     const text = response.text || '';
@@ -322,15 +245,17 @@ Respond ONLY with clean valid JSON, no markdown, no code fences:
 
     if (parsed.speaker1Text && parsed.speaker2Highlight && parsed.speaker2Line1) {
       return {
-        id: `mindrush_dynamic_${Date.now()}`,
-        format: 'doubt_execution',
-        speaker1Label: parsed.speaker1Label || 'The Cynic:',
+        id: `mindrush_dyn_${Date.now()}`,
+        format: 'naysayer_clapback',
+        speaker1Label: parsed.speaker1Label || 'The Naysayer',
         speaker1Text: parsed.speaker1Text,
-        speaker2Label: parsed.speaker2Label || 'Me:',
+        speaker2Label: parsed.speaker2Label || 'How I Clapped Back',
         speaker2Line1: parsed.speaker2Line1,
         speaker2Highlight: parsed.speaker2Highlight.toUpperCase(),
         speaker2Line2: parsed.speaker2Line2,
-        theme: parsed.theme || 'relentless_grind'
+        rareWord: (parsed.rareWord || parsed.speaker2Highlight).toUpperCase(),
+        rareWordDefinition: parsed.rareWordDefinition || 'Persisting relentlessly despite all obstacles.',
+        theme: parsed.theme || 'unapologetic_grind'
       };
     }
   } catch (err) {
@@ -365,9 +290,7 @@ Respond ONLY with clean valid JSON, no markdown:
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
-      config: {
-        temperature: 0.85
-      }
+      config: { temperature: 0.85 }
     });
 
     const text = response.text || '';

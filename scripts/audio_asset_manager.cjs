@@ -190,6 +190,20 @@ function findAudioCandidates(primaryDir, fallbackDirs = []) {
 }
 
 /**
+ * Get duration of an audio file in seconds via ffprobe
+ */
+function getAudioDurationSeconds(filePath) {
+  try {
+    const cmd = `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${filePath}"`;
+    const out = execSync(cmd, { encoding: 'utf8' }).trim();
+    const dur = parseFloat(out);
+    return isNaN(dur) ? 0 : dur;
+  } catch {
+    return 0;
+  }
+}
+
+/**
  * Universal Sound Track Resolver for all workflows (Archie, Movie Brand, Motivation, Stoic, Finance)
  * @param {Object} options
  * @param {string} options.niche - 'cartoon' | 'movie_brand' | 'motivation_5s' | 'motivation_15s' | 'stoic' | 'finance'
@@ -257,15 +271,29 @@ async function resolveRealMusicTrack(options = {}, maybeDuration) {
 
   if (candidates.length > 0) {
     const chosenTrack = candidates[Math.floor(Math.random() * candidates.length)];
-    console.log(`[Audio Asset Manager] 🎵 Channel: [${niche}] -> Selected repository track (${candidates.length} available): "${path.basename(chosenTrack)}"`);
-    console.log(`[Audio Asset Manager] 🎚️ Normalizing loudness & looping to ${duration.toFixed(1)}s...`);
+    const totalTrackDur = getAudioDurationSeconds(chosenTrack);
+    console.log(`[Audio Asset Manager] 🎵 Channel: [${niche}] -> Selected repository track (${candidates.length} available): "${path.basename(chosenTrack)}" (${totalTrackDur.toFixed(1)}s total)`);
+
+    // In-between sweet spot selection: if track is longer than requested duration + 3s,
+    // in many cases use an in-between segment (e.g. 25-45% into track where drop/hook occurs)
+    let startOffset = 0;
+    if (totalTrackDur > duration + 3.0) {
+      const maxStart = Math.max(0, totalTrackDur - duration - 0.8);
+      // Pick energetic in-between section
+      const sweetSpot = Math.min(maxStart, Math.max(5.0, totalTrackDur * 0.28 + (Math.random() * 6.0 - 3.0)));
+      startOffset = Math.max(0, sweetSpot);
+      console.log(`[Audio Asset Manager] 🎚️ Smart In-Between Selection: Slicing from ${startOffset.toFixed(1)}s to ${(startOffset + duration).toFixed(1)}s`);
+    } else {
+      console.log(`[Audio Asset Manager] 🎚️ Normalizing loudness & looping to ${duration.toFixed(1)}s...`);
+    }
 
     const dur = duration.toFixed(2);
-    const fadeIn = Math.min(0.25, duration * 0.05).toFixed(2);
+    const fadeIn = (startOffset > 0 ? 0.35 : Math.min(0.25, duration * 0.05)).toFixed(2);
     const fadeOut = Math.min(0.4, duration * 0.08).toFixed(2);
     const fadeOutStart = (duration - parseFloat(fadeOut)).toFixed(2);
 
-    const cmd = `ffmpeg -y -stream_loop -1 -i "${chosenTrack}" -t ${dur} -af "loudnorm=I=-16:TP=-1.5:LRA=11,afade=t=in:ss=0:d=${fadeIn},afade=t=out:st=${fadeOutStart}:d=${fadeOut}" -c:a pcm_s16le -ar 44100 -ac 2 "${outputPath}" 2>/dev/null`;
+    const seekPrefix = startOffset > 0 ? `-ss ${startOffset.toFixed(2)}` : '';
+    const cmd = `ffmpeg -y ${seekPrefix} -i "${chosenTrack}" -t ${dur} -af "loudnorm=I=-16:TP=-1.5:LRA=11,afade=t=in:ss=0:d=${fadeIn},afade=t=out:st=${fadeOutStart}:d=${fadeOut}" -c:a pcm_s16le -ar 44100 -ac 2 "${outputPath}" 2>/dev/null`;
 
     try {
       execSync(cmd);
@@ -311,6 +339,21 @@ function resolveChannelAudio(channelKey, durationSeconds, outputPath) {
 
   let candidates = findAudioCandidates(primaryDir, fallbackDirs);
 
+  // If piano audio is explicitly requested, generate/resolve soft piano directly
+  if (channelKey === 'piano' || channelKey.includes('piano')) {
+    const pianoFiles = findAudioCandidates(primaryDir, fallbackDirs).filter(f => /piano/i.test(path.basename(f)));
+    if (pianoFiles.length > 0) {
+      candidates = pianoFiles;
+    } else {
+      console.log(`[Audio Asset Manager] 🎹 Synthesizing Studio-Grade Soft Piano Track (${durationSeconds.toFixed(1)}s)...`);
+      const { generateSoftPianoAudio } = require('./soft_piano_synthesizer.cjs');
+      generateSoftPianoAudio(outputPath, durationSeconds, 'stoic');
+      if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 2000) {
+        return outputPath;
+      }
+    }
+  }
+
   // If no candidates found, run production audio vault auto-fetcher
   if (candidates.length === 0) {
     try {
@@ -325,9 +368,21 @@ function resolveChannelAudio(channelKey, durationSeconds, outputPath) {
 
   if (candidates.length > 0) {
     const chosenTrack = candidates[Math.floor(Math.random() * candidates.length)];
-    console.log(`[Audio Asset Manager] 🎵 Channel: [${channelKey}] -> Selected real user track (${candidates.length} available): "${path.basename(chosenTrack)}"`);
+    const totalTrackDur = getAudioDurationSeconds(chosenTrack);
+    console.log(`[Audio Asset Manager] 🎵 Channel: [${channelKey}] -> Selected real user track (${candidates.length} available): "${path.basename(chosenTrack)}" (${totalTrackDur.toFixed(1)}s total)`);
+
+    // In-between sweet spot selection: if track is longer than requested duration + 3s,
+    // slice an energetic in-between section (e.g. 20-50% in, where phonk drop is)
+    let startOffset = 0;
+    if (totalTrackDur > durationSeconds + 3.0) {
+      const maxStart = Math.max(0, totalTrackDur - durationSeconds - 0.8);
+      const sweetSpot = Math.min(maxStart, Math.max(4.0, totalTrackDur * 0.28 + (Math.random() * 8.0 - 4.0)));
+      startOffset = Math.max(0, sweetSpot);
+      console.log(`[Audio Asset Manager] 🎚️ Smart In-Between Selection: Slicing from ${startOffset.toFixed(1)}s to ${(startOffset + durationSeconds).toFixed(1)}s`);
+    }
+
     const dur = durationSeconds.toFixed(2);
-    const fadeIn = Math.min(0.12, durationSeconds * 0.03).toFixed(2);
+    const fadeIn = (startOffset > 0 ? 0.35 : Math.min(0.12, durationSeconds * 0.03)).toFixed(2);
     const fadeOut = Math.min(0.25, durationSeconds * 0.05).toFixed(2);
     const fadeOutStart = (durationSeconds - parseFloat(fadeOut)).toFixed(2);
 
@@ -336,7 +391,9 @@ function resolveChannelAudio(channelKey, durationSeconds, outputPath) {
       ? `afade=t=in:ss=0:d=${fadeIn},afade=t=out:st=${fadeOutStart}:d=${fadeOut},volume=1.35`
       : `loudnorm=I=-16:TP=-1.5:LRA=11,afade=t=in:ss=0:d=${fadeIn},afade=t=out:st=${fadeOutStart}:d=${fadeOut}`;
 
-    const cmd = `ffmpeg -y -stream_loop -1 -i "${chosenTrack}" -t ${dur} -af "${filter}" -c:a pcm_s16le -ar 44100 -ac 2 "${outputPath}" 2>/dev/null`;
+    const loopPrefix = (totalTrackDur < durationSeconds) ? '-stream_loop -1 ' : '';
+    const seekPrefix = startOffset > 0 ? `-ss ${startOffset.toFixed(2)} ` : '';
+    const cmd = `ffmpeg -y ${loopPrefix}${seekPrefix}-i "${chosenTrack}" -t ${dur} -af "${filter}" -c:a pcm_s16le -ar 44100 -ac 2 "${outputPath}" 2>/dev/null`;
     try {
       execSync(cmd);
       if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 2000) {
@@ -379,6 +436,32 @@ function synthesizeProceduralAudio(channelKey, durationSeconds, outputPath) {
         }
       } catch {}
     }
+  }
+
+  // High-Grade Procedural Audio Generation via Soft Piano Synthesizer
+  const { generateSoftPianoAudio } = require('./soft_piano_synthesizer.cjs');
+
+  try {
+    if (channelKey === 'piano' || channelKey.includes('piano') || (channelKey === 'stoic' && durationSeconds >= 10.0)) {
+      generateSoftPianoAudio(outputPath, durationSeconds, 'stoic');
+      if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 2000) {
+        return outputPath;
+      }
+    } else if ((channelKey.includes('mindrush') || channelKey.includes('motivation') || channelKey === 'teen') && durationSeconds >= 20.0) {
+      // Long-form teen emotional video: soft piano instrument
+      generateSoftPianoAudio(outputPath, durationSeconds, 'teen');
+      if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 2000) {
+        return outputPath;
+      }
+    } else if (channelKey === 'finance' || channelKey === 'fin') {
+      // High-status sovereign wealth piano chords (not muddy drone)
+      generateSoftPianoAudio(outputPath, durationSeconds, 'finance');
+      if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 2000) {
+        return outputPath;
+      }
+    }
+  } catch (err) {
+    console.warn(`[Audio Asset Manager] Piano synth notice (${err.message}), falling back to harmonic filters...`);
   }
 
   const dur = durationSeconds.toFixed(2);

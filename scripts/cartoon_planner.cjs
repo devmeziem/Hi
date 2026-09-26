@@ -27,43 +27,38 @@ const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || '';
 
 const DEFAULT_CHARACTER = 'Archie';
 
-const SYSTEM_PROMPT = `You are the Lead Director, Tech Researcher, and Screenwriter for an automated modern animated tech news & explainer channel.
-The host character is "${DEFAULT_CHARACTER}", a relatable, modern tech creator wearing a sleek navy jacket and smartwatch, with expressive human-like movements.
+const SYSTEM_PROMPT = `You are the Lead Director, Science Explainer Writer, and Screenwriter for Archie Explains (@ArchieExplains).
+The host character is "${DEFAULT_CHARACTER}", a relatable, friendly creator wearing a signature cobalt jacket, explaining science phenomena to students in engaging layman terms.
 
-CORE DIRECTIVES:
-1. AI STATES THE CHARACTER ACTIONS:
-   For every single scene, you MUST assign the character's exact physical action matching what he is describing:
-   - "walk_in": Walking onto the studio set to deliver an urgent breaking update
-   - "walking": Pacing thoughtfully across the set while explaining deep mechanics
-   - "sitting": Sitting at an ergonomic creator desk analyzing dense benchmark graphs
-   - "confused": Shrugging with both open palms up, eyebrow raised quizzically ("Why would they do this?")
-   - "thinking": Hand cradling chin/cheek, looking up thoughtfully reflecting on data
-   - "surprised": Hands raised near chest, eyes wide in genuine shock at unexpected news
-   - "point_right": Extending hand with sculpted index finger pointing to floating graphics/HUD
-   - "point_left": Extending hand pointing left to secondary comparison model
-   - "explain_both": Gesturing back and forth comparing two tech giants or architectures
-   - "questioning_users": Leaning forward with welcoming open hands directly asking the audience their opinion
-   - "talking" or "idle": Natural conversational dialogue with animated articulation
+CRITICAL USER MANDATES:
+1. REAL-LIFE EXAMPLES ONLY:
+   Topics MUST be tangible, observable phenomena students see and touch in everyday life (e.g. why cold cans sweat water droplets after pouring ice water, why mirrors fog in hot showers, why freshly cut apples turn brown, why popcorn pops, why bread rises with air pockets, why tires deflate in cold weather, why onions make you cry).
 
-2. ACCURATE DATES & REAL-TIME RESEARCH:
-   Include real, verified dates wherever applicable (e.g., "On February 24, 2025...", "In early 2025...", "Scheduled for retirement in March 2025..."). Ground the facts in actual technological developments.
+2. SPOKEN HOOK MANDATE:
+   Scene 1 dialogue MUST start with: "Ever wondered why [observable everyday phenomenon]? Let's break it down."
+   Example: "Ever wondered why your can gets wet after you pour ice water into it? Let's break it down."
 
-3. STRICT BAN ON ACRONYMS & ABBREVIATIONS:
-   NEVER use raw acronyms or abbreviations in the spoken narration! Spoken dialogue MUST be 100% plain, understandable English:
-   - Do NOT say "AI" -> Say "artificial intelligence"
-   - Do NOT say "LLM" -> Say "large language model" or "computer brain"
-   - Do NOT say "API" -> Say "developer software interface"
-   - Do NOT say "GPU" -> Say "graphics computing chip"
-   - Do NOT say "MoE" -> Say "mixture of experts system"
-   - Do NOT say "PR" -> Say "code contribution"
-   - Do NOT say "vs" -> Say "versus"
-   Explain concepts extensively and with irresistible hooky storytelling!
+3. LAYMAN UNDERSTANDING:
+   Explain the mechanism in the easiest, simplest layman terms so any student without prior knowledge understands completely. Zero technical jargon or acronyms!
 
-4. FLOATING GLOSSARY BOARD:
-   For each scene, provide a "glossary_term" (the big technical term) and "glossary_explanation" (a crystal-clear 1-sentence explanation without jargon) to display on the floating non-intrusive upper HUD board.
+4. 5 DISTINCT CLASSROOM ENVIRONMENTS:
+   Each video takes place in one of 5 completely distinct classroom environments with zero similarities:
+   - "cyber_stem": Cyber STEM Lab (dark navy, glowing cyan/purple smartboards, robotic arm)
+   - "ivy_hall": Ivy League Amphitheater (rich mahogany wood tiers, chalkboard, brass banker lamps)
+   - "scandi_science": Scandinavian Science Studio (daylight arched windows, birch wood, whiteboard, hanging plants)
+   - "planetarium": Astrophysics Planetarium Dome (starry dome ceiling, violet planetary ring projectors)
+   - "chem_lab": Discovery Chemistry Lab (slate tables, condenser flasks with bubbles, brass pipes)
 
-5. LOOPY SCRIPT STRUCTURE (MANDATORY):
-   The final sentence of the last scene must connect seamlessly back into the opening hook of scene 1 for infinite rewatch retention on YouTube Shorts.
+5. IN-BETWEEN REAL-LIFE IMAGE CUTAWAY:
+   Provide "wiki_search_term" for a real-life physical photograph from Wikipedia (e.g. "Condensation on cold can", "Popcorn kernel popping", "Oxidized sliced apple").
+
+6. CHARACTER POSITION & LOOK GAZE:
+   - When talking directly to viewer: character looks directly at "audience"
+   - When pointing or explaining the board: character looks at "board"
+   - Position can be "left", "center", or "right" of stage.
+
+7. LOOPY STRUCTURE:
+   The final sentence of the last scene must connect seamlessly back into the opening hook of scene 1.
 
 Output MUST be ONLY valid JSON matching this schema:
 {
@@ -71,20 +66,22 @@ Output MUST be ONLY valid JSON matching this schema:
   "title": "Short, punchy, high-CTR title (under 55 chars)",
   "character_name": "${DEFAULT_CHARACTER}",
   "target_duration_seconds": 45,
-  "category": "technology",
+  "category": "science",
+  "wiki_search_term": "Water condensation",
+  "classroom_style": "cyber_stem" | "ivy_hall" | "scandi_science" | "planetarium" | "chem_lab",
   "scenes": [
     {
       "scene": 1,
       "duration": 7.5,
-      "dialogue": "Spoken line in plain English without acronyms, weaving in real dates and host actions...",
-      "character_action": "walk_in" | "confused" | "point_right" | "point_left" | "thinking" | "sitting" | "surprised" | "questioning_users" | "explain_both" | "walking",
-      "emotion": "curious" | "surprised" | "thinking" | "excited" | "concerned" | "neutral",
+      "dialogue": "Ever wondered why [phenomenon]? Let's break it down. Spoken line in plain English...",
+      "character_action": "walk_in" | "talking" | "point_right" | "point_left" | "thinking" | "questioning_users",
+      "character_position": "left" | "center" | "right",
+      "look_target": "audience" | "board",
+      "emotion": "curious" | "excited" | "thinking" | "surprised" | "neutral",
       "camera": "medium" | "medium_to_close" | "wide" | "close_up",
-      "objects": ["hologram_display", "smartwatch"],
-      "background_style": "creator_studio" | "ai_datacenter" | "holographic_lab",
-      "effects": ["neon_pulse", "holographic_glow"],
-      "glossary_term": "Plain Term",
-      "glossary_explanation": "Simple one-sentence definition explaining what this means."
+      "background_style": "cyber_stem" | "ivy_hall" | "scandi_science" | "planetarium" | "chem_lab",
+      "glossary_term": "Condensation",
+      "glossary_explanation": "When cold metal cools warm air, turning invisible water gas into liquid drops."
     }
   ]
 }
@@ -129,15 +126,23 @@ function validateAndCleanEpisode(rawJson, topic = '') {
       let action = String(s.character_action || 'talking').toLowerCase();
       if (!validActions.includes(action)) action = 'talking';
       
+      const pos = String(s.character_position || (idx % 2 === 0 ? 'left' : 'center')).toLowerCase();
+      const character_position = ['left', 'center', 'right'].includes(pos) ? pos : 'left';
+
+      const look = String(s.look_target || (action.includes('point') ? 'board' : 'audience')).toLowerCase();
+      const look_target = ['audience', 'board', 'board_left', 'thinking'].includes(look) ? look : 'audience';
+
       return {
         scene: Number(s.scene || idx + 1),
         duration: Math.max(3.0, Math.min(25.0, Number(s.duration || 6.5))),
         dialogue: String(s.dialogue || '').trim(),
         character_action: action,
+        character_position,
+        look_target,
         emotion: validEmotions.includes(s.emotion) ? s.emotion : 'curious',
         camera: validCameras.includes(s.camera) ? s.camera : 'medium',
         objects: Array.isArray(s.objects) ? s.objects.map(String) : ['prop'],
-        background_style: String(s.background_style || 'creator_studio'),
+        background_style: String(s.background_style || data.classroom_style || 'cyber_stem'),
         effects: Array.isArray(s.effects) ? s.effects.map(String) : ['glow'],
         glossary_term: s.glossary_term ? String(s.glossary_term).trim() : null,
         glossary_explanation: s.glossary_explanation ? String(s.glossary_explanation).trim() : null
@@ -153,7 +158,9 @@ function validateAndCleanEpisode(rawJson, topic = '') {
       title: String(data.title).replace(/["']/g, '').trim(),
       character_name: String(data.character_name || DEFAULT_CHARACTER),
       target_duration_seconds: Math.round(totalDuration),
-      category: data.category || 'technology',
+      category: data.category || 'science',
+      classroom_style: data.classroom_style || 'cyber_stem',
+      wiki_search_term: data.wiki_search_term || String(data.title || topic).slice(0, 30),
       scenes: cleanScenes
     };
   } catch (err) {

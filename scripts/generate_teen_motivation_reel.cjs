@@ -67,23 +67,27 @@ const MOTIVATION_IMAGES = {
 };
 
 // 3 Curated Prompt Pools for Live Cloudflare AI Image Synthesis
+// User Mandate: Real Naysayers / Bad Person intro & Explosive Aura Throwback (Zero cats/dogs/generic boys)
 const MYSTERY_3D_POOLS = {
-  boy: [
-    "3D octane render of a cool mysterious teen boy character with pure aura, dark streetwear hoodie, glowing cyan and electric purple neon rim light, sharp disciplined eyes looking at camera, misty volumetric atmosphere, dark cinematic mood, sleek and stylish, unreal engine 5 render, vertical 9:16",
-    "3D cinematic render of an enigmatic cool teen boy standing in atmospheric dark haze, intense golden aura rim light, black oversized techwear hoodie, ultra-detailed, pure aura, 8k vertical 9:16",
-    "3D render of a stoic teen boy with glowing electric blue aura, dark shadow silhouette, glowing eyes, cinematic mist, pure aura, high detail 3D character, vertical 9:16"
+  naysayer_intro: [
+    "3D octane render of a cynical shadowy toxic naysayer sneering in a dark rainy urban alley, shadowy skeptic criticizing under cold blue streetlights, dramatic silhouette of a bitter hater in mist and smoke, ultra detailed 3d character, cinematic 9:16 vertical 8k",
+    "3D cinematic render of an arrogant toxic doubter in shadows sneering with crossed arms, dark rainy city background, cold blue and violet rim light, pure skepticism and envy, 8k vertical 9:16",
+    "3D render of a shadowy petty critic with glowing cynical eyes, dark urban techwear silhouette, smoke and rain haze, negative aura, cinematic vertical 9:16"
   ],
-  animal_human: [
-    "3D octane render of a cool anthropomorphic black panther looking human dressed in an obsidian tailored luxury suit, glowing emerald and amber eyes, smoking cool atmosphere, pure aura, intense disciplined expression, hyper-detailed 3D character, dark cinematic mystery, vertical 9:16",
-    "3D octane render of a stoic anthropomorphic silver wolf character looking human in a dark urban techwear streetwear jacket, glowing icy blue neon eyes, misty rain reflections, pure aura, intense cool mood, octane render 8k vertical 9:16",
-    "3D render of a royal anthropomorphic lion looking human dressed in dark obsidian velvet trench coat, golden rim light, glowing amber eyes, pure aura, hyper-detailed 3d character, cinematic mystery, vertical 9:16"
+  aura_throwback: [
+    "3D octane render of an invincible disciplined champion standing atop a skyscraper with pure golden and violet energy aura, intense glowing neon eyes, shockwaves of raw power breaking through dark clouds, transcendent aura throwback, cinematic masterpiece vertical 9:16",
+    "3D render of an apex warrior with pure electric cyan and gold aura radiating from body, shattering dark shadows, glowing eyes of pure unstoppable willpower, high-detail 3D character, 8k vertical 9:16",
+    "3D cinematic render of a disciplined stoic protagonist in dark techwear surrounded by towering explosive aura and floating golden embers, supreme confidence, triumph over doubters, 8k vertical 9:16"
   ],
   studio: [
     "3D render of a cool minimalist dark luxury studio stage, dramatic overhead volumetric light spotlight, glowing floating geometric neon prism, deep cyan and gold rim illumination, moody dark mystery, pure aura, sleek dark reflective floor, 8k vertical 9:16 cinematic studio background",
-    "3D brutalist dark vault studio, dramatic single overhead spotlight, floating glowing particles, pure aura, sleek reflective metallic floor, hyper-cinematic mystery 8k vertical 9:16",
-    "3D high-end futuristic dark studio showroom with glowing neon frame, soft ambient haze, polished obsidian reflection, pure aura, architectural mystery, 8k vertical 9:16"
+    "3D brutalist dark vault studio, dramatic single overhead spotlight, floating glowing particles, pure aura, sleek reflective metallic floor, hyper-cinematic mystery 8k vertical 9:16"
   ]
 };
+
+// Aliases for compatibility
+MYSTERY_3D_POOLS.boy = MYSTERY_3D_POOLS.aura_throwback;
+MYSTERY_3D_POOLS.animal_human = MYSTERY_3D_POOLS.aura_throwback;
 
 /**
  * Dynamically Generate 3D Mystery Image via Cloudflare Workers AI Low-Cost Models
@@ -212,6 +216,20 @@ async function resolve3dMysteryImage(category = 'auto') {
   const dynamicImage = await generatePollinationsDynamicImage(prompt);
   if (dynamicImage && fs.existsSync(dynamicImage) && fs.statSync(dynamicImage).size > 2000) {
     return dynamicImage;
+  }
+
+  // 3. High-Resolution Local 3D Assets Fallback
+  const fallbackList = [
+    LOCAL_3D_MYSTERY_IMAGES.boy,
+    LOCAL_3D_MYSTERY_IMAGES.panther,
+    LOCAL_3D_MYSTERY_IMAGES.wolf,
+    LOCAL_3D_MYSTERY_IMAGES.studio
+  ];
+  for (const f of fallbackList) {
+    if (f && fs.existsSync(f) && fs.statSync(f).size > 2000) {
+      console.log(`[MindRush AI Images] 🏛️ Utilizing High-Resolution 3D Asset: ${path.basename(f)}`);
+      return f;
+    }
   }
 
   return cfImage || dynamicImage;
@@ -358,7 +376,7 @@ function build5sOverlaySvg(entry) {
 }
 
 /**
- * Build 15-Second Segment 1 (Them / Public Opinion with Stoic Prestige Zero-Box Layout)
+ * Build 15-Second Segment 1 (What the Naysayer Said - Clear Doubter Framing)
  */
 function build15sSegment1OverlaySvg(debate, cursorChar = '|') {
   const width = 1080;
@@ -384,9 +402,12 @@ function build15sSegment1OverlaySvg(debate, cursorChar = '|') {
     <!-- Seamless Obsidian Vignette Background (No Box / Zero-Pill) -->
     <rect x="0" y="680" width="1080" height="1240" fill="url(#vignette1)" />
 
-    <!-- Speaker 1 Label (e.g. THEY SAID:) -->
-    <text x="540" y="940" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="900" fill="#94a3b8" letter-spacing="6" text-anchor="middle" filter="url(#shadow1)">
-      ⚡ ${escapeXml(debate.speaker1Label.toUpperCase())}
+    <!-- Speaker 1 Label: Crystal Clear Naysayer Framing so viewer is never confused -->
+    <text x="540" y="890" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="900" fill="#ef4444" letter-spacing="4" text-anchor="middle" filter="url(#shadow1)">
+      ⚡ [ WHAT THE NAYSAYER SAID ]
+    </text>
+    <text x="540" y="930" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="800" fill="#94a3b8" letter-spacing="3" text-anchor="middle" filter="url(#shadow1)">
+      (THE TOXIC DOUBT I WAS TOLD)
     </text>
 
     <!-- Wrapped Doubt Statement with Blinking Cursor -->
@@ -405,13 +426,13 @@ function build15sSegment1OverlaySvg(debate, cursorChar = '|') {
 
     <!-- Suspense Prompt -->
     <text x="540" y="${1100 + lines.length * 78}" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="800" fill="#38bdf8" letter-spacing="4" text-anchor="middle" filter="url(#shadow1)">
-      WAIT FOR IT...
+      WAIT FOR MY CLAPBACK...
     </text>
   </svg>`;
 }
 
 /**
- * Build 15-Second Segment 3 (The Me / Reality Counter Slam with Stoic Prestige Zero-Box Layout)
+ * Build 15-Second Segment 3 (The Protagonist Throwback - Direct Clapback at Naysayer)
  */
 function build15sSegment3OverlaySvg(debate) {
   const width = 1080;
@@ -443,9 +464,12 @@ function build15sSegment3OverlaySvg(debate) {
     <!-- Seamless Obsidian Vignette Background (No Box / Zero-Pill) -->
     <rect x="0" y="620" width="1080" height="1300" fill="url(#vignette3)" />
 
-    <!-- Speaker 2 Label (e.g. THE REALITY:) -->
-    <text x="540" y="900" font-family="system-ui, -apple-system, sans-serif" font-size="30" font-weight="900" fill="#facc15" letter-spacing="6" text-anchor="middle" filter="url(#slamGlow)">
-      ⚡ ${escapeXml(debate.speaker2Label.toUpperCase())}
+    <!-- Speaker 2 Label: Crystal Clear Protagonist Clapback Framing -->
+    <text x="540" y="860" font-family="system-ui, -apple-system, sans-serif" font-size="30" font-weight="900" fill="#facc15" letter-spacing="4" text-anchor="middle" filter="url(#slamGlow)">
+      ⚡ [ HOW I CLAPPED BACK ]
+    </text>
+    <text x="540" y="905" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="800" fill="#38bdf8" letter-spacing="3" text-anchor="middle" filter="url(#slamGlow)">
+      (MY DIRECT ANSWER TO THE NAYSAYER)
     </text>
 
     <!-- Line 1 of retort (Auto-Wrapped, Bold Clean White) -->
@@ -470,8 +494,13 @@ function build15sSegment3OverlaySvg(debate) {
     <!-- Fine Accent Divider Bar -->
     <line x1="420" y1="${1020 + lines1.length * 72 + 145 + lines2.length * 66}" x2="660" y2="${1020 + lines1.length * 72 + 145 + lines2.length * 66}" stroke="#facc15" stroke-width="3" stroke-linecap="round" />
 
+    <!-- Rare Word Definition Tag on Screen -->
+    <text x="540" y="${1060 + lines1.length * 72 + 145 + lines2.length * 66}" font-family="system-ui, -apple-system, sans-serif" font-size="19" font-weight="800" fill="#94a3b8" letter-spacing="1.5" text-anchor="middle" filter="url(#slamGlow)">
+      ${escapeXml(debate.speaker2Highlight.toUpperCase())}: ${escapeXml((debate.rareWordDefinition || 'Unbreakable persistence').slice(0, 50))}
+    </text>
+
     <!-- Channel Tagline -->
-    <text x="540" y="${1070 + lines1.length * 72 + 145 + lines2.length * 66}" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="800" fill="#cbd5e1" letter-spacing="3" text-anchor="middle" filter="url(#slamGlow)">
+    <text x="540" y="${1100 + lines1.length * 72 + 145 + lines2.length * 66}" font-family="system-ui, -apple-system, sans-serif" font-size="21" font-weight="800" fill="#cbd5e1" letter-spacing="3" text-anchor="middle" filter="url(#slamGlow)">
       - MINDRUSH • APEX DISCIPLINE
     </text>
   </svg>`;
@@ -579,12 +608,12 @@ async function render15sTeenReel(customDebate = null) {
   console.log(`[15s Slam] Rare Word: "${chosen.speaker2Highlight.toUpperCase()}"\n`);
 
   // 2. Resolve Dynamic 3D Mystery Images (Cloudflare AI -> Local 3D Assets)
-  // Scene 1: Boy or Studio; Scene 3 (Slam): Anthropomorphic Animal or Studio
-  const img1Path = await resolve3dMysteryImage('boy');
-  const img2Path = await resolve3dMysteryImage('animal_human');
+  // Scene 1: Naysayer / Toxic Doubter Intro; Scene 3 (Slam): Explosive Aura Throwback
+  const img1Path = await resolve3dMysteryImage('naysayer_intro');
+  const img2Path = await resolve3dMysteryImage('aura_throwback');
 
-  console.log(`[15s Slam] 🖼️ Scene 1 Asset: ${path.basename(img1Path)}`);
-  console.log(`[15s Slam] 🖼️ Scene 3 Slam Asset: ${path.basename(img2Path)}`);
+  console.log(`[15s Slam] 🖼️ Scene 1 Naysayer Asset: ${path.basename(img1Path)}`);
+  console.log(`[15s Slam] 🖼️ Scene 3 Aura Slam Asset: ${path.basename(img2Path)}`);
 
   // 3. Resolve Random Audio Asset from sound_assets/mindrush/ (User Uploaded BangersOnly)
   const audioWavPath = path.join(ARTIFACTS_DIR, `teen_15s_audio_${Date.now()}.wav`);
@@ -693,6 +722,113 @@ async function render15sTeenReel(customDebate = null) {
 }
 
 /**
+ * Generate 32-Second MindRush Emotionally Impactful Long-Form Reel
+ * (Relentora Viral Format: 5 Progressive Contrast Slides + Pure Black Blank Ending Card with Dark Fin Aesthetics + Backup Quote + Watermark)
+ * Accompanied by soft emotional piano instrument in background.
+ */
+async function renderLongFormTeenReel(customNarrative = null) {
+  const duration = 32.0;
+  console.log(`\n======================================================`);
+  console.log(`⚡ [MINDRUSH LONG-FORM] GENERATING EMOTIONAL NARRATIVE REEL (${duration}s)`);
+  console.log(`======================================================\n`);
+
+  const { selectEmotionalNarrative, buildNarrativeSlideSvg, buildEndingBlankQuoteCardSvg } = require('./emotional_impact_engine.cjs');
+  const narrative = customNarrative || selectEmotionalNarrative('teen');
+  const watermarkHandle = process.env.TIKTOK_ACCOUNT_2_HANDLE || process.env.YOUTUBE_HANDLE_MINDRUSH || '@MindRush';
+
+  // 1. Resolve 3D Mystery Background Image with Pure Aura
+  const bgImagePath = await resolve3dMysteryImage('aura_throwback');
+  console.log(`[MindRush Long-Form] 🖼️ 3D Visual Asset: ${path.basename(bgImagePath)}`);
+
+  // 2. Resolve Soft Piano Background Track (32.0s)
+  const audioWavPath = path.join(ARTIFACTS_DIR, `teen_longform_piano_${Date.now()}.wav`);
+  resolveChannelAudio('teen', duration, audioWavPath);
+
+  // 3. Render Overlays for Slides 1 - 5
+  const slidePngPaths = [];
+  for (let i = 0; i < narrative.slides.length; i++) {
+    const slideSvg = buildNarrativeSlideSvg(narrative.slides[i], i + 1, narrative.slides.length, 'teen');
+    const slideSvgPath = path.join(ARTIFACTS_DIR, `teen_slide_${i + 1}.svg`);
+    const slidePngPath = path.join(ARTIFACTS_DIR, `teen_slide_${i + 1}.png`);
+    fs.writeFileSync(slideSvgPath, slideSvg, 'utf8');
+    try {
+      execSync(`rsvg-convert -w 1080 -h 1920 "${slideSvgPath}" -o "${slidePngPath}" 2>/dev/null || ffmpeg -y -i "${slideSvgPath}" "${slidePngPath}" 2>/dev/null`);
+    } catch {}
+    slidePngPaths.push(slidePngPath);
+  }
+
+  // 4. Render Ending Card: Black Blank Screen with Dark Fin-Card Aesthetics + Backup Quote + Watermark
+  const endingCardSvg = buildEndingBlankQuoteCardSvg(narrative.backupQuote, 'teen', watermarkHandle);
+  const endingSvgPath = path.join(ARTIFACTS_DIR, 'teen_ending_card.svg');
+  const endingPngPath = path.join(ARTIFACTS_DIR, 'teen_ending_card.png');
+  fs.writeFileSync(endingSvgPath, endingCardSvg, 'utf8');
+  try {
+    execSync(`rsvg-convert -w 1080 -h 1920 "${endingSvgPath}" -o "${endingPngPath}" 2>/dev/null || ffmpeg -y -i "${endingSvgPath}" "${endingPngPath}" 2>/dev/null`);
+  } catch {}
+
+  // 5. Render Part 1 (0 - 25s: 5 slides @ 5.0s each with Ken Burns zoom on aura background)
+  const part1Mp4 = path.join(ARTIFACTS_DIR, `teen_part1_${Date.now()}.mp4`);
+  const part1Filter = [
+    `[0:v]scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276,zoompan=z='1.05+0.00018*on':d=750:x='(iw-iw/zoom)*(0.3+0.4*(on/750))':y='(ih-ih/zoom)*0.2':s=1080x1920:fps=30,eq=brightness=-0.05:contrast=1.14:saturation=0.92,vignette=PI/4.5[bg]`,
+    `[1:v]scale=1080:1920[s1]`,
+    `[2:v]scale=1080:1920[s2]`,
+    `[3:v]scale=1080:1920[s3]`,
+    `[4:v]scale=1080:1920[s4]`,
+    `[5:v]scale=1080:1920[s5]`,
+    `[bg][s1]overlay=0:0:enable='between(t,0,5)'[v1]`,
+    `[v1][s2]overlay=0:0:enable='between(t,5,10)'[v2]`,
+    `[v2][s3]overlay=0:0:enable='between(t,10,15)'[v3]`,
+    `[v3][s4]overlay=0:0:enable='between(t,15,20)'[v4]`,
+    `[v4][s5]overlay=0:0:enable='between(t,20,25)'[vfinal]`
+  ].join(';');
+
+  const part1Cmd = `ffmpeg -y -loop 1 -t 25.0 -i "${bgImagePath}" ` +
+    slidePngPaths.map(p => `-loop 1 -t 5.0 -i "${p}"`).join(' ') +
+    ` -filter_complex "${part1Filter}" -map "[vfinal]" -t 25.0 -c:v libx264 -preset fast -pix_fmt yuv420p "${part1Mp4}" 2>/dev/null`;
+  execSync(part1Cmd);
+
+  // 6. Render Part 2 (25 - 32s: 7.0s Black Blank Screen with Dark Fin-Card Backup Quote)
+  const part2Mp4 = path.join(ARTIFACTS_DIR, `teen_part2_${Date.now()}.mp4`);
+  const part2Cmd = `ffmpeg -y -f lavfi -i "color=c=black:s=1080x1920:d=7.0:r=30" -loop 1 -t 7.0 -i "${endingPngPath}" -filter_complex "[0:v][1:v]overlay=0:0,format=yuv420p[v]" -map "[v]" -t 7.0 -c:v libx264 -preset fast -pix_fmt yuv420p "${part2Mp4}" 2>/dev/null`;
+  execSync(part2Cmd);
+
+  // 7. Concatenate Part 1 + Part 2 and merge with Soft Piano Soundtrack (32.0s total)
+  const concatListPath = path.join(ARTIFACTS_DIR, `teen_concat_${Date.now()}.txt`);
+  fs.writeFileSync(concatListPath, `file '${part1Mp4}'\nfile '${part2Mp4}'\n`, 'utf8');
+
+  const outMp4 = path.join(ARTIFACTS_DIR, `teen_motivation_longform_${Date.now()}.mp4`);
+  const latestMp4 = path.join(OUTPUT_DIR, 'teen_motivation_latest.mp4');
+
+  const finalCmd = `ffmpeg -y -f concat -safe 0 -i "${concatListPath}" -stream_loop -1 -i "${audioWavPath}" -c:v copy -c:a aac -b:a 192k -t 32.0 "${outMp4}"`;
+  execSync(finalCmd);
+
+  if (fs.existsSync(outMp4) && fs.statSync(outMp4).size > 10000) {
+    fs.copyFileSync(outMp4, latestMp4);
+    console.log(`[MindRush Long-Form] ✅ SUCCESS: Rendered ${(fs.statSync(outMp4).size / (1024 * 1024)).toFixed(2)} MB`);
+    console.log(`[MindRush Long-Form] 📁 Latest Video: ${latestMp4}`);
+  }
+
+  return {
+    outMp4,
+    latestMp4,
+    chosen: {
+      line1: narrative.title,
+      line2: narrative.backupQuote.quote,
+      line3: `— ${narrative.backupQuote.author}`,
+      speaker1Label: 'THE HARSH REALITY',
+      speaker1Text: narrative.slides[0].line1 + ' ' + narrative.slides[0].highlight,
+      speaker2Label: 'THE UNBREAKABLE MINDSET',
+      speaker2Line1: narrative.slides[4].line1,
+      speaker2Highlight: narrative.slides[4].highlight,
+      speaker2Line2: narrative.slides[4].line2 || '',
+      rareWord: narrative.theme,
+      rareWordDefinition: narrative.backupQuote.quote
+    },
+    duration: 32.0
+  };
+}
+
+/**
  * Main MindRush Reel Dispatcher
  */
 async function generateTeenMotivationReel(customMode = '') {
@@ -704,7 +840,9 @@ async function generateTeenMotivationReel(customMode = '') {
   console.log(`======================================================\n`);
 
   let result = null;
-  if (mode === '15s_slam' || mode === '15s' || mode === '15') {
+  if (mode === 'long_form' || mode === 'long' || mode === '30s' || mode === '32s' || process.env.VIDEO_MODE === 'long_form' || process.env.VIDEO_MODE === 'psychology_short_30s' || (mode === 'auto' && utcHour === 3)) {
+    result = await renderLongFormTeenReel();
+  } else if (mode === '15s_slam' || mode === '15s' || mode === '15') {
     result = await render15sTeenReel();
   } else if (mode === '5s_reel' || mode === '5s' || mode === '5') {
     result = await render5sTeenReel();
@@ -736,11 +874,22 @@ async function generateTeenMotivationReel(customMode = '') {
     if (fs.existsSync(MANIFEST_PATH)) {
       try { manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8')); } catch {}
     }
+    const description = result.duration >= 30.0
+      ? `"${result.chosen.line2}"\n${result.chosen.line3}\n\n🧠 Theme: ${result.chosen.rareWord || 'The Unbreakable Mindset'}\n\n#MindRush #Aura #Discipline #Shorts #Motivation #StoicTeen`
+      : (result.duration === 15.0
+        ? `${result.chosen.speaker1Label} "${result.chosen.speaker1Text}"\n\n${result.chosen.speaker2Label}: ${result.chosen.speaker2Line1} ${result.chosen.speaker2Highlight} ${result.chosen.speaker2Line2}\n\n📖 Word of the Day: ${result.chosen.rareWord || result.chosen.speaker2Highlight} — ${result.chosen.rareWordDefinition || 'Unbreakable persistence and discipline.'}\n\n#MindRush #Aura #Discipline #Shorts #Motivation`
+        : `"${result.chosen.line1} ${result.chosen.line2} ${result.chosen.line3}"\n\n#MindRush #Aura #Discipline #Shorts #Motivation`);
+
     const manifestEntry = {
       id: `mindrush_${Date.now()}`,
-      title: result.duration === 15.0
-        ? `${result.chosen.speaker1Label} "${result.chosen.speaker1Text}" vs ${result.chosen.speaker2Label} #MindRush #Discipline #Shorts`
-        : `"${result.chosen.line1} ${result.chosen.line2} ${result.chosen.line3}" #MindRush #Discipline #Shorts`,
+      title: result.duration >= 30.0
+        ? `${result.chosen.line1} #MindRush #Discipline #Shorts`
+        : (result.duration === 15.0
+          ? `${result.chosen.speaker1Label} vs ${result.chosen.speaker2Label} #MindRush #Aura #Shorts`
+          : `"${result.chosen.line1} ${result.chosen.line2} ${result.chosen.line3}" #MindRush #Discipline #Shorts`),
+      description,
+      rareWord: result.chosen.rareWord || result.chosen.speaker2Highlight || null,
+      rareWordDefinition: result.chosen.rareWordDefinition || null,
       duration: result.duration,
       videoPath: result.outMp4,
       createdAt: new Date().toISOString()
@@ -781,6 +930,7 @@ module.exports = {
   generateTeenMotivationReel,
   render5sTeenReel,
   render15sTeenReel,
+  renderLongFormTeenReel,
   CATALOG_5S_QUOTES,
   CATALOG_15S_DEBATES
 };

@@ -1,6 +1,19 @@
 {
   "videos": [
     {
+      "id": "fin_quote_1790414620542",
+      "channelId": "finance_saas",
+      "type": "financial_quote_reel_5s",
+      "title": "Stop Trading Your Life for Dollars — Charlie Munger #Shorts",
+      "author": "Charlie Munger",
+      "credentials": "Vice Chairman, Berkshire Hathaway • Harvard Law J.D.",
+      "reference": "Poor Charlie's Almanack (Talk 2)",
+      "duration": 5,
+      "videoPath": "/app/applet/rendered_videos/fin_quote_5s_1790414620542.mp4",
+      "loopable": true,
+      "publishedAt": "2026-09-26T09:24:09.493Z"
+    },
+    {
       "id": "fin_quote_1789815752379",
       "channelId": "finance_saas",
       "type": "financial_quote_reel_5s",
@@ -626,6 +639,45 @@
       "videoPath": "/app/applet/rendered_videos/stoic_quote_5s_latest.mp4",
       "loopable": true,
       "publishedAt": "2026-09-25T09:29:17.752Z"
+    },
+    {
+      "type": "scholar_quote_reel_5s",
+      "title": "amor_fati — Epictetus #Shorts #psychology #stoic",
+      "description": "\"He is a wise man who does not grieve for the things which he has not, but rejoices for those which he has.\"\n- Epictetus\nFormer Slave & Stoic Master\n\n🧠 Psychological Concept: amor_fati\n💬 Question: Whose opinion did you care about today that has zero impact on your actual future?\n\n🏛️ Subscribe to this channel for daily Stoic wisdom, mental fortitude, and timeless philosophy.\n\n#stoic #stoicism #psychology #mindset #motivation #quotes #wisdom #philosophy #shorts #darkpsychology #power #humanbehavior #mindsetshift #viral #discipline",
+      "quote": "He is a wise man who does not grieve for the things which he has not, but rejoices for those which he has.",
+      "author": "Epictetus",
+      "credentials": "Former Slave & Stoic Master",
+      "theme": "psychology",
+      "duration": 32,
+      "videoPath": "/app/applet/rendered_videos/stoic_psychology_30s_latest.mp4",
+      "loopable": true,
+      "publishedAt": "2026-09-26T09:22:22.842Z"
+    },
+    {
+      "type": "scholar_quote_reel_5s",
+      "title": "amor_fati — Epictetus #Shorts #psychology #stoic",
+      "description": "\"He is a wise man who does not grieve for the things which he has not, but rejoices for those which he has.\"\n- Epictetus\nFormer Slave & Stoic Master\n\n🧠 Psychological Concept: amor_fati\n💬 Question: What project or vision are you holding back on that deserves your ruthless devotion?\n\n🏛️ Subscribe to this channel for daily Stoic wisdom, mental fortitude, and timeless philosophy.\n\n#stoic #stoicism #psychology #mindset #motivation #quotes #wisdom #philosophy #shorts #darkpsychology #power #humanbehavior #mindsetshift #viral #discipline",
+      "quote": "He is a wise man who does not grieve for the things which he has not, but rejoices for those which he has.",
+      "author": "Epictetus",
+      "credentials": "Former Slave & Stoic Master",
+      "theme": "action",
+      "duration": 32,
+      "videoPath": "/app/applet/rendered_videos/stoic_psychology_30s_latest.mp4",
+      "loopable": true,
+      "publishedAt": "2026-09-26T09:24:06.451Z"
+    },
+    {
+      "type": "scholar_quote_reel_5s",
+      "title": "amor_fati — Epictetus #Shorts #psychology #stoic",
+      "description": "\"He is a wise man who does not grieve for the things which he has not, but rejoices for those which he has.\"\n- Epictetus\nFormer Slave & Stoic Master\n\n🧠 Psychological Concept: amor_fati\n💬 Question: Are you truly seeking independence, or an excuse to avoid total accountability?\n\n🏛️ Subscribe to this channel for daily Stoic wisdom, mental fortitude, and timeless philosophy.\n\n#stoic #stoicism #psychology #mindset #motivation #quotes #wisdom #philosophy #shorts #darkpsychology #power #humanbehavior #mindsetshift #viral #discipline",
+      "quote": "He is a wise man who does not grieve for the things which he has not, but rejoices for those which he has.",
+      "author": "Epictetus",
+      "credentials": "Former Slave & Stoic Master",
+      "theme": "psychology",
+      "duration": 32,
+      "videoPath": "/app/applet/rendered_videos/stoic_psychology_30s_latest.mp4",
+      "loopable": true,
+      "publishedAt": "2026-09-26T09:25:04.773Z"
     }
   ],
   "communityPost": {

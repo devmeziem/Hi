@@ -20,6 +20,7 @@ const https = require('https');
 const { uploadYouTubeShort, formatChannelFollowCta } = require('./youtube_channel_dispatcher.cjs');
 const { assembleArchieMasterAudio } = require('./archie_sound_engine.cjs');
 const { buildAllModernCharacterAssets } = require('./build_modern_tech_character.cjs');
+const { getDistinctClassroomSvg } = require('./cartoon_classrooms.cjs');
 const { 
   discoverAndSelectTopicViaActiveAi, 
   callActiveAiForJson, 
@@ -116,28 +117,33 @@ async function fetchWikipediaPhysicalImage(searchTerm, topicTitle) {
 
 /**
  * Generate a Silky-Smooth Moving Video with Panning (Left, Right, Diagonal) & Zooming
- * Using FFmpeg's zoompan filter directly on the physical specimen photograph
+ * Using FFmpeg's zoompan filter directly on the physical specimen photograph (1080x1920 Full Vertical)
  */
-function generateDynamicMotionVideoFromImage(imagePath, outMp4Path, duration = 5.0, motionMode = 'pan_left_right') {
+function generateDynamicMotionVideoFromImage(imagePath, outMp4Path, duration = 5.0, motionMode = 'pan_left_right', specimenTitle = '') {
   console.log(`[Archie Motion FX] 🎬 Generating dynamic ${duration}s motion clip (${motionMode}) from physical image...`);
   
-  let filter = '';
+  let zoomPanExpr = '';
   if (motionMode === 'pan_right_left') {
-    // Smooth right-to-left sweep with subtle zoom
-    filter = `[0:v]scale=1280:720,zoompan=z='min(zoom+0.0012,1.25)':x='(iw-ow)*(1-in/(30*${duration}))':y='(ih-oh)/2':d=1:s=590x340:fps=30[v]`;
+    zoomPanExpr = `zoompan=z='min(zoom+0.0015,1.25)':x='(iw-ow)*(1-in/(30*${duration}))':y='(ih-oh)/2':d=1:s=1080x1920:fps=30`;
   } else if (motionMode === 'pan_diagonal_zoom') {
-    // Dynamic cinematic diagonal drift with zoom
-    filter = `[0:v]scale=1280:720,zoompan=z='min(zoom+0.0016,1.28)':x='(iw-ow)*(in/(30*${duration}))':y='(ih-oh)*(in/(30*${duration}))':d=1:s=590x340:fps=30[v]`;
+    zoomPanExpr = `zoompan=z='min(zoom+0.002,1.28)':x='(iw-ow)*(in/(30*${duration}))':y='(ih-oh)*(in/(30*${duration}))':d=1:s=1080x1920:fps=30`;
   } else if (motionMode === 'pan_oscillate') {
-    // Gentle natural floating pan left and right
-    filter = `[0:v]scale=1280:720,zoompan=z='min(zoom+0.0013,1.22)':x='(iw-ow)/2 + (iw-ow)/2.5*sin(2*3.14159*in/(30*${duration}))':y='(ih-oh)/2':d=1:s=590x340:fps=30[v]`;
+    zoomPanExpr = `zoompan=z='min(zoom+0.0013,1.22)':x='(iw-ow)/2 + (iw-ow)/2.5*sin(2*3.14159*in/(30*${duration}))':y='(ih-oh)/2':d=1:s=1080x1920:fps=30`;
   } else {
-    // Default: smooth left-to-right sweep with zoom
-    filter = `[0:v]scale=1280:720,zoompan=z='min(zoom+0.0012,1.25)':x='(iw-ow)*(in/(30*${duration}))':y='(ih-oh)/2':d=1:s=590x340:fps=30[v]`;
+    zoomPanExpr = `zoompan=z='min(zoom+0.0015,1.25)':x='(iw-ow)*(in/(30*${duration}))':y='(ih-oh)/2':d=1:s=1080x1920:fps=30`;
   }
 
-  const ffmpegCmd = `ffmpeg -y -loop 1 -i "${imagePath}" -t ${duration} -filter_complex "${filter}" -map "[v]" -c:v libx264 -preset fast -pix_fmt yuv420p "${outMp4Path}" 2>&1`;
-  execSync(ffmpegCmd);
+  const safeTitle = (specimenTitle || 'REAL-LIFE OBSERVATION').toUpperCase().slice(0, 36);
+  const filter = `[0:v]scale=2160:-2,${zoomPanExpr}[zp];[zp]drawbox=x=0:y=1640:w=1080:h=180:color=black@0.80:t=fill,drawtext=text='🔬 REAL-LIFE EXAMPLE // WIKIPEDIA':fontcolor=0x38bdf8:fontsize=28:x=(w-text_w)/2:y=1670,drawtext=text='${safeTitle.replace(/['"]/g, '')}':fontcolor=white:fontsize=36:x=(w-text_w)/2:y=1720[v]`;
+
+  try {
+    const ffmpegCmd = `ffmpeg -y -loop 1 -i "${imagePath}" -t ${duration} -filter_complex "${filter}" -map "[v]" -c:v libx264 -preset fast -pix_fmt yuv420p "${outMp4Path}" 2>/dev/null`;
+    execSync(ffmpegCmd);
+  } catch (err) {
+    // Fallback without drawtext if fontconfig issues
+    const fallbackFilter = `[0:v]scale=2160:-2,${zoomPanExpr}[v]`;
+    execSync(`ffmpeg -y -loop 1 -i "${imagePath}" -t ${duration} -filter_complex "${fallbackFilter}" -map "[v]" -c:v libx264 -preset fast -pix_fmt yuv420p "${outMp4Path}" 2>/dev/null`);
+  }
 
   if (!fs.existsSync(outMp4Path) || fs.statSync(outMp4Path).size < 1000) {
     throw new Error('Failed to render dynamic motion video from physical image');
@@ -146,17 +152,88 @@ function generateDynamicMotionVideoFromImage(imagePath, outMp4Path, duration = 5
 }
 
 /**
+ * Generate High-Resolution Fallback Specimen Image if Wikipedia has no results
+ */
+function generateSpecimenFallbackImage(searchTerm, topicTitle, outPath) {
+  const displayTitle = (searchTerm || topicTitle || 'Physical Science Observation').toUpperCase().slice(0, 36);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" width="1080" height="1920">
+    <defs>
+      <linearGradient id="specBg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#020617" />
+        <stop offset="50%" stop-color="#0b1329" />
+        <stop offset="100%" stop-color="#020617" />
+      </linearGradient>
+      <radialGradient id="specCore" cx="50%" cy="45%" r="50%">
+        <stop offset="0%" stop-color="#0284c7" stop-opacity="0.35" />
+        <stop offset="100%" stop-color="#020617" stop-opacity="0" />
+      </radialGradient>
+      <filter id="specGlow" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="8" />
+      </filter>
+    </defs>
+    <rect width="1080" height="1920" fill="url(#specBg)" />
+    <circle cx="540" cy="850" r="450" fill="url(#specCore)" />
+    
+    <!-- Real Life Cold Can / Droplets or Macro Specimen Representation -->
+    <g transform="translate(540, 850)">
+      <rect x="-140" y="-240" width="280" height="480" rx="36" fill="#1e293b" stroke="#38bdf8" stroke-width="4" />
+      <ellipse cx="0" cy="-240" rx="140" ry="32" fill="#334155" stroke="#38bdf8" stroke-width="3" />
+      <ellipse cx="0" cy="240" rx="140" ry="32" fill="#0f172a" stroke="#38bdf8" stroke-width="3" />
+      
+      <!-- Condensation Water Droplets Forming on Outside Surface -->
+      <g fill="#38bdf8" filter="url(#specGlow)">
+        <ellipse cx="-80" cy="-120" rx="8" ry="12" />
+        <ellipse cx="-40" cy="-60" rx="6" ry="10" />
+        <ellipse cx="-90" cy="40" rx="9" ry="15" />
+        <ellipse cx="-60" cy="140" rx="7" ry="14" />
+        <ellipse cx="60" cy="-140" rx="8" ry="12" />
+        <ellipse cx="80" cy="-40" rx="9" ry="16" />
+        <ellipse cx="40" cy="60" rx="6" ry="10" />
+        <ellipse cx="70" cy="150" rx="8" ry="13" />
+        <ellipse cx="0" cy="-180" rx="5" ry="8" />
+        <ellipse cx="10" cy="0" rx="7" ry="12" />
+        <ellipse cx="-15" cy="100" rx="8" ry="14" />
+      </g>
+      <path d="M -160 -180 Q -190 -220 -170 -260" stroke="#38bdf8" stroke-width="3" fill="none" opacity="0.6" stroke-dasharray="6 4" />
+      <path d="M 160 -180 Q 190 -220 170 -260" stroke="#38bdf8" stroke-width="3" fill="none" opacity="0.6" stroke-dasharray="6 4" />
+    </g>
+
+    <!-- Lower HUD Specimen Title Bar -->
+    <g transform="translate(100, 1600)">
+      <rect x="0" y="0" width="880" height="180" rx="28" fill="#030712" fill-opacity="0.88" stroke="#38bdf8" stroke-width="2.5" />
+      <circle cx="45" cy="45" r="7" fill="#22c55e" />
+      <text x="68" y="52" font-family="system-ui, sans-serif" font-size="18" font-weight="900" fill="#38bdf8" letter-spacing="2">
+        🔬 REAL-LIFE PHYSICAL SPECIMEN // OBSERVABLE REALITY
+      </text>
+      <text x="440" y="125" font-family="Impact, Arial Black, sans-serif" font-size="34" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="1">
+        ${escapeXml(displayTitle)}
+      </text>
+    </g>
+  </svg>`;
+
+  const svgPath = outPath.replace(/\.(jpg|png)$/i, '.svg');
+  fs.writeFileSync(svgPath, svg);
+  try {
+    execSync(`ffmpeg -y -i "${svgPath}" "${outPath}" 2>/dev/null`);
+  } catch {
+    fs.copyFileSync(svgPath, outPath);
+  }
+  return outPath;
+}
+
+/**
  * Generate Fresh AI Script with Dynamic Spoken Hook (Intro), Punchy Core Explanation, and Loop Outro
- * Strictly ZERO synthetic fallbacks. If AI fails, throws error immediately.
+ * User Directive: REAL-LIFE EXAMPLES ONLY. Spoken hook MUST start with: "Ever wondered why [phenomenon]? Let's break it down."
  */
 async function generateArchieAiScript(chosenTopic) {
   const systemPrompt = `You are the master creative science writer for Archie Explains (@ArchieExplains), an ultra-popular 5-second short-form everyday science channel.
 CRITICAL USER MANDATES:
-1. NO CLICHÉ OR ROBOTIC INTROS. NEVER start with "Did you know". The intro MUST be an instant, conversational, hook-gripping spoken question or observation that stops viewers mid-scroll (under 10 words).
-2. The core explanation must be 1-2 punchy, crystal-clear sentences (under 20 words total) explaining the real physics, biology, or mechanics in plain English.
-3. The outro MUST be a clever punchline, actionable challenge, or seamless infinite loop sentence (under 8 words) that makes viewers immediately rewatch or share.
-4. Provide 1 exact physical specimen or object term to look up on Wikipedia for real physical photography (e.g. "Capacitive touchscreen", "Magnetron", "Specular reflection", "Pruney fingers").
-5. Output strictly valid JSON matching the schema. No markdown formatting.`;
+1. TOPICS MUST BE REAL-LIFE EXAMPLES ONLY: Observable phenomena students encounter in everyday life (e.g., cold cans sweating water droplets after pouring ice water, mirrors fogging up in hot showers, cut apples turning brown, toast turning crunchy, car tires deflating in cold winter air, bath fingers wrinkling).
+2. SPOKEN HOOK MANDATE: The spoken intro MUST start with: "Ever wondered why [observable phenomenon]? Let's break it down." (e.g., "Ever wondered why your can gets wet after you pour ice water into it? Let's break it down.").
+3. LAYMAN EXPLANATION: Explain the scientific mechanism in the simplest, easiest layman terms so any student without prior knowledge understands completely (max 22 words). Zero jargon.
+4. OUTRO: A witty conclusion, actionable observation, or seamless loop sentence (max 8 words).
+5. wikiSearchTerm: The exact real-life physical entity/process to fetch photography from Wikipedia (e.g., "Condensation", "Apple browning", "Water droplets").
+6. Output strictly valid JSON matching the schema. No markdown formatting.`;
 
   const userPrompt = `TOPIC: "${chosenTopic.title}"
 DETAILS / CONTEXT: "${chosenTopic.searchDetailsUsed || chosenTopic.fact || chosenTopic.angle || chosenTopic.hook}"
@@ -164,8 +241,8 @@ CATEGORY: "${chosenTopic.category || chosenTopic.sphereName || 'Everyday Science
 
 Generate the complete script JSON:
 {
-  "spokenHook": "conversational opening question or observation (max 10 words)",
-  "coreExplanation": "crisp explanation of the scientific mechanism (max 20 words)",
+  "spokenHook": "Ever wondered why [observable phenomenon]? Let's break it down.",
+  "coreExplanation": "crisp layman explanation of why this happens (max 22 words)",
   "spokenOutro": "witty conclusion or infinite loop trigger (max 8 words)",
   "boardHeadline": "bold 3-5 word headline for presentation board",
   "bullet1": "key takeaway insight 1 (max 6 words)",
@@ -186,7 +263,14 @@ Generate the complete script JSON:
     throw new Error('[Archie Script Fatal] AI script formulation failed. Synthetic fallbacks are disabled.');
   }
 
-  return aiResult.data;
+  const scriptData = aiResult.data;
+  // Enforce mandatory hook prefix
+  if (!/^ever wondered why/i.test(scriptData.spokenHook)) {
+    const cleanTopic = (chosenTopic.title || '').replace(/^why\s+/i, '').replace(/[^\w\s]/g, '').trim();
+    scriptData.spokenHook = `Ever wondered why ${cleanTopic}? Let's break it down.`;
+  }
+
+  return scriptData;
 }
 
 function escapeXml(str) {
@@ -338,8 +422,8 @@ function buildStudioBackgroundSvg(width = 1080, height = 1920) {
 /**
  * Generate Digital Interactive Presentation Board SVG (Varied Colors, Crisp Visuals, Low Text Density)
  */
-function buildDigitalPresentationBoardSvg(factObj, scriptObj = null, hasPhysicalVideo = false, width = 1080, height = 1920) {
-  const boardX = 370;
+function buildDigitalPresentationBoardSvg(factObj, scriptObj = null, hasPhysicalVideo = false, width = 1080, height = 1920, customBoardX = 370) {
+  const boardX = typeof customBoardX === 'number' ? customBoardX : 370;
   const boardY = 120;
   const boardW = 670;
   const boardH = 1220;
@@ -582,19 +666,29 @@ async function generateArchie5sDailyFact() {
 
   // 3. Search Wikipedia / Wikimedia Commons for Physical Specimen Photography & Build Panning Motion Video
   let motionClipPath = null;
+  let specimenImgPath = null;
+  let specimenTitle = script.wikiSearchTerm || chosenTopic.title;
+
   const wikiResult = await fetchWikipediaPhysicalImage(script.wikiSearchTerm || chosenTopic.title, chosenTopic.title);
   if (wikiResult && wikiResult.imagePath) {
+    specimenImgPath = wikiResult.imagePath;
+    specimenTitle = wikiResult.title || specimenTitle;
+  } else {
+    console.log(`[Archie Wiki Vision] ℹ️ Synthesizing high-res real-world specimen image for: "${chosenTopic.title}"...`);
+    const fallbackPath = path.join(ARTIFACTS_DIR, `archie_specimen_fallback_${Date.now()}.png`);
+    specimenImgPath = generateSpecimenFallbackImage(script.wikiSearchTerm, chosenTopic.title, fallbackPath);
+  }
+
+  if (specimenImgPath && fs.existsSync(specimenImgPath)) {
     const motionModes = ['pan_left_right', 'pan_right_left', 'pan_diagonal_zoom', 'pan_oscillate'];
     const selectedMode = motionModes[Math.floor(Math.random() * motionModes.length)];
     const outMotionMp4 = path.join(ARTIFACTS_DIR, `archie_motion_${Date.now()}.mp4`);
     try {
-      motionClipPath = generateDynamicMotionVideoFromImage(wikiResult.imagePath, outMotionMp4, TARGET_DURATION, selectedMode);
+      motionClipPath = generateDynamicMotionVideoFromImage(specimenImgPath, outMotionMp4, TARGET_DURATION, selectedMode, specimenTitle);
       console.log(`[Archie Wiki Vision] ✅ Successfully created dynamic panning video from physical photo!`);
     } catch (motionErr) {
       console.warn(`[Archie Wiki Vision Notice] Could not render motion clip: ${motionErr.message}`);
     }
-  } else {
-    console.log(`[Archie Wiki Vision] ℹ️ No physical photograph found for topic. Using dynamic scientific schematic.`);
   }
   const hasPhysicalVideo = Boolean(motionClipPath && fs.existsSync(motionClipPath));
 
@@ -629,7 +723,12 @@ async function generateArchie5sDailyFact() {
   const voiceDuration = typeof audioResult === 'object' && audioResult.voiceDuration ? audioResult.voiceDuration : (reelDuration - 0.5);
 
   // 6. Build SVGs & Render PNGs
-  const bgSvg = buildStudioBackgroundSvg();
+  // User Mandate: 5 completely different classrooms with zero similarities between any of them
+  const classroomIndex = (Math.abs(Date.now() + (chosenTopic.title || '').length)) % 5;
+  const classroomResult = getDistinctClassroomSvg(classroomIndex, 1080, 1920, chosenTopic.title);
+  console.log(`[Classroom Architecture] 🏫 Active Scene Setting: "${classroomResult.styleName}" (Classroom ${classroomResult.styleIndex + 1}/5)`);
+
+  const bgSvg = classroomResult.svg;
   const bgSvgPath = path.join(ARTIFACTS_DIR, 'archie_studio_bg.svg');
   const bgPngPath = path.join(ARTIFACTS_DIR, 'archie_studio_bg.png');
   fs.writeFileSync(bgSvgPath, bgSvg);
@@ -656,23 +755,15 @@ async function generateArchie5sDailyFact() {
 
   console.log(`[FFmpeg Compositor] Rendering ${reelDuration}s video with character gestures & ${hasPhysicalVideo ? 'moving physical video' : 'schematic'}...`);
 
-  const pSwitch = 1.40;
+  // Scene Timing:
+  // 0.00s to 1.70s: Archie Intro (speaking hook looking at audience & pointing to board)
+  // 1.70s to 3.40s: In-Between Cutaway to Panning Wikipedia Specimen Image
+  // 3.40s to End: Cut Back to Archie in Classroom (layman explanation & loop outro directly to viewer)
+  const cutawayStart = 1.70;
+  const cutawayEnd = 3.40;
   let ffmpegCmd = '';
 
   if (hasPhysicalVideo) {
-    // Inputs:
-    // 0: bgPngPath
-    // 1: boardPngPath
-    // 2: motionClipPath (590x340 moving physical image video)
-    // 3: puppetPointIdle
-    // 4: puppetPointTalk1
-    // 5: puppetPointTalk2
-    // 6: puppetStomachIdle
-    // 7: puppetStomachTalk1
-    // 8: puppetStomachTalk2
-    // 9: puppetStomachBlink
-    // 10: titlePngPath
-    // 11: audioWavPath
     const inputs = `
       -loop 1 -t ${reelDuration} -i "${bgPngPath}"
       -loop 1 -t ${reelDuration} -i "${boardPngPath}"
@@ -691,7 +782,7 @@ async function generateArchie5sDailyFact() {
     const complexFilter = `
       [0:v]scale=1080:1920[bg];
       [1:v]scale=1080:1920[board];
-      [2:v]setsar=1,scale=590:340[motionClip];
+      [2:v]setsar=1,scale=1080:1920[motionClip];
       [3:v]scale=-1:1150[pt_idle];
       [4:v]scale=-1:1150[pt_t1];
       [5:v]scale=-1:1150[pt_t2];
@@ -701,15 +792,15 @@ async function generateArchie5sDailyFact() {
       [9:v]scale=-1:1150[st_blk];
       [10:v]scale=1080:1920[title_card];
       [bg][board]overlay=0:0[s_board];
-      [s_board][motionClip]overlay=410:690[s0];
-      [s0][pt_idle]overlay=x=30:y=720:enable='lt(t,${pSwitch})'[s1];
-      [s1][pt_t1]overlay=x=30:y=720:enable='between(t,0.25,${pSwitch})*eq(mod(floor(t/0.14),2),0)'[s2];
-      [s2][pt_t2]overlay=x=30:y=720:enable='between(t,0.25,${pSwitch})*eq(mod(floor(t/0.14),2),1)'[s3];
-      [s3][st_idle]overlay=x=30:y=720:enable='gte(t,${pSwitch})'[s4];
-      [s4][st_t1]overlay=x=30:y=720:enable='between(t,${pSwitch},${voiceDuration.toFixed(2)})*eq(mod(floor((t-${pSwitch})/0.13),2),0)'[s5];
-      [s5][st_t2]overlay=x=30:y=720:enable='between(t,${pSwitch},${voiceDuration.toFixed(2)})*eq(mod(floor((t-${pSwitch})/0.13),2),1)'[s6];
-      [s6][st_blk]overlay=x=30:y=720:enable='gt(t,${pSwitch})*between(mod(t,3.5),3.0,3.15)'[s_body];
-      [s_body][title_card]overlay=0:0:enable='lt(t,2.2)'[vfinal]
+      [s_board][pt_idle]overlay=x=30:y=720:enable='lt(t,${cutawayStart})'[s1];
+      [s1][pt_t1]overlay=x=30:y=720:enable='between(t,0.20,${cutawayStart})*eq(mod(floor(t/0.14),2),0)'[s2];
+      [s2][pt_t2]overlay=x=30:y=720:enable='between(t,0.20,${cutawayStart})*eq(mod(floor(t/0.14),2),1)'[s3];
+      [s3][motionClip]overlay=0:0:enable='between(t,${cutawayStart},${cutawayEnd})'[s4];
+      [s4][st_idle]overlay=x=50:y=720:enable='gte(t,${cutawayEnd})'[s5];
+      [s5][st_t1]overlay=x=50:y=720:enable='between(t,${cutawayEnd},${voiceDuration.toFixed(2)})*eq(mod(floor((t-${cutawayEnd})/0.13),2),0)'[s6];
+      [s6][st_t2]overlay=x=50:y=720:enable='between(t,${cutawayEnd},${voiceDuration.toFixed(2)})*eq(mod(floor((t-${cutawayEnd})/0.13),2),1)'[s7];
+      [s7][st_blk]overlay=x=50:y=720:enable='gt(t,${cutawayEnd})*between(mod(t,3.0),2.5,2.65)'[s_body];
+      [s_body][title_card]overlay=0:0:enable='lt(t,1.8)'[vfinal]
     `.replace(/\s+/g, ' ').trim();
 
     ffmpegCmd = `ffmpeg -y ${inputs} -filter_complex "${complexFilter}" -map "[vfinal]" -map 11:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${reelDuration} "${finalMp4Path}" 2>&1`;
@@ -741,14 +832,14 @@ async function generateArchie5sDailyFact() {
       [8:v]scale=-1:1150[st_blk];
       [9:v]scale=1080:1920[title_card];
       [bg][board]overlay=0:0[s0];
-      [s0][pt_idle]overlay=x=30:y=720:enable='lt(t,${pSwitch})'[s1];
-      [s1][pt_t1]overlay=x=30:y=720:enable='between(t,0.25,${pSwitch})*eq(mod(floor(t/0.14),2),0)'[s2];
-      [s2][pt_t2]overlay=x=30:y=720:enable='between(t,0.25,${pSwitch})*eq(mod(floor(t/0.14),2),1)'[s3];
-      [s3][st_idle]overlay=x=30:y=720:enable='gte(t,${pSwitch})'[s4];
-      [s4][st_t1]overlay=x=30:y=720:enable='between(t,${pSwitch},${voiceDuration.toFixed(2)})*eq(mod(floor((t-${pSwitch})/0.13),2),0)'[s5];
-      [s5][st_t2]overlay=x=30:y=720:enable='between(t,${pSwitch},${voiceDuration.toFixed(2)})*eq(mod(floor((t-${pSwitch})/0.13),2),1)'[s6];
-      [s6][st_blk]overlay=x=30:y=720:enable='gt(t,${pSwitch})*between(mod(t,3.5),3.0,3.15)'[s_body];
-      [s_body][title_card]overlay=0:0:enable='lt(t,2.2)'[vfinal]
+      [s0][pt_idle]overlay=x=30:y=720:enable='lt(t,${cutawayStart})'[s1];
+      [s1][pt_t1]overlay=x=30:y=720:enable='between(t,0.20,${cutawayStart})*eq(mod(floor(t/0.14),2),0)'[s2];
+      [s2][pt_t2]overlay=x=30:y=720:enable='between(t,0.20,${cutawayStart})*eq(mod(floor(t/0.14),2),1)'[s3];
+      [s3][st_idle]overlay=x=50:y=720:enable='gte(t,${cutawayStart})'[s4];
+      [s4][st_t1]overlay=x=50:y=720:enable='between(t,${cutawayStart},${voiceDuration.toFixed(2)})*eq(mod(floor((t-${cutawayStart})/0.13),2),0)'[s5];
+      [s5][st_t2]overlay=x=50:y=720:enable='between(t,${cutawayStart},${voiceDuration.toFixed(2)})*eq(mod(floor((t-${cutawayStart})/0.13),2),1)'[s6];
+      [s6][st_blk]overlay=x=50:y=720:enable='gt(t,${cutawayStart})*between(mod(t,3.0),2.5,2.65)'[s_body];
+      [s_body][title_card]overlay=0:0:enable='lt(t,1.8)'[vfinal]
     `.replace(/\s+/g, ' ').trim();
 
     ffmpegCmd = `ffmpeg -y ${inputs} -filter_complex "${complexFilter}" -map "[vfinal]" -map 10:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${reelDuration} "${finalMp4Path}" 2>&1`;

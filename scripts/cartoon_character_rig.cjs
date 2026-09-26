@@ -85,28 +85,43 @@ function getMouthSvg(shape) {
 /**
  * Generate full SVG for Character Archie in a specific action, mouth shape, and topic-specific background
  */
-function generateCharacterFrameSvg(action = 'talking', emotion = 'curious', mouthShape = 'B', width = 1080, height = 1920, backgroundStyle = 'tech_studio', topic = '', objects = []) {
+function generateCharacterFrameSvg(action = 'talking', emotion = 'curious', mouthShape = 'B', width = 1080, height = 1920, backgroundStyle = 'tech_studio', topic = '', objects = [], stagePosition = 'center', lookTarget = 'audience') {
   const mouthSvgContent = getMouthSvg(mouthShape);
 
-  let leftPupilX = 510;
-  let rightPupilX = 570;
-  let pupilY = 720;
+  let leftPupilX = 505;
+  let rightPupilX = 575;
+  let pupilY = 715;
   let eyeScaleY = 1.0;
 
-  if (action === 'looking_left') {
-    leftPupilX = 495;
-    rightPupilX = 555;
-  } else if (action === 'looking_right' || action === 'point_right') {
+  // Eye Gaze Direction (Mandated: Look at audience when talking, look at board when explaining)
+  if (lookTarget === 'board' || action === 'point_right' || action === 'looking_right') {
     leftPupilX = 525;
-    rightPupilX = 585;
-  } else if (emotion === 'surprised' || action === 'surprise') {
-    eyeScaleY = 1.35;
-    pupilY = 715;
-  } else if (emotion === 'thinking' || action === 'thinking') {
-    pupilY = 705;
+    rightPupilX = 595;
+    pupilY = 695;
+  } else if (lookTarget === 'board_left' || action === 'point_left' || action === 'looking_left') {
+    leftPupilX = 485;
+    rightPupilX = 555;
+    pupilY = 695;
+  } else if (lookTarget === 'thinking' || emotion === 'thinking' || action === 'thinking') {
+    pupilY = 702;
     leftPupilX = 515;
     rightPupilX = 575;
+  } else {
+    // Direct audience eye contact
+    leftPupilX = 505;
+    rightPupilX = 575;
+    pupilY = 715;
   }
+
+  if (emotion === 'surprised' || action === 'surprise') {
+    eyeScaleY = 1.35;
+    pupilY = 712;
+  }
+
+  // Stage Horizontal Offset
+  let stageOffsetX = 0;
+  if (stagePosition === 'left') stageOffsetX = -150;
+  else if (stagePosition === 'right') stageOffsetX = 150;
 
   let leftArmSvg = `<path d="M 430 920 Q 380 1020 370 1150" stroke="#2563eb" stroke-width="48" stroke-linecap="round" fill="none" />
                     <circle cx="370" cy="1160" r="28" fill="#fbcfe8" stroke="#1e293b" stroke-width="4" />`;
@@ -143,10 +158,10 @@ function generateCharacterFrameSvg(action = 'talking', emotion = 'curious', mout
   ${bgInner}
 
   <!-- Shadow Floor -->
-  <ellipse cx="540" cy="1580" rx="320" ry="45" fill="#020617" opacity="0.6" />
+  <ellipse cx="${540 + stageOffsetX}" cy="1580" rx="320" ry="45" fill="#020617" opacity="0.6" />
 
   <!-- Character Group: "Archie" -->
-  <g id="character_archie">
+  <g id="character_archie" transform="translate(${stageOffsetX}, 0)">
     <!-- Legs / Pants -->
     <path d="M 460 1200 L 440 1520" stroke="#1e293b" stroke-width="52" stroke-linecap="round" />
     <path d="M 620 1200 L 640 1520" stroke="#1e293b" stroke-width="52" stroke-linecap="round" />
