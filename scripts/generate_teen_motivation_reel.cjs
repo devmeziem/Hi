@@ -47,12 +47,22 @@ for (const dir of [OUTPUT_DIR, ARTIFACTS_DIR]) {
 const CLOUDFLARE_ACCOUNT_ID = (process.env.CLOUDFLARE_ACCOUNT_ID || '').trim().replace(/^https?:\/\/[^\/]+\//, '').replace(/\/$/, '');
 const CLOUDFLARE_API_TOKEN = (process.env.CLOUDFLARE_API_TOKEN || '').trim();
 
-// Local 3D Mystery Assets with Pure Aura (Permanently replaces generic outdoor photos)
+// Resolve all available high-res 3D mystery images from local storage
+function getAvailableLocal3DImages() {
+  const imgDir = path.join(process.cwd(), 'src', 'assets', 'images');
+  if (!fs.existsSync(imgDir)) return [];
+  return fs.readdirSync(imgDir)
+    .filter(f => /\.(jpg|jpeg|png|webp)$/i.test(f) && fs.statSync(path.join(imgDir, f)).size > 2000)
+    .map(f => path.join(imgDir, f));
+}
+
+// Local 3D Mystery Assets with Pure Aura (Auto-scans src/assets/images/)
+const available3dImages = getAvailableLocal3DImages();
 const LOCAL_3D_MYSTERY_IMAGES = {
-  boy: path.join(process.cwd(), 'src', 'assets', 'images', 'mindrush_mystery_boy_1790164693177.jpg'),
-  panther: path.join(process.cwd(), 'src', 'assets', 'images', 'mindrush_animal_human_1790164705789.jpg'),
-  wolf: path.join(process.cwd(), 'src', 'assets', 'images', 'mindrush_wolf_human_1790164730412.jpg'),
-  studio: path.join(process.cwd(), 'src', 'assets', 'images', 'mindrush_studio_bg_1790164717832.jpg')
+  boy: available3dImages.find(f => f.includes('boy')) || available3dImages[0] || path.join(process.cwd(), 'src', 'assets', 'images', 'mindrush_mystery_boy_1790502497758.jpg'),
+  panther: available3dImages.find(f => f.includes('animal') || f.includes('panther')) || available3dImages[1] || path.join(process.cwd(), 'src', 'assets', 'images', 'mindrush_animal_human_1790502513783.jpg'),
+  wolf: available3dImages.find(f => f.includes('wolf')) || available3dImages[2] || path.join(process.cwd(), 'src', 'assets', 'images', 'mindrush_wolf_human_1790502528886.jpg'),
+  studio: available3dImages.find(f => f.includes('studio')) || available3dImages[3] || path.join(process.cwd(), 'src', 'assets', 'images', 'mindrush_studio_bg_1790502544405.jpg')
 };
 
 // Aliases for backwards compatibility with legacy catalogs
@@ -235,56 +245,49 @@ async function resolve3dMysteryImage(category = 'auto') {
   return cfImage || dynamicImage;
 }
 
-// 1. Curated Catalog of 5-Second High-Impact Punchlines
+// 1. Curated Catalog of 5-Second High-Impact Teen Empowerment Punchlines
 const CATALOG_5S_QUOTES = [
   {
-    line1: "Nobody is coming.",
-    line2: "Build yourself",
-    line3: "anyway.",
-    author: "MindRush",
-    theme: "self_reliance"
+    line1: "They call you lazy.",
+    line2: "They never saw your",
+    line3: "2 AM silent battles.",
+    author: "MindRush Solidarity",
+    theme: "validation"
   },
   {
-    line1: "Work in silence.",
-    line2: "Shock everyone",
-    line3: "with your results.",
-    author: "MindRush",
-    theme: "execution"
+    line1: "A letter on paper",
+    line2: "will never measure",
+    line3: "your internal fire.",
+    author: "MindRush Truth",
+    theme: "worth"
   },
   {
     line1: "You're not behind.",
-    line2: "You just started",
-    line3: "the real work.",
-    author: "MindRush",
-    theme: "focus"
+    line2: "You're just waking up",
+    line3: "to your real power.",
+    author: "MindRush Awakening",
+    theme: "potential"
   },
   {
-    line1: "Kill your excuses.",
-    line2: "Build undeniable",
-    line3: "self-respect.",
-    author: "MindRush",
-    theme: "discipline"
+    line1: "Protect your vision.",
+    line2: "The ones who doubted",
+    line3: "already surrendered.",
+    author: "MindRush Shield",
+    theme: "sovereignty"
   },
   {
-    line1: "Don't tell them.",
-    line2: "Show them with",
-    line3: "ruthless output.",
-    author: "MindRush",
-    theme: "unapologetic"
+    line1: "We stand with you.",
+    line2: "Let them whisper while",
+    line3: "you build the future.",
+    author: "MindRush Alliance",
+    theme: "unity"
   },
   {
-    line1: "Pain is temporary.",
-    line2: "Being average is",
-    line3: "forever.",
-    author: "MindRush",
-    theme: "excellence"
-  },
-  {
-    line1: "They want you soft.",
-    line2: "Choose discipline",
-    line3: "every single time.",
-    author: "MindRush",
-    theme: "grit"
+    line1: "Don't fit their mold.",
+    line2: "You were created to",
+    line3: "break their script.",
+    author: "MindRush Fire",
+    theme: "defiance"
   }
 ];
 
@@ -402,12 +405,12 @@ function build15sSegment1OverlaySvg(debate, cursorChar = '|') {
     <!-- Seamless Obsidian Vignette Background (No Box / Zero-Pill) -->
     <rect x="0" y="680" width="1080" height="1240" fill="url(#vignette1)" />
 
-    <!-- Speaker 1 Label: Crystal Clear Naysayer Framing so viewer is never confused -->
+    <!-- Speaker 1 Label: Pressure and doubts teens face -->
     <text x="540" y="890" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="900" fill="#ef4444" letter-spacing="4" text-anchor="middle" filter="url(#shadow1)">
-      ⚡ [ WHAT THE NAYSAYER SAID ]
+      ⚡ [ WHAT THEY TOLD YOU ]
     </text>
     <text x="540" y="930" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="800" fill="#94a3b8" letter-spacing="3" text-anchor="middle" filter="url(#shadow1)">
-      (THE TOXIC DOUBT I WAS TOLD)
+      (THE UNFAIR PRESSURES &amp; DOUBTS WE HEAR)
     </text>
 
     <!-- Wrapped Doubt Statement with Blinking Cursor -->
@@ -464,12 +467,12 @@ function build15sSegment3OverlaySvg(debate) {
     <!-- Seamless Obsidian Vignette Background (No Box / Zero-Pill) -->
     <rect x="0" y="620" width="1080" height="1300" fill="url(#vignette3)" />
 
-    <!-- Speaker 2 Label: Crystal Clear Protagonist Clapback Framing -->
+    <!-- Speaker 2 Label: Crystal Clear Protagonist Solidarity Framing -->
     <text x="540" y="860" font-family="system-ui, -apple-system, sans-serif" font-size="30" font-weight="900" fill="#facc15" letter-spacing="4" text-anchor="middle" filter="url(#slamGlow)">
-      ⚡ [ HOW I CLAPPED BACK ]
+      ⚡ [ HOW WE'RE PROVING THEM WRONG ]
     </text>
     <text x="540" y="905" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="800" fill="#38bdf8" letter-spacing="3" text-anchor="middle" filter="url(#slamGlow)">
-      (MY DIRECT ANSWER TO THE NAYSAYER)
+      (WE STAND IN YOUR CORNER)
     </text>
 
     <!-- Line 1 of retort (Auto-Wrapped, Bold Clean White) -->
@@ -874,22 +877,27 @@ async function generateTeenMotivationReel(customMode = '') {
     if (fs.existsSync(MANIFEST_PATH)) {
       try { manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8')); } catch {}
     }
+    const viralTeenTags = '#TeenMotivation #StudentGrind #Underdog #ProvingThemWrong #AcademicPressure #Relatable #LockIn #TeenMindset #Aura #DeepThoughts #FYP #StudyTok #Shorts';
+    const rareWord = result.chosen.rareWord || result.chosen.speaker2Highlight || 'INDOMITABLE';
+    const rareWordDef = result.chosen.rareWordDefinition || 'Impossible to subdue, defeat, or discourage; having an unconquerable spirit against critics.';
+    const vocabBlock = `\n\n📖 POWER WORD & MINDSET DEFINED:\n• ${rareWord.toUpperCase()}: ${rareWordDef}`;
+
     const description = result.duration >= 30.0
-      ? `"${result.chosen.line2}"\n${result.chosen.line3}\n\n🧠 Theme: ${result.chosen.rareWord || 'The Unbreakable Mindset'}\n\n#MindRush #Aura #Discipline #Shorts #Motivation #StoicTeen`
+      ? `"${result.chosen.line2}"\n${result.chosen.line3}\n\n🧠 Message to you: We stand in your corner. Do not let their small expectations dim your fire.${vocabBlock}\n\n💾 Save this to your private collection for the days you feel exhausted.\n\n${viralTeenTags}`
       : (result.duration === 15.0
-        ? `${result.chosen.speaker1Label} "${result.chosen.speaker1Text}"\n\n${result.chosen.speaker2Label}: ${result.chosen.speaker2Line1} ${result.chosen.speaker2Highlight} ${result.chosen.speaker2Line2}\n\n📖 Word of the Day: ${result.chosen.rareWord || result.chosen.speaker2Highlight} — ${result.chosen.rareWordDefinition || 'Unbreakable persistence and discipline.'}\n\n#MindRush #Aura #Discipline #Shorts #Motivation`
-        : `"${result.chosen.line1} ${result.chosen.line2} ${result.chosen.line3}"\n\n#MindRush #Aura #Discipline #Shorts #Motivation`);
+        ? `⚡ ${result.chosen.speaker1Label}: "${result.chosen.speaker1Text}"\n\n🛡️ ${result.chosen.speaker2Label}: ${result.chosen.speaker2Line1} ${result.chosen.speaker2Highlight} ${result.chosen.speaker2Line2}${vocabBlock}\n\n💬 What pressure are you proving wrong today? Drop a 🔥 below.\n\n${viralTeenTags}`
+        : `"${result.chosen.line1} ${result.chosen.line2} ${result.chosen.line3}"\n\nWe stand with the students and creators building their future in silence.${vocabBlock}\n\n💾 Save this.\n\n${viralTeenTags}`);
 
     const manifestEntry = {
       id: `mindrush_${Date.now()}`,
       title: result.duration >= 30.0
-        ? `${result.chosen.line1} #MindRush #Discipline #Shorts`
+        ? `${result.chosen.line1} #TeenMotivation #Shorts`
         : (result.duration === 15.0
-          ? `${result.chosen.speaker1Label} vs ${result.chosen.speaker2Label} #MindRush #Aura #Shorts`
-          : `"${result.chosen.line1} ${result.chosen.line2} ${result.chosen.line3}" #MindRush #Discipline #Shorts`),
+          ? `${result.chosen.speaker1Label} vs ${result.chosen.speaker2Label} #TeenMotivation #Shorts`
+          : `"${result.chosen.line1} ${result.chosen.line2} ${result.chosen.line3}" #TeenMotivation #Shorts`),
       description,
-      rareWord: result.chosen.rareWord || result.chosen.speaker2Highlight || null,
-      rareWordDefinition: result.chosen.rareWordDefinition || null,
+      rareWord,
+      rareWordDefinition: rareWordDef,
       duration: result.duration,
       videoPath: result.outMp4,
       createdAt: new Date().toISOString()

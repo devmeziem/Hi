@@ -254,23 +254,23 @@ export const TeenMotivationTab: React.FC = () => {
 
       {/* Header Banner */}
       <div id="teen-header-banner" className="p-6 bg-gradient-to-r from-slate-900 via-cyan-950/40 to-slate-900 border border-slate-800 rounded-3xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 min-w-0">
           <div className="flex items-center gap-2.5">
-            <div className="p-2.5 bg-cyan-600/20 border border-cyan-500/40 rounded-2xl text-cyan-400">
+            <div className="p-2.5 bg-cyan-600/20 border border-cyan-500/40 rounded-2xl text-cyan-400 shrink-0">
               <Flame className="w-6 h-6" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-xl font-black text-white tracking-tight">MindRush: Pure Aura & 3D Mystery Discipline</h2>
+                <h2 className="text-xl font-black text-white tracking-tight">MindRush: Youth Motivation & True Ally</h2>
                 <span className="px-2.5 py-0.5 rounded-full bg-cyan-950 border border-cyan-800 text-cyan-300 text-[10px] font-mono font-bold">
-                  MindRush • 3 Posts Daily
+                  Standing With Teens • 3 Daily Reels
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full bg-amber-950 border border-amber-800 text-amber-300 text-[10px] font-mono font-bold">
-                  3D AI Visuals & Custom Sound
+                  We Stand In Your Corner
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Dynamic Cloudflare AI 3D imagery (cool characters, anthropomorphic animals, studio), intense debate slams, high-contrast typography, and custom user audio.
+              <p className="text-xs text-slate-400 mt-0.5 break-words">
+                Standing up for students, young creators, and dreamers facing unfair school and social pressures. High-impact visual storytelling, validating silent struggles, and proving doubters wrong.
               </p>
             </div>
           </div>
@@ -289,7 +289,7 @@ export const TeenMotivationTab: React.FC = () => {
             ) : (
               <Flame className="w-4 h-4" />
             )}
-            <span>Render 15s Debate Slam</span>
+            <span>Render 15s Reality Slam Reel</span>
           </button>
 
           <button
@@ -303,7 +303,7 @@ export const TeenMotivationTab: React.FC = () => {
             ) : (
               <Zap className="w-4 h-4 text-amber-400" />
             )}
-            <span>Render 5s Impact Reel</span>
+            <span>Render 5s Rapid Truth Reel</span>
           </button>
         </div>
       </div>

@@ -649,7 +649,8 @@ function buildStoicDeepBeat3Svg(scholar, width = 1080, height = 1920) {
     const concatListPath = path.join(ARTIFACTS_DIR, `stoic_concat_${Date.now()}.txt`);
     fs.writeFileSync(concatListPath, `file '${part1Mp4}'\nfile '${part2Mp4}'\n`, 'utf8');
 
-    const finalCmd = `ffmpeg -y -f concat -safe 0 -i "${concatListPath}" -stream_loop -1 -i "${wavPath}" -c:v copy -c:a aac -b:a 192k -t 32.0 "${finalMp4Path}"`;
+    // Mute Stoic channel sound for observation (silent audio track)
+    const finalCmd = `ffmpeg -y -f concat -safe 0 -i "${concatListPath}" -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -c:v copy -c:a aac -b:a 192k -t 32.0 "${finalMp4Path}"`;
     execSync(finalCmd);
 
     // Attach backup quote metadata to chosen for title & description
@@ -670,13 +671,14 @@ function buildStoicDeepBeat3Svg(scholar, width = 1080, height = 1920) {
       `[bg][ov]overlay=0:0,format=yuv420p[v]`
     ].join(';');
 
-    const ffmpegCmd = `ffmpeg -y -loglevel error -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t ${TARGET_DURATION} -i "${overlayInput}" -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 2:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${TARGET_DURATION} "${finalMp4Path}"`;
+    // User directive: Mute sound from Stoic channel to observe audience engagement
+    const ffmpegCmd = `ffmpeg -y -loglevel error -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t ${TARGET_DURATION} -i "${overlayInput}" -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -filter_complex "${filterComplex}" -map "[v]" -map 2:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${TARGET_DURATION} "${finalMp4Path}"`;
 
     try {
       execSync(ffmpegCmd, { maxBuffer: 50 * 1024 * 1024, stdio: ['pipe', 'pipe', 'pipe'] });
     } catch (err) {
       console.warn('[Quote Reel] Primary filter complex notice, falling back to safe pan overlay:', err.message);
-      const fallbackCmd = `ffmpeg -y -loglevel error -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t ${TARGET_DURATION} -i "${overlayInput}" -i "${wavPath}" -filter_complex "[0:v]scale=1180:2098:force_original_aspect_ratio=increase,crop=1180:2098,zoompan=z='1.06':d=${TOTAL_FRAMES}:x='(iw-iw/zoom)*0.5':y='(ih-ih/zoom)*0.2':s=1080x1920:fps=${FPS},eq=brightness=-0.06:contrast=1.12[bg];[1:v]scale=1080:1920[ov];[bg][ov]overlay=0:0[v]" -map "[v]" -map 2:a -c:v libx264 -preset ultrafast -crf 22 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${TARGET_DURATION} "${finalMp4Path}"`;
+      const fallbackCmd = `ffmpeg -y -loglevel error -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t ${TARGET_DURATION} -i "${overlayInput}" -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -filter_complex "[0:v]scale=1180:2098:force_original_aspect_ratio=increase,crop=1180:2098,zoompan=z='1.06':d=${TOTAL_FRAMES}:x='(iw-iw/zoom)*0.5':y='(ih-ih/zoom)*0.2':s=1080x1920:fps=${FPS},eq=brightness=-0.06:contrast=1.12[bg];[1:v]scale=1080:1920[ov];[bg][ov]overlay=0:0[v]" -map "[v]" -map 2:a -c:v libx264 -preset ultrafast -crf 22 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${TARGET_DURATION} "${finalMp4Path}"`;
       execSync(fallbackCmd, { maxBuffer: 50 * 1024 * 1024, stdio: ['pipe', 'pipe', 'pipe'] });
     }
   }

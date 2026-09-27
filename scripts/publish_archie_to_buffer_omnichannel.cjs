@@ -631,29 +631,47 @@ async function uploadToCloudinary(videoPath) {
  */
 function buildOmnichannelCaption(metadata = {}, service = 'generic') {
   const cleanTitle = (metadata.title || 'Did You Know? Mind-Blowing Science & Tech Breakdown').trim();
-  const fact = (metadata.fact || metadata.description || 'Archie Explains: Cutting-edge science, AI, and everyday wonders!').trim();
+  const hook = (metadata.spokenHook || `Notice how this happens every time? Here's the truth:`).trim();
+  const explanation = (metadata.coreExplanation || metadata.fact || metadata.description || 'Archie Explains: Cutting-edge science and everyday wonders!').trim();
+  const takeaway = metadata.takeawayLearnt ? `🎯 KEY TAKEAWAY: ${metadata.takeawayLearnt}` : '';
   const citation = metadata.reference ? `🔬 Verified Citation: ${metadata.reference}` : '';
 
-  const baseTags = metadata.tags && metadata.tags.length > 0
-    ? metadata.tags
-    : ['#ArchieExplains', '#EverydayScience', '#Tech', '#AI', '#Engineering', '#HowItWorks', '#DidYouKnow'];
+  // Format Vocabulary / Hard Words Section
+  let vocabSection = '';
+  if (Array.isArray(metadata.hardWords) && metadata.hardWords.length > 0) {
+    const vocabLines = metadata.hardWords.map(hw => `• ${hw.word}: ${hw.definition}`).join('\n');
+    vocabSection = `\n\n📖 VOCABULARY & KEY CONCEPTS EXPLAINED:\n${vocabLines}`;
+  }
+
+  // Format Trending Searches Section
+  let trendingSection = '';
+  if (Array.isArray(metadata.trendingKeywords) && metadata.trendingKeywords.length > 0) {
+    const trendingLines = metadata.trendingKeywords.map(tk => `• ${tk}`).join('\n');
+    trendingSection = `\n\n🔍 TRENDING SEARCHES:\n${trendingLines}`;
+  }
+
+  const baseTags = (metadata.syncedHashtags && metadata.syncedHashtags.length > 0)
+    ? metadata.syncedHashtags
+    : (metadata.tags && metadata.tags.length > 0
+        ? metadata.tags
+        : ['#ArchieExplains', '#EverydayScience', '#DidYouKnow', '#STEM', '#ScienceFacts']);
 
   if (service === 'tiktok') {
     const ttTags = Array.from(new Set([...baseTags, '#TikTokTech', '#TechTok', '#FYP', '#LearnOnTikTok', '#ScienceFacts', '#DidYouKnow', '#ArchieLab', '#Shorts']));
-    return `⚡ ${cleanTitle.toUpperCase()}\n\n${fact}\n\n${citation}\n\nWhat science or tech mystery should Archie break down next? Let us know below!\n\n${ttTags.join(' ')}`.trim();
+    return `⚡ ${hook}\n\n${explanation}\n\n${takeaway ? takeaway + '\n\n' : ''}${citation}${vocabSection}${trendingSection}\n\n💾 Save this so you remember! What should Archie break down next? Drop a comment below 👇\n\n${ttTags.join(' ')}`.trim();
   }
 
   if (service === 'instagram') {
-    const igTags = Array.from(new Set([...baseTags, '#ReelsInstagram', '#ScienceReels', '#ScienceFacts', '#DidYouKnow', '#ArchieLab', '#InstaScience', '#ViralScience', '#Shorts']));
-    return `⚡ ${cleanTitle.toUpperCase()}\n\n${fact}\n\n${citation}\n\nFollow @bones_ceo for daily animated science & tech insights.\n\n${igTags.join(' ')}`.trim();
+    const igTags = Array.from(new Set([...baseTags, '#ReelsInstagram', '#ScienceReels', '#ScienceFacts', '#DidYouKnow', '#ArchieLab', '#InstaScience', '#ViralScience', '#LifeHacks', '#STEMEducation', '#Shorts']));
+    return `⚡ ${hook}\n\n${explanation}\n\n${takeaway ? takeaway + '\n\n' : ''}${citation}${vocabSection}${trendingSection}\n\n💾 Save this post for later and share with a friend who needs to see this!\n\nFollow @ArchieExplains for daily science & tech breakthroughs.\n\n${igTags.join(' ')}`.trim();
   }
 
   if (service === 'facebook') {
-    const fbTags = Array.from(new Set([...baseTags, '#FacebookReels', '#ScienceFacts', '#DidYouKnow', '#ScienceExplained', '#ArchieLab', '#Shorts']));
-    return `⚡ ${cleanTitle.toUpperCase()}\n\n${fact}\n\n${citation}\n\nFollow Archie Lab for daily mind-blowing everyday science & engineering comparisons!\n\n${fbTags.join(' ')}`.trim();
+    const fbTags = Array.from(new Set([...baseTags, '#FacebookReels', '#ScienceFacts', '#DidYouKnow', '#ScienceExplained', '#EverydayScience', '#LifeHacks', '#ArchieLab', '#Shorts']));
+    return `⚡ ${cleanTitle.toUpperCase()}\n\n${hook}\n\n${explanation}\n\n${takeaway ? takeaway + '\n\n' : ''}${citation}${vocabSection}${trendingSection}\n\n👉 Follow Archie Lab for daily visual science breakdowns!\n\n${fbTags.join(' ')}`.trim();
   }
 
-  return `⚡ ${cleanTitle.toUpperCase()}\n\n${fact}\n\n${citation}\n\n${baseTags.join(' ')}`.trim();
+  return `⚡ ${hook}\n\n${explanation}\n\n${takeaway ? takeaway + '\n\n' : ''}${citation}${vocabSection}${trendingSection}\n\n${baseTags.join(' ')}`.trim();
 }
 
 /**

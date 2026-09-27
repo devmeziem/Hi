@@ -690,16 +690,26 @@ async function dispatchTikTok(channelType = 'movie_brand') {
     }
 
     // Load teen motivation manifest
-    const manifestPath = path.join(process.cwd(), 'test_artifacts', 'teen_motivation_manifest.json');
+    const manifestPath = path.join(process.cwd(), 'daily_blueprint_manifest.json');
+    const legacyManifestPath = path.join(process.cwd(), 'test_artifacts', 'teen_motivation_manifest.json');
     let meta = { title: 'How To Lock In and Level Up', hook: 'You are not lazy. You are just drowning in cheap dopamine.', challenge: 'RULE 1: NO PHONE IN BED FOR 7 DAYS' };
-    if (fs.existsSync(manifestPath)) {
-      try {
-        const arr = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-        if (arr && arr[0]) meta = arr[0];
-      } catch {}
+    for (const mPath of [manifestPath, legacyManifestPath]) {
+      if (fs.existsSync(mPath)) {
+        try {
+          const arr = JSON.parse(fs.readFileSync(mPath, 'utf8'));
+          const found = Array.isArray(arr) ? arr.find(item => item.id?.startsWith('mindrush_') || item.type === 'mindrush') : null;
+          if (found) { meta = found; break; }
+          if (Array.isArray(arr) && arr[0]) { meta = arr[0]; break; }
+        } catch {}
+      }
     }
 
-    caption = `⚡ ${meta.hook || 'Lock in.'}\n\n👉 Challenge: ${meta.challenge || 'Discipline over mood.'}\n\nHit follow to build mental armor and level up daily. 🛡️\n\n#TeenMotivation #YouthDiscipline #LockIn #StudyMotivation #DopamineDetox #Grindset #SelfImprovement #Discipline`;
+    let vocabBlock = '';
+    if (meta.rareWord && meta.rareWordDefinition) {
+      vocabBlock = `\n\n📖 POWER WORD & MINDSET DEFINED:\n• ${meta.rareWord.toUpperCase()}: ${meta.rareWordDefinition}`;
+    }
+
+    caption = meta.description || `⚡ ${meta.hook || 'Lock in.'}\n\n👉 ${meta.challenge || 'We stand with you against the doubters.'}${vocabBlock}\n\nHit follow to build mental armor and level up daily. 🛡️\n\n#TeenMotivation #StudentGrind #Underdog #ProvingThemWrong #AcademicPressure #Relatable #LockIn #TeenMindset #Aura #DeepThoughts #FYP #StudyTok #Shorts`;
   }
 
   if (!targetChannel) {

@@ -16,184 +16,158 @@ const CURATED_15S_CONFRONTATIONS = [
   {
     id: 'mindrush_conf_1',
     format: 'naysayer_clapback',
-    speaker1Label: 'The Broke Critic',
-    speaker1Text: 'You look miserable locked in your room grinding on a Friday night while we are out partying.',
-    speaker2Label: 'How I Clapped Back',
-    speaker2Line1: 'Waking up broke with a hangover isn\'t winning—I built an',
-    speaker2Highlight: 'INDEFATIGABLE',
-    speaker2Line2: 'machine while you beg your parents for rent money.',
-    rareWord: 'INDEFATIGABLE',
-    rareWordDefinition: 'Persisting tirelessly without giving up or becoming fatigued.',
-    theme: 'tireless_grit'
+    speaker1Label: 'The Dismissive Teacher',
+    speaker1Text: 'You will never amount to anything because your test scores aren\'t high enough.',
+    speaker2Label: 'Why We Stand With You',
+    speaker2Line1: 'Grading human potential on a standardized bubble sheet is your limitation—I have an',
+    speaker2Highlight: 'INDOMITABLE',
+    speaker2Line2: 'curiosity and fire that your grading rubric could never measure.',
+    rareWord: 'INDOMITABLE',
+    rareWordDefinition: 'Impossible to subdue, defeat, or discourage; having an unconquerable spirit.',
+    theme: 'unconquerable_potential'
   },
   {
     id: 'mindrush_conf_2',
     format: 'naysayer_clapback',
-    speaker1Label: 'The Couch Skeptic',
-    speaker1Text: 'You really think you\'re special with your gym pass and your little alarm clock?',
-    speaker2Label: 'My Answer to Him',
-    speaker2Line1: 'Moving from the bed to the couch is your only daily milestone—I forged an',
+    speaker1Label: 'The Comparing Relative',
+    speaker1Text: 'Why can\'t you be obedient and get straight A\'s like your cousin does?',
+    speaker2Label: 'How We Answered Them',
+    speaker2Line1: 'Measuring my unique worth against someone else\'s script won\'t break my focus—I forged an',
     speaker2Highlight: 'INVIOLABLE',
-    speaker2Line2: 'work ethic while you watched my highlights from the cheap seats.',
+    speaker2Line2: 'standard tailored to the real future I am building with my own hands.',
     rareWord: 'INVIOLABLE',
     rareWordDefinition: 'Never to be broken, infringed, or dishonored; completely untouchable.',
-    theme: 'unbreakable_will'
+    theme: 'unshakable_individuality'
   },
   {
     id: 'mindrush_conf_3',
     format: 'naysayer_clapback',
-    speaker1Label: 'The Toxic Hater',
-    speaker1Text: 'You act like you\'re above everyone now just because you stopped hanging out with us.',
+    speaker1Label: 'The Fake Friend Group',
+    speaker1Text: 'You think you\'re better than us just because you study alone on Friday nights now?',
     speaker2Label: 'Me Talking Back',
-    speaker2Line1: 'I didn\'t change, I just quit drinking away my potential—I kept my',
-    speaker2Highlight: 'EQUILIBRIUM',
-    speaker2Line2: 'while you stayed complaining in the exact same spot.',
-    rareWord: 'EQUILIBRIUM',
-    rareWordDefinition: 'A state of perfect mental balance, composure, and emotional calm.',
-    theme: 'mental_balance'
+    speaker2Line1: 'Staying trapped in gossip and distraction was your choice—I took a',
+    speaker2Highlight: 'SURREPTITIOUS',
+    speaker2Line2: 'lead to master high-value skills we both know you\'re too scared to chase.',
+    rareWord: 'SURREPTITIOUS',
+    rareWordDefinition: 'Done quietly, stealthily, or without seeking loud outside attention.',
+    theme: 'silent_advancement'
   },
   {
     id: 'mindrush_conf_4',
     format: 'naysayer_clapback',
-    speaker1Label: 'The Sneering Doubter',
-    speaker1Text: '99% of people who try this fail. Your little hustle is honestly embarrassing to watch.',
-    speaker2Label: 'Putting Him In His Place',
-    speaker2Line1: 'Giving up before you even step onto the field is your specialty—I possess an',
-    speaker2Highlight: 'INEXORABLE',
-    speaker2Line2: 'drive that makes your pathetic excuses completely irrelevant.',
-    rareWord: 'INEXORABLE',
-    rareWordDefinition: 'Impossible to stop, prevent, or turn aside; relentless.',
-    theme: 'relentless_drive'
+    speaker1Label: 'The Out-of-Touch Critic',
+    speaker1Text: 'Your generation is soft, distracted, and lazy. You have no real work ethic.',
+    speaker2Label: 'Standing Up For Our Generation',
+    speaker2Line1: 'Mistaking our silent burnout for laziness was your mistake—I possess an',
+    speaker2Highlight: 'INDEFATIGABLE',
+    speaker2Line2: 'drive that will shatter every outdated rule you ever forced on us.',
+    rareWord: 'INDEFATIGABLE',
+    rareWordDefinition: 'Persisting tirelessly without giving up or becoming fatigued.',
+    theme: 'tireless_rebellion'
   },
   {
     id: 'mindrush_conf_5',
     format: 'naysayer_clapback',
-    speaker1Label: 'The 2 AM Doomscroller',
-    speaker1Text: 'You look exhausted waking up at 5 AM, nobody cares how hard you make life for yourself.',
-    speaker2Label: 'How I Answered',
-    speaker2Line1: 'Scrolling TikTok until your brain rots is your whole life—I took a',
-    speaker2Highlight: 'SURREPTITIOUS',
-    speaker2Line2: 'lead while you slept away your twenties in the dark.',
-    rareWord: 'SURREPTITIOUS',
-    rareWordDefinition: 'Done secretly, stealthily, or without attracting public attention.',
-    theme: 'stealth_advantage'
+    speaker1Label: 'The Toxic Doubter',
+    speaker1Text: 'You look exhausted trying to teach yourself code and business. Just give up and fit in.',
+    speaker2Label: 'Why We Never Fold',
+    speaker2Line1: 'Surrendering to a predictable, boring life will never be my destiny—I have an',
+    speaker2Highlight: 'INEXORABLE',
+    speaker2Line2: 'hunger for true independence that makes your doubts completely powerless.',
+    rareWord: 'INEXORABLE',
+    rareWordDefinition: 'Impossible to stop, prevent, or turn aside; relentless.',
+    theme: 'relentless_purpose'
   },
   {
     id: 'mindrush_conf_6',
     format: 'naysayer_clapback',
-    speaker1Label: 'The Fake Friend',
-    speaker1Text: 'You\'re going to burn out and end up with zero friends because you\'re obsessed.',
-    speaker2Label: 'Me Clapping Back',
-    speaker2Line1: 'Surrounding myself with cowards who only celebrate distractions is worse—your',
-    speaker2Highlight: 'PUSILLANIMOUS',
-    speaker2Line2: 'mindset would have kept me broke and trapped forever.',
-    rareWord: 'PUSILLANIMOUS',
-    rareWordDefinition: 'Lacking courage, timid, faint-hearted, or cowardly.',
-    theme: 'fearless_standard'
+    speaker1Label: 'The Hallway Gossip',
+    speaker1Text: 'Look at them trying so hard to act all focused, nobody even notices you.',
+    speaker2Label: 'Our Answer To The Hater',
+    speaker2Line1: 'Seeking temporary applause from people who don\'t care is your trap—my',
+    speaker2Highlight: 'PERVICACIOUS',
+    speaker2Line2: 'mindset is locked on personal excellence, not your validation.',
+    rareWord: 'PERVICACIOUS',
+    rareWordDefinition: 'Stubbornly persistent, obstinate, and refusing to bend to outside peer pressure.',
+    theme: 'peer_immunity'
   },
   {
     id: 'mindrush_conf_7',
     format: 'naysayer_clapback',
-    speaker1Label: 'The Weekend Partier',
-    speaker1Text: 'Working on a Saturday night? You have zero personality outside of working out and studying.',
-    speaker2Label: 'Talking Back to the Naysayer',
-    speaker2Line1: 'Flexing rented bottles on maxed-out credit cards isn\'t a personality—I have a',
-    speaker2Highlight: 'BELLIGERENT',
-    speaker2Line2: 'hunger for winning that terrifies lazy people like you.',
-    rareWord: 'BELLIGERENT',
-    rareWordDefinition: 'Aggressively determined, fiercely combative, or fighting without retreat.',
-    theme: 'combative_discipline'
+    speaker1Label: 'The School Skeptic',
+    speaker1Text: 'If it\'s not taught in the textbook, it isn\'t useful for your real life.',
+    speaker2Label: 'Breaking The Mold With You',
+    speaker2Line1: 'Memorizing obsolete facts to pass a 40-minute test won\'t build the future—I kept my',
+    speaker2Highlight: 'EQUILIBRIUM',
+    speaker2Line2: 'while building modern capabilities that schools are terrified to acknowledge.',
+    rareWord: 'EQUILIBRIUM',
+    rareWordDefinition: 'A state of perfect mental balance, composure, and emotional calm.',
+    theme: 'sovereign_intelligence'
   },
   {
     id: 'mindrush_conf_8',
     format: 'naysayer_clapback',
-    speaker1Label: 'The Envious Gossip',
-    speaker1Text: 'Look at him trying to act all mysterious online, who does he think he is?',
-    speaker2Label: 'How I Roasted Him',
-    speaker2Line1: 'Whispering about winners is the only workout your jaw gets—my',
-    speaker2Highlight: 'PERVICACIOUS',
-    speaker2Line2: 'focus stays locked on results while you beg for gossip.',
-    rareWord: 'PERVICACIOUS',
-    rareWordDefinition: 'Stubbornly persistent, obstinate, and refusing to bend to outside pressure.',
-    theme: 'stubborn_persistence'
-  },
-  {
-    id: 'mindrush_conf_9',
-    format: 'naysayer_clapback',
-    speaker1Label: 'The Comfort-Zone Addict',
-    speaker1Text: 'Just relax bro, life is too short to work 12 hours a day, stop trying so hard.',
-    speaker2Label: 'My Direct Response',
-    speaker2Line1: 'Dying average with a pile of regret is your life plan—I am',
+    speaker1Label: 'The Comfort-Zone Friend',
+    speaker1Text: 'Why skip the hangout? Life is about chilling now, you take things way too seriously.',
+    speaker2Label: 'Why We Protect Our Fire',
+    speaker2Line1: 'Waking up five years from now filled with regret is your gamble—I am',
     speaker2Highlight: 'RECALCITRANT',
-    speaker2Line2: 'against every lazy habit that turned you into a spectator.',
+    speaker2Line2: 'against the comfortable habits that trick young minds into settling for mediocrity.',
     rareWord: 'RECALCITRANT',
-    rareWordDefinition: 'Obstinately defiant of authority, convention, or mediocrity.',
-    theme: 'defiance_of_mediocrity'
-  },
-  {
-    id: 'mindrush_conf_10',
-    format: 'naysayer_clapback',
-    speaker1Label: 'The Arrogant Skeptic',
-    speaker1Text: 'People from around here never make it big, keep your feet on the ground before you drop.',
-    speaker2Label: 'How I Silenced Him',
-    speaker2Line1: 'Using your hometown as an excuse to stay broke is pathetic—I showed',
-    speaker2Highlight: 'MAGNANIMOUS',
-    speaker2Line2: 'pity by letting you talk while I bought the entire block.',
-    rareWord: 'MAGNANIMOUS',
-    rareWordDefinition: 'Generous or forgiving, especially toward a rival or someone less powerful.',
-    theme: 'sovereign_triumph'
+    rareWordDefinition: 'Obstinately defiant of authority, convention, or peer pressure.',
+    theme: 'defiance_of_apathy'
   }
 ];
 
-// 2. High-Aura 5-Second Wisdom Punchlines (Punchy, Clean, Disciplined)
+// 2. High-Aura 5-Second Youth Empowerment Wisdom (Solidarity, Truth, Clarity)
 const CURATED_5S_WISDOM = [
   {
     id: 'mindrush_5s_1',
-    line1: "Nobody is coming to save you.",
-    line2: "Become the monster",
-    line3: "who solves it.",
-    author: "MindRush Grit",
-    theme: "sovereignty"
+    line1: "They call you lazy.",
+    line2: "They never saw your",
+    line3: "2 AM silent battles.",
+    author: "MindRush Solidarity",
+    theme: "validation"
   },
   {
     id: 'mindrush_5s_2',
-    line1: "Kill your excuses.",
-    line2: "Build undeniable",
-    line3: "self-respect.",
-    author: "MindRush Discipline",
-    theme: "discipline"
+    line1: "A letter on paper",
+    line2: "will never measure",
+    line3: "your internal fire.",
+    author: "MindRush Truth",
+    theme: "worth"
   },
   {
     id: 'mindrush_5s_3',
-    line1: "Stay quiet.",
-    line2: "Let your bank account",
-    line3: "make the noise.",
-    author: "MindRush Execution",
-    theme: "silence"
+    line1: "You're not behind.",
+    line2: "You're just waking up",
+    line3: "to your real power.",
+    author: "MindRush Rise",
+    theme: "awakening"
   },
   {
     id: 'mindrush_5s_4',
-    line1: "They laugh now.",
-    line2: "They ask for advice",
-    line3: "three years later.",
-    author: "MindRush Foresight",
-    theme: "inevitable"
+    line1: "Protect your vision.",
+    line2: "The ones who doubted",
+    line3: "already surrendered.",
+    author: "MindRush Shield",
+    theme: "sovereignty"
   },
   {
     id: 'mindrush_5s_5',
-    line1: "Discipline is expensive.",
-    line2: "Regret is catastrophic.",
-    line3: "Choose your tax.",
-    author: "MindRush Focus",
-    theme: "sacrifice"
+    line1: "We stand with you.",
+    line2: "Let them whisper while",
+    line3: "you build the future.",
+    author: "MindRush Alliance",
+    theme: "unity"
   },
   {
     id: 'mindrush_5s_6',
-    line1: "They want you soft.",
-    line2: "Become physically and mentally",
-    line3: "impossible to break.",
-    author: "MindRush Armor",
-    theme: "indomitable"
+    line1: "Don't fit their mold.",
+    line2: "You were created to",
+    line3: "break their script.",
+    author: "MindRush Fire",
+    theme: "defiance"
   }
 ];
 

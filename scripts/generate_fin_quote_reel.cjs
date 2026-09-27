@@ -1113,7 +1113,8 @@ async function generateFin5sVideo() {
       `[v2][ov3]overlay=0:0:enable='gte(t,18)'[vfinal]`
     ].join(';');
 
-    const ffmpegCmd = `ffmpeg -y -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t 8 -i "${ov1}" -loop 1 -t 10 -i "${ov2}" -loop 1 -t 12 -i "${ov3}" -i "${mysteryWavPath}" -filter_complex "${complexFilter}" -map "[vfinal]" -map 4:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${TARGET_DURATION} "${finalMp4Path}" 2>&1`;
+    // User directive: Mute sound from Fin channel to observe audience engagement
+    const ffmpegCmd = `ffmpeg -y -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t 8 -i "${ov1}" -loop 1 -t 10 -i "${ov2}" -loop 1 -t 12 -i "${ov3}" -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -filter_complex "${complexFilter}" -map "[vfinal]" -map 4:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${TARGET_DURATION} "${finalMp4Path}" 2>&1`;
     execSync(ffmpegCmd);
   } else {
     // 5-Second Quote Reel with Dynamic Ken Burns Camera Pan
@@ -1128,7 +1129,8 @@ async function generateFin5sVideo() {
       `[bg][card]overlay=0:0[vfinal]`
     ].join(';');
 
-    const ffmpegCmd = `ffmpeg -y -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t ${TARGET_DURATION} -i "${cardInput}" -i "${mysteryWavPath}" -filter_complex "${complexFilter}" -map "[vfinal]" -map 2:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${TARGET_DURATION} "${finalMp4Path}" 2>&1`;
+    // User directive: Mute sound from Fin channel to observe audience engagement
+    const ffmpegCmd = `ffmpeg -y -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t ${TARGET_DURATION} -i "${cardInput}" -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -filter_complex "${complexFilter}" -map "[vfinal]" -map 2:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${TARGET_DURATION} "${finalMp4Path}" 2>&1`;
     execSync(ffmpegCmd);
   }
 

@@ -186,127 +186,127 @@ const STOIC_EMOTIONAL_NARRATIVES = [
 const TEEN_EMOTIONAL_NARRATIVES = [
   {
     theme: "teen_silent_grind",
-    title: "When You Do Everything Right and Still Feel Invisible",
+    title: "When You Try Your Hardest and They Still Call You Lazy",
     slides: [
       {
-        line1: "You can study until 2:00 AM every night,",
-        highlight: "and still blank out on the exam paper.",
-        line2: "You can be genuine to everyone in the group,",
-        highlight2: "and still get left out of the weekend plans."
+        line1: "You study until your eyes burn at 2:00 AM,",
+        highlight: "and parents only ask why it wasn't an A+.",
+        line2: "You listen to teachers reduce your whole future",
+        highlight2: "to a single test score on a piece of paper."
       },
       {
-        line1: "You can show up to every single practice first,",
-        highlight: "and still sit on the bench while others play.",
-        line2: "You can try to fix your habits and cut off bad friends,",
+        line1: "They compare you to your cousins and peers,",
+        highlight: "ignoring the quiet battles you fight every morning.",
+        line2: "You try to change your life and fix your habits,",
         highlight2: "and end up eating lunch completely alone."
       },
       {
-        line1: "You scroll social media and see people who don't care",
-        highlight: "getting the attention, the friends, and the easy life.",
-        line2: "And a voice whispers in your head:",
-        highlight2: "'Why am I trying so hard when nobody notices?'"
+        line1: "You look at people on your feed who never try",
+        highlight: "getting the applause, the easy friends, and the praise.",
+        line2: "And a tired voice whispers in your chest:",
+        highlight2: "'Why am I breaking my back when nobody even cares?'"
       },
       {
-        line1: "Here is the raw truth your school won't tell you:",
-        highlight: "Nobody is coming to save you.",
-        line2: "The scoreboard only tests your patience.",
-        highlight2: "The silence is where your real character is forged."
+        line1: "Look at me right now: I am on your side.",
+        highlight: "You are NOT lazy. You are mentally exhausted.",
+        line2: "The system was built to create obedient workers,",
+        highlight2: "not to measure the fire inside your soul."
       },
       {
-        line1: "Do not stop. Do not fold.",
-        highlight: "Discipline isn't about getting their applause.",
-        line2: "It's about looking in the mirror five years from now",
-        highlight2: "and respecting the monster you built in private."
+        line1: "Do not fold. Do not dim your light.",
+        highlight: "We don't need their permission to be great.",
+        line2: "Protect your peace, protect your dream,",
+        highlight2: "and let your future results silence every single room."
       }
     ],
     backupQuote: {
-      quote: "You have to build calluses on your brain just like you build calluses on your hands. Don't stop when you're tired; stop when you're done.",
-      author: "David Goggins",
-      title: "Ultra-Endurance Athlete & Navy SEAL",
-      reference: "Can't Hurt Me: Master Your Mind"
+      quote: "Do not judge me by my successes, judge me by how many times I fell down and got back up again. Your worth is measured by your grit, not their expectations.",
+      author: "Nelson Mandela",
+      title: "Global Icon of Resilience",
+      reference: "Long Walk to Freedom"
     }
   },
   {
     theme: "teen_misunderstood_dreams",
-    title: "They Laugh Because They Already Gave Up",
+    title: "They Told You to Be Realistic Because They Already Gave Up",
     slides: [
       {
-        line1: "You tell your closest friends what you want to achieve,",
-        highlight: "and they laugh in your face like it's a joke.",
-        line2: "You put your heart into learning a new skill,",
-        highlight2: "and your family tells you to 'just be realistic.'"
+        line1: "You tell people what you want to achieve with your life,",
+        highlight: "and they laugh like your ambition is a joke.",
+        line2: "You spend your weekends learning to code or create,",
+        highlight2: "and family tells you to 'just play it safe.'"
       },
       {
-        line1: "You delete TikTok and start reading books,",
-        highlight: "and they say you think you're 'better than everyone.'",
-        line2: "You try to change your life,",
-        highlight2: "and the people closest to you pull you back down."
+        line1: "You choose your goals over mindless distractions,",
+        highlight: "and friends say you think you're 'better than everyone.'",
+        line2: "They want you to fit the exact same mold",
+        highlight2: "that keeps them trapped and unhappy."
       },
       {
         line1: "It hurts when the people you love don't believe in you.",
-        highlight: "It makes you want to quit just to fit in again.",
-        line2: "But understand this before you give up:",
-        highlight2: "They don't hate your dream. They hate their own surrender."
+        highlight: "It makes you feel like an outcast in your own world.",
+        line2: "Understand this before you ever surrender:",
+        highlight2: "They don't hate your dream—they hate their own regret."
       },
       {
-        line1: "If you stay comfortable, you stay average.",
-        highlight: "You have to be willing to be misunderstood for a season",
-        line2: "to build a life that lasts a lifetime."
+        line1: "We are standing in your corner.",
+        highlight: "Every true pioneer was misunderstood for a season",
+        line2: "before the world ever begged for their advice."
       },
       {
-        line1: "Keep grinding in the shadows.",
-        highlight: "Don't argue with them. Don't explain your vision.",
-        line2: "Let your results make the noise.",
-        highlight2: "Silence the room with execution."
+        line1: "Keep building in silence.",
+        highlight: "You don't need to argue with them or justify yourself.",
+        line2: "Your discipline is your rebellion.",
+        highlight2: "Show them who you are through your actions."
       }
     ],
     backupQuote: {
-      quote: "Those who dare to fail miserably can achieve greatly. When you want to succeed as bad as you want to breathe, then you will be successful.",
-      author: "Eric Thomas",
-      title: "World Renowned Motivational Speaker",
-      reference: "The Secret to Success"
+      quote: "The people who are crazy enough to think they can change the world are the ones who actually do. Never let anyone who gave up on their dreams talk you out of yours.",
+      author: "Steve Jobs",
+      title: "Co-Founder of Apple",
+      reference: "Think Different"
     }
   },
   {
     theme: "teen_relapse_and_rising",
-    title: "When You Fall After Trying So Hard",
+    title: "When You Fall and Feel Like All Your Progress Was Fake",
     slides: [
       {
-        line1: "You stayed disciplined for 2 weeks straight,",
-        highlight: "and then relapsed into your worst habits in one night.",
-        line2: "The disgust hits you in the chest.",
-        highlight2: "You feel like all your progress was fake."
+        line1: "You stayed consistent for two weeks straight,",
+        highlight: "and then slipped back into old habits in one night.",
+        line2: "The guilt hits you right in the throat.",
+        highlight2: "You feel like you'll never escape the cycle."
       },
       {
-        line1: "You see other people looking confident and happy,",
-        highlight: "while you are fighting wars inside your own head.",
-        line2: "You wonder if you are just broken,",
-        highlight2: "if discipline just isn't built for you."
+        line1: "You look at everyone around you looking happy,",
+        highlight: "while you are fighting quiet wars inside your head.",
+        line2: "You wonder if you are permanently broken,",
+        highlight2: "if success just wasn't coded into your DNA."
       },
       {
-        line1: "Listen carefully: A relapse does not erase your strength.",
-        highlight: "The only real defeat is choosing to stay down.",
-        line2: "Every champion you admire",
-        highlight2: "lost hundreds of invisible battles you never saw."
+        line1: "Hear this clearly: We stand with you.",
+        highlight: "One bad night does not erase fourteen days of growth.",
+        line2: "Progress isn't a straight line on a graph—",
+        highlight2: "it is a war won one single choice at a time."
       },
       {
-        line1: "Forgive yourself right now.",
-        highlight: "Wash your face. Stand up. Reset the clock.",
-        line2: "The person who falls seven times and stands up eight",
-        highlight2: "is 100 times more dangerous than someone who never fell."
+        line1: "Forgive yourself right this second.",
+        highlight: "Wash your face. Take a breath. Reset the clock.",
+        line2: "The teen who falls ten times and gets up eleven",
+        highlight2: "is 100 times stronger than someone who never tried."
       },
       {
-        line1: "This is your turning point.",
-        highlight: "No more excuses. No more self-pity.",
-        line2: "Lock back in.",
-        highlight2: "Your future self is begging you not to quit today."
+        line1: "This is your comeback moment.",
+        highlight: "Your future self is proud that you didn't quit today.",
+        line2: "Lock back in with us.",
+        highlight2: "Your real chapter starts right now."
       }
     ],
     backupQuote: {
-      quote: "It's not whether you get knocked down; it's whether you get up. The greatest glory in living lies not in never falling, but in rising every time we fall.",
-      author: "Vince Lombardi",
-      title: "Legendary Coach & Hall of Famer",
-      reference: "What It Takes to Be Number One"
+      quote: "Success is not final, failure is not fatal: it is the courage to continue that counts. We rise not by being flawless, but by refusing to remain defeated.",
+      author: "Winston Churchill",
+      title: "Statesman & Nobel Laureate",
+      reference: "Speeches of Resilience"
     }
   }
 ];
@@ -326,7 +326,7 @@ function escapeXml(str) {
  */
 function buildNarrativeSlideSvg(slide, slideIndex, totalSlides, channelKey = 'stoic', width = 1080, height = 1920) {
   const accentColor = channelKey === 'stoic' ? '#f59e0b' : '#38bdf8';
-  const badgeText = channelKey === 'stoic' ? '⚡ HARD TRUTH' : '⚡ REAL TALK';
+  const badgeText = channelKey === 'stoic' ? '⚡ HARD TRUTH' : '⚡ WE STAND WITH YOU';
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
     <defs>

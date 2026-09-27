@@ -17,7 +17,7 @@ const fs = require('fs');
 const path = require('path');
 
 const CACHE_FILE = path.join(process.cwd(), 'openrouter_working_models.json');
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_API_KEY = (process.env.OPENROUTER_API_KEY || process.env.OPEN_ROUTER_API_KEY || process.env.OPENROUTER_KEY || '').trim();
 
 // High-speed, high-reliability candidate models on OpenRouter
 const DEFAULT_CANDIDATES = [

@@ -36,7 +36,7 @@ const LOCAL_CARTOON_CACHE = path.join(process.cwd(), 'daily_cartoon_history_cach
 const MANIFEST_PATH = path.join(process.cwd(), 'daily_blueprint_manifest.json');
 
 // API Keys from environment
-const OPENROUTER_API_KEY = (process.env.OPENROUTER_API_KEY || '').trim();
+const OPENROUTER_API_KEY = (process.env.OPENROUTER_API_KEY || process.env.OPEN_ROUTER_API_KEY || process.env.OPENROUTER_KEY || '').trim();
 const GROQ_API_KEY = (process.env.GROQ_API_KEY || '').trim();
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim();
 const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || '').trim();
@@ -176,8 +176,9 @@ const NICHE_SPHERES = {
   }
 };
 
-// Negative topic pattern filter for Channel 3 (Tech & AI Animation)
+// Negative topic pattern filter for Channel 3 (Tech & AI Animation) - Strictly eliminates stale seeds
 const BANNED_TECH_TOPIC_PATTERNS = [
+  /apple/i, /sliced\s*apple/i, /cold\s*can/i, /sweat.*droplet/i,
   /mattress/i, /bedding/i, /pillow/i, /furniture/i, /sofa/i, /couch/i,
   /detergent/i, /cleaning\s*product/i, /skincare/i, /makeup/i, /cosmetics/i,
   /shoe\s*polish/i, /cooking\s*pan/i, /kitchen\s*sponge/i, /vacuum\s*cleaner/i,
@@ -1238,33 +1239,45 @@ async function discoverAndSelectTopicViaActiveAi(nicheKey = 'fin', options = {})
 
   const isCartoon = nicheKey === 'cartoon';
   const systemPrompt = isCartoon
-    ? `You are the lead science explainer writer for Archie Explains (@ArchieExplains).
-CORE DIRECTIVES:
-1. TOPICS MUST BE REAL-LIFE EXAMPLES ONLY: Tangible, observable everyday phenomena that students and regular people see in real life (e.g., cold can sweating after pouring ice water, mirrors fogging in hot showers, sliced apples turning brown, toast turning crunchy, car tires deflating in cold weather, bath fingers wrinkling).
-2. HOOK FORMAT (MANDATORY): The opening hook MUST start with: "Ever wondered why [observable phenomenon]? Let's break it down."
-3. LAYMAN EXPLANATION: Explain the scientific mechanism in the simplest, easiest layman terms so any student without prior knowledge understands completely. Zero jargon.
-4. PROMPT COMPACTNESS: Keep outputs crisp and concise.
+    ? `You are the lead viral science creator for Archie Explains (@ArchieExplains).
+CRITICAL DIRECTIVES FOR ALGORITHM RETENTION, NON-BOTTED CONTENT & ZERO SEED DATA:
+1. UP-TO-DATE, UNIQUE TOPICS (NO CANNED SEEDS): Formulate fresh, captivating, real-world science or tech phenomena. STRICTLY FORBIDDEN: DO NOT generate anything about apples turning brown or cold cans sweating. Choose from diverse domains: optics, sound physics, thermal dynamics, materials science, atmospheric quirks, sensory biology, everyday electronics.
+2. DYNAMIC VIRAL HOOKS (ANTI-BOT MANDATE): DO NOT use repetitive formulaic prefixes like "Ever wondered why...". Every video MUST use a distinct, scroll-stopping opening hook:
+   - Pattern Interrupt: "Stop scrolling if your [item] does this—here is why."
+   - High-Curiosity Gap: "Notice how your [item] always [action]? Watch this closely."
+   - Counter-Intuitive Truth: "Almost everyone gets this wrong: here is what's really happening when [phenomenon]."
+   - Direct Phenomenon Reveal: "Why does [phenomenon] happen in seconds? The secret physics will shock you."
+3. CRISP LAYMAN EXPLANATION (NO COMPLICATED JARGON): Explain in simple, friendly layman English (max 22 words) so anyone understands instantly. If a technical term is involved, translate it into plain human English.
+4. MANDATORY TAKEAWAY LEARNT: Exactly one memorable rule of thumb, practical insight, or observable takeaway (max 14 words).
+5. TRENDING KEYWORDS SEARCH & SYNCED HASHTAGS: Provide 3-5 trending search terms and 4-6 hashtags directly synchronized with this exact topic.
+6. HARD WORDS DEFINITION: Extract 1-2 key terms from the topic/explanation and provide simple, plain-English definitions so viewers learn without confusion.
 
 Return valid JSON:
 {
   "candidates": [
     {
       "id": 1,
-      "sphereId": "everyday_physics",
-      "sphereName": "Everyday Science",
-      "title": "Why Cold Cans Sweat Water",
-      "angle": "Condensation physics",
-      "coreHook": "Ever wondered why your can gets wet after you pour ice water into it? Let's break it down.",
-      "factExplanation": "Air has invisible water gas. Cold metal chills that air and turns it into liquid drops on the outside.",
-      "searchDetailsUsed": "Water vapor condensation",
+      "sphereId": "sphere_id",
+      "sphereName": "Domain Name",
+      "title": "Clear Topic Headline",
+      "angle": "Educational breakdown angle",
+      "coreHook": "Scroll-stopping unique spoken hook",
+      "factExplanation": "Plain-English layman explanation (max 22 words)",
+      "takeawayLearnt": "Practical rule of thumb to remember (max 14 words)",
+      "trendingKeywords": ["trending search keyword 1", "trending search keyword 2", "trending search keyword 3"],
+      "syncedHashtags": ["#TopicSpecificTag1", "#TopicSpecificTag2", "#STEM", "#Shorts"],
+      "hardWords": [
+        { "word": "Key Term", "definition": "Simple plain-English explanation of this word" }
+      ],
+      "searchDetailsUsed": "Live observation",
       "isUnique": true,
-      "loopyHookConcept": "Loops back to cold cans"
+      "loopyHookConcept": "Seamless ending loop"
     }
   ],
   "chosenWinnerId": 1,
-  "deduplicationAnalysis": "Unique real-life observation",
-  "selectionRationale": "Relatable real-life everyday example for students",
-  "discardedNotes": [{ "candidateId": 2, "reason": "Less relatable than winner" }]
+  "deduplicationAnalysis": "Unique verified observation",
+  "selectionRationale": "High curiosity and clear layman takeaway",
+  "discardedNotes": [{ "candidateId": 2, "reason": "Alternative" }]
 }`
     : `You are an elite educational content creator and viral scriptwriter for a multi-social channel with a dedicated niche in education, science/physics, and "Did you know?" facts.
 Channel: "${nicheConfig.channelName}" (${nicheConfig.channelHandle}).
@@ -1293,10 +1306,11 @@ Return strictly valid JSON with this exact schema:
 }`;
 
   const userPrompt = isCartoon
-    ? `Formulate 5 fresh candidate topics for Archie Explains.
+    ? `Formulate 5 fresh, high-engagement candidate topics for Archie Explains.
 MANDATORY RULES:
-- Topics must be REAL-LIFE EXAMPLES only (things you touch, see, or experience daily).
-- Hooks MUST start with: "Ever wondered why [real life phenomenon]? Let's break it down."
+- Topics must be REAL-LIFE EXAMPLES only (tangible phenomena experienced daily).
+- Hooks MUST be unique, scroll-stopping, and non-botted (NO repetitive "Ever wondered why" openings).
+- Every candidate must have a practical, memorable "takeawayLearnt" rule or insight.
 - Explanations must be plain layman English for everyday students.
 Past Topics to avoid:
 ${pastTopics.slice(0, 5).map(h => `- ${h.topic || h.title}`).join('\n') || 'None'}

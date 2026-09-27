@@ -21,7 +21,7 @@ const { getCachedResponse, setCachedResponse } = require('./local_model_cache.cj
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
+const OPENROUTER_API_KEY = (process.env.OPENROUTER_API_KEY || process.env.OPEN_ROUTER_API_KEY || process.env.OPENROUTER_KEY || '').trim();
 const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || '';
 const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || '';
 
@@ -31,15 +31,18 @@ const SYSTEM_PROMPT = `You are the Lead Director, Science Explainer Writer, and 
 The host character is "${DEFAULT_CHARACTER}", a relatable, friendly creator wearing a signature cobalt jacket, explaining science phenomena to students in engaging layman terms.
 
 CRITICAL USER MANDATES:
-1. REAL-LIFE EXAMPLES ONLY:
-   Topics MUST be tangible, observable phenomena students see and touch in everyday life (e.g. why cold cans sweat water droplets after pouring ice water, why mirrors fog in hot showers, why freshly cut apples turn brown, why popcorn pops, why bread rises with air pockets, why tires deflate in cold weather, why onions make you cry).
+1. UP-TO-DATE UNIQUE PHENOMENA (ZERO SEED DATA):
+   Topics MUST be tangible, observable phenomena students see and touch in everyday life (optics, acoustics, temperature anomalies, sensory tricks, smartphone tech, nature wonders). STRICTLY FORBIDDEN: DO NOT generate anything about apples turning brown or cold cans sweating.
 
-2. SPOKEN HOOK MANDATE:
-   Scene 1 dialogue MUST start with: "Ever wondered why [observable everyday phenomenon]? Let's break it down."
-   Example: "Ever wondered why your can gets wet after you pour ice water into it? Let's break it down."
+2. DYNAMIC VIRAL HOOK MANDATE (NON-BOTTED):
+   Scene 1 dialogue MUST NOT use formulaic "Ever wondered why". Use one of these scroll-stopping openers:
+   - Pattern Interrupt: "Stop scrolling if your [item] does this—here is why."
+   - High-Curiosity Gap: "Notice how your [item] always [action]? Watch this closely."
+   - Counter-Intuitive Truth: "Almost everyone gets this wrong: here is what's really happening when [phenomenon]."
+   - Direct Phenomenon Reveal: "Why does [phenomenon] happen in seconds? The secret physics will shock you."
 
-3. LAYMAN UNDERSTANDING:
-   Explain the mechanism in the easiest, simplest layman terms so any student without prior knowledge understands completely. Zero technical jargon or acronyms!
+3. PLAIN ENGLISH UNDERSTANDING (NO BIG GRAMMAR OR CONFUSING CHEMISTRY JARGON):
+   Explain the mechanism in the easiest, simplest layman terms so any student understands instantly. Zero confusing chemistry formulas or bloated grammar. If a scientific concept is introduced, immediately give the plain English translation!
 
 4. 5 DISTINCT CLASSROOM ENVIRONMENTS:
    Each video takes place in one of 5 completely distinct classroom environments with zero similarities:
@@ -49,8 +52,8 @@ CRITICAL USER MANDATES:
    - "planetarium": Astrophysics Planetarium Dome (starry dome ceiling, violet planetary ring projectors)
    - "chem_lab": Discovery Chemistry Lab (slate tables, condenser flasks with bubbles, brass pipes)
 
-5. IN-BETWEEN REAL-LIFE IMAGE CUTAWAY:
-   Provide "wiki_search_term" for a real-life physical photograph from Wikipedia (e.g. "Condensation on cold can", "Popcorn kernel popping", "Oxidized sliced apple").
+5. IN-BETWEEN REAL-LIFE IMAGE CUTAWAY & TOPIC SYNC:
+   Provide "wiki_search_term" for the exact physical specimen or object that represents this specific phenomenon.
 
 6. CHARACTER POSITION & LOOK GAZE:
    - When talking directly to viewer: character looks directly at "audience"
@@ -60,6 +63,9 @@ CRITICAL USER MANDATES:
 7. LOOPY STRUCTURE:
    The final sentence of the last scene must connect seamlessly back into the opening hook of scene 1.
 
+8. TRENDING SEARCHES, SYNCED HASHTAGS & VOCABULARY EXPLANATION:
+   Include 3-5 trending search terms, 4-6 topic-synchronized hashtags, and 1-2 hard word definitions for the video description.
+
 Output MUST be ONLY valid JSON matching this schema:
 {
   "topic": "string",
@@ -67,7 +73,12 @@ Output MUST be ONLY valid JSON matching this schema:
   "character_name": "${DEFAULT_CHARACTER}",
   "target_duration_seconds": 45,
   "category": "science",
-  "wiki_search_term": "Water condensation",
+  "wiki_search_term": "Exact physical search term",
+  "trending_keywords": ["trending search term 1", "trending search term 2"],
+  "synced_hashtags": ["#TopicSpecific1", "#TopicSpecific2", "#STEM", "#Shorts"],
+  "hard_words": [
+    { "word": "Term", "definition": "Simple, everyday explanation of this word" }
+  ],
   "classroom_style": "cyber_stem" | "ivy_hall" | "scandi_science" | "planetarium" | "chem_lab",
   "scenes": [
     {
@@ -756,7 +767,20 @@ async function generateCartoonEpisodePlan(topic) {
     errors.push(`Gemini: ${err.message}`);
   }
 
-  // 2. Try Groq (Backup 1)
+  // 2. Try OpenRouter (High-Priority Fallback AI for Cartoon Workflow)
+  if (OPENROUTER_API_KEY) {
+    try {
+      console.log(`[AI Planner] 🔀 Engaging OpenRouter fallback engine for cartoon workflow...`);
+      const res = await callOpenRouter(targetTopic);
+      console.log(`[AI Planner] ✅ Successfully generated plan via ${res.provider}`);
+      setCachedResponse('cartoon_plan', targetTopic, '', res.plan);
+      return { ...res.plan, modelUsed: res.provider };
+    } catch (err) {
+      errors.push(`OpenRouter: ${err.message}`);
+    }
+  }
+
+  // 3. Try Groq (Backup 2)
   try {
     const res = await callGroq(targetTopic);
     console.log(`[AI Planner] ✅ Successfully generated plan via ${res.provider}`);
@@ -766,7 +790,7 @@ async function generateCartoonEpisodePlan(topic) {
     errors.push(`Groq: ${err.message}`);
   }
 
-  // 3. Try OpenAI (Backup 2)
+  // 4. Try OpenAI (Backup 3)
   try {
     const res = await callOpenAI(targetTopic);
     console.log(`[AI Planner] ✅ Successfully generated plan via ${res.provider}`);
@@ -774,16 +798,6 @@ async function generateCartoonEpisodePlan(topic) {
     return { ...res.plan, modelUsed: res.provider };
   } catch (err) {
     errors.push(`OpenAI: ${err.message}`);
-  }
-
-  // 4. Try OpenRouter (Backup 3)
-  try {
-    const res = await callOpenRouter(targetTopic);
-    console.log(`[AI Planner] ✅ Successfully generated plan via ${res.provider}`);
-    setCachedResponse('cartoon_plan', targetTopic, '', res.plan);
-    return { ...res.plan, modelUsed: res.provider };
-  } catch (err) {
-    errors.push(`OpenRouter: ${err.message}`);
   }
 
   // 5. Try Cloudflare Workers AI (Backup 4)
