@@ -13,7 +13,7 @@ on:
         default: ''
         type: string
       video_mode:
-        description: 'Video Generation Mode (auto | video | fact_reel | all_daily_4)'
+        description: 'Video Generation Mode (auto | video | fact_reel | all_daily_5 [4x 5s reels + 1x 25-35s episode])'
         required: false
         default: 'auto'
         type: choice
@@ -21,6 +21,7 @@ on:
           - auto
           - video
           - fact_reel
+          - all_daily_5
           - all_daily_4
       engine:
         description: 'Rendering Engine (moviepy for exact puppet character animation, ffmpeg for ultra-fast 2.5D, blender for 3D cutout)'
@@ -145,15 +146,17 @@ jobs:
           elif [ "$VIDEO_MODE" = "fact_reel" ] || { [ "$VIDEO_MODE" = "auto" ] && [ "$CURRENT_HOUR" -ne 13 ]; }; then
             echo "▶️ Generating 1 Archie Everyday Science / Tech Fact Reel..."
             node scripts/generate_archie_tech_fact_reel.cjs
-          elif [ "$VIDEO_MODE" = "all_daily_4" ]; then
-            echo "▶️ Generating Full Daily 4-Video Suite (1 Animated Video + 3 Everyday Fact Reels)..."
-            echo "--- Slot 1: Everyday Fact Reel 1 of 3 ---"
+          elif [ "$VIDEO_MODE" = "all_daily_5" ] || [ "$VIDEO_MODE" = "all_daily_4" ]; then
+            echo "▶️ Generating Full Daily Suite: 4 Reps of 5s Fact Reels + 1 Deep-Dive Animated Episode (25-35s)..."
+            echo "--- Rep 1/4: 5s Everyday Fact Reel ---"
             node scripts/generate_archie_tech_fact_reel.cjs || true
-            echo "--- Slot 2: Full Animated Video ---"
+            echo "--- Rep 2/4: 5s Everyday Fact Reel ---"
+            node scripts/generate_archie_tech_fact_reel.cjs || true
+            echo "--- Deep-Dive Episode: 25-35s Full Animated Cartoon Video ---"
             node scripts/test_cartoon_runner.cjs || true
-            echo "--- Slot 3: Everyday Fact Reel 2 of 3 ---"
+            echo "--- Rep 3/4: 5s Everyday Fact Reel ---"
             node scripts/generate_archie_tech_fact_reel.cjs || true
-            echo "--- Slot 4: Everyday Fact Reel 3 of 3 ---"
+            echo "--- Rep 4/4: 5s Everyday Fact Reel ---"
             node scripts/generate_archie_tech_fact_reel.cjs || true
           else
             echo "▶️ Defaulting to Archie Everyday Fact Reel..."

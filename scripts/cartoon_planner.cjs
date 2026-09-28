@@ -71,7 +71,7 @@ Output MUST be ONLY valid JSON matching this schema:
   "topic": "string",
   "title": "Short, punchy, high-CTR title (under 55 chars)",
   "character_name": "${DEFAULT_CHARACTER}",
-  "target_duration_seconds": 45,
+  "target_duration_seconds": 30, // User mandate: strictly 25 to 35 seconds total
   "category": "science",
   "wiki_search_term": "Exact physical search term",
   "trending_keywords": ["trending search term 1", "trending search term 2"],
@@ -83,16 +83,16 @@ Output MUST be ONLY valid JSON matching this schema:
   "scenes": [
     {
       "scene": 1,
-      "duration": 7.5,
-      "dialogue": "Ever wondered why [phenomenon]? Let's break it down. Spoken line in plain English...",
+      "duration": 5.8, // 4-5 scenes each 5.5-6.5s to total 28-32s (strictly 25-35s)
+      "dialogue": "Notice how [phenomenon] happens every single time? Watch this closely. Spoken line in plain English...",
       "character_action": "walk_in" | "talking" | "point_right" | "point_left" | "thinking" | "questioning_users",
       "character_position": "left" | "center" | "right",
       "look_target": "audience" | "board",
       "emotion": "curious" | "excited" | "thinking" | "surprised" | "neutral",
       "camera": "medium" | "medium_to_close" | "wide" | "close_up",
       "background_style": "cyber_stem" | "ivy_hall" | "scandi_science" | "planetarium" | "chem_lab",
-      "glossary_term": "Condensation",
-      "glossary_explanation": "When cold metal cools warm air, turning invisible water gas into liquid drops."
+      "glossary_term": "Core Scientific Term",
+      "glossary_explanation": "Plain English explanation of this phenomenon for young curious viewers."
     }
   ]
 }
@@ -162,7 +162,17 @@ function validateAndCleanEpisode(rawJson, topic = '') {
 
     if (cleanScenes.length === 0) return null;
 
-    const totalDuration = cleanScenes.reduce((sum, sc) => sum + sc.duration, 0);
+    let totalDuration = cleanScenes.reduce((sum, sc) => sum + sc.duration, 0);
+
+    // User directive: ensure episode strictly falls within 25.0 to 35.0 seconds
+    if (totalDuration > 35.0 || totalDuration < 25.0) {
+      const targetSec = 30.0;
+      const ratio = targetSec / (totalDuration || 1);
+      cleanScenes.forEach(sc => {
+        sc.duration = Math.max(3.5, Math.min(8.5, Math.round(sc.duration * ratio * 10) / 10));
+      });
+      totalDuration = cleanScenes.reduce((sum, sc) => sum + sc.duration, 0);
+    }
 
     return {
       topic: String(data.topic || topic).trim(),

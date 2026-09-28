@@ -180,6 +180,132 @@ const STOIC_EMOTIONAL_NARRATIVES = [
       title: "Emperor of Rome",
       reference: "Meditations, Book V.20"
     }
+  },
+  {
+    theme: "carrying_the_world_in_silence",
+    title: "Carrying Everyone in Silence While Nobody Asks If You're Okay",
+    slides: [
+      {
+        line1: "You can solve everyone's emergencies at 3 AM,",
+        highlight: "and sit with your own grief completely alone.",
+        line2: "You can be the strongest pillar in the entire room,",
+        highlight2: "while secretly fighting not to break in half."
+      },
+      {
+        line1: "They come to you when their life is falling apart,",
+        highlight: "because they know you never fold.",
+        line2: "Yet when the storm calms down,",
+        highlight2: "nobody ever turns around to ask: 'How are you holding up?'"
+      },
+      {
+        line1: "You learned to swallow your tears as a child.",
+        highlight: "You learned that vulnerability gets punished with pity or betrayal.",
+        line2: "So you put on the armor every morning",
+        highlight2: "and carry the world on your shoulders."
+      },
+      {
+        line1: "Hear this truth before you let exhaustion win:",
+        highlight: "Your silence is not weakness. Your endurance is legendary.",
+        line2: "You were built for the storm",
+        highlight2: "that would drown everyone else."
+      },
+      {
+        line1: "Do not seek their applause.",
+        highlight: "A lighthouse never begs for gratitude from the ships it saves.",
+        line2: "Stand unmoved. Hold the line.",
+        highlight2: "Your character is your immortal crown."
+      }
+    ],
+    backupQuote: {
+      quote: "A gem cannot be polished without friction, nor a man perfected without trials. Difficulties strengthen the mind as labor does the body.",
+      author: "Seneca the Younger",
+      title: "Stoic Statesman & Moralist",
+      reference: "Letters from a Stoic (Epistulae Morales)"
+    }
+  },
+  {
+    theme: "betrayal_and_stoic_loyalty",
+    title: "When You Shielded Them from the Arrows and They Handed You the Knife",
+    slides: [
+      {
+        line1: "You can give someone 10 years of purest loyalty,",
+        highlight: "and be discarded the moment you are no longer convenient.",
+        line2: "You can pull them out of their darkest rock-bottom,",
+        highlight2: "and watch them laugh with your enemies tomorrow."
+      },
+      {
+        line1: "The human heart is often fragile and treacherous.",
+        highlight: "People forget a hundred sacrifices in one heartbeat",
+        line2: "the second someone offers them cheap status",
+        highlight2: "or easy comfort."
+      },
+      {
+        line1: "The knife never comes from a stranger across the street.",
+        highlight: "It always comes from the hand you spent years filling.",
+        line2: "And the ache in your chest whispers:",
+        highlight2: "'I should have never cared.'"
+      },
+      {
+        line1: "Never let their cowardice corrupt your virtue.",
+        highlight: "You were loyal because of who YOU are, not who they pretended to be.",
+        line2: "Their betrayal is their life sentence.",
+        highlight2: "Your honor remains spotless."
+      },
+      {
+        line1: "Walk away in total silence. Zero arguments. Zero revenge.",
+        highlight: "The most ruthless revenge against the ungrateful",
+        line2: "is living an untouchable, honorable life",
+        highlight2: "where they no longer exist."
+      }
+    ],
+    backupQuote: {
+      quote: "When you wake up, tell yourself: The people I deal with today will be meddling, ungrateful, arrogant, and surly. But none of them can hurt me, for I have recognized the beauty of goodness.",
+      author: "Marcus Aurelius",
+      title: "Roman Emperor & Stoic Philosopher",
+      reference: "Meditations, Book II.1"
+    }
+  },
+  {
+    theme: "existential_attitude_freedom",
+    title: "The Last Freedom That No Calamity Can Steal",
+    slides: [
+      {
+        line1: "They can take your job, your savings, your comfort,",
+        highlight: "and tear down the life you spent decades building.",
+        line2: "Circumstances can strip you down to the bare bone,",
+        highlight2: "until you have nothing left to give."
+      },
+      {
+        line1: "Fate can hand you an unfair card.",
+        highlight: "Illness, grief, and betrayal don't ask for permission.",
+        line2: "The world can push you down on your knees",
+        highlight2: "in the dark mud of despair."
+      },
+      {
+        line1: "But in that exact pitch-black moment,",
+        highlight: "there is one sacred sovereign boundary they cannot touch:",
+        line2: "They cannot force you to become bitter.",
+        highlight2: "They cannot force your soul to kneel."
+      },
+      {
+        line1: "Between what happens to you and your response,",
+        highlight: "there is a space. In that space lies your absolute freedom.",
+        line2: "You choose dignity over cowardice.",
+        highlight2: "You choose grit over pity."
+      },
+      {
+        line1: "Rise up. Dust yourself off.",
+        highlight: "The world broke you down so you could discover",
+        line2: "the invincible warrior sleeping inside your chest.",
+        highlight2: "Die on your feet before you live on your knees."
+      }
+    ],
+    backupQuote: {
+      quote: "Everything can be taken from a man but one thing: the last of the human freedoms — to choose one's attitude in any given set of circumstances, to choose one's own way.",
+      author: "Dr. Viktor E. Frankl",
+      title: "Holocaust Survivor & Neurologist",
+      reference: "Man's Search for Meaning"
+    }
   }
 ];
 

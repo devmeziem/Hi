@@ -20,15 +20,14 @@ export const App: React.FC = () => {
     });
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user && user.email) {
+      const isExplicitlyLocked = localStorage.getItem('voxam_workspace_locked') === 'true';
+      if (user && user.email && !isExplicitlyLocked) {
         setCurrentUserEmail(user.email);
         localStorage.setItem('voxam_current_user', user.email);
       } else {
-        // Check local storage for persistent session
-        const savedUser = localStorage.getItem('voxam_current_user');
-        if (savedUser) {
-          setCurrentUserEmail(savedUser);
-        }
+        // Strict site lock: require explicit authentication
+        setCurrentUserEmail(null);
+        localStorage.removeItem('voxam_current_user');
       }
       setLoading(false);
     });
@@ -37,17 +36,19 @@ export const App: React.FC = () => {
   }, []);
 
   const handleLoginSuccess = (email: string) => {
+    localStorage.removeItem('voxam_workspace_locked');
     setCurrentUserEmail(email);
     localStorage.setItem('voxam_current_user', email);
   };
 
   const handleSignOut = async () => {
+    localStorage.setItem('voxam_workspace_locked', 'true');
+    localStorage.removeItem('voxam_current_user');
     try {
       await signOut(auth);
     } catch {
       // offline signOut
     }
-    localStorage.removeItem('voxam_current_user');
     setCurrentUserEmail(null);
   };
 

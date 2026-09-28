@@ -39,7 +39,10 @@ import {
   Menu,
   Atom,
   Share2,
-  Film
+  Film,
+  Lock,
+  Copy,
+  HeartHandshake
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { NicheType, SavedCampaign, FactoryJob, WorkerLog, IntegrationKeys, ChannelMetrics, ProjectConfig } from '../types';
@@ -58,6 +61,7 @@ import { MonetizationMatrixTab } from './MonetizationMatrixTab';
 import { SoundSetupTab } from './SoundSetupTab';
 import { MovieBrandTab } from './MovieBrandTab';
 import { TeenMotivationTab } from './TeenMotivationTab';
+import { AudienceFeedbackTab } from './AudienceFeedbackTab';
 
 interface VoxamFactoryAppProps {
   userEmail: string;
@@ -670,6 +674,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
 
   const navItems = [
     { id: 'dashboard', label: 'Overview Dashboard', icon: LayoutDashboard },
+    { id: 'audience-feedback', label: 'Subscriber Feedback & Sentiment', icon: HeartHandshake },
     { id: 'movie-brand', label: 'Cinema Vanguard (Channel 4)', icon: Film },
     { id: 'teen-motivation', label: 'MindRush (Channel 5)', icon: Flame },
     { id: 'finance', label: 'Finance Blueprint (Channel 1)', icon: DollarSign },
@@ -832,6 +837,21 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                 <button
                   type="button"
                   onClick={() => {
+                    setActiveTab('audience-feedback');
+                    setIsMobileDrawerOpen(false);
+                  }}
+                  className="w-full p-2.5 bg-purple-950/40 border border-purple-500/30 rounded-xl text-left cursor-pointer transition-all hover:border-purple-400 flex items-center gap-2.5"
+                >
+                  <HeartHandshake className="w-4 h-4 text-purple-400 shrink-0" />
+                  <div>
+                    <div className="text-xs font-bold text-purple-300">Subscriber Feedback Hub</div>
+                    <div className="text-[10px] text-slate-400">Anti-Cartoon & Emotional Piano Controls</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
                     setActiveTab('playground');
                     setIsMobileDrawerOpen(false);
                   }}
@@ -876,18 +896,34 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
               <div className="flex items-center justify-between">
                 <div className="truncate pr-2">
                   <div className="text-[11px] font-bold text-slate-200 truncate">{userEmail}</div>
-                  <div className="text-[10px] text-emerald-400 font-mono">Owner / Admin</div>
+                  <div className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                    <span>Protected & Locked</span>
+                  </div>
                 </div>
-                <button
-                  onClick={() => {
-                    setIsMobileDrawerOpen(false);
-                    onSignOut();
-                  }}
-                  title="Sign Out"
-                  className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-rose-400 cursor-pointer"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => {
+                      setIsMobileDrawerOpen(false);
+                      onSignOut();
+                    }}
+                    title="Lock Workspace"
+                    className="p-2 hover:bg-amber-950/40 border border-amber-500/20 rounded-lg text-amber-400 hover:text-amber-300 cursor-pointer flex items-center gap-1 text-[10px] font-bold"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>Lock</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsMobileDrawerOpen(false);
+                      onSignOut();
+                    }}
+                    title="Sign Out"
+                    className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-rose-400 cursor-pointer"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -953,15 +989,28 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
           <div className="flex items-center justify-between">
             <div className="truncate pr-2">
               <div className="text-[11px] font-bold text-slate-200 truncate">{userEmail}</div>
-              <div className="text-[10px] text-emerald-400 font-mono">Owner / Admin</div>
+              <div className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                <span>Protected & Locked</span>
+              </div>
             </div>
-            <button
-              onClick={onSignOut}
-              title="Sign Out"
-              className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-rose-400 cursor-pointer"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={onSignOut}
+                title="Lock Workspace (Requires Re-authentication)"
+                className="p-2 hover:bg-amber-950/40 border border-amber-500/20 rounded-lg text-amber-400 hover:text-amber-300 cursor-pointer flex items-center gap-1 text-[10px] font-bold"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>Lock</span>
+              </button>
+              <button
+                onClick={onSignOut}
+                title="Sign Out"
+                className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-rose-400 cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </aside>
@@ -1208,6 +1257,24 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                   <div>
                     <span className="text-slate-500 text-[10px]">Total Views</span>
                     <div className="font-bold text-purple-400">{channel2Data.views.toLocaleString()}</div>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-800 space-y-1.5">
+                  <div className="flex items-center justify-between text-[10px] font-mono">
+                    <span className="text-emerald-400 font-bold flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3 text-emerald-400 shrink-0" />
+                      <span>Audience Review Active</span>
+                    </span>
+                    <button
+                      onClick={() => setActiveTab('audience-feedback')}
+                      className="text-purple-400 hover:text-purple-300 font-semibold underline cursor-pointer"
+                    >
+                      Feedback Hub →
+                    </button>
+                  </div>
+                  <div className="text-[10px] text-slate-400 leading-tight">
+                    1 Long-Form (32s) + 4 Short-Form (5s) daily. Classical marble statues + soft piano active.
                   </div>
                 </div>
               </div>
@@ -2205,6 +2272,11 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
           );
         })()}
 
+        {/* TAB: SUBSCRIBER FEEDBACK & SENTIMENT */}
+        {activeTab === 'audience-feedback' && (
+          <AudienceFeedbackTab userEmail={userEmail} onToast={setAppToast} />
+        )}
+
         {/* TAB: SOUND & MUSIC SETUP */}
         {activeTab === 'sound-setup' && <SoundSetupTab />}
 
@@ -2249,11 +2321,185 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
         {/* TAB 9: SETTINGS */}
         {activeTab === 'settings' && (
           <div className="space-y-6">
+            {/* SECRETS DIRECTORY & NAMES REFERENCE CARD */}
+            <div className="p-6 bg-slate-900 border border-indigo-500/30 rounded-3xl space-y-5 shadow-xl shadow-indigo-950/20">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                      <Key className="w-5 h-5 text-indigo-400" />
+                      Required Secrets & Exact Names Guide
+                    </h2>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Add these exact secret names to GitHub Secrets (Repo → Settings → Secrets &amp; Variables → Actions) or your local environment.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] font-mono bg-indigo-950 text-indigo-300 border border-indigo-500/30 px-2.5 py-1 rounded-full font-bold flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
+                    Workspace Guard Active
+                  </span>
+                  <button
+                    onClick={onSignOut}
+                    className="px-3 py-1.5 bg-amber-950/40 hover:bg-amber-900/50 border border-amber-500/30 text-amber-300 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                    title="Lock Workspace Now"
+                  >
+                    <Lock className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Lock Site Now</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Secrets Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {/* 1. OpenRouter (Primary Fallback AI for Cartoon) */}
+                <div className="p-3.5 bg-purple-950/20 border border-purple-500/30 rounded-2xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-purple-400 font-mono">Cartoon Fallback AI</span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText('OPENROUTER_API_KEY');
+                        showAppToast('Copied "OPENROUTER_API_KEY" to clipboard');
+                      }}
+                      className="px-2 py-0.5 bg-purple-900/60 hover:bg-purple-800 text-purple-200 text-[10px] font-mono rounded flex items-center gap-1 cursor-pointer transition-all"
+                      title="Copy Secret Name"
+                    >
+                      <Copy className="w-3 h-3" />
+                      <span>Copy Name</span>
+                    </button>
+                  </div>
+                  <div className="font-mono text-xs font-bold text-white tracking-wide">
+                    OPENROUTER_API_KEY
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    High-priority fallback AI for Cartoon &amp; Archie 5s workflows. Connects to multi-model router (DeepSeek R1, Llama 3.3 70B, Gemini Flash).
+                  </p>
+                </div>
+
+                {/* 2. Gemini API Key */}
+                <div className="p-3.5 bg-blue-950/20 border border-blue-500/30 rounded-2xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-blue-400 font-mono">Primary LLM</span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText('GEMINI_API_KEY');
+                        showAppToast('Copied "GEMINI_API_KEY" to clipboard');
+                      }}
+                      className="px-2 py-0.5 bg-blue-900/60 hover:bg-blue-800 text-blue-200 text-[10px] font-mono rounded flex items-center gap-1 cursor-pointer transition-all"
+                    >
+                      <Copy className="w-3 h-3" />
+                      <span>Copy Name</span>
+                    </button>
+                  </div>
+                  <div className="font-mono text-xs font-bold text-white tracking-wide">
+                    GEMINI_API_KEY
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    Google GenAI flash models for topic discovery, blueprint creation, and scientific script generation.
+                  </p>
+                </div>
+
+                {/* 3. Groq API Key */}
+                <div className="p-3.5 bg-indigo-950/20 border border-indigo-500/30 rounded-2xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-indigo-400 font-mono">Ultra-Fast LPU</span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText('GROQ_API_KEY');
+                        showAppToast('Copied "GROQ_API_KEY" to clipboard');
+                      }}
+                      className="px-2 py-0.5 bg-indigo-900/60 hover:bg-indigo-800 text-indigo-200 text-[10px] font-mono rounded flex items-center gap-1 cursor-pointer transition-all"
+                    >
+                      <Copy className="w-3 h-3" />
+                      <span>Copy Name</span>
+                    </button>
+                  </div>
+                  <div className="font-mono text-xs font-bold text-white tracking-wide">
+                    GROQ_API_KEY
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    Sub-second Llama 3.3 70B inference engine for candidate validation, scene timing, and scripts.
+                  </p>
+                </div>
+
+                {/* 4. Buffer API Key */}
+                <div className="p-3.5 bg-emerald-950/20 border border-emerald-500/30 rounded-2xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-400 font-mono">Omnichannel Dispatch</span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText('BUFFER_API_KEY');
+                        showAppToast('Copied "BUFFER_API_KEY" to clipboard');
+                      }}
+                      className="px-2 py-0.5 bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 text-[10px] font-mono rounded flex items-center gap-1 cursor-pointer transition-all"
+                    >
+                      <Copy className="w-3 h-3" />
+                      <span>Copy Name</span>
+                    </button>
+                  </div>
+                  <div className="font-mono text-xs font-bold text-white tracking-wide">
+                    BUFFER_API_KEY
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    Publishes Archie and Teen Motivation videos seamlessly across Instagram (@bones_ceo), Facebook (Voxam Fact), and TikTok.
+                  </p>
+                </div>
+
+                {/* 5. Cloudflare Workers AI */}
+                <div className="p-3.5 bg-orange-950/20 border border-orange-500/30 rounded-2xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-orange-400 font-mono">Visuals &amp; AI</span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText('CLOUDFLARE_API_TOKEN');
+                        showAppToast('Copied "CLOUDFLARE_API_TOKEN" to clipboard');
+                      }}
+                      className="px-2 py-0.5 bg-orange-900/60 hover:bg-orange-800 text-orange-200 text-[10px] font-mono rounded flex items-center gap-1 cursor-pointer transition-all"
+                    >
+                      <Copy className="w-3 h-3" />
+                      <span>Copy Name</span>
+                    </button>
+                  </div>
+                  <div className="font-mono text-xs font-bold text-white tracking-wide">
+                    CLOUDFLARE_API_TOKEN
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    Workers AI for SDXL macro image synthesis, topic photography, and Llama 3.3 inference (pair with <code className="text-orange-300 font-mono text-[10px]">CLOUDFLARE_ACCOUNT_ID</code>).
+                  </p>
+                </div>
+
+                {/* 6. YouTube Channel 3 Archie */}
+                <div className="p-3.5 bg-rose-950/20 border border-rose-500/30 rounded-2xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-rose-400 font-mono">Archie Shorts</span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText('YOUTUBE_REFRESH_TOKEN_CH3');
+                        showAppToast('Copied "YOUTUBE_REFRESH_TOKEN_CH3" to clipboard');
+                      }}
+                      className="px-2 py-0.5 bg-rose-900/60 hover:bg-rose-800 text-rose-200 text-[10px] font-mono rounded flex items-center gap-1 cursor-pointer transition-all"
+                    >
+                      <Copy className="w-3 h-3" />
+                      <span>Copy Name</span>
+                    </button>
+                  </div>
+                  <div className="font-mono text-xs font-bold text-white tracking-wide">
+                    YOUTUBE_REFRESH_TOKEN_CH3
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    Direct YouTube Shorts upload authorization for Archie Cartoon Channel (pair with <code className="text-rose-300 font-mono text-[10px]">YOUTUBE_CLIENT_ID_CH3</code> &amp; <code className="text-rose-300 font-mono text-[10px]">SECRET</code>).
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-6">
               <div>
                 <h2 className="text-lg font-bold text-white flex items-center gap-2">
                   <Settings className="w-5 h-5 text-indigo-400" />
-                  Integration Keys & Presets Configuration
+                  Integration Keys &amp; Presets Configuration
                 </h2>
                 <p className="text-xs text-slate-400 mt-1">
                   Manage Cloudinary unsigned presets, xAI Grok API key, Groq LPU, Cloudflare Workers AI, and YouTube OAuth credentials.
@@ -2290,7 +2536,12 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
 
                 {/* OpenRouter API Key */}
                 <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-1.5">
-                  <label className="text-[11px] font-bold text-purple-400 uppercase font-mono">OpenRouter API Key</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-purple-400 uppercase font-mono">OpenRouter API Key</label>
+                    <span className="text-[9px] bg-purple-950 text-purple-300 border border-purple-500/30 px-1.5 py-0.5 rounded font-bold font-mono">
+                      Fallback AI for Cartoon
+                    </span>
+                  </div>
                   <input
                     type="password"
                     value={keys.openRouterApiKey || ''}
@@ -2298,6 +2549,9 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                     placeholder="sk-or-v1-..."
                     className="w-full bg-slate-900 p-2.5 rounded-xl border border-slate-800 text-slate-200 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-purple-500"
                   />
+                  <p className="text-[10px] text-slate-400">
+                    High-priority fallback inference engine for Cartoon &amp; Archie 5s scripts when Gemini or Groq are offline.
+                  </p>
                 </div>
 
                 {/* Hugging Face Token */}

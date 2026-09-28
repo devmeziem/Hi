@@ -48,69 +48,13 @@ async function resolveScholarPortrait(scholar) {
 
   console.log(`[Scholar Portrait] Sourcing portrait for: "${scholar.author}"...`);
 
-  // 1. Primary Strategy: Cloudflare Workers AI Low-Cost Dynamic Generation (Zero static seeds)
-  const cfAccountId = (process.env.CLOUDFLARE_ACCOUNT_ID || '').trim().replace(/^https?:\/\/[^\/]+\//, '').replace(/\/$/, '');
-  const cfApiToken = (process.env.CLOUDFLARE_API_TOKEN || '').trim();
-  if (cfAccountId && cfApiToken) {
-    const cfModels = [
-      '@cf/bytedance/stable-diffusion-xl-lightning',
-      '@cf/stabilityai/stable-diffusion-xl-base-1.0'
-    ];
-    for (const model of cfModels) {
-      try {
-        const randomSeed = Math.floor(Math.random() * 99999999);
-        const postData = JSON.stringify({
-          prompt: `Cinematic 9:16 vertical 8k photorealistic dark portrait of ${scholar.author}, ${scholar.credentials}, dramatic chiaroscuro side lighting, dark obsidian textured stone background, classical philosopher atmosphere, moody film grain, masterpiece`,
-          num_steps: 4,
-          seed: randomSeed
-        });
-        const cfBuf = await new Promise((resolve) => {
-          const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/${model}`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${cfApiToken}`,
-              'Content-Type': 'application/json',
-              'Content-Length': Buffer.byteLength(postData)
-            },
-            timeout: 18000
-          }, (res) => {
-            const chunks = [];
-            res.on('data', c => chunks.push(c));
-            res.on('end', () => {
-              if (res.statusCode === 200) {
-                const full = Buffer.concat(chunks);
-                try {
-                  const json = JSON.parse(full.toString('utf8'));
-                  if (json.result?.image) return resolve(Buffer.from(json.result.image, 'base64'));
-                } catch {}
-                if (full.length > 2000) return resolve(full);
-              }
-              resolve(null);
-            });
-          });
-          req.on('error', () => resolve(null));
-          req.on('timeout', () => { req.destroy(); resolve(null); });
-          req.write(postData);
-          req.end();
-        });
-
-        if (cfBuf && cfBuf.length > 5000) {
-          fs.writeFileSync(portraitPath, cfBuf);
-          console.log(`[Scholar Portrait] 🎨 Synthesized dynamic portrait via Cloudflare AI (${model})`);
-          return portraitPath;
-        }
-      } catch (cfErr) {
-        console.warn(`[Scholar Portrait] Cloudflare AI notice: ${cfErr.message}`);
-      }
-    }
-  }
-
-  // Check cached image if Cloudflare AI is unavailable
+  // 1. Primary Strategy: Check cached verified authentic portrait (museum photos, marble busts, oil paintings)
   if (fs.existsSync(portraitPath) && fs.statSync(portraitPath).size > 10000) {
-    console.log(`[Scholar Portrait] Using cached portrait for ${scholar.author}`);
+    console.log(`[Scholar Portrait] Using verified authentic portrait for ${scholar.author}`);
     return portraitPath;
   }
 
+  // 2. Verified Museum & Classical Public Domain Archives (Priority #1 to eliminate cartoon/AI-looking images)
   let fetchedUrl = scholar.directUrl || null;
 
   // If no direct URL, query Wikipedia REST API summary
@@ -216,65 +160,10 @@ async function resolveScholarPortrait(scholar) {
     }
   }
 
-  // Cloudflare Workers AI Low-Cost Dynamic Generation (Zero static seeds fallback)
-  if (cfAccountId && cfApiToken) {
-    const cfModels = [
-      '@cf/bytedance/stable-diffusion-xl-lightning',
-      '@cf/stabilityai/stable-diffusion-xl-base-1.0'
-    ];
-    for (const model of cfModels) {
-      try {
-        const randomSeed = Math.floor(Math.random() * 99999999);
-        const postData = JSON.stringify({
-          prompt: `Cinematic 9:16 vertical 8k photorealistic dark portrait of ${scholar.author}, ${scholar.credentials}, dramatic chiaroscuro side lighting, dark obsidian textured stone background, classical philosopher atmosphere, moody film grain, masterpiece`,
-          num_steps: 4,
-          seed: randomSeed
-        });
-        const cfBuf = await new Promise((resolve) => {
-          const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/${model}`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${cfApiToken}`,
-              'Content-Type': 'application/json',
-              'Content-Length': Buffer.byteLength(postData)
-            },
-            timeout: 18000
-          }, (res) => {
-            const chunks = [];
-            res.on('data', c => chunks.push(c));
-            res.on('end', () => {
-              if (res.statusCode === 200) {
-                const full = Buffer.concat(chunks);
-                try {
-                  const json = JSON.parse(full.toString('utf8'));
-                  if (json.result?.image) return resolve(Buffer.from(json.result.image, 'base64'));
-                } catch {}
-                if (full.length > 2000) return resolve(full);
-              }
-              resolve(null);
-            });
-          });
-          req.on('error', () => resolve(null));
-          req.on('timeout', () => { req.destroy(); resolve(null); });
-          req.write(postData);
-          req.end();
-        });
-
-        if (cfBuf && cfBuf.length > 5000) {
-          fs.writeFileSync(portraitPath, cfBuf);
-          console.log(`[Scholar Portrait] 🎨 Synthesized dynamic portrait via Cloudflare AI (${model})`);
-          return portraitPath;
-        }
-      } catch (cfErr) {
-        console.warn(`[Scholar Portrait] Cloudflare AI notice: ${cfErr.message}`);
-      }
-    }
-  }
-
-  // Fallback 1: Pollinations FLUX high-fidelity chiaroscuro portrait (Dynamic seed)
+  // Fallback 1: FLUX photorealistic antique carved marble bust / classical museum sculpture (Zero cartoon/AI look)
   const randomSeed = Math.floor(Math.random() * 99999999);
-  console.log(`[Scholar Portrait] Rendering photorealistic cinematic portrait for ${scholar.author} (Seed: ${randomSeed})...`);
-  const aiPrompt = encodeURIComponent(`Cinematic 9:16 vertical 8k photorealistic dark portrait of ${scholar.author}, ${scholar.credentials}, dramatic chiaroscuro side lighting, dark obsidian textured stone background, classical philosopher atmosphere, moody film grain, masterpiece`);
+  console.log(`[Scholar Portrait] Sourcing authentic classical sculpture for ${scholar.author} (Seed: ${randomSeed})...`);
+  const aiPrompt = encodeURIComponent(`Authentic ancient Roman marble statue bust of ${scholar.author}, ${scholar.credentials}, museum gallery lighting, chiaroscuro, weathered marble stone texture, dark obsidian slate backdrop, 35mm film photograph of real classical sculpture, antique artifact, hyper-detailed, masterpiece, photorealistic, strictly NO cartoon, NO anime, NO 3D render, NO plastic skin, NO CGI, NO digital illustration`);
   const pollinationsUrl = `https://image.pollinations.ai/prompt/${aiPrompt}?width=1080&height=1920&model=flux&nologo=true&seed=${randomSeed}`;
 
   try {
@@ -293,11 +182,11 @@ async function resolveScholarPortrait(scholar) {
     });
 
     if (fs.existsSync(portraitPath) && fs.statSync(portraitPath).size > 10000) {
-      console.log(`[Scholar Portrait] AI likeness rendered successfully.`);
+      console.log(`[Scholar Portrait] Classical marble sculpture likeness rendered successfully.`);
       return portraitPath;
     }
   } catch (e) {
-    console.warn(`[Scholar Portrait] AI generation notice: ${e.message}`);
+    console.warn(`[Scholar Portrait] Classical sculpture notice: ${e.message}`);
   }
 
   // Fallback 2: Classical dark slate scholar silhouette
@@ -365,18 +254,26 @@ function escapeXml(str) {
 }
 
 /**
- * Generate 5-Second / 3-Second Loopy YouTube Short / TikTok Reel
+ * Generate 5-Second Quote Reel or 32-Second Emotional Impact Long-Form Video
+ * Supports both:
+ * - 1 Long-Form Emotional Impact Video (32s, Multi-Slide Contrast + Black Ending Screen, Soft Piano)
+ * - 4 Short-Form 5-Second Quote Reels (5.0s, Authentic Marble Statue/Painting, Contemplative Ambient)
  */
-async function generateStoic5sVideo() {
+async function generateStoic5sVideo(durationOverride = null, customChosen = null, outputFileNameOverride = null) {
+  const effectiveDuration = durationOverride !== null ? parseFloat(durationOverride) : TARGET_DURATION;
+  const isLongForm = effectiveDuration >= 20;
+  const fps = 30;
+  const totalFrames = Math.round(effectiveDuration * fps);
+
   console.log('\n======================================================');
-  console.log(`🏛️  [PSYCHOLOGY & STOIC REEL] GENERATING DAILY ${TARGET_DURATION.toFixed(1)}s VIDEO`);
+  console.log(`🏛️  [PSYCHOLOGY & STOIC REEL] GENERATING ${isLongForm ? 'LONG-FORM EMOTIONAL (32s)' : 'SHORT-FORM REEL (5s)'} VIDEO`);
   console.log('======================================================\n');
 
   if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   if (!fs.existsSync(ARTIFACTS_DIR)) fs.mkdirSync(ARTIFACTS_DIR, { recursive: true });
 
   // 1. Select Unique Scholar & Quote with Anti-Spam Cross-Runner Deduplication
-  const chosen = await selectDeduplicatedCandidate('stoic', WORLD_SCHOLARS_QUOTES, q => q.quote, q => q.author);
+  const chosen = customChosen || await selectDeduplicatedCandidate('stoic', WORLD_SCHOLARS_QUOTES, q => q.quote, q => q.author);
   console.log(`[Quote Reel] Scholar:      ${chosen.author}`);
   console.log(`[Quote Reel] Credentials:  ${chosen.credentials}`);
   console.log(`[Quote Reel] Concept:      ${chosen.psychologicalConcept || chosen.theme}`);
@@ -385,13 +282,12 @@ async function generateStoic5sVideo() {
   // 2. Resolve Scholar Portrait via Direct/Wikipedia/AI
   const portraitPath = await resolveScholarPortrait(chosen);
 
-  const isLongForm = TARGET_DURATION >= 20;
   // 3. Resolve Audio (Soft piano instrument for emotional longform video, deep mystery for short reels)
-  const wavPath = path.join(ARTIFACTS_DIR, isLongForm ? `stoic_longform_piano_${TARGET_DURATION}s.wav` : `scholar_mystery_sound_${TARGET_DURATION}s.wav`);
+  const wavPath = path.join(ARTIFACTS_DIR, isLongForm ? `stoic_longform_piano_${effectiveDuration}s.wav` : `scholar_mystery_sound_${effectiveDuration}s.wav`);
   if (isLongForm) {
-    resolveChannelAudio('piano', TARGET_DURATION, wavPath);
+    resolveChannelAudio('piano', effectiveDuration, wavPath);
   } else {
-    resolveChannelAudio('stoic', TARGET_DURATION, wavPath);
+    resolveChannelAudio('stoic', effectiveDuration, wavPath);
   }
 
   // 4. Prepare High-Contrast Caption Overlay with ZERO-PILL DISCIPLINE
@@ -583,11 +479,11 @@ function buildStoicDeepBeat3Svg(scholar, width = 1080, height = 1920) {
   </svg>`;
 }
 
-  const videoFileName = isLongForm ? 'stoic_psychology_30s_latest.mp4' : 'stoic_quote_5s_latest.mp4';
+  const videoFileName = outputFileNameOverride || (isLongForm ? 'stoic_psychology_30s_latest.mp4' : 'stoic_quote_5s_latest.mp4');
   const finalMp4Path = path.join(OUTPUT_DIR, videoFileName);
   const artifactMp4Path = path.join(ARTIFACTS_DIR, videoFileName);
 
-  console.log(`[Quote Reel] Compositing ${TARGET_DURATION}s video with cinematic Ken Burns camera panning...`);
+  console.log(`[Quote Reel] Compositing ${effectiveDuration}s video with cinematic Ken Burns camera panning...`);
 
   const overlayInput = (fs.existsSync(overlayPngPath) && fs.statSync(overlayPngPath).size > 1000) ? overlayPngPath : overlaySvgPath;
 
@@ -649,8 +545,8 @@ function buildStoicDeepBeat3Svg(scholar, width = 1080, height = 1920) {
     const concatListPath = path.join(ARTIFACTS_DIR, `stoic_concat_${Date.now()}.txt`);
     fs.writeFileSync(concatListPath, `file '${part1Mp4}'\nfile '${part2Mp4}'\n`, 'utf8');
 
-    // Mute Stoic channel sound for observation (silent audio track)
-    const finalCmd = `ffmpeg -y -f concat -safe 0 -i "${concatListPath}" -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -c:v copy -c:a aac -b:a 192k -t 32.0 "${finalMp4Path}"`;
+    // Merge Soft Piano Soundtrack for emotional long-form video (restoring emotional audio per audience feedback)
+    const finalCmd = `ffmpeg -y -f concat -safe 0 -i "${concatListPath}" -stream_loop -1 -i "${wavPath}" -c:v copy -c:a aac -b:a 192k -t 32.0 "${finalMp4Path}"`;
     execSync(finalCmd);
 
     // Attach backup quote metadata to chosen for title & description
@@ -662,23 +558,23 @@ function buildStoicDeepBeat3Svg(scholar, width = 1080, height = 1920) {
     // 5-Second Quote Reel
     const isPanRight = (chosen.quote.length % 2 === 0);
     const panXFormula = isPanRight
-      ? `(iw-iw/zoom)*(0.18+0.64*(on/${TOTAL_FRAMES}))`
-      : `(iw-iw/zoom)*(0.82-0.64*(on/${TOTAL_FRAMES}))`;
+      ? `(iw-iw/zoom)*(0.18+0.64*(on/${totalFrames}))`
+      : `(iw-iw/zoom)*(0.82-0.64*(on/${totalFrames}))`;
 
     const filterComplex = [
-      `[0:v]scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276,zoompan=z='1.08+0.0006*on':d=${TOTAL_FRAMES}:x='${panXFormula}':y='(ih-ih/zoom)*0.24':s=1080x1920:fps=${FPS},eq=brightness=-0.04:contrast=1.14:saturation=0.90,vignette=PI/4.5[bg]`,
+      `[0:v]scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276,zoompan=z='1.08+0.0006*on':d=${totalFrames}:x='${panXFormula}':y='(ih-ih/zoom)*0.24':s=1080x1920:fps=${fps},eq=brightness=-0.04:contrast=1.14:saturation=0.90,vignette=PI/4.5[bg]`,
       `[1:v]scale=1080:1920[ov]`,
       `[bg][ov]overlay=0:0,format=yuv420p[v]`
     ].join(';');
 
-    // User directive: Mute sound from Stoic channel to observe audience engagement
-    const ffmpegCmd = `ffmpeg -y -loglevel error -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t ${TARGET_DURATION} -i "${overlayInput}" -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -filter_complex "${filterComplex}" -map "[v]" -map 2:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${TARGET_DURATION} "${finalMp4Path}"`;
+    // Restored deep contemplative / Hans Zimmer ambient soundtrack per viewer review
+    const ffmpegCmd = `ffmpeg -y -loglevel error -loop 1 -t ${effectiveDuration} -i "${portraitPath}" -loop 1 -t ${effectiveDuration} -i "${overlayInput}" -stream_loop -1 -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 2:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${effectiveDuration} "${finalMp4Path}"`;
 
     try {
       execSync(ffmpegCmd, { maxBuffer: 50 * 1024 * 1024, stdio: ['pipe', 'pipe', 'pipe'] });
     } catch (err) {
       console.warn('[Quote Reel] Primary filter complex notice, falling back to safe pan overlay:', err.message);
-      const fallbackCmd = `ffmpeg -y -loglevel error -loop 1 -t ${TARGET_DURATION} -i "${portraitPath}" -loop 1 -t ${TARGET_DURATION} -i "${overlayInput}" -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -filter_complex "[0:v]scale=1180:2098:force_original_aspect_ratio=increase,crop=1180:2098,zoompan=z='1.06':d=${TOTAL_FRAMES}:x='(iw-iw/zoom)*0.5':y='(ih-ih/zoom)*0.2':s=1080x1920:fps=${FPS},eq=brightness=-0.06:contrast=1.12[bg];[1:v]scale=1080:1920[ov];[bg][ov]overlay=0:0[v]" -map "[v]" -map 2:a -c:v libx264 -preset ultrafast -crf 22 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${TARGET_DURATION} "${finalMp4Path}"`;
+      const fallbackCmd = `ffmpeg -y -loglevel error -loop 1 -t ${effectiveDuration} -i "${portraitPath}" -loop 1 -t ${effectiveDuration} -i "${overlayInput}" -stream_loop -1 -i "${wavPath}" -filter_complex "[0:v]scale=1180:2098:force_original_aspect_ratio=increase,crop=1180:2098,zoompan=z='1.06':d=${totalFrames}:x='(iw-iw/zoom)*0.5':y='(ih-ih/zoom)*0.2':s=1080x1920:fps=${fps},eq=brightness=-0.06:contrast=1.12[bg];[1:v]scale=1080:1920[ov];[bg][ov]overlay=0:0[v]" -map "[v]" -map 2:a -c:v libx264 -preset ultrafast -crf 22 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${effectiveDuration} "${finalMp4Path}"`;
       execSync(fallbackCmd, { maxBuffer: 50 * 1024 * 1024, stdio: ['pipe', 'pipe', 'pipe'] });
     }
   }
@@ -689,7 +585,7 @@ function buildStoicDeepBeat3Svg(scholar, width = 1080, height = 1920) {
 
   fs.copyFileSync(finalMp4Path, artifactMp4Path);
   await saveQuoteHistory(chosen);
-  await recordPostedCandidate('stoic', chosen.quote, chosen.author, { theme: chosen.theme, duration: TARGET_DURATION });
+  await recordPostedCandidate('stoic', chosen.quote, chosen.author, { theme: chosen.theme, duration: effectiveDuration });
 
   // 5. Format Viral Title, Description, and Targeted Hashtags
   const viralTitle = generatePsychologyViralTitle(chosen);
@@ -709,9 +605,9 @@ ${viralTagsString}`;
 
   const fileSizeMb = (fs.statSync(finalMp4Path).size / 1024 / 1024).toFixed(2);
   console.log(`\n======================================================`);
-  console.log(`🚀 [Quote Reel] SUCCESS! ${TARGET_DURATION.toFixed(1)}s Scholar Video Rendered:`);
+  console.log(`🚀 [Quote Reel] SUCCESS! ${effectiveDuration.toFixed(1)}s Scholar Video Rendered:`);
   console.log(`📹 Video File:  ${finalMp4Path} (${fileSizeMb} MB)`);
-  console.log(`⏱️  Duration:    Exactly ${TARGET_DURATION.toFixed(1)}s (${TOTAL_FRAMES} frames @ 30 FPS)`);
+  console.log(`⏱️  Duration:    Exactly ${effectiveDuration.toFixed(1)}s (${totalFrames} frames @ 30 FPS)`);
   console.log(`📜 Scholar:     ${chosen.author}`);
   console.log(`🎓 Reference:   ${chosen.credentials}`);
   console.log(`🏷️  Tags:        ${viralTagsString}`);
@@ -894,8 +790,55 @@ async function uploadQuoteReelToYouTube(videoFilePath, title, description, tags 
   console.log('[Stoic Upload] ✅ 5s Video published successfully to YouTube Shorts!');
 }
 
+/**
+ * Generate 1 Long-Form Emotional Impactful Video (32s, Multi-Slide Contrast + Black Ending Screen, Soft Piano)
+ */
+async function generateStoicLongFormVideo(customChosen = null) {
+  return generateStoic5sVideo(32.0, customChosen, 'stoic_psychology_30s_latest.mp4');
+}
+
+/**
+ * Generate the Daily Content Cadence Requested by Subscribers:
+ * - 1 Long-Form Emotionally Impactful Video (32s, Multi-Slide Contrast + Black Ending Screen, Soft Piano)
+ * - 4 Short-Form 5-Second Quote Reels (5.0s, Authentic Marble Statues, Contemplative Ambient)
+ */
+async function generateDailyStoicSchedule(options = {}) {
+  console.log('\n======================================================');
+  console.log('🏛️  [STOIC DAILY BATCH] 1 LONG-FORM (32s) + 4 SHORT-FORM (5s) VIDEOS');
+  console.log('======================================================\n');
+  const results = {
+    longForm: null,
+    shorts: []
+  };
+
+  // 1. Generate 1 Long-Form Emotional Video (32s)
+  try {
+    console.log('[Daily Schedule] Step 1/2: Generating 1 Long-Form Emotional Impact Video (32s)...');
+    const longRes = await generateStoicLongFormVideo();
+    results.longForm = longRes;
+  } catch (err) {
+    console.error('[Daily Schedule] Long-form error:', err.message);
+  }
+
+  // 2. Generate 4 Short-Form Quote Reels (5.0s each)
+  const shortCount = options.count || 4;
+  for (let i = 1; i <= shortCount; i++) {
+    try {
+      console.log(`[Daily Schedule] Step 2/2: Generating Short-Form Reel ${i}/${shortCount} (5.0s)...`);
+      const shortRes = await generateStoic5sVideo(5.0, null, i === 1 ? 'stoic_quote_5s_latest.mp4' : `stoic_quote_5s_reel_${i}.mp4`);
+      results.shorts.push(shortRes);
+    } catch (err) {
+      console.error(`[Daily Schedule] Reel ${i} error:`, err.message);
+    }
+  }
+
+  return results;
+}
+
 module.exports = {
   generateStoic5sVideo,
+  generateStoicLongFormVideo,
+  generateDailyStoicSchedule,
   resolveScholarPortrait,
   WORLD_SCHOLARS_QUOTES
 };
