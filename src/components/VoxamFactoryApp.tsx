@@ -785,7 +785,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                   <Headphones className="w-4 h-4 text-indigo-400 shrink-0" />
                   <div>
                     <div className="text-xs font-bold text-indigo-300">Sound & Music Setup</div>
-                    <div className="text-[10px] text-slate-400">Audio URLs, Pixabay API & Ducking</div>
+                    <div className="text-[10px] text-slate-400">Audio Vault, Music Library & Dynamic Ducking</div>
                   </div>
                 </button>
 
@@ -829,7 +829,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                 >
                   <Share2 className="w-4 h-4 text-indigo-400 shrink-0" />
                   <div>
-                    <div className="text-xs font-bold text-indigo-300">Ad Monetization & API Matrix</div>
+                    <div className="text-xs font-bold text-indigo-300">Ad Monetization & Multi-Platform</div>
                     <div className="text-[10px] text-slate-400">Rumble, Dailymotion & Meta</div>
                   </div>
                 </button>

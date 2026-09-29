@@ -29,9 +29,9 @@ const {
   saveChosenTopicToDatabase 
 } = require('./topic_discovery_engine.cjs');
 
-const TARGET_DURATION = 5.0;
+const TARGET_DURATION = 35.0;
 const FPS = 30;
-const TOTAL_FRAMES = 150;
+const TOTAL_FRAMES = 1050;
 const ARTIFACTS_DIR = path.join(process.cwd(), 'test_artifacts', 'archie_5s_reels');
 const OUTPUT_DIR = path.join(process.cwd(), 'test_artifacts');
 const RENDERED_VIDEOS_DIR = path.join(process.cwd(), 'rendered_videos');
@@ -716,6 +716,51 @@ function buildDigitalPresentationBoardSvg(factObj, scriptObj = null, hasPhysical
       titleColor: '#f5d0fe',
       boardBg: ['#1e1b4b', '#2e1065', '#0f0728'],
       schematicAccent: '#c084fc'
+    },
+    quantum_cleanroom: {
+      neonBorder: ['#f59e0b', '#fbbf24', '#fef08a'],
+      headerBadge: '#78350f',
+      headerText: 'QUANTUM WORKSTATION // CRYOGENIC CLEANROOM',
+      dropGlow: '#f59e0b',
+      titleColor: '#fde047',
+      boardBg: ['#020817', '#0b172b', '#02040a'],
+      schematicAccent: '#fbbf24'
+    },
+    botanical_biome: {
+      neonBorder: ['#059669', '#10b981', '#6ee7b7'],
+      headerBadge: '#064e3b',
+      headerText: 'BIOLOGY GREENHOUSE // BIO-DOME SLATE',
+      dropGlow: '#10b981',
+      titleColor: '#a7f3d0',
+      boardBg: ['#022c22', '#064e3b', '#021e17'],
+      schematicAccent: '#34d399'
+    },
+    deep_sea_abyss: {
+      neonBorder: ['#0284c7', '#06b6d4', '#67e8f9'],
+      headerBadge: '#0c4a6e',
+      headerText: 'MARIANA TRENCH // ABYSS OBSERVATORY',
+      dropGlow: '#06b6d4',
+      titleColor: '#7dd3fc',
+      boardBg: ['#020617', '#05172e', '#020d1a'],
+      schematicAccent: '#38bdf8'
+    },
+    aerospace_hangar: {
+      neonBorder: ['#ea580c', '#f97316', '#facc15'],
+      headerBadge: '#7c2d12',
+      headerText: 'PROPULSION HANGAR // SUPERSONIC HUD',
+      dropGlow: '#ea580c',
+      titleColor: '#fdba74',
+      boardBg: ['#0f172a', '#1e293b', '#090d16'],
+      schematicAccent: '#f97316'
+    },
+    ancient_observatory: {
+      neonBorder: ['#854d0e', '#ca8a04', '#fef08a'],
+      headerBadge: '#713f12',
+      headerText: 'GALILEO TOWER // ASTROLABE CELESTIAL',
+      dropGlow: '#ca8a04',
+      titleColor: '#fef08a',
+      boardBg: ['#1c1917', '#292524', '#0c0a09'],
+      schematicAccent: '#eab308'
     }
   };
 
@@ -987,8 +1032,8 @@ async function generateArchie5sDailyFact() {
   generateArchieKaraokeAss(speechNarration, voiceDuration, karaokeAssPath);
   console.log(`[Karaoke Engine] 🎤 Generated word-synchronized on-screen karaoke subtitles!`);
 
-  // 7. Select 1 of 5 Completely Distinct Classroom Environments
-  const classroomIndex = (Math.abs(Date.now() + (chosenTopic.title || '').length)) % 5;
+  // 7. Select 1 of 10 Completely Distinct Classroom Environments
+  const classroomIndex = (Math.abs(Date.now() + (chosenTopic.title || '').length)) % 10;
   const classroomResult = getDistinctClassroomSvg(classroomIndex, 1080, 1920, chosenTopic.title);
   console.log(`[Classroom Architecture] 🏫 Active Scene Setting: "${classroomResult.styleName}" (${classroomResult.styleId})`);
 
@@ -1020,8 +1065,8 @@ async function generateArchie5sDailyFact() {
 
   console.log(`[FFmpeg Compositor] Rendering ${reelDuration}s video with karaoke captions & ${hasPhysicalVideo ? 'moving physical video' : 'schematic'}...`);
 
-  const cutawayStart = 1.70;
-  const cutawayEnd = 3.40;
+  const cutawayStart = Number(Math.max(6.5, reelDuration * 0.30).toFixed(2));
+  const cutawayEnd = Number(Math.min(reelDuration - 6.0, reelDuration * 0.68).toFixed(2));
   let ffmpegCmd = '';
 
   const assEscaped = karaokeAssPath.replace(/\\/g, '/').replace(/:/g, '\\:');

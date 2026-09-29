@@ -113,22 +113,28 @@ async function runCartoonPipelineDiagnostic() {
     const lipsyncResult = extractMouthCues(audioWavPath, scene.dialogue, ttsResult.duration, ARTIFACTS_DIR);
     console.log(`   👄 Lip-Sync Track: Extracted ${lipsyncResult.cues.length} mouth cues for continuous animation`);
 
-    // D. Generate Floating Non-Intrusive Glossary Translation Board (if technical term present)
+    // D. Generate Floating Non-Intrusive Glossary Translation Board (if technical term present or glossary_takeaway)
     let glossPngPath = null;
-    if (scene.glossary_term) {
+    if (scene.glossary_term || scene.middle_scene_type === 'glossary_takeaway') {
+      const term = scene.glossary_term || (episodePlan.hard_words?.[0]?.word || 'Key Principle');
+      const expl = scene.glossary_explanation || (episodePlan.hard_words?.[0]?.definition || 'The observable scientific law in daily life.');
       const glossSvgPath = path.join(ARTIFACTS_DIR, `scene_${sceneIndex}_glossary.svg`);
       glossPngPath = path.join(ARTIFACTS_DIR, `scene_${sceneIndex}_glossary.png`);
-      const glossSvg = generateGlossaryBoardSvg(scene.glossary_term, scene.glossary_explanation || '');
+      const glossSvg = generateGlossaryBoardSvg(term, expl);
       fs.writeFileSync(glossSvgPath, glossSvg);
       rasterizeSvgToPng(glossSvgPath, glossPngPath, 860, 180);
-      console.log(`   💡 Floating Glossary Board: "${scene.glossary_term}" -> "${scene.glossary_explanation || ''}"`);
+      console.log(`   💡 Floating Glossary Board: "${term}" -> "${expl}"`);
     }
 
-    // E. Interactive Topic Presentation Boards (for Scene 1 or when comparing concepts)
+    // E. Interactive Topic Presentation Boards (for comparison_contrast, comparing, or explain_both scenes)
     let interactiveBoards = null;
-    if (sceneIndex === 1 || scene.character_action === 'walk_in') {
-      let topicA = 'Technology A';
-      let topicB = 'Technology B';
+    const isComparisonScene = scene.middle_scene_type === 'comparison_contrast' || 
+                              scene.character_action === 'comparing' || 
+                              scene.character_action === 'explain_both' ||
+                              (sceneIndex === 1 && episodePlan.scenes.length <= 4);
+    if (isComparisonScene) {
+      let topicA = 'Common Myth';
+      let topicB = 'Physical Reality';
       const vsMatch = inputTopic.match(/(.+?)\s+(?:vs\.?|versus|and|or)\s+(.+)/i);
       if (vsMatch) {
         topicA = vsMatch[1].trim();
@@ -140,10 +146,11 @@ async function runCartoonPipelineDiagnostic() {
           topicB = words.slice(Math.ceil(words.length / 2)).join(' ');
         } else {
           topicA = inputTopic;
-          topicB = 'Alternatives';
+          topicB = 'Physical Law';
         }
       }
-      interactiveBoards = buildComparisonBoardAssets(topicA, topicB, episodePlan.category || 'Tech', ARTIFACTS_DIR);
+      interactiveBoards = buildComparisonBoardAssets(topicA, topicB, episodePlan.category || 'Science', ARTIFACTS_DIR);
+      console.log(`   ⚡ Activated Comparison Presentation Boards for Scene ${sceneIndex}`);
     }
 
     // F. Generate 2D Vector Frame Reference for this scene

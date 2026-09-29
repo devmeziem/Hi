@@ -64,6 +64,66 @@ const CURATED_PSYCHOLOGY_QUOTES = [
     psychologicalConcept: "Cognitive flexibility & behavioral adaptation",
     communityQuestion: "What outdated habit are you holding onto that no longer serves your current ambitions?"
   },
+  {
+    quote: "He who blinds himself to how men really live in order to follow how they ought to live will learn his ruin rather than his preservation.",
+    author: "Niccolò Machiavelli",
+    credentials: "Author of The Prince • Diplomat & Political Philosopher",
+    wikiSearch: "Niccolò_Machiavelli",
+    directUrl: "https://upload.wikimedia.org/wikipedia/commons/e/e2/Portrait_of_Niccol%C3%B2_Machiavelli_by_Santi_di_Tito.jpg",
+    theme: "defense",
+    psychologicalConcept: "Radical realism vs naive romanticism",
+    communityQuestion: "Where in your life are you refusing to see people as they actually are?"
+  },
+  {
+    quote: "The lion cannot protect himself from traps, and the fox cannot defend himself from wolves. One must be a fox to recognize traps, and a lion to frighten wolves.",
+    author: "Niccolò Machiavelli",
+    credentials: "Author of The Prince • Diplomat & Political Philosopher",
+    wikiSearch: "Niccolò_Machiavelli",
+    directUrl: "https://upload.wikimedia.org/wikipedia/commons/e/e2/Portrait_of_Niccol%C3%B2_Machiavelli_by_Santi_di_Tito.jpg",
+    theme: "strategy",
+    psychologicalConcept: "Dual intelligence: acute discernment paired with unshakeable fortitude",
+    communityQuestion: "Are you being too aggressive when you need to be subtle, or too quiet when you need to stand firm?"
+  },
+  {
+    quote: "Men are so simple of mind, and so dominated by their immediate need, that a deceitful person will always find plenty who are ready to be deceived.",
+    author: "Niccolò Machiavelli",
+    credentials: "Author of The Prince • Diplomat & Political Philosopher",
+    wikiSearch: "Niccolò_Machiavelli",
+    directUrl: "https://upload.wikimedia.org/wikipedia/commons/e/e2/Portrait_of_Niccol%C3%B2_Machiavelli_by_Santi_di_Tito.jpg",
+    theme: "psychology",
+    psychologicalConcept: "Vulnerability created by desperate urgency",
+    communityQuestion: "What hasty decision are you rushing into because of impatient emotion?"
+  },
+  {
+    quote: "Hatred is gained as much by good works as by evil. Never expect everyone to applaud your integrity.",
+    author: "Niccolò Machiavelli",
+    credentials: "Author of The Prince • Diplomat & Political Philosopher",
+    wikiSearch: "Niccolò_Machiavelli",
+    directUrl: "https://upload.wikimedia.org/wikipedia/commons/e/e2/Portrait_of_Niccol%C3%B2_Machiavelli_by_Santi_di_Tito.jpg",
+    theme: "fortitude",
+    psychologicalConcept: "Detachment from external approval when doing what is necessary",
+    communityQuestion: "Can you stay loyal to your moral code even when misunderstood by those around you?"
+  },
+  {
+    quote: "Never was anything great achieved without danger. But never confuse courage with recklessness.",
+    author: "Niccolò Machiavelli",
+    credentials: "Author of The Prince • Diplomat & Political Philosopher",
+    wikiSearch: "Niccolò_Machiavelli",
+    directUrl: "https://upload.wikimedia.org/wikipedia/commons/e/e2/Portrait_of_Niccol%C3%B2_Machiavelli_by_Santi_di_Tito.jpg",
+    theme: "courage",
+    psychologicalConcept: "Calculated risk-taking vs impulsive self-destruction",
+    communityQuestion: "What bold step are you avoiding out of fear of discomfort?"
+  },
+  {
+    quote: "It is not titles that honor men, but men that honor titles.",
+    author: "Niccolò Machiavelli",
+    credentials: "Author of The Prince • Diplomat & Political Philosopher",
+    wikiSearch: "Niccolò_Machiavelli",
+    directUrl: "https://upload.wikimedia.org/wikipedia/commons/e/e2/Portrait_of_Niccol%C3%B2_Machiavelli_by_Santi_di_Tito.jpg",
+    theme: "sovereignty",
+    psychologicalConcept: "Intrinsic value over extrinsic status symbols",
+    communityQuestion: "Are you chasing vanity labels, or cultivating undeniable competence?"
+  },
 
   // Arthur Schopenhauer
   {

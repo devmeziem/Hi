@@ -400,17 +400,308 @@ function buildChemLabSvg(width = 1080, height = 1920, topic = '') {
   </svg>`;
 }
 
+/**
+ * Classroom 6: Robotics & AI Cybernetics Garage
+ */
+function buildRoboticsGarageSvg(width = 1080, height = 1920, topic = '') {
+  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="roboWall" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0f172a" /><stop offset="100%" stop-color="#1e293b" />
+      </linearGradient>
+      <linearGradient id="roboFloor" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#334155" /><stop offset="100%" stop-color="#0f172a" />
+      </linearGradient>
+      <linearGradient id="roboGlow" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#f59e0b" /><stop offset="100%" stop-color="#ef4444" />
+      </linearGradient>
+    </defs>
+    <rect width="${width}" height="${height}" fill="url(#roboWall)" />
+    <!-- Pegboard Tool Racks & Blueprints -->
+    <rect x="80" y="160" width="920" height="420" rx="16" fill="#1e293b" stroke="#475569" stroke-width="4" />
+    <text x="120" y="220" font-family="system-ui, sans-serif" font-weight="900" font-size="28" fill="#f59e0b">ROBOTICS &amp; CYBERNETICS WORKSHOP // ARCHIE LAB 06</text>
+    <rect x="120" y="250" width="380" height="280" rx="10" fill="#0f172a" stroke="#3b82f6" stroke-width="2" />
+    <path d="M 140 390 Q 220 280 320 370 T 480 320" fill="none" stroke="#38bdf8" stroke-width="3" stroke-dasharray="6 4" />
+    <text x="140" y="290" font-family="monospace" font-size="16" fill="#94a3b8">BIONIC ARM ACTUATOR SCHEMATICS</text>
+    <!-- Industrial Robotic Arm on Right -->
+    <g transform="translate(680, 240)">
+      <rect x="60" y="280" width="80" height="40" rx="8" fill="#334155" stroke="#f59e0b" stroke-width="3" />
+      <path d="M 100 280 L 140 160 L 60 70 L 40 30" stroke="#f59e0b" stroke-width="14" stroke-linecap="round" fill="none" />
+      <circle cx="140" cy="160" r="14" fill="#ef4444" />
+      <circle cx="60" cy="70" r="10" fill="#38bdf8" />
+      <!-- Welder Sparks Indicator -->
+      <circle cx="40" cy="30" r="12" fill="#fef08a" opacity="0.8" />
+    </g>
+    <!-- Workbench Counter -->
+    <rect x="0" y="1320" width="${width}" height="600" fill="url(#roboFloor)" />
+    <line x1="0" y1="1320" x2="${width}" y2="1320" stroke="#f59e0b" stroke-width="6" />
+    <!-- Yellow Caution Striping -->
+    <g fill="#f59e0b" opacity="0.25">
+      <polygon points="0,1326 60,1326 20,1370 0,1370" />
+      <polygon points="120,1326 180,1326 140,1370 80,1370" />
+      <polygon points="240,1326 300,1326 260,1370 200,1370" />
+      <polygon points="360,1326 420,1326 380,1370 320,1370" />
+      <polygon points="480,1326 540,1326 500,1370 440,1370" />
+      <polygon points="600,1326 660,1326 620,1370 560,1370" />
+      <polygon points="720,1326 780,1326 740,1370 680,1370" />
+      <polygon points="840,1326 900,1326 860,1370 800,1370" />
+      <polygon points="960,1326 1020,1326 980,1370 920,1370" />
+    </g>
+  </svg>`;
+}
+
+/**
+ * Classroom 7: Particle Collider Beamline Tunnel
+ */
+function buildParticleColliderSvg(width = 1080, height = 1920, topic = '') {
+  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="ringGlow" cx="50%" cy="40%" r="50%">
+        <stop offset="0%" stop-color="#0284c7" stop-opacity="0.4" />
+        <stop offset="60%" stop-color="#0f172a" stop-opacity="0.9" />
+        <stop offset="100%" stop-color="#020617" />
+      </radialGradient>
+    </defs>
+    <rect width="${width}" height="${height}" fill="#030712" />
+    <circle cx="540" cy="700" r="420" fill="url(#ringGlow)" stroke="#0284c7" stroke-width="12" />
+    <circle cx="540" cy="700" r="340" fill="#030712" stroke="#38bdf8" stroke-width="6" stroke-dasharray="14 10" />
+    <circle cx="540" cy="700" r="260" fill="#0b0f19" stroke="#0ea5e9" stroke-width="4" />
+    <!-- Superconducting Quadrupole Magnets -->
+    <rect x="510" y="240" width="60" height="90" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="3" />
+    <rect x="510" y="1070" width="60" height="90" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="3" />
+    <rect x="100" y="670" width="90" height="60" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="3" />
+    <rect x="890" y="670" width="90" height="60" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="3" />
+    <!-- Beam Collision Flash in Center -->
+    <circle cx="540" cy="700" r="30" fill="#ffffff" />
+    <circle cx="540" cy="700" r="70" fill="#38bdf8" opacity="0.3" />
+    <line x1="160" y1="700" x2="920" y2="700" stroke="#f43f5e" stroke-width="2" stroke-dasharray="8 6" />
+    <text x="540" y="180" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="32" fill="#38bdf8">CERN SYNCHROTRON BEAMLINE // ARCHIE LAB 07</text>
+    <!-- Floor Platform -->
+    <rect x="0" y="1360" width="${width}" height="560" fill="#090d16" />
+    <line x1="0" y1="1360" x2="${width}" y2="1360" stroke="#0284c7" stroke-width="4" />
+  </svg>`;
+}
+
+/**
+ * Classroom 8: Forensic CSI Science Studio
+ */
+function buildForensicCsiSvg(width = 1080, height = 1920, topic = '') {
+  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="${width}" height="${height}" fill="#020617" />
+    <!-- UV Luminol Blue Glow -->
+    <rect x="60" y="140" width="960" height="480" rx="20" fill="#090d16" stroke="#8b5cf6" stroke-width="4" />
+    <text x="100" y="200" font-family="system-ui, sans-serif" font-weight="900" font-size="28" fill="#c084fc">FORENSIC SCIENCE &amp; EVIDENCE STUDIO // ARCHIE LAB 08</text>
+    <!-- Fingerprint Ridge Analysis Graphic -->
+    <g transform="translate(140, 240)" stroke="#a855f7" stroke-width="3" fill="none">
+      <ellipse cx="140" cy="180" rx="90" ry="120" />
+      <ellipse cx="140" cy="180" rx="70" ry="95" />
+      <ellipse cx="140" cy="180" rx="50" ry="70" />
+      <ellipse cx="140" cy="180" rx="30" ry="45" />
+      <path d="M 140 150 Q 150 170 140 190" />
+    </g>
+    <!-- Forensic Case Match HUD -->
+    <g transform="translate(480, 250)">
+      <rect width="480" height="230" rx="12" fill="#0f172a" stroke="#6366f1" stroke-width="2" />
+      <text x="24" y="45" font-family="monospace" font-size="18" fill="#38bdf8">99.87% DNA PROFILE MATCH</text>
+      <text x="24" y="85" font-family="monospace" font-size="14" fill="#94a3b8">Spectrometry: C12 H22 O11 Glucose Trace</text>
+      <text x="24" y="125" font-family="monospace" font-size="14" fill="#94a3b8">Ballistic Trajectory: 32.4 deg deflection</text>
+      <rect x="24" y="155" width="220" height="36" rx="6" fill="#8b5cf6" />
+      <text x="134" y="178" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="bold" font-size="14" fill="#ffffff">CASE SOLVED</text>
+    </g>
+    <!-- Lab Counter -->
+    <rect x="0" y="1340" width="${width}" height="580" fill="#0b0f19" />
+    <line x1="0" y1="1340" x2="${width}" y2="1340" stroke="#a855f7" stroke-width="4" />
+  </svg>`;
+}
+
+/**
+ * Classroom 9: Zero-G Orbital Space Station Lab
+ */
+function buildZeroGStationSvg(width = 1080, height = 1920, topic = '') {
+  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="${width}" height="${height}" fill="#030712" />
+    <!-- Panoramic Cupola Window showing Earth Curvature -->
+    <ellipse cx="540" cy="500" rx="460" ry="340" fill="#0284c7" opacity="0.3" stroke="#e2e8f0" stroke-width="16" />
+    <path d="M 120 540 Q 540 320 960 540" fill="none" stroke="#38bdf8" stroke-width="8" />
+    <text x="540" y="120" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="30" fill="#f8fafc">ORBITAL SPACE STATION ISS // ARCHIE LAB 09</text>
+    <!-- Floating Test Tubes & Microgravity Racks -->
+    <g transform="translate(200, 720)" stroke="#38bdf8" stroke-width="3" fill="#0f172a">
+      <rect x="0" y="0" width="140" height="240" rx="14" />
+      <circle cx="70" cy="60" r="30" fill="#0284c7" opacity="0.8" />
+      <circle cx="70" cy="150" r="20" fill="#ec4899" opacity="0.8" />
+      <text x="70" y="210" text-anchor="middle" font-family="monospace" font-size="12" fill="#94a3b8">FLOAT RACK</text>
+    </g>
+    <!-- Airlock Conduit -->
+    <rect x="0" y="1380" width="${width}" height="540" fill="#0f172a" />
+    <line x1="0" y1="1380" x2="${width}" y2="1380" stroke="#38bdf8" stroke-width="4" />
+  </svg>`;
+}
+
+/**
+ * Classroom 10: Supercomputing Quantum Vault
+ */
+function buildQuantumVaultSvg(width = 1080, height = 1920, topic = '') {
+  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="${width}" height="${height}" fill="#020617" />
+    <text x="540" y="140" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="32" fill="#eab308">QUANTUM COMPUTING CRYOGENIC VAULT // ARCHIE LAB 10</text>
+    <!-- Hanging Dilution Refrigerator Golden Chandelier -->
+    <g transform="translate(360, 200)">
+      <rect x="120" y="0" width="80" height="120" fill="#ca8a04" />
+      <rect x="80" y="120" width="160" height="40" rx="6" fill="#eab308" />
+      <rect x="40" y="200" width="240" height="35" rx="6" fill="#facc15" />
+      <rect x="10" y="300" width="300" height="30" rx="6" fill="#fde047" />
+      <!-- Golden Braided Coaxial Cables -->
+      <line x1="60" y1="160" x2="60" y2="300" stroke="#ca8a04" stroke-width="4" />
+      <line x1="120" y1="160" x2="120" y2="300" stroke="#ca8a04" stroke-width="4" />
+      <line x1="200" y1="160" x2="200" y2="300" stroke="#ca8a04" stroke-width="4" />
+      <line x1="260" y1="160" x2="260" y2="300" stroke="#ca8a04" stroke-width="4" />
+      <!-- Quantum Processor Qubit Core at Bottom -->
+      <rect x="110" y="340" width="100" height="60" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="3" />
+      <text x="160" y="375" text-anchor="middle" font-family="monospace" font-size="14" fill="#38bdf8">127 QUBITS</text>
+    </g>
+    <!-- Raised Server Floor -->
+    <rect x="0" y="1360" width="${width}" height="560" fill="#090d16" />
+    <line x1="0" y1="1360" x2="${width}" y2="1360" stroke="#eab308" stroke-width="4" />
+  </svg>`;
+}
+
+/**
+ * Classroom 11: Deep Ocean Marine Biology Observatory
+ */
+function buildMarineOceanSvg(width = 1080, height = 1920, topic = '') {
+  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="${width}" height="${height}" fill="#021c32" />
+    <text x="540" y="140" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="30" fill="#06b6d4">DEEP OCEAN MARINE OBSERVATORY // ARCHIE LAB 11</text>
+    <!-- Submerged Aquarium Dome Viewing Glass -->
+    <rect x="80" y="200" width="920" height="640" rx="28" fill="#042f4b" stroke="#0891b2" stroke-width="8" />
+    <!-- Bioluminescent Giant Squid & Jellyfish Shadows -->
+    <ellipse cx="360" cy="460" rx="60" ry="40" fill="#06b6d4" opacity="0.6" />
+    <path d="M 320 490 Q 300 560 310 620 M 360 490 Q 360 580 370 630 M 400 490 Q 420 570 410 620" stroke="#06b6d4" stroke-width="3" fill="none" opacity="0.6" />
+    <!-- Sonar Hydrophone Screen -->
+    <g transform="translate(680, 260)">
+      <circle cx="120" cy="120" r="100" fill="#082f49" stroke="#14b8a6" stroke-width="3" />
+      <line x1="120" y1="120" x2="200" y2="70" stroke="#2dd4bf" stroke-width="2" />
+      <circle cx="160" cy="95" r="4" fill="#f43f5e" />
+    </g>
+    <!-- Submarine Deck -->
+    <rect x="0" y="1360" width="${width}" height="560" fill="#031525" />
+    <line x1="0" y1="1360" x2="${width}" y2="1360" stroke="#06b6d4" stroke-width="4" />
+  </svg>`;
+}
+
+/**
+ * Classroom 12: Geothermal Volcanology Research Hub
+ */
+function buildGeothermalHubSvg(width = 1080, height = 1920, topic = '') {
+  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="${width}" height="${height}" fill="#180c08" />
+    <text x="540" y="140" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="30" fill="#ea580c">VOLCANOLOGY &amp; GEOTHERMAL CORE // ARCHIE LAB 12</text>
+    <!-- Seismograph Oscilloscope Wall -->
+    <rect x="80" y="200" width="920" height="420" rx="16" fill="#27140e" stroke="#c2410c" stroke-width="4" />
+    <!-- Active Richter Seismograph Waveform -->
+    <path d="M 120 410 L 260 410 L 290 320 L 320 480 L 350 280 L 390 520 L 430 350 L 480 430 L 520 400 L 960 410" fill="none" stroke="#fdba74" stroke-width="4" />
+    <text x="120" y="260" font-family="monospace" font-size="20" fill="#fb923c">SEISMIC SENSOR: 6.8 MAGNITUDE DETECTED</text>
+    <!-- Obsidian Rock Counter -->
+    <rect x="0" y="1350" width="${width}" height="570" fill="#100705" />
+    <line x1="0" y1="1350" x2="${width}" y2="1350" stroke="#ea580c" stroke-width="6" />
+  </svg>`;
+}
+
+/**
+ * Classroom 13: Ancient Mythology & Classical History Hall
+ */
+function buildMythologyHallSvg(width = 1080, height = 1920, topic = '') {
+  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="${width}" height="${height}" fill="#1c1917" />
+    <text x="540" y="130" text-anchor="middle" font-family="serif" font-weight="bold" font-size="32" fill="#d97706">CLASSICAL MYTHOLOGY &amp; ANCIENT HISTORY // ARCHIE LAB 13</text>
+    <!-- Doric Columns -->
+    <g fill="#44403c" stroke="#78716c" stroke-width="4">
+      <rect x="120" y="200" width="80" height="700" rx="6" />
+      <rect x="420" y="200" width="80" height="700" rx="6" />
+      <rect x="720" y="200" width="80" height="700" rx="6" />
+      <!-- Architrave Beam on Top -->
+      <rect x="80" y="180" width="760" height="40" rx="4" fill="#57534e" />
+    </g>
+    <!-- Celestial Astrolabe in Center -->
+    <circle cx="540" cy="500" r="140" fill="none" stroke="#f59e0b" stroke-width="6" />
+    <circle cx="540" cy="500" r="100" fill="none" stroke="#d97706" stroke-width="4" />
+    <line x1="400" y1="500" x2="680" y2="500" stroke="#f59e0b" stroke-width="3" />
+    <line x1="540" y1="360" x2="540" y2="640" stroke="#f59e0b" stroke-width="3" />
+    <!-- Marble Slab Floor -->
+    <rect x="0" y="1360" width="${width}" height="560" fill="#292524" />
+    <line x1="0" y1="1360" x2="${width}" y2="1360" stroke="#d97706" stroke-width="4" />
+  </svg>`;
+}
+
+/**
+ * Classroom 14: AR/VR Spatial Holographic Studio
+ */
+function buildSpatialArVrSvg(width = 1080, height = 1920, topic = '') {
+  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="${width}" height="${height}" fill="#050814" />
+    <text x="540" y="140" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="30" fill="#ec4899">SPATIAL COMPUTING &amp; VR HOLODECK // ARCHIE LAB 14</text>
+    <!-- 3D Perspective Grid Hologram -->
+    <g stroke="#ec4899" stroke-width="2" opacity="0.4">
+      <line x1="540" y1="400" x2="100" y2="1100" />
+      <line x1="540" y1="400" x2="300" y2="1100" />
+      <line x1="540" y1="400" x2="540" y2="1100" />
+      <line x1="540" y1="400" x2="780" y2="1100" />
+      <line x1="540" y1="400" x2="980" y2="1100" />
+      <line x1="200" y1="650" x2="880" y2="650" />
+      <line x1="160" y1="850" x2="920" y2="850" />
+    </g>
+    <!-- Floating 3D Wireframe Polyhedron -->
+    <polygon points="540,460 660,560 620,700 460,700 420,560" fill="none" stroke="#a855f7" stroke-width="6" />
+    <polygon points="540,520 600,580 580,660 500,660 480,580" fill="#a855f7" opacity="0.3" stroke="#f43f5e" stroke-width="3" />
+    <!-- Hologram Floor Emitter -->
+    <rect x="0" y="1360" width="${width}" height="560" fill="#0b0f20" />
+    <line x1="0" y1="1360" x2="${width}" y2="1360" stroke="#ec4899" stroke-width="4" />
+  </svg>`;
+}
+
+/**
+ * Classroom 15: Aeronautics & Supersonic Wind Tunnel
+ */
+function buildAeroWindTunnelSvg(width = 1080, height = 1920, topic = '') {
+  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="${width}" height="${height}" fill="#0a0f1d" />
+    <text x="540" y="140" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="30" fill="#38bdf8">SUPERSONIC AERODYNAMICS TUNNEL // ARCHIE LAB 15</text>
+    <!-- Wind Tunnel Intake Ring -->
+    <rect x="80" y="220" width="920" height="520" rx="20" fill="#111827" stroke="#1f2937" stroke-width="6" />
+    <!-- NACA Airfoil Wing Profile in Tunnel -->
+    <path d="M 280 480 C 380 400 640 430 820 480 C 640 500 380 510 280 480 Z" fill="#475569" stroke="#94a3b8" stroke-width="4" />
+    <!-- Aerodynamic Smoke Streamlines -->
+    <path d="M 120 430 Q 380 370 880 420" stroke="#38bdf8" stroke-width="3" fill="none" stroke-dasharray="12 6" />
+    <path d="M 120 460 Q 380 390 880 460" stroke="#06b6d4" stroke-width="4" fill="none" stroke-dasharray="16 8" />
+    <path d="M 120 510 Q 380 530 880 510" stroke="#38bdf8" stroke-width="3" fill="none" stroke-dasharray="12 6" />
+    <text x="820" y="320" font-family="monospace" font-size="18" fill="#38bdf8">MACH 2.4 / 1850 KTS</text>
+    <!-- Steel Floor Deck -->
+    <rect x="0" y="1360" width="${width}" height="560" fill="#0f172a" />
+    <line x1="0" y1="1360" x2="${width}" y2="1360" stroke="#38bdf8" stroke-width="4" />
+  </svg>`;
+}
+
 const CLASSROOM_STYLES = [
   { id: 'cyber_stem', name: 'Cyber STEM Lab', fn: buildCyberStemLabSvg },
   { id: 'ivy_hall', name: 'Ivy League Lecture Hall', fn: buildIvyHallSvg },
   { id: 'scandi_science', name: 'Scandinavian Science Studio', fn: buildScandiScienceSvg },
   { id: 'planetarium', name: 'Astrophysics Planetarium', fn: buildPlanetariumSvg },
-  { id: 'chem_lab', name: 'Discovery Chemistry Lab', fn: buildChemLabSvg }
+  { id: 'chem_lab', name: 'Discovery Chemistry Lab', fn: buildChemLabSvg },
+  { id: 'robotics_garage', name: 'Robotics & AI Garage', fn: buildRoboticsGarageSvg },
+  { id: 'particle_collider', name: 'Particle Collider Tunnel', fn: buildParticleColliderSvg },
+  { id: 'forensic_csi', name: 'Forensic CSI Science Studio', fn: buildForensicCsiSvg },
+  { id: 'zero_g_station', name: 'Zero-G Orbital Station', fn: buildZeroGStationSvg },
+  { id: 'quantum_vault', name: 'Quantum Supercomputing Vault', fn: buildQuantumVaultSvg },
+  { id: 'marine_ocean', name: 'Deep Ocean Marine Observatory', fn: buildMarineOceanSvg },
+  { id: 'geothermal_hub', name: 'Geothermal Volcanology Hub', fn: buildGeothermalHubSvg },
+  { id: 'mythology_hall', name: 'Classical Mythology & History', fn: buildMythologyHallSvg },
+  { id: 'spatial_ar_vr', name: 'Spatial AR/VR Holodeck', fn: buildSpatialArVrSvg },
+  { id: 'aero_wind_tunnel', name: 'Supersonic Wind Tunnel', fn: buildAeroWindTunnelSvg }
 ];
 
 /**
- * Get one of the 5 distinct classroom backgrounds
- * @param {number|string} selector - Index (0-4), style id, or seed number
+ * Get one of the 15 distinct classroom backgrounds
+ * @param {number|string} selector - Index (0-14), style id, or seed number
  * @param {number} width - 1080 default
  * @param {number} height - 1920 default
  * @param {string} topic - optional topic name
@@ -444,5 +735,15 @@ module.exports = {
   buildIvyHallSvg,
   buildScandiScienceSvg,
   buildPlanetariumSvg,
-  buildChemLabSvg
+  buildChemLabSvg,
+  buildRoboticsGarageSvg,
+  buildParticleColliderSvg,
+  buildForensicCsiSvg,
+  buildZeroGStationSvg,
+  buildQuantumVaultSvg,
+  buildMarineOceanSvg,
+  buildGeothermalHubSvg,
+  buildMythologyHallSvg,
+  buildSpatialArVrSvg,
+  buildAeroWindTunnelSvg
 };

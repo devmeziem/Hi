@@ -44,21 +44,29 @@ CRITICAL USER MANDATES:
 3. PLAIN ENGLISH UNDERSTANDING (NO BIG GRAMMAR OR CONFUSING CHEMISTRY JARGON):
    Explain the mechanism in the easiest, simplest layman terms so any student understands instantly. Zero confusing chemistry formulas or bloated grammar. If a scientific concept is introduced, immediately give the plain English translation!
 
-4. 5 DISTINCT CLASSROOM ENVIRONMENTS:
-   Each video takes place in one of 5 completely distinct classroom environments with zero similarities:
+4. STRICT 30 TO 45 SECONDS TOTAL EPISODE DURATION:
+   Each episode MUST have 5 to 6 scenes (each ~6.0s to 7.8s), totaling strictly between 30.0 and 45.0 seconds (target: 36 to 42 seconds). Never less than 30s, never more than 45s!
+
+5. EVERY MIDDLE SCENE MUST BE COMPLETELY DIFFERENT:
+   Between opening Scene 1 (Hook & Intro) and the final Scene (Outro Loop), EVERY SINGLE MIDDLE SCENE (Scenes 2 to N-1) MUST HAVE A COMPLETELY UNIQUE FOCUS, CHARACTER ACTION, AND CAMERA ANGLE!
+   - Middle Scene 1 (Scene 2): Smartboard Interactive Schematic Breakdown (Action: "point_right", Camera: "medium", Look: "board", Type: "board_schematic"). Archie explains the dynamic blueprint/flow on the holographic smartboard.
+   - Middle Scene 2 (Scene 3): Real Physical Specimen Cutaway / Macro Observation (Action: "thinking" or "comparing", Camera: "close_up" or "pan_right", Look: "thinking" or "board", Type: "specimen_cutaway"). Camera switches to real-world physical footage or macro photography with smooth panning motion.
+   - Middle Scene 3 (Scene 4): Concept Contrast / Myth vs Reality / Reaction (Action: "explain_both" or "questioning_users", Camera: "wide", Look: "audience", Type: "comparison_contrast"). Two interactive boards slam in comparing common misconception vs actual physical reality with the BAM indicator.
+   - Middle Scene 4 (Scene 5, if 6 scenes total): Actionable Key Takeaway & Floating Glossary Card (Action: "akimbo_jaw" or "point_left", Camera: "medium_to_close", Look: "audience", Type: "glossary_takeaway"). Archie delivers the practical rule of thumb and translates the core scientific term.
+   NO TWO MIDDLE SCENES CAN HAVE THE SAME ACTION OR THE SAME CAMERA ANGLE!
+
+6. 10 DISTINCT CLASSROOM & LAB ENVIRONMENTS:
+   Each video takes place in one of 10 completely distinct classroom/lab environments with zero similarities:
    - "cyber_stem": Cyber STEM Lab (dark navy, glowing cyan/purple smartboards, robotic arm)
    - "ivy_hall": Ivy League Amphitheater (rich mahogany wood tiers, chalkboard, brass banker lamps)
    - "scandi_science": Scandinavian Science Studio (daylight arched windows, birch wood, whiteboard, hanging plants)
    - "planetarium": Astrophysics Planetarium Dome (starry dome ceiling, violet planetary ring projectors)
    - "chem_lab": Discovery Chemistry Lab (slate tables, condenser flasks with bubbles, brass pipes)
-
-5. IN-BETWEEN REAL-LIFE IMAGE CUTAWAY & TOPIC SYNC:
-   Provide "wiki_search_term" for the exact physical specimen or object that represents this specific phenomenon.
-
-6. CHARACTER POSITION & LOOK GAZE:
-   - When talking directly to viewer: character looks directly at "audience"
-   - When pointing or explaining the board: character looks at "board"
-   - Position can be "left", "center", or "right" of stage.
+   - "quantum_cleanroom": Quantum Cryogenic Cleanroom (golden dilution refrigerator, subatomic qubits, HEPA grid)
+   - "botanical_biome": Botanical Bio-Dome & Genetic Greenhouse (curved glass conservatory, holographic DNA, vines)
+   - "deep_sea_abyss": Mariana Abyss Oceanographic Observatory (submarine bulkhead porthole, bioluminescent jellyfish)
+   - "aerospace_hangar": Supersonic Wind Tunnel & Propulsion Hangar (delta-wing airframe, afterburner vector glow)
+   - "ancient_observatory": Galileo Renaissance Celestial Clockwork Tower (antique brass armillary sphere, star charts)
 
 7. LOOPY STRUCTURE:
    The final sentence of the last scene must connect seamlessly back into the opening hook of scene 1.
@@ -71,7 +79,7 @@ Output MUST be ONLY valid JSON matching this schema:
   "topic": "string",
   "title": "Short, punchy, high-CTR title (under 55 chars)",
   "character_name": "${DEFAULT_CHARACTER}",
-  "target_duration_seconds": 30, // User mandate: strictly 25 to 35 seconds total
+  "target_duration_seconds": 38, // User mandate: strictly 30 to 45 seconds total
   "category": "science",
   "wiki_search_term": "Exact physical search term",
   "trending_keywords": ["trending search term 1", "trending search term 2"],
@@ -79,20 +87,81 @@ Output MUST be ONLY valid JSON matching this schema:
   "hard_words": [
     { "word": "Term", "definition": "Simple, everyday explanation of this word" }
   ],
-  "classroom_style": "cyber_stem" | "ivy_hall" | "scandi_science" | "planetarium" | "chem_lab",
+  "classroom_style": "cyber_stem" | "ivy_hall" | "scandi_science" | "planetarium" | "chem_lab" | "quantum_cleanroom" | "botanical_biome" | "deep_sea_abyss" | "aerospace_hangar" | "ancient_observatory",
   "scenes": [
     {
       "scene": 1,
-      "duration": 5.8, // 4-5 scenes each 5.5-6.5s to total 28-32s (strictly 25-35s)
+      "duration": 6.5,
       "dialogue": "Notice how [phenomenon] happens every single time? Watch this closely. Spoken line in plain English...",
-      "character_action": "walk_in" | "talking" | "point_right" | "point_left" | "thinking" | "questioning_users",
-      "character_position": "left" | "center" | "right",
-      "look_target": "audience" | "board",
-      "emotion": "curious" | "excited" | "thinking" | "surprised" | "neutral",
-      "camera": "medium" | "medium_to_close" | "wide" | "close_up",
-      "background_style": "cyber_stem" | "ivy_hall" | "scandi_science" | "planetarium" | "chem_lab",
+      "character_action": "walk_in",
+      "character_position": "center",
+      "look_target": "audience",
+      "emotion": "curious",
+      "camera": "medium",
+      "middle_scene_type": "intro_hook",
+      "background_style": "cyber_stem" | "ivy_hall" | "scandi_science" | "planetarium" | "chem_lab"
+    },
+    {
+      "scene": 2,
+      "duration": 7.0,
+      "dialogue": "When [trigger] happens, molecules change speeds instantly, creating the visible effect right on the surface...",
+      "character_action": "point_right",
+      "character_position": "left",
+      "look_target": "board",
+      "emotion": "excited",
+      "camera": "medium_to_close",
+      "middle_scene_type": "board_schematic",
+      "background_style": "cyber_stem" | "ivy_hall" | "scandi_science" | "planetarium" | "chem_lab"
+    },
+    {
+      "scene": 3,
+      "duration": 7.2,
+      "dialogue": "Take a look at this real-life specimen under macro lens. See those tiny microscopic ridges? That is the secret...",
+      "character_action": "thinking",
+      "character_position": "left",
+      "look_target": "board",
+      "emotion": "curious",
+      "camera": "close_up",
+      "middle_scene_type": "specimen_cutaway",
+      "background_style": "cyber_stem" | "ivy_hall" | "scandi_science" | "planetarium" | "chem_lab"
+    },
+    {
+      "scene": 4,
+      "duration": 6.8,
+      "dialogue": "Most people think it works because of [myth], but in reality [true science law] is what drives the whole reaction...",
+      "character_action": "explain_both",
+      "character_position": "center",
+      "look_target": "audience",
+      "emotion": "surprised",
+      "camera": "wide",
+      "middle_scene_type": "comparison_contrast",
+      "background_style": "cyber_stem" | "ivy_hall" | "scandi_science" | "planetarium" | "chem_lab"
+    },
+    {
+      "scene": 5,
+      "duration": 6.5,
+      "dialogue": "Here is the key takeaway rule of thumb: [takeaway]. Keep this in mind next time you see this happen...",
+      "character_action": "akimbo_jaw",
+      "character_position": "right",
+      "look_target": "audience",
+      "emotion": "thinking",
+      "camera": "medium",
+      "middle_scene_type": "glossary_takeaway",
       "glossary_term": "Core Scientific Term",
-      "glossary_explanation": "Plain English explanation of this phenomenon for young curious viewers."
+      "glossary_explanation": "Plain English explanation of this phenomenon for young curious viewers.",
+      "background_style": "cyber_stem" | "ivy_hall" | "scandi_science" | "planetarium" | "chem_lab"
+    },
+    {
+      "scene": 6,
+      "duration": 5.0,
+      "dialogue": "Save this before you scroll, and share it with a friend who loves everyday science! Because...",
+      "character_action": "questioning_users",
+      "character_position": "center",
+      "look_target": "audience",
+      "emotion": "excited",
+      "camera": "medium",
+      "middle_scene_type": "outro_loop",
+      "background_style": "cyber_stem" | "ivy_hall" | "scandi_science" | "planetarium" | "chem_lab"
     }
   ]
 }
@@ -124,7 +193,8 @@ function validateAndCleanEpisode(rawJson, topic = '') {
     const validActions = [
       'idle', 'talking', 'walking', 'walk_in', 'point_right', 'point_left',
       'thinking', 'sitting', 'confused', 'surprised', 'surprise', 'questioning_users',
-      'explain_both', 'comparing', 'laughing', 'excitement', 'looking_left', 'looking_right'
+      'explain_both', 'comparing', 'laughing', 'excitement', 'looking_left', 'looking_right',
+      'akimbo_jaw', 'point_up_left', 'point_up_right'
     ];
     const validEmotions = [
       'neutral', 'happy', 'surprised', 'curious', 'excited', 'thinking', 'concerned', 'laughing'
@@ -145,13 +215,14 @@ function validateAndCleanEpisode(rawJson, topic = '') {
 
       return {
         scene: Number(s.scene || idx + 1),
-        duration: Math.max(3.0, Math.min(25.0, Number(s.duration || 6.5))),
+        duration: Math.max(4.0, Math.min(10.0, Number(s.duration || 6.5))),
         dialogue: String(s.dialogue || '').trim(),
         character_action: action,
         character_position,
         look_target,
         emotion: validEmotions.includes(s.emotion) ? s.emotion : 'curious',
         camera: validCameras.includes(s.camera) ? s.camera : 'medium',
+        middle_scene_type: s.middle_scene_type || (idx === 0 ? 'intro_hook' : idx === data.scenes.length - 1 ? 'outro_loop' : 'board_schematic'),
         objects: Array.isArray(s.objects) ? s.objects.map(String) : ['prop'],
         background_style: String(s.background_style || data.classroom_style || 'cyber_stem'),
         effects: Array.isArray(s.effects) ? s.effects.map(String) : ['glow'],
@@ -162,16 +233,70 @@ function validateAndCleanEpisode(rawJson, topic = '') {
 
     if (cleanScenes.length === 0) return null;
 
+    // USER MANDATE: strictly 30.0 to 45.0 seconds total duration
     let totalDuration = cleanScenes.reduce((sum, sc) => sum + sc.duration, 0);
-
-    // User directive: ensure episode strictly falls within 25.0 to 35.0 seconds
-    if (totalDuration > 35.0 || totalDuration < 25.0) {
-      const targetSec = 30.0;
+    if (totalDuration < 30.0 || totalDuration > 45.0) {
+      const targetSec = 37.5; // Optimal midpoint between 30 and 45 seconds
       const ratio = targetSec / (totalDuration || 1);
       cleanScenes.forEach(sc => {
-        sc.duration = Math.max(3.5, Math.min(8.5, Math.round(sc.duration * ratio * 10) / 10));
+        sc.duration = Math.max(5.0, Math.min(8.5, Math.round(sc.duration * ratio * 10) / 10));
       });
       totalDuration = cleanScenes.reduce((sum, sc) => sum + sc.duration, 0);
+      if (totalDuration < 30.0) {
+        cleanScenes[cleanScenes.length - 1].duration += Number((31.0 - totalDuration).toFixed(1));
+        totalDuration = 31.0;
+      } else if (totalDuration > 45.0) {
+        cleanScenes[cleanScenes.length - 1].duration -= Number((totalDuration - 44.0).toFixed(1));
+        totalDuration = 44.0;
+      }
+    }
+
+    // USER MANDATE: Every middle scene must be different!
+    // Middle scenes are indices 1 through cleanScenes.length - 2
+    if (cleanScenes.length >= 3) {
+      const middleActionPool = ['point_right', 'thinking', 'explain_both', 'akimbo_jaw', 'comparing', 'questioning_users', 'point_left'];
+      const middleTypePool = ['board_schematic', 'specimen_cutaway', 'comparison_contrast', 'glossary_takeaway'];
+      const cameraPool = ['medium_to_close', 'close_up', 'wide', 'medium', 'pan_right'];
+      const usedActions = new Set([cleanScenes[0].character_action]);
+
+      for (let i = 1; i < cleanScenes.length - 1; i++) {
+        const sc = cleanScenes[i];
+        const midIdx = i - 1;
+
+        // 1. Ensure action is distinct from all other scenes
+        if (usedActions.has(sc.character_action) || sc.character_action === 'walk_in' || sc.character_action === 'talking' || sc.character_action === 'idle') {
+          const freshAction = middleActionPool.find(a => !usedActions.has(a)) || middleActionPool[midIdx % middleActionPool.length];
+          sc.character_action = freshAction;
+        }
+        usedActions.add(sc.character_action);
+
+        // 2. Assign distinct middle scene type
+        sc.middle_scene_type = middleTypePool[midIdx % middleTypePool.length];
+
+        // 3. Ensure camera angle does not repeat adjacent scene
+        const prevCam = cleanScenes[i - 1].camera;
+        if (sc.camera === prevCam) {
+          sc.camera = cameraPool.find(c => c !== prevCam) || 'wide';
+        }
+
+        // 4. Align look target with action
+        if (sc.character_action.includes('point_right')) {
+          sc.look_target = 'board';
+        } else if (sc.character_action.includes('point_left')) {
+          sc.look_target = 'board_left';
+        } else if (sc.character_action === 'thinking') {
+          sc.look_target = 'thinking';
+        } else {
+          sc.look_target = 'audience';
+        }
+
+        // 5. Ensure glossary term exists if type is glossary_takeaway
+        if (sc.middle_scene_type === 'glossary_takeaway' && !sc.glossary_term) {
+          const firstHardWord = Array.isArray(data.hard_words) && data.hard_words[0];
+          sc.glossary_term = firstHardWord ? firstHardWord.word : (topic.split(/\s+/).slice(0, 2).join(' ') || 'Key Principle');
+          sc.glossary_explanation = firstHardWord ? firstHardWord.definition : 'The observable scientific law governing this phenomenon.';
+        }
+      }
     }
 
     return {
