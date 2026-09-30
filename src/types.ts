@@ -103,6 +103,8 @@ export interface IntegrationKeys {
   youtubeClientId?: string;
   youtubeClientSecret?: string;
   youtubeRefreshToken?: string;
+  youtubeApiKey?: string;
+  pexelsApiKey?: string;
   youtube2ClientId?: string;
   youtube2ClientSecret?: string;
   youtube2RefreshToken?: string;

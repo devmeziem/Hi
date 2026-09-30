@@ -23,7 +23,8 @@
     "react-dom": "^18.3.1",
     "recharts": "^2.13.3",
     "tailwind-merge": "^2.5.4",
-    "ws": "^8.21.3"
+    "ws": "^8.21.3",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",

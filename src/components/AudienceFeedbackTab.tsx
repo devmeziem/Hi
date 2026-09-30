@@ -163,6 +163,20 @@ export const AudienceFeedbackTab: React.FC<AudienceFeedbackTabProps> = ({
   ];
 
   const ARCHIE_CLASSROOMS = [
+    {
+      id: 'creator_studio_warm',
+      name: 'Warm Creator Studio & Podcast Desk',
+      category: 'Creator Studio',
+      desc: 'Cinematic creator workstation with walnut desk, ergonomic chair, boom arm microphone, and warm backlit bookshelves with zero floating.',
+      imagePath: '/src/assets/images/studio_env_desk_chair_1790754334372.jpg'
+    },
+    {
+      id: 'bio_quantum_lab',
+      name: 'High-Tech Research Workbench',
+      category: 'Creator Studio',
+      desc: 'Modern laboratory workbench with illuminated instruments, glassware, and dual cyan/tungsten volumetric lighting.',
+      imagePath: '/src/assets/images/lab_env_high_tech_1790754347089.jpg'
+    },
     { id: 'cyber_stem', name: 'Cyber STEM Lab', category: 'Technology', desc: 'Neon cyan/purple holographic smartboard, robotic assembly arm, circuit lines.' },
     { id: 'ivy_hall', name: 'Ivy League Lecture Hall', category: 'Humanities', desc: 'Mahogany wood tiers, vintage green chalkboard, brass banker lamps.' },
     { id: 'scandi_science', name: 'Scandinavian Science Studio', category: 'Natural Science', desc: 'Arched loft sunbeams, light birch wood, botanical vines, magnetic board.' },
@@ -754,27 +768,54 @@ export const AudienceFeedbackTab: React.FC<AudienceFeedbackTabProps> = ({
           </div>
         </div>
 
-        {/* 15 Classrooms Grid */}
+        {/* 15 Classrooms Grid with Real Vector Previews */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {ARCHIE_CLASSROOMS.filter(c => selectedClassroomFilter === 'all' || c.category === selectedClassroomFilter).map((room, idx) => (
             <div
               key={room.id}
-              className="p-4 bg-slate-950 border border-slate-800/90 hover:border-indigo-500/50 rounded-2xl transition-all space-y-2.5 group"
+              className="p-4 bg-slate-950 border border-slate-800/90 hover:border-indigo-500/50 rounded-2xl transition-all space-y-2.5 group flex flex-col justify-between"
             >
-              <div className="flex items-center justify-between">
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-slate-900 border border-slate-800 text-indigo-400">
-                  {room.category}
-                </span>
-                <span className="text-[10px] font-mono text-slate-500">LAB #{idx + 1}</span>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-slate-900 border border-slate-800 text-indigo-400">
+                    {room.category}
+                  </span>
+                  <span className="text-[10px] font-mono text-slate-500">LAB #{idx + 1}</span>
+                </div>
+
+                {/* Environment Thumbnail */}
+                <div className="relative aspect-[16/9] w-full bg-slate-900 rounded-xl overflow-hidden border border-slate-800/80 group-hover:border-indigo-500/40 transition-colors">
+                  <img
+                    src={(room as any).imagePath || `/classrooms/${room.id}.svg`}
+                    alt={room.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    referrerPolicy="no-referrer"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-70" />
+                  <span className="absolute bottom-1.5 left-2 text-[9px] font-mono text-indigo-300 drop-shadow">
+                    9:16 Studio Geometry
+                  </span>
+                </div>
+
+                <h3 className="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors">
+                  {room.name}
+                </h3>
+                <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-2">
+                  {room.desc}
+                </p>
               </div>
-              <h3 className="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors">
-                {room.name}
-              </h3>
-              <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-2">
-                {room.desc}
-              </p>
-              <div className="pt-2 border-t border-slate-900 flex items-center justify-between text-[10px] font-mono text-slate-500">
-                <span>Vector SVG Native</span>
+
+              <div className="pt-2 border-t border-slate-900 flex items-center justify-between text-[10px] font-mono">
+                <a
+                  href={`/classrooms/${room.id}.svg`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-slate-400 hover:text-white flex items-center gap-1 transition-colors"
+                >
+                  <Eye className="w-3 h-3" />
+                  <span>Inspect SVG</span>
+                </a>
                 <span className="text-emerald-400 flex items-center gap-1">
                   <Check className="w-3 h-3" />
                   Active in Engine

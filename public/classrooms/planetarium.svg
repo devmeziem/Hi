@@ -1,0 +1,61 @@
+<svg width="1080" height="1920" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="nebulaDome" cx="50%" cy="30%" r="70%">
+        <stop offset="0%" stop-color="#4c1d95" stop-opacity="0.8" />
+        <stop offset="45%" stop-color="#1e1b4b" stop-opacity="0.95" />
+        <stop offset="100%" stop-color="#050214" />
+      </radialGradient>
+      <linearGradient id="cosmicFloor" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#1e1145" />
+        <stop offset="100%" stop-color="#030014" />
+      </linearGradient>
+      <filter id="starGlow" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="3" />
+      </filter>
+    </defs>
+
+    <!-- Interstellar Dark Ceiling -->
+    <rect width="1080" height="1920" fill="url(#nebulaDome)" />
+
+    <!-- Planetarium Constellations & Starfield -->
+    <g fill="#ffffff" filter="url(#starGlow)">
+      <circle cx="120" cy="180" r="3" />
+      <circle cx="200" cy="150" r="2.5" />
+      <circle cx="280" cy="220" r="3.5" />
+      <circle cx="340" cy="160" r="2" />
+      <circle cx="160" cy="320" r="2" />
+      <circle cx="240" cy="400" r="3" />
+      <circle cx="820" cy="140" r="3" />
+      <circle cx="900" cy="220" r="2.5" />
+      <circle cx="980" cy="160" r="3.5" />
+      <circle cx="880" cy="340" r="2.8" />
+    </g>
+    <!-- Constellation Lines (Big Dipper / Orion Style) -->
+    <g stroke="#818cf8" stroke-width="1.2" opacity="0.45" fill="none">
+      <polyline points="120,180 200,150 280,220 340,160 380,240" />
+      <polyline points="820,140 900,220 980,160 920,290 880,340" />
+    </g>
+
+    <!-- Holographic 3D Planetary Projection in Mid-Air -->
+    <g transform="translate(180, 520)" opacity="0.85">
+      <!-- Outer Orbit Rings -->
+      <ellipse cx="0" cy="0" rx="140" ry="45" fill="none" stroke="#c084fc" stroke-width="2" stroke-dasharray="6 6" />
+      <ellipse cx="0" cy="0" rx="190" ry="60" fill="none" stroke="#38bdf8" stroke-width="1.5" />
+      <!-- Central Glowing Planet (Saturn / Gas Giant Style) -->
+      <circle cx="0" cy="0" r="45" fill="#f59e0b" opacity="0.8" />
+      <ellipse cx="0" cy="0" rx="90" ry="18" fill="none" stroke="#fbbf24" stroke-width="6" />
+      <!-- Moon -->
+      <circle cx="130" cy="-20" r="9" fill="#e0e7ff" />
+    </g>
+
+    <!-- Dome Projection Rib Beams -->
+    <path d="M 0 0 Q 540 260 1080 0" stroke="#6366f1" stroke-width="2" opacity="0.3" fill="none" />
+    <path d="M 0 80 Q 540 380 1080 80" stroke="#8b5cf6" stroke-width="1.5" opacity="0.2" fill="none" />
+
+    <!-- Polished Obsidian Planetarium Floor -->
+    <line x1="0" y1="1360" x2="1080" y2="1360" stroke="#a855f7" stroke-width="2.5" opacity="0.8" />
+    <rect x="0" y="1360" width="1080" height="560" fill="url(#cosmicFloor)" />
+
+    <!-- Violet Circular Spotlight Ring on Archie Side -->
+    <ellipse cx="230" cy="1680" rx="180" ry="65" fill="#8b5cf6" fill-opacity="0.08" stroke="#a855f7" stroke-width="2" stroke-dasharray="8 6" opacity="0.6" />
+  </svg>

@@ -4,6 +4,9 @@ import fs from 'fs';
 import path from 'path';
 import https from 'https';
 import { execSync } from 'child_process';
+import { createRequire } from 'module';
+
+const requireCjs = createRequire(import.meta.url);
 
 function apiProxyPlugin(): Plugin {
   return {
@@ -73,6 +76,106 @@ function apiProxyPlugin(): Plugin {
         if (req.method === 'OPTIONS') {
           res.statusCode = 204;
           res.end();
+          return;
+        }
+
+        // Archie & Classrooms Preview Endpoints
+        if (url === '/api/archie/classrooms' && req.method === 'GET') {
+          try {
+            const cjsModule = requireCjs('./scripts/cartoon_classrooms.cjs');
+            const CLASSROOM_STYLES = cjsModule.CLASSROOM_STYLES || [];
+            const getDistinctClassroomSvg = cjsModule.getDistinctClassroomSvg;
+            const urlObj = new URL(req.url || '', 'http://localhost:3000');
+            const topic = urlObj.searchParams.get('topic') || 'Archie Explains: Future of Science';
+
+            const classrooms = CLASSROOM_STYLES.map((c: any, idx: number) => {
+              const resObj = getDistinctClassroomSvg(idx, 1080, 1920, topic);
+              return {
+                id: c.id,
+                name: c.name,
+                index: idx,
+                svg: resObj.svg,
+                svgUrl: `/classrooms/${c.id}.svg`
+              };
+            });
+
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 200;
+            res.end(JSON.stringify({ success: true, count: classrooms.length, classrooms }));
+          } catch (err: any) {
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 500;
+            res.end(JSON.stringify({ success: false, error: err.message }));
+          }
+          return;
+        }
+
+        if (url === '/api/archie/puppets' && req.method === 'GET') {
+          try {
+            const puppetDir = path.join(process.cwd(), 'cartoon_character_assets', 'exact_puppet');
+            const files = fs.existsSync(puppetDir)
+              ? fs.readdirSync(puppetDir).filter(f => f.endsWith('.svg'))
+              : [];
+
+            const puppets = files.map(file => {
+              const id = file.replace(/\.svg$/, '');
+              const isTalk = id.includes('talk');
+              const isBlink = id.includes('blink');
+              const isSeated = id.includes('desk') || id.includes('sitting');
+              const isWalk = id.includes('walk');
+              const isThink = id.includes('thinking') || id.includes('confused') || id.includes('question');
+              const isSurprise = id.includes('surprised') || id.includes('akimbo');
+              const isExplain = id.includes('point') || id.includes('explain') || id.includes('board');
+
+              let category = 'Neutral';
+              if (isExplain) category = 'Explaining';
+              else if (isThink) category = 'Thinking';
+              else if (isSurprise) category = 'Surprised';
+              else if (isSeated) category = 'Seated';
+              else if (isWalk) category = 'Walking';
+
+              return {
+                id,
+                name: id.replace(/^puppet_/, '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                category,
+                file,
+                svgUrl: `/cartoon_character_assets/exact_puppet/${file}`,
+                pngUrl: `/cartoon_character_assets/exact_puppet/${id}.png`,
+                isTalk,
+                isBlink
+              };
+            });
+
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 200;
+            res.end(JSON.stringify({ success: true, count: puppets.length, puppets }));
+          } catch (err: any) {
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 500;
+            res.end(JSON.stringify({ success: false, error: err.message }));
+          }
+          return;
+        }
+
+        if (url === '/api/archie/composite' && req.method === 'POST') {
+          let body = '';
+          req.on('data', chunk => { body += chunk; });
+          req.on('end', async () => {
+            try {
+              const payload = JSON.parse(body || '{}');
+              const compMod = requireCjs('./scripts/archie_scene_compositor.cjs');
+              const compositeArchieScene = compMod.compositeArchieScene;
+              const result = compositeArchieScene(payload);
+
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 200;
+              res.end(JSON.stringify({ success: true, ...result }));
+            } catch (err: any) {
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 500;
+              res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+          });
           return;
         }
 

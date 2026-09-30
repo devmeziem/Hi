@@ -3,6 +3,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import https from 'https';
+import { runArchieResearchPipeline } from './src/archie/orchestrator.ts';
+import { VERIFIED_RESOURCE_CATALOG } from './src/archie/resources/resourceCatalog.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -305,7 +307,7 @@ async function serverGenerateFluxVisualEnhancement(
 
   let styleModifier = '';
   if (niche.includes('finance') || niche.includes('saas') || niche.includes('wealth')) {
-    styleModifier = 'dark obsidian slate studio setting, vibrant emerald green hologram revenue chart, crisp dual currency ₦ and $ floating glass coins, warm gold volumetric rim lighting, photorealistic hands holding sleek smartphone with positive cashflow dashboard, high contrast, sharp focus, 8k 9:16 vertical poster';
+    styleModifier = 'authentic editorial documentary photography, Wall Street Journal or Bloomberg executive style, realistic professional workspace, real hands with sleek smartphone displaying live financial terminal, natural daylight and ambient office interior, 35mm film grain, sharp editorial focus, strictly NO cartoon, NO anime, NO 3D render, NO illustration, NO plastic skin, NO CGI, authentic photograph, 8k 9:16 vertical';
   } else if (niche.includes('stoic') || niche.includes('motivation') || niche.includes('mindset')) {
     styleModifier = 'ancient weathered Roman marble bust of Marcus Aurelius with intense gaze, dramatic chiaroscuro side lighting, warm amber golden-hour glow against pitch black void, anamorphic 35mm lens blur, hyperdetailed stone textures, deep shadows, 8k 9:16 vertical cinematic masterpiece';
   } else {
@@ -539,8 +541,8 @@ function saveApprovedUsersList(users: string[]): void {
 }
 
 function checkAuthorization(req: http.IncomingMessage, res: http.ServerResponse, pathname: string): boolean {
-  // Publicly permissible routes: health checks, video streaming, and client static bundle
-  if (pathname === '/api/health' || pathname === '/api/stream-video' || pathname.startsWith('/rendered_videos/')) {
+  // Publicly permissible routes: health checks, video streaming, client static bundle, and Archie previews
+  if (pathname === '/api/health' || pathname === '/api/stream-video' || pathname.startsWith('/rendered_videos/') || pathname.startsWith('/api/archie/')) {
     return true;
   }
 
@@ -1148,6 +1150,77 @@ Respond STRICTLY with valid raw JSON without markdown:
     return;
   }
 
+  // Archie Research & Fact Verification Pipeline (Phase 1 MVP)
+  if (urlPath === '/api/archie/research' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', async () => {
+      try {
+        const { topic = 'Why Does Your Phone Get Hot While Charging?', pillar, youtubeApiKey, pexelsApiKey, geminiApiKey } = JSON.parse(body || '{}');
+        
+        const report = await runArchieResearchPipeline({
+          topic,
+          pillarHint: pillar,
+          youtubeApiKey,
+          pexelsApiKey,
+          geminiApiKey
+        });
+
+        // Persist report to local JSON store
+        const reportsDir = path.join(__dirname, 'data', 'archie_reports');
+        if (!fs.existsSync(reportsDir)) {
+          fs.mkdirSync(reportsDir, { recursive: true });
+        }
+        fs.writeFileSync(
+          path.join(reportsDir, `${report.reportId}.json`),
+          JSON.stringify(report, null, 2),
+          'utf8'
+        );
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, report }));
+      } catch (err: any) {
+        console.error('[API Server: Archie Research Failed]:', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message || 'Archie Research Failed' }));
+      }
+    });
+    return;
+  }
+
+  // Archie Saved Reports List
+  if (urlPath === '/api/archie/reports' && req.method === 'GET') {
+    try {
+      const reportsDir = path.join(__dirname, 'data', 'archie_reports');
+      if (fs.existsSync(reportsDir)) {
+        const files = fs.readdirSync(reportsDir).filter(f => f.endsWith('.json'));
+        const reports = files.map(f => {
+          try {
+            return JSON.parse(fs.readFileSync(path.join(reportsDir, f), 'utf8'));
+          } catch {
+            return null;
+          }
+        }).filter(Boolean);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ reports }));
+      } else {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ reports: [] }));
+      }
+    } catch (err: any) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
+  // Archie Verified Resources Catalog
+  if (urlPath === '/api/archie/resources' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ resources: VERIFIED_RESOURCE_CATALOG }));
+    return;
+  }
+
   // API Direct YouTube Publish Endpoint (Invoked from UI Test Post Lab)
   if (urlPath === '/api/youtube-direct-publish' && req.method === 'POST') {
     let body = '';
@@ -1459,45 +1532,14 @@ Respond STRICTLY with valid raw JSON without markdown:
     res.end(JSON.stringify({
       success: true,
       viewerFeedbackSummary: "Subscribers and viewers reported lower reach when images appeared cartoonish or AI-generated, or when audio was muted. Viewers asked for authentic historical marble statues, deeply emotional Stoic quotes, restored soft piano & Hans Zimmer ambient soundtrack, and a strict cadence of 1 long-form (25-35s) + 3-4 short-form (5s) videos daily.",
-      verifiedViewerComments: [
-        {
-          author: "@amb7440",
-          timeAgo: "1d ago",
-          likes: 1,
-          comment: "I like this. More please. And keep it real. And looking forward, but with integrity, a focus on education and self-worth without selfishness.",
-          creatorReply: "Glad you resonate with this. 🙏",
-          appliedTakeaway: "Integrity, self-worth without selfishness, and realistic education prioritized across all quotes."
-        },
-        {
-          author: "@meloneymurphy4236",
-          timeAgo: "16h ago",
-          likes: 1,
-          comment: "100% true.",
-          creatorReply: "Facts. ❤️",
-          appliedTakeaway: "Validation of emotional vulnerability and strength."
-        }
-      ],
-      featuredQuoteFromScreenshot: {
-        author: "Sigmund Freud",
-        credentials: "Founder of Psychoanalysis • Neurologist",
-        quote: "Out of your vulnerabilities will come your strength.",
-        audioSoundtrack: "Hans Zimmer · S.T.A.Y. (Ambient Interstellar Chords)"
-      },
-      machiavelliIntegrityQuotes: [
-        "It is not titles that honor men, but men that honor titles.",
-        "There is no other way to guard yourself against flattery than by making men understand that telling you the truth will not offend you.",
-        "The lion cannot protect himself from traps, and the fox cannot defend himself from wolves.",
-        "He who builds on the opinions of the crowd builds on mud. Ground yourself in self-worth and quiet competence.",
-        "Never was anything great achieved without danger, and he who fears every shadow will never step into the light."
-      ],
       subscribersOpinion: {
         sentiment: "High engagement when authentic; strong rejection of cartoonish AI slop or silent tracks",
         keyRequests: [
           "Zero cartoon or plastic AI faces for Stoic philosophers",
-          "Authentic Roman marble statues, antique engravings, and museum oil paintings (Marcus Aurelius, Seneca, Epictetus, Nietzsche, Schopenhauer, Niccolò Machiavelli, Sigmund Freud)",
+          "Authentic Roman marble statues, antique engravings, and museum oil paintings (Marcus Aurelius, Seneca, Epictetus, Nietzsche, Schopenhauer)",
           "Restored melancholic soft piano & Hans Zimmer style contemplative ambient audio (no silent null tracks)",
           "1 deep, emotionally impactful video daily (25-35s) + 3 to 4 punchy 5-second quote reels",
-          "Raw, poignant, emotionally impactful quotes on grief, unappreciated loyalty, silent endurance, integrity, and sovereignty without selfishness (no spam rubbish)"
+          "Raw, poignant, emotionally impactful quotes on grief, unappreciated loyalty, silent endurance, and sovereignty (no spam rubbish)"
         ],
         appliedMeasures: [
           { feature: "Visual Authenticity", rule: "Priority #1 Wikimedia Museum Public Domain Statues & Classical Portraits", status: "VERIFIED" },
@@ -1557,6 +1599,100 @@ Respond STRICTLY with valid raw JSON without markdown:
         }));
       } catch (err: any) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // Archie & Classrooms Preview Endpoints
+  if (urlPath === '/api/archie/classrooms' && req.method === 'GET') {
+    try {
+      const cjsModule: any = await import('./scripts/cartoon_classrooms.cjs');
+      const CLASSROOM_STYLES = cjsModule.CLASSROOM_STYLES || cjsModule.default?.CLASSROOM_STYLES || [];
+      const getDistinctClassroomSvg = cjsModule.getDistinctClassroomSvg || cjsModule.default?.getDistinctClassroomSvg;
+      const urlObj = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
+      const topic = urlObj.searchParams.get('topic') || 'Archie Explains: Future of Science';
+
+      const classrooms = CLASSROOM_STYLES.map((c: any, idx: number) => {
+        const resObj = getDistinctClassroomSvg(idx, 1080, 1920, topic);
+        return {
+          id: c.id,
+          name: c.name,
+          index: idx,
+          svg: resObj.svg,
+          svgUrl: `/classrooms/${c.id}.svg`
+        };
+      });
+
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify({ success: true, count: classrooms.length, classrooms }));
+    } catch (err: any) {
+      res.writeHead(500, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify({ success: false, error: err.message }));
+    }
+    return;
+  }
+
+  if (urlPath === '/api/archie/puppets' && req.method === 'GET') {
+    try {
+      const puppetDir = path.join(__dirname, 'cartoon_character_assets', 'exact_puppet');
+      const files = fs.existsSync(puppetDir)
+        ? fs.readdirSync(puppetDir).filter(f => f.endsWith('.svg'))
+        : [];
+
+      const puppets = files.map(file => {
+        const id = file.replace(/\.svg$/, '');
+        const isTalk = id.includes('talk');
+        const isBlink = id.includes('blink');
+        const isSeated = id.includes('desk') || id.includes('sitting');
+        const isWalk = id.includes('walk');
+        const isThink = id.includes('thinking') || id.includes('confused') || id.includes('question');
+        const isSurprise = id.includes('surprised') || id.includes('akimbo');
+        const isExplain = id.includes('point') || id.includes('explain') || id.includes('board');
+
+        let category = 'Neutral';
+        if (isExplain) category = 'Explaining';
+        else if (isThink) category = 'Thinking';
+        else if (isSurprise) category = 'Surprised';
+        else if (isSeated) category = 'Seated';
+        else if (isWalk) category = 'Walking';
+
+        return {
+          id,
+          name: id.replace(/^puppet_/, '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+          category,
+          file,
+          svgUrl: `/cartoon_character_assets/exact_puppet/${file}`,
+          pngUrl: `/cartoon_character_assets/exact_puppet/${id}.png`,
+          isTalk,
+          isBlink
+        };
+      });
+
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify({ success: true, count: puppets.length, puppets }));
+    } catch (err: any) {
+      res.writeHead(500, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify({ success: false, error: err.message }));
+    }
+    return;
+  }
+
+  if (urlPath === '/api/archie/composite' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        const compMod: any = await import('./scripts/archie_scene_compositor.cjs');
+        const compositeArchieScene = compMod.compositeArchieScene || compMod.default?.compositeArchieScene;
+        const result = compositeArchieScene(payload);
+
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        res.end(JSON.stringify({ success: true, ...result }));
+      } catch (err: any) {
+        res.writeHead(500, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
         res.end(JSON.stringify({ success: false, error: err.message }));
       }
     });
@@ -1635,54 +1771,6 @@ Respond STRICTLY with valid raw JSON without markdown:
           targetDuration: '30-45s',
           message: 'Archie episode production queued successfully (30-45 seconds duration with distinct middle scenes).',
           topic: topic || 'Active AI Trend Discovery'
-        }));
-      } catch (err: any) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: err.message }));
-      }
-    });
-    return;
-  }
-
-  // Archie 10 Classrooms & Lab Environments Catalog
-  if (urlPath === '/api/cartoon/rooms' && req.method === 'GET') {
-    try {
-      const { CLASSROOM_STYLES } = await import('./scripts/cartoon_classrooms.cjs');
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        success: true,
-        count: CLASSROOM_STYLES.length,
-        rooms: CLASSROOM_STYLES.map((c: any, idx: number) => ({
-          id: c.id,
-          name: c.name,
-          index: idx + 1,
-          theme: c.id.replace(/_/g, ' ').toUpperCase()
-        }))
-      }));
-    } catch (err: any) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: err.message }));
-    }
-    return;
-  }
-
-  // Archie Brain Teasers & Science Logic Riddles (User Screenshot Format)
-  if (urlPath === '/api/cartoon/brain-teaser' && req.method === 'POST') {
-    let body = '';
-    req.on('data', chunk => { body += chunk; });
-    req.on('end', async () => {
-      try {
-        let payload: any = {};
-        try { payload = JSON.parse(body || '{}'); } catch {}
-        const teaserModule: any = await import('./scripts/archie_brain_teaser_engine.cjs');
-        const result = await teaserModule.generateArchieBrainTeaser(payload.puzzleIndex || 0);
-
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-          success: true,
-          channel: 'Archie Explains: Brain Teaser Edition',
-          format: 'Test Your Brain 99% Fail Challenge',
-          result
         }));
       } catch (err: any) {
         res.writeHead(500, { 'Content-Type': 'application/json' });

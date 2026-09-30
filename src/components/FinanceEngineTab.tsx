@@ -145,7 +145,7 @@ export const FinanceEngineTab: React.FC<FinanceEngineTabProps> = ({ keys }) => {
         </div>
 
         {/* Core Guardrails */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-800/80 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-slate-800/80 text-xs">
           <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800/60 space-y-1">
             <span className="font-bold text-emerald-400 flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4" /> Non-Guru Positioning
@@ -169,6 +169,72 @@ export const FinanceEngineTab: React.FC<FinanceEngineTabProps> = ({ keys }) => {
             <p className="text-[11px] text-slate-400">
               Seamlessly integrates Nigerian Naira (₦) with global USD ($) estimates (e.g. ₦5,000 / ~$3.50 USD).
             </p>
+          </div>
+          <div className="p-3 bg-slate-950/60 rounded-xl border border-emerald-500/40 space-y-1 bg-emerald-950/20">
+            <span className="font-bold text-emerald-300 flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Zero Cartoon Standard
+            </span>
+            <p className="text-[11px] text-slate-400">
+              Strictly authentic documentary photography, live terminal charts & realistic workshops. Zero cartoon, anime, or plastic 3D renders.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Editorial Photography Standard Showcase (Eliminating Cartoon Aesthetic) */}
+      <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">
+                STRICT EDITORIAL STANDARD
+              </span>
+              <span className="text-[11px] font-mono text-slate-400">Bloomberg &amp; WSJ Quality</span>
+            </div>
+            <h2 className="text-base font-bold text-white mt-1">
+              Editorial Financial Photography (No Cartoons / No 3D CGI)
+            </h2>
+            <p className="text-xs text-slate-400">
+              Visual assets for @bones_ceo strictly depict authentic business settings, real market monitors, and genuine entrepreneurs.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-slate-950 border border-slate-800 rounded-2xl p-3 space-y-2 group">
+            <div className="relative aspect-[9/16] max-h-[320px] w-full bg-slate-900 rounded-xl overflow-hidden border border-slate-800">
+              <img
+                src="/src/assets/images/fin_editorial_wealth_1790755455009.jpg"
+                alt="Executive Financial Desk"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                referrerPolicy="no-referrer"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-60" />
+              <div className="absolute bottom-2.5 left-2.5 right-2.5 text-xs text-white font-bold drop-shadow">
+                Executive Market Desk &amp; Terminal
+              </div>
+            </div>
+            <div className="text-[11px] text-slate-400">
+              Real mobile banking dashboard, leather journal, and dark slate corporate workstation with authentic 35mm camera lighting.
+            </div>
+          </div>
+
+          <div className="bg-slate-950 border border-slate-800 rounded-2xl p-3 space-y-2 group">
+            <div className="relative aspect-[9/16] max-h-[320px] w-full bg-slate-900 rounded-xl overflow-hidden border border-slate-800">
+              <img
+                src="/src/assets/images/fin_editorial_entrepreneur_1790755465848.jpg"
+                alt="Micro-business Entrepreneur"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                referrerPolicy="no-referrer"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-60" />
+              <div className="absolute bottom-2.5 left-2.5 right-2.5 text-xs text-white font-bold drop-shadow">
+                Micro-Enterprise Workshop &amp; Packaging
+              </div>
+            </div>
+            <div className="text-[11px] text-slate-400">
+              Authentic documentary capture of small business packaging and daily inventory economics with natural daylight.
+            </div>
           </div>
         </div>
       </div>

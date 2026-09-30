@@ -1,0 +1,64 @@
+<svg width="1080" height="1920" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="scandiWall" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#fdfbf7" />
+        <stop offset="60%" stop-color="#f5ede0" />
+        <stop offset="100%" stop-color="#ebdcc7" />
+      </linearGradient>
+      <linearGradient id="sunbeam" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#fef08a" stop-opacity="0.32" />
+        <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+      </linearGradient>
+      <linearGradient id="scandiFloor" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#d4a373" />
+        <stop offset="100%" stop-color="#bc8a5f" />
+      </linearGradient>
+    </defs>
+
+    <!-- Warm Daylight Wall -->
+    <rect width="1080" height="1920" fill="url(#scandiWall)" />
+
+    <!-- Big Arched Sunlit Studio Loft Window on Left -->
+    <g transform="translate(60, 160)" opacity="0.85">
+      <path d="M 0 180 Q 0 0 130 0 Q 260 0 260 180 L 260 700 L 0 700 Z" fill="#e0f2fe" stroke="#a8a29e" stroke-width="8" />
+      <!-- Window Grids -->
+      <line x1="130" y1="0" x2="130" y2="700" stroke="#a8a29e" stroke-width="6" />
+      <line x1="0" y1="260" x2="260" y2="260" stroke="#a8a29e" stroke-width="6" />
+      <line x1="0" y1="460" x2="260" y2="460" stroke="#a8a29e" stroke-width="6" />
+    </g>
+
+    <!-- Volumetric Sunlight Beams Casting Diagonal Warmth -->
+    <polygon points="120,200 320,200 880,1400 400,1400" fill="url(#sunbeam)" />
+
+    <!-- Lush Hanging Indoor Plants (Monstera & Pothos Vines) -->
+    <g transform="translate(260, 180)">
+      <!-- Macrame Plant Hanger -->
+      <line x1="0" y1="0" x2="0" y2="140" stroke="#d6d3d1" stroke-width="3" />
+      <ellipse cx="0" cy="150" rx="35" ry="18" fill="#e7e5e4" stroke="#a8a29e" stroke-width="2" />
+      <!-- Green Leaves -->
+      <path d="M 0 150 Q -30 180 -50 210 Q -20 220 0 160 Z" fill="#16a34a" />
+      <path d="M 0 150 Q 30 190 60 230 Q 30 240 5 160 Z" fill="#22c55e" />
+      <path d="M -15 155 Q -40 220 -30 280 Q -10 260 -5 160 Z" fill="#15803d" />
+      <path d="M 15 155 Q 40 210 50 270 Q 20 250 10 160 Z" fill="#4ade80" />
+    </g>
+
+    <!-- Floating Minimalist Magnetic Whiteboard Shelf -->
+    <rect x="60" y="900" width="280" height="24" rx="4" fill="#a8a29e" />
+    <rect x="80" y="860" width="40" height="40" rx="4" fill="#facc15" stroke="#ca8a04" stroke-width="1.5" />
+    <rect x="135" y="850" width="45" height="50" rx="4" fill="#38bdf8" stroke="#0284c7" stroke-width="1.5" />
+    <rect x="195" y="865" width="40" height="35" rx="4" fill="#f472b6" stroke="#db2777" stroke-width="1.5" />
+
+    <!-- Light Scandinavian Birch Hardwood Floor -->
+    <line x1="0" y1="1360" x2="1080" y2="1360" stroke="#a16207" stroke-width="3" />
+    <rect x="0" y="1360" width="1080" height="560" fill="url(#scandiFloor)" />
+    <!-- Floor Planks -->
+    <g stroke="#935610" stroke-width="1.8" opacity="0.35">
+      <line x1="540" y1="1360" x2="60" y2="1920" />
+      <line x1="540" y1="1360" x2="300" y2="1920" />
+      <line x1="540" y1="1360" x2="540" y2="1920" />
+      <line x1="540" y1="1360" x2="780" y2="1920" />
+      <line x1="540" y1="1360" x2="1020" y2="1920" />
+      <line x1="0" y1="1490" x2="1080" y2="1490" />
+      <line x1="0" y1="1650" x2="1080" y2="1650" />
+    </g>
+  </svg>

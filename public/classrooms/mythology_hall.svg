@@ -1,0 +1,20 @@
+<svg width="1080" height="1920" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1080" height="1920" fill="#1c1917" />
+    <text x="540" y="130" text-anchor="middle" font-family="serif" font-weight="bold" font-size="32" fill="#d97706">CLASSICAL MYTHOLOGY &amp; ANCIENT HISTORY // ARCHIE LAB 13</text>
+    <!-- Doric Columns -->
+    <g fill="#44403c" stroke="#78716c" stroke-width="4">
+      <rect x="120" y="200" width="80" height="700" rx="6" />
+      <rect x="420" y="200" width="80" height="700" rx="6" />
+      <rect x="720" y="200" width="80" height="700" rx="6" />
+      <!-- Architrave Beam on Top -->
+      <rect x="80" y="180" width="760" height="40" rx="4" fill="#57534e" />
+    </g>
+    <!-- Celestial Astrolabe in Center -->
+    <circle cx="540" cy="500" r="140" fill="none" stroke="#f59e0b" stroke-width="6" />
+    <circle cx="540" cy="500" r="100" fill="none" stroke="#d97706" stroke-width="4" />
+    <line x1="400" y1="500" x2="680" y2="500" stroke="#f59e0b" stroke-width="3" />
+    <line x1="540" y1="360" x2="540" y2="640" stroke="#f59e0b" stroke-width="3" />
+    <!-- Marble Slab Floor -->
+    <rect x="0" y="1360" width="1080" height="560" fill="#292524" />
+    <line x1="0" y1="1360" x2="1080" y2="1360" stroke="#d97706" stroke-width="4" />
+  </svg>

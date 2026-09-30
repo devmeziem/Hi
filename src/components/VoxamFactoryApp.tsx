@@ -42,7 +42,8 @@ import {
   Film,
   Lock,
   Copy,
-  HeartHandshake
+  HeartHandshake,
+  GraduationCap
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { NicheType, SavedCampaign, FactoryJob, WorkerLog, IntegrationKeys, ChannelMetrics, ProjectConfig } from '../types';
@@ -62,6 +63,8 @@ import { SoundSetupTab } from './SoundSetupTab';
 import { MovieBrandTab } from './MovieBrandTab';
 import { TeenMotivationTab } from './TeenMotivationTab';
 import { AudienceFeedbackTab } from './AudienceFeedbackTab';
+import { ArchieResearchLabTab } from './ArchieResearchLabTab';
+import { ArchiePreviewStudioTab } from './ArchiePreviewStudioTab';
 
 interface VoxamFactoryAppProps {
   userEmail: string;
@@ -674,6 +677,8 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
 
   const navItems = [
     { id: 'dashboard', label: 'Overview Dashboard', icon: LayoutDashboard },
+    { id: 'archie-preview', label: 'Archie & Environments Studio', icon: GraduationCap },
+    { id: 'archie-lab', label: 'Archie Research Lab', icon: Atom },
     { id: 'audience-feedback', label: 'Subscriber Feedback & Sentiment', icon: HeartHandshake },
     { id: 'movie-brand', label: 'Cinema Vanguard (Channel 4)', icon: Film },
     { id: 'teen-motivation', label: 'MindRush (Channel 5)', icon: Flame },
@@ -721,12 +726,23 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
           <button
             type="button"
             onClick={() => {
-              setActiveTab('playground');
+              setActiveTab('archie-preview');
+            }}
+            className="px-2 py-1 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/40 text-emerald-300 rounded-lg text-[10px] font-bold flex items-center gap-1 font-mono"
+          >
+            <GraduationCap className="w-3 h-3 text-emerald-400" />
+            <span>Archie Studio</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('archie-lab');
             }}
             className="px-2 py-1 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 rounded-lg text-[10px] font-bold flex items-center gap-1 font-mono"
           >
             <Atom className="w-3 h-3 text-emerald-400" />
-            <span>Archie Ideas</span>
+            <span>Research</span>
           </button>
 
           <button
@@ -774,6 +790,39 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
 
               {/* Special Quick Access Inside Drawer */}
               <div className="p-3 border-b border-slate-800 space-y-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('archie-preview');
+                    setIsMobileDrawerOpen(false);
+                  }}
+                  className="w-full p-2.5 bg-gradient-to-r from-emerald-950/80 via-teal-950/60 to-slate-900 border border-emerald-500/50 rounded-xl text-left cursor-pointer transition-all hover:border-emerald-400 flex items-center gap-2.5"
+                >
+                  <GraduationCap className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <div>
+                    <div className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+                      <span>Archie Studio &amp; Environments</span>
+                      <span className="text-[9px] px-1 py-0.2 rounded bg-amber-900/80 text-amber-300 font-mono">STUDIO</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400">Grounded Creator Desk, Zero Floating &amp; 18 Backdrops</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('archie-lab');
+                    setIsMobileDrawerOpen(false);
+                  }}
+                  className="w-full p-2.5 bg-gradient-to-r from-emerald-950/60 to-teal-950/60 border border-emerald-500/40 rounded-xl text-left cursor-pointer transition-all hover:border-emerald-400 flex items-center gap-2.5"
+                >
+                  <Atom className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <div>
+                    <div className="text-xs font-bold text-emerald-300">Archie Research &amp; Fact Verification Lab</div>
+                    <div className="text-[10px] text-slate-400">Phase 1 Spec MVP: Fact-Check, Pexels &amp; Wikimedia</div>
+                  </div>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => {
@@ -950,13 +999,13 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
           <div className="p-3 border-b border-slate-800">
             <button
               type="button"
-              onClick={() => setActiveTab('playground')}
+              onClick={() => setActiveTab('archie-lab')}
               className="w-full p-2.5 bg-emerald-950/40 hover:bg-emerald-950/60 border border-emerald-500/30 rounded-xl text-left cursor-pointer transition-all flex items-center gap-2"
             >
               <Atom className="w-4 h-4 text-emerald-400 shrink-0" />
               <div className="truncate">
-                <div className="text-[11px] font-bold text-emerald-300 truncate">Science Hook Generator</div>
-                <div className="text-[9px] text-slate-400 truncate">Curated High-Curiosity Science Facts</div>
+                <div className="text-[11px] font-bold text-emerald-300 truncate">Archie Research &amp; Fact Lab</div>
+                <div className="text-[9px] text-slate-400 truncate">Phase 1 Spec: Fact-Check, Sources &amp; Pexels</div>
               </div>
             </button>
           </div>
@@ -2713,6 +2762,27 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
               </div>
             </div>
           </div>
+        )}
+
+        {/* ARCHIE RESEARCH & FACT VERIFICATION LAB (PHASE 1 SPEC) */}
+        {activeTab === 'archie-lab' && (
+          <ArchieResearchLabTab
+            userEmail={userEmail}
+            youtubeApiKey={keys.youtubeApiKey}
+            pexelsApiKey={keys.pexelsApiKey}
+            onToast={(t) => showAppToast(t.text, t.isError)}
+            onNavigateToPreview={(t) => {
+              if (t) setStudioTopic(t);
+              setActiveTab('archie-preview');
+            }}
+          />
+        )}
+
+        {/* ARCHIE & ENVIRONMENTS VISUAL PREVIEW STUDIO */}
+        {activeTab === 'archie-preview' && (
+          <ArchiePreviewStudioTab
+            onToast={(t) => showAppToast(t.text, t.isError)}
+          />
         )}
       </main>
 

@@ -1,0 +1,26 @@
+<svg width="1080" height="1920" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="ringGlow" cx="50%" cy="40%" r="50%">
+        <stop offset="0%" stop-color="#0284c7" stop-opacity="0.4" />
+        <stop offset="60%" stop-color="#0f172a" stop-opacity="0.9" />
+        <stop offset="100%" stop-color="#020617" />
+      </radialGradient>
+    </defs>
+    <rect width="1080" height="1920" fill="#030712" />
+    <circle cx="540" cy="700" r="420" fill="url(#ringGlow)" stroke="#0284c7" stroke-width="12" />
+    <circle cx="540" cy="700" r="340" fill="#030712" stroke="#38bdf8" stroke-width="6" stroke-dasharray="14 10" />
+    <circle cx="540" cy="700" r="260" fill="#0b0f19" stroke="#0ea5e9" stroke-width="4" />
+    <!-- Superconducting Quadrupole Magnets -->
+    <rect x="510" y="240" width="60" height="90" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="3" />
+    <rect x="510" y="1070" width="60" height="90" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="3" />
+    <rect x="100" y="670" width="90" height="60" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="3" />
+    <rect x="890" y="670" width="90" height="60" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="3" />
+    <!-- Beam Collision Flash in Center -->
+    <circle cx="540" cy="700" r="30" fill="#ffffff" />
+    <circle cx="540" cy="700" r="70" fill="#38bdf8" opacity="0.3" />
+    <line x1="160" y1="700" x2="920" y2="700" stroke="#f43f5e" stroke-width="2" stroke-dasharray="8 6" />
+    <text x="540" y="180" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="32" fill="#38bdf8">CERN SYNCHROTRON BEAMLINE // ARCHIE LAB 07</text>
+    <!-- Floor Platform -->
+    <rect x="0" y="1360" width="1080" height="560" fill="#090d16" />
+    <line x1="0" y1="1360" x2="1080" y2="1360" stroke="#0284c7" stroke-width="4" />
+  </svg>

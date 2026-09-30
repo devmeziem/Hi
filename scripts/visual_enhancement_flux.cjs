@@ -23,7 +23,7 @@ function buildHighCtrFluxPrompt(topic, niche = 'finance_saas', baseVisual = '') 
 
   let styleModifier = '';
   if (niche.includes('finance') || niche.includes('saas') || niche.includes('wealth')) {
-    styleModifier = 'dark obsidian slate studio setting, vibrant emerald green hologram revenue chart, crisp dual currency ₦ and $ floating glass coins, warm gold volumetric rim lighting, photorealistic hands holding sleek smartphone with positive cashflow dashboard, high contrast, sharp focus, 8k 9:16 vertical poster';
+    styleModifier = 'authentic editorial documentary photography, Wall Street Journal or Bloomberg executive style, realistic professional workspace, real hands with sleek smartphone displaying live financial terminal, natural daylight and ambient office interior, 35mm film grain, sharp editorial focus, strictly NO cartoon, NO anime, NO 3D render, NO illustration, NO plastic skin, NO CGI, authentic photograph, 8k 9:16 vertical';
   } else if (niche.includes('stoic') || niche.includes('motivation') || niche.includes('mindset')) {
     styleModifier = 'ancient weathered Roman marble bust of Marcus Aurelius with intense gaze, dramatic chiaroscuro side lighting, warm amber golden-hour glow against pitch black void, anamorphic 35mm lens blur, hyperdetailed stone textures, deep shadows, 8k 9:16 vertical cinematic masterpiece';
   } else {

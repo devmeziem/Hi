@@ -1,0 +1,44 @@
+<svg width="1080" height="1920" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="roboWall" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0f172a" /><stop offset="100%" stop-color="#1e293b" />
+      </linearGradient>
+      <linearGradient id="roboFloor" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#334155" /><stop offset="100%" stop-color="#0f172a" />
+      </linearGradient>
+      <linearGradient id="roboGlow" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#f59e0b" /><stop offset="100%" stop-color="#ef4444" />
+      </linearGradient>
+    </defs>
+    <rect width="1080" height="1920" fill="url(#roboWall)" />
+    <!-- Pegboard Tool Racks & Blueprints -->
+    <rect x="80" y="160" width="920" height="420" rx="16" fill="#1e293b" stroke="#475569" stroke-width="4" />
+    <text x="120" y="220" font-family="system-ui, sans-serif" font-weight="900" font-size="28" fill="#f59e0b">ROBOTICS &amp; CYBERNETICS WORKSHOP // ARCHIE LAB 06</text>
+    <rect x="120" y="250" width="380" height="280" rx="10" fill="#0f172a" stroke="#3b82f6" stroke-width="2" />
+    <path d="M 140 390 Q 220 280 320 370 T 480 320" fill="none" stroke="#38bdf8" stroke-width="3" stroke-dasharray="6 4" />
+    <text x="140" y="290" font-family="monospace" font-size="16" fill="#94a3b8">BIONIC ARM ACTUATOR SCHEMATICS</text>
+    <!-- Industrial Robotic Arm on Right -->
+    <g transform="translate(680, 240)">
+      <rect x="60" y="280" width="80" height="40" rx="8" fill="#334155" stroke="#f59e0b" stroke-width="3" />
+      <path d="M 100 280 L 140 160 L 60 70 L 40 30" stroke="#f59e0b" stroke-width="14" stroke-linecap="round" fill="none" />
+      <circle cx="140" cy="160" r="14" fill="#ef4444" />
+      <circle cx="60" cy="70" r="10" fill="#38bdf8" />
+      <!-- Welder Sparks Indicator -->
+      <circle cx="40" cy="30" r="12" fill="#fef08a" opacity="0.8" />
+    </g>
+    <!-- Workbench Counter -->
+    <rect x="0" y="1320" width="1080" height="600" fill="url(#roboFloor)" />
+    <line x1="0" y1="1320" x2="1080" y2="1320" stroke="#f59e0b" stroke-width="6" />
+    <!-- Yellow Caution Striping -->
+    <g fill="#f59e0b" opacity="0.25">
+      <polygon points="0,1326 60,1326 20,1370 0,1370" />
+      <polygon points="120,1326 180,1326 140,1370 80,1370" />
+      <polygon points="240,1326 300,1326 260,1370 200,1370" />
+      <polygon points="360,1326 420,1326 380,1370 320,1370" />
+      <polygon points="480,1326 540,1326 500,1370 440,1370" />
+      <polygon points="600,1326 660,1326 620,1370 560,1370" />
+      <polygon points="720,1326 780,1326 740,1370 680,1370" />
+      <polygon points="840,1326 900,1326 860,1370 800,1370" />
+      <polygon points="960,1326 1020,1326 980,1370 920,1370" />
+    </g>
+  </svg>

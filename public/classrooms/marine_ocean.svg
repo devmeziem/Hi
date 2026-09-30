@@ -1,0 +1,18 @@
+<svg width="1080" height="1920" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1080" height="1920" fill="#021c32" />
+    <text x="540" y="140" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="30" fill="#06b6d4">DEEP OCEAN MARINE OBSERVATORY // ARCHIE LAB 11</text>
+    <!-- Submerged Aquarium Dome Viewing Glass -->
+    <rect x="80" y="200" width="920" height="640" rx="28" fill="#042f4b" stroke="#0891b2" stroke-width="8" />
+    <!-- Bioluminescent Giant Squid & Jellyfish Shadows -->
+    <ellipse cx="360" cy="460" rx="60" ry="40" fill="#06b6d4" opacity="0.6" />
+    <path d="M 320 490 Q 300 560 310 620 M 360 490 Q 360 580 370 630 M 400 490 Q 420 570 410 620" stroke="#06b6d4" stroke-width="3" fill="none" opacity="0.6" />
+    <!-- Sonar Hydrophone Screen -->
+    <g transform="translate(680, 260)">
+      <circle cx="120" cy="120" r="100" fill="#082f49" stroke="#14b8a6" stroke-width="3" />
+      <line x1="120" y1="120" x2="200" y2="70" stroke="#2dd4bf" stroke-width="2" />
+      <circle cx="160" cy="95" r="4" fill="#f43f5e" />
+    </g>
+    <!-- Submarine Deck -->
+    <rect x="0" y="1360" width="1080" height="560" fill="#031525" />
+    <line x1="0" y1="1360" x2="1080" y2="1360" stroke="#06b6d4" stroke-width="4" />
+  </svg>

@@ -1,0 +1,16 @@
+<svg width="1080" height="1920" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1080" height="1920" fill="#0a0f1d" />
+    <text x="540" y="140" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="30" fill="#38bdf8">SUPERSONIC AERODYNAMICS TUNNEL // ARCHIE LAB 15</text>
+    <!-- Wind Tunnel Intake Ring -->
+    <rect x="80" y="220" width="920" height="520" rx="20" fill="#111827" stroke="#1f2937" stroke-width="6" />
+    <!-- NACA Airfoil Wing Profile in Tunnel -->
+    <path d="M 280 480 C 380 400 640 430 820 480 C 640 500 380 510 280 480 Z" fill="#475569" stroke="#94a3b8" stroke-width="4" />
+    <!-- Aerodynamic Smoke Streamlines -->
+    <path d="M 120 430 Q 380 370 880 420" stroke="#38bdf8" stroke-width="3" fill="none" stroke-dasharray="12 6" />
+    <path d="M 120 460 Q 380 390 880 460" stroke="#06b6d4" stroke-width="4" fill="none" stroke-dasharray="16 8" />
+    <path d="M 120 510 Q 380 530 880 510" stroke="#38bdf8" stroke-width="3" fill="none" stroke-dasharray="12 6" />
+    <text x="820" y="320" font-family="monospace" font-size="18" fill="#38bdf8">MACH 2.4 / 1850 KTS</text>
+    <!-- Steel Floor Deck -->
+    <rect x="0" y="1360" width="1080" height="560" fill="#0f172a" />
+    <line x1="0" y1="1360" x2="1080" y2="1360" stroke="#38bdf8" stroke-width="4" />
+  </svg>

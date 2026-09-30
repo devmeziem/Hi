@@ -1,0 +1,26 @@
+<svg width="1080" height="1920" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1080" height="1920" fill="#020617" />
+    <!-- UV Luminol Blue Glow -->
+    <rect x="60" y="140" width="960" height="480" rx="20" fill="#090d16" stroke="#8b5cf6" stroke-width="4" />
+    <text x="100" y="200" font-family="system-ui, sans-serif" font-weight="900" font-size="28" fill="#c084fc">FORENSIC SCIENCE &amp; EVIDENCE STUDIO // ARCHIE LAB 08</text>
+    <!-- Fingerprint Ridge Analysis Graphic -->
+    <g transform="translate(140, 240)" stroke="#a855f7" stroke-width="3" fill="none">
+      <ellipse cx="140" cy="180" rx="90" ry="120" />
+      <ellipse cx="140" cy="180" rx="70" ry="95" />
+      <ellipse cx="140" cy="180" rx="50" ry="70" />
+      <ellipse cx="140" cy="180" rx="30" ry="45" />
+      <path d="M 140 150 Q 150 170 140 190" />
+    </g>
+    <!-- Forensic Case Match HUD -->
+    <g transform="translate(480, 250)">
+      <rect width="480" height="230" rx="12" fill="#0f172a" stroke="#6366f1" stroke-width="2" />
+      <text x="24" y="45" font-family="monospace" font-size="18" fill="#38bdf8">99.87% DNA PROFILE MATCH</text>
+      <text x="24" y="85" font-family="monospace" font-size="14" fill="#94a3b8">Spectrometry: C12 H22 O11 Glucose Trace</text>
+      <text x="24" y="125" font-family="monospace" font-size="14" fill="#94a3b8">Ballistic Trajectory: 32.4 deg deflection</text>
+      <rect x="24" y="155" width="220" height="36" rx="6" fill="#8b5cf6" />
+      <text x="134" y="178" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="bold" font-size="14" fill="#ffffff">CASE SOLVED</text>
+    </g>
+    <!-- Lab Counter -->
+    <rect x="0" y="1340" width="1080" height="580" fill="#0b0f19" />
+    <line x1="0" y1="1340" x2="1080" y2="1340" stroke="#a855f7" stroke-width="4" />
+  </svg>

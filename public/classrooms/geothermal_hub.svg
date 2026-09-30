@@ -1,0 +1,12 @@
+<svg width="1080" height="1920" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1080" height="1920" fill="#180c08" />
+    <text x="540" y="140" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="30" fill="#ea580c">VOLCANOLOGY &amp; GEOTHERMAL CORE // ARCHIE LAB 12</text>
+    <!-- Seismograph Oscilloscope Wall -->
+    <rect x="80" y="200" width="920" height="420" rx="16" fill="#27140e" stroke="#c2410c" stroke-width="4" />
+    <!-- Active Richter Seismograph Waveform -->
+    <path d="M 120 410 L 260 410 L 290 320 L 320 480 L 350 280 L 390 520 L 430 350 L 480 430 L 520 400 L 960 410" fill="none" stroke="#fdba74" stroke-width="4" />
+    <text x="120" y="260" font-family="monospace" font-size="20" fill="#fb923c">SEISMIC SENSOR: 6.8 MAGNITUDE DETECTED</text>
+    <!-- Obsidian Rock Counter -->
+    <rect x="0" y="1350" width="1080" height="570" fill="#100705" />
+    <line x1="0" y1="1350" x2="1080" y2="1350" stroke="#ea580c" stroke-width="6" />
+  </svg>

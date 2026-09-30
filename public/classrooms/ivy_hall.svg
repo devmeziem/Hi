@@ -1,0 +1,72 @@
+<svg width="1080" height="1920" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="ivyWall" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#1c110a" />
+        <stop offset="60%" stop-color="#2a1810" />
+        <stop offset="100%" stop-color="#140a05" />
+      </linearGradient>
+      <linearGradient id="chalkboardGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#0f291e" />
+        <stop offset="100%" stop-color="#163829" />
+      </linearGradient>
+      <linearGradient id="mahoganyFloor" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#3b1d11" />
+        <stop offset="100%" stop-color="#1a0b06" />
+      </linearGradient>
+      <filter id="lampGlow" x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="16" />
+      </filter>
+    </defs>
+
+    <!-- Deep Wood Wall -->
+    <rect width="1080" height="1920" fill="url(#ivyWall)" />
+
+    <!-- Acoustic Vertical Wood Paneling on Back Wall -->
+    <g stroke="#3d2217" stroke-width="8" opacity="0.6">
+      <line x1="50" y1="60" x2="50" y2="1360" />
+      <line x1="110" y1="60" x2="110" y2="1360" />
+      <line x1="170" y1="60" x2="170" y2="1360" />
+      <line x1="230" y1="60" x2="230" y2="1360" />
+      <line x1="850" y1="60" x2="850" y2="1360" />
+      <line x1="910" y1="60" x2="910" y2="1360" />
+      <line x1="970" y1="60" x2="970" y2="1360" />
+      <line x1="1030" y1="60" x2="1030" y2="1360" />
+    </g>
+
+    <!-- Classical Architectural Arch Molding -->
+    <path d="M 0 180 Q 540 60 1080 180" stroke="#78350f" stroke-width="12" fill="none" opacity="0.45" />
+
+    <!-- Giant Classic Green Chalkboard Behind Board Position -->
+    <rect x="60" y="240" width="260" height="900" rx="10" fill="url(#chalkboardGrad)" stroke="#78350f" stroke-width="10" />
+    <!-- Chalk Formulas & Sketches -->
+    <g stroke="#fef08a" stroke-width="1.8" fill="none" opacity="0.45">
+      <text x="80" y="320" font-family="Georgia, serif" font-size="22" font-style="italic" fill="#fef08a" stroke="none">ΔE = mc²</text>
+      <text x="80" y="380" font-family="Georgia, serif" font-size="20" fill="#fef08a" stroke="none">PV = nRT</text>
+      <circle cx="160" cy="480" r="35" />
+      <line x1="125" y1="480" x2="195" y2="480" />
+      <line x1="160" y1="445" x2="160" y2="515" />
+      <text x="80" y="580" font-family="Georgia, serif" font-size="18" fill="#fef08a" stroke="none">H₂O + CO₂</text>
+      <path d="M 80 660 Q 140 620 200 660 T 260 660" />
+      <text x="80" y="740" font-family="Georgia, serif" font-size="18" fill="#fef08a" stroke="none">λ = h / p</text>
+    </g>
+
+    <!-- Vintage Emerald Banker Lamp on Wall Shelf (Warm Glow) -->
+    <circle cx="180" cy="180" r="90" fill="#fbbf24" opacity="0.16" filter="url(#lampGlow)" />
+    <rect x="130" y="170" width="100" height="24" rx="12" fill="#047857" stroke="#064e3b" stroke-width="2" />
+    <path d="M 180 194 L 180 230 L 160 230 L 200 230" stroke="#d97706" stroke-width="4" />
+
+    <!-- Mahogany Tiered Stage Floor -->
+    <line x1="0" y1="1360" x2="1080" y2="1360" stroke="#92400e" stroke-width="4" />
+    <rect x="0" y="1360" width="1080" height="560" fill="url(#mahoganyFloor)" />
+
+    <!-- Wood Plank Perspective Floor Lines -->
+    <g stroke="#5c2e17" stroke-width="2" opacity="0.45">
+      <line x1="540" y1="1360" x2="120" y2="1920" />
+      <line x1="540" y1="1360" x2="360" y2="1920" />
+      <line x1="540" y1="1360" x2="540" y2="1920" />
+      <line x1="540" y1="1360" x2="720" y2="1920" />
+      <line x1="540" y1="1360" x2="960" y2="1920" />
+      <line x1="0" y1="1480" x2="1080" y2="1480" stroke="#78350f" stroke-width="1.5" />
+      <line x1="0" y1="1620" x2="1080" y2="1620" stroke="#78350f" stroke-width="1.5" />
+    </g>
+  </svg>
