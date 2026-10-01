@@ -68,17 +68,18 @@ async function synthesizeCloudflareTTS(text, outWavPath) {
 }
 
 /**
- * ElevenLabs Studio Voice Synthesis
+ * ElevenLabs Studio Voice Synthesis (Mature Adult Educator Voice)
  */
 async function synthesizeElevenLabsTTS(text, outWavPath) {
   if (!ELEVENLABS_API_KEY) return false;
 
-  const voiceId = 'IKne3meq5aSn9XLyUdCD'; // Charlie / enthusiastic explainer
+  // George (JBFqnCBsd6RMkjVDRZzb) or Adam (pNInz6obpgDQGcFmaJgB) - mature, calm, articulate adult host
+  const voiceId = process.env.ELEVENLABS_VOICE_ID || 'JBFqnCBsd6RMkjVDRZzb';
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
   const body = JSON.stringify({
     text,
     model_id: 'eleven_multilingual_v2',
-    voice_settings: { stability: 0.5, similarity_boost: 0.75 }
+    voice_settings: { stability: 0.65, similarity_boost: 0.80, style: 0.20 }
   });
 
   const tempMp3 = outWavPath.replace(/\.wav$/i, '_el.mp3');
@@ -118,10 +119,16 @@ async function synthesizeElevenLabsTTS(text, outWavPath) {
 }
 
 /**
- * Microsoft Edge Neural TTS with multiple voice fallbacks
+ * Microsoft Edge Neural TTS with Adult Educator Voices
+ * Uses deep, calm, articulate adult male narration (Brian, Christopher, Andrew, Roger)
  */
 async function synthesizeEdgeTTS(text, outWavPath) {
-  const voices = ['en-US-GuyNeural', 'en-US-ChristopherNeural', 'en-US-AndrewMultilingualNeural'];
+  const voices = [
+    'en-US-BrianMultilingualNeural',
+    'en-US-ChristopherNeural',
+    'en-US-AndrewMultilingualNeural',
+    'en-US-RogerNeural'
+  ];
   const dir = path.dirname(outWavPath);
 
   for (const voice of voices) {
@@ -132,8 +139,8 @@ async function synthesizeEdgeTTS(text, outWavPath) {
         voice: voice,
         lang: 'en-US',
         outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
-        pitch: '+0Hz',
-        rate: '+0%'
+        pitch: '-3Hz',
+        rate: '-3%'
       });
 
       await tts.ttsPromise(text, tempMp3);
@@ -219,27 +226,35 @@ async function synthesizeArchieVoice(text, outWavPath) {
  * Uses a gentle, warm chord progression (Cmaj7 -> Am7 -> Fmaj7 -> Gsus4) with soft synth pads & warm bass.
  * Completely free of harsh treble sizzle or low drone buzz.
  */
-function generateScienceGrooveMusic(outWavPath, duration = 6.0) {
+/**
+ * Generate Slow, Calm Varying Acoustic Piano Soundtrack
+ * Creates a peaceful, gentle acoustic piano piece (Cmaj9 -> Am9 -> Fmaj7 -> Em7 -> Dm9 -> Gsus4)
+ * with natural hammer decay and warm acoustic filtering to fill mute time without distracting.
+ */
+function generateSlowCalmPianoSoundtrack(outWavPath, duration = 6.0) {
   const dir = path.dirname(outWavPath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-  const chord1 = 'sin(2*PI*261.63*t)*0.16 + sin(2*PI*329.63*t)*0.12 + sin(2*PI*392.00*t)*0.12'; // Cmaj
-  const chord2 = 'sin(2*PI*220.00*t)*0.16 + sin(2*PI*261.63*t)*0.12 + sin(2*PI*329.63*t)*0.12'; // Am
-  const chord3 = 'sin(2*PI*174.61*t)*0.16 + sin(2*PI*220.00*t)*0.12 + sin(2*PI*261.63*t)*0.12'; // Fmaj
-  const chord4 = 'sin(2*PI*196.00*t)*0.16 + sin(2*PI*246.94*t)*0.12 + sin(2*PI*293.66*t)*0.12'; // Gmaj
+  // Warm acoustic piano chord components (fundamental + 2nd & 3rd harmonics with gentle decay)
+  const chord1 = '(sin(2*PI*130.81*t)*0.16 + sin(2*PI*261.63*t)*0.12 + sin(2*PI*329.63*t)*0.10 + sin(2*PI*587.33*t)*0.08)*exp(-0.7*mod(t,3.8))'; // Cmaj9
+  const chord2 = '(sin(2*PI*110.00*t)*0.16 + sin(2*PI*220.00*t)*0.12 + sin(2*PI*261.63*t)*0.10 + sin(2*PI*493.88*t)*0.08)*exp(-0.7*mod(t,3.8))'; // Am9
+  const chord3 = '(sin(2*PI*87.31*t)*0.16 + sin(2*PI*174.61*t)*0.12 + sin(2*PI*220.00*t)*0.10 + sin(2*PI*329.63*t)*0.08)*exp(-0.7*mod(t,3.8))';  // Fmaj7
+  const chord4 = '(sin(2*PI*82.41*t)*0.16 + sin(2*PI*164.81*t)*0.12 + sin(2*PI*196.00*t)*0.10 + sin(2*PI*293.66*t)*0.08)*exp(-0.7*mod(t,3.8))';  // Em7
+  const chord5 = '(sin(2*PI*146.83*t)*0.16 + sin(2*PI*293.66*t)*0.12 + sin(2*PI*349.23*t)*0.10 + sin(2*PI*523.25*t)*0.08)*exp(-0.7*mod(t,3.8))'; // Dm9
+  const chord6 = '(sin(2*PI*98.00*t)*0.16 + sin(2*PI*196.00*t)*0.12 + sin(2*PI*246.94*t)*0.10 + sin(2*PI*392.00*t)*0.08)*exp(-0.7*mod(t,3.8))';  // Gsus4
 
-  const quarter = (duration / 4).toFixed(2);
-  const half = (duration / 2).toFixed(2);
-  const threeQuarter = (duration * 0.75).toFixed(2);
+  const part = (duration / 6).toFixed(2);
+  const p2 = (part * 2).toFixed(2);
+  const p3 = (part * 3).toFixed(2);
+  const p4 = (part * 4).toFixed(2);
+  const p5 = (part * 5).toFixed(2);
 
-  const musicExpr = `if(lt(t,${quarter}), ${chord1}, if(lt(t,${half}), ${chord2}, if(lt(t,${threeQuarter}), ${chord3}, ${chord4})))`;
-  const bass = 'sin(2*PI*65.41*t)*0.10';
+  const pianoExpr = `if(lt(t,${part}), ${chord1}, if(lt(t,${p2}), ${chord2}, if(lt(t,${p3}), ${chord3}, if(lt(t,${p4}), ${chord4}, if(lt(t,${p5}), ${chord5}, ${chord6})))))`;
+  
+  // Warm low-pass filter at 1400Hz gives an authentic upright felt-piano timbre
+  const filter = `lowpass=f=1400,afade=t=in:ss=0:d=0.5,afade=t=out:st=${Math.max(0, duration - 0.8).toFixed(2)}:d=0.8`;
 
-  const fullSynth = `(${musicExpr})*0.45 + (${bass})`;
-  // Warm lowpass filter at 1800Hz removes all high-pitch hiss/buzz
-  const filter = `lowpass=f=1800,afade=t=in:ss=0:d=0.3,afade=t=out:st=${Math.max(0, duration - 0.5).toFixed(2)}:d=0.5`;
-
-  const cmd = `ffmpeg -y -f lavfi -i "aevalsrc='${fullSynth}':s=44100:d=${duration}" -af "${filter}" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`;
+  const cmd = `ffmpeg -y -f lavfi -i "aevalsrc='${pianoExpr}':s=44100:d=${duration}" -af "${filter}" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`;
   try {
     execSync(cmd);
     return outWavPath;
@@ -247,6 +262,10 @@ function generateScienceGrooveMusic(outWavPath, duration = 6.0) {
     execSync(`ffmpeg -y -f lavfi -i "aevalsrc='0':s=44100:d=${duration}" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
     return outWavPath;
   }
+}
+
+function generateScienceGrooveMusic(outWavPath, duration = 6.0) {
+  return generateSlowCalmPianoSoundtrack(outWavPath, duration);
 }
 
 /**
@@ -323,20 +342,26 @@ async function assembleArchieMasterAudio(spokenText, outMasterWav, options = {})
       if (fs.existsSync(voiceWav)) fs.copyFileSync(voiceWav, outMasterWav);
     }
   } else {
-    // Pure clean voiceover + soft reveal chime (NO synthetic sine-wave beeps!)
-    console.log(`[Archie Sound Master] 🎙️ No external music URL provided; rendering studio-clean vocal master with soft card reveal chime.`);
+    // Fill mute time with peaceful, slow varying calm acoustic piano soundtrack (as requested by user)
+    console.log(`[Archie Sound Master] 🎹 Generating slow calm piano soundtrack to fill mute time under Archie's voice...`);
+    const calmPianoWav = path.join(dir, `calm_piano_${Date.now()}.wav`);
+    generateSlowCalmPianoSoundtrack(calmPianoWav, masterDuration);
+
     const complexFilter = `
-      [0:a]volume=1.4,apad=whole_dur=${masterDuration}[voice];
-      [1:a]adelay=${chimeDelayMs}|${chimeDelayMs},volume=0.20,apad=whole_dur=${masterDuration}[chime];
-      [voice][chime]amix=inputs=2:duration=longest:dropout_transition=1,loudnorm=I=-16:TP=-1.5:LRA=11[out]
+      [0:a]volume=1.35,apad=whole_dur=${masterDuration}[voice];
+      [1:a]volume=0.11,atrim=0:${masterDuration}[piano];
+      [2:a]adelay=${chimeDelayMs}|${chimeDelayMs},volume=0.15,apad=whole_dur=${masterDuration}[chime];
+      [voice][piano][chime]amix=inputs=3:duration=longest:dropout_transition=1,loudnorm=I=-16:TP=-1.5:LRA=11[out]
     `.replace(/\s+/g, ' ');
 
-    const mixCmd = `ffmpeg -y -i "${voiceWav}" -i "${chimeWav}" -filter_complex "${complexFilter}" -map "[out]" -c:a pcm_s16le -ar 44100 -ac 2 "${outMasterWav}" 2>/dev/null`;
+    const mixCmd = `ffmpeg -y -i "${voiceWav}" -i "${calmPianoWav}" -i "${chimeWav}" -filter_complex "${complexFilter}" -map "[out]" -c:a pcm_s16le -ar 44100 -ac 2 "${outMasterWav}" 2>/dev/null`;
     try {
       execSync(mixCmd);
+      console.log(`[Archie Sound Master] ✅ Audio mix complete! Clean adult voiceover + slow calm piano soundtrack (${masterDuration}s)`);
     } catch {
       if (fs.existsSync(voiceWav)) fs.copyFileSync(voiceWav, outMasterWav);
     }
+    if (fs.existsSync(calmPianoWav)) try { fs.unlinkSync(calmPianoWav); } catch {}
   }
 
   // Cleanup temporary audio

@@ -115,9 +115,9 @@ async function synthesizeCloudflareTTS(text, outputPathWav) {
 }
 
 /**
- * Synthesize voice via Microsoft Edge Neural TTS (Archie voices: Guy, Christopher, Andrew)
+ * Synthesize voice via Microsoft Edge Neural TTS (Adult Educator voices: Brian, Christopher, Andrew)
  */
-async function synthesizeEdgeTTS(text, outputPathWav, voice = 'en-US-GuyNeural') {
+async function synthesizeEdgeTTS(text, outputPathWav, voice = 'en-US-BrianMultilingualNeural') {
   try {
     const dir = path.dirname(outputPathWav);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -128,8 +128,8 @@ async function synthesizeEdgeTTS(text, outputPathWav, voice = 'en-US-GuyNeural')
       voice: voice,
       lang: 'en-US',
       outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
-      pitch: '+0Hz',
-      rate: '+5%'
+      pitch: '-3Hz',
+      rate: '-3%'
     });
 
     await tts.ttsPromise(text, tempMp3);

@@ -164,29 +164,27 @@ export const ArchieResearchLabTab: React.FC<ArchieResearchLabTabProps> = ({
   return (
     <div className="space-y-6 pb-12 animate-in fade-in max-w-full overflow-x-hidden">
       {/* Header Banner */}
-      <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-4">
+      <div className="p-5 sm:p-6 bg-[#12161f] border border-[#222a38] rounded-2xl space-y-3">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono tracking-wider uppercase bg-emerald-950 text-emerald-300 border border-emerald-800/80">
-                ARCHIE CONTENT FACTORY // SPECIFICATION COMPLIANT
-              </span>
-              <span className="flex items-center gap-1 text-[11px] font-mono text-emerald-400">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                Phase 1 Research &amp; Fact Verification Engine
-              </span>
+            <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
+              <span className="text-amber-400 font-bold uppercase">Archie Content Lab</span>
+              <span aria-hidden="true">·</span>
+              <span>Everyday Science &amp; Tech Frustrations</span>
+              <span aria-hidden="true">·</span>
+              <span className="text-emerald-400">Fact-Checked Claims</span>
             </div>
             <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-              <Atom className="w-6 h-6 text-emerald-400" />
-              Archie Research &amp; Fact Verification Lab
+              <Atom className="w-5 h-5 text-amber-400" />
+              <span>Archie Research &amp; Fact Verification Lab</span>
             </h1>
-            <p className="text-xs text-slate-400 max-w-2xl leading-relaxed">
-              Everyday science, technology, and smart finds. Gathers authoritative sources, extracts factual claims, validates commercial licenses on Pexels and Wikimedia Commons, and produces phone-ready research reports.
+            <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+              Everyday science, technology, and smart tools. Gathers authoritative sources, extracts factual claims, validates commercial licenses on Pexels and Wikimedia Commons, and produces phone-ready research reports.
             </p>
           </div>
 
-          <div className="p-3 bg-slate-950 border border-slate-800 rounded-2xl flex items-center gap-3">
-            <Lock className="w-5 h-5 text-amber-400 shrink-0" />
+          <div className="p-3 bg-[#161c28] border border-[#222a38] rounded-xl flex items-center gap-3">
+            <Lock className="w-4 h-4 text-amber-400 shrink-0" />
             <div>
               <div className="text-[11px] font-bold text-slate-200">PUBLISH SAFETY LOCK</div>
               <div className="text-[10px] font-mono text-amber-400">PUBLISH_ENABLED = false (Human Approval Required)</div>
@@ -196,10 +194,10 @@ export const ArchieResearchLabTab: React.FC<ArchieResearchLabTabProps> = ({
       </div>
 
       {/* Preset Topics & Pillar Selector */}
-      <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-4">
+      <div className="p-5 sm:p-6 bg-[#12161f] border border-[#222a38] rounded-2xl space-y-4">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-slate-200 uppercase font-mono flex items-center gap-1.5">
-            <BookOpen className="w-4 h-4 text-emerald-400" />
+            <BookOpen className="w-4 h-4 text-amber-400" />
             Select Content Pillar &amp; Topic Angle
           </span>
           <span className="text-[10px] text-slate-400 font-mono">8 Core Pillars</span>
@@ -216,8 +214,8 @@ export const ArchieResearchLabTab: React.FC<ArchieResearchLabTabProps> = ({
                 onClick={() => setSelectedPillar(pillar)}
                 className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                   isSelected
-                    ? 'bg-emerald-950/40 border-emerald-500 text-white ring-1 ring-emerald-500 shadow-sm'
-                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                    ? 'bg-[#182030] border-amber-500 text-white font-bold ring-1 ring-amber-500'
+                    : 'bg-[#161c28] border-[#222a38] text-slate-400 hover:text-slate-200 hover:border-slate-600'
                 }`}
               >
                 <div className="text-xs font-bold leading-tight">{item.title}</div>
@@ -229,15 +227,15 @@ export const ArchieResearchLabTab: React.FC<ArchieResearchLabTabProps> = ({
 
         {/* Quick link to Archie & Environments Preview Studio + Content Creator Trends */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="p-3.5 bg-gradient-to-r from-cyan-950/50 via-slate-900 to-slate-900 border border-cyan-500/40 rounded-2xl flex flex-col justify-between gap-3">
+          <div className="p-3.5 bg-[#161c28] border border-[#222a38] rounded-xl flex flex-col justify-between gap-3">
             <div className="flex items-start gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 font-bold shrink-0 mt-0.5">
-                <Search className="w-4 h-4 text-cyan-400" />
+              <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold shrink-0 mt-0.5">
+                <Search className="w-4 h-4 text-amber-400" />
               </div>
               <div>
-                <div className="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
+                <div className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
                   <span>Google Trends &amp; 5-Tool Creator Reel</span>
-                  <span className="text-[9px] px-1 py-0.2 rounded bg-cyan-900 text-cyan-200 font-mono">LIVE DEDUP</span>
+                  <span className="text-[10px] text-amber-400 font-mono">LIVE DEDUP</span>
                 </div>
                 <div className="text-[11px] text-slate-400 mt-0.5">
                   Viral countdown reels, glowing neon tool slams, plain-English Wikipedia &amp; DuckDuckGo problem-remedy breakdown.
@@ -247,7 +245,7 @@ export const ArchieResearchLabTab: React.FC<ArchieResearchLabTabProps> = ({
             {onNavigateToPreview && (
               <button
                 onClick={() => onNavigateToPreview(topicInput)}
-                className="w-full py-1.5 px-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-cyan-600/20 flex items-center justify-center gap-1.5 cursor-pointer"
+                className="w-full py-1.5 px-3 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <span>Open 5-Tool Reel Studio</span>
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -255,15 +253,15 @@ export const ArchieResearchLabTab: React.FC<ArchieResearchLabTabProps> = ({
             )}
           </div>
 
-          <div className="p-3.5 bg-gradient-to-r from-emerald-950/40 via-teal-950/30 to-slate-900 border border-emerald-500/30 rounded-2xl flex flex-col justify-between gap-3">
+          <div className="p-3.5 bg-[#161c28] border border-[#222a38] rounded-xl flex flex-col justify-between gap-3">
             <div className="flex items-start gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold shrink-0 mt-0.5">
-                <Sparkles className="w-4 h-4 text-emerald-400" />
+              <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold shrink-0 mt-0.5">
+                <Sparkles className="w-4 h-4 text-amber-400" />
               </div>
               <div>
-                <div className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+                <div className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
                   <span>Visual Staging &amp; Environments</span>
-                  <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-900 text-emerald-200 font-mono">18 BACKDROPS</span>
+                  <span className="text-[10px] text-slate-400 font-mono">18 BACKDROPS</span>
                 </div>
                 <div className="text-[11px] text-slate-400 mt-0.5">
                   Archie grounded creator desk, zero floating, quantum vaults, collider tunnels, and safe mobile captions.
@@ -273,7 +271,7 @@ export const ArchieResearchLabTab: React.FC<ArchieResearchLabTabProps> = ({
             {onNavigateToPreview && (
               <button
                 onClick={() => onNavigateToPreview(topicInput)}
-                className="w-full py-1.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5 cursor-pointer"
+                className="w-full py-1.5 px-3 bg-[#181f2c] hover:bg-[#20293a] border border-[#2a3446] text-slate-200 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <span>Preview in Studio</span>
                 <ChevronRight className="w-3.5 h-3.5" />

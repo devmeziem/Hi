@@ -82,7 +82,7 @@ export const VERIFIED_CREATOR_TOOLS_CATALOG: CreatorToolItem[] = [
     freeTier: '100% Free with zero watermark on export',
     pros: ['Auto-generates word-by-word karaoke captions', 'One-click 9:16 vertical crop', 'Massive free sound effects library'],
     usageSummary: 'Instead of manually typing subtitles for two hours, its auto-caption engine transcribes your voice in 15 seconds with custom animations.',
-    screenshotUrl: 'https://images.pexels.com/photos/7988086/pexels-photo-7988086.jpeg?auto=compress&cs=tinysrgb&w=800',
+    screenshotUrl: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=1080&q=80',
     directUrl: 'https://www.capcut.com'
   },
   {
@@ -93,7 +93,7 @@ export const VERIFIED_CREATOR_TOOLS_CATALOG: CreatorToolItem[] = [
     freeTier: 'Free web tier (1 hour of audio per day)',
     pros: ['Removes harsh room echo and fan noise', 'Boosts low-end vocal resonance like a $400 mic', 'Runs directly in your phone browser'],
     usageSummary: 'Upload raw phone audio recorded on a noisy street or in an echoey bedroom, and it eliminates 100% of background noise to sound like a studio condenser.',
-    screenshotUrl: 'https://images.pexels.com/photos/6883810/pexels-photo-6883810.jpeg?auto=compress&cs=tinysrgb&w=800',
+    screenshotUrl: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=1080&q=80',
     directUrl: 'https://podcast.adobe.com/enhance'
   },
   {
@@ -104,7 +104,7 @@ export const VERIFIED_CREATOR_TOOLS_CATALOG: CreatorToolItem[] = [
     freeTier: '100% Free web app, zero download needed',
     pros: ['Opens native PSD, AI, and Figma files', 'Supports layer masks, smart filters & blending modes', 'Zero login required for immediate thumbnail editing'],
     usageSummary: 'You do not need a paid Photoshop subscription to make high-CTR YouTube thumbnails. Photopea runs identical tools inside your browser for free.',
-    screenshotUrl: 'https://images.pexels.com/photos/196644/pexels-photo-196644.jpeg?auto=compress&cs=tinysrgb&w=800',
+    screenshotUrl: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?auto=format&fit=crop&w=1080&q=80',
     directUrl: 'https://www.photopea.com'
   },
   {
@@ -115,7 +115,7 @@ export const VERIFIED_CREATOR_TOOLS_CATALOG: CreatorToolItem[] = [
     freeTier: '100% Free online tool',
     pros: ['Cuts image weight by 70% with zero visible quality loss', 'Drastically speeds up video import and loading', 'Batch uploads up to 20 images at once'],
     usageSummary: 'Shrinks 15-megabyte camera stills down to 2 megabytes with zero visible distortion so your editing timeline stays butter-smooth without crashing.',
-    screenshotUrl: 'https://images.pexels.com/photos/1779487/pexels-photo-1779487.jpeg?auto=compress&cs=tinysrgb&w=800',
+    screenshotUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1080&q=80',
     directUrl: 'https://tinypng.com'
   },
   {
@@ -126,7 +126,7 @@ export const VERIFIED_CREATOR_TOOLS_CATALOG: CreatorToolItem[] = [
     freeTier: '100% Free permanent version (No watermark, no trial limits)',
     pros: ['Industry-standard Fairlight audio & Fusion VFX', 'Hardware-accelerated 4K timeline rendering', 'Zero monthly subscription forever'],
     usageSummary: 'This is the most critically needed free software on this list. It gives you professional Hollywood color grading, 4K multi-cam timelines, and noise-gate audio without a single dime.',
-    screenshotUrl: 'https://images.pexels.com/photos/2582937/pexels-photo-2582937.jpeg?auto=compress&cs=tinysrgb&w=800',
+    screenshotUrl: 'https://images.unsplash.com/photo-1536240478700-b869070f9279?auto=format&fit=crop&w=1080&q=80',
     directUrl: 'https://www.blackmagicdesign.com/products/davinciresolve',
     isClimaxCritical: true
   }
@@ -308,32 +308,86 @@ export async function elaborateTopicWithWikiAndDuckDuckGo(
   }
 
   // Synthesize Problem, Plain English Mechanism & Free Remedy
-  const isCreatorQuery = topicTitle.toLowerCase().includes('creator') || topicTitle.toLowerCase().includes('tool') || topicTitle.toLowerCase().includes('edit');
+  const lower = topicTitle.toLowerCase();
 
-  const problemStatement = isCreatorQuery
-    ? 'Content creators spend 4+ hours every single day manually syncing audio, typing subtitles, and wrestling with paid subscription paywalls.'
-    : `When using ${topicTitle.toLowerCase()}, most users experience unexpected overheating, lagging latency, or quality degradation without understanding why.`;
+  let problemStatement = 'Most users run into hidden bottlenecks, unexpected latency, or quality drop-offs without realizing the underlying cause.';
+  let plainEnglishExplanation = duckDuckGoAbstract || wikipediaSummary || 'Here is the plain English mechanism: Digital systems trade off energy efficiency and thermal dissipation. When tasks run unoptimized, protective throttling kicks in.';
+  let freeRemedyTool = {
+    name: 'Built-In Diagnostic & System Optimization Tool',
+    description: 'Free utility that regulates thermal ceilings and clears unlinked cache memory.',
+    freeTier: '100% Free & Built-In',
+    directUrl: 'https://github.com',
+    pros: ['Prevents thermal throttling', 'Zero cost or subscription', 'Immediate measurable boost'],
+    actionableUsage: 'Apply the optimal settings profile to eliminate bottleneck latency.'
+  };
 
-  const plainEnglishExplanation = duckDuckGoAbstract || wikipediaSummary ||
-    'Here is the plain English mechanism: Digital systems and consumer hardware trade off energy efficiency for speed. When unoptimized tasks run continuously, the processor throttles performance to protect internal circuitry.';
-
-  const freeRemedyTool = isCreatorQuery
-    ? {
-        name: 'CapCut Desktop & Adobe Podcast AI',
-        description: 'Auto-transcription and neural vocal studio enhancer with zero watermarks.',
-        freeTier: '100% Free Tier Available',
-        directUrl: 'https://podcast.adobe.com/enhance',
-        pros: ['One-click background echo removal', 'Word-by-word animated captions', 'No hardware upgrade required'],
-        actionableUsage: 'Drop your raw audio or video into the browser window, let the neural filter clean the waveform in 15 seconds, and export lossless audio directly.'
-      }
-    : {
-        name: 'Open-Source Hardware Diagnostic & Optimization Tool',
-        description: 'Free utility that regulates charging temperature and cleans cache allocations.',
-        freeTier: 'Free & Open Source',
-        directUrl: 'https://github.com',
-        pros: ['Monitors real-time thermal throttling', 'Disables background memory leaks', 'Saves battery cycles'],
-        actionableUsage: 'Enable the internal battery protection toggle in settings to cap peak thermal charging at 80% capacity.'
-      };
+  if (lower.includes('phone') || lower.includes('batter') || lower.includes('charg')) {
+    problemStatement = 'Your phone rockets from 0% to 80% in 20 minutes, but the last 20% takes forever—and leaving it plugged in overnight cooks the chemical cells.';
+    plainEnglishExplanation = 'Think of charging like parking cars in a massive empty lot. At first, cars zoom straight into open spots at 60mph. But once 80% of spots are taken, cars must crawl at 5mph to avoid crashing into each other. Pushing high current into a full battery creates internal friction (Joule heating), which permanently degrades lithium capacity.';
+    freeRemedyTool = {
+      name: '80% Battery Protection Limit (Built-In OS Feature)',
+      description: 'Built-in battery health limiter found in both iOS and Android settings.',
+      freeTier: '100% Free Built-In Setting',
+      directUrl: 'https://support.google.com/android/answer/7664692',
+      pros: ['Cuts peak charging heat by 60%', 'Doubles battery lifespan from 2 to 4 years', 'Zero app download required'],
+      actionableUsage: 'Go to Settings -> Battery -> Battery Health / Protection, and turn on the 80% Charge Limit ceiling.'
+    };
+  } else if (lower.includes('echo') || lower.includes('noise') || lower.includes('audio') || lower.includes('mic')) {
+    problemStatement = 'Recording videos on a phone microphone in a bedroom or office captures harsh room echo, air conditioning rumble, and fan noise that makes the video sound amateur.';
+    plainEnglishExplanation = 'Sound waves bounce off hard walls, glass windows, and desks like tennis balls, arriving at your mic milliseconds after your direct voice. An AI speech filter decomposes the sound into a spectrogram, isolates vocal formants, and mathematically deletes 100% of the acoustic reverb reflections.';
+    freeRemedyTool = {
+      name: 'Adobe Podcast AI Audio Enhance',
+      description: 'One-click neural speech enhancer that transforms raw phone audio into a $400 studio condenser microphone sound.',
+      freeTier: '100% Free Browser Tier (1 hr/day)',
+      directUrl: 'https://podcast.adobe.com/enhance',
+      pros: ['Removes 100% of room echo and background hum', 'Adds broadcast vocal warmth & presence', 'Runs entirely in your web browser'],
+      actionableUsage: 'Drop your raw audio file into the web browser, let the AI clean it for 15 seconds, and export pristine studio audio.'
+    };
+  } else if (lower.includes('airplane') || lower.includes('window') || lower.includes('hole')) {
+    problemStatement = 'At cruising altitude of 35,000 feet, external atmospheric pressure drops to just 3.4 PSI while cabin pressure is maintained at 11 PSI, exerting thousands of pounds of explosive force on the windows.';
+    plainEnglishExplanation = 'Airplane passenger windows are made of three separate acrylic panes. The tiny hole is located exclusively in the middle pane, called the "bleed hole". It allows pressure to equalize between the cabin and the air gap, ensuring only the heavy outer pane bears the structural pressure while venting moisture to keep the window fog-free.';
+    freeRemedyTool = {
+      name: 'Flightradar24 Live Aircraft Telemetry',
+      description: 'Live aircraft cabin altitude, atmospheric pressure differential, and airspeed tracker.',
+      freeTier: '100% Free Web & Mobile App',
+      directUrl: 'https://www.flightradar24.com',
+      pros: ['Displays real-time cabin pressure altitude', 'Track any commercial flight globally', 'Free 3D cockpit perspective view'],
+      actionableUsage: 'Open the app during your flight to view your exact altitude, ambient air temperature (-50°C), and pressure differentials in real time.'
+    };
+  } else if (lower.includes('photoshop') || lower.includes('photopea') || lower.includes('graphic') || lower.includes('thumbnail')) {
+    problemStatement = 'Adobe charges over $20 every single month for Photoshop, which is unaffordable for new creators who just need to remove backgrounds and make high-CTR thumbnails.';
+    plainEnglishExplanation = 'Modern web browsers support WebAssembly (Wasm) and WebGL, allowing complex C++ photo editing applications to run directly inside a browser tab at near-native CPU/GPU speeds without downloading any software.';
+    freeRemedyTool = {
+      name: 'Photopea Online Editor',
+      description: 'Complete in-browser Photoshop replacement supporting native PSD, layer masks, and smart filters.',
+      freeTier: '100% Free with zero watermark',
+      directUrl: 'https://www.photopea.com',
+      pros: ['Opens and saves native .PSD files', 'Full support for layer styles, pen tool, and blending modes', 'Zero account registration or installation needed'],
+      actionableUsage: 'Go to photopea.com, drag in your thumbnail canvas, use the Quick Selection tool to cut out your portrait, and export high-res PNGs.'
+    };
+  } else if (lower.includes('delete') || lower.includes('trash') || lower.includes('storage') || lower.includes('recover')) {
+    problemStatement = 'Users accidentally empty their trash folder or believe deleted photos on an old phone are gone forever, leaving private data exposed or valuable memories lost.';
+    plainEnglishExplanation = 'Flash storage chips use NAND gates. Physically erasing billions of electrons takes significant time and battery voltage. Therefore, when you click "Delete", the operating system simply unlinks the file address pointer in the Master File Table. The actual binary data sits intact in the physical silicon until new photos overwrite it.';
+    freeRemedyTool = {
+      name: 'PhotoRec & Recuva (Open Source Data Recovery)',
+      description: 'Free forensic file carver that reads raw unlinked flash sectors to resurrect deleted photos and videos.',
+      freeTier: '100% Free Open-Source Software',
+      directUrl: 'https://www.cgsecurity.org/wiki/PhotoRec',
+      pros: ['Ignores damaged file system headers', 'Recovers hundreds of file formats (JPEG, MP4, RAW)', 'Zero trial restrictions or paywalls'],
+      actionableUsage: 'Stop writing new files to the device immediately, run PhotoRec on the memory card or drive, and extract your unlinked photos in 10 minutes.'
+    };
+  } else if (lower.includes('creator') || lower.includes('tool') || lower.includes('edit')) {
+    problemStatement = 'Content creators spend 4+ hours every single day manually syncing audio, typing subtitles, and wrestling with paid subscription paywalls.';
+    plainEnglishExplanation = 'Free AI workflows and open-source tools now match 95% of expensive enterprise software capabilities. By combining auto-captioning, audio enhancement, and browser graphic suites, you save hundreds of dollars a month.';
+    freeRemedyTool = {
+      name: 'CapCut Desktop & Adobe Podcast AI',
+      description: 'Auto-transcription and neural vocal studio enhancer with zero watermarks.',
+      freeTier: '100% Free Tier Available',
+      directUrl: 'https://podcast.adobe.com/enhance',
+      pros: ['One-click background echo removal', 'Word-by-word animated captions', 'No hardware upgrade required'],
+      actionableUsage: 'Drop your raw audio or video into the browser window, let the neural filter clean the waveform in 15 seconds, and export lossless audio directly.'
+    };
+  }
 
   return {
     topic: topicTitle,
@@ -353,14 +407,14 @@ export async function elaborateTopicWithWikiAndDuckDuckGo(
  */
 export function buildContentCreator5ToolReel(): Creator5ToolReelScript {
   return {
-    hook: "If you're a content creator, wait—this video is for you!",
-    subHook: "I'm giving you 5 tools you'll thank me for later. And make sure to stay until Tool 5, because it is the most critically needed free tool on this list.",
+    hook: "Stop scrolling! If you're a content creator, wait—this video is for you.",
+    subHook: "I'm giving you 5 completely free tools you'll thank me for later. And make sure to save Tool 5, because it replaces a $400 monthly subscription with zero watermark.",
     targetAudience: 'Content Creators',
     tools: VERIFIED_CREATOR_TOOLS_CATALOG,
-    outroCta: "Comment any other free tool you know, or comment FREE and I'll send you the direct link to all 5 tools!",
+    outroCta: "Comment any other secret free tool you use, or comment 'FREE' right now and I'll send you the direct links to all 5 tools!",
     safeCaptions: [
-      { cueSeconds: 0.0, text: "If you're a content creator, wait—this video is for you!", isToolSlam: false },
-      { cueSeconds: 3.5, text: "Here are 5 tools you'll thank me for later...", isToolSlam: false },
+      { cueSeconds: 0.0, text: "Stop scrolling! If you're a content creator, wait...", isToolSlam: false },
+      { cueSeconds: 3.2, text: "Here are 5 free tools you will thank me for later...", isToolSlam: false },
       { cueSeconds: 6.0, text: "TOOL 1: CAPCUT DESKTOP", isToolSlam: true, activeToolNumber: 1 },
       { cueSeconds: 8.0, text: "Auto-generates word-by-word karaoke captions in 15 seconds with zero watermarks.", isToolSlam: false, activeToolNumber: 1 },
       { cueSeconds: 16.0, text: "TOOL 2: ADOBE PODCAST AI", isToolSlam: true, activeToolNumber: 2 },
@@ -371,7 +425,7 @@ export function buildContentCreator5ToolReel(): Creator5ToolReelScript {
       { cueSeconds: 40.0, text: "Shrinks 15MB stills down to 2MB with zero visible quality loss.", isToolSlam: false, activeToolNumber: 4 },
       { cueSeconds: 48.0, text: "TOOL 5: DAVINCI RESOLVE (THE GAME CHANGER)", isToolSlam: true, activeToolNumber: 5 },
       { cueSeconds: 50.0, text: "Hollywood 4K color grading, multi-cam timelines, and zero monthly subscription.", isToolSlam: false, activeToolNumber: 5 },
-      { cueSeconds: 56.0, text: "Comment FREE and I'll send you direct links to all 5 tools!", isToolSlam: false }
+      { cueSeconds: 56.0, text: "Comment 'FREE' and I'll send you direct links to all 5 tools!", isToolSlam: false }
     ],
     hashtags: ['#ContentCreator', '#CreatorTools', '#VideoEditing', '#FreeTools', '#YouTubeShorts', '#ArchieCreator']
   };

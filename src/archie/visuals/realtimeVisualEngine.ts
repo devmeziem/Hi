@@ -54,8 +54,24 @@ export function optimizeVisualQuery(
   }
 
   if (channelKey.toLowerCase().includes('archie')) {
-    // Science & Technology Educational Visuals
-    return `${cleaned} science technology engineering laboratory diagram`;
+    const lower = cleaned.toLowerCase();
+    // Targeted concrete entity optimization (stops off-topic stock images)
+    if (lower.includes('phone') || lower.includes('battery') || lower.includes('charg')) {
+      return `${cleaned} smartphone battery charging electronics`;
+    }
+    if (lower.includes('audio') || lower.includes('sound') || lower.includes('mic') || lower.includes('echo')) {
+      return `${cleaned} audio waveform microphone recording studio`;
+    }
+    if (lower.includes('airplane') || lower.includes('window') || lower.includes('flight')) {
+      return `${cleaned} airplane window passenger cabin aviation`;
+    }
+    if (lower.includes('photo') || lower.includes('edit') || lower.includes('software') || lower.includes('tool')) {
+      return `${cleaned} computer screen video editing interface`;
+    }
+    if (lower.includes('delete') || lower.includes('storage') || lower.includes('flash') || lower.includes('chip')) {
+      return `${cleaned} computer hardware flash memory circuit`;
+    }
+    return `${cleaned} technology hardware`;
   }
 
   if (channelKey.toLowerCase().includes('stoic') || channelKey.toLowerCase().includes('motivation')) {
