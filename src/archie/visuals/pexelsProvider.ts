@@ -1,4 +1,6 @@
 import { VisualAssetRecord } from '../types';
+import { searchWikimediaRealtime, searchOpenverseRealtime } from './realtimeVisualEngine';
+import { filterDedupedImages } from '../../utils/imageDedupService';
 
 interface PexelsPhoto {
   id: number;
@@ -60,47 +62,29 @@ export async function searchPexelsVisuals(
     };
   }
 
-  const effectiveKey = apiKey || process.env.PEXELS_API_KEY || '';
+  const effectiveKey = apiKey || (typeof process !== 'undefined' ? process.env?.PEXELS_API_KEY : '') || '';
   if (!effectiveKey) {
-    // Curated high-relevance placeholder assets with licensed provenance
-    const fallbackPhotos: VisualAssetRecord[] = [
-      {
-        id: `pexels-curated-${normKey.slice(0, 10)}-1`,
-        type: 'photo',
-        provider: 'pexels',
-        sourceUrl: 'https://www.pexels.com',
-        mediaUrl: 'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=1080&h=1920&fit=crop',
-        thumbnailUrl: 'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=300',
-        creator: 'ThisIsEngineering',
-        license: 'Pexels Free Commercial License',
-        licenseUrl: 'https://www.pexels.com/license/',
-        attributionText: 'Photo by ThisIsEngineering on Pexels',
-        attributionRequired: false,
-        retrievedAt: new Date().toISOString(),
-        approved: true
-      },
-      {
-        id: `pexels-curated-${normKey.slice(0, 10)}-2`,
-        type: 'photo',
-        provider: 'pexels',
-        sourceUrl: 'https://www.pexels.com',
-        mediaUrl: 'https://images.pexels.com/photos/2582937/pexels-photo-2582937.jpeg?auto=compress&cs=tinysrgb&w=1080&h=1920&fit=crop',
-        thumbnailUrl: 'https://images.pexels.com/photos/2582937/pexels-photo-2582937.jpeg?auto=compress&cs=tinysrgb&w=300',
-        creator: 'Alexandre Debiève',
-        license: 'Pexels Free Commercial License',
-        licenseUrl: 'https://www.pexels.com/license/',
-        attributionText: 'Photo by Alexandre Debiève on Pexels',
-        attributionRequired: false,
-        retrievedAt: new Date().toISOString(),
-        approved: true
-      }
-    ];
+    // Unseeded Real-Time Fallback: Query live public open repositories (Wikimedia & Openverse)
+    try {
+      const [wikiPhotos, openversePhotos] = await Promise.all([
+        searchWikimediaRealtime(query, perPage),
+        searchOpenverseRealtime(query, perPage)
+      ]);
+      const combined = [...wikiPhotos, ...openversePhotos];
+      const { allowed } = filterDedupedImages('archie', combined);
 
-    return {
-      photos: fallbackPhotos,
-      videos: [],
-      providerStatus: 'no_key'
-    };
+      return {
+        photos: allowed.slice(0, perPage),
+        videos: [],
+        providerStatus: 'no_key'
+      };
+    } catch {
+      return {
+        photos: [],
+        videos: [],
+        providerStatus: 'no_key'
+      };
+    }
   }
 
   try {
@@ -163,9 +147,11 @@ export async function searchPexelsVisuals(
       });
     }
 
-    pexelsCache.set(normKey, { timestamp: Date.now(), photos, videos });
+    const { allowed: dedupedPhotos } = filterDedupedImages('archie', photos);
+
+    pexelsCache.set(normKey, { timestamp: Date.now(), photos: dedupedPhotos, videos });
     return {
-      photos,
+      photos: dedupedPhotos,
       videos,
       providerStatus: 'ok'
     };

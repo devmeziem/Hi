@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   GitBranch, 
   Workflow, 
@@ -16,12 +16,51 @@ import {
   Send,
   Sparkles,
   TrendingUp,
-  DollarSign
+  DollarSign,
+  Camera,
+  Shield,
+  Search,
+  Ban,
+  Check,
+  History
 } from 'lucide-react';
+import { checkImageDedup, getDedupCache, ROLLING_WINDOW_SIZE } from '../utils/imageDedupService';
+import { optimizeVisualQuery } from '../archie/visuals/realtimeVisualEngine';
 
 export const PipelineAutomationTab: React.FC = () => {
   const [activeWorkflowTab, setActiveWorkflowTab] = useState<number>(1);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  // Deduplication & Rolling Window State
+  const [dedupCache, setDedupCache] = useState(getDedupCache());
+  const [testImageUrl, setTestImageUrl] = useState<string>('');
+  const [testChannel, setTestChannel] = useState<string>('finance');
+  const [testResult, setTestResult] = useState<{ checked: boolean; allowed: boolean; reason?: string; slot?: number } | null>(null);
+
+  // Search Optimizer Simulator State
+  const [simQuery, setSimQuery] = useState<string>('Small business capital accounting');
+  const [simChannel, setSimChannel] = useState<string>('finance');
+
+  const refreshCache = () => {
+    setDedupCache(getDedupCache());
+  };
+
+  useEffect(() => {
+    refreshCache();
+    window.addEventListener('voxam-image-dedup-updated', refreshCache);
+    return () => window.removeEventListener('voxam-image-dedup-updated', refreshCache);
+  }, []);
+
+  const handleTestImageDedup = () => {
+    if (!testImageUrl) return;
+    const res = checkImageDedup(testChannel, testImageUrl);
+    setTestResult({
+      checked: true,
+      allowed: res.allowed,
+      reason: res.reason,
+      slot: res.videoSlot
+    });
+  };
 
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -75,9 +114,9 @@ jobs:
         with:
           node-version: 20
 
-      - name: Generate Audio & Images & Upload to Cloudinary
+      - name: Enforce 4-Video Image Deduplication & Unseeded Real-Time Media Synth
         env:
-          HUGGINGFACE_TOKEN: \${{ secrets.HUGGINGFACE_TOKEN }}
+          PEXELS_API_KEY: \${{ secrets.PEXELS_API_KEY }}
           CLOUDFLARE_ACCOUNT_ID: \${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDINARY_CLOUD_NAME: \${{ secrets.CLOUDINARY_CLOUD_NAME }}
@@ -85,7 +124,7 @@ jobs:
           FIREBASE_CONFIG_JSON: \${{ secrets.FIREBASE_CONFIG_JSON }}
         run: |
           node scripts/asset_generator_queue.cjs
-          echo "Assets uploaded to Cloudinary. Job updated to READY_FOR_RENDER"`;
+          echo "Assets generated with 4-video non-repeat deduplication and unseeded real-time search. Job updated to READY_FOR_RENDER"`;
 
   const workflowVisualEnhancementYaml = `name: 02.5-voxam-visual-enhancement-flux
 on:
@@ -851,6 +890,194 @@ jobs:
           </div>
           <div className="shrink-0 flex items-center gap-1.5 font-mono text-[11px] text-cyan-300 bg-cyan-950/80 px-2.5 py-1 rounded-lg border border-cyan-700/50">
             <span>FB</span> • <span>IG Reels</span> • <span>TikTok</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Universal Deduplication & 4-Video Non-Repeat Protection System */}
+      <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-indigo-950 text-indigo-300 border border-indigo-800">
+                ACTIVE PROTECTION MATRIX
+              </span>
+              <span className="text-[11px] font-mono text-slate-400">All Workflows Protected</span>
+            </div>
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <Shield className="w-5 h-5 text-indigo-400" />
+              Universal Multi-Workflow Deduplication &amp; 4-Video Non-Repeat Guard
+            </h2>
+            <p className="text-xs text-slate-400">
+              Guarantees zero repeat scripts, zero duplicate topics within 14 days, and strictly no same images in 4 videos in a row across any channel.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="px-3 py-1 rounded-full bg-slate-950 border border-emerald-900/60 text-emerald-400 text-xs font-mono font-bold flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              {dedupCache.blockedCount || 0} Duplicates Blocked
+            </span>
+          </div>
+        </div>
+
+        {/* 4 Workflow Protection Tiers */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+          <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">
+            <div className="text-[10px] font-mono uppercase text-indigo-400 font-bold">Workflow 01 (The Brain)</div>
+            <div className="font-bold text-white">Semantic Script &amp; Topic Dedup</div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Jaccard word-shingle comparison against 14-day history. Rejects topics with &gt;65% similarity to avoid repetitive hooks.
+            </p>
+            <div className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+              <Check className="w-3 h-3" /> 14-Day History Cache Active
+            </div>
+          </div>
+
+          <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">
+            <div className="text-[10px] font-mono uppercase text-emerald-400 font-bold">Workflow 02 (Media Synth)</div>
+            <div className="font-bold text-white">4-Video Image Non-Repeat Rule</div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Strictly bans reusing any image from the last 4 videos. Normalizes URLs and compares cryptographic SHA-256 fingerprints.
+            </p>
+            <div className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+              <Check className="w-3 h-3" /> 4-Video Sliding Cooldown
+            </div>
+          </div>
+
+          <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">
+            <div className="text-[10px] font-mono uppercase text-cyan-400 font-bold">Real-Time Visual Search</div>
+            <div className="font-bold text-white">Zero Seeded Data Policy</div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Queries Wikimedia Commons and Openverse in real-time. Zero hardcoded mock seeds. Fin channel enforces zero cartoon / anime / 3D.
+            </p>
+            <div className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+              <Check className="w-3 h-3" /> Live Creative Commons Search
+            </div>
+          </div>
+
+          <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">
+            <div className="text-[10px] font-mono uppercase text-amber-400 font-bold">Workflow 04 (Omnichannel)</div>
+            <div className="font-bold text-white">Cross-Platform Collision Guard</div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Prevents duplicate releases or identical captions across TikTok, YouTube, and Buffer within a 48-hour staggered window.
+            </p>
+            <div className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+              <Check className="w-3 h-3" /> Multi-Platform Anti-Collision
+            </div>
+          </div>
+        </div>
+
+        {/* Live Interactive Image Deduplication Checker */}
+        <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-2xl space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+            <span className="font-bold text-white flex items-center gap-1.5">
+              <History className="w-4 h-4 text-indigo-400" />
+              Live Image Deduplication Validator (Test 4-Video Cooldown)
+            </span>
+            <span className="text-[10px] font-mono text-slate-400">
+              Verify if an image is allowed or currently locked in 4-video cooldown
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+            <div className="sm:col-span-3">
+              <select
+                value={testChannel}
+                onChange={(e) => setTestChannel(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+              >
+                <option value="finance">Finance (@bones_ceo)</option>
+                <option value="archie">Archie Science Lab</option>
+                <option value="stoic">Stoic Mindset</option>
+                <option value="mindrush">Mindrush</option>
+                <option value="movie_brand">Cinema Vanguard</option>
+              </select>
+            </div>
+            <div className="sm:col-span-7">
+              <input
+                type="text"
+                value={testImageUrl}
+                onChange={(e) => setTestImageUrl(e.target.value)}
+                placeholder="Paste candidate image URL to test 4-video non-repeat check..."
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-sans"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <button
+                onClick={handleTestImageDedup}
+                className="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl cursor-pointer transition-colors"
+              >
+                Test Dedup
+              </button>
+            </div>
+          </div>
+
+          {testResult && testResult.checked && (
+            <div className={`p-3 rounded-xl border text-xs flex items-center gap-2 ${
+              testResult.allowed
+                ? 'bg-emerald-950/70 border-emerald-800 text-emerald-300'
+                : 'bg-rose-950/70 border-rose-800 text-rose-300'
+            }`}>
+              {testResult.allowed ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span><strong>PASSED:</strong> Image is fresh and clear to use! Zero appearances in the last 4 videos of this channel.</span>
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                  <span><strong>BLOCKED BY 4-VIDEO RULE:</strong> {testResult.reason}</span>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Live Search Query Optimizer Simulator */}
+        <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-2xl space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+            <span className="font-bold text-white flex items-center gap-1.5">
+              <Search className="w-4 h-4 text-emerald-400" />
+              Real-Time Search Query Optimizer Simulator
+            </span>
+            <span className="text-[10px] font-mono text-slate-400">
+              Demonstrates automatic keyword tuning and zero-cartoon enforcement
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+            <div className="sm:col-span-3">
+              <select
+                value={simChannel}
+                onChange={(e) => setSimChannel(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+              >
+                <option value="finance">Finance (@bones_ceo)</option>
+                <option value="archie">Archie Science Lab</option>
+                <option value="stoic">Stoic Mindset</option>
+              </select>
+            </div>
+            <div className="sm:col-span-9">
+              <input
+                type="text"
+                value={simQuery}
+                onChange={(e) => setSimQuery(e.target.value)}
+                placeholder="Type raw topic e.g. How to start small retail store"
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none font-sans"
+              />
+            </div>
+          </div>
+
+          <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 text-xs space-y-1">
+            <div className="text-[10px] font-mono text-slate-400 uppercase font-bold">Optimized Engine Query:</div>
+            <div className="text-emerald-400 font-mono break-all text-[11px]">
+              "{optimizeVisualQuery(simQuery, simChannel, simChannel === 'finance')}"
+            </div>
+            {simChannel === 'finance' && (
+              <div className="text-[10px] text-slate-400 pt-1 flex items-center gap-1">
+                <Ban className="w-3 h-3 text-rose-400" /> Negative filters applied: Cartoons, anime, vectors, drawings, and 3D plastic renders are blocked.
+              </div>
+            )}
           </div>
         </div>
       </div>

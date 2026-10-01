@@ -1,4 +1,5 @@
 import { VisualAssetRecord } from '../types';
+import { filterDedupedImages } from '../../utils/imageDedupService';
 
 /**
  * Wikimedia Commons Visual Provider (Master Spec Section 16, 113)
@@ -73,7 +74,8 @@ export async function searchWikimediaVisuals(
       });
     }
 
-    return assets;
+    const { allowed } = filterDedupedImages('archie', assets);
+    return allowed;
   } catch (err) {
     console.warn('[Wikimedia Provider] Error fetching Wikimedia Commons visuals:', err);
     return [];

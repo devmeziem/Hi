@@ -528,7 +528,7 @@ async function resolveFinancialPortrait(scholar) {
       try {
         const randomSeed = Math.floor(Math.random() * 99999999);
         const postData = JSON.stringify({
-          prompt: `Cinematic vertical 9:16 dark portrait of ${scholar.author}, iconic financial titan, thoughtful intense expression, dark obsidian executive boardroom background, subtle warm golden rim lighting, 8k resolution vertical masterpiece`,
+          prompt: `Authentic editorial documentary portrait of ${scholar.author}, iconic financial titan, thoughtful intense expression, 35mm film grain, Wall Street Journal Bloomberg executive photography, real human skin, dark obsidian executive boardroom background, subtle warm golden rim lighting, strictly NO cartoon, NO anime, NO 3D render, NO CGI, NO plastic skin, authentic photograph, 8k resolution vertical 9:16`,
           num_steps: 4,
           seed: randomSeed
         });
@@ -633,7 +633,7 @@ async function resolveFinancialPortrait(scholar) {
   try {
     const randomSeed = Math.floor(Math.random() * 99999999);
     console.log(`[Finance Quote Reel] ⚠️ Generating dynamic portrait for ${scholar.author} (Seed: ${randomSeed})...`);
-    const prompt = `cinematic vertical 9:16 portrait of ${scholar.author}, iconic financial titan, thoughtful expression, dark minimalist executive background, subtle warm golden rim lighting, sharp focus, 8k vertical wallpaper`;
+    const prompt = `editorial documentary portrait of ${scholar.author}, iconic financial titan, thoughtful expression, Wall Street Journal Bloomberg executive style, dark minimalist background, subtle warm golden rim lighting, 35mm film grain, strictly NO cartoon, NO anime, NO 3D render, NO CGI, NO plastic skin, authentic photograph, 9:16 vertical`;
     const pollUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1080&height=1920&nologo=true&model=flux&seed=${randomSeed}`;
     const imgBuf = await fetchHttpsBuffer(pollUrl, 14000);
     if (imgBuf && imgBuf.length > 10000) {

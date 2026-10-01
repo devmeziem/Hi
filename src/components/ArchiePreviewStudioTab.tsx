@@ -165,10 +165,9 @@ export const ArchiePreviewStudioTab: React.FC<ArchiePreviewStudioTabProps> = ({
   const currentClassroom = CLASSROOM_ENVIRONMENTS.find(e => e.id === selectedClassroomId) || CLASSROOM_ENVIRONMENTS[0];
   const currentPose = ARCHIE_PUPPET_POSES.find(p => p.id === selectedPoseId) || ARCHIE_PUPPET_POSES[0];
 
-  // Determine if this scene has a native integrated seated render (zero floating)
+  // Determine if this scene has a native baked render or dynamic sprite staging
   const isIntegratedStudioScene =
-    (selectedClassroomId === 'creator_studio_warm' && (selectedPoseId === 'archie_studio_seated_natural' || selectedPoseId === 'archie_studio_explaining_gesture')) ||
-    currentPose.isPhotorealistic;
+    selectedPoseId === 'archie_studio_seated_natural' || selectedPoseId === 'archie_studio_explaining_gesture';
 
   // Active background and character source
   const activeIntegratedImage =
@@ -669,20 +668,20 @@ Grounding: Seated at Walnut Desk with Boom Microphone (Zero Floating)`;
                       }}
                     />
 
-                    {/* Archie Character Layer */}
+                    {/* Archie Character Sprite Layer */}
                     <div
-                      className="absolute pointer-events-none transition-all duration-200"
+                      className="absolute pointer-events-none transition-all duration-200 flex items-end justify-center"
                       style={{
-                        bottom: archiePosition === 'desk' ? '22%' : '10%',
-                        left: archiePosition === 'left' ? '6%' : archiePosition === 'right' ? '46%' : '26%',
-                        width: `${48 * archieScale}%`,
-                        height: archiePosition === 'desk' ? '62%' : '75%'
+                        bottom: archiePosition === 'desk' ? '16%' : '8%',
+                        left: archiePosition === 'left' ? '4%' : archiePosition === 'right' ? '42%' : '14%',
+                        width: `${(currentPose.category === 'Seated' ? 72 : 54) * archieScale}%`,
+                        height: archiePosition === 'desk' ? '66%' : '75%'
                       }}
                     >
                       <img
-                        src={currentPose.svgPath}
+                        src={currentPose.imageUrl || currentPose.pngPath || currentPose.svgPath}
                         alt={currentPose.name}
-                        className="w-full h-full object-contain filter drop-shadow-[0_12px_18px_rgba(0,0,0,0.6)]"
+                        className="w-full h-full object-contain filter drop-shadow-[0_14px_24px_rgba(0,0,0,0.7)]"
                         referrerPolicy="no-referrer"
                       />
                     </div>

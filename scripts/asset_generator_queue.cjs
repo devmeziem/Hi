@@ -7,6 +7,7 @@
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+const { isImageAllowed, recordVideoImages } = require('./image_dedup_service.cjs');
 
 const CLOUDFLARE_ACCOUNT_ID = (process.env.CLOUDFLARE_ACCOUNT_ID || '').trim().replace(/^https?:\/\/[^\/]+\//, '').replace(/\/$/, '');
 const CLOUDFLARE_API_TOKEN = (process.env.CLOUDFLARE_API_TOKEN || '').trim();
@@ -329,6 +330,12 @@ async function processAssetQueue() {
       const slide = slides[sIdx];
       const isSlideZero = sIdx === 0;
       let slidePrompt = slide.visual || job.visualPrompt || job.title;
+      const isFin = (job.channelId || '').toLowerCase().includes('fin') || (job.channelId || '').toLowerCase().includes('bones');
+
+      // [ZERO CARTOON STANDARD]: Strictly ban cartoons for Finance Channel (@bones_ceo)
+      if (isFin) {
+        slidePrompt = `${slidePrompt}, authentic documentary photography, realistic workplace, natural sunlight, 35mm photograph, zero cartoon, zero anime, zero 3D CGI, zero vector illustration`;
+      }
 
       // [VISUAL ENHANCEMENT STEP]: Optimize Slide 0 with FLUX.1 High-CTR Style Engine
       if (isSlideZero) {
@@ -352,21 +359,37 @@ async function processAssetQueue() {
       try {
         const cfImg = await generateCloudflareAiImage(slidePrompt);
         if (cfImg) {
-          slideImageUrl = cfImg.url;
-          slideImageProvider = isSlideZero ? `FLUX.1 Visual Enhancement (${cfImg.provider})` : cfImg.provider;
-          console.log(`    ✔ [Slide ${sIdx + 1} Image] ${slideImageProvider}`);
+          const dedup = isImageAllowed(job.channelId, cfImg.url);
+          if (dedup.allowed) {
+            slideImageUrl = cfImg.url;
+            slideImageProvider = isSlideZero ? `FLUX.1 Visual Enhancement (${cfImg.provider})` : cfImg.provider;
+            console.log(`    ✔ [Slide ${sIdx + 1} Image] ${slideImageProvider} (Dedup: PASSED)`);
+          } else {
+            console.log(`    ⚠ [Slide ${sIdx + 1} Image] Dedup Block: ${dedup.reason}`);
+          }
         }
       } catch (err) {
         console.warn(`    ⚠ [Slide ${sIdx + 1} Image] Cloudflare AI notice: ${err.message}`);
       }
 
-      // 2. Fallback: Pollinations AI Flux Engine
+      // 2. Fallback: Pollinations AI Flux Engine with unique seed & 4-video non-repeat check
       if (!slideImageUrl) {
-        const slideSeed = Math.floor(Math.random() * 99999999);
-        const encodedPrompt = encodeURIComponent(slidePrompt + ' 8k ultra-hd cinematic photorealistic vertical 9:16');
-        slideImageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1080&height=1920&nologo=true&model=flux&seed=${slideSeed}&n=${Date.now() + sIdx}`;
-        slideImageProvider = isSlideZero ? `FLUX.1 Visual Enhancement (Pollinations Engine)` : `Pollinations Flux (seed: ${slideSeed})`;
-        console.log(`    ✔ [Slide ${sIdx + 1} Image Fallback] ${slideImageProvider}`);
+        let attempts = 0;
+        while (!slideImageUrl && attempts < 3) {
+          attempts++;
+          const slideSeed = Math.floor(Math.random() * 99999999) + attempts * 10000;
+          const encodedPrompt = encodeURIComponent(slidePrompt + ' 8k ultra-hd cinematic photorealistic vertical 9:16');
+          const candidateUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1080&height=1920&nologo=true&model=flux&seed=${slideSeed}&n=${Date.now() + sIdx + attempts}`;
+          
+          const dedup = isImageAllowed(job.channelId, candidateUrl);
+          if (dedup.allowed) {
+            slideImageUrl = candidateUrl;
+            slideImageProvider = isSlideZero ? `FLUX.1 Visual Enhancement (Pollinations Engine)` : `Pollinations Flux (seed: ${slideSeed})`;
+            console.log(`    ✔ [Slide ${sIdx + 1} Image Fallback] ${slideImageProvider} (Dedup: PASSED)`);
+          } else {
+            console.log(`    ⚠ [Slide ${sIdx + 1} Image Fallback Attempt ${attempts}] Dedup Block: ${dedup.reason}`);
+          }
+        }
       }
 
       // 3. Voice Synthesis for Slide Text
@@ -410,6 +433,17 @@ async function processAssetQueue() {
     job.stage = 'READY_FOR_RENDER';
     job.status = 'READY_FOR_RENDER';
     job.updatedAt = new Date().toISOString();
+
+    // Record images to 4-video non-repeat deduplication history
+    try {
+      await recordVideoImages(
+        job.channelId,
+        job.id,
+        processedSlides.map(s => ({ url: s.imageUrl, title: s.visualPrompt, provider: s.imageProvider }))
+      );
+    } catch (dedupErr) {
+      console.warn(`    ⚠ [Dedup Record Notice] ${dedupErr.message}`);
+    }
   }
 
   fs.writeFileSync(manifestPath, JSON.stringify(jobs, null, 2));

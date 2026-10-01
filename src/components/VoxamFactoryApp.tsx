@@ -811,6 +811,24 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                 <button
                   type="button"
                   onClick={() => {
+                    setActiveTab('finance-engine');
+                    setIsMobileDrawerOpen(false);
+                  }}
+                  className="w-full p-2.5 bg-gradient-to-r from-emerald-950/70 via-slate-900 to-slate-900 border border-emerald-500/40 rounded-xl text-left cursor-pointer transition-all hover:border-emerald-400 flex items-center gap-2.5"
+                >
+                  <DollarSign className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <div>
+                    <div className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+                      <span>Finance Studio (@bones_ceo)</span>
+                      <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-900/80 text-emerald-300 font-mono">0% CARTOON</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400">Live Unseeded Search &amp; 4-Video Image Deduplication</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
                     setActiveTab('archie-lab');
                     setIsMobileDrawerOpen(false);
                   }}

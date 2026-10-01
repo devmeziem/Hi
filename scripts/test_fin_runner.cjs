@@ -1471,7 +1471,7 @@ async function synthesizeEnrichedSlides(storyboard) {
         const randomSeed = Math.floor(Math.random() * 99999999);
         logInfo(`[Cloudflare Image] Attempting model ${model} (seed: ${randomSeed})...`);
         let payloadObj = {
-          prompt: `${prompt}, modern high-contrast financial scene, obsidian slate aesthetic, subtle emerald green and gold rim lighting, 9:16 vertical 8k resolution, cinematic studio lighting, photorealistic, sharp focus`
+          prompt: `${prompt}, authentic editorial documentary photography, Wall Street Journal Bloomberg style, realistic workspace, real human skin, 35mm film grain, strictly NO cartoon, NO anime, NO 3D render, NO CGI, NO illustration, NO plastic skin, authentic photograph, 9:16 vertical 8k resolution`
         };
         if (model.includes('flux')) {
           payloadObj.steps = 4;
@@ -1543,7 +1543,7 @@ async function synthesizeEnrichedSlides(storyboard) {
   // Pollinations.ai FLUX (High-Res 9:16 Vertical)
   async function generatePollinationsImage(prompt) {
     try {
-      const enhancedPrompt = `${prompt}, modern dark slate financial workspace, subtle emerald green and warm gold rim lighting, 9:16 vertical 1080x1920, 8k resolution, photorealistic cinematic lighting, sharp bokeh focus`;
+      const enhancedPrompt = `${prompt}, authentic editorial documentary photography, Bloomberg Wall Street Journal style, realistic workspace, real human skin, 35mm film grain, strictly NO cartoon, NO anime, NO 3D render, NO CGI, NO illustration, NO plastic skin, authentic photograph, 9:16 vertical 1080x1920`;
       const encoded = encodeURIComponent(enhancedPrompt.slice(0, 240));
       const url = `https://image.pollinations.ai/prompt/${encoded}?width=1080&height=1920&nologo=true&model=flux`;
       

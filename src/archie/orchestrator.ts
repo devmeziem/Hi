@@ -11,6 +11,7 @@ import { searchYouTubeSignals } from './research/youtubeProvider';
 import { searchWebAuthoritative } from './research/webSearchProvider';
 import { searchPexelsVisuals } from './visuals/pexelsProvider';
 import { searchWikimediaVisuals } from './visuals/wikimediaProvider';
+import { searchOpenverseRealtime } from './visuals/realtimeVisualEngine';
 import { synthesizeResearchWithGemini } from './ai/geminiResearchEngine';
 import { verifyClaimsAgainstSources } from './verification/claimVerifier';
 import { matchResourcesForTopic } from './resources/resourceCatalog';
@@ -78,16 +79,21 @@ export async function runArchieResearchPipeline(
   console.log(`[Archie Pipeline] Synthesizing claims across ${uniqueSources.length} verified sources...`);
   const aiSynthesis = await synthesizeResearchWithGemini(topic, uniqueSources, geminiApiKey);
 
-  // Stage 3: Visual Research using Pexels & Wikimedia Commons
-  console.log(`[Archie Pipeline] Gathering licensed visuals (Pexels & Wikimedia Commons)...`);
-  const [pexelsResult, wikimediaResult] = await Promise.allSettled([
+  // Stage 3: Visual Research using Pexels, Wikimedia Commons & Openverse (Zero Seeding)
+  console.log(`[Archie Pipeline] Gathering licensed visuals in real-time (Pexels, Wikimedia Commons, Openverse)...`);
+  const [pexelsResult, wikimediaResult, openverseResult] = await Promise.allSettled([
     searchPexelsVisuals(aiSynthesis.visualQueries.pexelsPhoto || topic, pexelsApiKey, 4),
-    searchWikimediaVisuals(aiSynthesis.visualQueries.wikimediaDiagram || topic, 4)
+    searchWikimediaVisuals(aiSynthesis.visualQueries.wikimediaDiagram || topic, 4),
+    searchOpenverseRealtime(aiSynthesis.visualQueries.pexelsPhoto || topic, 4)
   ]);
 
   const pexelsPhotos: VisualAssetRecord[] = pexelsResult.status === 'fulfilled' ? pexelsResult.value.photos : [];
   const pexelsVideos: VisualAssetRecord[] = pexelsResult.status === 'fulfilled' ? pexelsResult.value.videos : [];
   const wikimediaDiagrams: VisualAssetRecord[] = wikimediaResult.status === 'fulfilled' ? wikimediaResult.value : [];
+  const openversePhotos: VisualAssetRecord[] = openverseResult.status === 'fulfilled' ? openverseResult.value : [];
+  
+  // Combine all photos without duplicates
+  const allPhotos = [...pexelsPhotos, ...openversePhotos];
 
   // Stage 4: Fact-Check & Verify Claims against Sources
   const verification = verifyClaimsAgainstSources(aiSynthesis.claims, uniqueSources);
@@ -113,7 +119,7 @@ export async function runArchieResearchPipeline(
     sources: uniqueSources,
     claims: verification.verifiedClaims,
     visualOptions: {
-      pexelsPhotos,
+      pexelsPhotos: allPhotos,
       pexelsVideos,
       wikimediaDiagrams,
       archieSvgBackdrops: [

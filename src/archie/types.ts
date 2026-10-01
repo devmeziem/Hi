@@ -109,7 +109,7 @@ export type ClaimRecord = z.infer<typeof ClaimRecordSchema>;
 export const VisualAssetRecordSchema = z.object({
   id: z.string(),
   type: z.enum(['photo', 'video', 'diagram', 'animation', 'character_vector']),
-  provider: z.enum(['pexels', 'wikimedia_commons', 'archie_svg_owned', 'generated_diagram', 'manual_upload']),
+  provider: z.enum(['pexels', 'wikimedia_commons', 'openverse', 'public_domain', 'archie_svg_owned', 'generated_diagram', 'manual_upload']),
   sourceUrl: z.string(),
   mediaUrl: z.string(),
   thumbnailUrl: z.string().optional(),
