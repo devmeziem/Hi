@@ -227,30 +227,59 @@ export const ArchieResearchLabTab: React.FC<ArchieResearchLabTabProps> = ({
           })}
         </div>
 
-        {/* Quick link to Archie & Environments Preview Studio */}
-        <div className="p-3 bg-gradient-to-r from-emerald-950/40 via-teal-950/30 to-slate-900 border border-emerald-500/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold shrink-0">
-              <Sparkles className="w-4 h-4 text-emerald-400" />
-            </div>
-            <div>
-              <div className="text-xs font-bold text-emerald-300">
-                Visual Character Staging &amp; 15 Environments
+        {/* Quick link to Archie & Environments Preview Studio + Content Creator Trends */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="p-3.5 bg-gradient-to-r from-cyan-950/50 via-slate-900 to-slate-900 border border-cyan-500/40 rounded-2xl flex flex-col justify-between gap-3">
+            <div className="flex items-start gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 font-bold shrink-0 mt-0.5">
+                <Search className="w-4 h-4 text-cyan-400" />
               </div>
-              <div className="text-[11px] text-slate-400">
-                Preview Archie in particle collider tunnels, quantum vaults, or astrophysics domes.
+              <div>
+                <div className="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
+                  <span>Google Trends &amp; 5-Tool Creator Reel</span>
+                  <span className="text-[9px] px-1 py-0.2 rounded bg-cyan-900 text-cyan-200 font-mono">LIVE DEDUP</span>
+                </div>
+                <div className="text-[11px] text-slate-400 mt-0.5">
+                  Viral countdown reels, glowing neon tool slams, plain-English Wikipedia &amp; DuckDuckGo problem-remedy breakdown.
+                </div>
               </div>
             </div>
+            {onNavigateToPreview && (
+              <button
+                onClick={() => onNavigateToPreview(topicInput)}
+                className="w-full py-1.5 px-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-cyan-600/20 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>Open 5-Tool Reel Studio</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
-          {onNavigateToPreview && (
-            <button
-              onClick={() => onNavigateToPreview(topicInput)}
-              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
-            >
-              <span>Preview in Studio</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          )}
+
+          <div className="p-3.5 bg-gradient-to-r from-emerald-950/40 via-teal-950/30 to-slate-900 border border-emerald-500/30 rounded-2xl flex flex-col justify-between gap-3">
+            <div className="flex items-start gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold shrink-0 mt-0.5">
+                <Sparkles className="w-4 h-4 text-emerald-400" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+                  <span>Visual Staging &amp; Environments</span>
+                  <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-900 text-emerald-200 font-mono">18 BACKDROPS</span>
+                </div>
+                <div className="text-[11px] text-slate-400 mt-0.5">
+                  Archie grounded creator desk, zero floating, quantum vaults, collider tunnels, and safe mobile captions.
+                </div>
+              </div>
+            </div>
+            {onNavigateToPreview && (
+              <button
+                onClick={() => onNavigateToPreview(topicInput)}
+                className="w-full py-1.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>Preview in Studio</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Presets Chips */}

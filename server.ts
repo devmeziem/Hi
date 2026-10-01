@@ -5,6 +5,12 @@ import { fileURLToPath } from 'url';
 import https from 'https';
 import { runArchieResearchPipeline } from './src/archie/orchestrator.ts';
 import { VERIFIED_RESOURCE_CATALOG } from './src/archie/resources/resourceCatalog.ts';
+import {
+  fetchLiveTrends,
+  deduplicateTopics,
+  elaborateTopicWithWikiAndDuckDuckGo,
+  buildContentCreator5ToolReel
+} from './src/archie/research/googleTrendsYouTubeProvider.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1185,6 +1191,74 @@ Respond STRICTLY with valid raw JSON without markdown:
         res.end(JSON.stringify({ error: err.message || 'Archie Research Failed' }));
       }
     });
+    return;
+  }
+
+  // Archie Google Trends & YouTube Discovery Engine (Zero API Key Needed)
+  if (urlPath === '/api/archie/trends' && (req.method === 'GET' || req.method === 'POST')) {
+    try {
+      const candidates = await fetchLiveTrends('creator');
+      
+      // Load saved topic history from local reports
+      const reportsDir = path.join(__dirname, 'data', 'archie_reports');
+      const savedTopics: string[] = [];
+      if (fs.existsSync(reportsDir)) {
+        const files = fs.readdirSync(reportsDir).filter(f => f.endsWith('.json'));
+        files.forEach(f => {
+          try {
+            const data = JSON.parse(fs.readFileSync(path.join(reportsDir, f), 'utf8'));
+            if (data?.topic) savedTopics.push(data.topic);
+          } catch {}
+        });
+      }
+
+      // Run live deduplication
+      const deduplicated = deduplicateTopics(candidates, savedTopics, 0.55);
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        success: true,
+        trends: deduplicated,
+        savedTopicsChecked: savedTopics.length
+      }));
+    } catch (err: any) {
+      console.error('[API Server: Trends Discovery Failed]:', err);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message || 'Trends Discovery Failed' }));
+    }
+    return;
+  }
+
+  // Archie Wikipedia + DuckDuckGo Deep Elaborator
+  if (urlPath === '/api/archie/elaborate' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', async () => {
+      try {
+        const { topic = '5 Free Tools for Content Creators' } = JSON.parse(body || '{}');
+        const report = await elaborateTopicWithWikiAndDuckDuckGo(topic);
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, report }));
+      } catch (err: any) {
+        console.error('[API Server: Topic Elaboration Failed]:', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message || 'Topic Elaboration Failed' }));
+      }
+    });
+    return;
+  }
+
+  // Archie Content Creator 5-Tool Countdown Generator
+  if (urlPath === '/api/archie/creator-5-tools' && req.method === 'GET') {
+    try {
+      const script = buildContentCreator5ToolReel();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, script }));
+    } catch (err: any) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
     return;
   }
 

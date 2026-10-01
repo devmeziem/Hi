@@ -2354,7 +2354,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
         {activeTab === 'teen-motivation' && <TeenMotivationTab />}
 
         {/* TAB: FINANCE & SMALL BUSINESS ENGINE */}
-        {activeTab === 'finance' && <FinanceEngineTab keys={keys} />}
+        {(activeTab === 'finance' || activeTab === 'finance-engine') && <FinanceEngineTab keys={keys} />}
 
         {/* TAB: PIPELINE AUTOMATION */}
         {activeTab === 'pipeline' && <PipelineAutomationTab />}
