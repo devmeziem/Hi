@@ -949,7 +949,7 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
 
   // 4. QUATERNARY: Google Gemini 2.0 / 1.5 Flash (Free Tier)
   if (!scriptData && GEMINI_API_KEY) {
-    const candidateGeminiModels = ['gemini-2.5-flash', 'gemini-2.0-flash-exp', 'gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash'];
+    const candidateGeminiModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.5-pro'];
     for (const model of candidateGeminiModels) {
       try {
         logInfo(`[Storyboard Engine] 4. Requesting storyboard from Google Gemini (${model})...`);

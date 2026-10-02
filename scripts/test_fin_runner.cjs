@@ -552,7 +552,7 @@ async function discoverDynamicFinanceTopic(resolvedArchetype, activeGrok, recent
 
   // 3. Try Google Gemini
   if (GEMINI_API_KEY) {
-    const geminiModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    const geminiModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.5-pro'];
     for (const model of geminiModels) {
       try {
         const postData = JSON.stringify({
@@ -987,7 +987,7 @@ async function generateFinanceStoryboard(topicInput, grokObj, groqModel) {
 
     // 3. TERTIARY: Google Gemini Models
     if (!scriptData && GEMINI_API_KEY) {
-      const geminiModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.5-flash-8b'];
+      const geminiModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.5-pro'];
       for (const gModel of geminiModels) {
         if (scriptData) break;
         try {

@@ -300,7 +300,7 @@ async function callDeepSeek(prompt, systemPrompt) {
  */
 async function callGemini(prompt, systemPrompt) {
   if (!GEMINI_API_KEY) return null;
-  const candidateModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash'];
+  const candidateModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.5-pro'];
 
   for (const model of candidateModels) {
     try {

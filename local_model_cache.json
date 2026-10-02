@@ -1,0 +1,252 @@
+{
+  "562e77cd164522e827a52e2738e67630f7cf60fb2247cbe32d4113b01f5fc848": {
+    "model": "cartoon_plan",
+    "timestamp": "2026-10-02T11:33:15.865Z",
+    "response": {
+      "topic": "Why Microwaves Heat Soup Not Ceramic Mugs",
+      "title": "Why Microwaves Heat Soup Not Ceramic Mugs Actually H",
+      "character_name": "Archie",
+      "target_duration_seconds": 70,
+      "category": "science",
+      "classroom_style": "cyber_stem",
+      "wiki_search_term": "Microwaves Heat",
+      "trending_keywords": [
+        "Microwaves Heat Soup Not Ceramic Mugs science",
+        "Microwaves Heat Soup Not Ceramic Mugs explained",
+        "everyday physics wonder"
+      ],
+      "synced_hashtags": [
+        "#ArchieExplains",
+        "#ScienceFacts",
+        "#Shorts",
+        "#CuriousMinds",
+        "#EverydayPhysics"
+      ],
+      "hard_words": [
+        {
+          "word": "Microwaves Heat",
+          "definition": "The observable natural law in action during this everyday phenomenon."
+        }
+      ],
+      "scenes": [
+        {
+          "scene": 1,
+          "duration": 8,
+          "dialogue": "Notice how microwaves heat soup not ceramic mugs always happens when you least expect it? Stop scrolling, because what is actually happening will blow your mind.",
+          "character_action": "walk_in",
+          "character_position": "center",
+          "look_target": "audience",
+          "emotion": "curious",
+          "camera": "medium",
+          "middle_scene_type": "intro_hook",
+          "background_style": "cyber_stem"
+        },
+        {
+          "scene": 2,
+          "duration": 8.5,
+          "dialogue": "Most people assume it is caused by simple friction or luck, but everyday physics proves there is a hidden mechanism operating underneath.",
+          "character_action": "point_right",
+          "character_position": "left",
+          "look_target": "board",
+          "emotion": "curious",
+          "camera": "medium",
+          "middle_scene_type": "board_schematic",
+          "background_style": "cyber_stem"
+        },
+        {
+          "scene": 3,
+          "duration": 9,
+          "dialogue": "Look at the holographic blueprint on screen. When energy transfers across the surface, atomic bonds shift their alignment in fractions of a second.",
+          "character_action": "explain_both",
+          "character_position": "left",
+          "look_target": "board",
+          "emotion": "excited",
+          "camera": "wide",
+          "middle_scene_type": "board_schematic",
+          "background_style": "cyber_stem"
+        },
+        {
+          "scene": 4,
+          "duration": 9,
+          "dialogue": "Take a look at this physical specimen under macro lens. Those tiny micro-structures create an invisible barrier that controls the whole process.",
+          "character_action": "thinking",
+          "character_position": "left",
+          "look_target": "board",
+          "emotion": "curious",
+          "camera": "close_up",
+          "middle_scene_type": "specimen_cutaway",
+          "background_style": "cyber_stem"
+        },
+        {
+          "scene": 5,
+          "duration": 9.5,
+          "dialogue": "Because thermal energy and air pressure react instantly, the molecules accelerate rapidly, producing the observable change right before your eyes.",
+          "character_action": "point_left",
+          "character_position": "center",
+          "look_target": "audience",
+          "emotion": "excited",
+          "camera": "medium_to_close",
+          "middle_scene_type": "board_schematic",
+          "background_style": "cyber_stem"
+        },
+        {
+          "scene": 6,
+          "duration": 8.5,
+          "dialogue": "Here is the common myth versus reality: people think it takes minutes, but in actual lab tests the transition occurs in milliseconds.",
+          "character_action": "comparing",
+          "character_position": "center",
+          "look_target": "audience",
+          "emotion": "surprised",
+          "camera": "wide",
+          "middle_scene_type": "comparison_contrast",
+          "background_style": "cyber_stem"
+        },
+        {
+          "scene": 7,
+          "duration": 8.5,
+          "dialogue": "You experience this exact same scientific principle whenever you step outside into morning air or use your smartphone touchscreen.",
+          "character_action": "point_right",
+          "character_position": "right",
+          "look_target": "audience",
+          "emotion": "excited",
+          "camera": "medium",
+          "middle_scene_type": "specimen_cutaway",
+          "background_style": "cyber_stem"
+        },
+        {
+          "scene": 8,
+          "duration": 9,
+          "dialogue": "Here is the key takeaway: physical laws react instantly to pressure and temperature. Save this before you scroll, and follow Archie Explains for daily science decoded!",
+          "character_action": "akimbo_jaw",
+          "character_position": "right",
+          "look_target": "audience",
+          "emotion": "thinking",
+          "camera": "medium_to_close",
+          "middle_scene_type": "glossary_takeaway",
+          "glossary_term": "Microwaves Heat",
+          "glossary_explanation": "The natural physical law governing energy transfer in everyday materials.",
+          "background_style": "cyber_stem"
+        }
+      ]
+    }
+  },
+  "c2c00d406ca90f9ab9cd0230bacbd22e4eed4c4e87094927d1563fa8c4653def": {
+    "model": "cartoon_plan",
+    "timestamp": "2026-10-02T11:37:22.166Z",
+    "response": {
+      "topic": "5 Free Content Creator Tools",
+      "title": "5 Creator Tools You Will Thank Me For",
+      "character_name": "Archie",
+      "target_duration_seconds": 76,
+      "category": "science",
+      "classroom_style": "cyber_stem",
+      "wiki_search_term": "Creator Toolkit",
+      "trending_keywords": [
+        "5 Free Content Creator Tools science",
+        "5 Free Content Creator Tools explained",
+        "everyday physics wonder"
+      ],
+      "synced_hashtags": [
+        "#ArchieExplains",
+        "#ScienceFacts",
+        "#Shorts",
+        "#CuriousMinds",
+        "#EverydayPhysics"
+      ],
+      "hard_words": [
+        {
+          "word": "Creator Toolkit",
+          "definition": "The observable natural law in action during this everyday phenomenon."
+        }
+      ],
+      "scenes": [
+        {
+          "scene": 1,
+          "duration": 8,
+          "dialogue": "If you are a content creator, wait—here are five tools you will thank me for later. Tool number five is the most critically needed and completely free!",
+          "character_action": "walk_in",
+          "character_position": "center",
+          "look_target": "audience",
+          "emotion": "excited",
+          "camera": "medium",
+          "middle_scene_type": "intro_hook",
+          "background_style": "cyber_stem"
+        },
+        {
+          "scene": 2,
+          "duration": 11.5,
+          "dialogue": "Tool 1: High-Retention Visual Framing. It slams high-contrast vector badges and glow highlights directly onto your presentation board, boosting initial viewer retention instantly.",
+          "character_action": "point_right",
+          "character_position": "left",
+          "look_target": "board",
+          "emotion": "curious",
+          "camera": "medium",
+          "middle_scene_type": "board_schematic",
+          "background_style": "cyber_stem"
+        },
+        {
+          "scene": 3,
+          "duration": 11.5,
+          "dialogue": "Tool 2: Studio Audio Equalizer. It eliminates room reverberation and background hiss in one click so your voice sounds like a high-end broadcast studio microphone.",
+          "character_action": "explain_both",
+          "character_position": "left",
+          "look_target": "board",
+          "emotion": "excited",
+          "camera": "wide",
+          "middle_scene_type": "board_schematic",
+          "background_style": "cyber_stem"
+        },
+        {
+          "scene": 4,
+          "duration": 11,
+          "dialogue": "Tool 3: Kinetic Subtitle Engine. It locks synchronized animated captions at the bottom of the screen with clear contrast so mobile viewers stay locked into your video.",
+          "character_action": "thinking",
+          "character_position": "left",
+          "look_target": "board",
+          "emotion": "curious",
+          "camera": "close_up",
+          "middle_scene_type": "specimen_cutaway",
+          "background_style": "cyber_stem"
+        },
+        {
+          "scene": 5,
+          "duration": 11.5,
+          "dialogue": "Tool 4: Cross-Platform Asset Dispatcher. It renders and schedules your vertical videos to YouTube Shorts, TikTok, and Instagram simultaneously without quality loss.",
+          "character_action": "point_left",
+          "character_position": "center",
+          "look_target": "audience",
+          "emotion": "excited",
+          "camera": "medium_to_close",
+          "middle_scene_type": "board_schematic",
+          "background_style": "cyber_stem"
+        },
+        {
+          "scene": 6,
+          "duration": 13,
+          "dialogue": "Tool 5 is the most important: Open-Source Zero-Cost Direct Pipeline. It is completely free, runs without monthly subscriptions, and gives creators total creative control.",
+          "character_action": "point_right",
+          "character_position": "right",
+          "look_target": "audience",
+          "emotion": "excited",
+          "camera": "medium",
+          "middle_scene_type": "specimen_cutaway",
+          "background_style": "cyber_stem"
+        },
+        {
+          "scene": 7,
+          "duration": 9.5,
+          "dialogue": "Comment FREE below and I will send you the direct links, or comment any other free tool you know. Save this before you scroll!",
+          "character_action": "akimbo_jaw",
+          "character_position": "right",
+          "look_target": "audience",
+          "emotion": "thinking",
+          "camera": "medium_to_close",
+          "middle_scene_type": "glossary_takeaway",
+          "glossary_term": "Creator Toolkit",
+          "glossary_explanation": "High-leverage free software and production tools for digital creators.",
+          "background_style": "cyber_stem"
+        }
+      ]
+    }
+  }
+}

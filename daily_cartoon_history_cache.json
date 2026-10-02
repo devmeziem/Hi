@@ -1,5 +1,38 @@
 [
   {
+    "id": "topic_1790941194241",
+    "topic": "Food, Flavor & Spice Chemistry",
+    "title": "Food, Flavor & Spice Chemistry",
+    "sphereId": "",
+    "sphereName": "Food, Flavor & Spice Chemistry",
+    "angle": "Capsaicin vs milk casein, coffee adenosine blocking, soda carbonation Henry’s law",
+    "niche": "cartoon",
+    "modelUsed": "AI Core",
+    "chosenAt": "2026-10-02T11:39:54.241Z"
+  },
+  {
+    "id": "topic_1790941082879",
+    "topic": "Food, Flavor & Spice Chemistry",
+    "title": "Food, Flavor & Spice Chemistry",
+    "sphereId": "",
+    "sphereName": "Food, Flavor & Spice Chemistry",
+    "angle": "Capsaicin vs milk casein, coffee adenosine blocking, soda carbonation Henry’s law",
+    "niche": "cartoon",
+    "modelUsed": "Dynamic Research-Grounded Synthesizer",
+    "chosenAt": "2026-10-02T11:38:02.879Z"
+  },
+  {
+    "id": "topic_1790941051613",
+    "topic": "Household Physics & Winter Sparks",
+    "title": "Household Physics & Winter Sparks",
+    "sphereId": "",
+    "sphereName": "Household Physics & Winter Sparks",
+    "angle": "Static door shocks, bathroom mirror optics, chip bag air pressure, salt melting road ice",
+    "niche": "cartoon",
+    "modelUsed": "Dynamic Research-Grounded Synthesizer",
+    "chosenAt": "2026-10-02T11:37:31.613Z"
+  },
+  {
     "id": "topic_1788508554369",
     "topic": "Why Is Thunder So Loud? - Encyclopedia Britannica",
     "title": "Why Is Thunder So Loud? - Encyclopedia Britannica",

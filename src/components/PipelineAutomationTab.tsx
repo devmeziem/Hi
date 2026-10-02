@@ -386,14 +386,44 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - uses: actions/setup-python@v5
+          cache: 'npm'
+      - name: Cache Rhubarb Lip Sync Binary
+        id: cache-rhubarb
+        uses: actions/cache@v4
         with:
-          python-version: '3.10'
+          path: /usr/local/bin/rhubarb
+          key: rhubarb-lip-sync-1.13.0-\${{ runner.os }}
+      - name: Cache APT Packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: apt-cache-cartoon-\${{ runner.os }}
+          restore-keys: |
+            apt-cache-cartoon-\${{ runner.os }}
       - name: Install System Utilities & FFmpeg
+        timeout-minutes: 4
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg libespeak-ng1 libsndfile1
-          pip install --no-cache-dir soundfile moviepy pillow numpy
+          if command -v ffmpeg &> /dev/null && command -v espeak-ng &> /dev/null; then
+            echo "✓ FFmpeg and espeak-ng already pre-installed. Skipping network download."
+          else
+            sudo apt-get update -o Acquire::Retries=2 -o Acquire::http::Timeout="10" -o Acquire::Connect-Timeout="8" || true
+            sudo apt-get install -y --no-install-recommends ffmpeg libespeak-ng1 libsndfile1 || true
+          fi
+      - name: Install Node Dependencies
+        timeout-minutes: 4
+        run: npm install --legacy-peer-deps --no-audit --no-fund
+      - name: Install Rhubarb Lip Sync 1.13.0
+        if: steps.cache-rhubarb.outputs.cache-hit != 'true'
+        timeout-minutes: 3
+        run: |
+          curl -sL --max-time 30 "https://github.com/DanielSWolf/rhubarb-lip-sync/releases/download/v1.13.0/Rhubarb-Lip-Sync-1.13.0-Linux.zip" -o rhubarb.zip
+          unzip -q rhubarb.zip -d rhubarb_bin
+          RHUBARB_PATH=$(find rhubarb_bin -name rhubarb -type f | head -n 1)
+          if [ -n "$RHUBARB_PATH" ]; then
+            sudo cp "$RHUBARB_PATH" /usr/local/bin/rhubarb
+            sudo chmod +x /usr/local/bin/rhubarb
+          fi
+          rm -rf rhubarb.zip rhubarb_bin
       - name: Pre-Compile Exact Puppet Character Rig Assets
         run: |
           node scripts/build_exact_puppet_shapes.cjs
@@ -406,8 +436,18 @@ jobs:
           DRY_RUN: \${{ github.event.inputs.dry_run == 'true' }}
           PAUSE_YOUTUBE: \${{ github.event.inputs.pause_youtube || 'true' }}
           GEMINI_API_KEY: \${{ secrets.GEMINI_API_KEY }}
+          GROK_API_KEY: \${{ secrets.GROK_API_KEY }}
+          GROK_API_KEY_2: \${{ secrets.GROK_API_KEY_2 }}
+          XAI_API_KEY: \${{ secrets.XAI_API_KEY || secrets.GROK_API_KEY }}
           GROQ_API_KEY: \${{ secrets.GROQ_API_KEY }}
+          OPENAI_API_KEY: \${{ secrets.OPENAI_API_KEY }}
+          DEEPSEEK_API_KEY: \${{ secrets.DEEPSEEK_API_KEY }}
+          HUGGINGFACE_API_KEY: \${{ secrets.HUGGINGFACE_API_KEY || secrets.HF_TOKEN }}
+          CEREBRAS_API_KEY: \${{ secrets.CEREBRAS_API_KEY }}
+          CLOUDFLARE_ACCOUNT_ID: \${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}
           OPENROUTER_API_KEY: \${{ secrets.OPENROUTER_API_KEY }}
+          YOUTUBE_API_KEY: \${{ secrets.YOUTUBE_API_KEY || secrets.GEMINI_API_KEY }}
           BUFFER_API_KEY: \${{ github.event.inputs.buffer_token || secrets.BUFFER_API_KEY }}
           BUFFER_FACEBOOK_CHANNEL_ID: \${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
           BUFFER_INSTAGRAM_CHANNEL_ID: \${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31c1dcd8b9c702c467a38' }}
