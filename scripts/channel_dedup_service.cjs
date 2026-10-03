@@ -66,7 +66,7 @@ async function fetchRemoteHistory(channelKey) {
 
   const url = `https://firestore.googleapis.com/v1/projects/${config.projectId}/databases/${config.databaseId}/documents/channel_post_history?pageSize=100&key=${config.apiKey}`;
 
-  // Channels to cross-check: For finance, also check stoic so no overlap occurs
+  // Channels to cross-check:
   const relevantChannels = new Set([channelKey]);
   if (channelKey === 'finance' || channelKey === 'fin') {
     relevantChannels.add('finance');
@@ -76,6 +76,11 @@ async function fetchRemoteHistory(channelKey) {
     relevantChannels.add('stoic');
     relevantChannels.add('finance');
     relevantChannels.add('fin');
+  } else if (channelKey === 'archie_qa_teaser' || channelKey === 'archie' || channelKey === 'cartoon' || channelKey === 'archie_tech_fact') {
+    relevantChannels.add('archie_qa_teaser');
+    relevantChannels.add('archie');
+    relevantChannels.add('cartoon');
+    relevantChannels.add('archie_tech_fact');
   } else if (['mindrush', 'mindrush_15s', 'mindrush_5s', 'teen', 'teen_15s', 'motivation'].includes(channelKey)) {
     ['mindrush', 'mindrush_15s', 'mindrush_5s', 'teen', 'teen_15s', 'motivation'].forEach(c => relevantChannels.add(c));
   }

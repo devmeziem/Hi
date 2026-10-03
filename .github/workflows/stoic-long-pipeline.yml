@@ -1,0 +1,101 @@
+name: Stoic Long-Form Emotional Essay Pipeline
+
+on:
+  schedule:
+    # Twice daily spaced slots: 03:00 UTC and 15:00 UTC
+    # User mandate: Minimum 30s emotional impactful essay with Andrew voice (-5% rate, -25Hz pitch)
+    - cron: '0 3,15 * * *'
+  workflow_dispatch:
+    inputs:
+      philosopher:
+        description: 'Specific Stoic Philosopher ID (e.g. marcus_aurelius, seneca, epictetus, or blank for auto-rotation)'
+        required: false
+        default: ''
+        type: string
+      dry_run:
+        description: 'Dry Run Mode (Uncheck for live YouTube upload)'
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  stoic_long_pipeline:
+    name: Generate & Publish Stoic Long Video (>30s)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: npm install --legacy-peer-deps --no-audit --no-fund
+
+      - name: Verify or Install FFmpeg
+        run: |
+          if ! command -v ffmpeg &> /dev/null; then
+            sudo apt-get update && sudo apt-get install -y ffmpeg
+          fi
+          ffmpeg -version
+
+      - name: Discover and Cache Working AI Models
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          node scripts/groq_model_finder.cjs || true
+          node scripts/openrouter_model_finder.cjs || true
+
+      - name: Execute Stoic Long-Form Video Engine (>30s)
+        env:
+          PHILOSOPHER_ID: ${{ github.event.inputs.philosopher }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY || secrets.GROK_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          HUGGINGFACE_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY || secrets.HF_TOKEN }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH2 }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH2 }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH2 }}
+          YOUTUBE_CLIENT_ID_CH2: ${{ secrets.YOUTUBE_CLIENT_ID_CH2 }}
+          YOUTUBE_CLIENT_SECRET_CH2: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH2 }}
+          YOUTUBE_REFRESH_TOKEN_CH2: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH2 }}
+          FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
+          FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
+          FIRESTORE_API_KEY: ${{ secrets.FIRESTORE_API_KEY }}
+        run: |
+          echo "=== Generating Long-Form Emotional Stoic Video with Andrew Voiceover ==="
+          node scripts/generate_stoic_long_video.cjs
+
+      - name: Archive Rendered Stoic Long Video
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stoic-long-video
+          path: |
+            rendered_videos/stoic_long_*.mp4
+            test_artifacts/stoic_long/stoic_long_latest.mp4
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Pipeline Summary
+        if: always()
+        run: |
+          echo "==============================================================="
+          echo "STOIC LONG-FORM ESSAY PIPELINE FINISHED"
+          echo "Generated vertical 9:16 emotional short with karaoke subtitles."
+          echo "==============================================================="

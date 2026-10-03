@@ -2,9 +2,9 @@ name: Test Stoic & Motivation Pipeline
 
 on:
   schedule:
-    # 5x daily spaced drops: 03:00 UTC (30s deep psychology), 06:00 UTC (3s reel), 11:00 UTC (5s reel), 16:00 UTC (3s reel), 21:00 UTC (5s reel)
-    # 5 daily drops maintaining optimal algorithm cadence and deep viewer psychological impact
-    - cron: '0 3,6,11,16,21 * * *'
+    # 2x daily spaced drops for 5s quote reels: 09:00 UTC and 21:00 UTC
+    # Combined with 2x daily long-form essays (03:00, 15:00 UTC in stoic-long-pipeline.yml), totals exactly 4 posts daily!
+    - cron: '0 9,21 * * *'
   workflow_dispatch:
     inputs:
       topic:
@@ -77,6 +77,13 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY || secrets.GROK_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          HUGGINGFACE_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY || secrets.HF_TOKEN }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH2 }}

@@ -20,6 +20,7 @@ const https = require('https');
 const { getSyncedChannelProfile, formatChannelFollowCta } = require('./youtube_channel_dispatcher.cjs');
 const { resolveChannelAudio } = require('./audio_asset_manager.cjs');
 const { selectDeduplicatedCandidate, recordPostedCandidate } = require('./channel_dedup_service.cjs');
+const { searchAndFetchImage, searchAndFetchAudio } = require('./universal_media_fetcher.cjs');
 
 const MANIFEST_PATH = path.join(process.cwd(), 'daily_blueprint_manifest.json');
 const LOCAL_QUOTE_CACHE = path.join(process.cwd(), 'fin_quote_history.json');
@@ -516,70 +517,13 @@ async function resolveFinancialPortrait(scholar) {
   const safeName = scholar.author.toLowerCase().replace(/[^a-z0-9]/g, '_');
   const outJpgPath = path.join(PORTRAITS_DIR, `${safeName}_portrait.jpg`);
 
-  // 1. Primary Strategy: Cloudflare Workers AI Low-Cost Dynamic Generation (Zero static seeds)
-  const cfAccountId = (process.env.CLOUDFLARE_ACCOUNT_ID || '').trim().replace(/^https?:\/\/[^\/]+\//, '').replace(/\/$/, '');
-  const cfApiToken = (process.env.CLOUDFLARE_API_TOKEN || '').trim();
-  if (cfAccountId && cfApiToken) {
-    const cfModels = [
-      '@cf/bytedance/stable-diffusion-xl-lightning',
-      '@cf/stabilityai/stable-diffusion-xl-base-1.0'
-    ];
-    for (const model of cfModels) {
-      try {
-        const randomSeed = Math.floor(Math.random() * 99999999);
-        const postData = JSON.stringify({
-          prompt: `Authentic editorial documentary portrait of ${scholar.author}, iconic financial titan, thoughtful intense expression, 35mm film grain, Wall Street Journal Bloomberg executive photography, real human skin, dark obsidian executive boardroom background, subtle warm golden rim lighting, strictly NO cartoon, NO anime, NO 3D render, NO CGI, NO plastic skin, authentic photograph, 8k resolution vertical 9:16`,
-          num_steps: 4,
-          seed: randomSeed
-        });
-        const cfBuf = await new Promise((resolve) => {
-          const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/${model}`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${cfApiToken}`,
-              'Content-Type': 'application/json',
-              'Content-Length': Buffer.byteLength(postData)
-            },
-            timeout: 18000
-          }, (res) => {
-            const chunks = [];
-            res.on('data', c => chunks.push(c));
-            res.on('end', () => {
-              if (res.statusCode === 200) {
-                const full = Buffer.concat(chunks);
-                try {
-                  const json = JSON.parse(full.toString('utf8'));
-                  if (json.result?.image) return resolve(Buffer.from(json.result.image, 'base64'));
-                } catch {}
-                if (full.length > 2000) return resolve(full);
-              }
-              resolve(null);
-            });
-          });
-          req.on('error', () => resolve(null));
-          req.on('timeout', () => { req.destroy(); resolve(null); });
-          req.write(postData);
-          req.end();
-        });
-
-        if (cfBuf && cfBuf.length > 5000) {
-          fs.writeFileSync(outJpgPath, cfBuf);
-          console.log(`[Finance Quote Reel] 🎨 Synthesized dynamic portrait via Cloudflare AI (${model})`);
-          return outJpgPath;
-        }
-      } catch (cfErr) {
-        console.warn(`[Finance Quote Reel] Cloudflare AI portrait notice: ${cfErr.message}`);
-      }
-    }
-  }
-
   if (fs.existsSync(outJpgPath) && fs.statSync(outJpgPath).size > 15000) {
     return outJpgPath;
   }
 
   const wikiTitle = scholar.wikiSearch || scholar.author.replace(/\s+/g, '_');
 
-  // 1. Primary Strategy: Wikipedia REST API Summary (Instant verified portraits)
+  // 1. Primary Strategy: Wikipedia REST API Summary (Real historical & executive portraits)
   try {
     const summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiTitle)}`;
     const buf = await fetchHttpsBuffer(summaryUrl, 6000);
@@ -629,20 +573,27 @@ async function resolveFinancialPortrait(scholar) {
     console.warn(`[Finance Quote Reel] Wikipedia search lookup notice: ${e.message}`);
   }
 
-  // 3. Dynamic Pollinations FLUX generation (Always dynamic random seed)
+  // 3. User Mandate: Real Sources Only (Unsplash, Pexels, Pixabay, Openverse - ZERO CARTOONS)
   try {
-    const randomSeed = Math.floor(Math.random() * 99999999);
-    console.log(`[Finance Quote Reel] ⚠️ Generating dynamic portrait for ${scholar.author} (Seed: ${randomSeed})...`);
-    const prompt = `editorial documentary portrait of ${scholar.author}, iconic financial titan, thoughtful expression, Wall Street Journal Bloomberg executive style, dark minimalist background, subtle warm golden rim lighting, 35mm film grain, strictly NO cartoon, NO anime, NO 3D render, NO CGI, NO plastic skin, authentic photograph, 9:16 vertical`;
-    const pollUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1080&height=1920&nologo=true&model=flux&seed=${randomSeed}`;
-    const imgBuf = await fetchHttpsBuffer(pollUrl, 14000);
-    if (imgBuf && imgBuf.length > 10000) {
-      fs.writeFileSync(outJpgPath, imgBuf);
+    console.log(`[Finance Quote Reel] 📸 Sourcing real photograph for ${scholar.author} from verified stock archives...`);
+    const realMedia = await searchAndFetchImage(`${scholar.author} executive portrait`, { preferredSource: 'unsplash' });
+    if (realMedia && realMedia.localPath && fs.existsSync(realMedia.localPath)) {
+      fs.copyFileSync(realMedia.localPath, outJpgPath);
+      console.log(`[Finance Quote Reel] ✓ Sourced authentic photo from ${realMedia.source} for ${scholar.author}`);
       return outJpgPath;
     }
-  } catch (e) {
-    console.warn(`[Finance Quote Reel] Pollinations fallback notice: ${e.message}`);
+  } catch (stockErr) {
+    console.warn(`[Finance Quote Reel] Stock archive notice: ${stockErr.message}`);
   }
+
+  // Fallback stock query: real wall street / financial executive setting
+  try {
+    const backupRealMedia = await searchAndFetchImage('executive boardroom investor portrait', { preferredSource: 'pexels' });
+    if (backupRealMedia && backupRealMedia.localPath && fs.existsSync(backupRealMedia.localPath)) {
+      fs.copyFileSync(backupRealMedia.localPath, outJpgPath);
+      return outJpgPath;
+    }
+  } catch {}
 
   // 5. Resilient Local Executive Backdrop (Chiaroscuro Obsidian Silhouette)
   const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" width="1080" height="1920">

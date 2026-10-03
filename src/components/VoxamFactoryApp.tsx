@@ -65,6 +65,7 @@ import { TeenMotivationTab } from './TeenMotivationTab';
 import { AudienceFeedbackTab } from './AudienceFeedbackTab';
 import { ArchieResearchLabTab } from './ArchieResearchLabTab';
 import { ArchiePreviewStudioTab } from './ArchiePreviewStudioTab';
+import { StoicStudioTab } from './StoicStudioTab';
 
 interface VoxamFactoryAppProps {
   userEmail: string;
@@ -677,6 +678,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
 
   const navItems = [
     { id: 'dashboard', label: 'Overview Dashboard', icon: LayoutDashboard },
+    { id: 'stoic', label: 'The Stoic Architect (Channel 2)', icon: BookOpen },
     { id: 'archie-preview', label: 'Archie & Environments Studio', icon: GraduationCap },
     { id: 'archie-lab', label: 'Archie Research Lab', icon: Atom },
     { id: 'audience-feedback', label: 'Subscriber Feedback & Sentiment', icon: HeartHandshake },
@@ -790,6 +792,24 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
 
               {/* Special Quick Access Inside Drawer */}
               <div className="p-3 border-b border-slate-800 space-y-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('stoic');
+                    setIsMobileDrawerOpen(false);
+                  }}
+                  className="w-full p-2.5 bg-gradient-to-r from-amber-950/80 via-slate-900 to-slate-900 border border-amber-500/50 rounded-xl text-left cursor-pointer transition-all hover:border-amber-400 flex items-center gap-2.5"
+                >
+                  <BookOpen className="w-4 h-4 text-amber-400 shrink-0" />
+                  <div>
+                    <div className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                      <span>The Stoic Architect (Channel 2)</span>
+                      <span className="text-[9px] px-1 py-0.2 rounded bg-amber-900/80 text-amber-300 font-mono">4 POSTS/DAY</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400">2x 5s Reels + 2x Long Videos (&gt;30s, Andrew Voice)</div>
+                  </div>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => {
@@ -2346,6 +2366,9 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
 
         {/* TAB: SOUND & MUSIC SETUP */}
         {activeTab === 'sound-setup' && <SoundSetupTab />}
+
+        {/* TAB: THE STOIC ARCHITECT (CHANNEL 2) */}
+        {activeTab === 'stoic' && <StoicStudioTab onToast={showAppToast} />}
 
         {/* TAB: MOVIE BRAND CHANNEL */}
         {activeTab === 'movie-brand' && <MovieBrandTab />}

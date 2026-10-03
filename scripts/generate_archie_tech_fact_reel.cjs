@@ -28,6 +28,7 @@ const {
   callActiveAiForJson, 
   saveChosenTopicToDatabase 
 } = require('./topic_discovery_engine.cjs');
+const { searchAndFetchImage, searchAndFetchVideo } = require('./universal_media_fetcher.cjs');
 
 const TARGET_DURATION = 35.0;
 const FPS = 30;
@@ -318,7 +319,23 @@ async function resolveAccurateSpecimenImage(searchTerm, topicTitle, category, ar
     };
   }
 
-  // 2. Synthesize High-Resolution 9:16 Photo via Cloudflare AI or Pollinations FLUX
+  // 2. Search Verified Stock Media Archives (Pexels, Unsplash, Pixabay, Openverse)
+  try {
+    const cleanSearch = String(topicTitle || searchTerm || 'science technology').replace(/^(why|how|what)\s+/i, '').trim();
+    console.log(`[Archie Specimen Vision] 📸 Sourcing real photographic evidence for: "${cleanSearch}"...`);
+    const stockImage = await searchAndFetchImage(`${cleanSearch} science technology physical`, { preferredSource: 'pexels' });
+    if (stockImage && stockImage.localPath && fs.existsSync(stockImage.localPath)) {
+      return {
+        imagePath: stockImage.localPath,
+        title: topicTitle,
+        source: stockImage.source
+      };
+    }
+  } catch (stockErr) {
+    console.warn(`[Archie Specimen Vision Notice] Stock archive: ${stockErr.message}`);
+  }
+
+  // 3. Synthesize High-Resolution 9:16 Photo via Cloudflare AI or Pollinations FLUX
   const aiPath = path.join(artifactsDir, `archie_ai_specimen_${Date.now()}.jpg`);
   const aiImage = await generateTopicAccurateAiImage(topicTitle, category, aiPath);
   if (aiImage && fs.existsSync(aiImage)) {
@@ -329,7 +346,7 @@ async function resolveAccurateSpecimenImage(searchTerm, topicTitle, category, ar
     };
   }
 
-  // 3. Render High-Tech Topic-Accurate Vector Infographic
+  // 4. Render High-Tech Topic-Accurate Vector Infographic
   console.log(`[Archie Wiki Vision] ℹ️ Synthesizing high-res topic-accurate diagram for: "${topicTitle}"...`);
   const fallbackPath = path.join(artifactsDir, `archie_specimen_fallback_${Date.now()}.png`);
   const vectorImg = generateSpecimenFallbackImage(searchTerm, topicTitle, fallbackPath);
@@ -1024,8 +1041,10 @@ async function generateArchie5sDailyFact() {
 
   console.log(`[Audio Engine] Synthesizing speech narration: "${speechNarration}"...`);
   const audioResult = await assembleArchieMasterAudio(speechNarration, audioWavPath, TARGET_DURATION);
-  const reelDuration = typeof audioResult === 'object' && audioResult.duration ? audioResult.duration : TARGET_DURATION;
-  const voiceDuration = typeof audioResult === 'object' && audioResult.voiceDuration ? audioResult.voiceDuration : (reelDuration - 0.5);
+  const rawDuration = typeof audioResult === 'object' && audioResult.duration ? audioResult.duration : TARGET_DURATION;
+  // User mandate: Above 30 seconds, no hard cap above it!
+  const reelDuration = Math.max(35.0, Number(rawDuration.toFixed(2)));
+  const voiceDuration = typeof audioResult === 'object' && audioResult.voiceDuration ? audioResult.voiceDuration : (reelDuration - 1.0);
 
   // 6. Build On-Screen Karaoke Captions (.ass)
   const karaokeAssPath = path.join(ARTIFACTS_DIR, `archie_karaoke_${Date.now()}.ass`);
@@ -1100,14 +1119,14 @@ async function generateArchie5sDailyFact() {
       [9:v]scale=-1:1150[st_blk];
       [10:v]scale=1080:1920[title_card];
       [bg][board]overlay=0:0[s_board];
-      [s_board][pt_idle]overlay=x=30:y=720:enable='lt(t,${cutawayStart})'[s1];
-      [s1][pt_t1]overlay=x=30:y=720:enable='between(t,0.20,${cutawayStart})*eq(mod(floor(t/0.14),2),0)'[s2];
-      [s2][pt_t2]overlay=x=30:y=720:enable='between(t,0.20,${cutawayStart})*eq(mod(floor(t/0.14),2),1)'[s3];
+      [s_board][pt_idle]overlay=x=30:y=720:enable='lt(t,0.20)'[s1];
+      [s1][pt_t1]overlay=x=30:y=720:enable='between(t,0.20,${cutawayStart})*eq(mod(floor((t-0.20)/0.14),2),0)'[s2];
+      [s2][pt_t2]overlay=x=30:y=720:enable='between(t,0.20,${cutawayStart})*eq(mod(floor((t-0.20)/0.14),2),1)'[s3];
       [s3][motionClip]overlay=0:0:enable='between(t,${cutawayStart},${cutawayEnd})'[s4];
-      [s4][st_idle]overlay=x=50:y=720:enable='gte(t,${cutawayEnd})'[s5];
-      [s5][st_t1]overlay=x=50:y=720:enable='between(t,${cutawayEnd},${voiceDuration.toFixed(2)})*eq(mod(floor((t-${cutawayEnd})/0.13),2),0)'[s6];
-      [s6][st_t2]overlay=x=50:y=720:enable='between(t,${cutawayEnd},${voiceDuration.toFixed(2)})*eq(mod(floor((t-${cutawayEnd})/0.13),2),1)'[s7];
-      [s7][st_blk]overlay=x=50:y=720:enable='gt(t,${cutawayEnd})*between(mod(t,3.0),2.5,2.65)'[s_body];
+      [s4][st_blk]overlay=x=50:y=720:enable='gte(t,${cutawayEnd})*between(mod(t,3.0),2.5,2.65)'[s5];
+      [s5][st_t1]overlay=x=50:y=720:enable='between(t,${cutawayEnd},${voiceDuration.toFixed(2)})*not(between(mod(t,3.0),2.5,2.65))*eq(mod(floor((t-${cutawayEnd})/0.13),2),0)'[s6];
+      [s6][st_t2]overlay=x=50:y=720:enable='between(t,${cutawayEnd},${voiceDuration.toFixed(2)})*not(between(mod(t,3.0),2.5,2.65))*eq(mod(floor((t-${cutawayEnd})/0.13),2),1)'[s7];
+      [s7][st_idle]overlay=x=50:y=720:enable='gte(t,${voiceDuration.toFixed(2)})*not(between(mod(t,3.0),2.5,2.65))'[s_body];
       [s_body][title_card]overlay=0:0:enable='lt(t,1.8)'[v_raw];
       [v_raw]subtitles='${assEscaped}'[vfinal]
     `.replace(/\s+/g, ' ').trim();
@@ -1140,13 +1159,13 @@ async function generateArchie5sDailyFact() {
       [8:v]scale=-1:1150[st_blk];
       [9:v]scale=1080:1920[title_card];
       [bg][board]overlay=0:0[s0];
-      [s0][pt_idle]overlay=x=30:y=720:enable='lt(t,${cutawayStart})'[s1];
-      [s1][pt_t1]overlay=x=30:y=720:enable='between(t,0.20,${cutawayStart})*eq(mod(floor(t/0.14),2),0)'[s2];
-      [s2][pt_t2]overlay=x=30:y=720:enable='between(t,0.20,${cutawayStart})*eq(mod(floor(t/0.14),2),1)'[s3];
-      [s3][st_idle]overlay=x=50:y=720:enable='gte(t,${cutawayStart})'[s4];
-      [s4][st_t1]overlay=x=50:y=720:enable='between(t,${cutawayStart},${voiceDuration.toFixed(2)})*eq(mod(floor((t-${cutawayStart})/0.13),2),0)'[s5];
-      [s5][st_t2]overlay=x=50:y=720:enable='between(t,${cutawayStart},${voiceDuration.toFixed(2)})*eq(mod(floor((t-${cutawayEnd || cutawayStart})/0.13),2),1)'[s6];
-      [s6][st_blk]overlay=x=50:y=720:enable='gt(t,${cutawayStart})*between(mod(t,3.0),2.5,2.65)'[s_body];
+      [s0][pt_idle]overlay=x=30:y=720:enable='lt(t,0.20)'[s1];
+      [s1][pt_t1]overlay=x=30:y=720:enable='between(t,0.20,${cutawayStart})*eq(mod(floor((t-0.20)/0.14),2),0)'[s2];
+      [s2][pt_t2]overlay=x=30:y=720:enable='between(t,0.20,${cutawayStart})*eq(mod(floor((t-0.20)/0.14),2),1)'[s3];
+      [s3][st_blk]overlay=x=50:y=720:enable='gte(t,${cutawayStart})*between(mod(t,3.0),2.5,2.65)'[s4];
+      [s4][st_t1]overlay=x=50:y=720:enable='between(t,${cutawayStart},${voiceDuration.toFixed(2)})*not(between(mod(t,3.0),2.5,2.65))*eq(mod(floor((t-${cutawayStart})/0.13),2),0)'[s5];
+      [s5][st_t2]overlay=x=50:y=720:enable='between(t,${cutawayStart},${voiceDuration.toFixed(2)})*not(between(mod(t,3.0),2.5,2.65))*eq(mod(floor((t-${cutawayStart})/0.13),2),1)'[s6];
+      [s6][st_idle]overlay=x=50:y=720:enable='gte(t,${voiceDuration.toFixed(2)})*not(between(mod(t,3.0),2.5,2.65))'[s_body];
       [s_body][title_card]overlay=0:0:enable='lt(t,1.8)'[v_raw];
       [v_raw]subtitles='${assEscaped}'[vfinal]
     `.replace(/\s+/g, ' ').trim();

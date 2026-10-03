@@ -772,17 +772,28 @@ HASHTAGS: ${creatorScript.hashtags.join(' ')}`;
                     </div>
                   </div>
 
-                  {/* SAFE-ZONE CAPTIONS: Positioned at bottom-26 to bottom-32 */}
-                  {/* NEVER covered by YouTube Shorts title or bottom action bar */}
+                  {/* KARAOKE CAPTIONS WITH BLURRY DARK DROP BOX */}
                   <div className="absolute bottom-28 left-4 right-14 pointer-events-none z-30 flex flex-col items-center text-center">
-                    <div className="bg-black/90 border border-slate-700/80 px-3 py-1.5 rounded-lg shadow-2xl">
-                      <span className="text-xs font-black text-amber-300 uppercase tracking-wide drop-shadow">
-                        {activeToolStep === 0
-                          ? "STOP SCROLLING! IF YOU'RE A CREATOR, WAIT!"
-                          : activeToolStep === 6
-                          ? "COMMENT 'FREE' FOR DIRECT LINKS!"
-                          : `TOOL ${activeTool.number}: ${activeTool.name.toUpperCase()}`}
-                      </span>
+                    <div className="bg-black/90 backdrop-blur-md border border-slate-700/80 px-4 py-2.5 rounded-xl shadow-2xl space-y-1">
+                      <div className="flex items-center justify-center gap-1.5 text-[10px] font-mono font-bold text-amber-400">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span>KARAOKE SUBTITLES</span>
+                      </div>
+                      <div className="text-xs font-black tracking-wide leading-snug">
+                        {activeToolStep === 0 ? (
+                          <>
+                            <span className="text-amber-300">STOP SCROLLING!</span> <span className="text-white">IF YOU'RE A CREATOR,</span> <span className="text-cyan-400 underline decoration-cyan-400">WAIT!</span>
+                          </>
+                        ) : activeToolStep === 6 ? (
+                          <>
+                            <span className="text-white">COMMENT</span> <span className="text-amber-400 underline decoration-amber-400">'FREE'</span> <span className="text-white">FOR DIRECT</span> <span className="text-emerald-400">LINKS!</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-amber-400">TOOL {activeTool.number}:</span> <span className="text-white">{activeTool.name.toUpperCase()}</span> <span className="text-emerald-400">({activeTool.freeTier})</span>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
 

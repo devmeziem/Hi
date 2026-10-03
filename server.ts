@@ -548,7 +548,7 @@ function saveApprovedUsersList(users: string[]): void {
 
 function checkAuthorization(req: http.IncomingMessage, res: http.ServerResponse, pathname: string): boolean {
   // Publicly permissible routes: health checks, video streaming, client static bundle, and Archie previews
-  if (pathname === '/api/health' || pathname === '/api/stream-video' || pathname.startsWith('/rendered_videos/') || pathname.startsWith('/api/archie/')) {
+  if (pathname === '/api/health' || pathname === '/api/stream-video' || pathname.startsWith('/api/videos/') || pathname.startsWith('/rendered_videos/') || pathname.startsWith('/api/archie/')) {
     return true;
   }
 
@@ -1854,6 +1854,62 @@ Respond STRICTLY with valid raw JSON without markdown:
     return;
   }
 
+  // Generate Stoic Long-Form Video Endpoint (>30s)
+  if (urlPath === '/api/generate-stoic-long' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const { philosopherId = '' } = JSON.parse(body || '{}');
+        const env = { ...process.env, PHILOSOPHER_ID: philosopherId };
+        exec('node scripts/generate_stoic_long_video.cjs', { env }, (error, stdout, stderr) => {
+          if (error) console.warn('[Stoic Long API Notice]:', error.message);
+        });
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: true,
+          channel: 'The Stoic Architect',
+          targetDuration: '>30s',
+          message: 'Long-form Stoic video generation queued successfully with Andrew voiceover.',
+          philosopher: philosopherId || 'Next in Weekly Rotation'
+        }));
+      } catch (err: any) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // Generate Stoic 5s Quote Reel Endpoint
+  if (urlPath === '/api/generate-stoic-quote' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const { philosopherId = '' } = JSON.parse(body || '{}');
+        const env = { ...process.env, PHILOSOPHER_ID: philosopherId, SHORT_DURATION: '5.0' };
+        exec('node scripts/generate_stoic_quote_reel.cjs', { env }, (error, stdout, stderr) => {
+          if (error) console.warn('[Stoic Quote API Notice]:', error.message);
+        });
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: true,
+          channel: 'The Stoic Architect',
+          targetDuration: '5.0s',
+          message: 'Stoic 5-second quote reel queued successfully.',
+          philosopher: philosopherId || 'Next in Weekly Rotation'
+        }));
+      } catch (err: any) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
   // API Health Check
   if (urlPath === '/api/health' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -1862,7 +1918,7 @@ Respond STRICTLY with valid raw JSON without markdown:
   }
 
   // Rendered Videos Static & Streaming File Serving with HTTP 206 Partial Content
-  if (urlPath === '/api/stream-video' || urlPath.startsWith('/rendered_videos/') || urlPath.includes('/rendered_videos/') || urlPath.includes('/test_artifacts/')) {
+  if (urlPath === '/api/stream-video' || urlPath.startsWith('/api/videos/') || urlPath.startsWith('/rendered_videos/') || urlPath.includes('/rendered_videos/') || urlPath.includes('/test_artifacts/')) {
     let rawPath = urlPath;
     let isDownload = false;
     if (urlPath === '/api/stream-video') {
@@ -1873,6 +1929,7 @@ Respond STRICTLY with valid raw JSON without markdown:
 
     // Sanitize and extract file name
     const cleanFileName = rawPath
+      .replace(/^.*\/api\/videos\//, '')
       .replace(/^.*\/rendered_videos\//, '')
       .replace(/^.*\/test_artifacts\//, '')
       .replace(/^\/+/, '')
@@ -1881,6 +1938,7 @@ Respond STRICTLY with valid raw JSON without markdown:
     const possiblePaths = [
       path.join(__dirname, 'rendered_videos', cleanFileName),
       path.join(__dirname, 'test_artifacts', cleanFileName),
+      path.join(__dirname, 'test_artifacts', 'stoic_long', cleanFileName),
       path.join(__dirname, 'test_artifacts', 'movie_episodes', cleanFileName),
       path.join(__dirname, 'test_artifacts', 'motivation_reels', cleanFileName),
       path.join(__dirname, cleanFileName),

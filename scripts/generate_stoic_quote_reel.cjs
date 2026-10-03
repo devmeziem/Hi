@@ -20,7 +20,9 @@ const https = require('https');
 const { getSyncedChannelProfile, formatChannelFollowCta } = require('./youtube_channel_dispatcher.cjs');
 const { resolveChannelAudio } = require('./audio_asset_manager.cjs');
 const { selectDeduplicatedCandidate, recordPostedCandidate } = require('./channel_dedup_service.cjs');
-const { CURATED_PSYCHOLOGY_QUOTES, VIRAL_PSYCHOLOGY_TAGS, generatePsychologyViralTitle } = require('./stoic_psychology_vault.cjs');
+const { CURATED_PSYCHOLOGY_QUOTES, VIRAL_PSYCHOLOGY_TAGS, generatePsychologyViralTitle, generateStoicSearchSeoKeywords } = require('./stoic_psychology_vault.cjs');
+const { selectPhilosopherAndQuote } = require('./stoic_philosophers_vault.cjs');
+const { searchAndFetchImage, searchAndFetchAudio } = require('./universal_media_fetcher.cjs');
 const { selectEmotionalNarrative, buildNarrativeSlideSvg, buildEndingBlankQuoteCardSvg } = require('./emotional_impact_engine.cjs');
 
 const MANIFEST_PATH = path.join(process.cwd(), 'daily_blueprint_manifest.json');
@@ -160,7 +162,20 @@ async function resolveScholarPortrait(scholar) {
     }
   }
 
-  // Fallback 1: FLUX photorealistic antique carved marble bust / classical museum sculpture (Zero cartoon/AI look)
+  // 3. Fallback: Search Verified Media Archives (Pexels, Unsplash, Pixabay, Wikimedia, Openverse)
+  try {
+    const searchTerms = `${scholar.author} marble bust statue museum`;
+    const stockImage = await searchAndFetchImage(searchTerms, { preferredSource: 'wikimedia' });
+    if (stockImage && stockImage.localPath && fs.existsSync(stockImage.localPath)) {
+      fs.copyFileSync(stockImage.localPath, portraitPath);
+      console.log(`[Scholar Portrait] ✓ Sourced verified portrait from ${stockImage.source} for ${scholar.author}`);
+      return portraitPath;
+    }
+  } catch (stockErr) {
+    console.warn(`[Scholar Portrait] Verified media archive notice: ${stockErr.message}`);
+  }
+
+  // Fallback 4: FLUX photorealistic antique carved marble bust / classical museum sculpture (Zero cartoon/AI look)
   const randomSeed = Math.floor(Math.random() * 99999999);
   console.log(`[Scholar Portrait] Sourcing authentic classical sculpture for ${scholar.author} (Seed: ${randomSeed})...`);
   const aiPrompt = encodeURIComponent(`Authentic ancient Roman marble statue bust of ${scholar.author}, ${scholar.credentials}, museum gallery lighting, chiaroscuro, weathered marble stone texture, dark obsidian slate backdrop, 35mm film photograph of real classical sculpture, antique artifact, hyper-detailed, masterpiece, photorealistic, strictly NO cartoon, NO anime, NO 3D render, NO plastic skin, NO CGI, NO digital illustration`);
@@ -282,12 +297,26 @@ async function generateStoic5sVideo(durationOverride = null, customChosen = null
   // 2. Resolve Scholar Portrait via Direct/Wikipedia/AI
   const portraitPath = await resolveScholarPortrait(chosen);
 
-  // 3. Resolve Audio (Soft piano instrument for emotional longform video, deep mystery for short reels)
+  // 3. Resolve Background Audio from Configured Sources (Freesound, Openverse, Archive.org, Local Synth)
   const wavPath = path.join(ARTIFACTS_DIR, isLongForm ? `stoic_longform_piano_${effectiveDuration}s.wav` : `scholar_mystery_sound_${effectiveDuration}s.wav`);
-  if (isLongForm) {
-    resolveChannelAudio('piano', effectiveDuration, wavPath);
-  } else {
-    resolveChannelAudio('stoic', effectiveDuration, wavPath);
+  let fetchedAudio = null;
+  try {
+    const audioQuery = isLongForm ? 'calm emotional piano ambient reflection' : 'ambient contemplative mystery soundscape';
+    fetchedAudio = await searchAndFetchAudio(audioQuery, { preferredSource: 'freesound' });
+    if (fetchedAudio && fetchedAudio.localPath && fs.existsSync(fetchedAudio.localPath)) {
+      // Normalize & loop to exact duration
+      execSync(`ffmpeg -y -stream_loop -1 -i "${fetchedAudio.localPath}" -t ${effectiveDuration} -c:a pcm_s16le "${wavPath}" 2>/dev/null`);
+    }
+  } catch (err) {
+    console.warn('[Quote Reel] Media fetcher audio notice:', err.message);
+  }
+
+  if (!fs.existsSync(wavPath) || fs.statSync(wavPath).size < 1000) {
+    if (isLongForm) {
+      resolveChannelAudio('piano', effectiveDuration, wavPath);
+    } else {
+      resolveChannelAudio('stoic', effectiveDuration, wavPath);
+    }
   }
 
   // 4. Prepare High-Contrast Caption Overlay with ZERO-PILL DISCIPLINE
@@ -555,26 +584,30 @@ function buildStoicDeepBeat3Svg(scholar, width = 1080, height = 1920) {
     chosen.credentials = narrative.backupQuote.title;
     chosen.psychologicalConcept = narrative.theme;
   } else {
-    // 5-Second Quote Reel
+    // 5-Second Quote Reel (Mandate: Author portrait, fade in, keep panning, fade out, configured audio)
     const isPanRight = (chosen.quote.length % 2 === 0);
     const panXFormula = isPanRight
-      ? `(iw-iw/zoom)*(0.18+0.64*(on/${totalFrames}))`
-      : `(iw-iw/zoom)*(0.82-0.64*(on/${totalFrames}))`;
+      ? `(iw-iw/zoom)*(0.15+0.70*(on/${totalFrames}))`
+      : `(iw-iw/zoom)*(0.85-0.70*(on/${totalFrames}))`;
 
+    const fadeOutStart = Math.max(0.1, Number((effectiveDuration - 0.55).toFixed(2)));
+
+    // User mandate: Fade in at start, keep panning across the portrait, and fade out smoothly at the end
     const filterComplex = [
-      `[0:v]scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276,zoompan=z='1.08+0.0006*on':d=${totalFrames}:x='${panXFormula}':y='(ih-ih/zoom)*0.24':s=1080x1920:fps=${fps},eq=brightness=-0.04:contrast=1.14:saturation=0.90,vignette=PI/4.5[bg]`,
-      `[1:v]scale=1080:1920[ov]`,
+      `[0:v]scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276,zoompan=z='1.10+0.00045*on':d=${totalFrames}:x='${panXFormula}':y='(ih-ih/zoom)*0.22':s=1080x1920:fps=${fps},eq=brightness=-0.04:contrast=1.14:saturation=0.90,vignette=PI/4.5,fade=t=in:st=0:d=0.5,fade=t=out:st=${fadeOutStart}:d=0.5[bg]`,
+      `[1:v]scale=1080:1920,fade=t=in:st=0:d=0.5,fade=t=out:st=${fadeOutStart}:d=0.5[ov]`,
       `[bg][ov]overlay=0:0,format=yuv420p[v]`
     ].join(';');
 
-    // Restored deep contemplative / Hans Zimmer ambient soundtrack per viewer review
-    const ffmpegCmd = `ffmpeg -y -loglevel error -loop 1 -t ${effectiveDuration} -i "${portraitPath}" -loop 1 -t ${effectiveDuration} -i "${overlayInput}" -stream_loop -1 -i "${wavPath}" -filter_complex "${filterComplex}" -map "[v]" -map 2:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${effectiveDuration} "${finalMp4Path}"`;
+    // Restored deep contemplative soundtrack with audio fade-in & fade-out
+    const audioFilters = `afade=t=in:st=0:d=0.4,afade=t=out:st=${fadeOutStart}:d=0.5`;
+    const ffmpegCmd = `ffmpeg -y -loglevel error -loop 1 -t ${effectiveDuration} -i "${portraitPath}" -loop 1 -t ${effectiveDuration} -i "${overlayInput}" -stream_loop -1 -i "${wavPath}" -filter_complex "${filterComplex}" -af "${audioFilters}" -map "[v]" -map 2:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${effectiveDuration} "${finalMp4Path}"`;
 
     try {
       execSync(ffmpegCmd, { maxBuffer: 50 * 1024 * 1024, stdio: ['pipe', 'pipe', 'pipe'] });
     } catch (err) {
       console.warn('[Quote Reel] Primary filter complex notice, falling back to safe pan overlay:', err.message);
-      const fallbackCmd = `ffmpeg -y -loglevel error -loop 1 -t ${effectiveDuration} -i "${portraitPath}" -loop 1 -t ${effectiveDuration} -i "${overlayInput}" -stream_loop -1 -i "${wavPath}" -filter_complex "[0:v]scale=1180:2098:force_original_aspect_ratio=increase,crop=1180:2098,zoompan=z='1.06':d=${totalFrames}:x='(iw-iw/zoom)*0.5':y='(ih-ih/zoom)*0.2':s=1080x1920:fps=${fps},eq=brightness=-0.06:contrast=1.12[bg];[1:v]scale=1080:1920[ov];[bg][ov]overlay=0:0[v]" -map "[v]" -map 2:a -c:v libx264 -preset ultrafast -crf 22 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${effectiveDuration} "${finalMp4Path}"`;
+      const fallbackCmd = `ffmpeg -y -loglevel error -loop 1 -t ${effectiveDuration} -i "${portraitPath}" -loop 1 -t ${effectiveDuration} -i "${overlayInput}" -stream_loop -1 -i "${wavPath}" -filter_complex "[0:v]scale=1180:2098:force_original_aspect_ratio=increase,crop=1180:2098,zoompan=z='1.06+0.0003*on':d=${totalFrames}:x='(iw-iw/zoom)*0.5':y='(ih-ih/zoom)*0.2':s=1080x1920:fps=${fps},eq=brightness=-0.06:contrast=1.12,fade=t=in:st=0:d=0.4,fade=t=out:st=${fadeOutStart}:d=0.4[bg];[1:v]scale=1080:1920,fade=t=in:st=0:d=0.4,fade=t=out:st=${fadeOutStart}:d=0.4[ov];[bg][ov]overlay=0:0[v]" -af "${audioFilters}" -map "[v]" -map 2:a -c:v libx264 -preset ultrafast -crf 22 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${effectiveDuration} "${finalMp4Path}"`;
       execSync(fallbackCmd, { maxBuffer: 50 * 1024 * 1024, stdio: ['pipe', 'pipe', 'pipe'] });
     }
   }
@@ -587,17 +620,21 @@ function buildStoicDeepBeat3Svg(scholar, width = 1080, height = 1920) {
   await saveQuoteHistory(chosen);
   await recordPostedCandidate('stoic', chosen.quote, chosen.author, { theme: chosen.theme, duration: effectiveDuration });
 
-  // 5. Format Viral Title, Description, and Targeted Hashtags
+  // 5. Format Viral Title, Description, and Targeted Search SEO Keywords & Hashtags
   const viralTitle = generatePsychologyViralTitle(chosen);
+  const seoData = generateStoicSearchSeoKeywords(chosen);
   const initialFollowCta = formatChannelFollowCta('motivation_stoicism', process.env.YOUTUBE_HANDLE_CH2 || process.env.YOUTUBE_HANDLE_STOIC || '');
-  const viralTagsString = VIRAL_PSYCHOLOGY_TAGS.join(' ');
+  const viralTagsString = seoData.tagsString;
 
   const viralDescription = `"${chosen.quote}"
 - ${chosen.author}
 ${chosen.credentials}
 
 🧠 Psychological Concept: ${chosen.psychologicalConcept || 'Human Nature & Sovereignty'}
-💬 Question: ${chosen.communityQuestion || 'How does this apply to your life today?'}
+💬 Question: ${chosen.communityQuestion || 'How does this apply to your life today? Share your thoughts below.'}
+
+🔍 Search Topics Aligned:
+${seoData.searchQueries.slice(0, 4).map(q => `• ${q}`).join('\n')}
 
 ${initialFollowCta}
 

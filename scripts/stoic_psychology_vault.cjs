@@ -669,8 +669,69 @@ function generatePsychologyViralTitle(scholar) {
   return title.slice(0, 100);
 }
 
+/**
+ * Generate High-Intent Search SEO Keywords & Hashtags grounded in YouTube & Google Search Queries
+ */
+function generateStoicSearchSeoKeywords(scholar) {
+  const authorClean = (scholar.author || 'Marcus Aurelius').replace(/[^a-zA-Z\s]/g, '').trim();
+  const authorTag = authorClean.replace(/\s+/g, '');
+  const concept = (scholar.psychologicalConcept || scholar.theme || 'Inner Peace').toLowerCase();
+
+  // Primary High-Volume YouTube Search Queries
+  const searchQueries = [
+    `${authorClean.toLowerCase()} stoic wisdom`,
+    `how to stop overthinking stoicism`,
+    `stoic quotes for mental toughness`,
+    `${concept} psychology explained`,
+    `daily stoic mindset motivation`,
+    `ancient philosophy life lessons`,
+    `how to deal with difficult people stoic`,
+    `stoic detachment and peace`
+  ];
+
+  // YouTube / Google Search SEO Hashtags
+  const hashtags = [
+    '#Stoicism',
+    '#Psychology',
+    `#${authorTag}`,
+    '#InnerPeace',
+    '#SelfMastery',
+    '#DailyStoic',
+    '#Mindset',
+    '#WisdomQuotes',
+    '#Philosophy',
+    '#Shorts'
+  ];
+
+  // YouTube Tag Metadata list (for video tags metadata)
+  const metaTags = [
+    'stoic',
+    'stoicism',
+    'psychology',
+    authorClean.toLowerCase(),
+    'marcus aurelius',
+    'seneca',
+    'epictetus',
+    'inner peace',
+    'self mastery',
+    'mental toughness',
+    'how to stop overthinking',
+    'life quotes',
+    'wisdom',
+    'philosophy shorts'
+  ];
+
+  return {
+    searchQueries,
+    hashtags,
+    metaTags,
+    tagsString: hashtags.join(' ')
+  };
+}
+
 module.exports = {
   CURATED_PSYCHOLOGY_QUOTES,
   VIRAL_PSYCHOLOGY_TAGS,
-  generatePsychologyViralTitle
+  generatePsychologyViralTitle,
+  generateStoicSearchSeoKeywords
 };

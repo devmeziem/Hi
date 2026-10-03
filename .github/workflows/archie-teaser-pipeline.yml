@@ -1,0 +1,100 @@
+name: Archie Daily Q&A Teaser & Showdown Pipeline
+
+on:
+  schedule:
+    # Twice daily drops: 07:00 UTC and 19:00 UTC
+    # User mandate: Everyday updating Q&A session, Andrew voice human pace, 4 options, 5-7s countdown with clock sound, debate in comments, deduplicating, no Archie sprite
+    - cron: '0 7,19 * * *'
+  workflow_dispatch:
+    inputs:
+      test_topic:
+        description: 'Custom Question Topic (Optional: e.g. Content Creation, Tech, Science, Finance)'
+        required: false
+        default: ''
+        type: string
+      dry_run:
+        description: 'Dry Run Mode (Uncheck for live upload)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  archie_qa_teaser_pipeline:
+    name: Build & Validate Archie Q&A Teaser
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Cache APT Packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: apt-cache-archie-qa-${{ runner.os }}
+          restore-keys: |
+            apt-cache-archie-qa-${{ runner.os }}
+
+      - name: Install System Utilities & FFmpeg
+        timeout-minutes: 4
+        run: |
+          echo "=== CHECKING SYSTEM BINARIES ==="
+          if command -v ffmpeg &> /dev/null; then
+            echo "✓ FFmpeg already pre-installed on runner. Skipping download."
+          else
+            sudo apt-get update -o Acquire::Retries=2 -o Acquire::http::Timeout="10" -o Acquire::Connect-Timeout="8" || true
+            sudo apt-get install -y --no-install-recommends ffmpeg librsvg2-bin || true
+          fi
+
+      - name: Install Node Dependencies
+        timeout-minutes: 4
+        run: npm install --legacy-peer-deps --no-audit --no-fund
+
+      - name: Execute Archie Daily Q&A Teaser Generator
+        env:
+          TEST_TOPIC: ${{ github.event.inputs.test_topic }}
+          DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY || secrets.GROK_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          YOUTUBE_CLIENT_ID_TECH: ${{ secrets.YOUTUBE_CLIENT_ID_TECH }}
+          YOUTUBE_CLIENT_SECRET_TECH: ${{ secrets.YOUTUBE_CLIENT_SECRET_TECH }}
+          YOUTUBE_REFRESH_TOKEN_TECH: ${{ secrets.YOUTUBE_REFRESH_TOKEN_TECH }}
+          YOUTUBE_CLIENT_ID_CH3: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 }}
+          YOUTUBE_CLIENT_SECRET_CH3: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 }}
+          YOUTUBE_REFRESH_TOKEN_CH3: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 }}
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
+          BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID }}
+        run: |
+          echo "=== Generating Archie Daily Intellectual Q&A Teaser Video ==="
+          node scripts/generate_archie_qa_teaser.cjs
+
+      - name: Upload Production Video & Diagnostics Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: archie-qa-teaser-output-${{ github.run_id }}
+          path: |
+            rendered_videos/archie_qa_teaser_*.mp4
+            test_artifacts/archie_qa/*
+          retention-days: 14
+
+      - name: Pipeline Summary (Zero Git Commits, Low Key Database Logging)
+        if: always()
+        run: |
+          echo "==============================================================="
+          echo "ARCHIE DAILY Q&A TEASER COMPLETED"
+          echo "Deduplicated to database - Zero git commits made."
+          echo "==============================================================="
