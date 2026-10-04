@@ -531,8 +531,9 @@ function generateArchieKaraokeAss(spokenText, voiceDurationSec, outAssPath) {
     const cs = totalCs % 100;
     const totalSec = Math.floor(totalCs / 100);
     const sec = totalSec % 60;
-    const min = Math.floor(totalSec / 60);
-    return `${min}:${sec.toString().padStart(2, '0')}.${cs.toString().padStart(2, '0')}`;
+    const min = Math.floor(totalSec / 60) % 60;
+    const hr = Math.floor(totalSec / 3600);
+    return `${hr}:${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}.${cs.toString().padStart(2, '0')}`;
   };
 
   for (let i = 0; i < rawWords.length; i += wordsPerLine) {
@@ -557,7 +558,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: ArchieKaraoke, Liberation Sans, 48, &H0000F5FF, &H00FFFFFF, &H00000000, &HB0000000, 1, 0, 0, 0, 100, 100, 1.2, 0, 1, 4.2, 2.5, 2, 70, 70, 480, 1
+Style: ArchieKaraoke, Liberation Sans, 48, &H0000FFFF, &H00FFFFFF, &H00000000, &HB0000000, 1, 0, 0, 0, 100, 100, 1.2, 0, 1, 4.0, 2.0, 2, 70, 70, 360, 1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -599,6 +600,7 @@ Generate the complete script JSON:
   "boardHeadline": "bold 3-5 word headline for presentation board",
   "bullet1": "key insight 1 in simple words (max 6 words)",
   "bullet2": "key insight 2 in simple words (max 6 words)",
+  "aiVisualSearchPrompt": "exact 3-5 word high-intent stock/photography search query describing the real physical phenomenon or object (e.g. 'microchip laser lithography' or 'liquid nitrogen freezing vapor')",
   "wikiSearchTerm": "physical specimen or entity to search on Wikipedia",
   "citationReference": "authoritative scientific reference",
   "trendingKeywords": ["search query 1", "search query 2", "search query 3"],
@@ -635,6 +637,7 @@ Generate the complete script JSON:
       boardHeadline: chosenTopic.title || 'Everyday Science',
       bullet1: 'Direct Reaction',
       bullet2: 'Observable Physics',
+      aiVisualSearchPrompt: cleanTopic.split(/\s+/).slice(0, 3).join(' ') + ' physical phenomenon',
       wikiSearchTerm: cleanTopic.split(/\s+/).slice(0, 2).join(' ') || 'Physical Science',
       citationReference: chosenTopic.reference || 'Direct Scientific Observation'
     };
@@ -681,242 +684,83 @@ function escapeXml(str) {
  * 1. ZERO BLANK TEXT: Uses native SVG <text> and <tspan> wrapped lines (NO foreignObject).
  * 2. ENVIRONMENT-SYNCHRONIZED CONTEXT: Borders, colors, headers, and schematics adapt to active classroom.
  */
-function buildDigitalPresentationBoardSvg(factObj, scriptObj = null, hasPhysicalVideo = false, width = 1080, height = 1920, customBoardX = 370, classroomStyle = 'cyber_stem') {
-  const boardX = typeof customBoardX === 'number' ? customBoardX : 370;
-  const boardY = 120;
-  const boardW = 670;
-  const boardH = 1220;
+function buildDigitalPresentationBoardSvg(factObj, scriptObj = null, hasPhysicalVideo = false, width = 1080, height = 1920, customBoardX = 380, classroomStyle = 'scandi_science') {
+  const boardX = typeof customBoardX === 'number' ? customBoardX : 380;
+  const boardY = 220;
+  const boardW = 640;
+  const boardH = 500;
 
-  // Visual Theme Variations strictly synchronized to Classroom Environments
-  const styleConfigs = {
-    cyber_stem: {
-      neonBorder: ['#06b6d4', '#38bdf8', '#818cf8'],
-      headerBadge: '#0284c7',
-      headerText: 'QUANTUM WORKSTATION // SMARTBOARD',
-      dropGlow: '#0284c7',
-      titleColor: '#38bdf8',
-      boardBg: ['#020617', '#090d16', '#02040a'],
-      schematicAccent: '#06b6d4'
-    },
-    chem_lab: {
-      neonBorder: ['#059669', '#10b981', '#34d399'],
-      headerBadge: '#065f46',
-      headerText: 'LABORATORY BENCHMARK // CHEMICAL SLATE',
-      dropGlow: '#059669',
-      titleColor: '#34d399',
-      boardBg: ['#022c22', '#064e3b', '#021e17'],
-      schematicAccent: '#10b981'
-    },
-    ivy_hall: {
-      neonBorder: ['#78350f', '#d97706', '#f59e0b'],
-      headerBadge: '#92400e',
-      headerText: 'LECTURE DISCOURSE // MAHOGANY SLATE',
-      dropGlow: '#d97706',
-      titleColor: '#facc15',
-      boardBg: ['#1c1917', '#292524', '#0c0a09'],
-      schematicAccent: '#f59e0b'
-    },
-    scandi_science: {
-      neonBorder: ['#0284c7', '#38bdf8', '#67e8f9'],
-      headerBadge: '#0369a1',
-      headerText: 'NORDIC STUDIO // MINIMALIST WHITEBOARD',
-      dropGlow: '#0284c7',
-      titleColor: '#e0f2fe',
-      boardBg: ['#0f172a', '#1e293b', '#090d16'],
-      schematicAccent: '#38bdf8'
-    },
-    planetarium: {
-      neonBorder: ['#9333ea', '#c084fc', '#f43f5e'],
-      headerBadge: '#7e22ce',
-      headerText: 'COSMIC OBSERVATORY // HOLOGRAPHIC DOME',
-      dropGlow: '#9333ea',
-      titleColor: '#f5d0fe',
-      boardBg: ['#1e1b4b', '#2e1065', '#0f0728'],
-      schematicAccent: '#c084fc'
-    },
-    quantum_cleanroom: {
-      neonBorder: ['#f59e0b', '#fbbf24', '#fef08a'],
-      headerBadge: '#78350f',
-      headerText: 'QUANTUM WORKSTATION // CRYOGENIC CLEANROOM',
-      dropGlow: '#f59e0b',
-      titleColor: '#fde047',
-      boardBg: ['#020817', '#0b172b', '#02040a'],
-      schematicAccent: '#fbbf24'
-    },
-    botanical_biome: {
-      neonBorder: ['#059669', '#10b981', '#6ee7b7'],
-      headerBadge: '#064e3b',
-      headerText: 'BIOLOGY GREENHOUSE // BIO-DOME SLATE',
-      dropGlow: '#10b981',
-      titleColor: '#a7f3d0',
-      boardBg: ['#022c22', '#064e3b', '#021e17'],
-      schematicAccent: '#34d399'
-    },
-    deep_sea_abyss: {
-      neonBorder: ['#0284c7', '#06b6d4', '#67e8f9'],
-      headerBadge: '#0c4a6e',
-      headerText: 'MARIANA TRENCH // ABYSS OBSERVATORY',
-      dropGlow: '#06b6d4',
-      titleColor: '#7dd3fc',
-      boardBg: ['#020617', '#05172e', '#020d1a'],
-      schematicAccent: '#38bdf8'
-    },
-    aerospace_hangar: {
-      neonBorder: ['#ea580c', '#f97316', '#facc15'],
-      headerBadge: '#7c2d12',
-      headerText: 'PROPULSION HANGAR // SUPERSONIC HUD',
-      dropGlow: '#ea580c',
-      titleColor: '#fdba74',
-      boardBg: ['#0f172a', '#1e293b', '#090d16'],
-      schematicAccent: '#f97316'
-    },
-    ancient_observatory: {
-      neonBorder: ['#854d0e', '#ca8a04', '#fef08a'],
-      headerBadge: '#713f12',
-      headerText: 'GALILEO TOWER // ASTROLABE CELESTIAL',
-      dropGlow: '#ca8a04',
-      titleColor: '#fef08a',
-      boardBg: ['#1c1917', '#292524', '#0c0a09'],
-      schematicAccent: '#eab308'
-    }
-  };
-
-  const currentTheme = styleConfigs[classroomStyle] || styleConfigs.cyber_stem;
-
-  // Text wrap for headline and bullets using native SVG text & tspans (NO foreignObject)
   const headlineText = String(scriptObj?.boardHeadline || factObj.title || 'Science Phenomenon');
-  const titleLines = wrapSvgText(headlineText, 21).slice(0, 3);
+  const titleLines = wrapSvgText(headlineText, 22).slice(0, 2);
   const titleTspans = titleLines.map((l, i) =>
-    `<tspan x="0" dy="${i === 0 ? 0 : 42}">${escapeXml(l)}</tspan>`
+    `<tspan x="0" dy="${i === 0 ? 0 : 38}">${escapeXml(l)}</tspan>`
   ).join('');
 
   const bullet1 = String(scriptObj?.bullet1 || 'Direct Reaction Principle');
   const bullet2 = String(scriptObj?.bullet2 || 'Observable Daily Wonder');
-
-  const takeawayText = String(scriptObj?.takeawayLearnt || factObj.takeawayLearnt || factObj.takeaway || 'Observable physical principle at work in daily life.');
-  const takeawayLines = wrapSvgText(takeawayText, 32).slice(0, 2);
-  const takeawayTspans = takeawayLines.map((l, i) =>
-    `<tspan x="18" dy="${i === 0 ? 0 : 26}">${escapeXml(l)}</tspan>`
-  ).join('');
-
-  const categoryName = (factObj.category || 'SCIENCE').toUpperCase().replace(/[^A-Z0-9\s]/g, '').slice(0, 16);
-
-  // Diagram / Physical Screen Box:
-  // Positioned at x = boardX + 40, y = boardY + 390, width = boardW - 80, height = 330
-  const screenContent = hasPhysicalVideo ? `
-    <!-- Physical Camera HUD Viewfinder -->
-    <rect x="0" y="0" width="${boardW - 80}" height="330" rx="18" fill="#030712" stroke="${currentTheme.neonBorder[1]}" stroke-width="2.5" />
-    
-    <!-- HUD Reticle Corners -->
-    <path d="M 10 30 L 10 10 L 30 10" stroke="${currentTheme.schematicAccent}" stroke-width="3" fill="none" stroke-linecap="round" />
-    <path d="M 580 30 L 580 10 L 560 10" stroke="${currentTheme.schematicAccent}" stroke-width="3" fill="none" stroke-linecap="round" />
-    <path d="M 10 300 L 10 320 L 30 320" stroke="${currentTheme.schematicAccent}" stroke-width="3" fill="none" stroke-linecap="round" />
-    <path d="M 580 300 L 580 320 L 560 320" stroke="${currentTheme.schematicAccent}" stroke-width="3" fill="none" stroke-linecap="round" />
-    
-    <!-- Top HUD Badge -->
-    <rect x="15" y="14" width="280" height="26" rx="13" fill="${currentTheme.headerBadge}" fill-opacity="0.45" stroke="${currentTheme.neonBorder[1]}" stroke-width="1.2" />
-    <circle cx="27" cy="27" r="4.5" fill="#22c55e" />
-    <text x="40" y="32" font-family="system-ui, sans-serif" font-size="11" font-weight="900" fill="#f8fafc" letter-spacing="1">PHYSICAL SPECIMEN • WIKIPEDIA</text>
-
-    <!-- Bottom HUD Specimen Label -->
-    <rect x="15" y="285" width="560" height="32" rx="10" fill="#020617" fill-opacity="0.92" />
-    <text x="28" y="306" font-family="system-ui, sans-serif" font-size="12" font-weight="800" fill="#94a3b8">Subject: <tspan fill="#f8fafc">${escapeXml(scriptObj?.wikiSearchTerm || factObj.title)}</tspan></text>
-    <text x="560" y="306" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="${currentTheme.schematicAccent}" text-anchor="end">PANNING MOTION</text>
-  ` : `
-    <!-- High-Tech Environment-Synchronized Scientific Schematic -->
-    <rect x="0" y="0" width="${boardW - 80}" height="330" rx="18" fill="#030712" stroke="${currentTheme.neonBorder[1]}" stroke-width="2" />
-    <text x="25" y="34" font-family="system-ui, sans-serif" font-size="13" font-weight="800" fill="${currentTheme.schematicAccent}" letter-spacing="1">SCIENTIFIC OBSERVATION MATRIX</text>
-    
-    <g stroke="${currentTheme.schematicAccent}" stroke-width="2.5" fill="none" opacity="0.85">
-      <path d="M 40 165 Q 110 80 180 165 T 320 165 T 460 165 T 550 165" />
-    </g>
-    <g stroke="#facc15" stroke-width="2" fill="none" stroke-dasharray="5 4">
-      <path d="M 40 165 Q 110 250 180 165 T 320 165 T 460 165 T 550 165" />
-    </g>
-    <circle cx="180" cy="165" r="7" fill="#ef4444" />
-    <circle cx="320" cy="165" r="8" fill="#22c55e" />
-    <circle cx="460" cy="165" r="7" fill="#ef4444" />
-    <text x="295" y="275" font-family="system-ui, sans-serif" font-size="14" font-weight="700" fill="#cbd5e1" text-anchor="middle">Physical Resonance • Natural Direct Law</text>
-  `;
+  const categoryName = (factObj.category || 'EVERYDAY SCIENCE').toUpperCase().replace(/[^A-Z0-9\s]/g, '').slice(0, 18);
 
   return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="boardBg_${classroomStyle}" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="${currentTheme.boardBg[0]}" stop-opacity="0.97" />
-        <stop offset="50%" stop-color="${currentTheme.boardBg[1]}" stop-opacity="0.95" />
-        <stop offset="100%" stop-color="${currentTheme.boardBg[2]}" stop-opacity="0.98" />
+      <linearGradient id="headerPillGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#0284c7" />
+        <stop offset="50%" stop-color="#0ea5e9" />
+        <stop offset="100%" stop-color="#38bdf8" />
       </linearGradient>
-
-      <linearGradient id="boardNeonBorder_${classroomStyle}" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="${currentTheme.neonBorder[0]}" />
-        <stop offset="50%" stop-color="${currentTheme.neonBorder[1]}" />
-        <stop offset="100%" stop-color="${currentTheme.neonBorder[2]}" />
+      <linearGradient id="cardBgGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0f172a" stop-opacity="0.95" />
+        <stop offset="100%" stop-color="#020617" stop-opacity="0.98" />
       </linearGradient>
-
-      <filter id="boardDrop_${classroomStyle}" x="-10%" y="-10%" width="120%" height="120%">
-        <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="${currentTheme.dropGlow}" flood-opacity="0.45" />
+      <filter id="cardGlow" x="-10%" y="-10%" width="120%" height="120%">
+        <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#0284c7" flood-opacity="0.3" />
       </filter>
     </defs>
 
-    <!-- 1. The Presentation Board Frame -->
-    <g filter="url(#boardDrop_${classroomStyle})">
-      <rect x="${boardX}" y="${boardY}" width="${boardW}" height="${boardH}" rx="30" fill="url(#boardBg_${classroomStyle})" stroke="url(#boardNeonBorder_${classroomStyle})" stroke-width="3.5" />
-      <path d="M ${boardX + 35} ${boardY + 6} L ${boardX + boardW - 35} ${boardY + 6} L ${boardX + 35} ${boardY + 280} Z" fill="#ffffff" fill-opacity="0.04" />
+    <!-- 1. Sleek Floating Header Pill at Top -->
+    <g transform="translate(100, 100)">
+      <rect x="0" y="0" width="880" height="74" rx="37" fill="#090d16" fill-opacity="0.92" stroke="#38bdf8" stroke-width="2" />
+      <rect x="12" y="12" width="180" height="50" rx="25" fill="url(#headerPillGrad)" />
+      <text x="102" y="44" font-family="system-ui, sans-serif" font-size="14" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="1">⚡ ${escapeXml(categoryName)}</text>
+      <text x="215" y="44" font-family="system-ui, sans-serif" font-size="18" font-weight="900" fill="#f8fafc">${escapeXml(headlineText.slice(0, 36))}</text>
     </g>
 
-    <!-- 2. Header Status Badge -->
-    <g transform="translate(${boardX + 35}, ${boardY + 30})">
-      <rect x="0" y="0" width="150" height="36" rx="18" fill="${currentTheme.headerBadge}" />
-      <text x="75" y="23" font-family="system-ui, sans-serif" font-size="13" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="1">${escapeXml(categoryName)}</text>
-
-      <rect x="165" y="0" width="375" height="36" rx="18" fill="#0f172a" stroke="#334155" stroke-width="1.2" />
-      <circle cx="180" cy="18" r="4.5" fill="#22c55e" />
-      <text x="195" y="23" font-family="system-ui, sans-serif" font-size="11" font-weight="800" fill="#94a3b8" letter-spacing="1">${escapeXml(currentTheme.headerText)}</text>
-    </g>
-
-    <!-- 3. High-Impact Headline Text (Pure SVG text & tspans - NEVER BLANK) -->
-    <g transform="translate(${boardX + 40}, ${boardY + 115})">
-      <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="900" fill="${currentTheme.titleColor}" letter-spacing="-0.5">
-        ${titleTspans}
-      </text>
-    </g>
-
-    <!-- Divider Line -->
-    <line x1="${boardX + 40}" y1="${boardY + 245}" x2="${boardX + boardW - 40}" y2="${boardY + 245}" stroke="#334155" stroke-width="2" stroke-dasharray="6 6" />
-
-    <!-- 4. Body Explanation Bullet Points -->
-    <g transform="translate(${boardX + 40}, ${boardY + 285})">
-      <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="25" font-weight="800" fill="#f8fafc">
-        • ${escapeXml(bullet1)}
-      </text>
-      <text x="0" y="44" font-family="system-ui, -apple-system, sans-serif" font-size="25" font-weight="800" fill="#cbd5e1">
-        • ${escapeXml(bullet2)}
-      </text>
-    </g>
-
-    <!-- 5. Dynamic Screen Window (Specimen Panning Video or Observation Matrix) -->
-    <g transform="translate(${boardX + 40}, ${boardY + 390})">
-      ${screenContent}
-    </g>
-
-    <!-- 6. Prominent Key Takeaway Learnt Card (Pure SVG Text & tspans - NEVER BLANK) -->
-    <g transform="translate(${boardX + 40}, ${boardY + 745})">
-      <rect x="0" y="0" width="${boardW - 80}" height="110" rx="18" fill="#022c22" stroke="#10b981" stroke-width="2.5" />
-      <g transform="translate(18, 22)">
-        <circle cx="10" cy="10" r="9" fill="#10b981" />
-        <text x="10" y="15" font-family="system-ui, sans-serif" font-size="12" font-weight="900" fill="#064e3b" text-anchor="middle">✓</text>
-        <text x="28" y="15" font-family="system-ui, sans-serif" font-size="13" font-weight="900" fill="#6ee7b7" letter-spacing="1">KEY TAKEAWAY LEARNT</text>
+    <!-- 2. Clean Modern Concept Card on Right Side -->
+    <g transform="translate(${boardX}, ${boardY})" filter="url(#cardGlow)">
+      <rect x="0" y="0" width="${boardW}" height="${boardH}" rx="28" fill="url(#cardBgGrad)" stroke="#38bdf8" stroke-width="2.5" />
+      
+      <!-- Card Badge -->
+      <g transform="translate(35, 35)">
+        <rect x="0" y="0" width="220" height="34" rx="17" fill="#0284c7" fill-opacity="0.3" stroke="#38bdf8" stroke-width="1.2" />
+        <text x="110" y="22" font-family="system-ui, sans-serif" font-size="12" font-weight="900" fill="#38bdf8" text-anchor="middle" letter-spacing="1">OBSERVABLE REALITY</text>
       </g>
-      <text x="0" y="65" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="800" fill="#ffffff">
-        ${takeawayTspans}
-      </text>
-    </g>
 
-    <!-- 7. Verified Citation & Reference Tag -->
-    <g transform="translate(${boardX + 40}, ${boardY + 875})">
-      <rect x="0" y="0" width="${boardW - 80}" height="55" rx="14" fill="#0f172a" stroke="#334155" stroke-width="1.2" />
-      <text x="20" y="22" font-family="system-ui, sans-serif" font-size="10" font-weight="900" fill="#94a3b8" letter-spacing="1">VERIFIED SCIENTIFIC REFERENCE</text>
-      <text x="20" y="42" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#38bdf8">${escapeXml(scriptObj?.citationReference || factObj.reference || "Direct Scientific Observation")}</text>
+      <!-- Headline -->
+      <g transform="translate(35, 120)">
+        <text x="0" y="0" font-family="system-ui, sans-serif" font-size="28" font-weight="900" fill="#ffffff" letter-spacing="-0.3">
+          ${titleTspans}
+        </text>
+      </g>
+
+      <line x1="35" y1="215" x2="${boardW - 35}" y2="215" stroke="#334155" stroke-width="1.5" stroke-dasharray="6 4" />
+
+      <!-- 2 Clean Insights -->
+      <g transform="translate(35, 260)">
+        <circle cx="12" cy="-6" r="6" fill="#38bdf8" />
+        <text x="30" y="0" font-family="system-ui, sans-serif" font-size="22" font-weight="800" fill="#f8fafc">
+          ${escapeXml(bullet1)}
+        </text>
+
+        <circle cx="12" cy="54" r="6" fill="#22c55e" />
+        <text x="30" y="60" font-family="system-ui, sans-serif" font-size="22" font-weight="800" fill="#cbd5e1">
+          ${escapeXml(bullet2)}
+        </text>
+      </g>
+
+      <!-- Bottom Verified Tag -->
+      <g transform="translate(35, 410)">
+        <rect x="0" y="0" width="${boardW - 70}" height="50" rx="14" fill="#0f172a" stroke="#334155" stroke-width="1" />
+        <text x="20" y="31" font-family="system-ui, sans-serif" font-size="13" font-weight="800" fill="#94a3b8">Ref: <tspan fill="#38bdf8">${escapeXml(scriptObj?.citationReference || "Physical Science Law")}</tspan></text>
+      </g>
     </g>
   </svg>`;
 }

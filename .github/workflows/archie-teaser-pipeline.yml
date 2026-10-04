@@ -77,8 +77,9 @@ jobs:
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
           BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
           BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID }}
+          BUFFER_TIKTOK_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_CHANNEL_ID }}
         run: |
-          echo "=== Generating Archie Daily Intellectual Q&A Teaser Video ==="
+          echo "=== Generating Archie Daily 3-in-1 Intellectual Q&A Teaser Video ==="
           node scripts/generate_archie_qa_teaser.cjs
 
       - name: Upload Production Video & Diagnostics Artifacts
@@ -87,6 +88,7 @@ jobs:
         with:
           name: archie-qa-teaser-output-${{ github.run_id }}
           path: |
+            rendered_videos/archie_3in1_teaser_*.mp4
             rendered_videos/archie_qa_teaser_*.mp4
             test_artifacts/archie_qa/*
           retention-days: 14

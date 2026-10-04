@@ -43,6 +43,7 @@ import {
   Lock,
   Copy,
   HeartHandshake,
+  Brain,
   GraduationCap
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
@@ -831,6 +832,24 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                 <button
                   type="button"
                   onClick={() => {
+                    setActiveTab('audience-feedback');
+                    setIsMobileDrawerOpen(false);
+                  }}
+                  className="w-full p-2.5 bg-gradient-to-r from-cyan-950/80 via-indigo-950/60 to-slate-900 border border-cyan-500/50 rounded-xl text-left cursor-pointer transition-all hover:border-cyan-400 flex items-center gap-2.5"
+                >
+                  <Brain className="w-4 h-4 text-cyan-400 shrink-0" />
+                  <div>
+                    <div className="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
+                      <span>Archie 3-in-1 Daily Showdown</span>
+                      <span className="text-[9px] px-1 py-0.2 rounded bg-cyan-900/80 text-cyan-300 font-mono">NEW 2X DAILY</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400">Andrew Voice • 5s Clock Countdown • 3 Questions in 1</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
                     setActiveTab('finance-engine');
                     setIsMobileDrawerOpen(false);
                   }}
@@ -839,10 +858,10 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                   <DollarSign className="w-4 h-4 text-emerald-400 shrink-0" />
                   <div>
                     <div className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
-                      <span>Finance Studio (@bones_ceo)</span>
-                      <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-900/80 text-emerald-300 font-mono">0% CARTOON</span>
+                      <span>Finance &amp; Wealth Hub</span>
+                      <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-900/80 text-emerald-300 font-mono">POPULAR</span>
                     </div>
-                    <div className="text-[10px] text-slate-400">Live Unseeded Search &amp; 4-Video Image Deduplication</div>
+                    <div className="text-[10px] text-slate-400">Fresh Topics &amp; Unique Visual Experiences</div>
                   </div>
                 </button>
 
@@ -856,8 +875,8 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                 >
                   <Atom className="w-4 h-4 text-emerald-400 shrink-0" />
                   <div>
-                    <div className="text-xs font-bold text-emerald-300">Archie Research &amp; Fact Verification Lab</div>
-                    <div className="text-[10px] text-slate-400">Phase 1 Spec MVP: Fact-Check, Pexels &amp; Wikimedia</div>
+                    <div className="text-xs font-bold text-emerald-300">Archie Wonder Lab</div>
+                    <div className="text-[10px] text-slate-400">Everyday Science, Curiosities &amp; High-Definition Media</div>
                   </div>
                 </button>
 

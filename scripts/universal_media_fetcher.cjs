@@ -409,5 +409,6 @@ module.exports = {
   searchAndFetchImage,
   searchAndFetchVideo,
   searchAndFetchAudio,
+  downloadFile,
   CACHE_DIR
 };

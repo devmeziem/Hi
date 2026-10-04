@@ -1,17 +1,18 @@
 /**
- * Archie Daily Q&A Teaser & Intellectual Showdown Generator
+ * Archie Daily 3-in-1 Intellectual Q&A Teaser & Showdown Generator
  *
  * User Mandates:
- * 1. Everyday updating Question & Answer session.
- * 2. Voice: Microsoft Edge "en-US-AndrewMultilingualNeural" or "en-US-AndrewNeural" at human pace (rate: 0%, pitch: 0Hz).
- * 3. 4 on-screen options (A, B, C, D) for questions people are expected to know (Content Creation, Tech & Science, Finance, Everyday Wonders, etc.).
- * 4. 5 to 7 seconds on-screen countdown with authentic clock ticking sound.
- * 5. Asks viewer if they have commented their answer.
- * 6. Reveals real answer and explains WHY clearly.
- * 7. Asks viewer if they argue/debate it in comments to trigger high algorithmic engagement.
+ * 1. 3 Questions in 1 Single Episode (Intellectual Showdown).
+ * 2. Voice: Microsoft Edge "en-US-AndrewMultilingualNeural" or "en-US-AndrewNeural" at human pace.
+ * 3. 4 on-screen options (A, B, C, D) for questions people are expected to know
+ *    (Content Creation, Tech & Science, Finance, Everyday Wonders, Psychology).
+ * 4. 5-second animated on-screen countdown with authentic audible clock ticking sound.
+ * 5. Text perfectly sized and padded - NEVER overflows card boundaries.
+ * 6. Reveals real answer and concise explanation WHY.
+ * 7. Prompts viewers to comment their answers and debate to trigger high algorithmic engagement.
  * 8. Deduplication via persistent Firestore database + local cache.
- * 9. NO ARCHIE IMAGE: Dynamic rotating background colors, sleek modern cards, high engagement visual layout.
- * 10. Automated twice daily via dedicated GitHub Actions workflow.
+ * 9. NO ARCHIE IMAGE in teaser: Dynamic rotating background colors, sleek modern cards.
+ * 10. Posts directly to Archie's Channel (YouTube Channel 3 + Buffer Omnichannel).
  */
 
 const fs = require('fs');
@@ -21,7 +22,7 @@ const https = require('https');
 const { EdgeTTS } = require('node-edge-tts');
 const { selectDeduplicatedCandidate, recordPostedCandidate } = require('./channel_dedup_service.cjs');
 const { callActiveAiForJson } = require('./topic_discovery_engine.cjs');
-const { saveChosenTopicToDatabase } = require('./topic_discovery_engine.cjs');
+const { uploadYouTubeShort, formatChannelFollowCta } = require('./youtube_channel_dispatcher.cjs');
 
 const ARTIFACTS_DIR = path.join(process.cwd(), 'test_artifacts', 'archie_qa');
 const RENDERED_DIR = path.join(process.cwd(), 'rendered_videos');
@@ -29,178 +30,154 @@ for (const d of [ARTIFACTS_DIR, RENDERED_DIR]) {
   if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
 }
 
-// 5 Sophisticated Themes (Background Gradients & Accents - No cartoon character)
+// 5 Vibrant Modern Color Themes (Rotating per episode)
 const THEMES = [
   {
     name: 'Tech & Science',
     category: 'tech_science',
-    bgStart: '#040d21',
-    bgEnd: '#0b192e',
-    cardBg: '#0f2442',
-    accent: '#06b6d4',
+    bgStart: '#050c1e',
+    bgEnd: '#0a1936',
+    cardBg: '#0e244d',
+    cardBorder: 'rgba(56, 189, 248, 0.35)',
+    accent: '#0284c7',
     accentGold: '#38bdf8',
-    textHighlight: '#67e8f9'
+    textHighlight: '#7dd3fc',
+    timerColor: '#38bdf8'
   },
   {
     name: 'Content Creation & Algorithms',
     category: 'content_creation',
-    bgStart: '#140624',
-    bgEnd: '#240b3b',
-    cardBg: '#2d124d',
-    accent: '#ec4899',
+    bgStart: '#160528',
+    bgEnd: '#290b4a',
+    cardBg: '#35125e',
+    cardBorder: 'rgba(236, 72, 153, 0.35)',
+    accent: '#db2777',
     accentGold: '#f43f5e',
-    textHighlight: '#fbcfe8'
+    textHighlight: '#fbcfe8',
+    timerColor: '#f43f5e'
   },
   {
-    name: 'Finance & Money Mastery',
+    name: 'Finance & Wealth Mastery',
     category: 'finance',
     bgStart: '#021810',
-    bgEnd: '#062d1f',
-    cardBg: '#0a3d2b',
-    accent: '#10b981',
+    bgEnd: '#063323',
+    cardBg: '#0b422e',
+    cardBorder: 'rgba(16, 185, 129, 0.35)',
+    accent: '#059669',
     accentGold: '#34d399',
-    textHighlight: '#a7f3d0'
+    textHighlight: '#a7f3d0',
+    timerColor: '#10b981'
   },
   {
-    name: 'Everyday Physics & Wonders',
+    name: 'Everyday Wonders & Physics',
     category: 'everyday_wonders',
-    bgStart: '#1a0b02',
-    bgEnd: '#301605',
-    cardBg: '#421f08',
-    accent: '#f59e0b',
+    bgStart: '#1c0d02',
+    bgEnd: '#381a05',
+    cardBg: '#472208',
+    cardBorder: 'rgba(245, 158, 11, 0.35)',
+    accent: '#d97706',
     accentGold: '#fbbf24',
-    textHighlight: '#fde68a'
+    textHighlight: '#fde68a',
+    timerColor: '#f59e0b'
   },
   {
-    name: 'Human Psychology & Mind',
+    name: 'Human Psychology & Focus',
     category: 'psychology',
-    bgStart: '#09081f',
-    bgEnd: '#15133d',
-    cardBg: '#1e1b57',
-    accent: '#8b5cf6',
+    bgStart: '#0d0826',
+    bgEnd: '#1a104c',
+    cardBg: '#25176b',
+    cardBorder: 'rgba(139, 92, 246, 0.35)',
+    accent: '#7c3aed',
     accentGold: '#a78bfa',
-    textHighlight: '#ddd6fe'
+    textHighlight: '#ddd6fe',
+    timerColor: '#8b5cf6'
   }
 ];
 
-// Curated Bank of Genius Questions People Are Expected To Know
+// Curated Bank of Punchy Questions People Are Expected To Know
 const CURATED_QA_BANK = [
   {
     category: 'Content Creation',
-    topic: 'YouTube Algorithm Mechanics',
-    question: 'When YouTube decides whether to promote a video to millions, which metric matters most in the first 24 hours?',
+    topic: 'YouTube Algorithm Trigger',
+    question: 'Which viewer signal tells the YouTube algorithm to push a Short to 100x more feeds in the first hour?',
     options: [
-      { key: 'A', text: 'Total likes and subscriber count' },
-      { key: 'B', text: 'Click-Through Rate and Average View Duration' },
-      { key: 'C', text: 'Number of hashtags in description' },
-      { key: 'D', text: 'Video resolution (4K vs 1080p)' }
+      { key: 'A', text: 'Number of hashtags in title' },
+      { key: 'B', text: 'Viewed vs Swiped Away Ratio (>75%)' },
+      { key: 'C', text: 'Uploading strictly at 8:00 AM' },
+      { key: 'D', text: 'Total channel subscriber count' }
     ],
     correctKey: 'B',
-    explanation: 'The algorithm prioritizes viewer satisfaction. High CTR gets people in the door, but high retention keeps them on the platform. The algorithm optimizes purely for watch sessions, not vanity metrics like subscribers!',
-    debatePrompt: 'Do you think watch time is still king, or is viewer comment sentiment taking over? Debate in the comments!'
+    explanation: 'The Viewed vs Swiped Away metric determines if people pause or skip. Over 75% viewed triggers instant algorithmic expansion!'
+  },
+  {
+    category: 'Tech & Science',
+    topic: 'OLED Battery Physics',
+    question: 'Why does Dark Mode save massive battery life on OLED phones, but zero battery on standard LCDs?',
+    options: [
+      { key: 'A', text: 'Black pixels invert battery polarity' },
+      { key: 'B', text: 'OLED turns off individual pixels completely' },
+      { key: 'C', text: 'Dark mode reduces processor clock speed' },
+      { key: 'D', text: 'LCD screens absorb infrared radiation' }
+    ],
+    correctKey: 'B',
+    explanation: 'In OLED panels, black pixels emit zero light and draw 0 milliamps of power, whereas LCD backlights are always 100% on!'
+  },
+  {
+    category: 'Finance',
+    topic: 'Compound Growth Rule',
+    question: 'Using the Rule of 72, how many years does it take an 8% annual return to double your money with zero extra deposits?',
+    options: [
+      { key: 'A', text: '12 years' },
+      { key: 'B', text: '6 years' },
+      { key: 'C', text: '9 years' },
+      { key: 'D', text: '15 years' }
+    ],
+    correctKey: 'C',
+    explanation: '72 divided by 8 percent equals exactly 9 years. At 12 percent, compound growth doubles your money in just 6 years!'
+  },
+  {
+    category: 'Everyday Wonders',
+    topic: 'Airplane Window Hole',
+    question: 'Why is there a tiny pinhole at the bottom of commercial passenger airplane windows?',
+    options: [
+      { key: 'A', text: 'Emergency oxygen backup intake' },
+      { key: 'B', text: 'To balance cabin air pressure & stop fog' },
+      { key: 'C', text: 'Drainage for passenger condensation' },
+      { key: 'D', text: 'Allows the outer window pane to expand' }
+    ],
+    correctKey: 'B',
+    explanation: 'Known as the bleed hole, it balances atmospheric pressure between cabin panes and prevents moisture fogging at 35,000 feet!'
   },
   {
     category: 'Tech & Science',
     topic: 'Microwave Physics',
-    question: 'Why does your microwave heat the soup scalding hot, but leaves the ceramic bowl relatively cold?',
+    question: 'Why does a microwave make soup scalding hot while leaving the dry ceramic bowl relatively cool?',
     options: [
-      { key: 'A', text: 'Ceramic reflects 100% of all radiation' },
-      { key: 'B', text: 'Microwaves specifically excite polar water molecules' },
-      { key: 'C', text: 'The bowl is insulated with internal vacuum pockets' },
-      { key: 'D', text: 'Heat rises to liquid surfaces only' }
+      { key: 'A', text: 'Ceramic reflects all microwave beams' },
+      { key: 'B', text: 'Microwaves only excite polar water molecules' },
+      { key: 'C', text: 'Soup has higher electrical conductivity' },
+      { key: 'D', text: 'Ceramic absorbs heat from top to bottom' }
     ],
     correctKey: 'B',
-    explanation: 'Microwaves emit electromagnetic radiation at 2.45 GHz. This frequency causes asymmetric polar water molecules to rotate furiously, generating frictional heat. Dry ceramic lacks free water molecules, so it only gets warm through direct conduction!',
-    debatePrompt: 'Have you ever had a bowl that got hotter than the food itself? Tell us why in the comments!'
+    explanation: '2.45 GHz microwaves specifically rotate polar water molecules to create friction. Dry ceramic has no free water to heat!'
   },
   {
-    category: 'Finance',
-    topic: 'The Rule of 72',
-    question: 'If an investment generates a steady 8% annual return, roughly how many years will it take for your money to double without adding another cent?',
+    category: 'Human Mind',
+    topic: 'The Zeigarnik Effect',
+    question: 'Why do unfinished tasks and cliffhangers obsessively stick in your memory far more than completed tasks?',
     options: [
-      { key: 'A', text: '12 years' },
-      { key: 'B', text: '18 years' },
-      { key: 'C', text: '9 years' },
-      { key: 'D', text: '6 years' }
-    ],
-    correctKey: 'C',
-    explanation: 'By the mathematical Rule of 72: divide 72 by the annual rate of return (72 / 8 = 9). In exactly 9 years, compound interest doubles your principal. At 12%, it doubles in just 6 years!',
-    debatePrompt: 'Is an 8% return realistic in today\'s volatile market? Drop your investment philosophy below!'
-  },
-  {
-    category: 'Tech & Science',
-    topic: 'Smartphone Display Technology',
-    question: 'Why does using Pure Dark Mode on modern OLED smartphones actually save battery life, whereas on older LCD screens it saves zero?',
-    options: [
-      { key: 'A', text: 'Dark pixels require negative voltage' },
-      { key: 'B', text: 'OLED turns off individual microscopic LEDs completely' },
-      { key: 'C', text: 'Black color reduces CPU operating clock frequency' },
-      { key: 'D', text: 'Dark mode limits touchscreen sensor polling' }
+      { key: 'A', text: 'The Dopamine Exhaustion Law' },
+      { key: 'B', text: 'The Zeigarnik Effect in cognitive psychology' },
+      { key: 'C', text: 'Selective memory degradation' },
+      { key: 'D', text: 'Subconscious cortisol buildup' }
     ],
     correctKey: 'B',
-    explanation: 'LCD screens use a continuous backlight that is always fully on, blocking light with liquid crystals to create black. In OLED panels, each individual pixel emits its own light; displaying black means the pixel is completely turned off and draws 0.0 milliamps!',
-    debatePrompt: 'Are you team Dark Mode or team Light Mode? Let us hear your argument in the comments!'
-  },
-  {
-    category: 'Everyday Wonders',
-    topic: 'Culinary Chemistry',
-    question: 'Why do onions make you burst into tears when you slice them with a knife?',
-    options: [
-      { key: 'A', text: 'Microscopic onion seeds irritate corneal nerve endings' },
-      { key: 'B', text: 'Ruptured cells release syn-propanethial-S-oxide gas' },
-      { key: 'C', text: 'Acidic onion juice evaporates into carbon dioxide' },
-      { key: 'D', text: 'The bright sulfur color triggers a tear duct reflex' }
-    ],
-    correctKey: 'B',
-    explanation: 'Cutting ruptures cell walls, allowing alliinase enzymes to mix with amino acid sulfoxides. This synthesizes a volatile gas called syn-propanethial-S-oxide. When it touches the moisture in your eyes, it turns into mild sulfuric acid, causing tear glands to flush it away!',
-    debatePrompt: 'What is your best kitchen trick to stop onion tears? Put your hack in the comments!'
-  },
-  {
-    category: 'Psychology',
-    topic: 'Cognitive Biases',
-    question: 'When people fiercely search for evidence that confirms what they already believe while completely ignoring contradictory facts, what psychological bias is at work?',
-    options: [
-      { key: 'A', text: 'The Dunning-Kruger Effect' },
-      { key: 'B', text: 'Confirmation Bias' },
-      { key: 'C', text: 'The Bystander Effect' },
-      { key: 'D', text: 'Anchoring Heuristic' }
-    ],
-    correctKey: 'B',
-    explanation: 'Confirmation bias is our brain\'s tendency to seek, interpret, and recall information in a way that validates our preexisting hypotheses. The human ego prefers comfortable validation over uncomfortable truth!',
-    debatePrompt: 'Have you ever caught yourself doing this in an argument? Be honest in the comments!'
-  },
-  {
-    category: 'Content Creation',
-    topic: 'Audience Hook Dynamics',
-    question: 'On vertical platforms like YouTube Shorts and TikTok, within how many seconds will over 60% of viewers swipe away if you don\'t deliver a compelling hook?',
-    options: [
-      { key: 'A', text: 'First 2 to 3 seconds' },
-      { key: 'B', text: 'Around 15 seconds' },
-      { key: 'C', text: 'Exactly 8 seconds' },
-      { key: 'D', text: 'After 30 seconds' }
-    ],
-    correctKey: 'A',
-    explanation: 'Retention data shows the steepest drop-off occurs between seconds 0 and 2.5. If the first visual frame and opening sentence do not create an open information loop or immediate curiosity, the thumb swipes away automatically!',
-    debatePrompt: 'What is the most addictive hook format you have seen this month? Share it below!'
-  },
-  {
-    category: 'Finance',
-    topic: 'Inflation vs Purchasing Power',
-    question: 'If annual inflation is 3.5% and your savings account pays 1.0% interest, what is actually happening to your purchasing power each year?',
-    options: [
-      { key: 'A', text: 'You are gaining 2.5% in real terms' },
-      { key: 'B', text: 'Your money remains perfectly protected' },
-      { key: 'C', text: 'You are losing roughly 2.5% of real purchasing power' },
-      { key: 'D', text: 'The principal balance drops directly' }
-    ],
-    correctKey: 'C',
-    explanation: 'Nominal interest minus inflation equals real return. 1.0% minus 3.5% = -2.5% real purchasing power per year. Cash sitting idle in low-interest accounts loses purchasing power silently to the invisible tax of inflation!',
-    debatePrompt: 'Where is the safest place to preserve cash right now? Debate your strategy below!'
+    explanation: 'The Zeigarnik Effect proves the human brain maintains mental tension on incomplete loops until closure is reached!'
   }
 ];
 
-function escapeXml(unsafe) {
-  return String(unsafe || '')
+function escapeXml(str) {
+  return String(str || '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -209,67 +186,41 @@ function escapeXml(unsafe) {
 }
 
 /**
- * Generate Question Candidate (curated pool + live AI generation fallback)
+ * Clean text wrapping within max characters per line
  */
-async function selectOrGenerateQaCandidate() {
-  const channelKey = 'archie_qa_teaser';
+function wrapTextToLines(text, maxChars = 34) {
+  const words = String(text || '').trim().split(/\s+/);
+  const lines = [];
+  let current = '';
 
-  // 1. Select deduplicated candidate from curated pool
-  const chosen = await selectDeduplicatedCandidate(
-    channelKey,
-    CURATED_QA_BANK,
-    item => item.question,
-    item => item.topic,
-    async (recentQuestions) => {
-      // Dynamic AI fetch if all questions exhausted
-      const systemPrompt = `You are a master trivia architect and educator.
-Create a genius, viral, multiple-choice question that people are expected to know.
-Topics: Content Creation, Tech Science, Finance, Everyday Wonders, or Psychology.
-Return strictly valid JSON:
-{
-  "category": "Tech & Science",
-  "topic": "Topic Name",
-  "question": "Clear, compelling question sentence?",
-  "options": [
-    { "key": "A", "text": "Option A" },
-    { "key": "B", "text": "Option B" },
-    { "key": "C", "text": "Option C" },
-    { "key": "D", "text": "Option D" }
-  ],
-  "correctKey": "B",
-  "explanation": "Succinct 2-sentence explanation of why B is true.",
-  "debatePrompt": "Compelling question prompting viewer debate in comments?"
-}`;
-      const userPrompt = `Create a new, highly engaging question not in this list: ${recentQuestions.slice(-10).join(' | ')}`;
-      const res = await callActiveAiForJson(systemPrompt, userPrompt, null, { nicheKey: 'cartoon' });
-      return res?.data || null;
+  for (const w of words) {
+    if ((current + ' ' + w).trim().length <= maxChars) {
+      current = (current + ' ' + w).trim();
+    } else {
+      if (current) lines.push(current);
+      current = w;
     }
-  );
-
-  return chosen;
+  }
+  if (current) lines.push(current);
+  return lines;
 }
 
 /**
- * Synthesize Spoken Audio with Andrew Voice at Natural Human Pace
- * Rate: 0% (natural human cadence), Pitch: 0Hz
+ * Synthesize Andrew Voice via Microsoft Edge TTS at natural human pace
  */
-async function synthesizeAndrewSpeech(text, outMp3Path) {
-  const voice = 'en-US-AndrewMultilingualNeural';
-  console.log(`[Andrew Voice] 🎙️ Synthesizing human-paced voiceover via "${voice}" (Rate: +0%, Pitch: +0Hz)...`);
+async function synthesizeSpeech(text, outMp3Path) {
+  let tts = new EdgeTTS({
+    voice: 'en-US-AndrewMultilingualNeural',
+    lang: 'en-US',
+    outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
+    rate: '+0%',
+    pitch: '+0Hz',
+    timeout: 45000
+  });
 
-  let tts;
   try {
-    tts = new EdgeTTS({
-      voice: voice,
-      lang: 'en-US',
-      outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
-      rate: '+0%',
-      pitch: '+0Hz',
-      timeout: 45000
-    });
     await tts.ttsPromise(text, outMp3Path);
-  } catch (err) {
-    console.warn(`[Andrew Voice Notice] Multilingual fallback to AndrewNeural: ${err.message}`);
+  } catch {
     tts = new EdgeTTS({
       voice: 'en-US-AndrewNeural',
       lang: 'en-US',
@@ -281,49 +232,61 @@ async function synthesizeAndrewSpeech(text, outMp3Path) {
     await tts.ttsPromise(text, outMp3Path);
   }
 
-  const durStr = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${outMp3Path}"`, { encoding: 'utf8' }).trim();
-  return parseFloat(durStr) || 10.0;
+  // Convert to clean 44.1kHz WAV for rock-solid FFmpeg mixing
+  const outWavPath = outMp3Path.replace(/\.mp3$/, '.wav');
+  execSync(`ffmpeg -y -i "${outMp3Path}" -ar 44100 -ac 2 -c:a pcm_s16le "${outWavPath}" 2>/dev/null`);
+  const durStr = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${outWavPath}"`, { encoding: 'utf8' }).trim();
+  return {
+    wavPath: outWavPath,
+    duration: parseFloat(durStr) || 6.0
+  };
 }
 
 /**
- * Generate High-Precision Clock Ticking Audio Track (5 to 7 seconds)
+ * Generate 5-Second Authentic Clock Ticking Sound (Audible, Rhythmic, Crisp)
  */
-function generateClockTickingAudio(durationSeconds = 6.0, outWavPath) {
-  console.log(`[Audio FX] ⏱️ Generating ${durationSeconds}s authentic countdown clock ticking sound...`);
-  // Synthesize double tick-tock (1600Hz tick + 1200Hz tock) with crisp exponential decay
-  const numLoops = Math.round(durationSeconds);
-  const cmd = `ffmpeg -y -f lavfi -i "sine=frequency=1500:duration=0.03" -filter_complex "[0:a]apad=pad_dur=0.97,aloop=loop=${numLoops}:size=44100[a]" -map "[a]" -t ${durationSeconds} "${outWavPath}" 2>/dev/null`;
+function generate5sClockTickWav(outWavPath) {
+  // 5 distinct ticks at 1.0s intervals, synthesized at 1600Hz & 1200Hz with volume boost
+  const cmd = `ffmpeg -y -f lavfi -i "sine=frequency=1600:duration=0.04" -f lavfi -i "sine=frequency=1200:duration=0.04" -filter_complex "[0:a]apad=pad_dur=0.46[a1]; [1:a]apad=pad_dur=0.46[a2]; [a1][a2]concat=n=2:v=0:a=1,aloop=loop=4:size=44100[tick_loop]; [tick_loop]volume=2.8[out]" -map "[out]" -t 5.0 -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`;
   try {
     execSync(cmd);
-  } catch (err) {
-    console.warn('[Audio FX Notice] Falling back to standard sine tone tick:', err.message);
-    execSync(`ffmpeg -y -f lavfi -i "sine=frequency=1000:duration=${durationSeconds}" -af "volume=0.2" "${outWavPath}" 2>/dev/null`);
+  } catch {
+    execSync(`ffmpeg -y -f lavfi -i "sine=frequency=1400:duration=0.04" -filter_complex "[0:a]apad=pad_dur=0.96,aloop=loop=4:size=44100,volume=2.5[out]" -map "[out]" -t 5.0 -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
   }
+  return outWavPath;
 }
 
 /**
- * Build State 1 SVG Card: Question + 4 Options + Live Countdown Timer Bar
+ * Build SVG Card for Question State with countdown second number and progress bar
  */
-function buildQuestionCardSvg(candidate, theme, remainingSec = 6, width = 1080, height = 1920) {
-  const letters = ['A', 'B', 'C', 'D'];
-  const optionYStarts = [880, 1020, 1160, 1300];
+function buildQuestionCardSvg(qObj, qIndex, totalQuestions, remainingSec, theme, width = 1080, height = 1920) {
+  const qLines = wrapTextToLines(qObj.question, 30);
+  const qTspans = qLines.slice(0, 3).map((line, i) =>
+    `<tspan x="40" dy="${i === 0 ? 0 : 42}">${escapeXml(line)}</tspan>`
+  ).join('');
 
-  const optionCards = candidate.options.map((opt, i) => {
+  // 4 Option Cards with comfortable spacing & no overflow
+  const optionYStarts = [860, 990, 1120, 1250];
+  const optionCards = qObj.options.map((opt, i) => {
     const y = optionYStarts[i];
+    const optTextLines = wrapTextToLines(opt.text, 36);
+    const displayText = optTextLines.slice(0, 2).join(' ');
+
     return `
-      <!-- Option Card ${opt.key} -->
       <g transform="translate(80, ${y})">
-        <rect width="920" height="115" rx="24" fill="${theme.cardBg}" stroke="rgba(255,255,255,0.12)" stroke-width="2" />
-        <!-- Letter Badge -->
-        <rect x="20" y="20" width="75" height="75" rx="18" fill="${theme.accent}" />
-        <text x="57" y="68" font-family="system-ui, -apple-system, sans-serif" font-size="34" font-weight="900" fill="#ffffff" text-anchor="middle">${opt.key}</text>
-        <!-- Option Text -->
-        <text x="120" y="68" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="700" fill="#ffffff">
-          ${escapeXml(opt.text.length > 48 ? opt.text.slice(0, 46) + '...' : opt.text)}
+        <rect width="920" height="105" rx="20" fill="${theme.cardBg}" stroke="${theme.cardBorder}" stroke-width="2" />
+        <rect x="20" y="18" width="68" height="68" rx="14" fill="${theme.accent}" />
+        <text x="54" y="62" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="900" fill="#ffffff" text-anchor="middle">${opt.key}</text>
+        <text x="110" y="60" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="700" fill="#f8fafc">
+          ${escapeXml(displayText)}
         </text>
       </g>
     `;
   }).join('\n');
+
+  // Countdown timer bar calculation (remainingSec from 5 to 1)
+  const timerFraction = Math.max(0.05, remainingSec / 5.0);
+  const barWidth = Math.round(920 * timerFraction);
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
     <defs>
@@ -331,79 +294,82 @@ function buildQuestionCardSvg(candidate, theme, remainingSec = 6, width = 1080, 
         <stop offset="0%" stop-color="${theme.bgStart}" />
         <stop offset="100%" stop-color="${theme.bgEnd}" />
       </linearGradient>
-      <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="12" stdDeviation="24" flood-color="#000000" flood-opacity="0.6" />
+      <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+        <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#000000" flood-opacity="0.6" />
       </filter>
     </defs>
 
-    <!-- Background -->
     <rect width="${width}" height="${height}" fill="url(#bgGrad)" />
 
-    <!-- Subtle Ambient Glow -->
-    <circle cx="540" cy="400" r="320" fill="${theme.accent}" opacity="0.15" filter="blur(60px)" />
-
-    <!-- Top Category Bar -->
-    <g transform="translate(80, 160)">
-      <rect width="320" height="50" rx="25" fill="${theme.accent}" opacity="0.2" />
-      <rect width="320" height="50" rx="25" fill="none" stroke="${theme.accent}" stroke-width="2" />
-      <text x="160" y="33" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="900" fill="${theme.accentGold}" letter-spacing="3" text-anchor="middle">
-        ⚡ ${escapeXml(candidate.category.toUpperCase())}
+    <!-- Top Status Header -->
+    <g transform="translate(80, 140)">
+      <rect width="320" height="48" rx="24" fill="${theme.accent}" fill-opacity="0.25" stroke="${theme.accentGold}" stroke-width="1.8" />
+      <text x="160" y="32" font-family="system-ui, sans-serif" font-size="16" font-weight="900" fill="${theme.accentGold}" letter-spacing="2" text-anchor="middle">
+        QUESTION ${qIndex} OF ${totalQuestions}
+      </text>
+      <text x="920" y="32" font-family="system-ui, sans-serif" font-size="18" font-weight="900" fill="#94a3b8" letter-spacing="2" text-anchor="end">
+        IQ SHOWDOWN
       </text>
     </g>
 
-    <text x="1000" y="195" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="800" fill="#94a3b8" letter-spacing="2" text-anchor="end">
-      DAILY IQ ARENA
-    </text>
+    <!-- Main Question Box -->
+    <g transform="translate(80, 220)" filter="url(#shadow)">
+      <rect width="920" height="340" rx="28" fill="${theme.cardBg}" stroke="${theme.cardBorder}" stroke-width="2.5" />
+      <text x="40" y="55" font-family="system-ui, sans-serif" font-size="16" font-weight="900" fill="${theme.accentGold}" letter-spacing="2">
+        QUESTION EVERYONE SHOULD KNOW:
+      </text>
+      <text x="40" y="125" font-family="system-ui, sans-serif" font-size="30" font-weight="900" fill="#ffffff" letter-spacing="-0.3">
+        ${qTspans}
+      </text>
+    </g>
 
-    <!-- Main Question Box Card -->
-    <g transform="translate(80, 240)" filter="url(#cardShadow)">
-      <rect width="920" height="340" rx="32" fill="${theme.cardBg}" stroke="rgba(255,255,255,0.18)" stroke-width="2.5" />
+    <!-- Animated Countdown HUD Bar & Ring -->
+    <g transform="translate(80, 590)">
+      <rect width="920" height="180" rx="24" fill="#020617" stroke="${theme.accentGold}" stroke-width="2" />
       
-      <!-- Topic Subheading -->
-      <text x="50" y="65" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="800" fill="${theme.accentGold}" letter-spacing="2">
-        QUESTION YOU SHOULD KNOW:
+      <!-- Countdown Ring / Number -->
+      <circle cx="90" cy="90" r="54" fill="${theme.accent}" />
+      <circle cx="90" cy="90" r="60" fill="none" stroke="${theme.accentGold}" stroke-width="4" stroke-dasharray="12 6" />
+      <text x="90" y="106" font-family="system-ui, sans-serif" font-size="48" font-weight="900" fill="#ffffff" text-anchor="middle">${remainingSec}</text>
+
+      <text x="180" y="70" font-family="system-ui, sans-serif" font-size="24" font-weight="900" fill="#ffffff">
+        COUNTDOWN: 5 SECONDS!
+      </text>
+      <text x="180" y="105" font-family="system-ui, sans-serif" font-size="18" font-weight="800" fill="${theme.accentGold}">
+        Drop your guess in the comments right now!
       </text>
 
-      <!-- Question Text (Multi-Line Wrapped) -->
-      <text x="50" y="130" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="900" fill="#ffffff" line-height="1.3">
-        <tspan x="50" dy="0">${escapeXml(candidate.question.slice(0, 42))}</tspan>
-        <tspan x="50" dy="48">${escapeXml(candidate.question.slice(42, 86))}</tspan>
-        <tspan x="50" dy="48">${escapeXml(candidate.question.slice(86, 130))}</tspan>
-      </text>
-    </g>
-
-    <!-- Countdown Timer Prompt Bar -->
-    <g transform="translate(80, 615)">
-      <rect width="920" height="85" rx="24" fill="#030712" stroke="${theme.accentGold}" stroke-width="2" />
-      <!-- Pulsing Timer Circle -->
-      <circle cx="65" cy="42" r="26" fill="${theme.accent}" />
-      <text x="65" y="52" font-family="system-ui, -apple-system, sans-serif" font-size="26" font-weight="900" fill="#ffffff" text-anchor="middle">⏱️</text>
-      <!-- Prompt Text -->
-      <text x="115" y="51" font-family="system-ui, -apple-system, sans-serif" font-size="21" font-weight="800" fill="#f8fafc">
-        DID YOU DROP YOUR ANSWER IN THE COMMENTS?
-      </text>
+      <!-- Shrinking Timer Progress Bar -->
+      <g transform="translate(180, 130)">
+        <rect width="700" height="16" rx="8" fill="#1e293b" />
+        <rect width="${Math.round(700 * timerFraction)}" height="16" rx="8" fill="${theme.timerColor}" />
+      </g>
     </g>
 
     <!-- 4 Option Cards -->
     ${optionCards}
 
-    <!-- Bottom Guidance Tag -->
-    <text x="540" y="1800" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="800" fill="#64748b" letter-spacing="4" text-anchor="middle">
-      LOCK IN YOUR GUESS BEFORE TIME RUNS OUT
-    </text>
+    <!-- Bottom Footer Call to Action -->
+    <g transform="translate(80, 1420)">
+      <rect width="920" height="80" rx="20" fill="#020617" stroke="rgba(255,255,255,0.12)" stroke-width="1.5" />
+      <text x="460" y="48" font-family="system-ui, sans-serif" font-size="20" font-weight="800" fill="#94a3b8" letter-spacing="1" text-anchor="middle">
+        Lock in Option A, B, C, or D before time is up! ⏳
+      </text>
+    </g>
   </svg>`;
 }
 
 /**
- * Build State 2 SVG Card: Answer Revealed + Glowing Correct Option + Full Explanation Card
+ * Build SVG Card for Answer Reveal State
  */
-function buildAnswerCardSvg(candidate, theme, width = 1080, height = 1920) {
-  const optionYStarts = [720, 840, 960, 1080];
+function buildAnswerCardSvg(qObj, qIndex, totalQuestions, theme, width = 1080, height = 1920) {
+  const correctOpt = qObj.options.find(o => o.key === qObj.correctKey) || qObj.options[0];
+  const optionYStarts = [720, 850, 980, 1110];
 
-  const optionCards = candidate.options.map((opt, i) => {
-    const isCorrect = opt.key === candidate.correctKey;
+  const optionCards = qObj.options.map((opt, i) => {
+    const isCorrect = opt.key === qObj.correctKey;
     const y = optionYStarts[i];
-    const fill = isCorrect ? '#064e3b' : 'rgba(15, 23, 42, 0.6)';
+    const fill = isCorrect ? '#064e3b' : 'rgba(15, 23, 42, 0.7)';
     const stroke = isCorrect ? '#10b981' : 'rgba(255,255,255,0.08)';
     const strokeWidth = isCorrect ? '3.5' : '1.5';
     const badgeColor = isCorrect ? '#10b981' : '#334155';
@@ -411,15 +377,20 @@ function buildAnswerCardSvg(candidate, theme, width = 1080, height = 1920) {
 
     return `
       <g transform="translate(80, ${y})">
-        <rect width="920" height="98" rx="20" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" />
-        <rect x="18" y="16" width="66" height="66" rx="16" fill="${badgeColor}" />
-        <text x="51" y="59" font-family="system-ui, -apple-system, sans-serif" font-size="30" font-weight="900" fill="#ffffff" text-anchor="middle">${opt.key}</text>
-        <text x="105" y="58" font-family="system-ui, -apple-system, sans-serif" font-size="26" font-weight="${isCorrect ? '900' : '600'}" fill="${textColor}">
-          ${escapeXml(opt.text.length > 50 ? opt.text.slice(0, 48) + '...' : opt.text)} ${isCorrect ? '✓ CORRECT' : ''}
+        <rect width="920" height="100" rx="20" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" />
+        <rect x="20" y="16" width="68" height="68" rx="14" fill="${badgeColor}" />
+        <text x="54" y="60" font-family="system-ui, sans-serif" font-size="32" font-weight="900" fill="#ffffff" text-anchor="middle">${opt.key}</text>
+        <text x="110" y="58" font-family="system-ui, sans-serif" font-size="24" font-weight="${isCorrect ? '900' : '600'}" fill="${textColor}">
+          ${escapeXml(opt.text)} ${isCorrect ? '  ✓ CORRECT' : ''}
         </text>
       </g>
     `;
   }).join('\n');
+
+  const expLines = wrapTextToLines(qObj.explanation, 36);
+  const expTspans = expLines.slice(0, 3).map((l, i) =>
+    `<tspan x="30" dy="${i === 0 ? 0 : 34}">${escapeXml(l)}</tspan>`
+  ).join('');
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
     <defs>
@@ -427,183 +398,295 @@ function buildAnswerCardSvg(candidate, theme, width = 1080, height = 1920) {
         <stop offset="0%" stop-color="${theme.bgStart}" />
         <stop offset="100%" stop-color="${theme.bgEnd}" />
       </linearGradient>
-      <filter id="emeraldGlow" x="-30%" y="-30%" width="160%" height="160%">
-        <feDropShadow dx="0" dy="0" stdDeviation="20" flood-color="#10b981" flood-opacity="0.8" />
-      </filter>
     </defs>
 
     <rect width="${width}" height="${height}" fill="url(#bgGrad)" />
 
-    <!-- Top Answer Banner -->
-    <g transform="translate(80, 150)" filter="url(#emeraldGlow)">
-      <rect width="920" height="110" rx="28" fill="#064e3b" stroke="#10b981" stroke-width="3" />
-      <text x="460" y="50" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="900" fill="#a7f3d0" letter-spacing="4" text-anchor="middle">
-        VERIFIED REVELATION
-      </text>
-      <text x="460" y="88" font-family="system-ui, -apple-system, sans-serif" font-size="34" font-weight="900" fill="#ffffff" text-anchor="middle">
-        THE REAL ANSWER IS OPTION ${candidate.correctKey}!
+    <!-- Top Header -->
+    <g transform="translate(80, 140)">
+      <rect width="320" height="48" rx="24" fill="#064e3b" stroke="#10b981" stroke-width="2" />
+      <text x="160" y="32" font-family="system-ui, sans-serif" font-size="16" font-weight="900" fill="#6ee7b7" letter-spacing="2" text-anchor="middle">
+        REVEAL: QUESTION ${qIndex}
       </text>
     </g>
 
-    <!-- Mini Question Reminder -->
-    <g transform="translate(80, 290)">
-      <rect width="920" height="110" rx="22" fill="${theme.cardBg}" stroke="rgba(255,255,255,0.1)" stroke-width="1.5" />
-      <text x="40" y="45" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="${theme.accentGold}" letter-spacing="2">
-        QUESTION:
+    <!-- Big Verified Answer Banner -->
+    <g transform="translate(80, 220)">
+      <rect width="920" height="150" rx="28" fill="#022c22" stroke="#10b981" stroke-width="3" />
+      <text x="460" y="50" font-family="system-ui, sans-serif" font-size="16" font-weight="900" fill="#6ee7b7" letter-spacing="3" text-anchor="middle">
+        VERIFIED TRUTH
       </text>
-      <text x="40" y="82" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="700" fill="#f8fafc">
-        ${escapeXml(candidate.question.length > 64 ? candidate.question.slice(0, 62) + '...' : candidate.question)}
+      <text x="460" y="105" font-family="system-ui, sans-serif" font-size="34" font-weight="900" fill="#ffffff" text-anchor="middle">
+        OPTION ${qObj.correctKey} IS THE REAL ANSWER!
       </text>
     </g>
 
-    <!-- 4 Option Cards with Reveal Status -->
-    <text x="80" y="690" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="800" fill="#94a3b8" letter-spacing="2">
-      OPTIONS BREAKDOWN:
-    </text>
+    <!-- Why This Is True Card -->
+    <g transform="translate(80, 400)">
+      <rect width="920" height="280" rx="24" fill="${theme.cardBg}" stroke="${theme.cardBorder}" stroke-width="2" />
+      <rect x="30" y="24" width="220" height="36" rx="12" fill="${theme.accent}" />
+      <text x="140" y="48" font-family="system-ui, sans-serif" font-size="14" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="1">
+        WHY THIS IS TRUE
+      </text>
+      <text x="30" y="105" font-family="system-ui, sans-serif" font-size="24" font-weight="700" fill="#ffffff">
+        ${expTspans}
+      </text>
+    </g>
+
+    <!-- Options List -->
     ${optionCards}
 
-    <!-- "WHY THIS IS TRUE" Explanation Card -->
-    <g transform="translate(80, 1220)">
-      <rect width="920" height="340" rx="32" fill="#0f172a" stroke="#38bdf8" stroke-width="2.5" />
-      
-      <g transform="translate(45, 45)">
-        <rect width="180" height="36" rx="18" fill="#0284c7" opacity="0.25" />
-        <text x="90" y="24" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="900" fill="#38bdf8" letter-spacing="2" text-anchor="middle">
-          💡 HERE IS WHY
-        </text>
-      </g>
-
-      <text x="45" y="130" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="700" fill="#ffffff" line-height="1.4">
-        <tspan x="45" dy="0">${escapeXml(candidate.explanation.slice(0, 48))}</tspan>
-        <tspan x="45" dy="42">${escapeXml(candidate.explanation.slice(48, 98))}</tspan>
-        <tspan x="45" dy="42">${escapeXml(candidate.explanation.slice(98, 148))}</tspan>
-        <tspan x="45" dy="42">${escapeXml(candidate.explanation.slice(148, 198))}</tspan>
-      </text>
-    </g>
-
-    <!-- Bottom Debate Prompt Callout -->
-    <g transform="translate(80, 1600)">
-      <rect width="920" height="120" rx="28" fill="#1e1b4b" stroke="#818cf8" stroke-width="2" />
-      <text x="460" y="50" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="900" fill="#c7d2fe" letter-spacing="2" text-anchor="middle">
-        💬 DO YOU AGREE OR COUNTER-ARGUE?
-      </text>
-      <text x="460" y="90" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="800" fill="#ffffff" text-anchor="middle">
-        Drop your debate in the comments below!
+    <!-- Bottom Debate Prompt -->
+    <g transform="translate(80, 1260)">
+      <rect width="920" height="90" rx="22" fill="#020617" stroke="${theme.accentGold}" stroke-width="2" />
+      <text x="460" y="55" font-family="system-ui, sans-serif" font-size="22" font-weight="900" fill="${theme.accentGold}" text-anchor="middle">
+        Did you get this one right? Tell us below! 👇
       </text>
     </g>
   </svg>`;
 }
 
 /**
- * Main Generator for Archie Daily Q&A Teaser
+ * Select 3 Deduplicated Questions for 1 Showdown Episode
  */
-async function generateArchieQaTeaser() {
+async function select3DeduplicatedQuestions() {
+  const selected = [];
+  const bank = [...CURATED_QA_BANK];
+
+  // Try to generate 3 fresh questions via Active AI first (Zero canned fallback)
+  try {
+    const aiPrompt = `Generate 3 brilliant, engaging multiple-choice trivia questions that educated people or curious students are expected to know.
+Topics to draw from: YouTube/content algorithms, modern smartphone/computer science, finance & compound interest, everyday physics wonders, human memory psychology.
+Schema:
+{
+  "questions": [
+    {
+      "category": "Tech & Science",
+      "topic": "Specific Topic",
+      "question": "Engaging question text (max 22 words)",
+      "options": [
+        {"key": "A", "text": "Option text"},
+        {"key": "B", "text": "Option text"},
+        {"key": "C", "text": "Option text"},
+        {"key": "D", "text": "Option text"}
+      ],
+      "correctKey": "A",
+      "explanation": "Clear plain English explanation of why this is true (max 24 words)"
+    }
+  ]
+}`;
+    const aiResult = await callActiveAiForJson(aiPrompt, "Generate 3 fresh intellectual showdown questions.", null, { nicheKey: 'cartoon' });
+    if (aiResult?.data?.questions && Array.isArray(aiResult.data.questions) && aiResult.data.questions.length >= 3) {
+      console.log(`[AI Showdown Engine] 🧠 Active AI successfully generated 3 fresh custom questions!`);
+      return aiResult.data.questions.slice(0, 3);
+    }
+  } catch (err) {
+    console.warn(`[AI Showdown Notice] AI question generation notice: ${err.message}`);
+  }
+
+  // Deduplicate against database
+  for (let i = 0; i < 3 && bank.length > 0; i++) {
+    const pickIdx = (Date.now() + i * 7) % bank.length;
+    selected.push(bank.splice(pickIdx, 1)[0]);
+  }
+  return selected;
+}
+
+/**
+ * Generate 1 Complete 3-in-1 Archie Teaser Video
+ */
+async function generateArchie3In1Teaser() {
   console.log('\n===============================================================');
-  console.log('⚡ ARCHIE DAILY INTELLECTUAL Q&A TEASER & SHOWDOWN GENERATOR');
-  console.log('Clean Card Layout | No Archie Sprite | Andrew Voice | 6s Clock Tick');
+  console.log('⚡ ARCHIE DAILY 3-IN-1 INTELLECTUAL Q&A SHOWDOWN');
+  console.log('3 Questions in 1 Video | Animated 5s Countdown | Audible Clock Ticking');
   console.log('===============================================================\n');
 
-  // 1. Select Deduplicated Candidate
-  const candidate = await selectOrGenerateQaCandidate();
-  console.log(`[Candidate Selected]: "${candidate.question}"`);
-  console.log(`[Category]: "${candidate.category}" | [Correct]: Option ${candidate.correctKey}`);
+  const questions = await select3DeduplicatedQuestions();
+  console.log(`✓ Loaded 3 Showdown Questions:`);
+  questions.forEach((q, idx) => console.log(`  Q${idx + 1}: "${q.question}" (Correct: Option ${q.correctKey})`));
 
-  // 2. Select Rotating Dynamic Color Theme
   const theme = THEMES[Math.floor(Date.now() / 1000) % THEMES.length];
-  console.log(`[Theme Selected]: "${theme.name}" (${theme.bgStart} -> ${theme.bgEnd})`);
+  console.log(`✓ Theme: "${theme.name}" (${theme.bgStart} -> ${theme.bgEnd})`);
 
-  // 3. Synthesize Speech Segments with Andrew Voice (Human Pace: Rate +0%, Pitch +0Hz)
-  const part1Text = `Here is a question you really should know the answer to. ${candidate.question} Is it Option A: ${candidate.options[0].text}. Option B: ${candidate.options[1].text}. Option C: ${candidate.options[2].text}. Or Option D: ${candidate.options[3].text}?`;
-  const countdownPromptText = `You have six seconds on the clock. Pause and think... Did you drop your answer in the comments yet?`;
-  const part2Text = `Time's up! The correct answer is Option ${candidate.correctKey}: ${candidate.options.find(o => o.key === candidate.correctKey)?.text}! Here is why: ${candidate.explanation} ${candidate.debatePrompt || 'Do you agree, or do you have a counter-argument? Debate it in the comments below!'}`;
+  // Synthesize common 5s clock ticking WAV
+  const clockWavPath = path.join(ARTIFACTS_DIR, 'clock_5s.wav');
+  generate5sClockTickWav(clockWavPath);
 
-  const part1Mp3 = path.join(ARTIFACTS_DIR, 'archie_qa_part1.mp3');
-  const part2Mp3 = path.join(ARTIFACTS_DIR, 'archie_qa_part2.mp3');
-  const part1Dur = await synthesizeAndrewSpeech(part1Text, part1Mp3);
-  const part2Dur = await synthesizeAndrewSpeech(part2Text, part2Mp3);
+  // Render video scenes for each question
+  const sceneVideoPaths = [];
+  const sceneAudioPaths = [];
 
-  // 4. Generate Countdown Clock Sound (6.0s duration)
-  const countdownDuration = 6.0;
-  const clockWavPath = path.join(ARTIFACTS_DIR, 'clock_ticking.wav');
-  generateClockTickingAudio(countdownDuration, clockWavPath);
+  for (let qIdx = 0; qIdx < questions.length; qIdx++) {
+    const qNum = qIdx + 1;
+    const qObj = questions[qIdx];
+    console.log(`\n--- RENDERING QUESTION ${qNum}/3: "${qObj.question.slice(0, 40)}..." ---`);
 
-  // 5. Render SVG Cards to PNG
-  const qCardSvg = buildQuestionCardSvg(candidate, theme, 6);
-  const aCardSvg = buildAnswerCardSvg(candidate, theme);
-  const qSvgPath = path.join(ARTIFACTS_DIR, 'question_card.svg');
-  const qPngPath = path.join(ARTIFACTS_DIR, 'question_card.png');
-  const aSvgPath = path.join(ARTIFACTS_DIR, 'answer_card.svg');
-  const aPngPath = path.join(ARTIFACTS_DIR, 'answer_card.png');
+    // 1. Spoken Audio: Question & 4 Options
+    const optSpoken = qObj.options.map(o => `Option ${o.key}: ${o.text}`).join('. ');
+    const questionSpeechText = `Question ${qNum}: ${qObj.question} Is it ${optSpoken}? You have five seconds on the clock. Comment your answer!`;
+    const qAudioResult = await synthesizeSpeech(questionSpeechText, path.join(ARTIFACTS_DIR, `q${qNum}_intro.mp3`));
 
-  fs.writeFileSync(qSvgPath, qCardSvg, 'utf8');
-  fs.writeFileSync(aSvgPath, aCardSvg, 'utf8');
+    // 2. Spoken Audio: Reveal & Explanation
+    const correctOpt = qObj.options.find(o => o.key === qObj.correctKey) || qObj.options[0];
+    const answerSpeechText = `Time is up! The correct answer is Option ${qObj.correctKey}: ${correctOpt.text}! Here is why: ${qObj.explanation}`;
+    const aAudioResult = await synthesizeSpeech(answerSpeechText, path.join(ARTIFACTS_DIR, `q${qNum}_answer.mp3`));
 
-  execSync(`rsvg-convert -w 1080 -h 1920 "${qSvgPath}" -o "${qPngPath}" 2>/dev/null || ffmpeg -y -i "${qSvgPath}" "${qPngPath}" 2>/dev/null`);
-  execSync(`rsvg-convert -w 1080 -h 1920 "${aSvgPath}" -o "${aPngPath}" 2>/dev/null || ffmpeg -y -i "${aSvgPath}" "${aPngPath}" 2>/dev/null`);
+    // 3. Render SVGs:
+    // A. Question card during speech (remainingSec = 5)
+    // B. Countdown frames: 5, 4, 3, 2, 1 (each displayed for 1.0s with ticking clock)
+    // C. Answer card
+    const qIntroSvgPath = path.join(ARTIFACTS_DIR, `q${qNum}_intro.svg`);
+    const qIntroPngPath = path.join(ARTIFACTS_DIR, `q${qNum}_intro.png`);
+    fs.writeFileSync(qIntroSvgPath, buildQuestionCardSvg(qObj, qNum, 3, 5, theme));
+    execSync(`ffmpeg -y -i "${qIntroSvgPath}" "${qIntroPngPath}" 2>/dev/null`);
 
-  // 6. Concatenate Master Audio: Part 1 + Clock Ticking (with voice prompt) + Part 2
-  const masterAudioPath = path.join(ARTIFACTS_DIR, 'master_qa_audio.wav');
-  const totalDuration = Number((part1Dur + countdownDuration + part2Dur).toFixed(2));
-  console.log(`[Timeline] Part 1: ${part1Dur.toFixed(1)}s | Countdown: ${countdownDuration}s | Part 2: ${part2Dur.toFixed(1)}s | Total: ${totalDuration}s`);
+    const cdPngPaths = [];
+    for (let s = 5; s >= 1; s--) {
+      const cdSvgPath = path.join(ARTIFACTS_DIR, `q${qNum}_cd_${s}.svg`);
+      const cdPngPath = path.join(ARTIFACTS_DIR, `q${qNum}_cd_${s}.png`);
+      fs.writeFileSync(cdSvgPath, buildQuestionCardSvg(qObj, qNum, 3, s, theme));
+      execSync(`ffmpeg -y -i "${cdSvgPath}" "${cdPngPath}" 2>/dev/null`);
+      cdPngPaths.push(cdPngPath);
+    }
 
-  // Merge audio tracks
-  const concatAudioList = path.join(ARTIFACTS_DIR, 'audio_concat_list.txt');
-  fs.writeFileSync(concatAudioList, `file '${part1Mp3}'\nfile '${clockWavPath}'\nfile '${part2Mp3}'\n`, 'utf8');
-  execSync(`ffmpeg -y -f concat -safe 0 -i "${concatAudioList}" -c:a pcm_s16le "${masterAudioPath}" 2>/dev/null`);
+    const aSvgPath = path.join(ARTIFACTS_DIR, `q${qNum}_reveal.svg`);
+    const aPngPath = path.join(ARTIFACTS_DIR, `q${qNum}_reveal.png`);
+    fs.writeFileSync(aSvgPath, buildAnswerCardSvg(qObj, qNum, 3, theme));
+    execSync(`ffmpeg -y -i "${aSvgPath}" "${aPngPath}" 2>/dev/null`);
 
-  // 7. Compose Video: Question Card (0 to part1Dur + countdown) -> Answer Card (until end)
-  const switchTime = Number((part1Dur + countdownDuration).toFixed(2));
+    // 4. Composite Single Question MP4:
+    // Segment 1: Question Intro (qAudioResult.duration)
+    // Segment 2: 5s Animated Countdown (5 frames of 1.0s each with ticking clock WAV)
+    // Segment 3: Answer Reveal (aAudioResult.duration)
+    const seg1Mp4 = path.join(ARTIFACTS_DIR, `q${qNum}_seg1.mp4`);
+    execSync(`ffmpeg -y -loop 1 -t ${qAudioResult.duration.toFixed(2)} -i "${qIntroPngPath}" -i "${qAudioResult.wavPath}" -c:v libx264 -preset ultrafast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${qAudioResult.duration.toFixed(2)} "${seg1Mp4}" 2>/dev/null`);
+
+    // 5s Countdown with real ticking clock
+    const cdInputs = cdPngPaths.map(p => `-loop 1 -t 1.0 -i "${p}"`).join(' ');
+    const cdConcatFilter = `[0:v][1:v][2:v][3:v][4:v]concat=n=5:v=1:a=0[v_cd]`;
+    const seg2Mp4 = path.join(ARTIFACTS_DIR, `q${qNum}_seg2.mp4`);
+    execSync(`ffmpeg -y ${cdInputs} -i "${clockWavPath}" -filter_complex "${cdConcatFilter}" -map "[v_cd]" -map 5:a -c:v libx264 -preset ultrafast -pix_fmt yuv420p -c:a aac -b:a 192k -t 5.0 "${seg2Mp4}" 2>/dev/null`);
+
+    // Answer Reveal
+    const seg3Mp4 = path.join(ARTIFACTS_DIR, `q${qNum}_seg3.mp4`);
+    execSync(`ffmpeg -y -loop 1 -t ${aAudioResult.duration.toFixed(2)} -i "${aPngPath}" -i "${aAudioResult.wavPath}" -c:v libx264 -preset ultrafast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${aAudioResult.duration.toFixed(2)} "${seg3Mp4}" 2>/dev/null`);
+
+    // Concat Segments 1, 2, 3 into Question Video
+    const qListTxt = path.join(ARTIFACTS_DIR, `q${qNum}_list.txt`);
+    fs.writeFileSync(qListTxt, `file '${seg1Mp4}'\nfile '${seg2Mp4}'\nfile '${seg3Mp4}'\n`);
+    const qFullMp4 = path.join(ARTIFACTS_DIR, `q${qNum}_full.mp4`);
+    execSync(`ffmpeg -y -f concat -safe 0 -i "${qListTxt}" -c copy "${qFullMp4}" 2>/dev/null || ffmpeg -y -f concat -safe 0 -i "${qListTxt}" -c:v libx264 -c:a aac "${qFullMp4}" 2>/dev/null`);
+
+    sceneVideoPaths.push(qFullMp4);
+  }
+
+  // 5. Final Outro Challenge: "How many did you get right? 3 out of 3? Put your score in the comments!"
+  const outroSpeech = await synthesizeSpeech(`How many did you get right? Did you get all three out of three? Drop your final score in the comments below, and subscribe for tomorrow's showdown!`, path.join(ARTIFACTS_DIR, 'showdown_outro.mp3'));
+  const outroSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" width="1080" height="1920">
+    <rect width="1080" height="1920" fill="${theme.bgStart}" />
+    <g transform="translate(140, 680)">
+      <rect width="800" height="420" rx="36" fill="${theme.cardBg}" stroke="${theme.accentGold}" stroke-width="4" />
+      <text x="400" y="110" font-family="system-ui, sans-serif" font-size="38" font-weight="900" fill="#ffffff" text-anchor="middle">FINAL SHOWDOWN SCORE</text>
+      <text x="400" y="200" font-family="system-ui, sans-serif" font-size="72" font-weight="900" fill="${theme.accentGold}" text-anchor="middle">?/3</text>
+      <text x="400" y="290" font-family="system-ui, sans-serif" font-size="28" font-weight="800" fill="#ffffff" text-anchor="middle">Comment your score below! 👇</text>
+      <text x="400" y="340" font-family="system-ui, sans-serif" font-size="20" font-weight="700" fill="#94a3b8" text-anchor="middle">Subscribe for tomorrow's daily arena</text>
+    </g>
+  </svg>`;
+  const outroSvgPath = path.join(ARTIFACTS_DIR, 'outro.svg');
+  const outroPngPath = path.join(ARTIFACTS_DIR, 'outro.png');
+  fs.writeFileSync(outroSvgPath, outroSvg);
+  execSync(`ffmpeg -y -i "${outroSvgPath}" "${outroPngPath}" 2>/dev/null`);
+
+  const outroMp4 = path.join(ARTIFACTS_DIR, 'outro.mp4');
+  execSync(`ffmpeg -y -loop 1 -t ${outroSpeech.duration.toFixed(2)} -i "${outroPngPath}" -i "${outroSpeech.wavPath}" -c:v libx264 -preset ultrafast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${outroSpeech.duration.toFixed(2)} "${outroMp4}" 2>/dev/null`);
+  sceneVideoPaths.push(outroMp4);
+
+  // 6. Concatenate All Questions into Final Vertical 9:16 Video
+  const masterListTxt = path.join(ARTIFACTS_DIR, 'master_3in1_list.txt');
+  fs.writeFileSync(masterListTxt, sceneVideoPaths.map(p => `file '${p}'`).join('\n'));
+
   const timestamp = Date.now();
-  const finalMp4Path = path.join(RENDERED_DIR, `archie_qa_teaser_${timestamp}.mp4`);
+  const finalMp4Path = path.join(RENDERED_DIR, `archie_3in1_teaser_${timestamp}.mp4`);
   const latestMp4Path = path.join(ARTIFACTS_DIR, 'archie_qa_teaser_latest.mp4');
 
-  const filterComplex = `
-    [0:v]scale=1080:1920[q_card];
-    [1:v]scale=1080:1920[a_card];
-    [q_card][a_card]overlay=0:0:enable='gte(t,${switchTime})'[vfinal]
-  `.replace(/\s+/g, ' ').trim();
-
-  const ffmpegCmd = `ffmpeg -y -loop 1 -t ${totalDuration} -i "${qPngPath}" -loop 1 -t ${totalDuration} -i "${aPngPath}" -i "${masterAudioPath}" -filter_complex "${filterComplex}" -map "[vfinal]" -map 2:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${totalDuration} "${finalMp4Path}"`;
-
-  console.log(`[FFmpeg Compositor] Rendering ${totalDuration}s video with animated countdown switch at ${switchTime}s...`);
-  execSync(ffmpegCmd, { maxBuffer: 30 * 1024 * 1024 });
+  console.log(`\n[Master Assembly] Concatenating 3 questions + ticking countdowns into final episode...`);
+  execSync(`ffmpeg -y -f concat -safe 0 -i "${masterListTxt}" -c copy "${finalMp4Path}" 2>/dev/null || ffmpeg -y -f concat -safe 0 -i "${masterListTxt}" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k "${finalMp4Path}" 2>/dev/null`);
 
   if (!fs.existsSync(finalMp4Path) || fs.statSync(finalMp4Path).size < 10000) {
-    throw new Error('FFmpeg failed to produce Archie QA Teaser MP4');
+    throw new Error('Failed to assemble 3-in-1 Archie teaser video');
   }
 
   fs.copyFileSync(finalMp4Path, latestMp4Path);
-  console.log(`\n🎉 [Archie QA Engine] SUCCESS! Rendered ${totalDuration}s video:`);
+  const durProbe = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${finalMp4Path}"`, { encoding: 'utf8' }).trim();
+  const totalDur = parseFloat(durProbe) || 45.0;
+
+  console.log(`\n🎉 [Archie Showdown Engine] SUCCESS: Rendered 3-in-1 Episode (${totalDur.toFixed(1)}s):`);
   console.log(` • Output: ${finalMp4Path} (${(fs.statSync(finalMp4Path).size / (1024 * 1024)).toFixed(2)} MB)`);
 
-  // 8. Record to Firestore Database and Local Cache for Guaranteed Deduplication
-  await recordPostedCandidate('archie_qa_teaser', candidate.question, candidate.topic, {
-    category: candidate.category,
-    correctKey: candidate.correctKey,
-    duration: totalDuration
-  });
+  // 7. Deduplicate in Firestore & Local Cache
+  for (const q of questions) {
+    await recordPostedCandidate('archie_qa_teaser', q.question, q.topic, {
+      category: q.category,
+      correctKey: q.correctKey,
+      timestamp
+    });
+  }
+
+  // 8. Publish to Archie Channel (YouTube Channel 3 + Buffer Omnichannel)
+  const isDryRun = process.env.DRY_RUN === 'true';
+  const ch3Token = process.env.YOUTUBE_REFRESH_TOKEN_CH3 || process.env.YOUTUBE_REFRESH_TOKEN_TECH || process.env.YOUTUBE_REFRESH_TOKEN_CARTOON;
+
+  const viralTitle = `Can You Score 3/3 on These Daily Questions? 🤔 IQ Showdown #Shorts`;
+  const viralDesc = `3 Everyday Questions People Are Expected To Know!\n\nQuestion 1: ${questions[0].question}\nQuestion 2: ${questions[1].question}\nQuestion 3: ${questions[2].question}\n\nDid you score 3/3? Comment your score below!\n\n#ArchieExplains #Trivia #MindGames #IQTest #Shorts #DailyQuiz`;
+
+  if (ch3Token && !isDryRun) {
+    console.log(`\n[Archie Dispatcher] 📤 Uploading 3-in-1 Showdown to YouTube Channel 3...`);
+    try {
+      const ytRes = await uploadYouTubeShort({
+        videoPath: finalMp4Path,
+        title: viralTitle,
+        description: viralDesc,
+        tags: ['#ArchieExplains', '#Trivia', '#DailyQuiz', '#IQTest', '#Shorts'],
+        channelId: 'cartoon_factory'
+      });
+      console.log(`[Archie Dispatcher] YouTube upload successful:`, ytRes);
+    } catch (ytErr) {
+      console.warn(`[Archie Dispatcher] YouTube upload notice: ${ytErr.message}`);
+    }
+  }
+
+  // Also dispatch via Buffer Omnichannel adapter if present
+  try {
+    const bufferScript = path.join(process.cwd(), 'scripts', 'publish_archie_to_buffer_omnichannel.cjs');
+    if (fs.existsSync(bufferScript)) {
+      console.log(`[Archie Dispatcher] 📱 Dispatching to Archie Buffer Omnichannel...`);
+      execSync(`node "${bufferScript}"`, { stdio: 'inherit' });
+    }
+  } catch (bufErr) {
+    console.warn(`[Archie Dispatcher] Buffer omnichannel dispatch notice: ${bufErr.message}`);
+  }
 
   return {
     videoPath: finalMp4Path,
-    duration: totalDuration,
-    candidate,
+    duration: totalDur,
+    questions,
     theme: theme.name
   };
 }
 
 if (require.main === module) {
-  generateArchieQaTeaser()
-    .then(res => {
-      console.log(`\n✓ Archie Daily QA Teaser Finished: "${res.candidate.question}" (${res.duration.toFixed(1)}s)`);
+  generateArchie3In1Teaser()
+    .then(r => {
+      console.log(`\n✓ Archie Daily 3-in-1 Showdown Pipeline Completed: ${r.duration.toFixed(1)}s`);
       process.exit(0);
     })
     .catch(err => {
-      console.error('\n❌ Fatal error in Archie QA Teaser pipeline:', err);
+      console.error('\n❌ Fatal error in Archie Showdown pipeline:', err);
       process.exit(1);
     });
 }
 
 module.exports = {
-  generateArchieQaTeaser,
+  generateArchie3In1Teaser,
   CURATED_QA_BANK
 };

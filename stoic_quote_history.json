@@ -350,5 +350,19 @@
     "credentials": "Roman Emperor & Stoic Philosopher",
     "theme": "truth",
     "usedAt": "2026-09-29T09:59:53.921Z"
+  },
+  {
+    "quote": "You have power over your mind, not outside events. Realize this, and you will find strength.",
+    "author": "Marcus Aurelius",
+    "credentials": "Roman Emperor & Stoic Philosopher • Meditations",
+    "theme": "sovereignty",
+    "usedAt": "2026-10-04T09:37:05.815Z"
+  },
+  {
+    "quote": "All of humanity's problems stem from man's inability to sit quietly in a room alone.",
+    "author": "Blaise Pascal",
+    "credentials": "Mathematician, Physicist & Philosopher • Pensées",
+    "theme": "solitude",
+    "usedAt": "2026-10-04T15:35:15.814Z"
   }
 ]

@@ -18,7 +18,7 @@ const https = require('https');
 const { execSync } = require('child_process');
 const { EdgeTTS } = require('node-edge-tts');
 const { selectPhilosopherAndQuote } = require('./stoic_philosophers_vault.cjs');
-const { searchAndFetchImage, searchAndFetchVideo, searchAndFetchAudio } = require('./universal_media_fetcher.cjs');
+const { searchAndFetchImage, searchAndFetchVideo, searchAndFetchAudio, downloadFile } = require('./universal_media_fetcher.cjs');
 const { callActiveAiForJson } = require('./topic_discovery_engine.cjs');
 const { saveChosenTopicToDatabase } = require('./topic_discovery_engine.cjs');
 
@@ -377,9 +377,26 @@ async function generateStoicLongVideo(options = {}) {
       visual = await searchAndFetchImage(fallbackQuery, { preferredSource: 'wikimedia' });
     }
 
+    let finalPath = visual ? visual.localPath : philosopher.defaultPortrait;
+    if (finalPath && finalPath.startsWith('http')) {
+      const destName = `remote_specimen_${idx}_${Date.now()}.jpg`;
+      const destPath = path.join(ARTIFACTS_DIR, destName);
+      try {
+        await downloadFile(finalPath, destPath);
+        finalPath = destPath;
+      } catch (dlErr) {
+        console.warn(`[Stoic Media Notice] Could not download remote media: ${dlErr.message}`);
+        finalPath = null;
+      }
+    }
+    if (!finalPath || !fs.existsSync(finalPath)) {
+      const fb = await searchAndFetchImage(`${philosopher.name} landscape`, { preferredSource: 'openverse' });
+      finalPath = fb?.localPath || path.join(process.cwd(), 'src', 'assets', 'images', 'mindrush_studio_bg_1790502544405.jpg');
+    }
+
     sceneMediaFiles.push({
       sceneIndex: idx,
-      mediaPath: visual ? visual.localPath : philosopher.defaultPortrait,
+      mediaPath: finalPath,
       isVideo: visual?.source?.includes('Video') || false,
       transition: sc.transition || (idx % 2 === 0 ? 'slide_right_in' : 'pan_zoom')
     });
@@ -425,11 +442,13 @@ async function generateStoicLongVideo(options = {}) {
     }
 
     const streamLabel = `v${sIdx}`;
-    // Ken Burns Zoom + Slide Transition
-    if (sc.transition === 'slide_right_in') {
-      filterComplex += `[${inputIdx}:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0012,1.15)':d=${Math.round(sceneDuration * 30)}:s=1080x1920:fps=30,trim=duration=${sceneDuration.toFixed(2)},setpts=PTS-STARTPTS[${streamLabel}]; `;
+    // Ken Burns Zoom + Slide Transition with guaranteed 1:1 SAR and YUV420P format for concat
+    if (isVideo) {
+      filterComplex += `[${inputIdx}:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,setdar=9/16,format=yuv420p,trim=duration=${sceneDuration.toFixed(2)},setpts=PTS-STARTPTS[${streamLabel}]; `;
+    } else if (sc.transition === 'slide_right_in') {
+      filterComplex += `[${inputIdx}:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,zoompan=z='min(zoom+0.0012,1.15)':d=${Math.round(sceneDuration * 30)}:s=1080x1920:fps=30,setsar=1,setdar=9/16,format=yuv420p,trim=duration=${sceneDuration.toFixed(2)},setpts=PTS-STARTPTS[${streamLabel}]; `;
     } else {
-      filterComplex += `[${inputIdx}:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='max(1.15-0.0012*on,1.0)':d=${Math.round(sceneDuration * 30)}:s=1080x1920:fps=30,trim=duration=${sceneDuration.toFixed(2)},setpts=PTS-STARTPTS[${streamLabel}]; `;
+      filterComplex += `[${inputIdx}:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,zoompan=z='max(1.15-0.0012*on,1.0)':d=${Math.round(sceneDuration * 30)}:s=1080x1920:fps=30,setsar=1,setdar=9/16,format=yuv420p,trim=duration=${sceneDuration.toFixed(2)},setpts=PTS-STARTPTS[${streamLabel}]; `;
     }
     sceneStreams.push(`[${streamLabel}]`);
   }
@@ -438,7 +457,7 @@ async function generateStoicLongVideo(options = {}) {
   filterComplex += `${sceneStreams.join('')}concat=n=${numScenes}:v=1:a=0[v_concat]; `;
 
   // Add ASS Subtitles with dark drop box
-  const escapedAss = assSubtitlePath.replace(/\\/g, '/').replace(/:/g, '\\:');
+  const escapedAss = assSubtitlePath.replace(/\\/g, '/').replace(/:/g, '\\:').replace(/'/g, "\\'");
   filterComplex += `[v_concat]subtitles='${escapedAss}'[v_subbed]; `;
 
   // Audio Mix: Andrew voice (high presence, audible & warm) + Background music softly ducked
