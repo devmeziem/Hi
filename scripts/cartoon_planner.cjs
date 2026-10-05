@@ -819,7 +819,7 @@ async function callCloudflareAI(topic) {
  * 5.5 Universal Free AI Tier (Pollinations.ai - Zero Key Required, Active Anonymous Models)
  */
 async function callUniversalFreeAI(topic) {
-  const models = ['openai-fast', 'openai', 'gpt-oss-20b'];
+  const models = ['openai-fast', 'openai', 'mistral', 'qwen-coder'];
   for (const model of models) {
     try {
       console.log(`[AI Planner] Requesting Universal Free AI (${model})...`);

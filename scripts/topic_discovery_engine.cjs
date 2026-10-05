@@ -150,42 +150,36 @@ const NICHE_SPHERES = {
     channelName: 'Archie Explains (Everyday Science & Relatable Tech Wonders)',
     targetAudience: 'Curious learners, students, and everyday viewers fascinated by the hidden science and surprising physics behind everyday stuff they touch, eat, use, and experience every single day.',
     searchQueries: [
-      'trending physics science and tech facts today',
-      'did you know science facts today',
-      'trending everyday physics phenomena curious facts today',
-      'trending science facts viral reels tiktok today',
-      'trending technology breakthroughs and everyday science curiosities today',
-      'mind blowing everyday physics facts today did you know',
-      'why microwave boils water but leaves ceramic mug cold physics',
-      'how smartphone capacitive touchscreen senses fingers vs gloves physics',
-      'why chopped onions make eyes cry syn-propanethial-s-oxide chemistry',
-      'why bathroom mirrors flip left right instead of upside down optics',
-      'why fingers wrinkle in bath water nervous system tire treads biology',
-      'why caffeine does not give real energy adenosine receptor crash',
-      'why potato chip bags puff up like balloons on mountain drives boyle law',
-      'why ice water tastes sweet and refreshing while warm water tastes flat trpm5',
-      'why touching metal doorknob zaps fingers in winter static electricity',
-      'why toasted bread smells amazing maillard reaction chemistry',
-      'why chugging water makes spicy food feel hotter capsaicin oil polarity',
-      'why shaking warm soda bottle explodes while cold soda does not henry law'
+      'trending physics discoveries breakthroughs today',
+      'breakthrough scientific engineering mysteries today',
+      'surprising aerospace and modern technology discoveries',
+      'ocean abyss and deep sea exploration discoveries',
+      'quantum mechanics and particle physics everyday impacts',
+      'neurology brain memory illusions fascinating science',
+      'optical illusions and light physics wonders',
+      'superconductivity and electromagnetic levitation breakthroughs',
+      'renewable energy fusion reaction science today',
+      'volcanoes geology earth seismic mysteries'
     ],
     spheres: [
-      { id: 'everyday_kitchen_physics', name: 'Kitchen Science & Breakfast Physics', desc: 'Microwaves, toaster Maillard reaction, boiling water anomalies, cold drink taste receptors' },
-      { id: 'everyday_smartphone_tech', name: 'Smartphone & Screen Magic', desc: 'Capacitive touchscreens, lithium battery degradation, OLED pixels vs LCD backlight' },
-      { id: 'everyday_human_body_quirks', name: 'Surprising Human Body Glitches', desc: 'Bath finger wrinkles, why you hate recorded voice, contagious yawning, onion crying chemistry' },
-      { id: 'everyday_household_physics', name: 'Household Physics & Winter Sparks', desc: 'Static door shocks, bathroom mirror optics, chip bag air pressure, salt melting road ice' },
-      { id: 'food_and_flavor_chemistry', name: 'Food, Flavor & Spice Chemistry', desc: 'Capsaicin vs milk casein, coffee adenosine blocking, soda carbonation Henry’s law' }
+      { id: 'aerospace_and_cosmology', name: 'Aerospace, Space Exploration & Satellites', desc: 'Orbital mechanics, lunar geology, space telescopes, cosmic radiation' },
+      { id: 'modern_materials_superconductivity', name: 'Superconductors, Quantum Physics & Materials', desc: 'Maglev trains, carbon nanotubes, metamaterials, zero resistance' },
+      { id: 'deep_ocean_and_earth_geology', name: 'Deep Sea Abysses & Geophysics', desc: 'Hydrothermal vents, Mariana trench pressure, tectonic plates, magma chambers' },
+      { id: 'neuroscience_and_human_vision', name: 'Neuroscience, Optical Illusions & Perception', desc: 'Photoreceptor cells, visual processing latency, acoustic resonance' },
+      { id: 'telecom_and_fiber_optics', name: 'Fiber Optics, Laser Transmission & Digital Waves', desc: 'Total internal reflection, electromagnetic spectra, silicon photonics' }
     ]
   }
 };
 
 // Negative topic pattern filter for Channel 3 (Tech & AI Animation) - Strictly eliminates stale seeds
 const BANNED_TECH_TOPIC_PATTERNS = [
+  /wrinkl/i, /finger/i, /bath/i, /fog\b/i, /glass.*fog/i, /condens/i,
   /apple/i, /sliced\s*apple/i, /cold\s*can/i, /sweat.*droplet/i,
   /mattress/i, /bedding/i, /pillow/i, /furniture/i, /sofa/i, /couch/i,
   /detergent/i, /cleaning\s*product/i, /skincare/i, /makeup/i, /cosmetics/i,
   /shoe\s*polish/i, /cooking\s*pan/i, /kitchen\s*sponge/i, /vacuum\s*cleaner/i,
-  /curtain/i, /rug\b/i, /toilet\s*paper/i, /shampoo/i, /toothpaste/i
+  /curtain/i, /rug\b/i, /toilet\s*paper/i, /shampoo/i, /toothpaste/i,
+  /onion/i, /yawn/i, /toaster/i
 ];
 
 // ----------------------------------------------------
@@ -949,7 +943,7 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
 
   // 1. Universal Free AI Tier (Pollinations.ai - Zero API Key Required, No Rate Limits)
   // Evaluated first as primary free path per user mandate (active anonymous models)
-  const freeAiModels = ['openai-fast', 'openai', 'gpt-oss-20b'];
+  const freeAiModels = ['openai-fast', 'openai', 'mistral', 'qwen-coder'];
   for (let mIdx = 0; mIdx < freeAiModels.length; mIdx++) {
     const model = freeAiModels[mIdx];
     if (mIdx > 0) {

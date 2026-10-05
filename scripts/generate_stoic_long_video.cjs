@@ -456,9 +456,10 @@ async function generateStoicLongVideo(options = {}) {
   // Concatenate all visual scenes
   filterComplex += `${sceneStreams.join('')}concat=n=${numScenes}:v=1:a=0[v_concat]; `;
 
-  // Add ASS Subtitles with dark drop box
-  const escapedAss = assSubtitlePath.replace(/\\/g, '/').replace(/:/g, '\\:').replace(/'/g, "\\'");
-  filterComplex += `[v_concat]subtitles='${escapedAss}'[v_subbed]; `;
+  // Add ASS Subtitles with safe relative path
+  const relAssPath = path.join(ARTIFACTS_DIR, 'stoic_subtitles.ass');
+  fs.copyFileSync(assSubtitlePath, relAssPath);
+  filterComplex += `[v_concat]subtitles=${relAssPath}[v_subbed]; `;
 
   // Audio Mix: Andrew voice (high presence, audible & warm) + Background music softly ducked
   if (fs.existsSync(bgMusicPath)) {
@@ -467,14 +468,14 @@ async function generateStoicLongVideo(options = {}) {
     filterComplex += `[0:a]volume=1.40,acompressor=threshold=-18dB:ratio=2.5:attack=10:release=120[a_final]`;
   }
 
-  const ffmpegCmd = `ffmpeg -y ${inputs} -filter_complex "${filterComplex}" -map "[v_subbed]" -map "[a_final]" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${finalDuration.toFixed(2)} -loglevel error "${finalMp4Path}"`;
+  const ffmpegCmd = `ffmpeg -y ${inputs} -filter_complex "${filterComplex}" -map "[v_subbed]" -map "[a_final]" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${finalDuration.toFixed(2)} "${finalMp4Path}" 2>/dev/null`;
 
   console.log(`[FFmpeg Compositor] Rendering ${finalDuration.toFixed(2)}s emotional Stoic short...`);
   try {
     execSync(ffmpegCmd, { maxBuffer: 15 * 1024 * 1024 });
   } catch (err) {
-    console.warn(`[FFmpeg Notice] Subtitle filter notice: ${err.message}. Retrying without subtitles...`);
-    const fallbackCmd = ffmpegCmd.replace(/subtitles='[^']*'/, 'null');
+    console.warn(`[FFmpeg Notice] Subtitle filter notice: ${err.message}. Retrying with direct copy...`);
+    const fallbackCmd = ffmpegCmd.replace(`subtitles=${relAssPath}`, 'copy');
     execSync(fallbackCmd, { maxBuffer: 15 * 1024 * 1024 });
   }
 
@@ -499,6 +500,34 @@ async function generateStoicLongVideo(options = {}) {
     };
     await saveChosenTopicToDatabase(postRecord, 'stoic', 'The Stoic Architect (Long Form)');
   } catch {}
+
+  // 9. Dispatch to YouTube Shorts (Channel 2: The Stoic Architect)
+  const isDryRun = process.env.DRY_RUN === 'true';
+  const ch2Token = process.env.YOUTUBE_REFRESH_TOKEN_CH2 || process.env.YOUTUBE_REFRESH_TOKEN_STOIC || process.env.YOUTUBE_REFRESH_TOKEN_2 || process.env.YOUTUBE_REFRESH_TOKEN;
+  if (ch2Token && !isDryRun) {
+    console.log(`\n[Stoic Dispatcher] 📤 Uploading Stoic Long-Form Short to YouTube Channel 2 (The Stoic Architect)...`);
+    try {
+      const { uploadYouTubeShort } = require('./youtube_channel_dispatcher.cjs');
+      const viralTitle = `${philosopher.name}: ${essayData.title.replace(/[?!.]+$/, '')} #Shorts`;
+      const viralDesc = `"${quote}" — ${philosopher.name}\n\n${fullNarration}\n\n#Stoic #Stoicism #Philosophy #Wisdom #Mindset #Shorts`;
+      const uploadRes = await uploadYouTubeShort({
+        videoPath: finalMp4Path,
+        title: viralTitle,
+        description: viralDesc,
+        tags: ['#Stoic', '#Stoicism', '#Philosophy', '#Wisdom', '#MarcusAurelius', '#Shorts'],
+        channelId: 'motivation_stoicism'
+      });
+      if (uploadRes?.id) {
+        console.log(`[Stoic Dispatcher] ✅ YouTube upload successful! Video URL: https://youtube.com/shorts/${uploadRes.id}`);
+      } else {
+        console.log(`[Stoic Dispatcher] YouTube upload status: ${uploadRes?.status || 'UNKNOWN'}`);
+      }
+    } catch (e) {
+      console.warn(`[Stoic Dispatcher] YouTube upload notice:`, e.message);
+    }
+  } else {
+    console.log(`[Stoic Dispatcher] Upload skipped: Dry run = ${isDryRun}, Active OAuth Token Present = ${Boolean(ch2Token)}`);
+  }
 
   return {
     videoPath: finalMp4Path,

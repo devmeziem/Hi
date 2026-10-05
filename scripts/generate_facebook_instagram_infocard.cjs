@@ -27,17 +27,17 @@ const ARCHIE_FACTS_CACHE = path.join(process.cwd(), 'archie_tech_facts_cache.jso
 
 const IN_DEPTH_KNOWLEDGE_BASE = [
   {
-    id: 'pruney_fingers_tire_treads',
-    category: 'EVERYDAY HUMAN BIOLOGY',
-    title: 'Why Bath Wrinkles Are Actually High-Grip Tire Treads',
-    hook: 'Did you know bath wrinkles on your fingers are not caused by absorbed water?',
-    mystery: 'Why do your fingers and toes get wrinkly in warm water, while your arms and face stay completely smooth?',
-    mythBuster: 'Myth: Skin soaks up water like a kitchen sponge. Fact: People with cut finger nerves never get pruney fingers!',
-    mechanism: 'When underwater, your autonomic nervous system (the involuntary brain controls) tightens subcutaneous blood vessels (tiny vessels under your skin). This shrinking pulls your skin downward into narrow channels.',
-    takeaway: 'These channels channel water away from your fingertips just like tire grooves push rain off roads, boosting your underwater grip by up to 40%.',
-    proTip: 'If your fingers do not prune after 15 minutes in warm water, doctors use this simple test to check nerve health!',
-    reference: 'Changizi, M. et al. / Brain, Behavior and Evolution',
-    tags: ['#ScienceFacts', '#HumanBiology', '#Evolution', '#EverydayScience', '#DidYouKnow', '#ArchieExplains', '#LearnEveryday', '#STEM']
+    id: 'fiber_optic_global_lasers',
+    category: 'TELECOMMUNICATIONS & QUANTUM OPTICS',
+    title: 'How Glass Threads Carry 99% of Global Internet',
+    hook: 'Did you know 99% of all international internet data travels through thin glass cables under the ocean, not satellites?',
+    mystery: 'How can a single glass thread no thicker than human hair transmit 100 million video streams simultaneously across 6,000 miles of dark ocean floor?',
+    mythBuster: 'Myth: The internet runs almost entirely through orbital satellites. Fact: Satellites carry under 1% of international data; subsea glass cables carry the rest!',
+    mechanism: 'Laser pulses shoot down ultra-pure silica glass using Total Internal Reflection: light enters at a shallow angle so the boundary acts like a perfect mirror, bouncing the light forward without losing signal.',
+    takeaway: 'These light pulses travel at approximately 200,000 kilometers per second through glass, crossing the Atlantic Ocean in roughly 65 milliseconds.',
+    proTip: 'Shark bites and ship anchors are the primary cause of internet cable outages; specialized armor cables wrap steel around the fiber to protect it!',
+    reference: 'Hecht, J. / City of Light: The Story of Fiber Optics & Submarine Telecom',
+    tags: ['#TechFacts', '#InternetInfrastructure', '#Physics', '#Optics', '#Engineering', '#ArchieExplains', '#STEM', '#DidYouKnow']
   },
   {
     id: 'winter_static_shock_15000v',

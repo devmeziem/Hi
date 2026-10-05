@@ -990,6 +990,15 @@ async function generateFin5sVideo() {
   console.log(`[Citation]: ${chosen.reference}\n`);
 
   saveLocalHistory(chosen);
+  try {
+    await recordPostedCandidate('finance', chosen.quote, chosen.author, {
+      credentials: chosen.credentials,
+      reference: chosen.reference,
+      theme: chosen.theme
+    });
+  } catch (recErr) {
+    console.warn('[Finance Quote Reel] Firestore history record notice:', recErr.message);
+  }
 
   // 2. Resolve Portrait
   const portraitPath = await resolveFinancialPortrait(chosen);
@@ -1226,8 +1235,7 @@ async function uploadQuoteReelToYouTube(videoFilePath, title, description, tags,
     },
     status: {
       privacyStatus: 'public',
-      selfDeclaredMadeForKids: false,
-      containsSyntheticMedia: true
+      selfDeclaredMadeForKids: false
     }
   });
 

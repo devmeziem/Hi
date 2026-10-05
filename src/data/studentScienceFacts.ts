@@ -41,14 +41,14 @@ export const STUDENT_SCIENCE_FACTS: StudentScienceFact[] = [
     tags: ['#Optics', '#MindBlown', '#BrainScience', '#EverydayScience', '#Shorts']
   },
   {
-    id: 'wrinkly_fingers_nervous_drainage',
+    id: 'maglev_quantum_levitation',
     subject: 'Everyday Science',
-    hook: 'Why do your fingers wrinkle in the bath, but your arms and legs don’t?',
-    fact: 'Wrinkled bath fingers are not caused by water absorption or skin osmosis. When nerves detect immersion, the sympathetic nervous system actively constricts subcutaneous blood vessels, pulling the skin down into microscopic drainage channels like tire treads to give our hands 12% better grip on wet rocks and tools.',
-    examRelevance: 'Anatomy & Evolutionary Biology / Sympathetic Vasoconstriction & Adaptive Traits',
-    whyStudentsNeedIt: 'Shatters the myth of skin water absorption: if nerves to the fingers are cut, they never wrinkle in water.',
-    citation: 'Changizi, M. et al., Are Wet-Induced Wrinkled Fingers Primate Rain Treads? / Brain, Behavior and Evolution (2011)',
-    tags: ['#HumanBody', '#Biology', '#Evolution', '#EverydayStuff', '#Shorts']
+    hook: 'Why do bullet trains float on thin air with zero wheels touching tracks?',
+    fact: 'Maglev trains use electromagnetic suspension: superconducting electromagnets chilled with liquid nitrogen create magnetic fields that simultaneously lift a 50-ton train 15 millimeters above the guideway and propel it forward past 600 km/h with zero rolling friction.',
+    examRelevance: 'Electromagnetism & Superconductivity / Meissner Effect & Linear Induction',
+    whyStudentsNeedIt: 'Fundamental physics principle showing how magnetic levitation eliminates mechanical friction to achieve near-airplane velocities.',
+    citation: 'Ono, M. et al., Superconducting Maglev Technology / IEEE Transactions on Applied Superconductivity',
+    tags: ['#Physics', '#Engineering', '#FutureTech', '#Transportation', '#Shorts']
   },
   {
     id: 'caffeine_adenosine_blockade_crash',

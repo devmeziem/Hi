@@ -2074,8 +2074,7 @@ async function handleYouTubePublish(storyboard, renderResult) {
         },
         status: {
           privacyStatus: 'public',
-          selfDeclaredMadeForKids: false,
-          containsSyntheticMedia: true
+          selfDeclaredMadeForKids: false
         }
       });
 

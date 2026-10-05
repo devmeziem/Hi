@@ -3,12 +3,12 @@ name: Stoic 5-Second Quote Reel Pipeline
 on:
   schedule:
     # 2x daily spaced drops for authentic 5s quote reels: 09:00 UTC and 21:00 UTC
-    # User mandate: Author image, fade in, keep panning, fade out, configured sound, SEO keywords
+    # User mandate: Author image, fade in, keep panning, fade out, configured audio, SEO search tags
     - cron: '0 9,21 * * *'
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Dry Run Mode (Uncheck for live YouTube upload)'
+        description: 'Dry Run Mode (Uncheck for live upload)'
         required: true
         default: false
         type: boolean
@@ -32,24 +32,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
 
-      - name: Install Dependencies
-        run: npm install --legacy-peer-deps --no-audit --no-fund
-
-      - name: Install FFmpeg Media Engine
+      - name: Verify or Install FFmpeg
         run: |
           if ! command -v ffmpeg &> /dev/null; then
             sudo apt-get update && sudo apt-get install -y ffmpeg librsvg2-bin
           fi
           ffmpeg -version | head -n 1
 
-      - name: Discover and Cache Working AI Models
-        env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-        run: |
-          node scripts/groq_model_finder.cjs || true
-          node scripts/openrouter_model_finder.cjs || true
+      - name: Install Dependencies
+        run: npm install --legacy-peer-deps --no-audit --no-fund
 
       - name: Execute Stoic 5-Second Reel Generator
         env:
@@ -60,27 +53,23 @@ jobs:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          XAI_API_KEY: ${{ secrets.XAI_API_KEY || secrets.GROK_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH2 }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH2 }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH2 }}
-          YOUTUBE_CLIENT_ID_CH2: ${{ secrets.YOUTUBE_CLIENT_ID_CH2 }}
-          YOUTUBE_CLIENT_SECRET_CH2: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH2 }}
-          YOUTUBE_REFRESH_TOKEN_CH2: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH2 }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+          YOUTUBE_CLIENT_ID_CH2: ${{ secrets.YOUTUBE_CLIENT_ID_CH2 || secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET_CH2: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH2 || secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN_CH2: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH2 || secrets.YOUTUBE_REFRESH_TOKEN }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
           FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
           FIRESTORE_API_KEY: ${{ secrets.FIRESTORE_API_KEY }}
         run: |
           echo "=== 🏛️ Generating Authentic 5-Second Stoic Quote Reel ==="
-          echo "Author Image + Fade In + Keep Panning + Fade Out + Configured Audio + SEO Search Tags"
           node scripts/generate_stoic_quote_reel.cjs
 
       - name: Archive Stoic Daily Short
@@ -90,6 +79,7 @@ jobs:
           name: stoic-5s-quote-reel-${{ github.run_id }}
           path: |
             rendered_videos/stoic_quote_5s_latest.mp4
+            rendered_videos/stoic_quote_*.mp4
             daily_blueprint_manifest.json
           if-no-files-found: ignore
           retention-days: 7

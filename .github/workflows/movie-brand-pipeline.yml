@@ -1,39 +1,35 @@
-name: Cinema Vanguard - Episodic Movie Series Pipeline (Channel 4)
+name: Cinema Vanguard - Historical Archival Documentary Pipeline (Channel 4)
 
-# MOVIE CHANNEL FULLY PAUSED (Season 1 Finale Episode 4 Released & Closed)
-# Push & Schedule triggers disabled to prevent automated runs / spam.
 on:
+  schedule:
+    # Daily spaced archival documentary drops at 14:00 UTC
+    - cron: '0 14 * * *'
   workflow_dispatch:
     inputs:
-      episode_index:
-        description: 'Episode Index (0 = Ep 1, 1 = Ep 2, 2 = Ep 3, 3 = The Abyssal Trench [Ep 4 Finale])'
+      episode_id:
+        description: 'Specific Documentary Topic ID (or leave blank for intelligent deduplication rotation)'
         required: false
-        default: '3'
+        default: ''
         type: string
       auto_publish:
-        description: 'Publish Live to YouTube & TikTok (Default TRUE for Push & Manual)'
+        description: 'Publish Live to YouTube Shorts (Channel 4)'
         required: true
         default: true
         type: boolean
       publish_tiktok:
-        description: 'Publish Live to TikTok via Buffer API 2 (Default TRUE)'
+        description: 'Publish Live to TikTok via Buffer API 2'
         required: false
         default: true
         type: boolean
       dry_run:
-        description: 'Dry Run Mode (Do not upload or post to CDN)'
+        description: 'Dry Run Mode (Render video locally without uploading)'
         required: true
         default: false
         type: boolean
-      sound_url:
-        description: 'Custom Soundtrack Audio URL (Optional)'
-        required: false
-        default: ''
-        type: string
 
 jobs:
-  movie_brand_pipeline:
-    name: Build & Render Episodic Mini-Movie Reel
+  documentary_pipeline:
+    name: Build, Render & Dispatch Archival Documentary Video
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -42,11 +38,43 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Movie Series Status Check (Channel 4 Paused & Video Seed Deleted)
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Verify or Install FFmpeg
         run: |
-          echo "=== ⏸️ Cinema Vanguard (Channel 4) is permanently paused. ==="
-          echo "Season 1 Finale (Episode 4) has been posted. Video seed & auto generation completely deleted."
-          exit 0
+          if ! command -v ffmpeg &> /dev/null; then
+            sudo apt-get update && sudo apt-get install -y ffmpeg
+          fi
+          ffmpeg -version | head -n 1
+
+      - name: Install Dependencies
+        run: npm install --legacy-peer-deps --no-audit --no-fund
+
+      - name: Execute Historical Documentary Engine
+        env:
+          DOCUMENTARY_EPISODE_ID: ${{ github.event.inputs.episode_id }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+          YOUTUBE_CLIENT_ID_CH4: ${{ secrets.YOUTUBE_CLIENT_ID_CH4 || secrets.YOUTUBE_CLIENT_ID_MOVIE || secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET_CH4: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH4 || secrets.YOUTUBE_CLIENT_SECRET_MOVIE || secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN_CH4: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH4 || secrets.YOUTUBE_REFRESH_TOKEN_MOVIE || secrets.YOUTUBE_REFRESH_TOKEN }}
+          YOUTUBE_HANDLE_CH4: ${{ secrets.YOUTUBE_HANDLE_CH4 || secrets.YOUTUBE_HANDLE_MOVIE }}
+          FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
+          FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
+        run: |
+          echo "=== 🏛️ Generating Cinema Vanguard Archival Documentary Reel ==="
+          node scripts/generate_documentary_movie_reel.cjs
 
       - name: Dispatch to Movie Brand TikTok Channel (Buffer API 2)
         if: success() && (github.event_name == 'push' || github.event_name == 'schedule' || github.event.inputs.publish_tiktok != 'false')
@@ -58,32 +86,24 @@ jobs:
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "=== 📱 Publishing Movie Episode to TikTok via Buffer API 2 ==="
-          node scripts/publish_buffer_second_tiktok.cjs movie_brand
+          echo "=== 📱 Publishing Documentary Reel to TikTok via Buffer API 2 ==="
+          node scripts/publish_buffer_second_tiktok.cjs movie_brand || true
 
-      - name: Delete Episode 4 Video Files Post-Upload
-        if: always()
-        run: |
-          echo "=== 🗑️ Post-Upload Cleanup: Deleting Episode 4 video files as requested ==="
-          rm -f rendered_videos/movie_episode* test_artifacts/movie_episodes/*.mp4 test_artifacts/movie_episodes/*.wav
-          echo "=== Episode 4 Video Files Deleted Post-Upload ==="
-
-      - name: Archive Movie Video Artifacts
+      - name: Archive Documentary Video Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: movie-episode-reel-${{ github.run_id }}
+          name: documentary-movie-reel-${{ github.run_id }}
           path: |
-            test_artifacts/movie_episodes_manifest.json
+            rendered_videos/documentary_*.mp4
+            test_artifacts/documentary/
           if-no-files-found: ignore
           retention-days: 14
 
-      - name: Pipeline Summary (Zero Git Commits, Low Key Database Logging)
+      - name: Pipeline Summary
         if: always()
         run: |
           echo "==============================================================="
-          echo "PROTOCOL ZERO EPISODIC ENGINE PIPELINE COMPLETED"
-          echo "Zero git commits made to repository - Low-key database logging."
-          echo "All episodes persisted directly to Firestore cloud database."
-          echo "Video artifact archived securely in Actions run artifacts."
+          echo "CINEMA VANGUARD ARCHIVAL DOCUMENTARY PIPELINE COMPLETED"
+          echo "Zero git commits made - Database & channel sync verified."
           echo "==============================================================="

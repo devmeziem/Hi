@@ -32,7 +32,7 @@ const CHANNEL_CONFIG = {
     isPrimary: false,
     clientId: process.env.YOUTUBE_CLIENT_ID_CH2 || process.env.YOUTUBE_CLIENT_ID_STOIC || DEFAULT_CLIENT_ID,
     clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH2 || process.env.YOUTUBE_CLIENT_SECRET_STOIC || DEFAULT_CLIENT_SECRET,
-    refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH2 || process.env.YOUTUBE_REFRESH_TOKEN_STOIC || '',
+    refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH2 || process.env.YOUTUBE_REFRESH_TOKEN_STOIC || process.env.YOUTUBE_REFRESH_TOKEN_2 || process.env.YOUTUBE_REFRESH_TOKEN || '',
     tags: ['#Stoicism', '#MarcusAurelius', '#DailyStoic', '#Philosophy', '#Wisdom', '#StoicQuotes', '#Discipline', '#Mindset', '#MentalFortitude', '#Stoic', '#Shorts']
   },
   cartoon_factory: {
@@ -42,8 +42,18 @@ const CHANNEL_CONFIG = {
     isPrimary: false,
     clientId: process.env.YOUTUBE_CLIENT_ID_CH3 || process.env.YOUTUBE_CLIENT_ID_TECH || process.env.YOUTUBE_CLIENT_ID_CARTOON || DEFAULT_CLIENT_ID,
     clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH3 || process.env.YOUTUBE_CLIENT_SECRET_TECH || process.env.YOUTUBE_CLIENT_SECRET_CARTOON || DEFAULT_CLIENT_SECRET,
-    refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH3 || process.env.YOUTUBE_REFRESH_TOKEN_TECH || process.env.YOUTUBE_REFRESH_TOKEN_CARTOON || process.env.YOUTUBE_REFRESH_TOKEN_ARCHIE || (process.env.ALLOW_SHARED_YOUTUBE_TOKEN === 'true' ? process.env.YOUTUBE_REFRESH_TOKEN : '') || '',
+    refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH3 || process.env.YOUTUBE_REFRESH_TOKEN_TECH || process.env.YOUTUBE_REFRESH_TOKEN_CARTOON || process.env.YOUTUBE_REFRESH_TOKEN_ARCHIE || process.env.YOUTUBE_REFRESH_TOKEN || '',
     tags: ['#Tech', '#ArtificialIntelligence', '#Science', '#FutureTech', '#Engineering', '#Archie', '#Shorts']
+  },
+  movie_brand: {
+    key: 'movie_brand',
+    handle: process.env.YOUTUBE_HANDLE_CH4 || process.env.YOUTUBE_HANDLE_MOVIE || process.env.YOUTUBE_HANDLE || '',
+    name: 'Cinema Vanguard Documentaries',
+    isPrimary: false,
+    clientId: process.env.YOUTUBE_CLIENT_ID_CH4 || process.env.YOUTUBE_CLIENT_ID_MOVIE || DEFAULT_CLIENT_ID,
+    clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH4 || process.env.YOUTUBE_CLIENT_SECRET_MOVIE || DEFAULT_CLIENT_SECRET,
+    refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH4 || process.env.YOUTUBE_REFRESH_TOKEN_MOVIE || process.env.YOUTUBE_REFRESH_TOKEN || '',
+    tags: ['#Documentary', '#History', '#UntoldHistory', '#Archival', '#CinemaVanguard', '#HistoricalDocumentary', '#Shorts']
   }
 };
 
@@ -103,6 +113,8 @@ function formatChannelFollowCta(channelKey, syncedHandle, syncedTitle) {
     return `🏛️ Subscribe to ${targetLabel} for daily Stoic wisdom, mental fortitude, and timeless philosophy.`;
   } else if (channelKey === 'cartoon_factory' || channelKey === 'ch3' || channelKey === 'tech') {
     return `🎬 Subscribe to ${targetLabel} for fast, animated breakdowns of AI, Future Tech, and Science mysteries!`;
+  } else if (channelKey === 'movie_brand' || channelKey === 'ch4' || channelKey === 'documentary') {
+    return `🏛️ Subscribe to ${targetLabel} for deep archival documentaries, untold historical chronicles, and cinematic retrospectives.`;
   } else {
     return `📈 Subscribe to ${targetLabel} for daily financial quotes, wealth principles, and money mindset.`;
   }
@@ -119,6 +131,8 @@ function formatChannelPinnedComment(channelKey, syncedHandle, syncedTitle) {
     return `📌 "No person is free who is not master of himself." How do you apply this Stoic wisdom today? Subscribe to ${targetLabel} for daily fortitude.`;
   } else if (channelKey === 'cartoon_factory' || channelKey === 'ch3' || channelKey === 'tech') {
     return `📌 What curious tech, AI, or science question should Archie animate next? Drop your ideas below and subscribe to ${targetLabel}!`;
+  } else if (channelKey === 'movie_brand' || channelKey === 'ch4' || channelKey === 'documentary') {
+    return `📌 What historical era or untold documentary event should we cover next? Leave a comment and subscribe to ${targetLabel}!`;
   } else {
     return `📌 Official Wealth Education & Financial Tools: https://lanecash.name.ng\n\nPreserve your hard-earned capital, master disciplined investing principles, and protect your finances against modern scams.\n\nSubscribe to ${targetLabel} for daily wealth wisdom!`;
   }
@@ -255,8 +269,7 @@ async function uploadToYouTube(accessToken, videoFilePath, title, description, t
       },
       status: {
         privacyStatus: 'public',
-        selfDeclaredMadeForKids: false,
-        containsSyntheticMedia: true // Active YouTube Synthetic / AI Generated metadata flag
+        selfDeclaredMadeForKids: false
       }
     });
 
@@ -273,7 +286,11 @@ async function uploadToYouTube(accessToken, videoFilePath, title, description, t
     }, (res) => {
       const uploadUrl = res.headers['location'];
       if (!uploadUrl) {
-        console.warn(`  [YouTube API]: Upload session init responded with code ${res.statusCode}`);
+        let errBody = '';
+        res.on('data', chunk => { errBody += chunk; });
+        res.on('end', () => {
+          console.warn(`  [YouTube API]: Upload session init responded with code ${res.statusCode}: ${errBody}`);
+        });
         return resolve(null);
       }
 
@@ -471,7 +488,12 @@ async function dispatchScheduledVideos() {
  * Direct programmatic upload helper for pipelines (e.g. Cartoon Factory / Tech Channel)
  */
 async function uploadYouTubeShort({ videoPath, title, description, tags, channelId = 'cartoon_factory' }) {
-  const config = CHANNEL_CONFIG[channelId] || CHANNEL_CONFIG.cartoon_factory;
+  let targetKey = channelId;
+  if (targetKey === 'stoic' || targetKey === 'ch2') targetKey = 'motivation_stoicism';
+  if (targetKey === 'fin' || targetKey === 'ch1') targetKey = 'finance_saas';
+  if (targetKey === 'tech' || targetKey === 'cartoon' || targetKey === 'ch3' || targetKey === 'archie') targetKey = 'cartoon_factory';
+  if (targetKey === 'movie' || targetKey === 'ch4' || targetKey === 'documentary') targetKey = 'movie_brand';
+  const config = CHANNEL_CONFIG[targetKey] || CHANNEL_CONFIG[channelId] || CHANNEL_CONFIG.cartoon_factory;
   console.log(`\n[YouTube Dispatcher] Preparing direct upload to channel "${config.name}" (${config.handle})...`);
 
   const accessToken = await getAccessToken(config.refreshToken, config.clientId, config.clientSecret);

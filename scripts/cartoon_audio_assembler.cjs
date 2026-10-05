@@ -180,7 +180,20 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
       }
     }
   }
-  if (!bgInput) bgInput = svgPath;
+  // Guarantee clean background input: NEVER use svgPath if it contains a character
+  if (!bgInput || !fs.existsSync(bgInput)) {
+    const { generateSceneBackgroundSvg, rasterizeSvgToPng } = require('./cartoon_character_rig.cjs');
+    const cleanBgSvg = generateSceneBackgroundSvg('creator_studio', '', []);
+    const cleanBgSvgPath = path.join(process.cwd(), 'cartoon_character_assets', 'clean_studio_bg.svg');
+    const cleanBgPngPath = path.join(process.cwd(), 'cartoon_character_assets', 'clean_studio_bg.png');
+    fs.writeFileSync(cleanBgSvgPath, cleanBgSvg);
+    try {
+      rasterizeSvgToPng(cleanBgSvgPath, cleanBgPngPath, 1080, 1920);
+      bgInput = cleanBgPngPath;
+    } catch {
+      bgInput = cleanBgSvgPath;
+    }
+  }
 
   const glossaryBoard = options.glossaryBoard || options.glossary_board || null;
   let renderSucceeded = false;
@@ -369,26 +382,26 @@ function renderSingleSceneVideo(svgPath, wavPath, outputSceneMp4, duration = 6.0
         `[12:v]scale=140:-1[vs]`,
         `[13:v]scale=400:-1[b2]`,
         // Walk in: -380 to 260 over 1.2s alternating strides
-        `[bg][w1]overlay=x='-380 + t*530':y='760 + 14*abs(sin(t*12))':enable='lte(t,1.2)*mod(floor(t*6),2)'[s1]`,
-        `[s1][w2]overlay=x='-380 + t*530':y='760 + 14*abs(sin(t*12))':enable='lte(t,1.2)*(1-mod(floor(t*6),2))'[s2]`,
+        `[bg][w1]overlay=x='-380 + t*530':y='760 + 14*abs(sin(t*12))':enable='lt(t,1.2)*mod(floor(t*6),2)'[s1]`,
+        `[s1][w2]overlay=x='-380 + t*530':y='760 + 14*abs(sin(t*12))':enable='lt(t,1.2)*(1-mod(floor(t*6),2))'[s2]`,
         // Center intro speech: t=1.2 to 2.2 with active lip-sync
-        `[s2][talk]overlay=x=260:y='760 + 4*sin(t*3)':enable='between(t,1.2,2.2)*mod(floor(t*5),2)'[s3]`,
-        `[s3][stand]overlay=x=260:y='760 + 4*sin(t*3)':enable='between(t,1.2,2.2)*(1-mod(floor(t*5),2))'[s4]`,
+        `[s2][talk]overlay=x=260:y='760 + 4*sin(t*3)':enable='gte(t,1.2)*lt(t,2.2)*mod(floor(t*5),2)'[s3]`,
+        `[s3][stand]overlay=x=260:y='760 + 4*sin(t*3)':enable='gte(t,1.2)*lt(t,2.2)*(1-mod(floor(t*5),2))'[s4]`,
         // Point up left to Board 1 with active lip-sync: t=2.2 to 3.2
-        `[s4][pt_l_talk]overlay=x=300:y='760 + 4*sin(t*3)':enable='between(t,2.2,3.2)*mod(floor(t*5),2)'[s5a]`,
-        `[s5a][pt_l]overlay=x=300:y='760 + 4*sin(t*3)':enable='between(t,2.2,3.2)*(1-mod(floor(t*5),2))'[s5]`,
+        `[s4][pt_l_talk]overlay=x=300:y='760 + 4*sin(t*3)':enable='gte(t,2.2)*lt(t,3.2)*mod(floor(t*5),2)'[s5a]`,
+        `[s5a][pt_l]overlay=x=300:y='760 + 4*sin(t*3)':enable='gte(t,2.2)*lt(t,3.2)*(1-mod(floor(t*5),2))'[s5]`,
         // Board 1 appears with slight stamp bounce: t >= 2.2 until exit
-        `[s5][b1]overlay=x=70:y='290 + 4*sin(t*2)':enable='between(t,2.2,${exitStart})'[s6]`,
+        `[s5][b1]overlay=x=70:y='290 + 4*sin(t*2)':enable='gte(t,2.2)*lt(t,${exitStart})'[s6]`,
         // VS Badge appears: t >= 2.7 until exit
-        `[s6][vs]overlay=x=470:y='370 + 3*sin(t*2.5)':enable='between(t,2.7,${exitStart})'[s7]`,
+        `[s6][vs]overlay=x=470:y='370 + 3*sin(t*2.5)':enable='gte(t,2.7)*lt(t,${exitStart})'[s7]`,
         // Point up right to Board 2 with active lip-sync: t=3.2 to 4.2
-        `[s7][pt_r_talk]overlay=x=220:y='760 + 4*sin(t*3)':enable='between(t,3.2,4.2)*mod(floor(t*5),2)'[s8a]`,
-        `[s8a][pt_r]overlay=x=220:y='760 + 4*sin(t*3)':enable='between(t,3.2,4.2)*(1-mod(floor(t*5),2))'[s8]`,
+        `[s7][pt_r_talk]overlay=x=220:y='760 + 4*sin(t*3)':enable='gte(t,3.2)*lt(t,4.2)*mod(floor(t*5),2)'[s8a]`,
+        `[s8a][pt_r]overlay=x=220:y='760 + 4*sin(t*3)':enable='gte(t,3.2)*lt(t,4.2)*(1-mod(floor(t*5),2))'[s8]`,
         // Board 2 appears: t >= 3.2 until exit
-        `[s8][b2]overlay=x=610:y='290 + 4*sin((t+0.5)*2)':enable='between(t,3.2,${exitStart})'[s9]`,
+        `[s8][b2]overlay=x=610:y='290 + 4*sin((t+0.5)*2)':enable='gte(t,3.2)*lt(t,${exitStart})'[s9]`,
         // Akimbo on hip + jaw pose analyzing with active lip-sync: t=4.2 to exitStart
-        `[s9][akimbo_talk]overlay=x=260:y='760 + 4*sin(t*3)':enable='between(t,4.2,${exitStart})*mod(floor(t*5),2)'[s10a]`,
-        `[s10a][akimbo]overlay=x=260:y='760 + 4*sin(t*3)':enable='between(t,4.2,${exitStart})*(1-mod(floor(t*5),2))'[s10]`,
+        `[s9][akimbo_talk]overlay=x=260:y='760 + 4*sin(t*3)':enable='gte(t,4.2)*lt(t,${exitStart})*mod(floor(t*5),2)'[s10a]`,
+        `[s10a][akimbo]overlay=x=260:y='760 + 4*sin(t*3)':enable='gte(t,4.2)*lt(t,${exitStart})*(1-mod(floor(t*5),2))'[s10]`,
         // Walk out to the right: t >= exitStart
         `[s10][w1]overlay=x='260 + (t-${exitStart})*600':y='760 + 14*abs(sin(t*12))':enable='gte(t,${exitStart})*mod(floor(t*6),2)'[s11]`,
         `[s11][w2]overlay=x='260 + (t-${exitStart})*600':y='760 + 14*abs(sin(t*12))':enable='gte(t,${exitStart})*(1-mod(floor(t*6),2))'[v]`

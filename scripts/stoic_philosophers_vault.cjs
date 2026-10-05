@@ -87,7 +87,7 @@ const PHILOSOPHERS_CATALOG = [
       { name: 'The Practical Philo', url: 'https://thepracticalphilo.com/stoic-quotes/', apiType: 'web' }
     ],
     wikiSearch: 'Seneca_the_Younger',
-    defaultPortrait: 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Seneca_buste.jpg',
+    defaultPortrait: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Duble_herma_of_Socrates_and_Seneca_Antikensammlung_Berlin_07.jpg/800px-Duble_herma_of_Socrates_and_Seneca_Antikensammlung_Berlin_07.jpg',
     quotes: [
       { text: "We suffer more often in imagination than in reality.", theme: "Overcoming Anxiety" },
       { text: "Life is long if you know how to use it.", theme: "The Value of Time" },
@@ -181,7 +181,7 @@ const PHILOSOPHERS_CATALOG = [
       { name: 'Internet Archive', url: 'https://archive.org/search?query=Hierocles+Stoic', apiType: 'archive' }
     ],
     wikiSearch: 'Hierocles_(Stoic)',
-    defaultPortrait: 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Seneca_buste.jpg',
+    defaultPortrait: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Marcus_Aurelius_Glyptothek_Munich.jpg/800px-Marcus_Aurelius_Glyptothek_Munich.jpg',
     quotes: [
       { text: "Each of us is encompassed by concentric circles: our mind, family, neighbors, and all humanity.", theme: "Cosmopolitan Empathy" },
       { text: "To live well is to treat even strangers as distant kin of the same universal household.", theme: "Universal Brotherhood" }
