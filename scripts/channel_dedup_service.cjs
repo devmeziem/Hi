@@ -81,8 +81,12 @@ async function fetchRemoteHistory(channelKey) {
     relevantChannels.add('archie');
     relevantChannels.add('cartoon');
     relevantChannels.add('archie_tech_fact');
-  } else if (['mindrush', 'mindrush_15s', 'mindrush_5s', 'teen', 'teen_15s', 'motivation'].includes(channelKey)) {
-    ['mindrush', 'mindrush_15s', 'mindrush_5s', 'teen', 'teen_15s', 'motivation'].forEach(c => relevantChannels.add(c));
+  } else if (['mindrush', 'mindrush_15s', 'mindrush_5s', 'teen', 'teen_15s', 'motivation', 'teen_motivation'].includes(channelKey)) {
+    ['mindrush', 'mindrush_15s', 'mindrush_5s', 'teen', 'teen_15s', 'motivation', 'teen_motivation'].forEach(c => relevantChannels.add(c));
+  } else if (['financial_story_doc', 'fin_story', 'ch4', 'movie_brand'].includes(channelKey)) {
+    ['financial_story_doc', 'fin_story', 'ch4', 'movie_brand'].forEach(c => relevantChannels.add(c));
+  } else if (['driftreel', 'driftreel_documentary', 'documentary_movie', 'documentary'].includes(channelKey)) {
+    ['driftreel', 'driftreel_documentary', 'documentary_movie', 'documentary'].forEach(c => relevantChannels.add(c));
   }
 
   return new Promise((resolve) => {

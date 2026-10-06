@@ -95,154 +95,61 @@ Return strictly valid JSON:
   const userPrompt = `Formulate an emotionally resonant, authentic video script for ${philosopher.name}'s quote: "${quote}". Connect it to everyday human struggles with ${theme}. Ensure words exceed 95 words so duration is safely above 30 seconds and ends with peaceful joy and a positive comment invitation.`;
 
   console.log(`[Stoic AI] 🧠 Formulating emotionally impactful narrative for ${philosopher.name}...`);
-  try {
-    const aiResult = await callActiveAiForJson(systemPrompt, userPrompt, null, {
-      nicheKey: 'stoic',
-      temperature: 0.75
-    });
-    if (aiResult?.data?.scenes && Array.isArray(aiResult.data.scenes) && aiResult.data.scenes.length >= 4) {
-      return aiResult.data;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const aiResult = await callActiveAiForJson(systemPrompt, userPrompt, null, {
+        nicheKey: 'stoic',
+        temperature: attempt === 1 ? 0.72 : 0.85
+      });
+      if (aiResult?.data?.scenes && Array.isArray(aiResult.data.scenes) && aiResult.data.scenes.length >= 4) {
+        return aiResult.data;
+      }
+    } catch (err) {
+      console.warn(`[Stoic AI Notice] Attempt ${attempt} error: ${err.message}`);
     }
-  } catch (err) {
-    console.warn(`[Stoic AI Notice] AI caller error: ${err.message}`);
   }
 
-  // 5 Diverse Everyday Human Life Problem Varieties (Procedural Engine)
-  const VARIETIES = [
-    // Variety 1: The 2 AM Overthinking Spiral & The Joy of Letting Go
-    {
-      title: `${philosopher.name} on Letting Go Tonight`,
-      hook: `If you are lying awake replaying conversations you cannot change, listen to what ${philosopher.name} learned centuries ago.`,
-      scenes: [
-        {
-          sceneNumber: 1,
-          spokenText: `If you are lying awake replaying conversations you cannot change, listen closely to what ${philosopher.name} learned centuries ago.`,
-          videoSearchQuery: `${philosopher.name} statue marble dramatic museum lighting`,
-          imageSearchQuery: `${philosopher.name} bust ancient sculpture`,
-          transition: "slide_right_in"
-        },
-        {
-          sceneNumber: 2,
-          spokenText: `"${quote}" Most of our sleepless nights are spent fighting shadows that exist only in our own exhausted imagination.`,
-          videoSearchQuery: "solitary man walking in misty forest dark",
-          imageSearchQuery: "shadowy forest fog lone traveler",
-          transition: "pan_zoom"
-        },
-        {
-          sceneNumber: 3,
-          spokenText: `You cannot rewrite yesterday, and tomorrow hasn't arrived. The only real power you will ever possess is right here in this breath.`,
-          videoSearchQuery: "hourglass sand falling dark moody candlelight",
-          imageSearchQuery: "antique hourglass time passing shadows",
-          transition: "slide_right_in"
-        },
-        {
-          sceneNumber: 4,
-          spokenText: `Take a deep breath and lay your heavy burdens down. You survived everything up to this second, and you are going to be completely okay.`,
-          videoSearchQuery: "calm ocean water sunset golden reflection",
-          imageSearchQuery: "peaceful twilight lake stillness",
-          transition: "pan_zoom"
-        },
-        {
-          sceneNumber: 5,
-          spokenText: `What heavy thought are you letting go of tonight? Leave it here in the comments and sleep with a peaceful, joyful heart.`,
-          videoSearchQuery: "sunrise over mountain peaks lone silhouette",
-          imageSearchQuery: "mountain summit golden sunrise mist",
-          transition: "slide_left_out"
-        }
-      ]
-    },
-    // Variety 2: The Comparison Trap & Finding Joy in Your Own Journey
-    {
-      title: `${philosopher.name}: Stop Feeling Behind`,
-      hook: `It feels like everyone around you is racing ahead while you are struggling to keep up. Here is the truth.`,
-      scenes: [
-        {
-          sceneNumber: 1,
-          spokenText: `It often feels like everyone around you is racing ahead while you are quietly struggling to keep up. But hear this truth.`,
-          videoSearchQuery: "ancient marble column hall dramatic shadows",
-          imageSearchQuery: "ancient greek temple marble colonnade",
-          transition: "slide_right_in"
-        },
-        {
-          sceneNumber: 2,
-          spokenText: `"${quote}" When you compare your unseen behind-the-scenes struggles to another person's public highlight reel, you steal your own joy.`,
-          videoSearchQuery: "foggy mountain road traveler dawn",
-          imageSearchQuery: "lone path mountain morning clouds",
-          transition: "pan_zoom"
-        },
-        {
-          sceneNumber: 3,
-          spokenText: `You are not running their race, and they are not walking in your shoes. Your growth is happening beneath the soil where nobody claps yet.`,
-          videoSearchQuery: "green sprout growing through rocky soil morning light",
-          imageSearchQuery: "seedling sunlight fertile soil hope",
-          transition: "slide_right_in"
-        },
-        {
-          sceneNumber: 4,
-          spokenText: `Celebrate your quiet progress today. The fact that you still care, still show up, and still choose kindness is a massive victory.`,
-          videoSearchQuery: "golden warm sunset field of wheat breeze",
-          imageSearchQuery: "golden sunlit landscape warmth",
-          transition: "pan_zoom"
-        },
-        {
-          sceneNumber: 5,
-          spokenText: `Name one quiet victory you achieved this week that nobody clapped for. I want to celebrate it with you in the comments below!`,
-          videoSearchQuery: "sun breaking through clouds over hills",
-          imageSearchQuery: "sunbeam clouds golden landscape",
-          transition: "slide_left_out"
-        }
-      ]
-    },
-    // Variety 3: When Plans Collapse & Discovering Joyful Strength
-    {
-      title: `${philosopher.name}: When Plans Fall Apart`,
-      hook: `When something you worked hard for suddenly falls apart, remember what ${philosopher.name} discovered about human resilience.`,
-      scenes: [
-        {
-          sceneNumber: 1,
-          spokenText: `When something you worked so hard for suddenly falls apart, remember what ${philosopher.name} discovered about human resilience.`,
-          videoSearchQuery: `${philosopher.name} marble statue dramatic shadows museum`,
-          imageSearchQuery: `${philosopher.name} antique bust sculpture`,
-          transition: "slide_right_in"
-        },
-        {
-          sceneNumber: 2,
-          spokenText: `"${quote}" Life never promised us smooth seas. Adversity is not here to destroy you, it is here to reveal your unbreakable depth.`,
-          videoSearchQuery: "ocean storm waves crashing rocky cliff dark",
-          imageSearchQuery: "dramatic stormy sea dark clouds waves",
-          transition: "pan_zoom"
-        },
-        {
-          sceneNumber: 3,
-          spokenText: `The detour you never planned for often becomes the exact path that builds your wisdom, your empathy, and your unshakable courage.`,
-          videoSearchQuery: "sunlight breaking through stormy rain clouds",
-          imageSearchQuery: "sunbeams through storm clouds dramatic",
-          transition: "slide_right_in"
-        },
-        {
-          sceneNumber: 4,
-          spokenText: `Smile at the storm. Nothing that happens outside of you can touch the peace, the integrity, and the joy alive inside your spirit.`,
-          videoSearchQuery: "lone oak tree standing strong against wind",
-          imageSearchQuery: "ancient majestic oak tree golden sunlight",
-          transition: "pan_zoom"
-        },
-        {
-          sceneNumber: 5,
-          spokenText: `If you are turning a difficult obstacle into an opportunity right now, drop a 'Still standing' in the comments below!`,
-          videoSearchQuery: "mountain summit golden sunrise mist",
-          imageSearchQuery: "soaring above mountain peaks clouds",
-          transition: "slide_left_out"
-        }
-      ]
-    }
-  ];
+  // Strict user mandate: Zero seed or mock data. If AI fails, let workflow fail!
+  throw new Error(`[Stoic Engine Fatal] Active AI script synthesis failed for ${philosopher.name}. Per strict zero-seed policy, seeded fallback scripts are deleted. Failing workflow.`);
+}
 
-  const chosenVariety = VARIETIES[Math.floor(Date.now() / 1000) % VARIETIES.length];
-  return {
-    ...chosenVariety,
-    audioSearchQuery: "calm emotional piano ambient reflection",
-    hashtags: ["#Stoicism", `#${philosopher.name.replace(/\s+/g, '')}`, "#InnerPeace", "#MindsetShift", "#Shorts"]
-  };
+/**
+ * Build Channel Watermark & Vignette Overlay SVG
+ */
+function buildStoicWatermarkOverlaySvg(channelWatermark = '@TheStoicArchitect', width = 1080, height = 1920) {
+  const activeWatermark = (channelWatermark || '@TheStoicArchitect').toUpperCase();
+  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="vignetteTop" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#020617" stop-opacity="0.85" />
+        <stop offset="100%" stop-color="#020617" stop-opacity="0.0" />
+      </linearGradient>
+      <linearGradient id="vignetteBottom" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#020617" stop-opacity="0.0" />
+        <stop offset="100%" stop-color="#020617" stop-opacity="0.88" />
+      </linearGradient>
+      <filter id="goldGlow" x="-10%" y="-10%" width="120%" height="120%">
+        <feDropShadow dx="0" dy="4" stdDeviation="10" flood-color="#000000" flood-opacity="0.8" />
+      </filter>
+    </defs>
+
+    <!-- Cinematic Top & Bottom Scrims -->
+    <rect x="0" y="0" width="${width}" height="280" fill="url(#vignetteTop)" />
+    <rect x="0" y="${height - 320}" width="${width}" height="320" fill="url(#vignetteBottom)" />
+
+    <!-- Top Channel Branding Watermark Pill -->
+    <g transform="translate(140, 100)" filter="url(#goldGlow)">
+      <rect width="800" height="64" rx="32" fill="#020617" fill-opacity="0.92" stroke="#d97706" stroke-width="1.8" />
+      <rect x="12" y="12" width="40" height="40" rx="20" fill="#d97706" />
+      <text x="32" y="37" font-family="system-ui, sans-serif" font-size="18" font-weight="900" fill="#020617" text-anchor="middle">🏛️</text>
+      <text x="420" y="39" font-family="system-ui, sans-serif" font-size="17" font-weight="900" fill="#fef3c7" letter-spacing="2" text-anchor="middle">
+        THE STOIC ARCHITECT • ${activeWatermark}
+      </text>
+    </g>
+
+    <!-- Subtle 35mm Vignette Border -->
+    <rect x="0" y="0" width="${width}" height="${height}" fill="none" stroke="#020617" stroke-width="16" opacity="0.5" />
+  </svg>`;
 }
 
 /**
@@ -272,11 +179,11 @@ async function synthesizeAndrewVoice(text, outputFile) {
 }
 
 /**
- * Generate Karaoke Subtitles (.ass) with translucent dark blurred drop box
+ * Generate Real Karaoke Subtitles (.ass) at DEAD CENTER OF SCREEN with Translucent Obsidian Box
  */
 function generateKaraokeAss(wordsWithTimings, totalDuration, outputPath) {
   const assHeader = `[Script Info]
-Title: Stoic Emotional Subtitles
+Title: Stoic Center Screen Karaoke Subtitles
 ScriptType: v4.00+
 WrapStyle: 0
 ScaledBorderAndShadow: yes
@@ -286,21 +193,21 @@ PlayResY: 1920
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: StoicBox,Georgia,54,&H00FFFFFF,&H0000D4FF,&H00000000,&H90000000,1,0,0,0,100,100,0,0,3,10,0,2,60,60,260,1
+Style: CenterKaraoke,Arial,58,&H00FFFFFF,&H0038D3FF,&H00000000,&HD0050810,1,0,0,0,100,100,0,0,3,16,0,5,80,80,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 `;
 
   let events = '';
-  // Group words into lines of 4-6 words
-  const wordsPerLine = 5;
+  // Group words into lines of 4-5 words for impactful readability
+  const wordsPerLine = 4;
   for (let i = 0; i < wordsWithTimings.length; i += wordsPerLine) {
     const chunk = wordsWithTimings.slice(i, i + wordsPerLine);
     if (chunk.length === 0) continue;
 
     const startSec = chunk[0].start;
-    const endSec = chunk[chunk.length - 1].end + 0.15;
+    const endSec = chunk[chunk.length - 1].end + 0.18;
 
     const formatTime = (sec) => {
       const h = Math.floor(sec / 3600);
@@ -310,12 +217,18 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
       return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
     };
 
-    const lineText = chunk.map(w => w.word).join(' ');
-    events += `Dialogue: 0,${formatTime(startSec)},${formatTime(endSec)},StoicBox,,0,0,0,,${lineText}\n`;
+    // Build Karaoke tags: {\k<cs>}Word
+    const kText = chunk.map(w => {
+      const wordDur = Math.max(0.12, w.end - w.start);
+      const cs = Math.round(wordDur * 100);
+      return `{\\k${cs}}${w.word.toUpperCase()}`;
+    }).join(' ');
+
+    events += `Dialogue: 0,${formatTime(startSec)},${formatTime(endSec)},CenterKaraoke,,0,0,0,,${kText}\n`;
   }
 
   fs.writeFileSync(outputPath, assHeader + events, 'utf8');
-  console.log(`[Subtitles Engine] 📄 Generated ASS Karaoke Subtitles with dark drop box.`);
+  console.log(`[Subtitles Engine] 📄 Generated Dead-Center ASS Karaoke Subtitles with glowing amber highlight.`);
 }
 
 /**
@@ -456,16 +369,33 @@ async function generateStoicLongVideo(options = {}) {
   // Concatenate all visual scenes
   filterComplex += `${sceneStreams.join('')}concat=n=${numScenes}:v=1:a=0[v_concat]; `;
 
-  // Add ASS Subtitles with safe relative path
-  const relAssPath = path.join(ARTIFACTS_DIR, 'stoic_subtitles.ass');
-  fs.copyFileSync(assSubtitlePath, relAssPath);
-  filterComplex += `[v_concat]subtitles=${relAssPath}[v_subbed]; `;
+  // Channel Watermark & Cinematic Scrim Overlay
+  const channelWatermark = process.env.YOUTUBE_HANDLE_CH2 || process.env.YOUTUBE_HANDLE_STOIC || '@TheStoicArchitect';
+  const watermarkSvg = buildStoicWatermarkOverlaySvg(channelWatermark, 1080, 1920);
+  const watermarkSvgPath = path.join(ARTIFACTS_DIR, 'stoic_watermark.svg');
+  const watermarkPngPath = path.join(ARTIFACTS_DIR, 'stoic_watermark.png');
+  fs.writeFileSync(watermarkSvgPath, watermarkSvg);
+  try {
+    execSync(`ffmpeg -y -i "${watermarkSvgPath}" "${watermarkPngPath}" 2>/dev/null`);
+  } catch {}
+
+  const wmInputIdx = numScenes + (fs.existsSync(bgMusicPath) ? 2 : 1);
+  let vPostWatermark = '[v_concat]';
+  if (fs.existsSync(watermarkPngPath)) {
+    inputs += `-loop 1 -t ${finalDuration.toFixed(2)} -i "${watermarkPngPath}" `;
+    filterComplex += `[v_concat][${wmInputIdx}:v]overlay=0:0[v_wm]; `;
+    vPostWatermark = '[v_wm]';
+  }
+
+  // Add ASS Subtitles with properly escaped path
+  const safeAssPath = assSubtitlePath.replace(/\\/g, '/').replace(/:/g, '\\:').replace(/'/g, "'\\\\''");
+  filterComplex += `${vPostWatermark}subtitles='${safeAssPath}'[v_subbed]; `;
 
   // Audio Mix: Andrew voice (high presence, audible & warm) + Background music softly ducked
   if (fs.existsSync(bgMusicPath)) {
-    filterComplex += `[1:a]volume=0.12,afade=t=in:st=0:d=1.5,afade=t=out:st=${Math.max(0.1, finalDuration - 1.5).toFixed(2)}:d=1.5,atrim=0:${finalDuration.toFixed(2)},asetpts=PTS-STARTPTS[bgm]; [0:a]volume=1.40,acompressor=threshold=-18dB:ratio=2.5:attack=10:release=120[voice]; [voice][bgm]amix=inputs=2:duration=first:dropout_transition=2[a_final]`;
+    filterComplex += `[1:a]volume=0.10,afade=t=in:st=0:d=1.5,afade=t=out:st=${Math.max(0.1, finalDuration - 1.5).toFixed(2)}:d=1.5,atrim=0:${finalDuration.toFixed(2)},asetpts=PTS-STARTPTS[bgm]; [0:a]volume=1.45,acompressor=threshold=-16dB:ratio=2.5:attack=10:release=120[voice]; [voice][bgm]amix=inputs=2:duration=first:dropout_transition=2[a_final]`;
   } else {
-    filterComplex += `[0:a]volume=1.40,acompressor=threshold=-18dB:ratio=2.5:attack=10:release=120[a_final]`;
+    filterComplex += `[0:a]volume=1.45,acompressor=threshold=-16dB:ratio=2.5:attack=10:release=120[a_final]`;
   }
 
   const ffmpegCmd = `ffmpeg -y ${inputs} -filter_complex "${filterComplex}" -map "[v_subbed]" -map "[a_final]" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${finalDuration.toFixed(2)} "${finalMp4Path}" 2>/dev/null`;

@@ -1,23 +1,28 @@
-name: Cinema Vanguard - Historical Archival Documentary Pipeline (Channel 4)
+name: Cinema Vanguard - Financial Story Documentary (YouTube Ch 4) & Archival TikTok (Driftreel)
 
 on:
   schedule:
-    # Daily spaced archival documentary drops at 14:00 UTC
+    # Daily spaced archival and financial documentary drops at 14:00 UTC
     - cron: '0 14 * * *'
   workflow_dispatch:
     inputs:
-      episode_id:
-        description: 'Specific Documentary Topic ID (or leave blank for intelligent deduplication rotation)'
+      financial_story_id:
+        description: 'Specific Financial Story ID (or blank for auto-rotation)'
         required: false
         default: ''
         type: string
-      auto_publish:
-        description: 'Publish Live to YouTube Shorts (Channel 4)'
+      documentary_topic_id:
+        description: 'Specific Crime/Horror/Mystery Topic ID for Driftreel (or blank for auto-rotation)'
+        required: false
+        default: ''
+        type: string
+      publish_youtube:
+        description: 'Publish Financial Story Live to YouTube Shorts (Channel 4)'
         required: true
         default: true
         type: boolean
       publish_tiktok:
-        description: 'Publish Live to TikTok via Buffer API 2'
+        description: 'Publish Crime/Horror Reel Live to TikTok Buffer (driftreel)'
         required: false
         default: true
         type: boolean
@@ -29,7 +34,7 @@ on:
 
 jobs:
   documentary_pipeline:
-    name: Build, Render & Dispatch Archival Documentary Video
+    name: Build, Render & Dispatch Financial Story & Driftreel Documentaries
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -54,14 +59,19 @@ jobs:
       - name: Install Dependencies
         run: npm install --legacy-peer-deps --no-audit --no-fund
 
-      - name: Execute Historical Documentary Engine
+      - name: Execute Financial Story Documentary Engine (YouTube Channel 4)
+        if: github.event.inputs.publish_youtube != 'false'
         env:
-          DOCUMENTARY_EPISODE_ID: ${{ github.event.inputs.episode_id }}
+          FINANCIAL_STORY_ID: ${{ github.event.inputs.financial_story_id }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
@@ -73,29 +83,51 @@ jobs:
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
           FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
         run: |
-          echo "=== 🏛️ Generating Cinema Vanguard Archival Documentary Reel ==="
+          echo "=== 💰 Generating Cinema Vanguard Financial Story Documentary Reel ==="
+          node scripts/generate_financial_story_documentary.cjs
+
+      - name: Execute Crime, Horror & Archival Documentary Engine (TikTok Driftreel)
+        if: github.event_name == 'push' || github.event_name == 'schedule' || github.event.inputs.publish_tiktok != 'false'
+        env:
+          DOCUMENTARY_EPISODE_ID: ${{ github.event.inputs.documentary_topic_id }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
+          FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
+        run: |
+          echo "=== 🏛️ Generating Archival Crime, Horror & Mystery Reel for Driftreel ==="
           node scripts/generate_documentary_movie_reel.cjs
 
-      - name: Dispatch to Movie Brand TikTok Channel (Buffer API 2)
+      - name: Dispatch Archival Documentary Reel to Driftreel TikTok (Buffer API 2)
         if: success() && (github.event_name == 'push' || github.event_name == 'schedule' || github.event.inputs.publish_tiktok != 'false')
         env:
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 || secrets.BUFFER_API_KEY }}
-          BUFFER_TIKTOK_MOVIE_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_MOVIE_CHANNEL_ID || secrets.BUFFER_TIKTOK_MOVIE_CHANNEL || secrets.BUFFER_TIKTOK_CHANNEL_ID_MOVIE || secrets.BUFFER_TIKTOK_CHANNEL_ID_1 }}
+          BUFFER_TIKTOK_DRIFTREEL_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_DRIFTREEL_CHANNEL_ID || secrets.BUFFER_TIKTOK_DRIFTREEL_CHANNEL || secrets.BUFFER_TIKTOK_DRIFTREEL || secrets.BUFFER_TIKTOK_MOVIE_CHANNEL_ID || secrets.BUFFER_TIKTOK_CHANNEL_ID_1 }}
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "=== 📱 Publishing Documentary Reel to TikTok via Buffer API 2 ==="
-          node scripts/publish_buffer_second_tiktok.cjs movie_brand || true
+          echo "=== 📱 Publishing Documentary Reel to TikTok Driftreel via Buffer API 2 ==="
+          node scripts/publish_buffer_second_tiktok.cjs driftreel || true
 
       - name: Archive Documentary Video Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: documentary-movie-reel-${{ github.run_id }}
+          name: cinema-vanguard-driftreel-artifacts-${{ github.run_id }}
           path: |
+            rendered_videos/financial_story_doc_*.mp4
+            rendered_videos/driftreel_documentary_*.mp4
             rendered_videos/documentary_*.mp4
+            test_artifacts/financial_story_doc/
             test_artifacts/documentary/
           if-no-files-found: ignore
           retention-days: 14
@@ -104,6 +136,7 @@ jobs:
         if: always()
         run: |
           echo "==============================================================="
-          echo "CINEMA VANGUARD ARCHIVAL DOCUMENTARY PIPELINE COMPLETED"
-          echo "Zero git commits made - Database & channel sync verified."
+          echo "CINEMA VANGUARD & DRIFTREEL DOCUMENTARY PIPELINE COMPLETED"
+          echo "• Financial Story Documentary -> YouTube Channel 4"
+          echo "• Crime, Horror & Mystery Documentary -> TikTok (driftreel via Buffer)"
           echo "==============================================================="

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { Film, Compass, Volume2, Sparkles, Clock, Play, BookOpen, Layers, CheckCircle2, ChevronRight, Eye } from 'lucide-react';
+import { Film, Compass, Volume2, Sparkles, Clock, CheckCircle2, Eye, DollarSign, ShieldAlert, BookOpen, Layers, Flame, ArrowUpRight } from 'lucide-react';
 
-interface ArchivalTopic {
+interface DocumentaryTopic {
   id: string;
+  channel: 'ch4_finance_story' | 'driftreel_tiktok';
+  genre: 'financial_story' | 'horror' | 'crime' | 'history' | 'story';
   title: string;
   era: string;
   sourceVault: string;
@@ -10,82 +12,157 @@ interface ArchivalTopic {
   duration: string;
   soundscape: string;
   visualPreviewUrl: string;
+  narrativeArc: string;
 }
 
-const ARCHIVAL_TOPICS: ArchivalTopic[] = [
+const DOCUMENTARY_TOPICS: DocumentaryTopic[] = [
+  // CHANNEL 4 — FINANCIAL STORY DOCUMENTARIES (Strictly narrative sagas)
   {
-    id: 'apollo-space-race',
-    title: 'The Unheard Apollo Transmissions',
-    era: '1969 • Cold War Space Age',
-    sourceVault: 'NASA Archival Vault & Prelinger Collection',
-    description: 'Declassified ground-to-orbit voice communications paired with genuine 70mm lunar surface film scans.',
-    duration: '48s Short Essay',
-    soundscape: 'Apollo cabin ambient hum, Quindar telemetry beep & deep orchestral strings',
-    visualPreviewUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1080&auto=format&fit=crop'
+    id: 'south-sea-newton',
+    channel: 'ch4_finance_story',
+    genre: 'financial_story',
+    title: 'How Isaac Newton Lost a Fortune',
+    era: '1720 • The South Sea Bubble',
+    sourceVault: 'Bank of England Archives & Royal Society Correspondence',
+    description: 'The smartest man on Earth put his life savings into a speculative empire, sold at huge profit, was re-seduced by FOMO, and lost everything when the bubble burst.',
+    duration: '48s Narrative Saga',
+    soundscape: 'Historical dark cello pulse, vintage ledger quill scratch & ticking clock',
+    visualPreviewUrl: 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?q=80&w=1080&auto=format&fit=crop',
+    narrativeArc: 'The Setup -> The Astronomical Rise -> The Fatal Re-entry -> The Total Collapse'
   },
   {
-    id: 'deep-ocean-mysteries',
-    title: 'The Silent Abyss: Challenger Deep',
-    era: '1960 • Bathyscaphe Trieste',
-    sourceVault: 'National Oceanic Archives & Public Domain Film',
-    description: 'Jacques Piccard and Don Walsh reaching the deepest point on Earth inside seven inches of forged steel.',
-    duration: '52s Cinematic Essay',
-    soundscape: 'Sub-bass sonar echo, hull pressure groans & solitary melancholic piano',
-    visualPreviewUrl: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1080&auto=format&fit=crop'
+    id: 'soros-broke-bank',
+    channel: 'ch4_finance_story',
+    genre: 'financial_story',
+    title: 'The Man Who Broke the Bank of England',
+    era: '1992 • Black Wednesday',
+    sourceVault: 'City of London Historical Trading Logs & Financial Press',
+    description: 'One private investor saw the British pound was artificially propped up by pride. He borrowed ten billion dollars and broke an entire empire central bank in twelve hours.',
+    duration: '52s High-Stakes Story',
+    soundscape: 'Fast ticking stopwatch, 1990s trading floor shouting & orchestral strings',
+    visualPreviewUrl: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=1080&auto=format&fit=crop',
+    narrativeArc: 'The Flaw in the System -> The Audacious Short -> The 7 PM Surrender -> The Billion Dollar Spoils'
   },
   {
-    id: 'ancient-library-alexandria',
-    title: 'The Lost Scrolls of the Mouseion',
-    era: '3rd Century BC • Hellenistic Egypt',
-    sourceVault: 'Classical Antiquity Manuscript Archives & Museum Scans',
-    description: 'How an empire attempted to collect every book in the world, and what humanity lost when it burned.',
-    duration: '45s Historical Reflection',
-    soundscape: 'Desert night wind, ancient harp resonance & slow ambient cello',
-    visualPreviewUrl: 'https://images.unsplash.com/photo-1507842229453-764267675778?q=80&w=1080&auto=format&fit=crop'
+    id: 'tulip-mania-amsterdam',
+    channel: 'ch4_finance_story',
+    genre: 'financial_story',
+    title: 'When a Single Flower Cost a Mansion',
+    era: '1637 • Dutch Golden Age',
+    sourceVault: 'Amsterdam City Archives & Historic Tavern Contracts',
+    description: 'In 17th-century Amsterdam, sailors traded lifetimes of wages for rare striped flower bulbs. When nobody raised a hand at auction, an empire economy collapsed in three days.',
+    duration: '46s Historical Story',
+    soundscape: 'Harpsichord tension, tavern murmur & dropping wooden coin rhythm',
+    visualPreviewUrl: 'https://images.unsplash.com/photo-1526047932273-341f2a7631f9?q=80&w=1080&auto=format&fit=crop',
+    narrativeArc: 'The Golden Age Wealth -> The Exotic Virus -> The Tavern Madness -> The Silent Auction'
   },
   {
-    id: 'industrial-silence',
-    title: 'When Steam Replaced Muscle',
-    era: '1888 • Early Industrial Era',
-    sourceVault: 'Library of Congress Motion Pictures & Early Film Pioneers',
-    description: 'Rare 35mm archival reel footage of the earliest mechanized factories, ironworks, and steam locomotives.',
-    duration: '44s Archival Journey',
-    soundscape: '35mm projector whir, rhythmic steam valve pulse & brass horn crescendo',
-    visualPreviewUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1080&auto=format&fit=crop'
+    id: 'nick-leeson-barings',
+    channel: 'ch4_finance_story',
+    genre: 'financial_story',
+    title: 'The 28-Year-Old Who Sunk a 200-Year Bank',
+    era: '1995 • The Fall of Barings',
+    sourceVault: 'Singapore SIMEX Records & Bank of England Inquiry',
+    description: 'Barings Bank funded the Napoleonic wars. A young trader hid his errors inside account 88888, doubled down before an earthquake, and destroyed the Queen bank.',
+    duration: '50s Financial Drama',
+    soundscape: 'Sub-bass heartbeat, flickering computer monitor hum & emergency sirens',
+    visualPreviewUrl: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?q=80&w=1080&auto=format&fit=crop',
+    narrativeArc: 'The Golden Boy -> The Secret Account -> The Kobe Earthquake -> Sold For One Pound'
+  },
+
+  // DRIFTREEL — TIKTOK BUFFER (Horror, Crime, History & Survival Mysteries)
+  {
+    id: 'mary-celeste-horror',
+    channel: 'driftreel_tiktok',
+    genre: 'horror',
+    title: 'The Ghost Ship of the Atlantic',
+    era: '1872 • Ghost Ship Disappearance',
+    sourceVault: 'Maritime Historical Archives & Admiralty Scans',
+    description: 'The Mary Celeste found drifting off the Azores with warm meals on the table, zero damage, and all seven crewmen vanished into thin air.',
+    duration: '46s Atmospheric Horror',
+    soundscape: 'Eerie ocean wind, creaking timber hull & dark suspense drone',
+    visualPreviewUrl: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?q=80&w=1080&auto=format&fit=crop',
+    narrativeArc: 'The Silent Sailboat -> The Untouched Cabin -> The Vanished Family -> Unsolved Forever'
+  },
+  {
+    id: 'db-cooper-crime',
+    channel: 'driftreel_tiktok',
+    genre: 'crime',
+    title: 'The Skyjacking of D.B. Cooper',
+    era: '1971 • Unsolved Aviation Heist',
+    sourceVault: 'FBI Declassified Records & National Archives',
+    description: 'A polite man in a dark business suit hijacks Flight 305, demands cash, and parachutes out the aft stairs into a pitch-black freezing rainstorm.',
+    duration: '49s Investigative Crime',
+    soundscape: 'Dark noir cello, vintage cockpit radio chatter & rain drumming',
+    visualPreviewUrl: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=1080&auto=format&fit=crop',
+    narrativeArc: 'The Calm Demand -> The Briefcase of Cash -> The Midnight Leap -> 50 Years of Silence'
+  },
+  {
+    id: 'dyatlov-pass-incident',
+    channel: 'driftreel_tiktok',
+    genre: 'horror',
+    title: 'The Dyatlov Pass Mystery',
+    era: '1959 • Ural Mountains Tragedy',
+    sourceVault: 'Soviet Declassified Inquest & Mountain Expedition Logs',
+    description: 'Nine skilled hikers flee their slashed-open tent barefoot into minus thirty blizzard conditions. The injuries matched the impact of a high-speed vehicle crash.',
+    duration: '47s Winter Horror',
+    soundscape: 'Howling Ural mountain blizzard, low sub-bass drone & solitary cello',
+    visualPreviewUrl: 'https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?q=80&w=1080&auto=format&fit=crop',
+    narrativeArc: 'The Mountain Expedition -> The Slashed Tent -> The Barefoot Escape -> The Unexplained Trauma'
+  },
+  {
+    id: 'shackleton-survival-story',
+    channel: 'driftreel_tiktok',
+    genre: 'story',
+    title: 'Shackleton: The Impossible Survival',
+    era: '1915 • Imperial Trans-Antarctic Expedition',
+    sourceVault: 'Royal Geographical Society & Frank Hurley Scans',
+    description: 'The Endurance crushed by polar ice, forcing twenty-eight men through an 800-mile open-boat journey across hurricane seas with zero fatalities.',
+    duration: '54s Epic Survival Story',
+    soundscape: 'Polar gale winds, cracking ice shelf & triumphant cinematic strings',
+    visualPreviewUrl: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1080&auto=format&fit=crop',
+    narrativeArc: 'The Ice Trap -> The Crushed Ship -> The 800-Mile Ocean Row -> Every Man Brought Home'
   }
 ];
 
 export const DocumentaryStudioTab: React.FC = () => {
-  const [selectedTopic, setSelectedTopic] = useState<ArchivalTopic>(ARCHIVAL_TOPICS[0]);
+  const [activeChannelFilter, setActiveChannelFilter] = useState<'all' | 'ch4_finance_story' | 'driftreel_tiktok'>('all');
+  const [selectedTopic, setSelectedTopic] = useState<DocumentaryTopic>(DOCUMENTARY_TOPICS[0]);
   const [narratorTone, setNarratorTone] = useState<string>('resonant_historian');
-  const [filmGrainIntensity, setFilmGrainIntensity] = useState<string>('subtle');
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
   const [generatedPreview, setGeneratedPreview] = useState<string | null>(null);
+
+  const filteredTopics = activeChannelFilter === 'all'
+    ? DOCUMENTARY_TOPICS
+    : DOCUMENTARY_TOPICS.filter(t => t.channel === activeChannelFilter);
 
   const handleGeneratePreview = () => {
     setIsSimulating(true);
     setTimeout(() => {
       setIsSimulating(false);
-      setGeneratedPreview(`Documentary Essay Ready: "${selectedTopic.title}" — Archival reel matched with authentic ${selectedTopic.soundscape}.`);
-    }, 1500);
+      const destination = selectedTopic.channel === 'ch4_finance_story'
+        ? 'YouTube Shorts (Channel 4 / Cinema Vanguard)'
+        : 'TikTok Buffer (driftreel)';
+      setGeneratedPreview(`Story Documentary Ready for ${destination}: "${selectedTopic.title}" — Narrative arc assembled with ${selectedTopic.soundscape.split(',')[0]}.`);
+    }, 1200);
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-16">
+    <div className="space-y-6 max-w-7xl mx-auto pb-16 w-full overflow-hidden">
       {/* Hero Header */}
-      <div className="bg-gradient-to-r from-amber-950/60 via-slate-900 to-slate-900 border border-amber-500/40 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-amber-950/70 via-slate-900 to-slate-900 border border-amber-500/40 rounded-2xl p-5 md:p-6 shadow-xl relative overflow-hidden">
         <div className="absolute -right-8 -top-8 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-semibold">
               <Film className="w-3.5 h-3.5" />
-              <span>Public Domain Historical Documentaries</span>
+              <span>Multi-Niche Archival & Financial Story Documentaries</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
-              Archival Documentary Video Studio
+              Cinema Vanguard &amp; Driftreel Studio
             </h1>
-            <p className="text-slate-300 text-sm max-w-2xl leading-relaxed">
-              Automated cinematic documentary creation utilizing verified public domain archives, declassified footage, authentic historical voiceovers, and atmospheric acoustic soundscapes.
+            <p className="text-slate-300 text-xs md:text-sm max-w-2xl leading-relaxed">
+              Dual-engine storytelling: Channel 4 produces gripping real-life financial narrative sagas (heists, crashes &amp; historic bubbles), while Driftreel publishes immersive crime, horror, and mystery documentary reels to TikTok.
             </p>
           </div>
 
@@ -94,17 +171,17 @@ export const DocumentaryStudioTab: React.FC = () => {
               type="button"
               onClick={handleGeneratePreview}
               disabled={isSimulating}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20 hover:from-amber-400 hover:to-amber-500 transition-all cursor-pointer flex items-center gap-2 shrink-0"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold text-xs md:text-sm shadow-lg shadow-amber-500/20 hover:from-amber-400 hover:to-amber-500 transition-all cursor-pointer flex items-center gap-2 shrink-0"
             >
               {isSimulating ? (
                 <>
                   <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                  <span>Curating Reel...</span>
+                  <span>Synthesizing Reel...</span>
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  <span>Synthesize Documentary</span>
+                  <span>Synthesize Documentary Story</span>
                 </>
               )}
             </button>
@@ -112,46 +189,100 @@ export const DocumentaryStudioTab: React.FC = () => {
         </div>
 
         {generatedPreview && (
-          <div className="mt-4 p-3.5 bg-emerald-950/70 border border-emerald-500/40 rounded-xl text-emerald-200 text-xs flex items-center gap-2">
+          <div className="mt-4 p-3 bg-emerald-950/70 border border-emerald-500/40 rounded-xl text-emerald-200 text-xs flex items-center gap-2 animate-in fade-in">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>{generatedPreview}</span>
           </div>
         )}
       </div>
 
+      {/* Channel Switcher Filter Pills */}
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setActiveChannelFilter('all')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            activeChannelFilter === 'all'
+              ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
+              : 'bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700'
+          }`}
+        >
+          All Documentaries ({DOCUMENTARY_TOPICS.length})
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveChannelFilter('ch4_finance_story')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+            activeChannelFilter === 'ch4_finance_story'
+              ? 'bg-emerald-500 text-slate-950 font-bold shadow-md shadow-emerald-500/20'
+              : 'bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700'
+          }`}
+        >
+          <DollarSign className="w-3.5 h-3.5" />
+          <span>Channel 4: Financial Stories (YouTube Shorts)</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveChannelFilter('driftreel_tiktok')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+            activeChannelFilter === 'driftreel_tiktok'
+              ? 'bg-sky-500 text-slate-950 font-bold shadow-md shadow-sky-500/20'
+              : 'bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700'
+          }`}
+        >
+          <Flame className="w-3.5 h-3.5" />
+          <span>Driftreel: Crime &amp; Horror (TikTok Buffer)</span>
+        </button>
+      </div>
+
       {/* Main Studio Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Archival Vault Selections */}
+        {/* Left Column: Topics Catalog */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
+            <h2 className="text-sm md:text-base font-bold text-white flex items-center gap-2">
               <Compass className="w-4 h-4 text-amber-400" />
-              <span>Curated Historical Archival Vaults</span>
+              <span>Curated Story Catalog &amp; Historical Chronicles</span>
             </h2>
-            <span className="text-xs text-slate-400">Public Domain Archives &amp; Museum Records</span>
+            <span className="text-xs text-slate-400">Deduplicated Narratives</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {ARCHIVAL_TOPICS.map((topic) => {
+            {filteredTopics.map((topic) => {
               const isSelected = selectedTopic.id === topic.id;
+              const isFinance = topic.channel === 'ch4_finance_story';
+
               return (
                 <div
                   key={topic.id}
                   onClick={() => setSelectedTopic(topic)}
                   className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between space-y-3 relative overflow-hidden ${
                     isSelected
-                      ? 'bg-amber-950/40 border-amber-400 shadow-lg shadow-amber-950/50 ring-1 ring-amber-400/40'
+                      ? isFinance
+                        ? 'bg-emerald-950/40 border-emerald-400 shadow-lg shadow-emerald-950/50 ring-1 ring-emerald-400/40'
+                        : 'bg-amber-950/40 border-amber-400 shadow-lg shadow-amber-950/50 ring-1 ring-amber-400/40'
                       : 'bg-slate-900/80 border-slate-800 hover:border-slate-700 hover:bg-slate-800/60'
                   }`}
                 >
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-semibold text-amber-300 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30">
-                        {topic.era}
-                      </span>
-                      <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-slate-400" />
-                        {topic.duration}
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                          topic.genre === 'financial_story' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                          topic.genre === 'horror' ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
+                          topic.genre === 'crime' ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' :
+                          'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                        }`}>
+                          {topic.genre === 'financial_story' ? 'FINANCIAL STORY' : topic.genre}
+                        </span>
+                        <span className="text-[11px] font-semibold text-slate-300 truncate max-w-[130px]">
+                          {topic.era}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-950/80 text-slate-300 border border-slate-700/60 shrink-0">
+                        {isFinance ? 'CH 4' : 'DRIFTREEL'}
                       </span>
                     </div>
 
@@ -164,13 +295,13 @@ export const DocumentaryStudioTab: React.FC = () => {
                   </div>
 
                   <div className="pt-2 border-t border-slate-800/80 space-y-1">
-                    <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
-                      <BookOpen className="w-3 h-3 text-amber-400 shrink-0" />
-                      <span className="truncate">Vault: {topic.sourceVault}</span>
+                    <div className="text-[11px] text-amber-300/90 font-medium flex items-center gap-1.5">
+                      <ArrowUpRight className="w-3 h-3 shrink-0" />
+                      <span className="truncate">{topic.narrativeArc}</span>
                     </div>
                     <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
-                      <Volume2 className="w-3 h-3 text-amber-400 shrink-0" />
-                      <span className="truncate">Sound: {topic.soundscape}</span>
+                      <Volume2 className="w-3 h-3 text-slate-400 shrink-0" />
+                      <span className="truncate">{topic.soundscape}</span>
                     </div>
                   </div>
                 </div>
@@ -178,32 +309,32 @@ export const DocumentaryStudioTab: React.FC = () => {
             })}
           </div>
 
-          {/* Documentary Production Pipeline Features */}
+          {/* Workflow Architecture Overview */}
           <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            <h3 className="text-xs md:text-sm font-bold text-white flex items-center gap-2">
               <Layers className="w-4 h-4 text-amber-400" />
-              <span>Automated Documentary Workflow Architecture</span>
+              <span>Documentary Production Workflow</span>
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="p-3 bg-slate-950/70 border border-slate-800 rounded-xl space-y-1">
-                <span className="text-xs font-bold text-amber-300">1. Archival Motion Sourcing</span>
-                <p className="text-[11px] text-slate-400">
-                  Direct connection to Internet Archive (Prelinger Archives), Wikimedia Commons Historical Reel, and National Archives.
+                <span className="text-xs font-bold text-emerald-300">1. Channel 4: Financial Stories</span>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  Real-life economic sagas (Wall Street showdowns, rogue traders &amp; historic bubbles) told with deep authoritative narration and tense cello pulses.
                 </p>
               </div>
 
               <div className="p-3 bg-slate-950/70 border border-slate-800 rounded-xl space-y-1">
-                <span className="text-xs font-bold text-amber-300">2. Atmospheric Audio Layering</span>
-                <p className="text-[11px] text-slate-400">
-                  Dual-track audio engineering blending historical room tones, 35mm projector flutter, vinyl warmth, and cinematic cello pads.
+                <span className="text-xs font-bold text-sky-300">2. Driftreel: TikTok Mysteries</span>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  High-engagement crime, horror, ghost ship, and expedition survival reels formatted for TikTok with glowing dark outros and call-to-actions.
                 </p>
               </div>
 
               <div className="p-3 bg-slate-950/70 border border-slate-800 rounded-xl space-y-1">
-                <span className="text-xs font-bold text-amber-300">3. Ken Burns Pan &amp; Zoom</span>
-                <p className="text-[11px] text-slate-400">
-                  Slow hypnotic camera drift pushing into historical faces and manuscripts with elegant serif typography cards.
+                <span className="text-xs font-bold text-amber-300">3. Karaoke Subtitles &amp; Drift</span>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  Word-synchronized karaoke captions with translucent drop-boxes, Ken Burns dynamic camera movement, and genre-specific sound effects.
                 </p>
               </div>
             </div>
@@ -213,16 +344,16 @@ export const DocumentaryStudioTab: React.FC = () => {
         {/* Right Column: Visual Preview & Director Controls */}
         <div className="space-y-4">
           <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-            <h3 className="text-sm font-bold text-white flex items-center justify-between">
+            <h3 className="text-xs md:text-sm font-bold text-white flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <Eye className="w-4 h-4 text-amber-400" />
                 <span>Visual Atmosphere Preview</span>
               </span>
-              <span className="text-[11px] text-slate-400">9:16 Vertical Documentary</span>
+              <span className="text-[10px] text-slate-400 font-mono">9:16 VERTICAL</span>
             </h3>
 
-            {/* Simulated 9:16 Card */}
-            <div className="relative aspect-[9/14] w-full max-w-[280px] mx-auto rounded-2xl overflow-hidden border border-amber-500/30 shadow-2xl bg-slate-950">
+            {/* Simulated 9:16 Vertical Card */}
+            <div className="relative aspect-[9/15] w-full max-w-[280px] mx-auto rounded-2xl overflow-hidden border border-amber-500/30 shadow-2xl bg-slate-950">
               <img
                 src={selectedTopic.visualPreviewUrl}
                 alt={selectedTopic.title}
@@ -232,12 +363,28 @@ export const DocumentaryStudioTab: React.FC = () => {
 
               {/* Top Vignette Tag */}
               <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 bg-slate-950/80 px-2.5 py-1 rounded-full border border-amber-400/40 backdrop-blur-sm">
-                  ARCHIVAL ESSAY
+                <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border backdrop-blur-sm ${
+                  selectedTopic.channel === 'ch4_finance_story'
+                    ? 'text-emerald-300 bg-slate-950/80 border-emerald-400/40'
+                    : 'text-amber-300 bg-slate-950/80 border-amber-400/40'
+                }`}>
+                  {selectedTopic.channel === 'ch4_finance_story' ? 'FINANCIAL STORY' : 'DRIFTREEL'}
                 </span>
                 <span className="text-[10px] font-semibold text-slate-300 bg-slate-950/80 px-2 py-0.5 rounded backdrop-blur-sm">
                   {selectedTopic.era.split('•')[0]}
                 </span>
+              </div>
+
+              {/* Center Simulated Karaoke Subtitles */}
+              <div className="absolute top-1/2 left-4 right-4 -translate-y-1/2 text-center pointer-events-none">
+                <div className="inline-block bg-black/75 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md">
+                  <span className="text-xs font-black text-emerald-400 tracking-wide drop-shadow">
+                    "I can calculate the stars,
+                  </span>
+                  <span className="text-xs font-bold text-white block">
+                    but not the madness of men."
+                  </span>
+                </div>
               </div>
 
               {/* Bottom Quote & Topic Text */}
@@ -245,46 +392,40 @@ export const DocumentaryStudioTab: React.FC = () => {
                 <h4 className="text-sm font-black text-white leading-snug drop-shadow-md">
                   {selectedTopic.title}
                 </h4>
-                <p className="text-[11px] text-slate-300 leading-normal line-clamp-3">
+                <p className="text-[11px] text-slate-300 leading-normal line-clamp-2">
                   {selectedTopic.description}
                 </p>
                 <div className="pt-2 border-t border-slate-700/60 flex items-center justify-between text-[10px] text-amber-300 font-medium">
-                  <span>Sound: {selectedTopic.soundscape.split(',')[0]}</span>
+                  <span>Target: {selectedTopic.channel === 'ch4_finance_story' ? 'YouTube Ch 4' : 'TikTok @driftreel'}</span>
                   <span>{selectedTopic.duration}</span>
                 </div>
               </div>
             </div>
 
-            {/* Director Settings */}
+            {/* Voice & Cadence Selection */}
             <div className="space-y-3 pt-3 border-t border-slate-800">
               <div>
                 <label className="text-xs font-semibold text-slate-300 block mb-1">
-                  Narrator Tone &amp; Cadence
+                  Narration Voice &amp; Cadence
                 </label>
                 <select
                   value={narratorTone}
                   onChange={(e) => setNarratorTone(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-400 cursor-pointer"
                 >
-                  <option value="resonant_historian">Resonant Historian (Andrew Voice -5% rate, -25Hz pitch)</option>
-                  <option value="contemplative_philosopher">Contemplative Baritone (Quiet, steady &amp; reflective)</option>
-                  <option value="archival_radio">Vintage Newsreel (Subtle radio filter &amp; room resonance)</option>
+                  <option value="resonant_historian">Authoritative Deep Narration (-6% rate, -20Hz pitch)</option>
+                  <option value="financial_thriller">Tense Financial Chronicle (Measured &amp; urgent)</option>
+                  <option value="cold_noir">Cold Noir Mystery (Quiet, haunting &amp; steady)</option>
                 </select>
               </div>
 
-              <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1">
-                  Archival Texture &amp; Film Grain
-                </label>
-                <select
-                  value={filmGrainIntensity}
-                  onChange={(e) => setFilmGrainIntensity(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-400 cursor-pointer"
-                >
-                  <option value="subtle">Subtle 35mm Emulsion (Clean with warm film grain)</option>
-                  <option value="vintage_reel">Vintage 16mm Archive (Soft vignette &amp; gentle grain)</option>
-                  <option value="crisp_hd">Ultra-Clean Contemporary Museum Scan (Zero grain)</option>
-                </select>
+              <div className="p-3 bg-slate-950/70 border border-slate-800 rounded-xl space-y-1 text-xs">
+                <span className="font-semibold text-slate-300">Destination Pipeline:</span>
+                <p className="text-slate-400 text-[11px]">
+                  {selectedTopic.channel === 'ch4_finance_story'
+                    ? 'Automatically uploads to YouTube Shorts (Channel 4 / Cinema Vanguard) daily at 14:00 UTC.'
+                    : 'Dispatches to TikTok Buffer under account @driftreel daily with glowing dark outro.'}
+                </p>
               </div>
             </div>
           </div>

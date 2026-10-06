@@ -17,6 +17,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 const https = require('https');
 const http = require('http');
+const { EdgeTTS } = require('node-edge-tts');
 const { uploadYouTubeShort, formatChannelFollowCta } = require('./youtube_channel_dispatcher.cjs');
 const { assembleArchieMasterAudio } = require('./archie_sound_engine.cjs');
 const { buildAllModernCharacterAssets } = require('./build_modern_tech_character.cjs');
@@ -203,18 +204,20 @@ ${lines.join('\n')}
  * Generate Fresh AI Script with AI-Decided Image/Specimen Search Term
  */
 async function generateArchieAiScript(chosenTopic) {
-  const systemPrompt = `You are the lead educator for Archie Explains (@ArchieExplains), creating high-retention everyday science shorts.
+  const cleanTitle = String(chosenTopic.title || 'Everyday Science').replace(/^(Why|How|What|Notice)\s+/i, '');
+  const systemPrompt = `You are the lead educator for Archie Explains (@ArchieExplains), creating high-retention, deeply informative everyday science shorts.
 REQUIREMENTS:
-1. Spoken Hook: Catchy, engaging pattern-interrupt (max 14 words).
-2. Core Explanation: Plain-English layman explanation of why the phenomenon happens (max 40 words).
-3. Spoken Outro: Interactive question prompting comments (max 14 words).
-4. Board Headline: Punchy 3-5 word title.
-5. Specimen Search Query: Highly specific 3-5 word photography search query for Unsplash/Pexels/Wikimedia describing the physical object or reaction.
+1. Spoken Hook: High-curiosity, engaging pattern-interrupt (15-20 words).
+2. Core Explanation: Rich, comprehensive, step-by-step explanation of the science, physics, or biology in clear plain English. Explain WHY and HOW it works in fascinating detail (65-85 words).
+3. Spoken Outro: Engaging thought-provoking question prompting comments (15-20 words).
+4. Total Spoken Word Count: MUST be between 95 and 125 words so the video has rich, continuous voiceover for 28-38 seconds. Zero dead silence.
+5. Board Headline: Punchy 3-5 word topic title.
+6. Specimen Search Query: Highly specific 3-5 word photography search query for Unsplash/Pexels/Wikimedia describing the physical object, phenomenon, or reaction.
 JSON schema:
 {
-  "spokenHook": "Spoken hook sentence",
-  "coreExplanation": "Plain English explanation",
-  "spokenOutro": "Interactive question for comments",
+  "spokenHook": "Spoken hook sentence (15-20 words)",
+  "coreExplanation": "Rich, step-by-step explanation (65-85 words)",
+  "spokenOutro": "Engaging closing takeaway and question (15-20 words)",
   "boardHeadline": "3-5 word topic headline",
   "specimenSearchQuery": "precise photo search query",
   "wikiSearchTerm": "Wikipedia subject",
@@ -224,29 +227,22 @@ JSON schema:
 
   try {
     const aiResult = await callActiveAiForJson(
-      `Topic: ${chosenTopic.title}. Category: ${chosenTopic.category || 'Science'}. Details: ${chosenTopic.searchDetailsUsed || ''}`,
+      `Topic: ${chosenTopic.title}. Category: ${chosenTopic.category || 'Science'}. Details: ${chosenTopic.searchDetailsUsed || ''}. Formulate a complete 95-125 word spoken narrative.`,
       systemPrompt,
       null,
       { nicheKey: 'cartoon' }
     );
     if (aiResult?.data?.spokenHook && aiResult?.data?.coreExplanation) {
-      return aiResult.data;
+      const totalWords = `${aiResult.data.spokenHook} ${aiResult.data.coreExplanation} ${aiResult.data.spokenOutro || ''}`.split(/\s+/).length;
+      if (totalWords >= 50) {
+        return aiResult.data;
+      }
     }
+    throw new Error('AI produced insufficient word count or invalid schema.');
   } catch (err) {
-    console.warn(`[Archie AI Notice] Active AI notice: ${err.message}. Synthesizing dynamic script...`);
+    console.error(`[Archie AI Error] AI script generation failed: ${err.message}`);
+    throw new Error(`AI script generation failed for "${chosenTopic.title}". Per strict user directive, seeded fallback scripts are banned.`);
   }
-
-  const cleanTitle = String(chosenTopic.title || 'Everyday Science').replace(/^(Why|How|What|Notice)\s+/i, '');
-  return {
-    spokenHook: `Notice how ${cleanTitle.toLowerCase()} always happens when you least expect it?`,
-    coreExplanation: `It is driven by direct physical reaction laws. Molecular forces interact continuously to produce this exact observable phenomenon every single day.`,
-    spokenOutro: `Did you ever notice this before? Tell us in the comments!`,
-    boardHeadline: cleanTitle.slice(0, 36),
-    specimenSearchQuery: `${cleanTitle} science photography`,
-    wikiSearchTerm: cleanTitle,
-    citationReference: 'Physical Science Principles',
-    syncedHashtags: ['#ArchieExplains', '#ScienceFacts', '#Shorts']
-  };
 }
 
 /**
@@ -270,11 +266,10 @@ async function generateArchie5sDailyFact() {
   } else {
     console.log('[Archie Topic Discovery] 🔎 Discovering fresh science topic...');
     const discovery = await discoverAndSelectTopicViaActiveAi('cartoon');
-    chosenTopic = discovery?.chosenTopic || {
-      title: 'How Fiber Optic Cables Bend Light',
-      category: 'Physics & Telecom',
-      reference: 'Total Internal Reflection'
-    };
+    if (!discovery?.chosenTopic) {
+      throw new Error('[Archie Error] Active AI topic discovery failed to return a fresh candidate. Per user directive, seeded fallback topics are banned.');
+    }
+    chosenTopic = discovery.chosenTopic;
   }
   console.log(`[Tech Topic Selected]: "${chosenTopic.title}"`);
 

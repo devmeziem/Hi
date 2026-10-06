@@ -51,6 +51,15 @@ const BUFFER_TIKTOK_MOVIE_CHANNEL_ID = String(
   ''
 ).trim();
 
+// Driftreel TikTok Channel ID (Dedicated Crime, Horror & Archival Documentary Channel)
+const BUFFER_TIKTOK_DRIFTREEL_CHANNEL_ID = String(
+  process.env.BUFFER_TIKTOK_DRIFTREEL_CHANNEL_ID ||
+  process.env.BUFFER_TIKTOK_DRIFTREEL_CHANNEL ||
+  process.env.BUFFER_TIKTOK_DRIFTREEL ||
+  BUFFER_TIKTOK_MOVIE_CHANNEL_ID ||
+  ''
+).trim();
+
 const HARDCODED_TEEN_TIKTOK_CHANNEL_ID = '6ab05677ea19ca0bde9c3ffb';
 
 const BUFFER_TIKTOK_TEEN_CHANNEL_ID = String(
@@ -155,6 +164,57 @@ function resolveTargetChannel(discoveredTikToks, userInputId, channelType) {
     // 5. Fallback strictly to hardcoded ID
     console.log(`[Buffer TikTok Dispatch] 🎯 Routing strictly to designated Motivation TikTok Channel ID: ${HARDCODED_TEEN_TIKTOK_CHANNEL_ID}`);
     return { id: HARDCODED_TEEN_TIKTOK_CHANNEL_ID, name: 'Teen Motivation TikTok (bonesceo)' };
+  }
+
+  // Driftreel (Crime, Horror, History & Mystery Documentary Niche) Routing
+  if (channelType === 'driftreel' || channelType === 'driftreel_documentary' || channelType === 'documentary') {
+    // 0. Direct match on userInputId if provided and NOT bonesceo
+    if (clean && clean.toLowerCase() !== HARDCODED_TEEN_TIKTOK_CHANNEL_ID.toLowerCase() && cleanNoAt !== 'bonesceo') {
+      const byId = discoveredTikToks.find(c => cleanChannelId(c.id).toLowerCase() === clean.toLowerCase());
+      if (byId) {
+        console.log(`[Buffer TikTok Dispatch] 🎯 Matched Driftreel TikTok channel by direct Channel ID: "${byId.name}" (${byId.id})`);
+        return byId;
+      }
+    }
+
+    // 1. Direct match on 'driftreel' or 'drift' account name / handle
+    const byDriftName = discoveredTikToks.find(c => {
+      const n = (c.name || '').replace(/^@/, '').toLowerCase();
+      const d = (c.displayName || '').replace(/^@/, '').toLowerCase();
+      return n.includes('driftreel') || d.includes('driftreel') || n.includes('drift') || d.includes('drift');
+    });
+    if (byDriftName) {
+      console.log(`[Buffer TikTok Dispatch] 🎯 Matched Driftreel TikTok channel by handle/name: "${byDriftName.name}" (${byDriftName.id})`);
+      return byDriftName;
+    }
+
+    // 2. Match documentary / mystery / crime / cinema keywords
+    const docKeywords = ['drift', 'reel', 'doc', 'crime', 'horror', 'mystery', 'history', 'movie', 'cinema', 'vault'];
+    const matchedDoc = discoveredTikToks.find(c => {
+      const n = (c.name || '').toLowerCase();
+      return docKeywords.some(kw => n.includes(kw));
+    });
+    if (matchedDoc) {
+      console.log(`[Buffer TikTok Dispatch] 🎯 Selected Driftreel TikTok channel by keyword: "${matchedDoc.name}" (${matchedDoc.id})`);
+      return matchedDoc;
+    }
+
+    // 3. Any non-bonesceo channel
+    const nonBonesTikToks = discoveredTikToks.filter(c => {
+      const n = (c.name || '').toLowerCase();
+      const isBones = n.includes('bonesceo') || cleanChannelId(c.id).toLowerCase() === HARDCODED_TEEN_TIKTOK_CHANNEL_ID.toLowerCase();
+      return !isBones;
+    });
+
+    if (nonBonesTikToks.length > 0) {
+      const primary = nonBonesTikToks[0];
+      console.log(`[Buffer TikTok Dispatch] 🎯 Selected Driftreel TikTok channel (non-motivation): "${primary.name}" (${primary.id})`);
+      return primary;
+    }
+
+    if (clean && clean.toLowerCase() !== HARDCODED_TEEN_TIKTOK_CHANNEL_ID.toLowerCase()) {
+      return { id: clean, name: 'Driftreel TikTok' };
+    }
   }
 
   // Movie Brand Channel Routing
@@ -653,13 +713,66 @@ async function dispatchTikTok(channelType = 'movie_brand') {
   let videoPath = null;
   let caption = '';
 
-  if (channelType === 'movie_brand') {
+  if (channelType === 'driftreel' || channelType === 'driftreel_documentary' || channelType === 'documentary') {
+    targetChannel = resolveTargetChannel(discoveredTikToks, BUFFER_TIKTOK_DRIFTREEL_CHANNEL_ID || BUFFER_TIKTOK_MOVIE_CHANNEL_ID, 'driftreel');
+
+    // Locate latest Driftreel Documentary video
+    const driftreelCandidates = [
+      path.join(process.cwd(), 'rendered_videos', 'driftreel_documentary_latest.mp4'),
+      path.join(process.cwd(), 'test_artifacts', 'documentary', 'driftreel_documentary_latest.mp4'),
+      path.join(process.cwd(), 'test_artifacts', 'documentary', 'documentary_latest.mp4'),
+      path.join(process.cwd(), 'rendered_videos', 'documentary_latest.mp4')
+    ];
+    // Check rendered_videos for documentary_movie_*.mp4
+    const renderedDir = path.join(process.cwd(), 'rendered_videos');
+    if (fs.existsSync(renderedDir)) {
+      try {
+        const found = fs.readdirSync(renderedDir)
+          .filter(f => f.startsWith('documentary_movie_') && f.endsWith('.mp4'))
+          .sort().reverse();
+        for (const f of found) {
+          driftreelCandidates.push(path.join(renderedDir, f));
+        }
+      } catch {}
+    }
+    for (const c of driftreelCandidates) {
+      if (fs.existsSync(c)) { videoPath = c; break; }
+    }
+
+    // Load driftreel manifest for rich caption
+    const manifestCandidates = [
+      path.join(process.cwd(), 'test_artifacts', 'documentary', 'driftreel_manifest.json'),
+      path.join(process.cwd(), 'rendered_videos', 'driftreel_manifest.json'),
+      path.join(process.cwd(), 'test_artifacts', 'documentary', 'documentary_manifest.json')
+    ];
+    let meta = {
+      title: 'The Ghost Ship of the Atlantic',
+      era: '1872 • Ghost Ship Disappearance',
+      genre: 'horror',
+      narration: 'In December 1872, a brigantine was spotted drifting silently off the Azores.'
+    };
+    for (const m of manifestCandidates) {
+      if (fs.existsSync(m)) {
+        try {
+          const parsed = JSON.parse(fs.readFileSync(m, 'utf8'));
+          if (parsed && parsed.title) { meta = parsed; break; }
+        } catch {}
+      }
+    }
+
+    const genreEmoji = meta.genre === 'horror' ? '👁️' : meta.genre === 'crime' ? '🕵️‍♂️' : meta.genre === 'history' ? '🏛️' : '📜';
+    caption = `${genreEmoji} ${meta.title} // ${meta.era}\n\n${(meta.narration || '').slice(0, 190)}...\n\nFollow @driftreel for daily true crime, dark mysteries & historical stories! 👁️📜\n\n#Driftreel #TrueCrime #History #HorrorDocumentary #DarkHistory #Mystery #Unsolved #StoryTime #Documentary #Shorts #FYP`;
+
+  } else if (channelType === 'movie_brand') {
     targetChannel = resolveTargetChannel(discoveredTikToks, BUFFER_TIKTOK_MOVIE_CHANNEL_ID, 'movie_brand');
 
-    // Locate latest Movie video
+    // Locate latest Movie video (or fall back to driftreel)
     const movieCandidates = [
       path.join(process.cwd(), 'rendered_videos', 'movie_episode_latest.mp4'),
-      path.join(process.cwd(), 'test_artifacts', 'movie_episodes', 'movie_episode_latest.mp4')
+      path.join(process.cwd(), 'test_artifacts', 'movie_episodes', 'movie_episode_latest.mp4'),
+      path.join(process.cwd(), 'rendered_videos', 'driftreel_documentary_latest.mp4'),
+      path.join(process.cwd(), 'test_artifacts', 'documentary', 'driftreel_documentary_latest.mp4'),
+      path.join(process.cwd(), 'test_artifacts', 'documentary', 'documentary_latest.mp4')
     ];
     for (const c of movieCandidates) {
       if (fs.existsSync(c)) { videoPath = c; break; }

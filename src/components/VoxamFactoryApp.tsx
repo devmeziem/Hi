@@ -687,7 +687,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
     { id: 'audience-feedback', label: 'Subscriber Feedback & Sentiment', icon: HeartHandshake },
     { id: 'movie-brand', label: 'Cinema Vanguard (Channel 4)', icon: Film },
     { id: 'teen-motivation', label: 'MindRush (Channel 5)', icon: Flame },
-    { id: 'documentary', label: 'Archival Documentary Studio', icon: Compass },
+    { id: 'documentary', label: 'Cinema Vanguard & Driftreel Documentaries', icon: Compass },
     { id: 'finance', label: 'Finance Blueprint (Channel 1)', icon: DollarSign },
     { id: 'sound-setup', label: 'Sound & Audio Studio', icon: Headphones },
     { id: 'pipeline', label: 'Autonomous Publishing Hub', icon: Workflow },
@@ -904,30 +904,15 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                     setActiveTab('documentary');
                     setIsMobileDrawerOpen(false);
                   }}
-                  className="w-full p-2.5 bg-gradient-to-r from-amber-950/60 via-slate-900 to-slate-900 border border-amber-500/40 rounded-xl text-left cursor-pointer transition-all hover:border-amber-400 flex items-center gap-2.5"
+                  className="w-full p-2.5 bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-900 border border-emerald-500/40 rounded-xl text-left cursor-pointer transition-all hover:border-emerald-400 flex items-center gap-2.5"
                 >
-                  <Compass className="w-4 h-4 text-amber-400 shrink-0" />
+                  <DollarSign className="w-4 h-4 text-emerald-400 shrink-0" />
                   <div>
-                    <div className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-                      <span>Cinema Vanguard Documentaries</span>
-                      <span className="text-[9px] px-1 py-0.2 rounded bg-amber-900/80 text-amber-300 font-mono">CHANNEL 4</span>
+                    <div className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+                      <span>Cinema Vanguard: Financial Stories</span>
+                      <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-900/80 text-emerald-300 font-mono">CHANNEL 4</span>
                     </div>
-                    <div className="text-[10px] text-slate-400">Public Domain Historical Archives • Ken Burns Drift</div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('teen-motivation');
-                    setIsMobileDrawerOpen(false);
-                  }}
-                  className="w-full p-2.5 bg-gradient-to-r from-amber-950/50 to-slate-900 border border-amber-500/40 rounded-xl text-left cursor-pointer transition-all hover:border-amber-400 flex items-center gap-2.5"
-                >
-                  <Flame className="w-4 h-4 text-amber-400 shrink-0" />
-                  <div>
-                    <div className="text-xs font-bold text-amber-300">Apex Discipline: Teen Motivation</div>
-                    <div className="text-[10px] text-slate-400">Dopamine Reset & Study Lockdown</div>
+                    <div className="text-[10px] text-slate-400">Wall Street Heists &amp; Bubbles • Daily to YouTube Shorts</div>
                   </div>
                 </button>
 
@@ -939,13 +924,28 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                   }}
                   className="w-full p-2.5 bg-gradient-to-r from-amber-950/70 via-slate-900 to-slate-900 border border-amber-500/50 rounded-xl text-left cursor-pointer transition-all hover:border-amber-400 flex items-center gap-2.5"
                 >
-                  <Film className="w-4 h-4 text-amber-400 shrink-0" />
+                  <Compass className="w-4 h-4 text-amber-400 shrink-0" />
                   <div>
                     <div className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-                      <span>Documentary Studio</span>
-                      <span className="text-[9px] px-1 py-0.2 rounded bg-amber-900/80 text-amber-300 font-mono">ARCHIVAL</span>
+                      <span>Driftreel: Crime &amp; Horror Docs</span>
+                      <span className="text-[9px] px-1 py-0.2 rounded bg-amber-900/80 text-amber-300 font-mono">TIKTOK BUFFER</span>
                     </div>
-                    <div className="text-[10px] text-slate-400">Public Domain Historical Footage &amp; Atmospheric Sounds</div>
+                    <div className="text-[10px] text-slate-400">Ghost Ships &amp; Unsolved Mysteries • Daily to @driftreel</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('teen-motivation');
+                    setIsMobileDrawerOpen(false);
+                  }}
+                  className="w-full p-2.5 bg-gradient-to-r from-sky-950/60 to-slate-900 border border-sky-500/40 rounded-xl text-left cursor-pointer transition-all hover:border-sky-400 flex items-center gap-2.5"
+                >
+                  <Flame className="w-4 h-4 text-sky-400 shrink-0" />
+                  <div>
+                    <div className="text-xs font-bold text-sky-300">MindRush: Youth &amp; Teen Motivation</div>
+                    <div className="text-[10px] text-slate-400">Authentic Daily Struggles, Perspective &amp; Fortitude (&gt;25s)</div>
                   </div>
                 </button>
 

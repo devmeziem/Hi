@@ -941,14 +941,160 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
     console.log(`[AI Inference] Local AI unavailable or yielded no result. Proceeding to cloud inference ladder...`);
   }
 
-  // 1. Universal Free AI Tier (Pollinations.ai - Zero API Key Required, No Rate Limits)
-  // Evaluated first as primary free path per user mandate (active anonymous models)
-  const freeAiModels = ['openai-fast', 'openai', 'mistral', 'qwen-coder'];
+  // 1. Google Gemini (Tier 1 Priority: High-speed, High-quality JSON generation)
+  if (GEMINI_API_KEY) {
+    const models = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash'];
+    for (const model of models) {
+      try {
+        const postData = JSON.stringify({
+          contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
+          generationConfig: { responseMimeType: 'application/json', temperature: 0.7 }
+        });
+        const res = await new Promise((resolve, reject) => {
+          const req = https.request(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) },
+            timeout: 10000
+          }, (r) => {
+            let d = '';
+            r.on('data', c => d += c);
+            r.on('end', () => resolve({ status: r.statusCode, data: d }));
+          });
+          req.on('error', reject);
+          req.on('timeout', () => { req.destroy(); reject(new Error('Gemini request timeout')); });
+          req.write(postData);
+          req.end();
+        });
+        if (res.status === 200) {
+          const json = JSON.parse(res.data);
+          const raw = json.candidates?.[0]?.content?.parts?.[0]?.text;
+          const parsed = cleanJsonText(raw);
+          if (parsed && (!validationFn || validationFn(parsed))) {
+            return { success: true, modelUsed: `Google Gemini (${model})`, data: parsed };
+          }
+        } else if (res.status === 429 || res.status === 403) {
+          console.warn(`[AI Inference Notice] Gemini ${res.status} (quota or access limit). Skipping remaining Gemini calls.`);
+          break;
+        } else {
+          console.warn(`[AI Inference Notice] Gemini (${model}) HTTP ${res.status}: ${res.data.slice(0, 100)}`);
+        }
+      } catch (err) {
+        console.warn(`[AI Inference Notice] Gemini (${model}) error: ${err.message}`);
+      }
+    }
+  }
+
+  // 2. Groq LPU with Model Finder & Adaptive Formatting
+  if (GROQ_API_KEY) {
+    let models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'qwen-2.5-32b', 'deepseek-r1-distill-llama-70b', 'gemma2-9b-it'];
+    let formatGrPayload = null;
+    let cleanGrJson = null;
+    try {
+      const grFinder = require('./groq_model_finder.cjs');
+      const verified = await grFinder.fetchAndVerifyGroqModels();
+      if (verified && verified.length > 0) models = [...new Set([...verified, ...models])];
+      formatGrPayload = grFinder.formatGroqPayload;
+      cleanGrJson = grFinder.cleanGroqJson;
+    } catch {}
+
+    for (const model of models) {
+      try {
+        const payloadObj = formatGrPayload
+          ? formatGrPayload(model, { systemPrompt, userPrompt, jsonMode: true })
+          : {
+            model,
+            messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
+            response_format: { type: 'json_object' },
+            temperature: 0.7
+          };
+        const postData = JSON.stringify(payloadObj);
+        const res = await new Promise((resolve, reject) => {
+          const req = https.request('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${GROQ_API_KEY}`,
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 12000
+          }, (r) => {
+            let d = '';
+            r.on('data', c => d += c);
+            r.on('end', () => resolve({ status: r.statusCode, data: d }));
+          });
+          req.on('error', reject);
+          req.on('timeout', () => { req.destroy(); reject(new Error('Groq timeout')); });
+          req.write(postData);
+          req.end();
+        });
+        if (res.status === 200) {
+          const json = JSON.parse(res.data);
+          const raw = json.choices?.[0]?.message?.content;
+          const parsed = (cleanGrJson ? cleanGrJson(raw) : null) || cleanJsonText(raw);
+          if (parsed && (!validationFn || validationFn(parsed))) {
+            return { success: true, modelUsed: `Groq LPU (${model})`, data: parsed };
+          }
+        } else {
+          console.warn(`[AI Inference Notice] Groq (${model}) HTTP ${res.status}: ${res.data.slice(0, 100)}`);
+        }
+      } catch (err) {
+        console.warn(`[AI Inference Notice] Groq (${model}) error: ${err.message}`);
+      }
+    }
+  }
+
+  // 3. OpenRouter with Model Finder & Adaptive Formatting
+  if (OPENROUTER_API_KEY) {
+    let models = ['google/gemini-2.0-flash-001', 'meta-llama/llama-3.3-70b-instruct:free', 'mistralai/mistral-small-24b-instruct-2501:free', 'qwen/qwen-2.5-72b-instruct:free', 'deepseek/deepseek-chat'];
+    for (const model of models) {
+      try {
+        const postData = JSON.stringify({
+          model,
+          messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
+          response_format: { type: 'json_object' },
+          temperature: 0.7
+        });
+        const res = await new Promise((resolve, reject) => {
+          const req = https.request('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+              'Content-Type': 'application/json',
+              'HTTP-Referer': 'https://voxam.ai',
+              'X-Title': 'Voxam AI Engine',
+              'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 15000
+          }, (r) => {
+            let d = '';
+            r.on('data', c => d += c);
+            r.on('end', () => resolve({ status: r.statusCode, data: d }));
+          });
+          req.on('error', reject);
+          req.on('timeout', () => { req.destroy(); reject(new Error('OpenRouter timeout')); });
+          req.write(postData);
+          req.end();
+        });
+        if (res.status === 200) {
+          const json = JSON.parse(res.data);
+          const raw = json.choices?.[0]?.message?.content;
+          const parsed = cleanJsonText(raw);
+          if (parsed && (!validationFn || validationFn(parsed))) {
+            return { success: true, modelUsed: `OpenRouter (${model})`, data: parsed };
+          }
+        } else {
+          console.warn(`[AI Inference Notice] OpenRouter (${model}) HTTP ${res.status}: ${res.data.slice(0, 100)}`);
+        }
+      } catch (err) {
+        console.warn(`[AI Inference Notice] OpenRouter (${model}) error: ${err.message}`);
+      }
+    }
+  }
+
+  // 4. Universal Free AI Tier (Pollinations.ai fallback with 402 guard)
+  const freeAiModels = ['mistral', 'qwen-coder', 'openai-fast'];
   for (let mIdx = 0; mIdx < freeAiModels.length; mIdx++) {
     const model = freeAiModels[mIdx];
-    if (mIdx > 0) {
-      await new Promise(r => setTimeout(r, 600));
-    }
     try {
       const postData = JSON.stringify({
         messages: [
@@ -966,14 +1112,14 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
             'Content-Type': 'application/json',
             'Content-Length': Buffer.byteLength(postData)
           },
-          timeout: 12000
+          timeout: 10000
         }, (r) => {
           let d = '';
           r.on('data', c => d += c);
           r.on('end', () => resolve({ status: r.statusCode, data: d }));
         });
         req.on('error', reject);
-        req.on('timeout', () => { req.destroy(); reject(new Error('Free AI timeout (12s)')); });
+        req.on('timeout', () => { req.destroy(); reject(new Error('Free AI timeout (10s)')); });
         req.write(postData);
         req.end();
       });
@@ -984,6 +1130,9 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
           console.log(`[AI Inference Success] ⚡ Universal Free AI (${model}) produced valid JSON.`);
           return { success: true, modelUsed: `Universal Free AI (${model})`, data: parsed };
         }
+      } else if (res.status === 402) {
+        console.warn(`[AI Inference Notice] Free AI (${model}) HTTP 402: endpoint requires paid subscription. Halting Pollinations tier.`);
+        break; // Stop repeated 402 attempts
       } else {
         console.warn(`[AI Inference Notice] Free AI (${model}) HTTP ${res.status}: ${res.data.slice(0, 100)}`);
       }
@@ -1200,49 +1349,6 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
         }
       } catch (err) {
         console.warn(`[AI Inference Notice] OpenRouter (${model}) error: ${err.message}`);
-      }
-    }
-  }
-
-  // 6. Google Gemini (Modern non-decommissioned active models: 2.5-flash only)
-  if (GEMINI_API_KEY) {
-    const models = ['gemini-2.5-flash'];
-    for (const model of models) {
-      try {
-        const postData = JSON.stringify({
-          contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
-          generationConfig: { responseMimeType: 'application/json', temperature: 0.7 }
-        });
-        const res = await new Promise((resolve, reject) => {
-          const req = https.request(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) },
-            timeout: 8000
-          }, (r) => {
-            let d = '';
-            r.on('data', c => d += c);
-            r.on('end', () => resolve({ status: r.statusCode, data: d }));
-          });
-          req.on('error', reject);
-          req.on('timeout', () => { req.destroy(); reject(new Error('Gemini request timeout')); });
-          req.write(postData);
-          req.end();
-        });
-        if (res.status === 200) {
-          const json = JSON.parse(res.data);
-          const raw = json.candidates?.[0]?.content?.parts?.[0]?.text;
-          const parsed = cleanJsonText(raw);
-          if (parsed && (!validationFn || validationFn(parsed))) {
-            return { success: true, modelUsed: `Google Gemini (${model})`, data: parsed };
-          }
-        } else if (res.status === 429 || res.status === 403) {
-          console.warn(`[AI Inference Notice] Gemini ${res.status} (quota or access limit). Skipping remaining Gemini calls.`);
-          break; // Quota or auth exhausted; roll immediately
-        } else {
-          console.warn(`[AI Inference Notice] Gemini (${model}) HTTP ${res.status}: ${res.data.slice(0, 100)}`);
-        }
-      } catch (err) {
-        console.warn(`[AI Inference Notice] Gemini (${model}) error: ${err.message}`);
       }
     }
   }

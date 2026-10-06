@@ -96,289 +96,36 @@ const THEMES = [
   }
 ];
 
-// Rich, Diverse Catalog of Engaging, Intuitive Trivia Questions (Categorized to guarantee 3 different topics per episode)
-const CURATED_SHOWDOWN_CATALOG = {
-  wildlife: [
-    {
-      category: 'Animal Wonders',
-      topic: 'Dolphin Sleep Mystery',
-      question: 'Which amazing trick do dolphins use to breathe without drowning while sleeping?',
-      imageSearchQuery: 'dolphin swimming clear ocean water sunlight',
-      options: [
-        { key: 'A', text: 'They sleep on dry sandbars' },
-        { key: 'B', text: 'One half of their brain stays awake' },
-        { key: 'C', text: 'They store 6 hours of oxygen in blood' },
-        { key: 'D', text: 'They only sleep for 30 seconds at a time' }
-      ],
-      correctKey: 'B',
-      explanation: 'Dolphins use unihemispheric sleep: one brain hemisphere sleeps while the other stays awake to surface for air!'
-    },
-    {
-      category: 'Animal Wonders',
-      topic: 'Flamingo Color Transformation',
-      question: 'Why are wild flamingos born grey, but turn bright pink as they grow up?',
-      imageSearchQuery: 'flamingos pink water lagoon wildlife reflection',
-      options: [
-        { key: 'A', text: 'Intense sunlight bleaches their feathers' },
-        { key: 'B', text: 'Their diet is rich in carotenoid algae' },
-        { key: 'C', text: 'Natural genetic mutation at maturity' },
-        { key: 'D', text: 'Minerals in volcanic mud dye their skin' }
-      ],
-      correctKey: 'B',
-      explanation: 'Flamingos eat brine shrimp and algae packed with beta-carotene, which dyes their grey feathers vibrant pink!'
-    },
-    {
-      category: 'Animal Wonders',
-      topic: 'Bee Waggle Dance',
-      question: 'How do honeybees communicate the exact location of flower fields to their hive?',
-      imageSearchQuery: 'honeybee collecting pollen flower macro close up',
-      options: [
-        { key: 'A', text: 'High-frequency wing buzz sounds' },
-        { key: 'B', text: 'A figure-eight waggle dance' },
-        { key: 'C', text: 'Scent trails left in the air' },
-        { key: 'D', text: 'Guiding other bees visually' }
-      ],
-      correctKey: 'B',
-      explanation: 'The famous waggle dance encodes both the angle relative to the sun and the flight distance in the waggle duration!'
-    },
-    {
-      category: 'Animal Wonders',
-      topic: 'Octopus Heart Anatomy',
-      question: 'How many functioning hearts does an octopus have pumping blood through its body?',
-      imageSearchQuery: 'octopus underwater coral reef tentacles blue ocean',
-      options: [
-        { key: 'A', text: '1 Single Large Heart' },
-        { key: 'B', text: '3 Separate Hearts' },
-        { key: 'C', text: '5 Distributed Mini-Hearts' },
-        { key: 'D', text: '2 Main Chambers' }
-      ],
-      correctKey: 'B',
-      explanation: 'Two branchial hearts pump blood through the gills, while a third systemic heart pumps copper-based blood to the body!'
-    }
-  ],
+// Dynamic Showdown Trivia Engine — Seeded Catalog Deleted per User Directive
+const CURATED_SHOWDOWN_CATALOG = {};
 
-  human_body: [
-    {
-      category: 'Human Body',
-      topic: 'Contagious Yawning',
-      question: 'Why does seeing someone else yawn trigger an instant urge for you to yawn too?',
-      imageSearchQuery: 'human face expression yawning tired relaxed',
-      options: [
-        { key: 'A', text: 'Oxygen levels drop in the room' },
-        { key: 'B', text: 'Mirror neurons and social empathy' },
-        { key: 'C', text: 'Carbon dioxide triggers the lungs' },
-        { key: 'D', text: 'Auditory vibration frequency' }
-      ],
-      correctKey: 'B',
-      explanation: 'Contagious yawning is linked to mirror neurons and empathy: our brain subconsciously mimics those around us!'
-    },
-    {
-      category: 'Human Body',
-      topic: 'Onion Tears Chemistry',
-      question: 'Why does chopping raw onions make your eyes water and sting within seconds?',
-      imageSearchQuery: 'chopping red onion kitchen cutting board fresh',
-      options: [
-        { key: 'A', text: 'Fine onion powder flies into the air' },
-        { key: 'B', text: 'It releases syn-propanethial-S-oxide gas' },
-        { key: 'C', text: 'Acidic onion juice splashes your skin' },
-        { key: 'D', text: 'The strong aroma overwhelms nasal nerves' }
-      ],
-      correctKey: 'B',
-      explanation: 'Cutting ruptures cell walls, mixing enzymes into a sulfur gas that reacts with eye moisture to form mild sulfuric acid!'
-    },
-    {
-      category: 'Human Body',
-      topic: 'Shivering Cold Reflex',
-      question: 'What is the primary evolutionary purpose of your body violently shivering in the cold?',
-      imageSearchQuery: 'person winter snow cold breath frosty air',
-      options: [
-        { key: 'A', text: 'To shake cold snow off your clothes' },
-        { key: 'B', text: 'Rapid muscle contractions produce heat' },
-        { key: 'C', text: 'To push cold blood out of limbs' },
-        { key: 'D', text: 'A panic reaction by nerve endings' }
-      ],
-      correctKey: 'B',
-      explanation: 'Shivering causes involuntary skeletal muscle twitches that burn glucose to generate internal metabolic heat!'
-    },
-    {
-      category: 'Human Body',
-      topic: 'Brain Energy Consumption',
-      question: 'The human brain makes up only 2% of body weight, but what percentage of daily energy does it burn?',
-      imageSearchQuery: 'human brain thinking glowing neural pathways dark',
-      options: [
-        { key: 'A', text: 'About 5% of daily calories' },
-        { key: 'B', text: 'Roughly 20% of total energy' },
-        { key: 'C', text: 'Over 50% during deep thinking' },
-        { key: 'D', text: 'Less than 1% when at rest' }
-      ],
-      correctKey: 'B',
-      explanation: 'Your brain burns a staggering 20% of your daily glucose and oxygen just maintaining cellular electrical gradients!'
+/**
+ * Resilient TTS Synthesis with Timeout & Automatic Voice Fallback
+ */
+async function synthesizeSpeechWithRetry(text, outFile, maxRetries = 2) {
+  const voices = ["en-US-AndrewNeural", "en-US-AndrewMultilingualNeural", "en-US-GuyNeural"];
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const voice = voices[attempt % voices.length];
+    try {
+      const t = new EdgeTTS({
+        voice,
+        lang: "en-US",
+        outputFormat: "audio-24khz-48kbitrate-mono-mp3",
+        timeout: 45000
+      });
+      await t.ttsPromise(text, outFile);
+      if (fs.existsSync(outFile) && fs.statSync(outFile).size > 500) {
+        return outFile;
+      }
+    } catch (err) {
+      console.warn(`[TTS Retry Notice] Voice "${voice}" attempt ${attempt + 1} notice: ${err.message}. Retrying...`);
+      if (attempt === maxRetries) {
+        throw new Error(`TTS synthesis failed after ${maxRetries + 1} attempts: ${err.message}`);
+      }
+      await new Promise(r => setTimeout(r, 1200));
     }
-  ],
-
-  kitchen_physics: [
-    {
-      category: 'Everyday Physics',
-      topic: 'Floating Ice Anomaly',
-      question: 'Why does solid ice float on liquid water, when nearly all other solid substances sink in their liquid form?',
-      imageSearchQuery: 'ice cube floating clear water glass macro reflection',
-      options: [
-        { key: 'A', text: 'Trapped air bubbles inside the ice' },
-        { key: 'B', text: 'Hydrogen bonds expand ice by 9%' },
-        { key: 'C', text: 'Surface tension pushes the ice upward' },
-        { key: 'D', text: 'Cold water is lighter than warm water' }
-      ],
-      correctKey: 'B',
-      explanation: 'Water is unique: as it freezes, hydrogen bonds force molecules into a hexagonal crystal with empty space, lowering density!'
-    },
-    {
-      category: 'Everyday Physics',
-      topic: 'Helium Voice Physics',
-      question: 'Why does inhaling helium gas from a balloon make your voice sound comically high-pitched?',
-      imageSearchQuery: 'colorful party balloons helium floating ceiling',
-      options: [
-        { key: 'A', text: 'Helium tightens your vocal cords' },
-        { key: 'B', text: 'Sound waves travel 3x faster in helium' },
-        { key: 'C', text: 'Helium cools the air inside your throat' },
-        { key: 'D', text: 'Helium shrinks your vocal cord muscles' }
-      ],
-      correctKey: 'B',
-      explanation: 'Helium is 6 times lighter than air, so sound travels at 927 m/s instead of 343 m/s, amplifying high resonant frequencies!'
-    },
-    {
-      category: 'Everyday Physics',
-      topic: 'Bread vs Cookie Staling',
-      question: 'Why does fresh bread turn hard when stale, but crunchy cookies turn soft and chewy?',
-      imageSearchQuery: 'fresh baked bread loaf warm bakery rustic',
-      options: [
-        { key: 'A', text: 'Bread loses moisture, sugar absorbs it' },
-        { key: 'B', text: 'Yeast dies and makes bread solid' },
-        { key: 'C', text: 'Cookies contain preservative oils' },
-        { key: 'D', text: 'Bread oxidizes faster than cookie dough' }
-      ],
-      correctKey: 'A',
-      explanation: 'Bread has high moisture that evaporates, while cookies have high sugar that pulls moisture out of humid ambient air!'
-    },
-    {
-      category: 'Everyday Physics',
-      topic: 'Spicy Chili Pepper Heat',
-      question: 'Why do spicy hot peppers make your tongue feel literally burned, even when eaten cold from a fridge?',
-      imageSearchQuery: 'red chili pepper fiery hot spices culinary macro',
-      options: [
-        { key: 'A', text: 'Capsaicin chemically burns skin cells' },
-        { key: 'B', text: 'Capsaicin triggers heat-pain receptors' },
-        { key: 'C', text: 'Chili seeds create friction heat' },
-        { key: 'D', text: 'It strips away your saliva layer' }
-      ],
-      correctKey: 'B',
-      explanation: 'Capsaicin binds to TRPV1 receptors—the exact sensors that detect actual burning temperatures above 43°C!'
-    }
-  ],
-
-  earth_space: [
-    {
-      category: 'Space & Sky',
-      topic: 'Blue Sky Scattering',
-      question: 'Why does Earth’s daytime sky look bright blue instead of violet or white?',
-      imageSearchQuery: 'bright blue sky white fluffy clouds sunny day',
-      options: [
-        { key: 'A', text: 'Sunlight reflects off blue ocean water' },
-        { key: 'B', text: 'Rayleigh scattering bends short blue waves' },
-        { key: 'C', text: 'Ozone gas absorbs all red light' },
-        { key: 'D', text: 'Dust particles in the clouds glow blue' }
-      ],
-      correctKey: 'B',
-      explanation: 'Nitrogen and oxygen molecules scatter shorter blue wavelengths 10x more than red, illuminating the sky in blue!'
-    },
-    {
-      category: 'Space & Sky',
-      topic: 'Lightning and Thunder Speed',
-      question: 'Why do you always see a lightning flash before you hear the loud rumble of thunder?',
-      imageSearchQuery: 'dramatic lightning strike night thunderstorm dark clouds',
-      options: [
-        { key: 'A', text: 'Thunder takes time to build in clouds' },
-        { key: 'B', text: 'Light travels nearly 1 million times faster' },
-        { key: 'C', text: 'Raindrops slow down thunder vibrations' },
-        { key: 'D', text: 'Lightning occurs seconds before thunder' }
-      ],
-      correctKey: 'B',
-      explanation: 'Light races at 300,000 km/s while sound crawls at 0.34 km/s. Every 3 seconds between flash and bang equals 1 kilometer!'
-    },
-    {
-      category: 'Space & Sky',
-      topic: 'Venus Backward Spin',
-      question: 'Which planet in our solar system spins in the opposite direction (clockwise) compared to nearly all others?',
-      imageSearchQuery: 'planet venus atmosphere space solar system orbit',
-      options: [
-        { key: 'A', text: 'Mars' },
-        { key: 'B', text: 'Venus' },
-        { key: 'C', text: 'Jupiter' },
-        { key: 'D', text: 'Mercury' }
-      ],
-      correctKey: 'B',
-      explanation: 'Venus experiences retrograde rotation: the Sun rises in the west and sets in the east, likely knocked by an ancient impact!'
-    },
-    {
-      category: 'Space & Sky',
-      topic: 'Ocean Tides Gravity',
-      question: 'What is the primary astronomical force creating Earth’s ocean high and low tides every single day?',
-      imageSearchQuery: 'ocean waves crashing shoreline high tide twilight',
-      options: [
-        { key: 'A', text: 'Earth’s magnetic field rotation' },
-        { key: 'B', text: 'The Moon’s gravitational pull' },
-        { key: 'C', text: 'Underwater volcanic heat currents' },
-        { key: 'D', text: 'Trade winds pushing surface water' }
-      ],
-      correctKey: 'B',
-      explanation: 'The Moon’s differential gravitational pull stretches ocean water into tidal bulges on both sides of Earth!'
-    }
-  ],
-
-  everyday_logic: [
-    {
-      category: 'Everyday Logic',
-      topic: 'Touchscreen Physics',
-      question: 'Why does your smartphone touchscreen work instantly with your bare finger, but fails completely with regular gloves?',
-      imageSearchQuery: 'person tapping smartphone touchscreen glowing screen modern',
-      options: [
-        { key: 'A', text: 'Screens require body heat to activate' },
-        { key: 'B', text: 'Fingers conduct electrical capacitance' },
-        { key: 'C', text: 'Touchscreens detect skin oil moisture' },
-        { key: 'D', text: 'Fingertip fingerprint ridges give grip' }
-      ],
-      correctKey: 'B',
-      explanation: 'Capacitive screens detect the disruption in their electrostatic field when your conductive human skin touches them!'
-    },
-    {
-      category: 'Everyday Logic',
-      topic: 'Hardest Natural Material',
-      question: 'What is the hardest naturally occurring mineral on Earth according to the Mohs hardness scale?',
-      imageSearchQuery: 'sparkling diamond gemstone macro crystal facet reflection',
-      options: [
-        { key: 'A', text: 'Titanium' },
-        { key: 'B', text: 'Diamond' },
-        { key: 'C', text: 'Quartz' },
-        { key: 'D', text: 'Obsidian' }
-      ],
-      correctKey: 'B',
-      explanation: 'Diamond rates a perfect 10 on the Mohs scale: carbon atoms locked in rigid tetrahedral lattice bonds!'
-    },
-    {
-      category: 'Everyday Logic',
-      topic: 'Sunlight Travel Time',
-      question: 'Approximately how long does a beam of sunlight take to travel 93 million miles from the Sun to reach your eyes on Earth?',
-      imageSearchQuery: 'sunbeam shining through trees morning sunrise golden light',
-      options: [
-        { key: 'A', text: '8 seconds' },
-        { key: 'B', text: '8 minutes and 20 seconds' },
-        { key: 'C', text: '1 hour and 15 minutes' },
-        { key: 'D', text: 'Instantaneous (zero time)' }
-      ],
-      correctKey: 'B',
-      explanation: 'At 186,282 miles per second, sunlight requires exactly 499 seconds (about 8.3 minutes) to cross the cosmic vacuum!'
-    }
-  ]
-};
+  }
+}
 
 function escapeXml(str) {
   return String(str || '')
@@ -579,11 +326,11 @@ function buildQuestionCardSvg(qObj, qIndex, totalQuestions, sec = 5, theme, visu
       </g>
     </g>
 
-    <!-- 6. Footer (Y: 1360) -->
+    <!-- 6. Footer & Channel Watermark (Y: 1360) -->
     <g transform="translate(80, 1360)">
-      <rect width="920" height="64" rx="18" fill="#020617" stroke="rgba(255,255,255,0.12)" stroke-width="1.2" />
-      <text x="460" y="39" font-family="system-ui, sans-serif" font-size="18" font-weight="800" fill="#94a3b8" letter-spacing="1" text-anchor="middle">
-        Lock in Option A, B, C, or D before the buzzer! ⏳
+      <rect width="920" height="64" rx="18" fill="#020617" stroke="rgba(255,255,255,0.18)" stroke-width="1.2" />
+      <text x="460" y="39" font-family="system-ui, sans-serif" font-size="16" font-weight="900" fill="#38bdf8" letter-spacing="1.5" text-anchor="middle">
+        ARCHIE EXPLAINS • @ArchieExplains • Lock in A, B, C, or D! ⏳
       </text>
     </g>
   </svg>`;
@@ -679,49 +426,104 @@ function buildAnswerCardSvg(qObj, qIndex, totalQuestions, theme, visualPngPath =
     <!-- 4 Options with Correct One Highlighted -->
     ${optionCards}
 
-    <!-- Bottom Debate Prompt -->
+    <!-- Bottom Debate Prompt & Watermark -->
     <g transform="translate(80, 1160)">
       <rect width="920" height="90" rx="22" fill="#020617" stroke="${theme.accentGold}" stroke-width="2" />
-      <text x="460" y="55" font-family="system-ui, sans-serif" font-size="22" font-weight="900" fill="${theme.accentGold}" text-anchor="middle">
+      <text x="460" y="42" font-family="system-ui, sans-serif" font-size="20" font-weight="900" fill="${theme.accentGold}" text-anchor="middle">
         Did you get this right? Argue or confirm below! 👇
+      </text>
+      <text x="460" y="70" font-family="system-ui, sans-serif" font-size="13" font-weight="800" fill="#94a3b8" letter-spacing="1.5" text-anchor="middle">
+        ARCHIE EXPLAINS • @ArchieExplains
       </text>
     </g>
   </svg>`;
 }
 
 /**
+ * Dynamically Generate a Fresh, Relatable Trivia Question via Active AI
+ */
+async function generateDynamicCategoryQuestion(categoryKey) {
+  const catNames = {
+    wildlife: 'Animal & Nature Wonders (Surprising animal behaviors, instincts, adaptations)',
+    human_body: 'Human Body & Brain Mysteries (Everyday reflexes, senses, biology quirks)',
+    kitchen_physics: 'Kitchen & Everyday Physics (Food science, heat, boiling, everyday materials)',
+    earth_space: 'Earth, Sky & Cosmos (Weather phenomena, clouds, oceans, space facts)',
+    everyday_logic: 'Everyday Tech & Physical Mysteries (Touchscreens, microwaves, mirrors, sounds)'
+  };
+  const categoryPrompt = catNames[categoryKey] || 'Everyday Science Curiosity';
+
+  const systemPrompt = `You are the lead trivia creator for Archie Explains (@ArchieExplains).
+Create 1 fun, universally relatable, surprising trivia question about: ${categoryPrompt}.
+MANDATORY RULES:
+1. QUESTION: Universally interesting, everyday curiosity question people encounter in real life. Max 18 words. (Never overly academic, no obscure chemical formulas).
+2. 4 OPTIONS: A, B, C, D. Each option must be short (max 32 characters) so it NEVER overflows or cuts off.
+3. CORRECT KEY: Exactly one of 'A', 'B', 'C', or 'D'.
+4. EXPLANATION: Plain English, fascinating 2-sentence explanation of why it happens (25-35 words).
+5. TOPIC: Punchy 2-4 word topic title.
+6. SEARCH QUERY: Highly specific 3-5 word photography query for Unsplash/Wikimedia.
+
+Return strictly valid JSON:
+{
+  "question": "Why do flamingos stand on one leg in water?",
+  "options": [
+    { "key": "A", "text": "To keep body heat in cold water" },
+    { "key": "B", "text": "To sneak up on small fish" },
+    { "key": "C", "text": "To stretch their leg muscles" },
+    { "key": "D", "text": "To balance better in mud" }
+  ],
+  "correctKey": "A",
+  "explanation": "Tucking one leg against their body dramatically reduces heat loss through bare skin in cold water, saving vital energy.",
+  "topic": "Flamingo Heat Control",
+  "category": "${categoryKey}",
+  "searchQuery": "flamingo standing on one leg water wildlife"
+}`;
+
+  const userPrompt = `Generate a fresh, universally captivating question about ${categoryPrompt}. Ensure options are concise (under 30 chars each) and explanation is clear.`;
+  try {
+    const res = await callActiveAiForJson(systemPrompt, userPrompt, null, { nicheKey: 'cartoon' });
+    if (res?.data?.question && Array.isArray(res?.data?.options) && res.data.options.length === 4 && res?.data?.correctKey) {
+      return {
+        ...res.data,
+        category: categoryKey
+      };
+    }
+  } catch (err) {
+    console.warn(`[Archie Q&A AI Notice] Active AI generation notice for ${categoryKey}: ${err.message}`);
+  }
+  return null;
+}
+
+/**
  * Select 3 Deduplicated Questions ensuring 3 COMPLETELY DIFFERENT categories
+ * Uses Active AI first to generate fresh, real-time questions, falling back to diverse catalog
  */
 async function select3DeduplicatedQuestions() {
   const selected = [];
-  const categories = Object.keys(CURATED_SHOWDOWN_CATALOG);
+  const categories = ['wildlife', 'human_body', 'kitchen_physics', 'earth_space', 'everyday_logic'];
 
   // Pick 3 distinct categories randomly
-  const shuffledCats = [...categories].sort(() => 0.5 - Math.random()).slice(0, 3);
+  const shuffledCats = [...categories].sort(() => 0.5 - Math.random());
+  console.log(`[Q&A Director] 🎲 Evaluating Distinct Categories: ${shuffledCats.join(', ')}`);
 
-  // For each chosen category, select a deduplicated question from its bank
   for (const cat of shuffledCats) {
-    const catPool = CURATED_SHOWDOWN_CATALOG[cat];
-    const chosenQ = await selectDeduplicatedCandidate(
-      `archie_qa_${cat}`,
-      catPool,
-      item => item.question,
-      item => item.topic
-    );
-    if (chosenQ) {
-      selected.push(chosenQ);
+    if (selected.length >= 3) break;
+    console.log(`[Q&A Director] 🧠 Synthesizing live AI question for category: "${cat}"...`);
+    const q = await generateDynamicCategoryQuestion(cat);
+    if (q) {
+      selected.push(q);
+      try {
+        await recordPostedCandidate(`archie_qa_${cat}`, q.question, q.topic, {
+          category: cat,
+          correctKey: q.correctKey,
+          timestamp: Date.now()
+        });
+      } catch {}
     }
   }
 
-  // Fallback if less than 3
+  // Ensure 3 questions synthesized by AI; if not, throw an error per strict zero-seed policy
   if (selected.length < 3) {
-    const allQs = Object.values(CURATED_SHOWDOWN_CATALOG).flat();
-    for (const q of allQs) {
-      if (selected.length >= 3) break;
-      if (!selected.some(s => s.question === q.question)) {
-        selected.push(q);
-      }
-    }
+    throw new Error(`[Archie Q&A Error] Active AI produced only ${selected.length}/3 questions. Per strict user mandate, seeded fallback questions are deleted. Failing workflow.`);
   }
 
   return selected.slice(0, 3);
@@ -761,10 +563,11 @@ async function generateArchie3In1Teaser() {
     console.log(`\n--- RENDERING QUESTION ${qNum}/3: "${qObj.topic}" (${qObj.category}) ---`);
 
     // 1. Source Photo Visual for this question
-    console.log(`[Media Fetcher] Sourcing photo for: "${qObj.imageSearchQuery}"...`);
+    const query = qObj.searchQuery || qObj.imageSearchQuery || qObj.topic || 'science curiosity';
+    console.log(`[Media Fetcher] Sourcing photo for: "${query}"...`);
     let visualPngPath = null;
     try {
-      const fetched = await searchAndFetchImage(qObj.imageSearchQuery, { preferredSource: 'unsplash' });
+      const fetched = await searchAndFetchImage(query, { preferredSource: 'unsplash' });
       if (fetched?.localPath && fs.existsSync(fetched.localPath)) {
         visualPngPath = fetched.localPath;
       }
@@ -778,7 +581,7 @@ async function generateArchie3In1Teaser() {
     const introMp3Path = path.join(ARTIFACTS_DIR, `q${qNum}_intro.mp3`);
 
     console.log(`[EdgeTTS] Synthesizing Question ${qNum} readout...`);
-    await tts.ttsPromise(introSpeech, introMp3Path);
+    await synthesizeSpeechWithRetry(introSpeech, introMp3Path);
     execSync(`ffmpeg -y -i "${introMp3Path}" -ar 44100 -ac 2 "${introAudioPath}" 2>/dev/null`);
 
     let introDuration = 9.0;
@@ -828,7 +631,7 @@ async function generateArchie3In1Teaser() {
     const revealAudioPath = path.join(ARTIFACTS_DIR, `q${qNum}_reveal.wav`);
 
     console.log(`[EdgeTTS] Synthesizing Answer ${qNum} reveal...`);
-    await tts.ttsPromise(revealSpeech, revealMp3Path);
+    await synthesizeSpeechWithRetry(revealSpeech, revealMp3Path);
     execSync(`ffmpeg -y -i "${revealMp3Path}" -ar 44100 -ac 2 "${revealAudioPath}" 2>/dev/null`);
 
     let revealDuration = 7.0;

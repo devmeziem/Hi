@@ -107,32 +107,61 @@ function assembleFinalCartoonVideo(sceneFiles, outputMp4Path, srtPath) {
 
   console.log(`[Audio/Media Engine] Concatenating ${validScenes.length} scenes into final video: ${outputMp4Path}`);
 
-  // Fast stream copy concat first (sub-second), then re-encode fallback
-  let assembled = false;
+  const tempConcatMp4 = path.join(dir, 'temp_raw_concat.mp4');
+  let assembledRaw = false;
+
   try {
-    const copyCmd = `ffmpeg -y -f concat -safe 0 -i "${concatListPath}" -c copy "${outputMp4Path}" 2>/dev/null`;
-    execSync(copyCmd);
-    if (fs.existsSync(outputMp4Path) && fs.statSync(outputMp4Path).size > 10000) {
-      assembled = true;
+    const rawConcatCmd = `ffmpeg -y -f concat -safe 0 -i "${concatListPath}" -c:v libx264 -preset fast -pix_fmt yuv420p -r 30 -c:a aac -b:a 192k -ar 44100 "${tempConcatMp4}" 2>/dev/null`;
+    execSync(rawConcatCmd);
+    if (fs.existsSync(tempConcatMp4) && fs.statSync(tempConcatMp4).size > 10000) {
+      assembledRaw = true;
     }
-  } catch (e) {
-    console.warn('[Audio/Media Engine] Fast concat copy notice:', e.message);
+  } catch (err) {
+    console.warn('[Audio/Media Engine] Re-encode concat notice:', err.message);
   }
 
-  if (!assembled) {
+  if (!assembledRaw) {
     try {
-      const ffmpegCmd = `ffmpeg -y -f concat -safe 0 -i "${concatListPath}" -c:v libx264 -preset ultrafast -pix_fmt yuv420p -r 30 -c:a aac -b:a 192k -ar 44100 "${outputMp4Path}" 2>/dev/null`;
-      execSync(ffmpegCmd);
-      if (fs.existsSync(outputMp4Path) && fs.statSync(outputMp4Path).size > 10000) {
-        assembled = true;
+      const copyCmd = `ffmpeg -y -f concat -safe 0 -i "${concatListPath}" -c copy "${tempConcatMp4}" 2>/dev/null`;
+      execSync(copyCmd);
+      if (fs.existsSync(tempConcatMp4) && fs.statSync(tempConcatMp4).size > 10000) {
+        assembledRaw = true;
       }
-    } catch (err) {
-      console.warn('[Audio/Media Engine] Re-encode concat notice:', err.message);
+    } catch (e) {
+      console.warn('[Audio/Media Engine] Concat copy notice:', e.message);
     }
   }
 
-  if (assembled && fs.existsSync(outputMp4Path) && fs.statSync(outputMp4Path).size > 10000) {
-    console.log(`[Audio/Media Engine] Final Cartoon MP4 assembled (${(fs.statSync(outputMp4Path).size / 1024 / 1024).toFixed(2)} MB)`);
+  if (!assembledRaw) {
+    throw new Error('Scene video concatenation failed to produce a valid MP4');
+  }
+
+  // Burn Subtitles and Channel Watermark onto Final MP4
+  const channelWatermark = process.env.YOUTUBE_HANDLE_CH3 || process.env.YOUTUBE_HANDLE_TECH || '@ArchieExplains';
+  let vfFilters = [];
+
+  // 1. Channel Watermark Pill (Top of video)
+  vfFilters.push(`drawtext=text='ARCHIE EXPLAINS • ${channelWatermark.toUpperCase()}':x=(w-text_w)/2:y=90:fontsize=22:fontcolor=white@0.95:box=1:boxcolor=black@0.75:boxborderw=12`);
+
+  // 2. High-Visibility Mobile Subtitles (Bottom center above platform controls)
+  if (srtPath && fs.existsSync(srtPath)) {
+    const escapedSrtPath = srtPath.replace(/\\/g, '/').replace(/:/g, '\\:').replace(/'/g, "'\\\\''");
+    vfFilters.push(`subtitles='${escapedSrtPath}':force_style='Alignment=2,Fontsize=28,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BackColour=&H95020617,BorderStyle=3,Outline=10,MarginV=360'`);
+  }
+
+  const burnCmd = `ffmpeg -y -i "${tempConcatMp4}" -vf "${vfFilters.join(',')}" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a copy "${outputMp4Path}" 2>/dev/null`;
+  try {
+    console.log(`[Audio/Media Engine] 🔥 Burning high-visibility subtitles and @ArchieExplains watermark...`);
+    execSync(burnCmd);
+  } catch (burnErr) {
+    console.warn(`[Audio/Media Engine] Subtitle burn notice: ${burnErr.message}. Copying raw concat...`);
+    fs.copyFileSync(tempConcatMp4, outputMp4Path);
+  }
+
+  try { if (fs.existsSync(tempConcatMp4)) fs.unlinkSync(tempConcatMp4); } catch {}
+
+  if (fs.existsSync(outputMp4Path) && fs.statSync(outputMp4Path).size > 10000) {
+    console.log(`[Audio/Media Engine] Final Cartoon MP4 assembled (${(fs.statSync(outputMp4Path).size / 1024 / 1024).toFixed(2)} MB) with subtitles & watermark`);
     return outputMp4Path;
   }
 
