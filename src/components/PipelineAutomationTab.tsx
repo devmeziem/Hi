@@ -658,7 +658,7 @@ jobs:
               Autonomous GitHub Actions Factory
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-3xl leading-relaxed">
-              Every stage is decoupled to eliminate rate-limits, prevent FFmpeg crashes, and ensure strict persona compliance across all 5 channels without mixing video assets.
+              Every stage is decoupled to eliminate rate-limits, prevent rendering interruptions, and ensure strict persona compliance across all 5 channels without mixing video assets.
             </p>
           </div>
 

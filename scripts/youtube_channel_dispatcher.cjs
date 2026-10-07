@@ -47,13 +47,23 @@ const CHANNEL_CONFIG = {
   },
   movie_brand: {
     key: 'movie_brand',
-    handle: process.env.YOUTUBE_HANDLE_CH4 || process.env.YOUTUBE_HANDLE_MOVIE || process.env.YOUTUBE_HANDLE || '',
+    handle: process.env.YOUTUBE_HANDLE_CH4 || process.env.YOUTUBE_HANDLE_MOVIE || process.env.YOUTUBE_HANDLE || '@CinemaVanguard',
     name: 'Cinema Vanguard Documentaries',
     isPrimary: false,
     clientId: process.env.YOUTUBE_CLIENT_ID_CH4 || process.env.YOUTUBE_CLIENT_ID_MOVIE || DEFAULT_CLIENT_ID,
     clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH4 || process.env.YOUTUBE_CLIENT_SECRET_MOVIE || DEFAULT_CLIENT_SECRET,
     refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH4 || process.env.YOUTUBE_REFRESH_TOKEN_MOVIE || process.env.YOUTUBE_REFRESH_TOKEN || '',
     tags: ['#Documentary', '#History', '#UntoldHistory', '#Archival', '#CinemaVanguard', '#HistoricalDocumentary', '#Shorts']
+  },
+  teen_motivation: {
+    key: 'teen_motivation',
+    handle: process.env.YOUTUBE_HANDLE_CH5 || process.env.YOUTUBE_HANDLE_TEEN || '@MindRushOfficial',
+    name: 'MindRush Motivation',
+    isPrimary: false,
+    clientId: process.env.YOUTUBE_CLIENT_ID_CH5 || process.env.YOUTUBE_CLIENT_ID_TEEN || DEFAULT_CLIENT_ID,
+    clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH5 || process.env.YOUTUBE_CLIENT_SECRET_TEEN || DEFAULT_CLIENT_SECRET,
+    refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH5 || process.env.YOUTUBE_REFRESH_TOKEN_TEEN || process.env.YOUTUBE_REFRESH_TOKEN || '',
+    tags: ['#MindRush', '#Motivation', '#Discipline', '#YouthMindset', '#TeenMotivation', '#LockIn', '#Shorts']
   }
 };
 
@@ -493,6 +503,7 @@ async function uploadYouTubeShort({ videoPath, title, description, tags, channel
   if (targetKey === 'fin' || targetKey === 'ch1') targetKey = 'finance_saas';
   if (targetKey === 'tech' || targetKey === 'cartoon' || targetKey === 'ch3' || targetKey === 'archie') targetKey = 'cartoon_factory';
   if (targetKey === 'movie' || targetKey === 'ch4' || targetKey === 'documentary') targetKey = 'movie_brand';
+  if (targetKey === 'teen' || targetKey === 'ch5' || targetKey === 'mindrush' || targetKey === 'youth') targetKey = 'teen_motivation';
   const config = CHANNEL_CONFIG[targetKey] || CHANNEL_CONFIG[channelId] || CHANNEL_CONFIG.cartoon_factory;
   console.log(`\n[YouTube Dispatcher] Preparing direct upload to channel "${config.name}" (${config.handle})...`);
 

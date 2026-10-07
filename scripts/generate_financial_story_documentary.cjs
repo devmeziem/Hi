@@ -30,6 +30,7 @@ const { searchAndFetchImage, searchAndFetchVideo, searchAndFetchAudio } = requir
 const { uploadYouTubeShort } = require('./youtube_channel_dispatcher.cjs');
 const { selectDeduplicatedCandidate, recordPostedCandidate } = require('./channel_dedup_service.cjs');
 const { callActiveAiForJson, queryDuckDuckGo } = require('./topic_discovery_engine.cjs');
+const { getChannelMeta, getVerifiedChannelHandle } = require('./channel_verifier.cjs');
 
 const ARTIFACTS_DIR = path.join(process.cwd(), 'test_artifacts', 'financial_story_doc');
 const RENDERED_DIR = path.join(process.cwd(), 'rendered_videos');
@@ -37,105 +38,54 @@ for (const d of [ARTIFACTS_DIR, RENDERED_DIR]) {
   if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
 }
 
-// 12 Gripping Financial Narrative Stories (Epic Rises, Audacious Heists & Cataclysmic Crashes)
-const FINANCIAL_STORY_CATALOG = [
-  {
-    id: 'south_sea_bubble_newton',
-    title: 'How Isaac Newton Lost a Fortune',
-    era: '1720 • The South Sea Bubble',
-    archiveQuery: 'london south sea bubble 1720 vintage stock certificate royal exchange',
-    bgmQuery: 'dark historical financial thriller cello strings slow pulse',
-    sfxType: 'ticker',
-    scenes: [
-      { text: "In 1720, the smartest man on Earth put his life savings into a single British stock.", query: "isaac newton portrait vintage oil painting candle dark" },
-      { text: "The South Sea Company promised endless gold from South American slave trade routes.", query: "vintage sailing ship 1700s ocean royal navy london harbor" },
-      { text: "Within months, the stock soared eight-fold as lords and peasants pawned their homes.", query: "1700s royal exchange crowd chaotic stock market london" },
-      { text: "Newton sold for a huge profit—then greed dragged him back in right at the absolute peak.", query: "vintage gold coins ledger quill pen desk candlelight" },
-      { text: "When the bubble burst, Newton lost twenty thousand pounds, admitting: I can calculate the motion of stars, but not the madness of men.", query: "burning stock certificate vintage embers dark desk ashes" }
-    ],
-    hashtags: ['#FinancialStory', '#IsaacNewton', '#WallStreetHistory', '#Documentary', '#Shorts']
-  },
-  {
-    id: 'soros_broke_bank_of_england',
-    title: 'The Man Who Broke the Bank of England',
-    era: '1992 • Black Wednesday',
-    archiveQuery: 'bank of england london 1992 city trading floor vintage currency',
-    bgmQuery: 'tense financial suspense thriller pulse strings piano',
-    sfxType: 'clock',
-    scenes: [
-      { text: "On September 16, 1992, one man went to war against the British Empire central bank.", query: "bank of england exterior historic stone pillars london" },
-      { text: "George Soros realized the British pound was artificially propped up by political pride.", query: "vintage 1990s trading floor trader screaming telephone" },
-      { text: "He borrowed ten billion dollars in sterling and sold it relentlessly through the night.", query: "british pound sterling banknotes vintage cash money stacks" },
-      { text: "The Bank of England spent billions in foreign reserves trying to buy their own currency back.", query: "panicked trader hands on head trading desk monitors 1990s" },
-      { text: "By 7 PM, Britain surrendered, devalued the pound, and Soros walked away with one billion dollars in a single day.", query: "london skyline sunset big ben gloomy clouds dramatic" }
-    ],
-    hashtags: ['#GeorgeSoros', '#BlackWednesday', '#FinanceDocumentary', '#WallStreet', '#Shorts']
-  },
-  {
-    id: 'tulip_mania_amsterdam',
-    title: 'When a Flower Cost a Mansion',
-    era: '1637 • The Dutch Tulip Mania',
-    archiveQuery: 'dutch golden age amsterdam canal historic merchant house tulips',
-    bgmQuery: 'dutch golden age historical melancholic classical strings',
-    sfxType: 'ticker',
-    scenes: [
-      { text: "In seventeenth-century Amsterdam, the wealthiest city on Earth lost its collective mind.", query: "vintage red and white striped tulip flower dark moody" },
-      { text: "A rare virus created feathered petals on tulip bulbs called the Semper Augustus.", query: "single rare tulip flower macro dark black background" },
-      { text: "At its peak, a single bulb traded for twelve acres of land, four fat oxen, and a thousand pounds of cheese.", query: "dutch merchant counting gold coins dark wood table amsterdam" },
-      { text: "Futures contracts were drawn on napkins in taverns as sailors traded lifetimes of wages.", query: "vintage tavern candle light ledger parchment tavern amsterdam" },
-      { text: "Then, at a routine auction in Haarlem, no buyer raised their hand. In three days, the entire Dutch economy collapsed.", query: "withered dead flower petals falling dark desk gloomy" }
-    ],
-    hashtags: ['#TulipMania', '#FinancialHistory', '#EconomicCrash', '#Documentary', '#Shorts']
-  },
-  {
-    id: 'nick_leeson_barings_bank',
-    title: 'The 28-Year-Old Who Sunk a 200-Year Bank',
-    era: '1995 • The Fall of Barings',
-    archiveQuery: 'singapore trading desk 1995 simex floor barings bank vintage',
-    bgmQuery: 'dark heart racing financial thriller synth bass strings',
-    sfxType: 'heartbeat',
-    scenes: [
-      { text: "Barings Bank funded the Napoleonic Wars and held the personal bank accounts of the Queen.", query: "historic barings bank london vintage facade crest stone" },
-      { text: "In 1992, they sent a twenty-five-year-old plasterer son named Nick Leeson to run Singapore.", query: "young trader jacket jacket trading floor shouting 1990s" },
-      { text: "When his rookie traders made mistakes, Leeson hid the losses inside an obscure error account: 88888.", query: "computer terminal 1990s green text glowing dark desk" },
-      { text: "To recoup the debt, he doubled down on the Tokyo stock market—just before the massive Kobe earthquake struck.", query: "tokyo stock exchange crash red numbers falling monitors" },
-      { text: "A two-hundred-and-thirty-three-year-old empire collapsed for one pound, ruined by one man who couldn't admit he lost.", query: "empty bank vault open heavy iron door shadows" }
-    ],
-    hashtags: ['#NickLeeson', '#BaringsBank', '#RogueTrader', '#FinancialThriller', '#Shorts']
-  },
-  {
-    id: 'black_monday_1987',
-    title: 'Black Monday: When Code Crashed Wall Street',
-    era: '1987 • The 22.6% Single-Day Plunge',
-    archiveQuery: 'wall street 1987 stock crash trading floor chaos ticker tape',
-    bgmQuery: 'dark fast financial pulse clock ticking dramatic cello',
-    sfxType: 'ticker',
-    scenes: [
-      { text: "On the morning of October 19, 1987, Wall Street walked into the worst single-day crash in history.", query: "new york stock exchange floor 1987 crowds paper on floor" },
-      { text: "New automated computer algorithms had been programmed to protect institutions by selling when prices dipped.", query: "vintage ibm mainframe computer server room blinking lights 1980s" },
-      { text: "Instead of hedging, the algorithms triggered an inescapable cascade, selling into each other at lightspeed.", query: "ticker tape pouring onto wall street floor panic 1987" },
-      { text: "By 4 PM, five hundred billion dollars vanished into thin air—the Dow plunged twenty-two point six percent in one afternoon.", query: "panicked wall street broker holding head tie loose 1987" },
-      { text: "Human panic had met machine precision for the first time, proving market gravity always wins.", query: "wall street bronze bull shadow gloomy sunset rain" }
-    ],
-    hashtags: ['#BlackMonday', '#WallStreet1987', '#StockMarketCrash', '#Documentary', '#Shorts']
-  },
-  {
-    id: 'enron_mirage_scandal',
-    title: 'The Enron Mirage: Anatomy of a Corporate Lie',
-    era: '2001 • The Houston Energy Empire',
-    archiveQuery: 'enron corporate headquarters houston texas skyscraper tilted e logo',
-    bgmQuery: 'chilling corporate suspense ambient pulse dark strings',
-    sfxType: 'paper',
-    scenes: [
-      { text: "In the year 2000, Fortune named Enron the most innovative corporation in America six years in a row.", query: "futuristic glass skyscraper reflective windows corporate greed" },
-      { text: "Behind glowing boardroom doors, executives used mark-to-market accounting to book twenty years of fantasy profit on day one.", query: "corporate boardroom dark wood table empty leather chairs" },
-      { text: "When deals hemorrhaged cash, they dumped the toxic debt into secret off-balance-sheet shell companies.", query: "paper shredder shredding documents late night office dark" },
-      { text: "Top executives quietly cashed out a billion dollars in personal stock while telling employees to invest their pensions.", query: "luxury sports car executive briefcase corporate fraud" },
-      { text: "Within twenty-four days, a seventy-billion-dollar giant evaporated into bankruptcy, leaving twenty thousand families penniless.", query: "cardboard box security guard escorting employee empty office" }
-    ],
-    hashtags: ['#Enron', '#CorporateFraud', '#WallStreetScandal', '#FinanceDocumentary', '#Shorts']
+/**
+ * Dynamic AI Financial Story Engine:
+ * Generates true-to-life financial crashes, bubbles, currency showdowns, and audacious trades.
+ * Strictly ZERO seed or mock data. If AI fails, the workflow fails!
+ */
+async function generateDynamicFinancialStory() {
+  console.log(`[Financial AI] 🧠 Formulating dynamic financial story documentary narrative...`);
+
+  const systemPrompt = `You are the lead showrunner for Cinema Vanguard (@CinemaVanguard), creating gripping financial story documentaries.
+Tell an epic true-life financial crash, rogue trader heist, historic bubble, or currency battle as a captivating narrative saga.
+Format:
+The Setup -> The Astronomical Rise -> The Turning Point -> The Fatal Collapse -> The Timeless Moral.
+Duration: 40-52 seconds spoken length (85-110 words total).
+
+Return strictly valid JSON:
+{
+  "title": "How Isaac Newton Lost a Fortune",
+  "era": "1720 • The South Sea Bubble",
+  "sfxType": "ticker",
+  "bgmQuery": "dark historical financial thriller cello strings slow pulse",
+  "scenes": [
+    { "text": "In 1720, the smartest man on Earth put his life savings into a single British stock.", "query": "isaac newton portrait vintage oil painting candle dark" },
+    { "text": "The South Sea Company promised endless gold from South American trade routes.", "query": "vintage sailing ship 1700s ocean royal navy london harbor" },
+    { "text": "Within months, the stock soared eight-fold as lords and peasants pawned their homes.", "query": "1700s royal exchange crowd chaotic stock market london" },
+    { "text": "Newton sold for huge profit—then greed dragged him back in right at the peak.", "query": "vintage gold coins ledger quill pen desk candlelight" },
+    { "text": "When the bubble burst, Newton lost twenty thousand pounds, admitting: I can calculate the motion of stars, but not the madness of men.", "query": "burning stock certificate vintage embers dark desk ashes" }
+  ],
+  "hashtags": ["#CinemaVanguard", "#FinancialStory", "#History", "#Shorts"]
+}`;
+
+  const userPrompt = `Generate a fresh, gripping financial story documentary based on a famous historical financial saga. Total spoken words must be 85-110 words across 5 scenes.`;
+
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const res = await callActiveAiForJson(systemPrompt, userPrompt, null, {
+        nicheKey: 'finance',
+        temperature: attempt === 1 ? 0.74 : 0.86
+      });
+      if (res?.data?.title && Array.isArray(res?.data?.scenes) && res.data.scenes.length === 5) {
+        return res.data;
+      }
+    } catch (err) {
+      console.warn(`[Financial AI] Attempt ${attempt} notice: ${err.message}`);
+    }
   }
-];
+
+  throw new Error(`[Financial Story Engine Fatal] Active AI financial narrative synthesis failed. Per strict user mandate, seeded fallback catalogs are deleted. Failing workflow.`);
+}
 
 function escapeXml(str) {
   return String(str || '')
@@ -242,7 +192,8 @@ ${lines.join('\n')}
  * Build Glowing Gold Outro Card SVG (Last Scene CTA: "FOLLOW FOR MORE • FINANCIAL STORIES")
  */
 function buildFinancialOutroSvg(width = 1080, height = 1920) {
-  const channelWatermark = process.env.YOUTUBE_HANDLE_CH4 || '@CinemaVanguard';
+  const channelMeta = getChannelMeta('ch4');
+  const channelWatermark = channelMeta.handle;
   return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="outroGrad" x1="0" y1="0" x2="0" y2="1">
@@ -292,7 +243,7 @@ function buildFinancialOutroSvg(width = 1080, height = 1920) {
       <g transform="translate(140, 290)">
         <rect width="520" height="56" rx="28" fill="#020617" stroke="#f59e0b" stroke-width="1.6" />
         <text x="260" y="35" font-family="system-ui, sans-serif" font-size="15" font-weight="800" fill="#10b981" text-anchor="middle" letter-spacing="1.5">
-          Cinema Vanguard • ${channelWatermark.toUpperCase()} • Daily Stories 🏛️
+          ${channelMeta.name} • ${channelWatermark.toUpperCase()} • Daily Stories 🏛️
         </text>
       </g>
     </g>
@@ -303,7 +254,8 @@ function buildFinancialOutroSvg(width = 1080, height = 1920) {
  * Build Single Slide Typography Overlay SVG
  */
 function buildFinancialSlideSvg(quoteText, eraLabel, sceneNum, totalScenes, width = 1080, height = 1920) {
-  const channelWatermark = process.env.YOUTUBE_HANDLE_CH4 || '@CinemaVanguard';
+  const channelMeta = getChannelMeta('ch4');
+  const channelWatermark = channelMeta.handle;
   return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="vignetteTop" x1="0" y1="0" x2="0" y2="1">
@@ -340,7 +292,7 @@ function buildFinancialSlideSvg(quoteText, eraLabel, sceneNum, totalScenes, widt
     <g transform="translate(80, ${height - 180})">
       <rect width="920" height="52" rx="26" fill="#020617" fill-opacity="0.9" stroke="#f59e0b" stroke-width="1.2" />
       <text x="460" y="32" font-family="system-ui, sans-serif" font-size="14" font-weight="800" fill="#fde68a" letter-spacing="2" text-anchor="middle">
-        CINEMA VANGUARD • ${channelWatermark.toUpperCase()} • FINANCIAL STORY
+        ${channelMeta.name.toUpperCase()} • ${channelWatermark.toUpperCase()} • FINANCIAL STORY
       </text>
     </g>
 
@@ -358,13 +310,8 @@ async function generateFinancialStoryDocumentary() {
   console.log('True Market Dramas • Audacious Trades • Wall Street Sagas');
   console.log('===============================================================\n');
 
-  // 1. Select Deduplicated Financial Story
-  const chosenStory = await selectDeduplicatedCandidate(
-    'financial_story_doc',
-    FINANCIAL_STORY_CATALOG,
-    st => st.title,
-    st => st.era
-  );
+  // 1. Synthesize Dynamic Financial Story via Active AI (strictly zero seed data)
+  const chosenStory = await generateDynamicFinancialStory();
 
   console.log(`[Financial Story Selected]: "${chosenStory.title}" (${chosenStory.era})`);
 
@@ -500,7 +447,8 @@ async function generateFinancialStoryDocumentary() {
   }
 
   // Combine video with karaoke subtitles filter
-  const finalFilter = `${audioFilter}; [0:v]subtitles=${assSubtitlesPath}[v_sub]`;
+  const escapedAss = assSubtitlesPath.replace(/\\/g, '/').replace(/:/g, '\\:').replace(/'/g, "\\'");
+  const finalFilter = `${audioFilter}; [0:v]subtitles='${escapedAss}'[v_sub]`;
   let finalCmd = `ffmpeg -y ${audioInputs} -filter_complex "${finalFilter}" -map "[v_sub]" -map "[a_final]" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -ar 44100 -ac 2 -t ${totalDuration.toFixed(2)} "${finalMp4Path}" 2>/dev/null`;
 
   console.log(`[Compositor Engine] 🎬 Assembling master financial story documentary with karaoke captions...`);
@@ -571,5 +519,5 @@ if (require.main === module) {
 
 module.exports = {
   generateFinancialStoryDocumentary,
-  FINANCIAL_STORY_CATALOG
+  generateDynamicFinancialStory
 };

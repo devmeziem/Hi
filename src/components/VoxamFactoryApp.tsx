@@ -927,10 +927,10 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                   <Compass className="w-4 h-4 text-amber-400 shrink-0" />
                   <div>
                     <div className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-                      <span>Driftreel: Crime &amp; Horror Docs</span>
-                      <span className="text-[9px] px-1 py-0.2 rounded bg-amber-900/80 text-amber-300 font-mono">TIKTOK BUFFER</span>
+                      <span>Cinema Vanguard: Documentaries</span>
+                      <span className="text-[9px] px-1 py-0.2 rounded bg-amber-900/80 text-amber-300 font-mono">CHANNEL 4 &amp; TIKTOK</span>
                     </div>
-                    <div className="text-[10px] text-slate-400">Ghost Ships &amp; Unsolved Mysteries • Daily to @driftreel</div>
+                    <div className="text-[10px] text-slate-400">Episodic Mini-Movies, Crime &amp; Archival Mysteries</div>
                   </div>
                 </button>
 

@@ -40,34 +40,26 @@ function sanitizeToken(raw) {
 
 const BUFFER_API_KEY = sanitizeToken(RAW_BUFFER_API_KEY_2);
 
-// Target TikTok channel IDs (Optional explicit overrides in GitHub Secrets)
+// Target TikTok channel IDs (Dynamically resolved from Buffer or GitHub Secrets / .env)
 const BUFFER_TIKTOK_MOVIE_CHANNEL_ID = String(
   process.env.BUFFER_TIKTOK_MOVIE_CHANNEL_ID ||
-  process.env.BUFFER_TIKTOK_MOVIE_CHANNEL ||
+  process.env.BUFFER_TIKTOK_DRIFTREEL_CHANNEL_ID ||
   process.env.BUFFER_TIKTOK_BRAND_CHANNEL_ID ||
   process.env.BUFFER_TIKTOK_CHANNEL_ID_MOVIE ||
-  process.env.BUFFER_TIKTOK_CHANNEL_ID_1 ||
   process.env.BUFFER_TIKTOK_CINEMA_CHANNEL_ID ||
-  ''
-).trim();
-
-// Driftreel TikTok Channel ID (Dedicated Crime, Horror & Archival Documentary Channel)
-const BUFFER_TIKTOK_DRIFTREEL_CHANNEL_ID = String(
-  process.env.BUFFER_TIKTOK_DRIFTREEL_CHANNEL_ID ||
-  process.env.BUFFER_TIKTOK_DRIFTREEL_CHANNEL ||
   process.env.BUFFER_TIKTOK_DRIFTREEL ||
-  BUFFER_TIKTOK_MOVIE_CHANNEL_ID ||
   ''
 ).trim();
 
-const HARDCODED_TEEN_TIKTOK_CHANNEL_ID = '6ab05677ea19ca0bde9c3ffb';
+// The episodic movies channel is the EXACT same channel used for the TikTok documentary niche
+const BUFFER_TIKTOK_DRIFTREEL_CHANNEL_ID = BUFFER_TIKTOK_MOVIE_CHANNEL_ID;
 
 const BUFFER_TIKTOK_TEEN_CHANNEL_ID = String(
   process.env.BUFFER_TIKTOK_TEEN_CHANNEL_ID ||
   process.env.BUFFER_TIKTOK_TEEN_CHANNEL ||
   process.env.BUFFER_TIKTOK_MOTIVATION_CHANNEL_ID ||
   process.env.BUFFER_TIKTOK_CHANNEL_ID_TEEN ||
-  HARDCODED_TEEN_TIKTOK_CHANNEL_ID
+  ''
 ).trim();
 
 const CLOUDINARY_CLOUD_NAME = String(process.env.CLOUDINARY_CLOUD_NAME || '').trim();
@@ -118,26 +110,28 @@ function resolveTargetChannel(discoveredTikToks, userInputId, channelType) {
       return byMindrush;
     }
 
-    // 1. Direct match on hardcoded Teen Motivation TikTok Channel ID (6ab05677ea19ca0bde9c3ffb)
-    const byExactTeenId = discoveredTikToks.find(c => cleanChannelId(c.id).toLowerCase() === HARDCODED_TEEN_TIKTOK_CHANNEL_ID.toLowerCase());
-    if (byExactTeenId) {
-      console.log(`[Buffer TikTok Dispatch] 🎯 Matched Teen Motivation TikTok channel by verified ID: "${byExactTeenId.name}" (${byExactTeenId.id})`);
-      return byExactTeenId;
+    // 1. Direct match on user configured Teen Motivation TikTok Channel ID
+    if (BUFFER_TIKTOK_TEEN_CHANNEL_ID) {
+      const byExactTeenId = discoveredTikToks.find(c => cleanChannelId(c.id).toLowerCase() === BUFFER_TIKTOK_TEEN_CHANNEL_ID.toLowerCase());
+      if (byExactTeenId) {
+        console.log(`[Buffer TikTok Dispatch] 🎯 Matched Teen Motivation TikTok channel by configured ID: "${byExactTeenId.name}" (${byExactTeenId.id})`);
+        return byExactTeenId;
+      }
     }
 
-    // 2. Direct match on user handle 'bonesceo'
-    const byBonesName = discoveredTikToks.find(c => {
+    // 2. Direct match on teen / mindrush / motivation account handle or name
+    const byTeenKeyword = discoveredTikToks.find(c => {
       const n = (c.name || '').replace(/^@/, '').toLowerCase();
       const d = (c.displayName || '').replace(/^@/, '').toLowerCase();
-      return n === 'bonesceo' || d === 'bonesceo';
+      return n.includes('mindrush') || d.includes('mindrush') || n.includes('motivation') || d.includes('motivation');
     });
-    if (byBonesName) {
-      console.log(`[Buffer TikTok Dispatch] 🎯 Matched Teen Motivation TikTok channel by handle "bonesceo": "${byBonesName.name}" (${byBonesName.id})`);
-      return byBonesName;
+    if (byTeenKeyword) {
+      console.log(`[Buffer TikTok Dispatch] 🎯 Matched Teen Motivation TikTok channel: "${byTeenKeyword.name}" (${byTeenKeyword.id})`);
+      return byTeenKeyword;
     }
 
     // 3. Match on teen/discipline/mindrush keywords (never movie)
-    const teenKeywords = ['mindrush', 'mind', 'teen', 'motivation', 'discipline', 'mindset', 'youth', 'apex', 'ch5', 'ch 5', 'lock in'];
+    const teenKeywords = ['mindrush', 'teen', 'motivation', 'discipline', 'mindset', 'youth', 'apex', 'lock in'];
     const matchedKeyword = discoveredTikToks.find(c => {
       const n = (c.name || '').toLowerCase();
       return teenKeywords.some(kw => n.includes(kw));
@@ -147,10 +141,10 @@ function resolveTargetChannel(discoveredTikToks, userInputId, channelType) {
       return matchedKeyword;
     }
 
-    // 4. Any channel that is NOT movie / archie.the.explorer6
+    // 4. Any channel that is NOT movie / episodic
     const nonMovieTikToks = discoveredTikToks.filter(c => {
       const n = (c.name || '').toLowerCase();
-      const isArchieOrMovie = ['archie', 'explorer', 'movie', 'cinema', 'film', 'zero'].some(kw => n.includes(kw));
+      const isArchieOrMovie = ['archie', 'movie', 'cinema', 'vanguard', 'film', 'zero'].some(kw => n.includes(kw));
       const isMovieId = cleanChannelId(c.id).toLowerCase() === cleanChannelId(BUFFER_TIKTOK_MOVIE_CHANNEL_ID).toLowerCase();
       return !isArchieOrMovie && !isMovieId;
     });
@@ -161,100 +155,43 @@ function resolveTargetChannel(discoveredTikToks, userInputId, channelType) {
       return target;
     }
 
-    // 5. Fallback strictly to hardcoded ID
-    console.log(`[Buffer TikTok Dispatch] 🎯 Routing strictly to designated Motivation TikTok Channel ID: ${HARDCODED_TEEN_TIKTOK_CHANNEL_ID}`);
-    return { id: HARDCODED_TEEN_TIKTOK_CHANNEL_ID, name: 'Teen Motivation TikTok (bonesceo)' };
+    if (BUFFER_TIKTOK_TEEN_CHANNEL_ID) {
+      return { id: BUFFER_TIKTOK_TEEN_CHANNEL_ID, name: 'Teen Motivation TikTok' };
+    }
+    return null;
   }
 
-  // Driftreel (Crime, Horror, History & Mystery Documentary Niche) Routing
-  if (channelType === 'driftreel' || channelType === 'driftreel_documentary' || channelType === 'documentary') {
-    // 0. Direct match on userInputId if provided and NOT bonesceo
-    if (clean && clean.toLowerCase() !== HARDCODED_TEEN_TIKTOK_CHANNEL_ID.toLowerCase() && cleanNoAt !== 'bonesceo') {
-      const byId = discoveredTikToks.find(c => cleanChannelId(c.id).toLowerCase() === clean.toLowerCase());
+  // Episodic Movies & Documentary Niche (Both belong to the SAME channel created for episodic movies)
+  if (channelType === 'movie_brand' || channelType === 'driftreel' || channelType === 'driftreel_documentary' || channelType === 'documentary' || channelType === 'cinema') {
+    // 0. Direct match on configured Movie/Doc Channel ID
+    const targetMovieId = cleanChannelId(BUFFER_TIKTOK_MOVIE_CHANNEL_ID || userInputId);
+    if (targetMovieId) {
+      const byId = discoveredTikToks.find(c => cleanChannelId(c.id).toLowerCase() === targetMovieId.toLowerCase());
       if (byId) {
-        console.log(`[Buffer TikTok Dispatch] 🎯 Matched Driftreel TikTok channel by direct Channel ID: "${byId.name}" (${byId.id})`);
+        console.log(`[Buffer TikTok Dispatch] 🎯 Matched Episodic Movie / Documentary TikTok channel by ID: "${byId.name}" (${byId.id})`);
         return byId;
       }
     }
 
-    // 1. Direct match on 'driftreel' or 'drift' account name / handle
-    const byDriftName = discoveredTikToks.find(c => {
+    // 1. Direct match on 'cinema', 'vanguard', 'movie', 'film', 'drift' account name / handle
+    const byMovieName = discoveredTikToks.find(c => {
       const n = (c.name || '').replace(/^@/, '').toLowerCase();
       const d = (c.displayName || '').replace(/^@/, '').toLowerCase();
-      return n.includes('driftreel') || d.includes('driftreel') || n.includes('drift') || d.includes('drift');
+      return n.includes('vanguard') || d.includes('vanguard') || n.includes('cinema') || d.includes('cinema') || n.includes('movie') || d.includes('drift');
     });
-    if (byDriftName) {
-      console.log(`[Buffer TikTok Dispatch] 🎯 Matched Driftreel TikTok channel by handle/name: "${byDriftName.name}" (${byDriftName.id})`);
-      return byDriftName;
+    if (byMovieName) {
+      console.log(`[Buffer TikTok Dispatch] 🎯 Matched Episodic Movie / Documentary TikTok channel by name: "${byMovieName.name}" (${byMovieName.id})`);
+      return byMovieName;
     }
 
-    // 2. Match documentary / mystery / crime / cinema keywords
-    const docKeywords = ['drift', 'reel', 'doc', 'crime', 'horror', 'mystery', 'history', 'movie', 'cinema', 'vault'];
-    const matchedDoc = discoveredTikToks.find(c => {
-      const n = (c.name || '').toLowerCase();
-      return docKeywords.some(kw => n.includes(kw));
-    });
-    if (matchedDoc) {
-      console.log(`[Buffer TikTok Dispatch] 🎯 Selected Driftreel TikTok channel by keyword: "${matchedDoc.name}" (${matchedDoc.id})`);
-      return matchedDoc;
+    // 2. Fallback to first discovered or configured
+    if (targetMovieId) {
+      return { id: targetMovieId, name: 'Cinema Vanguard / Episodic Movie & Documentary TikTok' };
     }
-
-    // 3. Any non-bonesceo channel
-    const nonBonesTikToks = discoveredTikToks.filter(c => {
-      const n = (c.name || '').toLowerCase();
-      const isBones = n.includes('bonesceo') || cleanChannelId(c.id).toLowerCase() === HARDCODED_TEEN_TIKTOK_CHANNEL_ID.toLowerCase();
-      return !isBones;
-    });
-
-    if (nonBonesTikToks.length > 0) {
-      const primary = nonBonesTikToks[0];
-      console.log(`[Buffer TikTok Dispatch] 🎯 Selected Driftreel TikTok channel (non-motivation): "${primary.name}" (${primary.id})`);
-      return primary;
+    if (discoveredTikToks.length > 0) {
+      return discoveredTikToks[0];
     }
-
-    if (clean && clean.toLowerCase() !== HARDCODED_TEEN_TIKTOK_CHANNEL_ID.toLowerCase()) {
-      return { id: clean, name: 'Driftreel TikTok' };
-    }
-  }
-
-  // Movie Brand Channel Routing
-  if (channelType === 'movie_brand') {
-    // 1. Direct match by userInputId if provided and NOT bonesceo
-    if (clean && clean.toLowerCase() !== HARDCODED_TEEN_TIKTOK_CHANNEL_ID.toLowerCase() && cleanNoAt !== 'bonesceo') {
-      const byId = discoveredTikToks.find(c => cleanChannelId(c.id).toLowerCase() === clean.toLowerCase());
-      if (byId) {
-        console.log(`[Buffer TikTok Dispatch] 🎯 Matched Movie TikTok channel by direct Channel ID: "${byId.name}" (${byId.id})`);
-        return byId;
-      }
-    }
-
-    // 2. Match archie.the.explorer6 or movie keywords
-    const movieKeywords = ['archie', 'explorer', 'movie', 'cinema', 'film', 'zero', 'vault'];
-    const matchedMovie = discoveredTikToks.find(c => {
-      const n = (c.name || '').toLowerCase();
-      return movieKeywords.some(kw => n.includes(kw));
-    });
-    if (matchedMovie) {
-      console.log(`[Buffer TikTok Dispatch] 🎯 Selected Movie TikTok channel by keyword: "${matchedMovie.name}" (${matchedMovie.id})`);
-      return matchedMovie;
-    }
-
-    // 3. Any channel that is NOT bonesceo
-    const nonBonesTikToks = discoveredTikToks.filter(c => {
-      const n = (c.name || '').toLowerCase();
-      const isBones = n.includes('bonesceo') || cleanChannelId(c.id).toLowerCase() === HARDCODED_TEEN_TIKTOK_CHANNEL_ID.toLowerCase();
-      return !isBones;
-    });
-
-    if (nonBonesTikToks.length > 0) {
-      const primary = nonBonesTikToks[0];
-      console.log(`[Buffer TikTok Dispatch] 🎯 Selected Movie TikTok channel (non-motivation): "${primary.name}" (${primary.id})`);
-      return primary;
-    }
-
-    if (clean && clean.toLowerCase() !== HARDCODED_TEEN_TIKTOK_CHANNEL_ID.toLowerCase()) {
-      return { id: clean, name: 'Movie Brand TikTok' };
-    }
+    return null;
   }
 
   // Generic fallback if channelType is not specified

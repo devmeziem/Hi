@@ -25,6 +25,7 @@ const { selectDeduplicatedCandidate, recordPostedCandidate } = require('./channe
 const { callActiveAiForJson } = require('./topic_discovery_engine.cjs');
 const { uploadYouTubeShort, formatChannelFollowCta } = require('./youtube_channel_dispatcher.cjs');
 const { searchAndFetchImage } = require('./universal_media_fetcher.cjs');
+const { getChannelMeta, getVerifiedChannelHandle } = require('./channel_verifier.cjs');
 
 const ARTIFACTS_DIR = path.join(process.cwd(), 'test_artifacts', 'archie_qa');
 const RENDERED_DIR = path.join(process.cwd(), 'rendered_videos');
@@ -240,8 +241,10 @@ function buildQuestionCardSvg(qObj, qIndex, totalQuestions, sec = 5, theme, visu
   let visualImageTag = '';
   if (visualPngPath && fs.existsSync(visualPngPath)) {
     try {
+      const ext = path.extname(visualPngPath).toLowerCase();
+      const mime = ext === '.png' ? 'image/png' : 'image/jpeg';
       const b64 = fs.readFileSync(visualPngPath).toString('base64');
-      visualImageTag = `<image href="data:image/jpeg;base64,${b64}" x="0" y="0" width="920" height="270" preserveAspectRatio="xMidYMid slice" clip-path="url(#visClip)" />`;
+      visualImageTag = `<image href="data:${mime};base64,${b64}" x="0" y="0" width="920" height="270" preserveAspectRatio="xMidYMid slice" clip-path="url(#visClip)" />`;
     } catch {}
   }
 
@@ -330,7 +333,7 @@ function buildQuestionCardSvg(qObj, qIndex, totalQuestions, sec = 5, theme, visu
     <g transform="translate(80, 1360)">
       <rect width="920" height="64" rx="18" fill="#020617" stroke="rgba(255,255,255,0.18)" stroke-width="1.2" />
       <text x="460" y="39" font-family="system-ui, sans-serif" font-size="16" font-weight="900" fill="#38bdf8" letter-spacing="1.5" text-anchor="middle">
-        ARCHIE EXPLAINS • @ArchieExplains • Lock in A, B, C, or D! ⏳
+        ARCHIE EXPLAINS • ${getVerifiedChannelHandle('ch3')} • Lock in A, B, C, or D! ⏳
       </text>
     </g>
   </svg>`;
@@ -433,7 +436,7 @@ function buildAnswerCardSvg(qObj, qIndex, totalQuestions, theme, visualPngPath =
         Did you get this right? Argue or confirm below! 👇
       </text>
       <text x="460" y="70" font-family="system-ui, sans-serif" font-size="13" font-weight="800" fill="#94a3b8" letter-spacing="1.5" text-anchor="middle">
-        ARCHIE EXPLAINS • @ArchieExplains
+        ARCHIE EXPLAINS • ${getVerifiedChannelHandle('ch3')}
       </text>
     </g>
   </svg>`;
@@ -476,19 +479,25 @@ Return strictly valid JSON:
   "topic": "Flamingo Heat Control",
   "category": "${categoryKey}",
   "searchQuery": "flamingo standing on one leg water wildlife"
-}`;
+} `;
 
   const userPrompt = `Generate a fresh, universally captivating question about ${categoryPrompt}. Ensure options are concise (under 30 chars each) and explanation is clear.`;
-  try {
-    const res = await callActiveAiForJson(systemPrompt, userPrompt, null, { nicheKey: 'cartoon' });
-    if (res?.data?.question && Array.isArray(res?.data?.options) && res.data.options.length === 4 && res?.data?.correctKey) {
-      return {
-        ...res.data,
-        category: categoryKey
-      };
+
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const res = await callActiveAiForJson(systemPrompt, userPrompt, null, {
+        nicheKey: 'cartoon',
+        temperature: attempt === 1 ? 0.72 : 0.85
+      });
+      if (res?.data?.question && Array.isArray(res?.data?.options) && res.data.options.length === 4 && res?.data?.correctKey) {
+        return {
+          ...res.data,
+          category: categoryKey
+        };
+      }
+    } catch (err) {
+      console.warn(`[Archie Q&A AI Notice] Attempt ${attempt} notice for ${categoryKey}: ${err.message}`);
     }
-  } catch (err) {
-    console.warn(`[Archie Q&A AI Notice] Active AI generation notice for ${categoryKey}: ${err.message}`);
   }
   return null;
 }

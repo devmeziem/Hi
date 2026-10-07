@@ -370,7 +370,8 @@ async function generateStoicLongVideo(options = {}) {
   filterComplex += `${sceneStreams.join('')}concat=n=${numScenes}:v=1:a=0[v_concat]; `;
 
   // Channel Watermark & Cinematic Scrim Overlay
-  const channelWatermark = process.env.YOUTUBE_HANDLE_CH2 || process.env.YOUTUBE_HANDLE_STOIC || '@TheStoicArchitect';
+  const { getVerifiedChannelHandle } = require('./channel_verifier.cjs');
+  const channelWatermark = getVerifiedChannelHandle('ch2');
   const watermarkSvg = buildStoicWatermarkOverlaySvg(channelWatermark, 1080, 1920);
   const watermarkSvgPath = path.join(ARTIFACTS_DIR, 'stoic_watermark.svg');
   const watermarkPngPath = path.join(ARTIFACTS_DIR, 'stoic_watermark.png');

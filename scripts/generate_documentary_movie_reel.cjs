@@ -25,6 +25,7 @@ const { searchAndFetchImage, searchAndFetchVideo, searchAndFetchAudio } = requir
 const { uploadYouTubeShort } = require('./youtube_channel_dispatcher.cjs');
 const { selectDeduplicatedCandidate, recordPostedCandidate } = require('./channel_dedup_service.cjs');
 const { callActiveAiForJson } = require('./topic_discovery_engine.cjs');
+const { getChannelMeta, getVerifiedChannelHandle } = require('./channel_verifier.cjs');
 
 const ARTIFACTS_DIR = path.join(process.cwd(), 'test_artifacts', 'documentary');
 const RENDERED_DIR = path.join(process.cwd(), 'rendered_videos');
@@ -32,152 +33,63 @@ for (const d of [ARTIFACTS_DIR, RENDERED_DIR]) {
   if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
 }
 
-// 16 Diverse Archival Documentaries spanning Horror, Crime, History & Survival Stories
-const DOCUMENTARY_CATALOG = [
-  // 1. HORROR / UNEXPLAINED
-  {
-    id: 'mary_celeste_ghost_ship',
-    genre: 'horror',
-    title: 'The Ghost Ship of the Atlantic',
-    era: '1872 • Ghost Ship Disappearance',
-    archiveQuery: 'ghost ship wooden sailboat stormy dark ocean mist',
-    bgmQuery: 'dark eerie horror tension atmospheric ambient cello',
-    sfxType: 'creak',
-    scenes: [
-      { text: "In December 1872, a brigantine was spotted drifting silently off the Azores.", query: "vintage sailing ship drifting calm dark ocean fog" },
-      { text: "Boarding sailors found untouched meals, intact cargo, and absolute silence.", query: "wooden ship dining table empty plates dark cabin" },
-      { text: "The captain, his wife, and all seven crewmen had vanished into thin air.", query: "empty ship helm wheel creaking dark stormy night" },
-      { text: "No struggle. No distress call. Only an open hatch and the howling wind.", query: "dark ship hull creaking ocean deep waters night" },
-      { text: "The ocean holds thousands of mysteries, but Mary Celeste remains its greatest ghost.", query: "abandoned sailing ship silhouette stormy sunset horizon" }
-    ],
-    hashtags: ['#HorrorDocumentary', '#MaryCeleste', '#GhostShip', '#Unexplained', '#Documentary', '#Shorts']
-  },
-  {
-    id: 'dyatlov_pass_incident',
-    genre: 'horror',
-    title: 'The Dyatlov Pass Mystery',
-    era: '1959 • Ural Mountains Tragedy',
-    archiveQuery: 'snow blizzard dark mountain tent abandoned winter urals',
-    bgmQuery: 'cold wind dark horror drone eerie ambient cello',
-    sfxType: 'wind',
-    scenes: [
-      { text: "In the freezing winter of 1959, nine skilled hikers hiked into the Ural Mountains.", query: "snowy mountain blizzard wilderness lone hikers expedition" },
-      { text: "Weeks later, searchers found their tent slashed open—from the inside.", query: "shredded canvas tent in snow blizzard cold mountain" },
-      { text: "Footprints showed they fled barefoot into minus thirty-degree blizzard conditions.", query: "bare footprints in deep snow dark winter forest" },
-      { text: "Several bodies were found with blunt trauma matching the force of a car crash.", query: "gloomy pine forest dark winter fog mysterious shadows" },
-      { text: "To this day, what terror drove them out into the lethal cold remains unsolved.", query: "lone snowy mountain peak ominous dark storm clouds" }
-    ],
-    hashtags: ['#DyatlovPass', '#UnsolvedMystery', '#HorrorDocumentary', '#History', '#Shorts']
-  },
+/**
+ * Dynamic AI Documentary Engine:
+ * Generates fresh, captivating documentary scripts across Horror, Crime, History & Survival.
+ * Strictly ZERO seed or mock data. If AI fails, the workflow fails!
+ */
+async function generateDynamicDocumentaryStory() {
+  const genres = ['crime', 'horror', 'history', 'story'];
+  const chosenGenre = genres[Math.floor(Math.random() * genres.length)];
+  console.log(`[Documentary AI] 🧠 Formulating dynamic ${chosenGenre.toUpperCase()} documentary narrative...`);
 
-  // 2. CRIME / HEISTS
-  {
-    id: 'db_cooper_sky_heist',
-    genre: 'crime',
-    title: 'The Skyjacking of D.B. Cooper',
-    era: '1971 • Unsolved Aviation Mystery',
-    archiveQuery: 'vintage boeing 727 airplane dark stormy night rain',
-    bgmQuery: 'dark crime noir investigative suspense cello piano',
-    sfxType: 'rain',
-    scenes: [
-      { text: "On Thanksgiving Eve 1971, a man in a business suit hijacked Flight 305.", query: "vintage 1970s airliner cabin passenger silhouette black tie" },
-      { text: "He demanded two hundred thousand dollars in cash and four parachutes.", query: "stacks of vintage hundred dollar bills leather briefcase" },
-      { text: "Somewhere over southwest Washington in freezing rain, he lowered the rear stairs.", query: "boeing 727 aft stairs descending in dark storm flight" },
-      { text: "He leaped into the pitch-black night sky and disappeared into the wilderness.", query: "man parachuting dark stormy rain clouds night silhouette" },
-      { text: "Despite five decades of FBI investigation, D.B. Cooper was never seen again.", query: "fbi agent vintage files noir detective dark desk light" }
-    ],
-    hashtags: ['#DBCooper', '#TrueCrime', '#HeistDocumentary', '#UnsolvedCrime', '#Shorts']
-  },
-  {
-    id: 'gardner_museum_art_heist',
-    genre: 'crime',
-    title: 'The Gardner Museum Art Heist',
-    era: '1990 • The $500 Million Theft',
-    archiveQuery: 'empty museum frame art gallery dark shadows night',
-    bgmQuery: 'tense noir suspense piano dark cello crime strings',
-    sfxType: 'clock',
-    scenes: [
-      { text: "Midnight in Boston, 1990. Two men dressed as police officers buzzed the museum gate.", query: "dark historic museum facade iron gates night streetlamp" },
-      { text: "Within eighty-one minutes, they walked out with thirteen masterworks of art.", query: "rembrandt vermeer painting empty picture frame wall" },
-      { text: "Masterpieces by Vermeer, Rembrandt, and Degas were ruthlessly sliced from their frames.", query: "empty golden picture frame hanging on dark gallery wall" },
-      { text: "Today, half a billion dollars in stolen paintings remain unaccounted for.", query: "empty picture frame spotlight dark art museum security" },
-      { text: "The museum still leaves the empty frames hanging on the walls, waiting for their return.", query: "lone visitor looking at empty picture frame dark museum" }
-    ],
-    hashtags: ['#ArtHeist', '#TrueCrime', '#UnsolvedMystery', '#CrimeDocumentary', '#Shorts']
-  },
+  const systemPrompt = `You are the lead executive showrunner for Cinema Vanguard (@CinemaVanguard), an acclaimed cinematic documentary and episodic series.
+Generate a gripping, factual, and deeply atmospheric documentary narrative (40-52 seconds spoken length, around 85-110 words).
+Genre: ${chosenGenre}.
+MANDATORY RULES:
+1. TITLE: Gripping, cinematic title (max 45 chars).
+2. ERA: Concise historical or investigative dateline (e.g., "1974 • Unsolved Oceanic Vanishing").
+3. SFX TYPE: Exactly one of "creak" (horror), "rain" (crime), "wind" (survival/cold), "clock" (ticking heist), "projector" (historical).
+4. BGM QUERY: 4-6 word atmospheric soundtrack query for Openverse (e.g., "dark noir investigative cello piano" or "eerie cold horror drone ambient").
+5. 5 SCENES: Exactly 5 sequential narrative scenes. Each scene has "text" (16-22 spoken words, continuous storytelling arc from hook to chilling climax) and "query" (high-detail stock video/photo query for Pexels/Wikimedia).
+6. HASHTAGS: 5 high-impact tags including #CinemaVanguard and #Documentary.
 
-  // 3. HISTORY / EPOCHS
-  {
-    id: 'apollo_11_silent_moon',
-    genre: 'history',
-    title: 'The Unheard Apollo Transmissions',
-    era: '1969 • Cold War Space Age',
-    archiveQuery: 'apollo 11 astronaut moon surface lunar module nasa',
-    bgmQuery: 'cinematic deep space ambient drone slow strings',
-    sfxType: 'projector',
-    scenes: [
-      { text: "In July 1969, humanity left its home planet for the first time.", query: "saturn v rocket launch apollo 11 smoke flames" },
-      { text: "When the lunar module touched down, only 25 seconds of fuel remained.", query: "apollo 11 lunar module eagle landing dust moon" },
-      { text: "Neil Armstrong and Buzz Aldrin stood in complete, eerie silence.", query: "astronaut footprint on lunar soil moon surface shadow" },
-      { text: "Looking back, Earth was a fragile blue marble suspended in total darkness.", query: "earthrise from moon surface apollo blue planet" },
-      { text: "We traveled 240,000 miles to explore the moon, but truly discovered ourselves.", query: "apollo 11 astronaut helmet visor reflection earth" }
-    ],
-    hashtags: ['#Documentary', '#Apollo11', '#NASA', '#SpaceHistory', '#History', '#Shorts']
-  },
-  {
-    id: 'library_of_alexandria_scrolls',
-    genre: 'history',
-    title: 'The Lost Scrolls of Alexandria',
-    era: '3rd Century BC • Hellenistic Egypt',
-    archiveQuery: 'ancient library scroll parchment manuscripts ruins marble',
-    bgmQuery: 'ancient contemplative strings melancholic ambient flute',
-    sfxType: 'projector',
-    scenes: [
-      { text: "Over two thousand years ago, an empire dreamed of collecting all human knowledge.", query: "ancient papyrus scroll library manuscripts dust" },
-      { text: "Every ship entering Alexandria harbor was stripped of its books to be copied.", query: "ancient greek library marble columns scroll shelves" },
-      { text: "Half a million papyrus scrolls held the lost science of the ancient world.", query: "ancient astronomical chart astrolabe papyrus map" },
-      { text: "Then, over centuries of fire and neglect, the great library vanished.", query: "ancient library ruins burning embers shadows dust" },
-      { text: "We do not mourn the lost paper, but the questions humanity forgot how to ask.", query: "ancient marble scholar bust contemplative shadow" }
-    ],
-    hashtags: ['#Documentary', '#AncientHistory', '#Alexandria', '#LostKnowledge', '#History', '#Shorts']
-  },
+Return strictly valid JSON:
+{
+  "title": "The Ghost Blimp of San Francisco",
+  "genre": "${chosenGenre}",
+  "era": "1942 • Unsolved Navy Mystery",
+  "sfxType": "creak",
+  "bgmQuery": "dark eerie horror tension atmospheric ambient cello",
+  "scenes": [
+    { "text": "In August 1942, a US Navy blimp drifted silently into a residential street.", "query": "vintage navy blimp floating over houses foggy sky" },
+    { "text": "Residents rushed to the crash, but when the cockpit was forced open, both pilots were missing.", "query": "blimp cockpit controls empty instruments 1940s" },
+    { "text": "The radio was working, parachutes were in place, and the engine was still humming.", "query": "vintage aircraft radio mic dark cockpit shadows" },
+    { "text": "No distress call was ever sent. What happened miles out at sea remains an eerie mystery.", "query": "lone ocean coast thick fog waves dark night" },
+    { "text": "The ocean holds thousands of mysteries, but this vanishing remains an unsolved ghost story.", "query": "stormy sea waves misty fog dark horizon" }
+  ],
+  "hashtags": ["#CinemaVanguard", "#Documentary", "#TrueMystery", "#Shorts"]
+}`;
 
-  // 4. STORY / SURVIVAL & DISCOVERY
-  {
-    id: 'shackleton_endurance_ice',
-    genre: 'story',
-    title: 'Shackleton: The Impossible Survival',
-    era: '1915 • Imperial Trans-Antarctic Expedition',
-    archiveQuery: 'wooden ship trapped in antarctic pack ice winter snow',
-    bgmQuery: 'dramatic orchestral survival strings emotional cello rise',
-    sfxType: 'wind',
-    scenes: [
-      { text: "In 1915, Sir Ernest Shackleton ship Endurance was crushed by Antarctic pack ice.", query: "vintage wooden ship trapped in antarctic ice pack" },
-      { text: "Stranded on drifting ice floes, twenty-eight men faced certain starvation.", query: "polar expedition team camping on antarctic sea ice" },
-      { text: "Shackleton and five men sailed eight hundred miles in a tiny twenty-foot lifeboat.", query: "small wooden lifeboat battling giant frozen ocean waves" },
-      { text: "Against hurricane winds and towering seas, they navigated by compass and raw willpower.", query: "dramatic stormy ocean waves polar iceberg mist" },
-      { text: "After five hundred days of pure ice and terror, not a single life was lost.", query: "polar rescue ship arriving through melting antarctic ice" }
-    ],
-    hashtags: ['#Shackleton', '#SurvivalStory', '#HeroicAge', '#HistoryDocumentary', '#Shorts']
-  },
-  {
-    id: 'voyager_golden_record',
-    genre: 'story',
-    title: 'The Golden Record to the Stars',
-    era: '1977 • Interstellar Space Mission',
-    archiveQuery: 'voyager golden record spacecraft deep space stars',
-    bgmQuery: 'voyager space ambient synthesizer contemplative strings',
-    sfxType: 'projector',
-    scenes: [
-      { text: "In 1977, NASA launched a golden phonograph record into deep space.", query: "voyager golden record gold disc phonograph cover" },
-      { text: "It carried whale songs, human heartbeats, and music by Bach and Chuck Berry.", query: "sound waves audio waveform frequencies visual space" },
-      { text: "Carl Sagan called it a bottle cast into the cosmic ocean.", query: "voyager spacecraft deep space distant star galaxy" },
-      { text: "Today, Voyager 1 has crossed into the cold dark interstellar medium.", query: "interstellar space cosmic dust stars deep universe" },
-      { text: "Long after our sun burns out, humanity voice will still drift among the stars.", query: "golden record drifting deep space cosmos galaxies" }
-    ],
-    hashtags: ['#Documentary', '#Voyager', '#CarlSagan', '#Space', '#Astronomy', '#Shorts']
+  const userPrompt = `Create an authentic, breathtaking documentary story in the ${chosenGenre} genre. Ensure high tension, factual resonance, and strictly 5 scenes totaling 85-110 words.`;
+
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const res = await callActiveAiForJson(systemPrompt, userPrompt, null, {
+        nicheKey: 'documentary',
+        temperature: attempt === 1 ? 0.75 : 0.88
+      });
+      if (res?.data?.title && Array.isArray(res?.data?.scenes) && res.data.scenes.length === 5) {
+        return res.data;
+      }
+    } catch (err) {
+      console.warn(`[Documentary AI] Attempt ${attempt} notice: ${err.message}`);
+    }
   }
-];
+
+  // Strict user mandate: Zero seed or mock data. If AI fails, let workflow fail!
+  throw new Error(`[Documentary Engine Fatal] Active AI documentary synthesis failed. Per strict user mandate, seeded fallback catalogs are deleted. Failing workflow.`);
+}
 
 function escapeXml(str) {
   return String(str || '')
@@ -346,7 +258,7 @@ function buildGlowingOutroSvg(genre = 'history', width = 1080, height = 1920) {
       <g transform="translate(140, 290)">
         <rect width="520" height="56" rx="28" fill="#020617" stroke="${glowTheme.border}" stroke-width="1.6" />
         <text x="260" y="35" font-family="system-ui, sans-serif" font-size="16" font-weight="800" fill="#f8fafc" text-anchor="middle" letter-spacing="1.5">
-          Driftreel • @driftreel • Daily Mysteries 🔍
+          ${getChannelMeta('ch4').name} • ${getChannelMeta('ch4').handle} • Daily Documentaries 🏛️
         </text>
       </g>
     </g>
@@ -358,6 +270,7 @@ function buildGlowingOutroSvg(genre = 'history', width = 1080, height = 1920) {
  */
 function buildDocumentarySlideSvg(quoteText, eraLabel, sceneNum, totalScenes, genre = 'history', width = 1080, height = 1920) {
   const accentColor = genre === 'horror' ? '#ef4444' : (genre === 'crime' ? '#38bdf8' : '#fbbf24');
+  const channelMeta = getChannelMeta('ch4');
 
   return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -395,7 +308,7 @@ function buildDocumentarySlideSvg(quoteText, eraLabel, sceneNum, totalScenes, ge
     <g transform="translate(80, ${height - 180})">
       <rect width="920" height="52" rx="26" fill="#020617" fill-opacity="0.9" stroke="${accentColor}" stroke-width="1.2" />
       <text x="460" y="32" font-family="system-ui, sans-serif" font-size="14" font-weight="800" fill="#f8fafc" letter-spacing="2" text-anchor="middle">
-        DRIFTREEL • @driftreel • ARCHIVAL DOCUMENTARY
+        ${channelMeta.name.toUpperCase()} • ${channelMeta.handle} • ARCHIVAL DOCUMENTARY
       </text>
     </g>
 
@@ -410,16 +323,11 @@ function buildDocumentarySlideSvg(quoteText, eraLabel, sceneNum, totalScenes, ge
 async function generateDocumentaryVideo() {
   console.log('\n===============================================================');
   console.log('🏛️ CINEMA VANGUARD: MULTI-GENRE ARCHIVAL DOCUMENTARY ENGINE');
-  console.log('Horror • Crime • History • Story | AI OST | Karaoke Subtitles');
+  console.log('Horror • Crime • History • Story | AI OST | Center Karaoke Subtitles');
   console.log('===============================================================\n');
 
-  // 1. Select Deduplicated Episode across Horror, Crime, History, and Story
-  const chosenEpisode = await selectDeduplicatedCandidate(
-    'documentary_movie',
-    DOCUMENTARY_CATALOG,
-    ep => ep.title,
-    ep => ep.era
-  );
+  // 1. Synthesize Dynamic Documentary Narrative via Active AI (strictly zero seed data)
+  const chosenEpisode = await generateDynamicDocumentaryStory();
 
   console.log(`[Documentary Selected]: "${chosenEpisode.title}" [${chosenEpisode.genre.toUpperCase()}] (${chosenEpisode.era})`);
 
@@ -554,8 +462,9 @@ async function generateDocumentaryVideo() {
     audioFilter += `[voice][sfx]amix=inputs=2:duration=first:dropout_transition=2[a_final]`;
   }
 
-  // Combine video with karaoke subtitles filter
-  const finalFilter = `${audioFilter}; [0:v]subtitles=${assSubtitlesPath}[v_sub]`;
+  // Combine video with karaoke subtitles filter (properly escaped so subtitles are never dropped)
+  const escapedAss = assSubtitlesPath.replace(/\\/g, '/').replace(/:/g, '\\:').replace(/'/g, "\\'");
+  const finalFilter = `${audioFilter}; [0:v]subtitles='${escapedAss}'[v_sub]`;
   let finalCmd = `ffmpeg -y ${audioInputs} -filter_complex "${finalFilter}" -map "[v_sub]" -map "[a_final]" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -ar 44100 -ac 2 -t ${totalDuration.toFixed(2)} "${finalMp4Path}" 2>/dev/null`;
 
   console.log(`[Compositor Engine] 🎬 Assembling master documentary video with karaoke captions...`);
@@ -631,5 +540,5 @@ if (require.main === module) {
 
 module.exports = {
   generateDocumentaryVideo,
-  DOCUMENTARY_CATALOG
+  generateDynamicDocumentaryStory
 };

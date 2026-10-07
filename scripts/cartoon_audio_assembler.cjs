@@ -137,7 +137,8 @@ function assembleFinalCartoonVideo(sceneFiles, outputMp4Path, srtPath) {
   }
 
   // Burn Subtitles and Channel Watermark onto Final MP4
-  const channelWatermark = process.env.YOUTUBE_HANDLE_CH3 || process.env.YOUTUBE_HANDLE_TECH || '@ArchieExplains';
+  const { getVerifiedChannelHandle } = require('./channel_verifier.cjs');
+  const channelWatermark = getVerifiedChannelHandle('ch3');
   let vfFilters = [];
 
   // 1. Channel Watermark Pill (Top of video)

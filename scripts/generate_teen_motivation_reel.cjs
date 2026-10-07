@@ -26,6 +26,7 @@ const { EdgeTTS } = require('node-edge-tts');
 const { searchAndFetchImage, searchAndFetchVideo, searchAndFetchAudio } = require('./universal_media_fetcher.cjs');
 const { selectDeduplicatedCandidate, recordPostedCandidate } = require('./channel_dedup_service.cjs');
 const { callActiveAiForJson, queryDuckDuckGo } = require('./topic_discovery_engine.cjs');
+const { getChannelMeta, getVerifiedChannelHandle } = require('./channel_verifier.cjs');
 
 const ARTIFACTS_DIR = path.join(process.cwd(), 'test_artifacts', 'teen_motivation');
 const RENDERED_DIR = path.join(process.cwd(), 'rendered_videos');
@@ -33,51 +34,63 @@ for (const d of [ARTIFACTS_DIR, RENDERED_DIR]) {
   if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
 }
 
-// Everyday Teen & Youth Emotional Struggle Categories (Rotated Daily)
-const YOUTH_EMOTIONAL_THEMES = [
-  {
-    theme: 'Comparison & Social Media Envy',
-    searchQuery: 'teens scrolling social media feeling left behind comparison anxiety',
-    visualQuery: 'lone teenager looking at glowing smartphone dark room moody',
-    quoteMentor: 'Marcus Aurelius',
-    formatAngle: 'problem_symptoms_solution_discipline'
-  },
-  {
-    theme: 'Late Night Overthinking & Guilt',
-    searchQuery: 'youth lying awake at night overthinking past mistakes regret',
-    visualQuery: 'teenager looking out rainy window night city lights reflection',
-    quoteMentor: 'Seneca',
-    formatAngle: 'fear_stoic_quote_action'
-  },
-  {
-    theme: 'Academic Burnout & Fear of Failure',
-    searchQuery: 'student overwhelmed studying late night academic burnout exhaustion',
-    visualQuery: 'student desk books desk lamp night tired studying coffee',
-    quoteMentor: 'Viktor Frankl',
-    formatAngle: 'struggle_truth_discipline'
-  },
-  {
-    theme: 'Loneliness in a Crowd & Feeling Misunderstood',
-    searchQuery: 'young person feeling lonely in crowded high school hallway isolation',
-    visualQuery: 'solitary figure walking crowded city street blurred people motion',
-    quoteMentor: 'Carl Jung',
-    formatAngle: 'problem_symptoms_solution_discipline'
-  },
-  {
-    theme: 'Losing Motivation After Three Days',
-    searchQuery: 'giving up on goals after a few days procrastination consistency struggle',
-    visualQuery: 'runner tying running shoes dawn misty morning pavement solitary',
-    quoteMentor: 'David Goggins',
-    formatAngle: 'fear_stoic_quote_action'
-  },
-  {
-    theme: 'Imposter Syndrome & Doubting Your Potential',
-    searchQuery: 'teenager doubting intelligence imposter syndrome feeling fake',
-    visualQuery: 'thoughtful young person mirror reflection dim lights moody shadow',
-    quoteMentor: 'James Clear',
-    formatAngle: 'struggle_truth_discipline'
+/**
+ * Dynamic Everyday Event Youth Motivation Generator:
+ * Generates relatable everyday teenage/youth scenarios dynamically (academic stress,
+ * late night doomscrolling, gym self-doubt, cafeteria loneliness, family expectations,
+ * fear of the future, heartbreak, broken habits) and constructs a powerful 4-part documentary-style
+ * narrative arc (Struggle -> Friction -> Perspective/Mentor -> Daily Action).
+ * Strictly ZERO seed or mock data. If AI fails, the workflow fails!
+ */
+async function generateDynamicYouthMotivation() {
+  console.log(`[MindRush Engine] 🧠 Discovering dynamic everyday youth event & narrative...`);
+
+  const systemPrompt = `You are the lead showrunner and mentor for "MindRush" (@MindRushOfficial), creating documentary-style motivational short videos for teenagers and young adults (ages 15-22).
+The script MUST be anchored around a concrete, everyday teenage/youth reality (e.g., staring at a blank Google Doc at midnight, eating lunch alone, comparing yourself to high-school athletes or viral influencers, breaking your workout streak, feeling like everyone else has life figured out, feeling unmotivated and guilty).
+CORE ARC (4 progressive scenes, 85-110 spoken words total so duration is safely 28-36 seconds):
+Scene 1: The Everyday Moment (Hook that visually places the viewer in a specific daily situation).
+Scene 2: The Internal Weight (The silent mental friction, anxiety, or guilt).
+Scene 3: The Reality Check / Mentor Insight (Timeless perspective or quote from Marcus Aurelius, Viktor Frankl, Seneca, or James Clear).
+Scene 4: The Immediate Action (One concrete, realistic action to take today—no generic hustle cliches).
+
+Return strictly valid JSON:
+{
+  "theme": "Late Night Doomscrolling & Wasted Hours",
+  "title": "When You Can't Stop Scrolling at 1 AM",
+  "quoteMentor": "Marcus Aurelius",
+  "fullScript": "It is 1 AM. The blue glow of your phone is the only light in your room. You promised yourself you would sleep at eleven, but you kept scrolling. And now, the guilt sets in. You feel behind on everything. But Marcus Aurelius reminded us: you could be good today, yet you choose tomorrow. Put the screen face down right now. Close your eyes. Tomorrow doesn't need your perfection; it just needs you to wake up and try again.",
+  "visualScenes": [
+    { "sceneNumber": 1, "text": "It is 1 AM. The blue glow of your phone is the only light in your room. You promised yourself you would sleep at eleven.", "query": "teenager lying in bed glowing phone dark room bedroom moody" },
+    { "sceneNumber": 2, "text": "You kept scrolling, and now the guilt sets in. You feel behind on everything.", "query": "thoughtful teenager looking out rainy window reflection dark city lights" },
+    { "sceneNumber": 3, "text": "Marcus Aurelius reminded us: you could be good today, yet you choose tomorrow.", "query": "ancient marble philosopher bust moody dramatic lighting shadows" },
+    { "sceneNumber": 4, "text": "Put the screen face down right now. Tomorrow doesn't need your perfection; it just needs you to try.", "query": "morning dawn sunrise runner lone athlete pavement mist" }
+  ],
+  "bgmSearchQuery": "emotional calm ambient piano cinematic strings",
+  "hashtags": ["#MindRush", "#TeenMotivation", "#Discipline", "#YouthMindset", "#Shorts"]
+}`;
+
+  const userPrompt = `Generate a fresh, emotionally resonant documentary-style youth motivation script based on a real everyday event. Spoken text MUST be between 85 and 110 words so video is strictly above 25 seconds.`;
+
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const res = await callActiveAiForJson(systemPrompt, userPrompt, null, {
+        nicheKey: 'motivation',
+        temperature: attempt === 1 ? 0.76 : 0.88
+      });
+      if (res?.data?.fullScript && Array.isArray(res?.data?.visualScenes) && res.data.visualScenes.length === 4) {
+        const words = res.data.fullScript.split(/\s+/).length;
+        if (words >= 65) {
+          return res.data;
+        }
+      }
+    } catch (err) {
+      console.warn(`[MindRush AI] Attempt ${attempt} notice: ${err.message}`);
+    }
   }
-];
+
+  // Strict user mandate: Zero seed or mock data. If AI fails, let workflow fail!
+  throw new Error(`[MindRush Engine Fatal] Active AI youth motivation script synthesis failed. Per strict zero-seed policy, seeded fallback scripts are deleted. Failing workflow.`);
+}
 
 function escapeXml(str) {
   return String(str || '')
@@ -257,22 +270,13 @@ async function generateTeenMotivationReel() {
   console.log('Authentic Mentorship | Center-Screen Visibility | Duration >25s');
   console.log('===============================================================\n');
 
-  // 1. Select Deduplicated Youth Emotional Theme
-  const chosenTheme = await selectDeduplicatedCandidate(
-    'teen_motivation',
-    YOUTH_EMOTIONAL_THEMES,
-    t => t.theme,
-    t => t.searchQuery
-  );
-
-  console.log(`[Theme Selected]: "${chosenTheme.theme}" (${chosenTheme.formatAngle})`);
-
-  // 2. Synthesize AI Motivation Script (>25s spoken)
-  const scriptData = await generateYouthMotivationScript(chosenTheme);
+  // 1. Synthesize Dynamic Youth Motivation Theme & Narrative via Active AI
+  const scriptData = await generateDynamicYouthMotivation();
   const spokenText = scriptData.fullScript.trim();
+  console.log(`[Theme Selected]: "${scriptData.title}" (${scriptData.theme})`);
   console.log(`[Script Word Count]: ${spokenText.split(/\s+/).length} words`);
 
-  // 3. Synthesize Grounded Emotional Voiceover via EdgeTTS (Andrew Neural)
+  // 2. Synthesize Grounded Emotional Voiceover via EdgeTTS (Andrew Neural)
   const voiceMp3 = path.join(ARTIFACTS_DIR, `teen_voice_${Date.now()}.mp3`);
   const voiceWav = path.join(ARTIFACTS_DIR, `teen_voice_${Date.now()}.wav`);
 
@@ -293,7 +297,7 @@ async function generateTeenMotivationReel() {
   const totalDuration = Math.max(26.0, voiceDuration + 1.5);
   console.log(`[TTS Engine] ✓ Voiceover generated: ${voiceDuration.toFixed(1)}s (Total Reel: ${totalDuration.toFixed(1)}s - Above 25s ✓)`);
 
-  // 4. Sourced Ambient Soundtrack & Heartbeat SFX Layer
+  // 3. Sourced Ambient Soundtrack & Heartbeat SFX Layer
   console.log(`[Audio Sourcing] 🎵 Resolving calm emotional backing music...`);
   let bgMusicPath = null;
   const fetchedAudio = await searchAndFetchAudio(scriptData.bgmSearchQuery || "emotional calm ambient piano strings", { preferredSource: 'openverse', targetDuration: totalDuration });
@@ -304,20 +308,19 @@ async function generateTeenMotivationReel() {
   const sfxWav = path.join(ARTIFACTS_DIR, `sfx_${Date.now()}.wav`);
   generateMotivationSfxWav(sfxWav, totalDuration);
 
-  // 5. Divide Voiceover into 4 Structured Narrative Sections
-  const narrativeSections = [
-    { title: 'The Problem', text: scriptData.hook, query: scriptData.visualScenes?.[0]?.query || chosenTheme.visualQuery },
-    { title: 'The Struggle', text: scriptData.symptoms, query: scriptData.visualScenes?.[1]?.query || "rainy window reflection dark night city" },
-    { title: 'The Perspective', text: scriptData.solutionQuote, query: scriptData.visualScenes?.[2]?.query || "stoic ancient marble statue dramatic lighting" },
-    { title: 'The Discipline', text: scriptData.disciplineCall, query: scriptData.visualScenes?.[3]?.query || "runner misty sunrise pavement solitary" }
-  ];
+  // 4. Divide Voiceover into 4 Structured Narrative Sections
+  const narrativeSections = (scriptData.visualScenes || []).map((sc, idx) => ({
+    title: `Scene ${idx + 1}`,
+    text: sc.text || scriptData.fullScript,
+    query: sc.query || 'thoughtful teen reflective emotional lighting'
+  }));
 
-  const secPerSection = totalDuration / narrativeSections.length;
+  const secPerSection = totalDuration / Math.max(1, narrativeSections.length);
   const sceneInputs = [];
 
   for (let i = 0; i < narrativeSections.length; i++) {
     const sec = narrativeSections[i];
-    console.log(`[Scene ${i + 1}/4] Sourcing visual for "${sec.title}": "${sec.query}"...`);
+    console.log(`[Scene ${i + 1}/${narrativeSections.length}] Sourcing visual: "${sec.query}"...`);
 
     let visual = await searchAndFetchImage(sec.query, { preferredSource: 'unsplash' });
     if (!visual || !visual.localPath || !fs.existsSync(visual.localPath)) {
@@ -326,7 +329,7 @@ async function generateTeenMotivationReel() {
     const visualPath = visual?.localPath || path.join(process.cwd(), 'src', 'assets', 'images', 'mindrush_studio_bg_1790502544405.jpg');
 
     // Build Centered Typography Card SVG
-    const slideSvg = buildCenterScreenCaptionSvg(sec.text, chosenTheme.theme, i + 1, 4, 1080, 1920);
+    const slideSvg = buildCenterScreenCaptionSvg(sec.text, scriptData.theme, i + 1, narrativeSections.length, 1080, 1920);
     const slideSvgPath = path.join(ARTIFACTS_DIR, `slide_${i}.svg`);
     const slidePngPath = path.join(ARTIFACTS_DIR, `slide_${i}.png`);
     fs.writeFileSync(slideSvgPath, slideSvg);
@@ -373,8 +376,8 @@ async function generateTeenMotivationReel() {
   }
 
   // 7. Record to Firestore Deduplication Service
-  await recordPostedCandidate('teen_motivation', scriptData.title, chosenTheme.theme, {
-    theme: chosenTheme.theme,
+  await recordPostedCandidate('teen_motivation', scriptData.title, scriptData.theme, {
+    theme: scriptData.theme,
     duration: totalDuration,
     wordCount: spokenText.split(/\s+/).length,
     timestamp
@@ -384,7 +387,7 @@ async function generateTeenMotivationReel() {
     videoPath: finalMp4Path,
     duration: totalDuration,
     title: scriptData.title,
-    theme: chosenTheme.theme
+    theme: scriptData.theme
   };
 }
 
@@ -402,5 +405,5 @@ if (require.main === module) {
 
 module.exports = {
   generateTeenMotivationReel,
-  YOUTH_EMOTIONAL_THEMES
+  generateDynamicYouthMotivation
 };
