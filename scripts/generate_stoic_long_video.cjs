@@ -193,14 +193,14 @@ PlayResY: 1920
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: CenterKaraoke,Arial,58,&H00FFFFFF,&H0038D3FF,&H00000000,&HD0050810,1,0,0,0,100,100,0,0,3,16,0,5,80,80,0,1
+Style: CenterKaraoke,DejaVu Sans,62,&H0000D7FF,&H00FFFFFF,&H00000000,&HD0020617,1,0,0,0,100,100,1.2,0,3,14,0,5,80,80,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 `;
 
   let events = '';
-  // Group words into lines of 4-5 words for impactful readability
+  // Group words into lines of 4 words for optimal centered readability
   const wordsPerLine = 4;
   for (let i = 0; i < wordsWithTimings.length; i += wordsPerLine) {
     const chunk = wordsWithTimings.slice(i, i + wordsPerLine);
@@ -217,11 +217,11 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
       return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
     };
 
-    // Build Karaoke tags: {\k<cs>}Word
+    // Build Karaoke tags: {\kf<cs>}Word for smooth fluid sweep
     const kText = chunk.map(w => {
       const wordDur = Math.max(0.12, w.end - w.start);
       const cs = Math.round(wordDur * 100);
-      return `{\\k${cs}}${w.word.toUpperCase()}`;
+      return `{\\kf${cs}}${w.word.toUpperCase()}`;
     }).join(' ');
 
     events += `Dialogue: 0,${formatTime(startSec)},${formatTime(endSec)},CenterKaraoke,,0,0,0,,${kText}\n`;
@@ -295,7 +295,7 @@ async function generateStoicLongVideo(options = {}) {
       const destName = `remote_specimen_${idx}_${Date.now()}.jpg`;
       const destPath = path.join(ARTIFACTS_DIR, destName);
       try {
-        await downloadFile(finalPath, destPath);
+        await downloadFile(finalPath, destPath, 5000);
         finalPath = destPath;
       } catch (dlErr) {
         console.warn(`[Stoic Media Notice] Could not download remote media: ${dlErr.message}`);
@@ -303,8 +303,7 @@ async function generateStoicLongVideo(options = {}) {
       }
     }
     if (!finalPath || !fs.existsSync(finalPath)) {
-      const fb = await searchAndFetchImage(`${philosopher.name} landscape`, { preferredSource: 'openverse' });
-      finalPath = fb?.localPath || path.join(process.cwd(), 'src', 'assets', 'images', 'mindrush_studio_bg_1790502544405.jpg');
+      finalPath = path.join(process.cwd(), 'src', 'assets', 'images', 'mindrush_studio_bg_1790502544405.jpg');
     }
 
     sceneMediaFiles.push({
@@ -405,8 +404,9 @@ async function generateStoicLongVideo(options = {}) {
   try {
     execSync(ffmpegCmd, { maxBuffer: 15 * 1024 * 1024 });
   } catch (err) {
-    console.warn(`[FFmpeg Notice] Subtitle filter notice: ${err.message}. Retrying with direct copy...`);
-    const fallbackCmd = ffmpegCmd.replace(`subtitles=${relAssPath}`, 'copy');
+    console.warn(`[FFmpeg Notice] Subtitle filter notice: ${err.message}. Retrying direct render without subtitles...`);
+    const cleanFilter = filterComplex.replace(`${vPostWatermark}subtitles='${safeAssPath}'[v_subbed]; `, '');
+    const fallbackCmd = `ffmpeg -y ${inputs} -filter_complex "${cleanFilter}" -map "${vPostWatermark}" -map "[a_final]" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${finalDuration.toFixed(2)} "${finalMp4Path}" 2>/dev/null`;
     execSync(fallbackCmd, { maxBuffer: 15 * 1024 * 1024 });
   }
 
@@ -434,13 +434,13 @@ async function generateStoicLongVideo(options = {}) {
 
   // 9. Dispatch to YouTube Shorts (Channel 2: The Stoic Architect)
   const isDryRun = process.env.DRY_RUN === 'true';
-  const ch2Token = process.env.YOUTUBE_REFRESH_TOKEN_CH2 || process.env.YOUTUBE_REFRESH_TOKEN_STOIC || process.env.YOUTUBE_REFRESH_TOKEN_2 || process.env.YOUTUBE_REFRESH_TOKEN;
+  const ch2Token = process.env.YOUTUBE_REFRESH_TOKEN_CH2 || process.env.YOUTUBE_REFRESH_TOKEN_STOIC || process.env.YOUTUBE_REFRESH_TOKEN_2 || '';
   if (ch2Token && !isDryRun) {
     console.log(`\n[Stoic Dispatcher] 📤 Uploading Stoic Long-Form Short to YouTube Channel 2 (The Stoic Architect)...`);
     try {
       const { uploadYouTubeShort } = require('./youtube_channel_dispatcher.cjs');
       const viralTitle = `${philosopher.name}: ${essayData.title.replace(/[?!.]+$/, '')} #Shorts`;
-      const viralDesc = `"${quote}" — ${philosopher.name}\n\n${fullNarration}\n\n#Stoic #Stoicism #Philosophy #Wisdom #Mindset #Shorts`;
+      const viralDesc = `"${quote}" — ${philosopher.name} (${philosopher.title})\n\n${fullNarration}\n\n🏛️ Stoic Reflection: Reframing everyday exhaustion and overthinking into unshakeable inner peace.\n\nSubscribe to @TheStoicArchitect for daily philosophy & fortitude.\n\n#Stoic #Stoicism #Philosophy #Wisdom #InnerPeace #Mindset #Shorts`;
       const uploadRes = await uploadYouTubeShort({
         videoPath: finalMp4Path,
         title: viralTitle,

@@ -1,5 +1,38 @@
 [
   {
+    "id": "topic_1791458277432",
+    "topic": "Neuroscience, Optical Illusions & Perception",
+    "title": "Neuroscience, Optical Illusions & Perception",
+    "sphereId": "",
+    "sphereName": "Neuroscience, Optical Illusions & Perception",
+    "angle": "Photoreceptor cells, visual processing latency, acoustic resonance",
+    "niche": "cartoon",
+    "modelUsed": "Dynamic Research-Grounded Synthesizer",
+    "chosenAt": "2026-10-08T11:17:57.432Z"
+  },
+  {
+    "id": "topic_1791458224908",
+    "topic": "Neuroscience, Optical Illusions & Perception",
+    "title": "Neuroscience, Optical Illusions & Perception",
+    "sphereId": "",
+    "sphereName": "Neuroscience, Optical Illusions & Perception",
+    "angle": "Photoreceptor cells, visual processing latency, acoustic resonance",
+    "niche": "cartoon",
+    "modelUsed": "Dynamic Research-Grounded Synthesizer",
+    "chosenAt": "2026-10-08T11:17:04.908Z"
+  },
+  {
+    "id": "topic_1791457432845",
+    "topic": "Aerospace, Space Exploration & Satellites",
+    "title": "Aerospace, Space Exploration & Satellites",
+    "sphereId": "",
+    "sphereName": "Aerospace, Space Exploration & Satellites",
+    "angle": "Orbital mechanics, lunar geology, space telescopes, cosmic radiation",
+    "niche": "cartoon",
+    "modelUsed": "Dynamic Research-Grounded Synthesizer",
+    "chosenAt": "2026-10-08T11:03:52.845Z"
+  },
+  {
     "id": "topic_1790941194241",
     "topic": "Food, Flavor & Spice Chemistry",
     "title": "Food, Flavor & Spice Chemistry",

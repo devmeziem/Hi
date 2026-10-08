@@ -254,7 +254,7 @@ function buildFinancialOutroSvg(width = 1080, height = 1920) {
  * Build Single Slide Typography Overlay SVG
  */
 function buildFinancialSlideSvg(quoteText, eraLabel, sceneNum, totalScenes, width = 1080, height = 1920) {
-  const channelMeta = getChannelMeta('ch4');
+  const channelMeta = getChannelMeta('ch1');
   const channelWatermark = channelMeta.handle;
   return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -474,22 +474,29 @@ async function generateFinancialStoryDocumentary() {
     timestamp
   });
 
-  // 10. Dispatch to YouTube Channel 4 (Cinema Vanguard / movie_brand)
+  const renderedLatestDoc = path.join(RENDERED_DIR, 'fin_documentary_latest.mp4');
+  const artifactsLatestDoc = path.join(ARTIFACTS_DIR, 'fin_documentary_latest.mp4');
+  try {
+    fs.copyFileSync(finalMp4Path, renderedLatestDoc);
+    fs.copyFileSync(finalMp4Path, artifactsLatestDoc);
+  } catch {}
+
+  // 10. Dispatch to YouTube Channel 1 (Fin Blueprint / @bones_ceo)
   const isDryRun = process.env.DRY_RUN === 'true';
-  const ch4Token = process.env.YOUTUBE_REFRESH_TOKEN_CH4 || process.env.YOUTUBE_REFRESH_TOKEN_MOVIE || process.env.YOUTUBE_REFRESH_TOKEN;
+  const ch1Token = process.env.YOUTUBE_REFRESH_TOKEN_CH1 || process.env.YOUTUBE_REFRESH_TOKEN_FIN || process.env.YOUTUBE_REFRESH_TOKEN || '';
 
   const viralTitle = `${chosenStory.title} (${chosenStory.era.split('•')[0].trim()}) #Shorts`;
-  const viralDesc = `${fullNarration}\n\n🏛️ Era: ${chosenStory.era}\nSource: Archival Financial History & Court Records\n\n#CinemaVanguard #FinancialDocumentary #WallStreet #History #Shorts`;
+  const viralDesc = `${fullNarration}\n\n🏛️ Era: ${chosenStory.era}\nSource: Archival Financial History & Economics Records\n\nFollow @bones_ceo for daily financial documentaries, money architecture & business breakdowns!\n\n#FinBlueprint #FinancialDocumentary #Finance #Investing #MoneyHistory #Shorts`;
 
-  if (ch4Token && !isDryRun) {
-    console.log(`\n[Documentary Dispatcher] 📤 Uploading to YouTube Channel 4 (Financial Story)...`);
+  if (ch1Token && !isDryRun) {
+    console.log(`\n[Documentary Dispatcher] 📤 Uploading to YouTube Channel 1 (Fin Blueprint)...`);
     try {
       await uploadYouTubeShort({
         videoPath: finalMp4Path,
         title: viralTitle,
         description: viralDesc,
         tags: chosenStory.hashtags,
-        channelId: 'movie_brand'
+        channelId: 'finance_saas'
       });
       console.log(`[Documentary Dispatcher] YouTube upload successful!`);
     } catch (e) {

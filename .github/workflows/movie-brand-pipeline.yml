@@ -1,23 +1,18 @@
-name: Cinema Vanguard - Financial Story Documentary (YouTube Ch 4) & Archival TikTok (Driftreel)
+name: Cinema Vanguard - Crime, Horror, Mystery & Episodic Cinema (YouTube Ch 4 & Driftreel TikTok)
 
 on:
   schedule:
-    # Daily spaced archival and financial documentary drops at 14:00 UTC
+    # Daily spaced archival and episodic cinema drops at 14:00 UTC
     - cron: '0 14 * * *'
   workflow_dispatch:
     inputs:
-      financial_story_id:
-        description: 'Specific Financial Story ID (or blank for auto-rotation)'
-        required: false
-        default: ''
-        type: string
       documentary_topic_id:
         description: 'Specific Crime/Horror/Mystery Topic ID for Driftreel (or blank for auto-rotation)'
         required: false
         default: ''
         type: string
       publish_youtube:
-        description: 'Publish Financial Story Live to YouTube Shorts (Channel 4)'
+        description: 'Publish Live to YouTube Shorts (Channel 4)'
         required: true
         default: true
         type: boolean
@@ -34,7 +29,7 @@ on:
 
 jobs:
   documentary_pipeline:
-    name: Build, Render & Dispatch Financial Story & Driftreel Documentaries
+    name: Build, Render & Dispatch Cinema Vanguard & Driftreel Documentaries
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -59,35 +54,8 @@ jobs:
       - name: Install Dependencies
         run: npm install --legacy-peer-deps --no-audit --no-fund
 
-      - name: Execute Financial Story Documentary Engine (YouTube Channel 4)
-        if: github.event.inputs.publish_youtube != 'false'
-        env:
-          FINANCIAL_STORY_ID: ${{ github.event.inputs.financial_story_id }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
-          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
-          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
-          FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
-          YOUTUBE_CLIENT_ID_CH4: ${{ secrets.YOUTUBE_CLIENT_ID_CH4 || secrets.YOUTUBE_CLIENT_ID_MOVIE || secrets.YOUTUBE_CLIENT_ID }}
-          YOUTUBE_CLIENT_SECRET_CH4: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH4 || secrets.YOUTUBE_CLIENT_SECRET_MOVIE || secrets.YOUTUBE_CLIENT_SECRET }}
-          YOUTUBE_REFRESH_TOKEN_CH4: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH4 || secrets.YOUTUBE_REFRESH_TOKEN_MOVIE || secrets.YOUTUBE_REFRESH_TOKEN }}
-          YOUTUBE_HANDLE_CH4: ${{ secrets.YOUTUBE_HANDLE_CH4 || secrets.YOUTUBE_HANDLE_MOVIE }}
-          FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
-          FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
-        run: |
-          echo "=== 💰 Generating Cinema Vanguard Financial Story Documentary Reel ==="
-          node scripts/generate_financial_story_documentary.cjs
-
-      - name: Execute Crime, Horror & Archival Documentary Engine (TikTok Driftreel)
-        if: github.event_name == 'push' || github.event_name == 'schedule' || github.event.inputs.publish_tiktok != 'false'
+      - name: Execute Crime, Horror & Archival Documentary Engine (YouTube Ch 4 & TikTok Driftreel)
+        if: github.event_name == 'push' || github.event_name == 'schedule' || github.event.inputs.publish_youtube != 'false' || github.event.inputs.publish_tiktok != 'false'
         env:
           DOCUMENTARY_EPISODE_ID: ${{ github.event.inputs.documentary_topic_id }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
@@ -99,17 +67,25 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH4 || secrets.YOUTUBE_CLIENT_ID_MOVIE }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH4 || secrets.YOUTUBE_CLIENT_SECRET_MOVIE }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH4 || secrets.YOUTUBE_REFRESH_TOKEN_MOVIE }}
+          YOUTUBE_CLIENT_ID_CH4: ${{ secrets.YOUTUBE_CLIENT_ID_CH4 || secrets.YOUTUBE_CLIENT_ID_MOVIE }}
+          YOUTUBE_CLIENT_SECRET_CH4: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH4 || secrets.YOUTUBE_CLIENT_SECRET_MOVIE }}
+          YOUTUBE_REFRESH_TOKEN_CH4: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH4 || secrets.YOUTUBE_REFRESH_TOKEN_MOVIE }}
+          YOUTUBE_HANDLE_CH4: ${{ secrets.YOUTUBE_HANDLE_CH4 || secrets.YOUTUBE_HANDLE_MOVIE }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
           FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
         run: |
-          echo "=== 🏛️ Generating Archival Crime, Horror & Mystery Reel for Driftreel ==="
+          echo "=== 🏛️ Generating Archival Crime, Horror & Mystery Reel for Driftreel & YouTube Ch 4 ==="
           node scripts/generate_documentary_movie_reel.cjs
 
       - name: Dispatch Archival Documentary Reel to Driftreel TikTok (Buffer API 2)
         if: success() && (github.event_name == 'push' || github.event_name == 'schedule' || github.event.inputs.publish_tiktok != 'false')
         env:
-          BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 || secrets.BUFFER_API_KEY }}
-          BUFFER_TIKTOK_DRIFTREEL_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_DRIFTREEL_CHANNEL_ID || secrets.BUFFER_TIKTOK_DRIFTREEL_CHANNEL || secrets.BUFFER_TIKTOK_DRIFTREEL || secrets.BUFFER_TIKTOK_MOVIE_CHANNEL_ID || secrets.BUFFER_TIKTOK_CHANNEL_ID_1 }}
+          BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
+          BUFFER_TIKTOK_DRIFTREEL_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_DRIFTREEL_CHANNEL_ID || secrets.BUFFER_TIKTOK_MOVIE_CHANNEL_ID || secrets.BUFFER_TIKTOK_DRIFTREEL || '6ab05677ea19ca0bde9c3ffb' }}
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
@@ -124,10 +100,8 @@ jobs:
         with:
           name: cinema-vanguard-driftreel-artifacts-${{ github.run_id }}
           path: |
-            rendered_videos/financial_story_doc_*.mp4
             rendered_videos/driftreel_documentary_*.mp4
             rendered_videos/documentary_*.mp4
-            test_artifacts/financial_story_doc/
             test_artifacts/documentary/
           if-no-files-found: ignore
           retention-days: 14
@@ -137,6 +111,6 @@ jobs:
         run: |
           echo "==============================================================="
           echo "CINEMA VANGUARD & DRIFTREEL DOCUMENTARY PIPELINE COMPLETED"
-          echo "• Financial Story Documentary -> YouTube Channel 4"
-          echo "• Crime, Horror & Mystery Documentary -> TikTok (driftreel via Buffer)"
+          echo "• Crime, Horror & Mystery Documentary -> YouTube Channel 4"
+          echo "• Crime, Horror & Mystery Documentary -> TikTok (driftreel via Buffer API 2)"
           echo "==============================================================="

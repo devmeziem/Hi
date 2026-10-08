@@ -24,7 +24,11 @@ function sanitizeToken(raw) {
 }
 
 const BUFFER_API_KEY = sanitizeToken(RAW_BUFFER_API_KEY);
-const BUFFER_TIKTOK_CHANNEL_ID = String(process.env.BUFFER_TIKTOK_CHANNEL_ID || '').trim();
+const BUFFER_TIKTOK_CHANNEL_ID = String(
+  process.env.BUFFER_TIKTOK_CHANNEL_ID ||
+  process.env.BUFFER_TIKTOK_FIN_CHANNEL_ID ||
+  '6a9b6f3f065799be468f596b'
+).trim();
 const CLOUDINARY_CLOUD_NAME = String(process.env.CLOUDINARY_CLOUD_NAME || '').trim();
 const CLOUDINARY_UPLOAD_PRESET = String(process.env.CLOUDINARY_UPLOAD_PRESET || '').trim();
 const STRICT_BUFFER_FAIL = process.env.STRICT_BUFFER_FAIL === 'true';

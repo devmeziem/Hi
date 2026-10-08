@@ -172,14 +172,14 @@ function generateDocumentaryKaraokeAss(wordsWithTimings, totalDuration, outAssPa
     let kLine = '';
     for (const w of chunk) {
       const wordCs = Math.max(8, Math.round(msPerWord / 10));
-      kLine += `{\\k${wordCs}}${w} `;
+      kLine += `{\\kf${wordCs}}${w.toUpperCase()} `;
     }
     lines.push(`Dialogue: 0,${formatAssTime(chunkStartMs)},${formatAssTime(chunkEndMs)},DocKaraoke,,0,0,0,,${kLine.trim()}`);
   }
 
-  // MarginV: 560 puts subtitles safely above bottom UI
+  // Centered screen alignment with translucent dark box and vibrant amber highlight
   const assContent = `[Script Info]
-Title: Driftreel Archival Karaoke
+Title: Cinema Vanguard Archival Karaoke
 ScriptType: v4.00+
 PlayResX: 1080
 PlayResY: 1920
@@ -187,7 +187,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: DocKaraoke, Arial, 56, &H00FFFFFF, &H0038BDF8, &H00000000, &HD0050810, 1, 0, 0, 0, 100, 100, 1.2, 0, 3, 16, 0, 5, 80, 80, 0, 1
+Style: DocKaraoke, DejaVu Sans, 58, &H0000D7FF, &H00FFFFFF, &H00000000, &HD0020617, 1, 0, 0, 0, 100, 100, 1.2, 0, 3, 16, 0, 5, 80, 80, 0, 1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -517,6 +517,28 @@ async function generateDocumentaryVideo() {
   });
 
   console.log(`\n[Driftreel TikTok Engine] 📱 Crime, Horror & Archival Documentary ready for TikTok Buffer dispatch.`);
+
+  // 10. Dispatch to YouTube Shorts (Channel 4: Cinema Vanguard)
+  const isDryRun = process.env.DRY_RUN === 'true';
+  const ch4Token = process.env.YOUTUBE_REFRESH_TOKEN_CH4 || process.env.YOUTUBE_REFRESH_TOKEN_MOVIE || '';
+  if (ch4Token && !isDryRun) {
+    try {
+      const { uploadYouTubeShort } = require('./youtube_channel_dispatcher.cjs');
+      const genreEmoji = chosenEpisode.genre === 'horror' ? '👁️' : chosenEpisode.genre === 'crime' ? '🕵️‍♂️' : '🏛️';
+      const viralTitle = `${genreEmoji} ${chosenEpisode.title} (${chosenEpisode.era.split('•')[0].trim()}) #Shorts`;
+      const viralDesc = `${fullNarration}\n\n🏛️ Era: ${chosenEpisode.era}\nGenre: ${chosenEpisode.genre.toUpperCase()}\n\n🍿 Follow @CinemaVanguard for daily archival cinema, true crime & deep mysteries!\n\n#CinemaVanguard #Documentary #DarkHistory #TrueCrime #Mystery #Shorts`;
+      await uploadYouTubeShort({
+        videoPath: finalMp4Path,
+        title: viralTitle,
+        description: viralDesc,
+        tags: chosenEpisode.hashtags,
+        channelId: 'movie_brand'
+      });
+      console.log(`[YouTube Channel 4 Dispatch] ✅ Uploaded documentary to YouTube Channel 4!`);
+    } catch (ytErr) {
+      console.warn(`[YouTube Channel 4 Notice] ${ytErr.message}`);
+    }
+  }
 
   return {
     videoPath: finalMp4Path,

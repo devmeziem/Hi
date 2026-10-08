@@ -368,8 +368,10 @@ async function generateTeenMotivationReel() {
   console.log(`[Compositor Engine] 🎬 Assembling master youth motivation video...`);
   execSync(finalCmd);
 
+  const renderedLatestMp4 = path.join(RENDERED_DIR, 'teen_motivation_latest.mp4');
   if (fs.existsSync(finalMp4Path) && fs.statSync(finalMp4Path).size > 10000) {
     fs.copyFileSync(finalMp4Path, latestMp4Path);
+    try { fs.copyFileSync(finalMp4Path, renderedLatestMp4); } catch {}
     console.log(`\n🎉 [MindRush Engine] SUCCESS: Rendered Video (${(fs.statSync(finalMp4Path).size / (1024 * 1024)).toFixed(2)} MB)`);
     console.log(` • Path: ${finalMp4Path}`);
     console.log(` • Spoken Duration: ${voiceDuration.toFixed(1)}s (Duration is strictly >25s)`);
@@ -382,6 +384,28 @@ async function generateTeenMotivationReel() {
     wordCount: spokenText.split(/\s+/).length,
     timestamp
   });
+
+  // 8. Dispatch to YouTube Shorts (Channel 5: Apex Discipline)
+  const isDryRun = process.env.DRY_RUN === 'true';
+  const autoPublish = process.env.AUTO_PUBLISH !== 'false';
+  const ch5Token = process.env.YOUTUBE_REFRESH_TOKEN_CH5 || process.env.YOUTUBE_REFRESH_TOKEN_TEEN || process.env.YOUTUBE_REFRESH_TOKEN || '';
+  if (ch5Token && !isDryRun && autoPublish) {
+    try {
+      const { uploadYouTubeShort } = require('./youtube_channel_dispatcher.cjs');
+      const viralTitle = `${scriptData.title} • Lock In #Shorts`;
+      const viralDesc = `⚡ Youth & Teen Motivation: ${scriptData.theme}\n\n${spokenText}\n\n🎯 Follow @ApexDiscipline for daily mental fortitude, habit systems & unstoppable discipline.\n\n#TeenMotivation #ApexDiscipline #LockIn #Mindset #SelfImprovement #Focus #Shorts`;
+      await uploadYouTubeShort({
+        videoPath: finalMp4Path,
+        title: viralTitle,
+        description: viralDesc,
+        tags: ['#TeenMotivation', '#ApexDiscipline', '#LockIn', '#Mindset', '#Focus', '#Shorts'],
+        channelId: 'teen_motivation'
+      });
+      console.log(`[YouTube Channel 5 Dispatch] ✅ Uploaded video to YouTube Channel 5!`);
+    } catch (ytErr) {
+      console.warn(`[YouTube Channel 5 Notice] ${ytErr.message}`);
+    }
+  }
 
   return {
     videoPath: finalMp4Path,

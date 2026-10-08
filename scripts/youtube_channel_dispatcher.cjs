@@ -17,42 +17,42 @@ const DEFAULT_CLIENT_SECRET = process.env.YOUTUBE_CLIENT_SECRET || '';
 const CHANNEL_CONFIG = {
   finance_saas: {
     key: 'finance_saas',
-    handle: process.env.YOUTUBE_HANDLE_CH1 || process.env.YOUTUBE_HANDLE_FIN || process.env.YOUTUBE_HANDLE || '',
+    handle: process.env.YOUTUBE_HANDLE_CH1 || process.env.YOUTUBE_HANDLE_FIN || process.env.YOUTUBE_HANDLE || '@bones_ceo',
     name: 'Fin Blueprint',
     isPrimary: true,
-    clientId: process.env.YOUTUBE_CLIENT_ID_CH1 || DEFAULT_CLIENT_ID,
-    clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH1 || DEFAULT_CLIENT_SECRET,
+    clientId: process.env.YOUTUBE_CLIENT_ID_CH1 || process.env.YOUTUBE_CLIENT_ID || '',
+    clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH1 || process.env.YOUTUBE_CLIENT_SECRET || '',
     refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH1 || process.env.YOUTUBE_REFRESH_TOKEN || '',
     tags: ['#Quotes', '#Finance', '#FinancialMindset', '#MoneyMindset', '#Wealth', '#Investing', '#FinancialFreedom', '#WealthMindset', '#SuccessQuotes', '#MillionaireMindset', '#Shorts']
   },
   motivation_stoicism: {
     key: 'motivation_stoicism',
-    handle: process.env.YOUTUBE_HANDLE_CH2 || process.env.YOUTUBE_HANDLE_STOIC || '',
+    handle: process.env.YOUTUBE_HANDLE_CH2 || process.env.YOUTUBE_HANDLE_STOIC || '@TheStoicArchitect',
     name: 'The Stoic Architect',
     isPrimary: false,
-    clientId: process.env.YOUTUBE_CLIENT_ID_CH2 || process.env.YOUTUBE_CLIENT_ID_STOIC || DEFAULT_CLIENT_ID,
-    clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH2 || process.env.YOUTUBE_CLIENT_SECRET_STOIC || DEFAULT_CLIENT_SECRET,
-    refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH2 || process.env.YOUTUBE_REFRESH_TOKEN_STOIC || process.env.YOUTUBE_REFRESH_TOKEN_2 || process.env.YOUTUBE_REFRESH_TOKEN || '',
+    clientId: process.env.YOUTUBE_CLIENT_ID_CH2 || process.env.YOUTUBE_CLIENT_ID_STOIC || '',
+    clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH2 || process.env.YOUTUBE_CLIENT_SECRET_STOIC || '',
+    refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH2 || process.env.YOUTUBE_REFRESH_TOKEN_STOIC || process.env.YOUTUBE_REFRESH_TOKEN_2 || '',
     tags: ['#Stoicism', '#MarcusAurelius', '#DailyStoic', '#Philosophy', '#Wisdom', '#StoicQuotes', '#Discipline', '#Mindset', '#MentalFortitude', '#Stoic', '#Shorts']
   },
   cartoon_factory: {
     key: 'cartoon_factory',
-    handle: process.env.YOUTUBE_HANDLE_CH3 || process.env.YOUTUBE_HANDLE_TECH || process.env.YOUTUBE_HANDLE_CARTOON || '',
-    name: 'Tech & AI Animation',
+    handle: process.env.YOUTUBE_HANDLE_CH3 || process.env.YOUTUBE_HANDLE_TECH || process.env.YOUTUBE_HANDLE_CARTOON || '@ArchieExplains',
+    name: 'Archie Explains',
     isPrimary: false,
-    clientId: process.env.YOUTUBE_CLIENT_ID_CH3 || process.env.YOUTUBE_CLIENT_ID_TECH || process.env.YOUTUBE_CLIENT_ID_CARTOON || DEFAULT_CLIENT_ID,
-    clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH3 || process.env.YOUTUBE_CLIENT_SECRET_TECH || process.env.YOUTUBE_CLIENT_SECRET_CARTOON || DEFAULT_CLIENT_SECRET,
-    refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH3 || process.env.YOUTUBE_REFRESH_TOKEN_TECH || process.env.YOUTUBE_REFRESH_TOKEN_CARTOON || process.env.YOUTUBE_REFRESH_TOKEN_ARCHIE || process.env.YOUTUBE_REFRESH_TOKEN || '',
+    clientId: process.env.YOUTUBE_CLIENT_ID_CH3 || process.env.YOUTUBE_CLIENT_ID_TECH || process.env.YOUTUBE_CLIENT_ID_CARTOON || '',
+    clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH3 || process.env.YOUTUBE_CLIENT_SECRET_TECH || process.env.YOUTUBE_CLIENT_SECRET_CARTOON || '',
+    refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH3 || process.env.YOUTUBE_REFRESH_TOKEN_TECH || process.env.YOUTUBE_REFRESH_TOKEN_CARTOON || process.env.YOUTUBE_REFRESH_TOKEN_ARCHIE || '',
     tags: ['#Tech', '#ArtificialIntelligence', '#Science', '#FutureTech', '#Engineering', '#Archie', '#Shorts']
   },
   movie_brand: {
     key: 'movie_brand',
-    handle: process.env.YOUTUBE_HANDLE_CH4 || process.env.YOUTUBE_HANDLE_MOVIE || process.env.YOUTUBE_HANDLE || '@CinemaVanguard',
+    handle: process.env.YOUTUBE_HANDLE_CH4 || process.env.YOUTUBE_HANDLE_MOVIE || '@CinemaVanguard',
     name: 'Cinema Vanguard Documentaries',
     isPrimary: false,
-    clientId: process.env.YOUTUBE_CLIENT_ID_CH4 || process.env.YOUTUBE_CLIENT_ID_MOVIE || DEFAULT_CLIENT_ID,
-    clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH4 || process.env.YOUTUBE_CLIENT_SECRET_MOVIE || DEFAULT_CLIENT_SECRET,
-    refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH4 || process.env.YOUTUBE_REFRESH_TOKEN_MOVIE || process.env.YOUTUBE_REFRESH_TOKEN || '',
+    clientId: process.env.YOUTUBE_CLIENT_ID_CH4 || process.env.YOUTUBE_CLIENT_ID_MOVIE || '',
+    clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH4 || process.env.YOUTUBE_CLIENT_SECRET_MOVIE || '',
+    refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH4 || process.env.YOUTUBE_REFRESH_TOKEN_MOVIE || '',
     tags: ['#Documentary', '#History', '#UntoldHistory', '#Archival', '#CinemaVanguard', '#HistoricalDocumentary', '#Shorts']
   },
   teen_motivation: {
@@ -60,9 +60,9 @@ const CHANNEL_CONFIG = {
     handle: process.env.YOUTUBE_HANDLE_CH5 || process.env.YOUTUBE_HANDLE_TEEN || '@MindRushOfficial',
     name: 'MindRush Motivation',
     isPrimary: false,
-    clientId: process.env.YOUTUBE_CLIENT_ID_CH5 || process.env.YOUTUBE_CLIENT_ID_TEEN || DEFAULT_CLIENT_ID,
-    clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH5 || process.env.YOUTUBE_CLIENT_SECRET_TEEN || DEFAULT_CLIENT_SECRET,
-    refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH5 || process.env.YOUTUBE_REFRESH_TOKEN_TEEN || process.env.YOUTUBE_REFRESH_TOKEN || '',
+    clientId: process.env.YOUTUBE_CLIENT_ID_CH5 || process.env.YOUTUBE_CLIENT_ID_TEEN || '',
+    clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH5 || process.env.YOUTUBE_CLIENT_SECRET_TEEN || '',
+    refreshToken: process.env.YOUTUBE_REFRESH_TOKEN_CH5 || process.env.YOUTUBE_REFRESH_TOKEN_TEEN || '',
     tags: ['#MindRush', '#Motivation', '#Discipline', '#YouthMindset', '#TeenMotivation', '#LockIn', '#Shorts']
   }
 };

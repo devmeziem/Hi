@@ -18,6 +18,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { getVerifiedChannelHandle } = require('./channel_verifier.cjs');
 
 const BUFFER_API_URL = 'https://api.buffer.com';
 
@@ -40,7 +41,10 @@ function sanitizeToken(raw) {
 
 const BUFFER_API_KEY = sanitizeToken(RAW_BUFFER_API_KEY_2);
 
-// Target TikTok channel IDs (Dynamically resolved from Buffer or GitHub Secrets / .env)
+// Target TikTok channel IDs (Dynamically resolved from Buffer or GitHub Secrets / .env with hardcoded fallbacks)
+const HARDCODED_TEEN_TIKTOK_CHANNEL_ID = '6ab05677ea19ca0bde9c3ffb';
+const HARDCODED_MOVIE_TIKTOK_CHANNEL_ID = '6ab05677ea19ca0bde9c3ffb';
+
 const BUFFER_TIKTOK_MOVIE_CHANNEL_ID = String(
   process.env.BUFFER_TIKTOK_MOVIE_CHANNEL_ID ||
   process.env.BUFFER_TIKTOK_DRIFTREEL_CHANNEL_ID ||
@@ -48,7 +52,7 @@ const BUFFER_TIKTOK_MOVIE_CHANNEL_ID = String(
   process.env.BUFFER_TIKTOK_CHANNEL_ID_MOVIE ||
   process.env.BUFFER_TIKTOK_CINEMA_CHANNEL_ID ||
   process.env.BUFFER_TIKTOK_DRIFTREEL ||
-  ''
+  HARDCODED_MOVIE_TIKTOK_CHANNEL_ID
 ).trim();
 
 // The episodic movies channel is the EXACT same channel used for the TikTok documentary niche
@@ -59,7 +63,7 @@ const BUFFER_TIKTOK_TEEN_CHANNEL_ID = String(
   process.env.BUFFER_TIKTOK_TEEN_CHANNEL ||
   process.env.BUFFER_TIKTOK_MOTIVATION_CHANNEL_ID ||
   process.env.BUFFER_TIKTOK_CHANNEL_ID_TEEN ||
-  ''
+  HARDCODED_TEEN_TIKTOK_CHANNEL_ID
 ).trim();
 
 const CLOUDINARY_CLOUD_NAME = String(process.env.CLOUDINARY_CLOUD_NAME || '').trim();
@@ -676,29 +680,40 @@ async function dispatchTikTok(channelType = 'movie_brand') {
       if (fs.existsSync(c)) { videoPath = c; break; }
     }
 
-    // Load driftreel manifest for rich caption
+    // Load documentary / driftreel manifest for rich caption
     const manifestCandidates = [
       path.join(process.cwd(), 'test_artifacts', 'documentary', 'driftreel_manifest.json'),
       path.join(process.cwd(), 'rendered_videos', 'driftreel_manifest.json'),
-      path.join(process.cwd(), 'test_artifacts', 'documentary', 'documentary_manifest.json')
+      path.join(process.cwd(), 'test_artifacts', 'documentary', 'documentary_manifest.json'),
+      path.join(process.cwd(), 'test_artifacts', 'movie_episodes_manifest.json')
     ];
-    let meta = {
-      title: 'The Ghost Ship of the Atlantic',
-      era: '1872 • Ghost Ship Disappearance',
-      genre: 'horror',
-      narration: 'In December 1872, a brigantine was spotted drifting silently off the Azores.'
-    };
+    let meta = null;
     for (const m of manifestCandidates) {
       if (fs.existsSync(m)) {
         try {
           const parsed = JSON.parse(fs.readFileSync(m, 'utf8'));
-          if (parsed && parsed.title) { meta = parsed; break; }
+          if (Array.isArray(parsed) && parsed[0]) { meta = parsed[0]; break; }
+          if (parsed && (parsed.title || parsed.episodeTitle)) { meta = parsed; break; }
         } catch {}
       }
     }
 
-    const genreEmoji = meta.genre === 'horror' ? '👁️' : meta.genre === 'crime' ? '🕵️‍♂️' : meta.genre === 'history' ? '🏛️' : '📜';
-    caption = `${genreEmoji} ${meta.title} // ${meta.era}\n\n${(meta.narration || '').slice(0, 190)}...\n\nFollow @driftreel for daily true crime, dark mysteries & historical stories! 👁️📜\n\n#Driftreel #TrueCrime #History #HorrorDocumentary #DarkHistory #Mystery #Unsolved #StoryTime #Documentary #Shorts #FYP`;
+    if (!meta) {
+      meta = {
+        title: path.basename(videoPath, '.mp4').replace(/[_-]+/g, ' ').toUpperCase(),
+        genre: 'documentary',
+        era: 'Archival Investigation',
+        narration: 'Deep historical investigation into real unsolved chronicles and mysteries.'
+      };
+    }
+
+    const verifiedDocHandle = getVerifiedChannelHandle('ch4');
+    const genreEmoji = meta.genre === 'horror' ? '👁️' : meta.genre === 'crime' ? '🕵️‍♂️' : meta.genre === 'history' ? '🏛️' : '🎬';
+    const docTitle = meta.title || meta.episodeTitle || 'Cinema Vanguard Documentary';
+    const docEra = meta.era ? ` // ${meta.era}` : '';
+    const storyExcerpt = (meta.narration || '').slice(0, 220);
+
+    caption = `${genreEmoji} ${docTitle}${docEra}\n\n${storyExcerpt}...\n\n🍿 Follow ${verifiedDocHandle} for daily archival cinema, true crime retrospectives & deep mysteries!\n\n#CinemaVanguard #Documentary #DarkHistory #TrueCrime #Mystery #ShortFilm #Cinematic #StoryTime #TikTokMovies #Drama #FYP #Shorts`;
 
   } else if (channelType === 'movie_brand') {
     targetChannel = resolveTargetChannel(discoveredTikToks, BUFFER_TIKTOK_MOVIE_CHANNEL_ID, 'movie_brand');
@@ -717,7 +732,7 @@ async function dispatchTikTok(channelType = 'movie_brand') {
 
     // Load movie manifest for rich caption
     const manifestPath = path.join(process.cwd(), 'test_artifacts', 'movie_episodes_manifest.json');
-    let meta = { episodeTitle: 'Protocol Zero: Episodic Cyberpunk Thriller', seriesTitle: 'Protocol Zero' };
+    let meta = null;
     if (fs.existsSync(manifestPath)) {
       try {
         const arr = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
@@ -725,7 +740,16 @@ async function dispatchTikTok(channelType = 'movie_brand') {
       } catch {}
     }
 
-    caption = `🎬 ${meta.seriesTitle || 'Protocol Zero'} // Episode: ${meta.episodeTitle || 'The Breach'}\n\n${(meta.narration || '').slice(0, 180)}...\n\nFollow for daily cinematic episodes! 🍿🔥\n\n#MovieTrailer #SciFi #CinemaVanguard #Cinematic #ShortFilm #ProtocolZero #TikTokMovies #Drama #Cyberpunk #Action #AIGenerated #AI`;
+    if (!meta) {
+      meta = {
+        seriesTitle: 'Cinema Vanguard',
+        episodeTitle: path.basename(videoPath, '.mp4').replace(/[_-]+/g, ' ').toUpperCase(),
+        narration: 'An episodic journey through high-stakes narrative cinema.'
+      };
+    }
+
+    const verifiedMovieHandle = getVerifiedChannelHandle('ch4');
+    caption = `🎬 ${meta.seriesTitle || 'Cinema Vanguard'} // Episode: ${meta.episodeTitle || 'The Breach'}\n\n${(meta.narration || '').slice(0, 200)}...\n\n🍿 Follow ${verifiedMovieHandle} for daily episodic cinema and documentary series!\n\n#MovieTrailer #SciFi #CinemaVanguard #Cinematic #ShortFilm #TikTokMovies #Drama #AIGenerated #AI #FYP`;
 
   } else if (channelType === 'teen_motivation') {
     targetChannel = resolveTargetChannel(discoveredTikToks, BUFFER_TIKTOK_TEEN_CHANNEL_ID, 'teen_motivation');
@@ -733,8 +757,21 @@ async function dispatchTikTok(channelType = 'movie_brand') {
     // Locate latest Teen Motivation video
     const teenCandidates = [
       path.join(process.cwd(), 'rendered_videos', 'teen_motivation_latest.mp4'),
+      path.join(process.cwd(), 'test_artifacts', 'teen_motivation', 'teen_motivation_latest.mp4'),
+      path.join(process.cwd(), 'test_artifacts', 'teen_motivation_latest.mp4'),
       path.join(process.cwd(), 'test_artifacts', 'motivation_reels', 'teen_motivation_dopamine_reset_21_days.mp4')
     ];
+    const renderedDir = path.join(process.cwd(), 'rendered_videos');
+    if (fs.existsSync(renderedDir)) {
+      try {
+        const found = fs.readdirSync(renderedDir)
+          .filter(f => f.startsWith('teen_motivation_') && f.endsWith('.mp4'))
+          .sort().reverse();
+        for (const f of found) {
+          teenCandidates.push(path.join(renderedDir, f));
+        }
+      } catch {}
+    }
     for (const c of teenCandidates) {
       if (fs.existsSync(c)) { videoPath = c; break; }
     }
@@ -742,7 +779,7 @@ async function dispatchTikTok(channelType = 'movie_brand') {
     // Load teen motivation manifest
     const manifestPath = path.join(process.cwd(), 'daily_blueprint_manifest.json');
     const legacyManifestPath = path.join(process.cwd(), 'test_artifacts', 'teen_motivation_manifest.json');
-    let meta = { title: 'How To Lock In and Level Up', hook: 'You are not lazy. You are just drowning in cheap dopamine.', challenge: 'RULE 1: NO PHONE IN BED FOR 7 DAYS' };
+    let meta = null;
     for (const mPath of [manifestPath, legacyManifestPath]) {
       if (fs.existsSync(mPath)) {
         try {
@@ -754,12 +791,15 @@ async function dispatchTikTok(channelType = 'movie_brand') {
       }
     }
 
-    let vocabBlock = '';
-    if (meta.rareWord && meta.rareWordDefinition) {
-      vocabBlock = `\n\n📖 POWER WORD & MINDSET DEFINED:\n• ${meta.rareWord.toUpperCase()}: ${meta.rareWordDefinition}`;
+    if (!meta) {
+      meta = {
+        hook: 'You are capable of far more than your doubts tell you.',
+        challenge: 'Focus on one hard task today without checking your phone.'
+      };
     }
 
-    caption = meta.description || `⚡ ${meta.hook || 'Lock in.'}\n\n👉 ${meta.challenge || 'We stand with you against the doubters.'}${vocabBlock}\n\nHit follow to build mental armor and level up daily. 🛡️\n\n#TeenMotivation #StudentGrind #Underdog #ProvingThemWrong #AcademicPressure #Relatable #LockIn #TeenMindset #Aura #DeepThoughts #FYP #StudyTok #Shorts`;
+    const verifiedTeenHandle = getVerifiedChannelHandle('ch5');
+    caption = meta.description || `⚡ ${meta.hook}\n\n👉 ${meta.challenge}\n\nHit follow ${verifiedTeenHandle} to build mental armor and level up daily. 🛡️\n\n#MindRush #TeenMotivation #Discipline #LockIn #Underdog #StudentMindset #Aura #DeepThoughts #FYP #StudyTok #Shorts`;
   }
 
   if (!targetChannel) {

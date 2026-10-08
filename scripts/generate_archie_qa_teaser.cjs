@@ -689,7 +689,7 @@ async function generateArchie3In1Teaser() {
 
   // 7. Dispatch to YouTube Shorts (Channel 3: Tech & Science Animation)
   const isDryRun = process.env.DRY_RUN === 'true';
-  const ch3Token = process.env.YOUTUBE_REFRESH_TOKEN_CH3 || process.env.YOUTUBE_REFRESH_TOKEN_TECH || process.env.YOUTUBE_REFRESH_TOKEN;
+  const ch3Token = process.env.YOUTUBE_REFRESH_TOKEN_CH3 || process.env.YOUTUBE_REFRESH_TOKEN_TECH || '';
 
   const viralTitle = `3 Common Knowledge Questions Most People Get Wrong! #Shorts`;
   const viralDesc = `Can you score 3 out of 3? Test your everyday intuition!\n\n1. ${questions[0].question}\n2. ${questions[1].question}\n3. ${questions[2].question}\n\nLock in your answers below! ⏳\n\n#ArchieExplains #Trivia #ScienceFacts #Showdown #Shorts`;
