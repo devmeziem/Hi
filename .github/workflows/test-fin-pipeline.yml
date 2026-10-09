@@ -1,6 +1,10 @@
 name: Fin Blueprint Pipeline - Daily Documentary & Fast Reels (Channel 1)
 
 on:
+  push:
+    branches:
+      - main
+      - master
   schedule:
     # 5x daily spaced drops: 04:00 UTC (Daily Financial Story Documentary), 07:00 UTC (3s reel), 12:00 UTC (5s reel), 17:00 UTC (3s reel), 22:00 UTC (5s reel)
     # Staggered 1 hour after Stoic drops to prevent API congestion & maintain ideal audience distribution
@@ -125,18 +129,7 @@ jobs:
             SHORT_DURATION=5.0 node scripts/generate_fin_quote_reel.cjs
           fi
 
-      - name: Queue Generated Video to TikTok through Buffer
-        if: ${{ github.event.inputs.dry_run != 'true' }}
-        continue-on-error: true
-        env:
-          TEST_TOPIC: ${{ github.event.inputs.topic }}
-          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
-          BUFFER_TIKTOK_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_CHANNEL_ID || '6a9b6f3f065799be468f596b' }}
-          BUFFER_POST_TEXT: ${{ github.event.inputs.topic }}
-          BUFFER_THUMBNAIL_OFFSET_MS: '2000'
-          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
-        run: node scripts/publish_fin_video_to_buffer_tiktok.cjs
+      # Note: Fin Blueprint is YouTube-only for now (never send to Buffer API 1 TikTok)
 
       - name: Pipeline Summary (Zero Git Commits, Low Key Database Logging)
         if: always()

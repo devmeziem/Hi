@@ -1,6 +1,10 @@
 name: Apex Discipline - Teen & Youth Motivation Pipeline (Channel 5)
 
 on:
+  push:
+    branches:
+      - main
+      - master
   schedule:
     # 4 Posts Daily:
     # 04:00 UTC (05:00 WAT) -> 32s Emotionally Impactful Long-Form Video (Soft Piano + Dark Blank Quote Ending Screen)
@@ -26,9 +30,9 @@ on:
         default: ''
         type: string
       auto_publish:
-        description: 'Publish Live to YouTube (Default FALSE: held in PENDING_REVIEW for manual check)'
+        description: 'Publish Live to YouTube (Default TRUE for automated daily publishing)'
         required: true
-        default: false
+        default: true
         type: boolean
       publish_tiktok:
         description: 'Publish Live to TikTok via Buffer API 2 (Default TRUE)'

@@ -1,6 +1,10 @@
 name: Stoic Long-Form Emotional Essay Pipeline
 
 on:
+  push:
+    branches:
+      - main
+      - master
   schedule:
     # Twice daily spaced slots: 03:00 UTC and 15:00 UTC
     # User mandate: Minimum 30s emotional impactful essay with Andrew voice (-5% rate, -25Hz pitch)

@@ -192,7 +192,7 @@ ${lines.join('\n')}
  * Build Glowing Gold Outro Card SVG (Last Scene CTA: "FOLLOW FOR MORE • FINANCIAL STORIES")
  */
 function buildFinancialOutroSvg(width = 1080, height = 1920) {
-  const channelMeta = getChannelMeta('ch4');
+  const channelMeta = getChannelMeta('ch1');
   const channelWatermark = channelMeta.handle;
   return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -201,13 +201,6 @@ function buildFinancialOutroSvg(width = 1080, height = 1920) {
         <stop offset="50%" stop-color="#0a0f1d" />
         <stop offset="100%" stop-color="#010204" />
       </linearGradient>
-      <filter id="goldPulse" x="-30%" y="-30%" width="160%" height="160%">
-        <feGaussianBlur stdDeviation="16" result="glow" />
-        <feMerge>
-          <feMergeNode in="glow" />
-          <feMergeNode in="SourceGraphic" />
-        </feMerge>
-      </filter>
     </defs>
 
     <rect width="${width}" height="${height}" fill="url(#outroGrad)" />
@@ -216,33 +209,33 @@ function buildFinancialOutroSvg(width = 1080, height = 1920) {
     <rect x="0" y="0" width="${width}" height="${height}" fill="none" stroke="#000000" stroke-width="120" opacity="0.85" />
 
     <!-- Outer Glowing Gold Frame -->
-    <rect x="60" y="80" width="${width - 120}" height="${height - 160}" rx="32" fill="none" stroke="#f59e0b" stroke-width="2" opacity="0.45" filter="url(#goldPulse)" />
+    <rect x="60" y="80" width="${width - 120}" height="${height - 160}" rx="32" fill="none" stroke="#f59e0b" stroke-width="2" opacity="0.45" />
 
     <!-- Center Card -->
     <g transform="translate(140, 740)">
-      <rect width="800" height="420" rx="28" fill="#090d16" fill-opacity="0.96" stroke="#f59e0b" stroke-width="3" filter="url(#goldPulse)" />
+      <rect width="800" height="420" rx="28" fill="#090d16" fill-opacity="0.96" stroke="#f59e0b" stroke-width="3" />
 
       <!-- Top Badge -->
       <g transform="translate(240, -24)">
         <rect width="320" height="48" rx="24" fill="#f59e0b" />
-        <text x="160" y="30" font-family="system-ui, sans-serif" font-size="13" font-weight="900" fill="#02040a" text-anchor="middle" letter-spacing="2">
+        <text x="160" y="30" font-family="DejaVu Sans, sans-serif" font-size="13" font-weight="900" fill="#02040a" text-anchor="middle" letter-spacing="2">
           FINANCIAL STORY ARCHIVE
         </text>
       </g>
 
       <!-- Glowing CTA Text -->
-      <text x="400" y="140" font-family="system-ui, sans-serif" font-size="52" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="4">
+      <text x="400" y="140" font-family="DejaVu Sans, sans-serif" font-size="52" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="4">
         FOLLOW FOR MORE
       </text>
 
-      <text x="400" y="215" font-family="system-ui, sans-serif" font-size="22" font-weight="800" fill="#fde68a" text-anchor="middle" letter-spacing="2">
-        EPIC STORIES OF MONEY, POWER & CRASHES
+      <text x="400" y="215" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="800" fill="#fde68a" text-anchor="middle" letter-spacing="2">
+        EPIC STORIES OF MONEY, POWER &amp; CRASHES
       </text>
 
       <!-- Bottom Channel Stamp -->
       <g transform="translate(140, 290)">
         <rect width="520" height="56" rx="28" fill="#020617" stroke="#f59e0b" stroke-width="1.6" />
-        <text x="260" y="35" font-family="system-ui, sans-serif" font-size="15" font-weight="800" fill="#10b981" text-anchor="middle" letter-spacing="1.5">
+        <text x="260" y="35" font-family="DejaVu Sans, sans-serif" font-size="15" font-weight="800" fill="#10b981" text-anchor="middle" letter-spacing="1.5">
           ${channelMeta.name} • ${channelWatermark.toUpperCase()} • Daily Stories 🏛️
         </text>
       </g>

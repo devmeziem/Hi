@@ -1,6 +1,10 @@
 name: Automated Cartoon Factory (Workflow 3)
 
 on:
+  push:
+    branches:
+      - main
+      - master
   schedule:
     # 4x daily spaced drops: 08:00 UTC (reel), 13:00 UTC (animated episode/short), 18:00 UTC (reel), 23:00 UTC (reel)
     # Staggered 1 hour after Fin and 2 hours after Stoic to balance runner execution and audience reach

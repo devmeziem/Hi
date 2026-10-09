@@ -216,13 +216,6 @@ function buildGlowingOutroSvg(genre = 'history', width = 1080, height = 1920) {
         <stop offset="50%" stop-color="#070c18" />
         <stop offset="100%" stop-color="#010204" />
       </linearGradient>
-      <filter id="neonPulse" x="-30%" y="-30%" width="160%" height="160%">
-        <feGaussianBlur stdDeviation="16" result="glow" />
-        <feMerge>
-          <feMergeNode in="glow" />
-          <feMergeNode in="SourceGraphic" />
-        </feMerge>
-      </filter>
     </defs>
 
     <rect width="${width}" height="${height}" fill="url(#outroGrad)" />
@@ -230,34 +223,34 @@ function buildGlowingOutroSvg(genre = 'history', width = 1080, height = 1920) {
     <!-- Ambient Vignette -->
     <rect x="0" y="0" width="${width}" height="${height}" fill="none" stroke="#000000" stroke-width="120" opacity="0.8" />
 
-    <!-- Outer Glowing Frame -->
-    <rect x="60" y="80" width="${width - 120}" height="${height - 160}" rx="32" fill="none" stroke="${glowTheme.border}" stroke-width="2" opacity="0.5" filter="url(#neonPulse)" />
+    <!-- Outer Frame -->
+    <rect x="60" y="80" width="${width - 120}" height="${height - 160}" rx="32" fill="none" stroke="${glowTheme.border}" stroke-width="2" opacity="0.5" />
 
     <!-- Center Card -->
     <g transform="translate(140, 740)">
-      <rect width="800" height="420" rx="28" fill="#050811" fill-opacity="0.96" stroke="${glowTheme.border}" stroke-width="3" filter="url(#neonPulse)" />
+      <rect width="800" height="420" rx="28" fill="#050811" fill-opacity="0.96" stroke="${glowTheme.border}" stroke-width="3" />
 
       <!-- Top Genre Badge -->
       <g transform="translate(250, -24)">
         <rect width="300" height="48" rx="24" fill="${glowTheme.border}" />
-        <text x="150" y="30" font-family="system-ui, sans-serif" font-size="13" font-weight="900" fill="#02040a" text-anchor="middle" letter-spacing="2">
+        <text x="150" y="30" font-family="DejaVu Sans, sans-serif" font-size="13" font-weight="900" fill="#02040a" text-anchor="middle" letter-spacing="2">
           ${glowTheme.badge}
         </text>
       </g>
 
       <!-- Glowing CTA Text -->
-      <text x="400" y="140" font-family="system-ui, sans-serif" font-size="52" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="4">
+      <text x="400" y="140" font-family="DejaVu Sans, sans-serif" font-size="52" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="4">
         FOLLOW FOR MORE
       </text>
 
-      <text x="400" y="215" font-family="system-ui, sans-serif" font-size="22" font-weight="800" fill="${glowTheme.text}" text-anchor="middle" letter-spacing="2">
-        DARK ARCHIVAL MYSTERIES & CRIME
+      <text x="400" y="215" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="800" fill="${glowTheme.text}" text-anchor="middle" letter-spacing="2">
+        DARK ARCHIVAL MYSTERIES &amp; CRIME
       </text>
 
       <!-- Bottom Channel Stamp -->
       <g transform="translate(140, 290)">
         <rect width="520" height="56" rx="28" fill="#020617" stroke="${glowTheme.border}" stroke-width="1.6" />
-        <text x="260" y="35" font-family="system-ui, sans-serif" font-size="16" font-weight="800" fill="#f8fafc" text-anchor="middle" letter-spacing="1.5">
+        <text x="260" y="35" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="800" fill="#f8fafc" text-anchor="middle" letter-spacing="1.5">
           ${getChannelMeta('ch4').name} • ${getChannelMeta('ch4').handle} • Daily Documentaries 🏛️
         </text>
       </g>

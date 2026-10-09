@@ -22,12 +22,11 @@ const { getVerifiedChannelHandle } = require('./channel_verifier.cjs');
 
 const BUFFER_API_URL = 'https://api.buffer.com';
 
-// Dedicated second Buffer token, falling back to primary token
+// Dedicated second Buffer token ONLY (Buffer API 2)
+// MANDATE: NEVER fall back to BUFFER_API_KEY (Buffer API 1 is omnichannel FB/IG only, NEVER for TikTok)
 const RAW_BUFFER_API_KEY_2 = String(
   process.env.BUFFER_API_KEY_2 ||
   process.env.BUFFER_TOKEN_2 ||
-  process.env.BUFFER_API_KEY ||
-  process.env.BUFFER_TOKEN ||
   ''
 ).trim();
 
@@ -103,15 +102,15 @@ function resolveTargetChannel(discoveredTikToks, userInputId, channelType) {
 
   // If Teen Motivation or MindRush, enforce strict priority
   if (channelType === 'teen_motivation' || channelType === 'mindrush' || channelType === 'mindrush_reel') {
-    // 0. Direct match on 'mindrush'
-    const byMindrush = discoveredTikToks.find(c => {
-      const n = (c.name || '').replace(/^@/, '').toLowerCase();
-      const d = (c.displayName || '').replace(/^@/, '').toLowerCase();
-      return n.includes('mindrush') || d.includes('mindrush');
+    // 0. Direct match on bonesceo / bones_ceo / mindrush
+    const byTeenExactHandle = discoveredTikToks.find(c => {
+      const n = (c.name || '').replace(/^@/, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const d = (c.displayName || '').replace(/^@/, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      return n.includes('bonesceo') || d.includes('bonesceo') || n.includes('mindrush') || d.includes('mindrush');
     });
-    if (byMindrush) {
-      console.log(`[Buffer TikTok Dispatch] 🎯 Matched MindRush TikTok channel: "${byMindrush.name}" (${byMindrush.id})`);
-      return byMindrush;
+    if (byTeenExactHandle) {
+      console.log(`[Buffer TikTok Dispatch] 🎯 Matched Youth/Teen Motivation TikTok channel (@bones_ceo / MindRush): "${byTeenExactHandle.name}" (${byTeenExactHandle.id})`);
+      return byTeenExactHandle;
     }
 
     // 1. Direct match on user configured Teen Motivation TikTok Channel ID

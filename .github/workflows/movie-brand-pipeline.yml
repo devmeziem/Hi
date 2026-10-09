@@ -1,6 +1,10 @@
 name: Cinema Vanguard - Crime, Horror, Mystery & Episodic Cinema (YouTube Ch 4 & Driftreel TikTok)
 
 on:
+  push:
+    branches:
+      - main
+      - master
   schedule:
     # Daily spaced archival and episodic cinema drops at 14:00 UTC
     - cron: '0 14 * * *'

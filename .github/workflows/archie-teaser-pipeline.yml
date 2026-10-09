@@ -1,6 +1,10 @@
 name: Archie Daily Q&A Teaser & Showdown Pipeline
 
 on:
+  push:
+    branches:
+      - main
+      - master
   schedule:
     # Twice daily drops: 07:00 UTC and 19:00 UTC
     # User mandate: Everyday updating 3-in-1 Q&A session, Andrew voice human pace, 4 options, 5s countdown with clock sound, debate in comments, deduplicating, no Archie sprite
@@ -68,7 +72,6 @@ jobs:
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
           BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
           BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31c1dcd8b9c702c467a38' }}
-          BUFFER_TIKTOK_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_CHANNEL_ID || '6a9b6f3f065799be468f596b' }}
         run: |
           echo "=== Generating Archie Daily 3-in-1 Intellectual Q&A Teaser Video ==="
           node scripts/generate_archie_qa_teaser.cjs

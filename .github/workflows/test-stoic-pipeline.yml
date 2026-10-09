@@ -1,6 +1,10 @@
 name: Stoic 5-Second Quote Reel Pipeline
 
 on:
+  push:
+    branches:
+      - main
+      - master
   schedule:
     # 2x daily spaced drops for authentic 5s quote reels: 09:00 UTC and 21:00 UTC
     # User mandate: Author image, fade in, keep panning, fade out, configured audio, SEO search tags
