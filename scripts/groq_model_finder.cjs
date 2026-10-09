@@ -262,7 +262,7 @@ async function fetchAndVerifyGroqModels() {
               const j = JSON.parse(data);
               const ids = (j.data || [])
                 .map(m => m.id)
-                .filter(id => !id.includes('whisper') && !id.includes('guard') && !id.includes('embedding'));
+                .filter(id => !id.includes('whisper') && !id.includes('guard') && !id.includes('embedding') && !id.includes('allam') && !id.includes('orpheus'));
               resolve(ids);
             } catch {
               resolve([]);
@@ -277,9 +277,10 @@ async function fetchAndVerifyGroqModels() {
     });
 
     if (liveModels.length > 0) {
-      // Prioritize fast, production-grade chat models
-      const preferred = DEFAULT_CANDIDATES.filter(c => liveModels.includes(c));
-      const remaining = liveModels.filter(m => !DEFAULT_CANDIDATES.includes(m));
+      // Prioritize fast, production-grade chat models (Llama 3.3, Llama 3.1, Qwen 2.5)
+      const primaryOrder = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'qwen-2.5-32b', 'llama-3.2-3b-preview', 'llama-3.2-1b-preview', 'mixtral-8x7b-32768'];
+      const preferred = primaryOrder.filter(c => liveModels.includes(c));
+      const remaining = liveModels.filter(m => !primaryOrder.includes(m));
       candidates = [...preferred, ...remaining];
     }
   } catch {}

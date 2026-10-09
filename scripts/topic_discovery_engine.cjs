@@ -1140,20 +1140,33 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
     }
   }
 
-  // 2. Cloudflare Workers AI (Zero Quota Clash)
+  // 2. Cloudflare Workers AI with Model Finder & Adaptive Formatting
   if (CLOUDFLARE_ACCOUNT_ID && CLOUDFLARE_API_TOKEN) {
-    const models = [
+    let cfModels = [
       '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
       '@cf/meta/llama-3.1-8b-instruct',
       '@cf/mistral/mistral-7b-instruct-v0.2',
       '@cf/qwen/qwen2.5-7b-instruct',
       '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b'
     ];
-    for (const model of models) {
+    let formatCfPayload = null;
+    let cleanCfJson = null;
+
+    try {
+      const cfFinder = require('./cloudflare_model_finder.cjs');
+      const discovered = await cfFinder.fetchAndVerifyCloudflareModels();
+      if (discovered && discovered.length > 0) cfModels = discovered;
+      formatCfPayload = cfFinder.formatCloudflarePayload;
+      cleanCfJson = cfFinder.cleanCloudflareJson;
+    } catch {}
+
+    for (const model of cfModels) {
       try {
-        const postData = JSON.stringify({
-          messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: `${userPrompt}\nReturn valid JSON object.` }]
-        });
+        const payloadObj = formatCfPayload
+          ? formatCfPayload(model, { systemPrompt, userPrompt, jsonMode: true })
+          : { messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: `${userPrompt}\nReturn valid JSON object.` }] };
+
+        const postData = JSON.stringify(payloadObj);
         const res = await new Promise((resolve, reject) => {
           const req = https.request(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${model}`, {
             method: 'POST',
@@ -1176,7 +1189,7 @@ async function callActiveAiForJson(systemPrompt, userPrompt, activeGrok = null, 
         if (res.status === 200) {
           const json = JSON.parse(res.data);
           const responseText = json.result?.response || (typeof json.result === 'string' ? json.result : null);
-          const parsed = cleanJsonText(responseText);
+          const parsed = (cleanCfJson ? cleanCfJson(responseText) : null) || cleanJsonText(responseText);
           if (parsed && (!validationFn || validationFn(parsed))) {
             return { success: true, modelUsed: `Cloudflare Workers AI (${model})`, data: parsed };
           }

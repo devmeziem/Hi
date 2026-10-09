@@ -415,6 +415,7 @@ async function generateArchie5sDailyFact() {
   }));
   const relAssPath = path.join(ARTIFACTS_DIR, 'archie_karaoke.ass');
   generateArchieKaraokeAss(wordsWithTimings, reelDuration, relAssPath);
+  const safeAssPath = relAssPath.replace(/\\/g, '/').replace(/:/g, '\\:').replace(/'/g, "\\'");
 
   // 11. Composite Video with FFmpeg (Single clean puppet on right, clean cutaway, subtitles)
   const timestamp = Date.now();
