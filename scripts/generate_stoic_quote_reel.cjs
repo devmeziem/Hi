@@ -46,15 +46,33 @@ async function resolveScholarPortrait(scholar) {
   if (!fs.existsSync(PORTRAITS_DIR)) fs.mkdirSync(PORTRAITS_DIR, { recursive: true });
 
   const safeName = scholar.wikiSearch || scholar.author.replace(/[^a-zA-Z0-9]/g, '_');
-  const portraitPath = path.join(PORTRAITS_DIR, `${safeName}.jpg`);
+  const quoteHash = Math.abs(scholar.quote ? scholar.quote.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0) : 0) % 1000;
+  const portraitPath = path.join(PORTRAITS_DIR, `${safeName}_${quoteHash}.jpg`);
+  const legacyPortraitPath = path.join(PORTRAITS_DIR, `${safeName}.jpg`);
 
-  console.log(`[Scholar Portrait] Sourcing portrait for: "${scholar.author}"...`);
+  console.log(`[Scholar Portrait] Sourcing authentic portrait for: "${scholar.author}"...`);
 
-  // 1. Primary Strategy: Check cached verified authentic portrait (museum photos, marble busts, oil paintings)
+  // 1. Primary Strategy: Check quote-specific portrait
   if (fs.existsSync(portraitPath) && fs.statSync(portraitPath).size > 10000) {
     console.log(`[Scholar Portrait] Using verified authentic portrait for ${scholar.author}`);
     return portraitPath;
   }
+
+  // 1b. Dynamic Fresh Visual Search (Unsplash / Wikimedia / Public Archives)
+  try {
+    const queryVariations = [
+      `${scholar.author} philosopher marble bust moody lighting`,
+      `${scholar.author} sculpture portrait dramatic classical`,
+      `ancient stoic thinker marble bust dramatic shadows`,
+      `classical marble statue contemplation shadows moody`
+    ];
+    const pickedQuery = queryVariations[quoteHash % queryVariations.length];
+    const fetched = await searchAndFetchImage(pickedQuery, { preferredSource: 'wikimedia' });
+    if (fetched && fetched.localPath && fs.existsSync(fetched.localPath)) {
+      fs.copyFileSync(fetched.localPath, portraitPath);
+      return portraitPath;
+    }
+  } catch (_) {}
 
   // 2. Verified Museum & Classical Public Domain Archives (Priority #1 to eliminate cartoon/AI-looking images)
   let fetchedUrl = scholar.directUrl || null;
@@ -584,24 +602,45 @@ function buildStoicDeepBeat3Svg(scholar, width = 1080, height = 1920) {
     chosen.credentials = narrative.backupQuote.title;
     chosen.psychologicalConcept = narrative.theme;
   } else {
-    // 5-Second Quote Reel (Mandate: Author portrait, fade in, keep panning, fade out, configured audio)
+    // 5-Second Quote Reel: 2-Beat Dynamic Narrative Progression
+    // Beat 1 (0.0s - 1.8s): Provocative psychological teaser hook
+    // Beat 2 (1.8s - 5.0s): Match cut reveal of the profound quote & scholar credentials
+    const hookSvg = buildStoicDeepBeat2Svg(chosen, 1080, 1920);
+    const hookSvgPath = path.join(ARTIFACTS_DIR, 'stoic_hook_beat.svg');
+    const hookPngPath = path.join(ARTIFACTS_DIR, 'stoic_hook_beat.png');
+    fs.writeFileSync(hookSvgPath, hookSvg);
+    try {
+      execSync(`ffmpeg -y -i "${hookSvgPath}" "${hookPngPath}" 2>/dev/null`);
+    } catch (_) {}
+
     const isPanRight = (chosen.quote.length % 2 === 0);
     const panXFormula = isPanRight
       ? `(iw-iw/zoom)*(0.15+0.70*(on/${totalFrames}))`
       : `(iw-iw/zoom)*(0.85-0.70*(on/${totalFrames}))`;
 
-    const fadeOutStart = Math.max(0.1, Number((effectiveDuration - 0.55).toFixed(2)));
+    const fadeOutStart = Math.max(0.1, Number((effectiveDuration - 0.45).toFixed(2)));
 
-    // User mandate: Fade in at start, keep panning across the portrait, and fade out smoothly at the end
-    const filterComplex = [
-      `[0:v]scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276,zoompan=z='1.10+0.00045*on':d=${totalFrames}:x='${panXFormula}':y='(ih-ih/zoom)*0.22':s=1080x1920:fps=${fps},eq=brightness=-0.04:contrast=1.14:saturation=0.90,vignette=PI/4.5,fade=t=in:st=0:d=0.5,fade=t=out:st=${fadeOutStart}:d=0.5[bg]`,
-      `[1:v]scale=1080:1920,fade=t=in:st=0:d=0.5,fade=t=out:st=${fadeOutStart}:d=0.5[ov]`,
+    // Multi-beat dynamic overlay graph:
+    // [bg] continuous cinematic camera pan + push
+    // [ov1] hook beat enabled between 0.0s and 1.8s
+    // [ov2] quote overlay enabled from 1.8s to end with smooth crossfade
+    const hasHook = fs.existsSync(hookPngPath) && fs.statSync(hookPngPath).size > 1000;
+    const filterComplex = hasHook ? [
+      `[0:v]scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276,zoompan=z='1.10+0.0005*on':d=${totalFrames}:x='${panXFormula}':y='(ih-ih/zoom)*0.22':s=1080x1920:fps=${fps},eq=brightness=-0.04:contrast=1.14:saturation=0.90,vignette=PI/4.5,fade=t=in:st=0:d=0.35,fade=t=out:st=${fadeOutStart}:d=0.45[bg]`,
+      `[1:v]scale=1080:1920,fade=t=in:st=0:d=0.3,fade=t=out:st=1.6:d=0.3[ov1]`,
+      `[2:v]scale=1080:1920,fade=t=in:st=1.8:d=0.3,fade=t=out:st=${fadeOutStart}:d=0.45[ov2]`,
+      `[bg][ov1]overlay=0:0:enable='lt(t,1.8)'[v_mid]`,
+      `[v_mid][ov2]overlay=0:0:enable='gte(t,1.8)',format=yuv420p[v]`
+    ].join(';') : [
+      `[0:v]scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276,zoompan=z='1.10+0.00045*on':d=${totalFrames}:x='${panXFormula}':y='(ih-ih/zoom)*0.22':s=1080x1920:fps=${fps},eq=brightness=-0.04:contrast=1.14:saturation=0.90,vignette=PI/4.5,fade=t=in:st=0:d=0.4,fade=t=out:st=${fadeOutStart}:d=0.45[bg]`,
+      `[1:v]scale=1080:1920,fade=t=in:st=0:d=0.4,fade=t=out:st=${fadeOutStart}:d=0.45[ov]`,
       `[bg][ov]overlay=0:0,format=yuv420p[v]`
     ].join(';');
 
-    // Restored deep contemplative soundtrack with audio fade-in & fade-out
-    const audioFilters = `afade=t=in:st=0:d=0.4,afade=t=out:st=${fadeOutStart}:d=0.5`;
-    const ffmpegCmd = `ffmpeg -y -loglevel error -loop 1 -t ${effectiveDuration} -i "${portraitPath}" -loop 1 -t ${effectiveDuration} -i "${overlayInput}" -stream_loop -1 -i "${wavPath}" -filter_complex "${filterComplex}" -af "${audioFilters}" -map "[v]" -map 2:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${effectiveDuration} "${finalMp4Path}"`;
+    const audioFilters = `afade=t=in:st=0:d=0.3,afade=t=out:st=${fadeOutStart}:d=0.45`;
+    const ffmpegCmd = hasHook
+      ? `ffmpeg -y -loglevel error -loop 1 -t ${effectiveDuration} -i "${portraitPath}" -loop 1 -t 1.8 -i "${hookPngPath}" -loop 1 -t ${effectiveDuration} -i "${overlayInput}" -stream_loop -1 -i "${wavPath}" -filter_complex "${filterComplex}" -af "${audioFilters}" -map "[v]" -map 3:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${effectiveDuration} "${finalMp4Path}"`
+      : `ffmpeg -y -loglevel error -loop 1 -t ${effectiveDuration} -i "${portraitPath}" -loop 1 -t ${effectiveDuration} -i "${overlayInput}" -stream_loop -1 -i "${wavPath}" -filter_complex "${filterComplex}" -af "${audioFilters}" -map "[v]" -map 2:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${effectiveDuration} "${finalMp4Path}"`;
 
     try {
       execSync(ffmpegCmd, { maxBuffer: 50 * 1024 * 1024, stdio: ['pipe', 'pipe', 'pipe'] });

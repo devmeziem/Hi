@@ -300,6 +300,13 @@ function selectDeduplicatedItem() {
  * - Figure of Archie below: hands on jaw, other hand akimbo on waist, one eye slightly raised
  * - Companion insight card beside Archie
  */
+/**
+ * Build 1080x1350 High-Resolution Post InfoCard SVG
+ * Ultra-Clean, Spacious Editorial Design (Significantly reduced clutter):
+ * - Clean obsidian canvas with generous margins and breathing room
+ * - Hero Card: Big bold "DID YOU KNOW?" title + 1 crisp takeaway (Zero nested mini-boxes)
+ * - Lower Half: Archie mascot alongside a single spacious, elegant insight quote
+ */
 function buildPostInfocardSvg(item) {
   const width = 1080;
   const height = 1350;
@@ -312,11 +319,11 @@ function buildPostInfocardSvg(item) {
   return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#000000" flood-opacity="0.5" />
+      <feDropShadow dx="0" dy="10" stdDeviation="20" flood-color="#000000" flood-opacity="0.6" />
     </filter>
-    <linearGradient id="hookCardBg" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="heroCardBg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#0f172a" />
-      <stop offset="100%" stop-color="#090d16" />
+      <stop offset="100%" stop-color="#070d18" />
     </linearGradient>
     <linearGradient id="goldBadge" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" stop-color="#fbbf24" />
@@ -325,102 +332,79 @@ function buildPostInfocardSvg(item) {
   </defs>
 
   <!-- Clean Obsidian Canvas Background -->
-  <rect width="${width}" height="${height}" fill="#070a12" />
+  <rect width="${width}" height="${height}" fill="#050811" />
   
-  <!-- Subtle Framing Border -->
-  <rect x="20" y="20" width="${width - 40}" height="${height - 40}" rx="24" fill="none" stroke="#1e293b" stroke-width="2" />
+  <!-- Subtle Outer Border -->
+  <rect x="24" y="24" width="${width - 48}" height="${height - 48}" rx="28" fill="none" stroke="#1e293b" stroke-width="1.8" />
 
   <!-- Top Category & Brand Bar -->
-  <g transform="translate(50, 48)">
-    <rect x="0" y="0" width="340" height="38" rx="19" fill="#0f172a" stroke="#38bdf8" stroke-width="1.8" />
-    <circle cx="22" cy="19" r="5" fill="#38bdf8" />
-    <text x="38" y="25" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="800" fill="#38bdf8" letter-spacing="1.5">
+  <g transform="translate(60, 56)">
+    <rect x="0" y="0" width="360" height="42" rx="21" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5" />
+    <circle cx="22" cy="21" r="5" fill="#38bdf8" />
+    <text x="40" y="27" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="900" fill="#38bdf8" letter-spacing="1.5">
       ${escapeXml(item.category)}
     </text>
-    <text x="980" y="25" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="800" fill="#94a3b8" text-anchor="end" letter-spacing="1.5">
-      ARCHIE LAB • FACT CHECK
+    <text x="960" y="27" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="800" fill="#64748b" text-anchor="end" letter-spacing="2">
+      ARCHIE LAB • STEM
     </text>
   </g>
 
   <!-- ================================================================= -->
-  <!-- HERO HOOK CARD: CLEAN, UNCLUTTERED, MAXIMUM STOPPING POWER       -->
+  <!-- HERO CARD: AIRY, UNCLUTTERED, MAXIMUM READABILITY                 -->
   <!-- ================================================================= -->
-  <g transform="translate(50, 110)" filter="url(#softShadow)">
-    <rect x="0" y="0" width="980" height="520" rx="24" fill="url(#hookCardBg)" stroke="#38bdf8" stroke-width="2.5" />
+  <g transform="translate(60, 126)" filter="url(#softShadow)">
+    <rect x="0" y="0" width="960" height="490" rx="28" fill="url(#heroCardBg)" stroke="#38bdf8" stroke-width="2.0" />
 
-    <!-- Big Attention-Grabbing Hook Badge -->
-    <rect x="36" y="32" width="230" height="42" rx="12" fill="url(#goldBadge)" />
-    <text x="151" y="60" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="900" fill="#0f172a" text-anchor="middle" letter-spacing="1.5">
+    <!-- Did You Know Chip -->
+    <rect x="44" y="40" width="220" height="42" rx="14" fill="url(#goldBadge)" />
+    <text x="154" y="68" font-family="system-ui, -apple-system, sans-serif" font-size="19" font-weight="900" fill="#0f172a" text-anchor="middle" letter-spacing="1.2">
       💡 DID YOU KNOW?
     </text>
 
-    <!-- Bold Main Hook Title (Prominent, High Impact) -->
-    ${renderWrappedSvgText(item.title, 36, 120, 36, 44, 34, '#ffffff', '900')}
+    <!-- Main Title (Big, bold, clean line height) -->
+    ${renderWrappedSvgText(item.title, 44, 140, 32, 48, 38, '#ffffff', '900')}
 
-    <!-- Divider -->
-    <line x1="36" y1="210" x2="944" y2="210" stroke="#1e293b" stroke-width="2" />
-
-    <!-- Core Hook Mystery Box: Readable, uncluttered, curiosity trigger -->
-    <rect x="36" y="235" width="908" height="150" rx="16" fill="#0b1120" stroke="#334155" stroke-width="1.5" />
-    <text x="64" y="275" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="900" fill="#38bdf8" letter-spacing="1.2">
-      🔍 THE EVERYDAY QUESTION:
+    <!-- Clean Single Revelation (No nested boxes) -->
+    <text x="44" y="320" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="900" fill="#38bdf8" letter-spacing="2">
+      ⚡ THE CORE SCIENCE:
     </text>
-    ${renderWrappedSvgText(item.mystery, 64, 310, 52, 32, 22, '#f1f5f9', '600')}
-
-    <!-- Bottom Hook Punchline Bar -->
-    <rect x="36" y="415" width="908" height="75" rx="14" fill="#06251f" stroke="#10b981" stroke-width="1.5" />
-    <text x="64" y="452" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="900" fill="#34d399" letter-spacing="1.2">
-      ⚡ THE VERDICT:
-    </text>
-    <text x="210" y="452" font-family="system-ui, -apple-system, sans-serif" font-size="17" font-weight="700" fill="#ecfdf5">
-      ${escapeXml(item.mythBuster.replace(/^Myth:\s*/i, '').slice(0, 72))}...
-    </text>
-    <text x="64" y="475" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#94a3b8">
-      📖 Full scientific breakdown explained in caption below!
-    </text>
+    ${renderWrappedSvgText(item.takeaway, 44, 360, 46, 36, 23, '#cbd5e1', '500')}
   </g>
 
   <!-- ================================================================= -->
-  <!-- LOWER SECTION: ARCHIE MASCOT & READABLE TAKEAWAY CARD             -->
+  <!-- LOWER SECTION: ARCHIE MASCOT & SINGLE AIRY INSIGHT CARD           -->
   <!-- ================================================================= -->
-  <!-- Archie Character on Left -->
-  <g id="archie_character_figure" transform="translate(10, 645) scale(0.68)">
+  <!-- Archie Character Figure on Left -->
+  <g id="archie_character_figure" transform="translate(50, 670) scale(0.74)">
     ${archieInnerContent}
   </g>
 
-  <!-- Hook Companion Card (Right of Archie) -->
-  <g transform="translate(440, 655)" filter="url(#softShadow)">
-    <rect x="0" y="0" width="590" height="625" rx="24" fill="#0b1120" stroke="#334155" stroke-width="2" />
+  <!-- Single Spacious Insight Card on Right (Spacious, Zero Mini-Boxes) -->
+  <g transform="translate(460, 670)" filter="url(#softShadow)">
+    <rect x="0" y="0" width="560" height="580" rx="28" fill="#0b1120" stroke="#38bdf8" stroke-width="1.8" />
 
     <!-- Card Header Pill -->
-    <rect x="32" y="28" width="270" height="38" rx="12" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5" />
-    <text x="48" y="53" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#38bdf8" letter-spacing="1.2">
-      🧠 ARCHIE'S LAB NOTE
+    <rect x="36" y="36" width="250" height="40" rx="20" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5" />
+    <text x="161" y="62" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="900" fill="#38bdf8" text-anchor="middle" letter-spacing="1.5">
+      🔍 ARCHIE'S TAKE
     </text>
 
-    <!-- Key Scientific Takeaway -->
-    <text x="32" y="105" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="900" fill="#facc15" letter-spacing="1">
-      ⚡ KEY TAKEAWAY:
+    <!-- Question / Curiosity Prompt -->
+    <text x="36" y="125" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="800" fill="#94a3b8" letter-spacing="1">
+      WHY IT MATTERS:
     </text>
-    ${renderWrappedSvgText(item.takeaway, 32, 138, 38, 30, 20, '#f8fafc', '500')}
+    ${renderWrappedSvgText(item.mystery, 36, 165, 34, 36, 23, '#f1f5f9', '600')}
 
-    <!-- Pro Tip / Practical Action -->
-    <rect x="32" y="270" width="526" height="150" rx="14" fill="#0f172a" stroke="#facc15" stroke-width="1.5" />
-    <text x="52" y="304" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="900" fill="#facc15" letter-spacing="1">
-      💡 EVERYDAY LIFE HACK:
+    <!-- Minimalist Everyday Tip -->
+    <rect x="36" y="350" width="488" height="110" rx="18" fill="#0f172a" stroke="#f59e0b" stroke-width="1.4" stroke-opacity="0.8" />
+    <text x="54" y="385" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="900" fill="#f59e0b" letter-spacing="1.5">
+      💡 EVERYDAY TAKEAWAY:
     </text>
-    ${renderWrappedSvgText(item.proTip, 52, 338, 38, 28, 18, '#fef08a', '500')}
+    ${renderWrappedSvgText(item.proTip, 54, 418, 38, 28, 17, '#fef3c7', '500')}
 
-    <!-- Engagement & Community Call To Action -->
-    <rect x="32" y="445" width="526" height="150" rx="14" fill="#070d18" stroke="#1e293b" stroke-width="1.5" />
-    <text x="52" y="482" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="900" fill="#ffffff">
-      💬 Did this surprise you?
-    </text>
-    <text x="52" y="512" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="500" fill="#94a3b8">
-      Read the full caption for the full science details!
-    </text>
-    <text x="52" y="555" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#38bdf8">
-      👉 Follow @bones_ceo • 📌 Save for later
+    <!-- Clean Bottom Prompt -->
+    <text x="36" y="525" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#38bdf8" letter-spacing="0.5">
+      👉 Read full scientific explanation in caption!
     </text>
   </g>
 </svg>`;
