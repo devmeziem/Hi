@@ -150,7 +150,26 @@ function assembleFinalCartoonVideo(sceneFiles, outputMp4Path, srtPath) {
     vfFilters.push(`subtitles='${escapedSrtPath}':force_style='Alignment=2,Fontsize=28,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BackColour=&H95020617,BorderStyle=3,Outline=10,MarginV=360'`);
   }
 
-  const burnCmd = `ffmpeg -y -i "${tempConcatMp4}" -vf "${vfFilters.join(',')}" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a copy "${outputMp4Path}" 2>/dev/null`;
+  // Mix in background music ducked under dialogue if available
+  const { resolveRealMusicTrack } = require('./audio_asset_manager.cjs');
+  let totalDur = 30;
+  try {
+    totalDur = parseFloat(execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${tempConcatMp4}"`).toString().trim()) || 30;
+  } catch {}
+
+  let bgmPath = null;
+  try {
+    bgmPath = resolveRealMusicTrack({ niche: 'cartoon', duration: totalDur });
+  } catch {}
+
+  let burnCmd = '';
+  if (bgmPath && fs.existsSync(bgmPath)) {
+    console.log(`[Audio/Media Engine] 🎶 Mixing cartoon background music: "${path.basename(bgmPath)}" (${totalDur.toFixed(1)}s)...`);
+    burnCmd = `ffmpeg -y -i "${tempConcatMp4}" -stream_loop -1 -i "${bgmPath}" -filter_complex "[0:v]${vfFilters.join(',')}[vout]; [0:a]volume=1.35[va]; [1:a]volume=0.14,atrim=0:${totalDur.toFixed(2)},afade=t=in:st=0:d=1.0,afade=t=out:st=${(totalDur - 1.5).toFixed(2)}:d=1.5[bgma]; [va][bgma]amix=inputs=2:duration=first[aout]" -map "[vout]" -map "[aout]" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${totalDur.toFixed(2)} "${outputMp4Path}" 2>/dev/null`;
+  } else {
+    burnCmd = `ffmpeg -y -i "${tempConcatMp4}" -vf "${vfFilters.join(',')}" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a copy "${outputMp4Path}" 2>/dev/null`;
+  }
+
   try {
     console.log(`[Audio/Media Engine] 🔥 Burning high-visibility subtitles and @ArchieExplains watermark...`);
     execSync(burnCmd);

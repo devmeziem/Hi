@@ -19,7 +19,7 @@ const https = require('https');
 const http = require('http');
 const { EdgeTTS } = require('node-edge-tts');
 const { uploadYouTubeShort, formatChannelFollowCta } = require('./youtube_channel_dispatcher.cjs');
-const { assembleArchieMasterAudio } = require('./archie_sound_engine.cjs');
+const { synthesizeArchieVoice, assembleArchieMasterAudio } = require('./archie_sound_engine.cjs');
 const { buildAllModernCharacterAssets } = require('./build_modern_tech_character.cjs');
 const { 
   discoverAndSelectTopicViaActiveAi, 
@@ -325,34 +325,13 @@ async function generateArchie5sDailyFact() {
   const puppetPoint = path.join(characterDir, 'puppet_point_up_right.png');
   const puppetPointTalk = path.join(characterDir, 'puppet_point_up_right_talk.png');
 
-  // 5. Synthesize Audio Spoken Voiceover via EdgeTTS (Andrew Voice)
+  // 5. Synthesize Audio Spoken Voiceover via Resilient Multi-Tier Engine
   const fullNarration = `${script.spokenHook} ${script.coreExplanation} ${script.spokenOutro}`;
-  const voiceMp3Path = path.join(ARTIFACTS_DIR, `archie_voice_${Date.now()}.mp3`);
   const voiceWavPath = path.join(ARTIFACTS_DIR, `archie_voice_${Date.now()}.wav`);
 
-  let tts = new EdgeTTS({
-    voice: 'en-US-AndrewMultilingualNeural',
-    lang: 'en-US',
-    outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
-    rate: '+0%',
-    pitch: '+0Hz',
-    timeout: 45000
-  });
-  try {
-    await tts.ttsPromise(fullNarration, voiceMp3Path);
-  } catch {
-    tts = new EdgeTTS({
-      voice: 'en-US-AndrewNeural',
-      lang: 'en-US',
-      outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
-      rate: '+0%',
-      pitch: '+0Hz',
-      timeout: 45000
-    });
-    await tts.ttsPromise(fullNarration, voiceMp3Path);
-  }
+  console.log(`[Audio Engine] 🎙️ Synthesizing Archie's voice narration...`);
+  await synthesizeArchieVoice(fullNarration, voiceWavPath);
 
-  execSync(`ffmpeg -y -i "${voiceMp3Path}" -ar 44100 -ac 2 -c:a pcm_s16le "${voiceWavPath}" 2>/dev/null`);
   const durProbe = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${voiceWavPath}"`, { encoding: 'utf8' }).trim();
   const voiceDuration = parseFloat(durProbe) || 28.0;
   const reelDuration = voiceDuration + 1.5;
@@ -360,7 +339,14 @@ async function generateArchie5sDailyFact() {
 
   // 6. Assemble Background Music & SFX
   const audioWavPath = path.join(ARTIFACTS_DIR, `archie_master_audio_${Date.now()}.wav`);
-  assembleArchieMasterAudio(voiceWavPath, audioWavPath, reelDuration, 'tech');
+  try {
+    await assembleArchieMasterAudio(voiceWavPath, audioWavPath, { duration: reelDuration, niche: 'cartoon' });
+  } catch (audioErr) {
+    console.warn(`[Audio Engine] assembleArchieMasterAudio notice: ${audioErr.message}`);
+  }
+  if (!fs.existsSync(audioWavPath) || fs.statSync(audioWavPath).size < 1000) {
+    fs.copyFileSync(voiceWavPath, audioWavPath);
+  }
 
   // 7. Render Modern Creator Studio Background SVG -> PNG
   const bgSvg = buildModernCreatorStudioSvg(1080, 1920, chosenTopic.title);
@@ -448,18 +434,18 @@ async function generateArchie5sDailyFact() {
     [0:v]scale=1080:1920[bg];
     [1:v]scale=1080:1920[pill];
     [2:v]scale=1080:1920[specimen];
-    [3:v]scale=-1:1150[pt];
+    [3:v]scale=-1:1150,split=2[pt1][pt2];
     [4:v]scale=-1:1150[pt_t];
-    [5:v]scale=-1:1150[idle];
+    [5:v]scale=-1:1150,split=2[idle1][idle2];
     [6:v]scale=-1:1150[talk];
     [bg][pill]overlay=0:0[s0];
     [s0][specimen]overlay=0:0:enable='between(t,${cutawayStart},${cutawayEnd})'[s1];
-    [s1][pt]overlay=x=440:y=760:enable='lt(t,1.2)'[s2];
+    [s1][pt1]overlay=x=440:y=760:enable='lt(t,1.2)'[s2];
     [s2][pt_t]overlay=x=440:y=760:enable='gte(t,1.2)*lt(t,${cutawayStart})*mod(floor(t*5),2)'[s3];
-    [s3][pt]overlay=x=440:y=760:enable='gte(t,1.2)*lt(t,${cutawayStart})*(1-mod(floor(t*5),2))'[s4];
+    [s3][pt2]overlay=x=440:y=760:enable='gte(t,1.2)*lt(t,${cutawayStart})*(1-mod(floor(t*5),2))'[s4];
     [s4][talk]overlay=x=440:y=760:enable='gte(t,${cutawayStart})*lt(t,${voiceDuration.toFixed(2)})*mod(floor(t*5),2)'[s5];
-    [s5][idle]overlay=x=440:y=760:enable='gte(t,${cutawayStart})*lt(t,${voiceDuration.toFixed(2)})*(1-mod(floor(t*5),2))'[s6];
-    [s6][idle]overlay=x=440:y=760:enable='gte(t,${voiceDuration.toFixed(2)})'[v_raw];
+    [s5][idle1]overlay=x=440:y=760:enable='gte(t,${cutawayStart})*lt(t,${voiceDuration.toFixed(2)})*(1-mod(floor(t*5),2))'[s6];
+    [s6][idle2]overlay=x=440:y=760:enable='gte(t,${voiceDuration.toFixed(2)})'[v_raw];
     [v_raw]subtitles='${safeAssPath}'[vfinal]
   `.replace(/\s+/g, ' ').trim();
 

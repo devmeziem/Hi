@@ -160,12 +160,84 @@ async function synthesizeEdgeTTS(text, outWavPath) {
 }
 
 /**
+ * Google Speech TTS Engine (Fast, highly reliable fallback when EdgeTTS WebSocket is blocked)
+ */
+async function synthesizeGoogleSpeechTTS(text, outWavPath) {
+  try {
+    const dir = path.dirname(outWavPath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+    const sentences = (text.match(/[^.!?]+[.!?]+/g) || [text]).map(s => s.trim()).filter(Boolean);
+    const chunks = [];
+    for (const s of sentences) {
+      if (s.length <= 180) {
+        chunks.push(s);
+      } else {
+        const words = s.split(/\s+/);
+        let curr = '';
+        for (const w of words) {
+          if ((curr + ' ' + w).trim().length <= 180) {
+            curr = (curr + ' ' + w).trim();
+          } else {
+            if (curr) chunks.push(curr);
+            curr = w;
+          }
+        }
+        if (curr) chunks.push(curr);
+      }
+    }
+
+    const chunkFiles = [];
+    const prefix = `gtts_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    for (let i = 0; i < chunks.length; i++) {
+      const chunkPath = path.join(dir, `${prefix}_${i}.mp3`);
+      const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(chunks[i])}&tl=en&client=tw-ob`;
+      const ok = await new Promise((resolve) => {
+        const file = fs.createWriteStream(chunkPath);
+        const req = https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' } }, res => {
+          if (res.statusCode === 200) {
+            res.pipe(file);
+            file.on('finish', () => { file.close(); resolve(true); });
+          } else {
+            file.close();
+            try { fs.unlinkSync(chunkPath); } catch {}
+            resolve(false);
+          }
+        });
+        req.on('error', () => { file.close(); resolve(false); });
+        req.on('timeout', () => { req.destroy(); file.close(); resolve(false); });
+      });
+      if (ok && fs.existsSync(chunkPath) && fs.statSync(chunkPath).size > 200) {
+        chunkFiles.push(chunkPath);
+      }
+    }
+
+    if (chunkFiles.length > 0) {
+      const listPath = path.join(dir, `${prefix}_list.txt`);
+      const listContent = chunkFiles.map(f => `file '${f.replace(/\\/g, '/')}'`).join('\n');
+      fs.writeFileSync(listPath, listContent, 'utf8');
+      execSync(`ffmpeg -y -f concat -safe 0 -i "${listPath}" -af "atempo=1.02,highpass=f=80,equalizer=f=3000:t=q:w=1.2:g=1.5" -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
+      try { fs.unlinkSync(listPath); } catch {}
+      chunkFiles.forEach(f => { try { fs.unlinkSync(f); } catch {} });
+      if (fs.existsSync(outWavPath) && fs.statSync(outWavPath).size > 2000) {
+        return true;
+      }
+    }
+  } catch (err) {
+    console.warn(`[Google Speech Engine] Notice: ${err.message}`);
+  }
+  return false;
+}
+
+/**
  * Synthesize Archie's speech narration to WAV with robust fallbacks
- * Hierarchy configured per user specification:
- * Tier 1: Microsoft Edge Neural TTS (PRIMARY - high fidelity, zero key required)
- * Tier 2: ElevenLabs Studio Voice (SECONDARY - high realism if key provided)
- * Tier 3: Cloudflare Workers AI Neural TTS (LAST OPTION among cloud/neural providers)
- * Tier 4: espeak-ng local speech engine (Offline safety)
+ * Hierarchy:
+ * Tier 1: Microsoft Edge Neural TTS (Primary)
+ * Tier 2: Google Speech TTS (Ultra-reliable, zero-key)
+ * Tier 3: ElevenLabs Studio Voice (If key provided)
+ * Tier 4: Cloudflare Workers AI Neural TTS (If token configured)
+ * Tier 5: espeak-ng local speech engine
+ * Tier 6: High-clarity spoken cadence fallback
  */
 async function synthesizeArchieVoice(text, outWavPath) {
   const dir = path.dirname(outWavPath);
@@ -187,7 +259,16 @@ async function synthesizeArchieVoice(text, outWavPath) {
     }
   } catch {}
 
-  // Tier 2: ElevenLabs Studio Voice (Secondary Option)
+  // Tier 2: Google Speech Engine (Immediate resilient fallback)
+  try {
+    const gOk = await synthesizeGoogleSpeechTTS(cleanText, outWavPath);
+    if (gOk) {
+      console.log('  ✅ Synthesized via Google Speech Engine (Resilient)');
+      return { path: outWavPath, engine: 'google-speech' };
+    }
+  } catch {}
+
+  // Tier 3: ElevenLabs Studio Voice (Secondary Option)
   try {
     const elOk = await synthesizeElevenLabsTTS(cleanText, outWavPath);
     if (elOk) {
@@ -196,7 +277,7 @@ async function synthesizeArchieVoice(text, outWavPath) {
     }
   } catch {}
 
-  // Tier 3: Cloudflare Workers AI Neural TTS (Last online option)
+  // Tier 4: Cloudflare Workers AI Neural TTS
   try {
     const cfOk = await synthesizeCloudflareTTS(cleanText, outWavPath);
     if (cfOk) {
@@ -287,16 +368,21 @@ function generateChimeSound(outWavPath, duration = 1.0) {
  * Master Archie's Reel Audio: Clean Voice + Ducked Real Background Music
  * Features dynamic duration calculation so speech is NEVER cut off!
  */
-async function assembleArchieMasterAudio(spokenText, outMasterWav, options = {}) {
+async function assembleArchieMasterAudio(spokenTextOrWav, outMasterWav, options = {}) {
   const dir = path.dirname(outMasterWav);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-  const voiceWav = path.join(dir, `archie_voice_${Date.now()}.wav`);
+  let voiceWav = path.join(dir, `archie_voice_${Date.now()}.wav`);
   const chimeWav = path.join(dir, `archie_chime_${Date.now()}.wav`);
 
-  // 1. Synthesize voice
-  console.log(`[Archie Sound Master] 🎙️ Synthesizing Archie's voice: "${spokenText.slice(0, 60)}..."`);
-  await synthesizeArchieVoice(spokenText, voiceWav);
+  // 1. Synthesize voice OR use provided WAV directly
+  if (typeof spokenTextOrWav === 'string' && fs.existsSync(spokenTextOrWav) && /\.(wav|mp3|m4a|aac)$/i.test(spokenTextOrWav)) {
+    console.log(`[Archie Sound Master] 🎙️ Using pre-rendered spoken voice: "${path.basename(spokenTextOrWav)}"`);
+    voiceWav = spokenTextOrWav;
+  } else {
+    console.log(`[Archie Sound Master] 🎙️ Synthesizing Archie's voice: "${String(spokenTextOrWav || '').slice(0, 60)}..."`);
+    await synthesizeArchieVoice(spokenTextOrWav, voiceWav);
+  }
 
   // Measure exact voice duration with ffprobe
   let voiceDuration = 4.5;
@@ -308,8 +394,7 @@ async function assembleArchieMasterAudio(spokenText, outMasterWav, options = {})
     }
   } catch {}
 
-  // Master duration ensures the voice completes completely with generous +1.8s outro buffer
-  const masterDuration = Math.max(6.0, Number((voiceDuration + 1.8).toFixed(2)));
+  const masterDuration = typeof options === 'number' ? options : (options?.duration ? Number(options.duration) : Math.max(6.0, Number((voiceDuration + 1.8).toFixed(2))));
   console.log(`[Archie Sound Master] ⏱️ Spoken voice: ${voiceDuration.toFixed(2)}s -> Target reel duration: ${masterDuration}s (Zero cutoffs!)`);
 
   // 2. Resolve real music track (from URL, local real mp3/wav, or sound_assets/cartoon/)

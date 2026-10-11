@@ -1,5 +1,104 @@
 [
   {
+    "id": "topic_1791737241319",
+    "topic": "Fiber Optics, Laser Transmission & Digital Waves",
+    "title": "Fiber Optics, Laser Transmission & Digital Waves",
+    "sphereId": "",
+    "sphereName": "Fiber Optics, Laser Transmission & Digital Waves",
+    "angle": "Total internal reflection, electromagnetic spectra, silicon photonics",
+    "niche": "cartoon",
+    "modelUsed": "AI Core",
+    "chosenAt": "2026-10-11T16:47:21.319Z"
+  },
+  {
+    "id": "topic_1791737221882",
+    "topic": "Aerospace, Space Exploration & Satellites",
+    "title": "Aerospace, Space Exploration & Satellites",
+    "sphereId": "",
+    "sphereName": "Aerospace, Space Exploration & Satellites",
+    "angle": "Orbital mechanics, lunar geology, space telescopes, cosmic radiation",
+    "niche": "cartoon",
+    "modelUsed": "Dynamic Research-Grounded Synthesizer",
+    "chosenAt": "2026-10-11T16:47:01.882Z"
+  },
+  {
+    "id": "topic_1791737140097",
+    "topic": "Fiber Optics, Laser Transmission & Digital Waves",
+    "title": "Fiber Optics, Laser Transmission & Digital Waves",
+    "sphereId": "",
+    "sphereName": "Fiber Optics, Laser Transmission & Digital Waves",
+    "angle": "Total internal reflection, electromagnetic spectra, silicon photonics",
+    "niche": "cartoon",
+    "modelUsed": "Dynamic Research-Grounded Synthesizer",
+    "chosenAt": "2026-10-11T16:45:40.097Z"
+  },
+  {
+    "id": "topic_1791736889738",
+    "topic": "Superconductors, Quantum Physics & Materials",
+    "title": "Superconductors, Quantum Physics & Materials",
+    "sphereId": "",
+    "sphereName": "Superconductors, Quantum Physics & Materials",
+    "angle": "Maglev trains, carbon nanotubes, metamaterials, zero resistance",
+    "niche": "cartoon",
+    "modelUsed": "AI Core",
+    "chosenAt": "2026-10-11T16:41:29.738Z"
+  },
+  {
+    "id": "topic_1791736812084",
+    "topic": "Superconductors, Quantum Physics & Materials",
+    "title": "Superconductors, Quantum Physics & Materials",
+    "sphereId": "",
+    "sphereName": "Superconductors, Quantum Physics & Materials",
+    "angle": "Maglev trains, carbon nanotubes, metamaterials, zero resistance",
+    "niche": "cartoon",
+    "modelUsed": "Dynamic Research-Grounded Synthesizer",
+    "chosenAt": "2026-10-11T16:40:12.084Z"
+  },
+  {
+    "id": "topic_1791736746844",
+    "topic": "Deep Sea Abysses & Geophysics",
+    "title": "Deep Sea Abysses & Geophysics",
+    "sphereId": "",
+    "sphereName": "Deep Sea Abysses & Geophysics",
+    "angle": "Hydrothermal vents, Mariana trench pressure, tectonic plates, magma chambers",
+    "niche": "cartoon",
+    "modelUsed": "Dynamic Research-Grounded Synthesizer",
+    "chosenAt": "2026-10-11T16:39:06.844Z"
+  },
+  {
+    "id": "topic_1791736596884",
+    "topic": "Deep Sea Abysses & Geophysics",
+    "title": "Deep Sea Abysses & Geophysics",
+    "sphereId": "",
+    "sphereName": "Deep Sea Abysses & Geophysics",
+    "angle": "Hydrothermal vents, Mariana trench pressure, tectonic plates, magma chambers",
+    "niche": "cartoon",
+    "modelUsed": "Dynamic Research-Grounded Synthesizer",
+    "chosenAt": "2026-10-11T16:36:36.884Z"
+  },
+  {
+    "id": "topic_1791736206630",
+    "topic": "Deep Sea Abysses & Geophysics",
+    "title": "Deep Sea Abysses & Geophysics",
+    "sphereId": "",
+    "sphereName": "Deep Sea Abysses & Geophysics",
+    "angle": "Hydrothermal vents, Mariana trench pressure, tectonic plates, magma chambers",
+    "niche": "cartoon",
+    "modelUsed": "Dynamic Research-Grounded Synthesizer",
+    "chosenAt": "2026-10-11T16:30:06.630Z"
+  },
+  {
+    "id": "topic_1791736041734",
+    "topic": "Aerospace, Space Exploration & Satellites",
+    "title": "Aerospace, Space Exploration & Satellites",
+    "sphereId": "",
+    "sphereName": "Aerospace, Space Exploration & Satellites",
+    "angle": "Orbital mechanics, lunar geology, space telescopes, cosmic radiation",
+    "niche": "cartoon",
+    "modelUsed": "Dynamic Research-Grounded Synthesizer",
+    "chosenAt": "2026-10-11T16:27:21.734Z"
+  },
+  {
     "id": "topic_1791458277432",
     "topic": "Neuroscience, Optical Illusions & Perception",
     "title": "Neuroscience, Optical Illusions & Perception",

@@ -149,29 +149,63 @@ async function synthesizeEdgeTTS(text, outputPathWav, voice = 'en-US-BrianMultil
 }
 
 /**
- * Synthesize voice via Google Speech DSP
+ * Synthesize voice via Google Speech DSP (with multi-sentence chunking)
  */
 async function synthesizeGoogleDspTTS(text, outputPathWav) {
   try {
-    const encText = encodeURIComponent(text.slice(0, 260));
-    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encText}&tl=en-US&client=tw-ob`;
-    const tempMp3 = path.join(path.dirname(outputPathWav), `temp_g_${Date.now()}.mp3`);
+    const dir = path.dirname(outputPathWav);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-    const ok = await new Promise((resolve) => {
-      const file = fs.createWriteStream(tempMp3);
-      https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, timeout: 8000 }, (res) => {
-        if (res.statusCode === 200) {
-          res.pipe(file);
-          file.on('finish', () => { file.close(); resolve(true); });
-        } else {
-          resolve(false);
+    const sentences = (text.match(/[^.!?]+[.!?]+/g) || [text]).map(s => s.trim()).filter(Boolean);
+    const chunks = [];
+    for (const s of sentences) {
+      if (s.length <= 180) {
+        chunks.push(s);
+      } else {
+        const words = s.split(/\s+/);
+        let curr = '';
+        for (const w of words) {
+          if ((curr + ' ' + w).trim().length <= 180) {
+            curr = (curr + ' ' + w).trim();
+          } else {
+            if (curr) chunks.push(curr);
+            curr = w;
+          }
         }
-      }).on('error', () => resolve(false));
-    });
+        if (curr) chunks.push(curr);
+      }
+    }
 
-    if (ok && fs.existsSync(tempMp3) && fs.statSync(tempMp3).size > 800) {
-      execSync(`ffmpeg -y -i "${tempMp3}" -ar 24000 -ac 1 -filter_complex "atempo=1.05,equalizer=f=150:t=q:w=1.5:g=3.0,equalizer=f=3200:t=q:w=2.0:g=2.0" "${outputPathWav}" 2>/dev/null`);
-      try { fs.unlinkSync(tempMp3); } catch {}
+    const chunkFiles = [];
+    const prefix = `gdsp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    for (let i = 0; i < chunks.length; i++) {
+      const chunkPath = path.join(dir, `${prefix}_${i}.mp3`);
+      const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(chunks[i])}&tl=en&client=tw-ob`;
+      const ok = await new Promise((resolve) => {
+        const file = fs.createWriteStream(chunkPath);
+        https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, timeout: 8000 }, (res) => {
+          if (res.statusCode === 200) {
+            res.pipe(file);
+            file.on('finish', () => { file.close(); resolve(true); });
+          } else {
+            file.close();
+            try { fs.unlinkSync(chunkPath); } catch {}
+            resolve(false);
+          }
+        }).on('error', () => { file.close(); resolve(false); });
+      });
+      if (ok && fs.existsSync(chunkPath) && fs.statSync(chunkPath).size > 200) {
+        chunkFiles.push(chunkPath);
+      }
+    }
+
+    if (chunkFiles.length > 0) {
+      const listPath = path.join(dir, `${prefix}_list.txt`);
+      const listContent = chunkFiles.map(f => `file '${f.replace(/\\/g, '/')}'`).join('\n');
+      fs.writeFileSync(listPath, listContent, 'utf8');
+      execSync(`ffmpeg -y -f concat -safe 0 -i "${listPath}" -ar 24000 -ac 1 -filter_complex "atempo=1.05,equalizer=f=150:t=q:w=1.5:g=3.0,equalizer=f=3200:t=q:w=2.0:g=2.0" "${outputPathWav}" 2>/dev/null`);
+      try { fs.unlinkSync(listPath); } catch {}
+      chunkFiles.forEach(f => { try { fs.unlinkSync(f); } catch {} });
       if (fs.existsSync(outputPathWav) && fs.statSync(outputPathWav).size > 1000) {
         return outputPathWav;
       }

@@ -157,16 +157,33 @@ async function selectDeduplicatedCandidate(channelKey, candidatePool, getQuoteFn
     console.warn(`[Anti-Spam Engine] Remote history notice: ${err.message}`);
   }
 
-  // 2. Read local cache if present
-  if (fs.existsSync(localCachePath)) {
-    try {
-      const local = JSON.parse(fs.readFileSync(localCachePath, 'utf8'));
-      if (Array.isArray(local)) combinedHistory.push(...local);
-    } catch {}
+  // 2. Read local cache and root database files if present
+  const potentialFiles = [
+    localCachePath,
+    path.join(process.cwd(), `${channelKey}_quote_history.json`),
+    path.join(process.cwd(), `daily_${channelKey}_history_cache.json`),
+    path.join(process.cwd(), '.content_history_cache.json')
+  ];
+  if (channelKey === 'stoic') {
+    potentialFiles.push(path.join(process.cwd(), 'stoic_quote_history.json'));
+    potentialFiles.push(path.join(process.cwd(), 'daily_stoic_history_cache.json'));
+  }
+  if (channelKey === 'finance' || channelKey === 'fin') {
+    potentialFiles.push(path.join(process.cwd(), 'fin_quote_history.json'));
+    potentialFiles.push(path.join(process.cwd(), 'daily_fin_history_cache.json'));
   }
 
-  const recentQuotes = combinedHistory.map(h => (typeof h === 'string' ? h : h.quote || '')).filter(Boolean);
-  const recentAuthors = combinedHistory.slice(-15).map(h => (typeof h === 'object' ? h.author : '')).filter(Boolean);
+  for (const pf of potentialFiles) {
+    if (fs.existsSync(pf)) {
+      try {
+        const parsed = JSON.parse(fs.readFileSync(pf, 'utf8'));
+        if (Array.isArray(parsed)) combinedHistory.push(...parsed);
+      } catch {}
+    }
+  }
+
+  const recentQuotes = combinedHistory.map(h => (typeof h === 'string' ? h : h.quote || h.topic || h.title || '')).filter(Boolean);
+  const recentAuthors = combinedHistory.slice(-25).map(h => (typeof h === 'object' ? h.author || h.scholar || '' : '')).filter(Boolean);
   const genericAuthors = new Set(['mindrush', 'mindrush discipline', 'mindrush grit', 'mindrush execution', 'mindrush armor', 'me:', 'the reality:', 'the slam:', 'cold fact:', 'reality check:', 'anonymous']);
 
   // 3. Strict filter: No identical or similar quotes, no recent authors (unless generic)
@@ -232,42 +249,47 @@ async function selectDeduplicatedCandidate(channelKey, candidatePool, getQuoteFn
     filtered = scoredPool.slice(0, Math.max(3, Math.floor(candidatePool.length / 2))).map(s => s.item);
   }
 
-  // 4. Deterministic non-repeating mathematical seed
-  // Uses Day of Year + UTC Hour + Microsecond Entropy to ensure variation across all slots
-  const now = new Date();
-  const startOfYear = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
-  const dayOfYear = Math.floor((now - startOfYear) / (24 * 60 * 60 * 1000));
-  const utcHour = now.getUTCHours();
-  const slotEntropy = Math.floor(Math.random() * filtered.length);
-
-  // Large prime multiplier ensures different slots jump through the catalog predictably
-  const seed = (dayOfYear * 73 + utcHour * 19 + slotEntropy) % filtered.length;
-  const chosen = filtered[seed];
+  // 4. Uniform cryptographically diverse slot selection
+  const randIdx = Math.floor(Math.random() * filtered.length);
+  const chosen = filtered[randIdx] || filtered[0] || candidatePool[0];
 
   return chosen;
 }
 
 /**
- * Record posted quote to Firestore and local cache
+ * Record posted quote to Firestore and local cache files
  */
 async function recordPostedCandidate(channelKey, quote, author, metadata = {}) {
   const localCachePath = path.join(process.cwd(), 'test_artifacts', `${channelKey}_history_cache.json`);
+  const rootQuotePath = path.join(process.cwd(), `${channelKey}_quote_history.json`);
+
   if (!fs.existsSync(path.dirname(localCachePath))) {
     fs.mkdirSync(path.dirname(localCachePath), { recursive: true });
   }
 
-  // 1. Update local cache
+  const newRecord = { quote, author, channel: channelKey, timestamp: new Date().toISOString() };
+
+  // 1. Update local cache in test_artifacts
   try {
     let local = [];
     if (fs.existsSync(localCachePath)) {
       try { local = JSON.parse(fs.readFileSync(localCachePath, 'utf8')); } catch {}
     }
-    local.push({ quote, author, channel: channelKey, timestamp: new Date().toISOString() });
-    const trimmed = local.slice(-150);
-    fs.writeFileSync(localCachePath, JSON.stringify(trimmed, null, 2));
+    local.push(newRecord);
+    fs.writeFileSync(localCachePath, JSON.stringify(local.slice(-150), null, 2));
   } catch (e) {
     console.warn(`[Anti-Spam Engine] Local cache update notice: ${e.message}`);
   }
+
+  // 1b. Update root quote history file
+  try {
+    let rootList = [];
+    if (fs.existsSync(rootQuotePath)) {
+      try { rootList = JSON.parse(fs.readFileSync(rootQuotePath, 'utf8')); } catch {}
+    }
+    rootList.push(newRecord);
+    fs.writeFileSync(rootQuotePath, JSON.stringify(rootList.slice(-200), null, 2));
+  } catch (e) {}
 
   // 2. Persist to Firestore database
   const config = getFirestoreConfig();

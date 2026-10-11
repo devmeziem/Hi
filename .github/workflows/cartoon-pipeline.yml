@@ -93,7 +93,7 @@ jobs:
           else
             echo "Installing missing system utilities with fast connection timeouts..."
             sudo apt-get update -o Acquire::Retries=2 -o Acquire::http::Timeout="10" -o Acquire::Connect-Timeout="8" || true
-            sudo apt-get install -y --no-install-recommends ffmpeg libespeak-ng1 libsndfile1 || true
+            sudo apt-get install -y --no-install-recommends ffmpeg espeak-ng libsndfile1 || true
           fi
 
       - name: Install Node Dependencies

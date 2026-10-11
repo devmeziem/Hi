@@ -389,7 +389,7 @@ function resolveChannelAudio(channelKey, durationSeconds, outputPath) {
     const isPhonk = channelKey.includes('mindrush') || channelKey.includes('motivation') || /phonk|drift/i.test(chosenTrack);
     const filter = isPhonk
       ? `afade=t=in:ss=0:d=${fadeIn},afade=t=out:st=${fadeOutStart}:d=${fadeOut},volume=1.35`
-      : `loudnorm=I=-16:TP=-1.5:LRA=11,afade=t=in:ss=0:d=${fadeIn},afade=t=out:st=${fadeOutStart}:d=${fadeOut}`;
+      : `loudnorm=I=-15:TP=-1.0:LRA=10,afade=t=in:ss=0:d=${fadeIn},afade=t=out:st=${fadeOutStart}:d=${fadeOut},volume=1.40`;
 
     const loopPrefix = (totalTrackDur < durationSeconds) ? '-stream_loop -1 ' : '';
     const seekPrefix = startOffset > 0 ? `-ss ${startOffset.toFixed(2)} ` : '';
@@ -442,7 +442,7 @@ function synthesizeProceduralAudio(channelKey, durationSeconds, outputPath) {
   const { generateSoftPianoAudio } = require('./soft_piano_synthesizer.cjs');
 
   try {
-    if (channelKey === 'piano' || channelKey.includes('piano') || (channelKey === 'stoic' && durationSeconds >= 10.0)) {
+    if (channelKey === 'piano' || channelKey.includes('piano') || channelKey === 'stoic') {
       generateSoftPianoAudio(outputPath, durationSeconds, 'stoic');
       if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 2000) {
         return outputPath;
