@@ -181,7 +181,7 @@ function generateSoundEffectWav(sfxType, outWavPath, duration = 45.0) {
  * Build Word-Synced Karaoke Subtitle File (.ass) with Translucent Backing
  */
 function generateDocumentaryKaraokeAss(wordsWithTimings, totalDuration, outAssPath) {
-  const wordsPerLine = 4;
+  const wordsPerLine = 3;
   const rawWords = wordsWithTimings.map(w => w.word);
   const totalMs = Math.round(totalDuration * 1000);
   const msPerWord = rawWords.length > 0 ? totalMs / rawWords.length : 320;
@@ -206,12 +206,12 @@ function generateDocumentaryKaraokeAss(wordsWithTimings, totalDuration, outAssPa
       const wordCs = Math.max(8, Math.round(msPerWord / 10));
       kLine += `{\\kf${wordCs}}${w.toUpperCase()} `;
     }
-    lines.push(`Dialogue: 0,${formatAssTime(chunkStartMs)},${formatAssTime(chunkEndMs)},DocKaraoke,,0,0,0,,${kLine.trim()}`);
+    lines.push(`Dialogue: 0,${formatAssTime(chunkStartMs)},${formatAssTime(chunkEndMs)},CenterKaraoke,,0,0,0,,${kLine.trim()}`);
   }
 
-  // Centered screen alignment with translucent dark box and vibrant amber highlight
+  // Unified Center Screen Subtitle Style (Trebuchet MS, Amber Gold Highlight, Dead Center)
   const assContent = `[Script Info]
-Title: Cinema Vanguard Archival Karaoke
+Title: Cinema Vanguard Unified Archival Karaoke
 ScriptType: v4.00+
 PlayResX: 1080
 PlayResY: 1920
@@ -219,7 +219,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: DocKaraoke, DejaVu Sans, 58, &H0000D7FF, &H00FFFFFF, &H00000000, &HD0020617, 1, 0, 0, 0, 100, 100, 1.2, 0, 3, 16, 0, 5, 80, 80, 0, 1
+Style: CenterKaraoke,Trebuchet MS,52,&H0000D7FF,&H00FFFFFF,&H00000000,&H80000000,1,0,0,0,100,100,1.2,0,1,2.8,2.0,5,100,100,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text

@@ -42,6 +42,90 @@ interface FinanceEngineTabProps {
   keys: IntegrationKeys;
 }
 
+const ASPIRING_WEALTH_QUOTES = [
+  {
+    id: 'beginner-traps',
+    title: '3 Things to Stop as a Beginner in Earning',
+    quote: 'Three things to stop as a beginner in earning: Stop buying courses before selling a real skill, stop spending your first profit on luxuries, and stop telling people your goals before making your first dollar.',
+    author: 'Financial Blueprint',
+    credentials: 'Foundational Cashflow & Capital Survival',
+    reference: 'The Cold Rules of Early Capital Preservation',
+    takeaway: 'Focus on 1 skill, protect initial cash, execute in silence.'
+  },
+  {
+    id: 'first-thousand',
+    title: 'The Psychological Plateau of First Capital',
+    quote: 'Your first $1,000 takes 100x longer than your next $10,000. It is not because the math is hard, but because you are fighting undisciplined habits and impatience.',
+    author: 'Wealth Compound Law',
+    credentials: 'Behavioral Economics & Momentum',
+    reference: 'Psychology of Early Wealth Formation',
+    takeaway: 'Early money builds discipline, later money builds leverage.'
+  },
+  {
+    id: 'skill-vs-crypto',
+    title: 'Early Stage Capital vs Speculation',
+    quote: 'When you have under $1,000, do not speculate in crypto or high-risk stocks. The highest return on capital is investing in a high-income skill that lets you generate cash on demand.',
+    author: 'Cashflow Architecture',
+    credentials: 'Human Capital Leverage',
+    reference: 'Skill Acquisition vs Capital Speculation',
+    takeaway: 'Cashflow generation precedes capital allocation.'
+  },
+  {
+    id: 'lifestyle-defense',
+    title: 'The 6-Month Liquidity Moat',
+    quote: 'Never upgrade your lifestyle on your first winning month. Your first $5,000 is your moat against emergencies, not permission to impress strangers.',
+    author: 'Capital Defense',
+    credentials: 'Emergency Buffer & Moat Architecture',
+    reference: 'Lifestyle Creep Immunity Index',
+    takeaway: 'Build an untouchable cash cushion before luxury expenses.'
+  },
+  {
+    id: 'passive-income-myth',
+    title: 'Passive Income Truth for Beginners',
+    quote: 'Passive income is a fantasy for beginners. Passive income is the reward you earn after years of relentless active execution. Master active sales first.',
+    author: 'Sovereign Capital',
+    credentials: 'Direct Cashflow & Active Agency Operations',
+    reference: 'Active Income Foundations Before Passive Allocation',
+    takeaway: 'Master active execution before attempting passive leverage.'
+  }
+];
+
+const DOCUMENTARY_LESSONS = [
+  {
+    title: 'The 2008 Liquidity Shock: Why Leverage Drowns the Impatient',
+    era: 'Wall Street Liquidity Meltdown',
+    citation: 'Financial Crisis Inquiry Commission Official Records',
+    takeaway: 'High leverage masquerades as intelligence during bull runs, but kills instantaneously when liquidity freezes. Cash reserves guarantee survival.',
+    storyPoints: [
+      'Billion-dollar balance sheets held 30:1 debt',
+      'Repo financing froze in 48 hours',
+      'Firms with dry powder acquired titans for pennies'
+    ]
+  },
+  {
+    title: 'The Dot-Com Collapse: Customer Revenue vs Speculative Traffic',
+    era: '1999 • Silicon Valley',
+    citation: 'SEC Historical Technology Equities Analysis',
+    takeaway: 'Users and vanity eyeballs do not pay operating expenses. A business unable to collect cash from customers on day one is an expensive hobby.',
+    storyPoints: [
+      'Five thousand companies raised millions with $0 revenue',
+      'Customer acquisition cost exceeded lifetime value by 10x',
+      'Sustainable cashflow firms survived and grew 1,000x'
+    ]
+  },
+  {
+    title: 'The South Sea Bubble: Emotional FOMO vs Mathematical Rigor',
+    era: '1720 • London Exchange',
+    citation: 'Bank of England Archives & Royal Society Correspondence',
+    takeaway: 'Even the greatest mathematical minds fall prey to watching neighbors get rich without working. Stick to proven unit economics.',
+    storyPoints: [
+      'Stock surged 800% based on imaginary trade routes',
+      'Newton sold early with 100% gain, then re-entered at absolute peak',
+      'Market discipline requires detachment from crowd frenzy'
+    ]
+  }
+];
+
 export const FinanceEngineTab: React.FC<FinanceEngineTabProps> = ({ keys }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('small_capital_business');
   const [targetBudget, setTargetBudget] = useState<string>('₦5,000');
@@ -50,6 +134,11 @@ export const FinanceEngineTab: React.FC<FinanceEngineTabProps> = ({ keys }) => {
   const [autoPublish, setAutoPublish] = useState<boolean>(false);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [pipelineStatus, setPipelineStatus] = useState<string>('IDLE');
+
+  // Aspiring Wealth Quotes & Documentary State
+  const [selectedQuoteIndex, setSelectedQuoteIndex] = useState<number>(0);
+  const [activeFinStudioTab, setActiveFinStudioTab] = useState<'quotes' | 'documentary_stories'>('quotes');
+  const [copiedQuoteNotice, setCopiedQuoteNotice] = useState<string | null>(null);
 
   // Real-time Visual Search State (Unseeded & Free Repositories)
   const [visualSearchQuery, setVisualSearchQuery] = useState<string>('Nigerian small business retail packaging accounting desk');
@@ -577,6 +666,210 @@ export const FinanceEngineTab: React.FC<FinanceEngineTabProps> = ({ keys }) => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* ASPIRING WEALTH QUOTES & DOCUMENTARY CASE STUDY STUDIO (NO WEIRD BOX)     */}
+      {/* Dedicated to people who want to get successful: Beginner earning traps,   */}
+      {/* unboxed high-retention typographic layout, and verified documentary lessons */}
+      {/* ========================================================================= */}
+      <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-950 text-amber-300 border border-amber-800">
+                FINANCIAL BLUEPRINT • @BONES_CEO
+              </span>
+              <span className="text-[11px] font-mono text-slate-400">
+                Aspiring Wealth Principles &amp; Real Documentary Lessons
+              </span>
+            </div>
+            <h2 className="text-base font-bold text-white mt-1 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-400" />
+              Aspiring Wealth Quotes &amp; Documentary Insights (Unboxed Cinematic Layout)
+            </h2>
+            <p className="text-xs text-slate-400">
+              Targeted for people striving to achieve success. Features beginner earning traps, cashflow survival, and historical lessons.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveFinStudioTab('quotes')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeFinStudioTab === 'quotes'
+                  ? 'bg-amber-600 text-white shadow-sm'
+                  : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+              }`}
+            >
+              Beginner Earning Quotes
+            </button>
+            <button
+              onClick={() => setActiveFinStudioTab('documentary_stories')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeFinStudioTab === 'documentary_stories'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+              }`}
+            >
+              Documentary Lessons
+            </button>
+          </div>
+        </div>
+
+        {activeFinStudioTab === 'quotes' ? (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left: Quote Selector List */}
+            <div className="lg:col-span-5 space-y-2.5">
+              <div className="text-[11px] font-mono font-bold uppercase text-slate-400">
+                Quotes for Striving Beginners (No Billionaire Fluff)
+              </div>
+              <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+                {ASPIRING_WEALTH_QUOTES.map((q, idx) => {
+                  const isSelected = selectedQuoteIndex === idx;
+                  return (
+                    <div
+                      key={q.id}
+                      onClick={() => setSelectedQuoteIndex(idx)}
+                      className={`p-3.5 rounded-2xl border transition-all cursor-pointer space-y-1.5 ${
+                        isSelected
+                          ? 'bg-amber-950/40 border-amber-500/80 ring-1 ring-amber-500/50'
+                          : 'bg-slate-950/70 border-slate-800 hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between text-[10px] font-mono">
+                        <span className={`font-bold ${isSelected ? 'text-amber-300' : 'text-slate-400'}`}>
+                          {q.title}
+                        </span>
+                        {isSelected && <span className="text-amber-400 font-bold">✓ ACTIVE</span>}
+                      </div>
+                      <p className="text-xs text-slate-200 line-clamp-2">
+                        "{q.quote}"
+                      </p>
+                      <div className="text-[10px] text-slate-400 flex items-center justify-between pt-1 border-t border-slate-900">
+                        <span>— {q.author}</span>
+                        <span className="text-amber-400/80 font-mono">Takeaway: {q.takeaway}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="pt-1 flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const next = (selectedQuoteIndex + 1) % ASPIRING_WEALTH_QUOTES.length;
+                    setSelectedQuoteIndex(next);
+                  }}
+                  className="w-full py-2 px-3 bg-slate-950 border border-slate-800 text-xs font-bold text-amber-300 rounded-xl hover:border-amber-500/50 flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Cycle Next Beginner Quote</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Right: Unboxed High-Retention Visual Preview */}
+            <div className="lg:col-span-7 flex flex-col justify-between p-5 bg-gradient-to-b from-slate-950 via-[#070d18] to-black border border-slate-800 rounded-2xl space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+                  <span className="text-xs font-bold text-white">Cinematic Typographic Layout (No Weird Box)</span>
+                </div>
+                <span className="text-[10px] font-mono text-slate-400">Vertical 9:16 Preview</span>
+              </div>
+
+              {/* Redesigned Card Preview */}
+              <div className="p-6 bg-slate-950/80 rounded-2xl border border-amber-500/20 shadow-xl space-y-4 text-center relative overflow-hidden">
+                <div className="absolute top-2 left-4 text-amber-500/30 text-6xl font-serif select-none pointer-events-none">
+                  “
+                </div>
+                <div className="text-[11px] font-mono font-extrabold uppercase text-amber-400 tracking-widest">
+                  ⚡ THE COLD LAW OF CAPITAL
+                </div>
+                <p className="text-sm sm:text-base text-white font-serif font-bold leading-relaxed px-4">
+                  "{ASPIRING_WEALTH_QUOTES[selectedQuoteIndex].quote}"
+                </p>
+                <div className="w-20 h-0.5 bg-amber-500/80 mx-auto rounded-full" />
+                <div className="space-y-1">
+                  <div className="text-xs font-bold text-white tracking-wide">
+                    — {ASPIRING_WEALTH_QUOTES[selectedQuoteIndex].author} <span className="text-sky-400">✓</span>
+                  </div>
+                  <div className="text-[11px] text-slate-400">
+                    {ASPIRING_WEALTH_QUOTES[selectedQuoteIndex].credentials}
+                  </div>
+                  <div className="text-[10px] text-slate-400 font-mono pt-1">
+                    Verified Citation: {ASPIRING_WEALTH_QUOTES[selectedQuoteIndex].reference}
+                  </div>
+                </div>
+                <div className="text-[9px] font-mono text-slate-400 tracking-widest pt-2 border-t border-slate-900">
+                  @BONES_CEO • FINANCIAL BLUEPRINT
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
+                <div className="text-[11px] text-slate-400">
+                  {copiedQuoteNotice ? (
+                    <span className="text-emerald-400 font-bold flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5" /> {copiedQuoteNotice}
+                    </span>
+                  ) : (
+                    <span>Ready for automated YouTube Shorts &amp; TikTok rendering</span>
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    const current = ASPIRING_WEALTH_QUOTES[selectedQuoteIndex];
+                    navigator.clipboard.writeText(`"${current.quote}" — ${current.author}\n\nCitation: ${current.reference}\n\n#FinanceBlueprint #EarnMoney #Shorts`);
+                    setCopiedQuoteNotice('Quote copied to clipboard!');
+                    setTimeout(() => setCopiedQuoteNotice(null), 3000);
+                  }}
+                  className="py-1.5 px-3 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-md shadow-amber-600/20"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Copy Clean Script</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Documentary Lessons Tab */
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {DOCUMENTARY_LESSONS.map((doc, idx) => (
+              <div
+                key={idx}
+                className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3 flex flex-col justify-between"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-[10px] font-mono">
+                    <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 font-bold">
+                      {doc.era}
+                    </span>
+                    <span className="text-slate-400 font-bold">CASE STUDY #{idx + 1}</span>
+                  </div>
+                  <h3 className="text-xs font-bold text-white">
+                    {doc.title}
+                  </h3>
+                  <div className="p-2.5 bg-slate-900/80 rounded-xl border border-slate-800/80 text-[11px] text-slate-300 leading-relaxed">
+                    <span className="font-bold text-amber-300 block mb-1">Key Documentary Takeaway:</span>
+                    {doc.takeaway}
+                  </div>
+                  <ul className="text-[10px] text-slate-400 space-y-1 pt-1">
+                    {doc.storyPoints.map((pt, pIdx) => (
+                      <li key={pIdx} className="flex items-start gap-1.5">
+                        <span className="text-emerald-400 font-mono">•</span>
+                        <span>{pt}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="pt-2 border-t border-slate-900 text-[9px] font-mono text-slate-400 truncate">
+                  Citation: {doc.citation}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Category Selector Grid */}

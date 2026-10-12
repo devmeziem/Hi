@@ -324,18 +324,25 @@ async function generateArchie5sDailyFact() {
   const puppetTalk1 = path.join(characterDir, 'puppet_talking.png');
   const puppetPoint = path.join(characterDir, 'puppet_point_up_right.png');
   const puppetPointTalk = path.join(characterDir, 'puppet_point_up_right_talk.png');
+  const puppetExplain = path.join(characterDir, 'puppet_explain_both.png');
+  const puppetExplainTalk = path.join(characterDir, 'puppet_explain_both_talk.png');
+  const puppetQuestion = path.join(characterDir, 'puppet_questioning_users.png');
+  const puppetQuestionTalk = path.join(characterDir, 'puppet_questioning_users_talk.png');
 
   // 5. Synthesize Audio Spoken Voiceover via Resilient Multi-Tier Engine
-  const fullNarration = `${script.spokenHook} ${script.coreExplanation} ${script.spokenOutro}`;
+  // Ensure clear, complete sentence articulation with a slight breathing pause
+  const cleanOutro = script.spokenOutro ? script.spokenOutro.trim() : 'What should Archie explain next? Tell us in the comments!';
+  const fullNarration = `${script.spokenHook.trim()} ${script.coreExplanation.trim()} ${cleanOutro}`;
   const voiceWavPath = path.join(ARTIFACTS_DIR, `archie_voice_${Date.now()}.wav`);
 
-  console.log(`[Audio Engine] 🎙️ Synthesizing Archie's voice narration...`);
+  console.log(`[Audio Engine] 🎙️ Synthesizing Archie's voice narration (Complete articulation)...`);
   await synthesizeArchieVoice(fullNarration, voiceWavPath);
 
   const durProbe = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${voiceWavPath}"`, { encoding: 'utf8' }).trim();
   const voiceDuration = parseFloat(durProbe) || 28.0;
-  const reelDuration = voiceDuration + 1.5;
-  console.log(`[Audio Engine] Spoken Duration: ${voiceDuration.toFixed(1)}s (Total Reel: ${reelDuration.toFixed(1)}s)`);
+  // Add 2.0s post-narration padding so the last sentence is never cut off
+  const reelDuration = voiceDuration + 2.0;
+  console.log(`[Audio Engine] Spoken Duration: ${voiceDuration.toFixed(1)}s (Total Reel: ${reelDuration.toFixed(1)}s with outro buffer)`);
 
   // 6. Assemble Background Music & SFX
   const audioWavPath = path.join(ARTIFACTS_DIR, `archie_master_audio_${Date.now()}.wav`);
@@ -413,7 +420,8 @@ async function generateArchie5sDailyFact() {
   // t=2.5s..cutawayEnd: Archie gestures talking
   // Cutaway appears between t=3.5s and t=Math.min(reelDuration - 3.5, 18.0)s
   const cutawayStart = 3.5;
-  const cutawayEnd = Math.min(reelDuration - 2.5, 18.0);
+  const cutawayEnd = Math.min(reelDuration - 3.0, 18.0);
+  const outroStart = Math.max(cutawayEnd + 1.0, voiceDuration - 4.5);
 
   const inputs = [
     `-loop 1 -t ${reelDuration.toFixed(2)} -i "${bgPngPath}"`,
@@ -421,6 +429,10 @@ async function generateArchie5sDailyFact() {
     specimenCutawayPng ? `-loop 1 -t ${reelDuration.toFixed(2)} -i "${specimenCutawayPng}"` : `-loop 1 -t ${reelDuration.toFixed(2)} -i "${bgPngPath}"`,
     `-loop 1 -t ${reelDuration.toFixed(2)} -i "${puppetPoint}"`,
     `-loop 1 -t ${reelDuration.toFixed(2)} -i "${puppetPointTalk}"`,
+    `-loop 1 -t ${reelDuration.toFixed(2)} -i "${puppetExplain}"`,
+    `-loop 1 -t ${reelDuration.toFixed(2)} -i "${puppetExplainTalk}"`,
+    `-loop 1 -t ${reelDuration.toFixed(2)} -i "${puppetQuestion}"`,
+    `-loop 1 -t ${reelDuration.toFixed(2)} -i "${puppetQuestionTalk}"`,
     `-loop 1 -t ${reelDuration.toFixed(2)} -i "${puppetIdle}"`,
     `-loop 1 -t ${reelDuration.toFixed(2)} -i "${puppetTalk1}"`,
     `-i "${audioWavPath}"`
@@ -429,27 +441,37 @@ async function generateArchie5sDailyFact() {
   // Filter graph:
   // Base: [0:v] bg + [1:v] pill
   // Overlaid with cutaway [2:v] during middle
-  // Overlaid with puppet on right side (x=460, y=780) with natural lip-sync
+  // Overlaid with puppet on right side (x=440, y=760) with dynamic gesture rotation:
+  // - Hook (0..2.2s): Pointing up at topic pill
+  // - Core Explanation (2.2s..outroStart): Active two-handed expressive gestures
+  // - Outro Question (outroStart..voiceDuration): Welcoming open hands addressing viewer
+  // - Post-voice tail (voiceDuration..reelDuration): Natural smiling idle posture
   const filterGraph = `
     [0:v]scale=1080:1920[bg];
     [1:v]scale=1080:1920[pill];
     [2:v]scale=1080:1920[specimen];
     [3:v]scale=-1:1150,split=2[pt1][pt2];
     [4:v]scale=-1:1150[pt_t];
-    [5:v]scale=-1:1150,split=2[idle1][idle2];
-    [6:v]scale=-1:1150[talk];
+    [5:v]scale=-1:1150[exp];
+    [6:v]scale=-1:1150[exp_t];
+    [7:v]scale=-1:1150[qst];
+    [8:v]scale=-1:1150[qst_t];
+    [9:v]scale=-1:1150,split=2[idle1][idle2];
+    [10:v]scale=-1:1150[talk];
     [bg][pill]overlay=0:0[s0];
     [s0][specimen]overlay=0:0:enable='between(t,${cutawayStart},${cutawayEnd})'[s1];
-    [s1][pt1]overlay=x=440:y=760:enable='lt(t,1.2)'[s2];
-    [s2][pt_t]overlay=x=440:y=760:enable='gte(t,1.2)*lt(t,${cutawayStart})*mod(floor(t*5),2)'[s3];
-    [s3][pt2]overlay=x=440:y=760:enable='gte(t,1.2)*lt(t,${cutawayStart})*(1-mod(floor(t*5),2))'[s4];
-    [s4][talk]overlay=x=440:y=760:enable='gte(t,${cutawayStart})*lt(t,${voiceDuration.toFixed(2)})*mod(floor(t*5),2)'[s5];
-    [s5][idle1]overlay=x=440:y=760:enable='gte(t,${cutawayStart})*lt(t,${voiceDuration.toFixed(2)})*(1-mod(floor(t*5),2))'[s6];
-    [s6][idle2]overlay=x=440:y=760:enable='gte(t,${voiceDuration.toFixed(2)})'[v_raw];
+    [s1][pt1]overlay=x=440:y=760:enable='lt(t,1.0)'[s2];
+    [s2][pt_t]overlay=x=440:y=760:enable='gte(t,1.0)*lt(t,2.2)*mod(floor(t*5),2)'[s3];
+    [s3][pt2]overlay=x=440:y=760:enable='gte(t,1.0)*lt(t,2.2)*(1-mod(floor(t*5),2))'[s4];
+    [s4][exp_t]overlay=x=440:y=760:enable='gte(t,2.2)*lt(t,${outroStart.toFixed(2)})*mod(floor(t*5.2),2)'[s5];
+    [s5][exp]overlay=x=440:y=760:enable='gte(t,2.2)*lt(t,${outroStart.toFixed(2)})*(1-mod(floor(t*5.2),2))'[s6];
+    [s6][qst_t]overlay=x=440:y=760:enable='gte(t,${outroStart.toFixed(2)})*lt(t,${voiceDuration.toFixed(2)})*mod(floor(t*4.8),2)'[s7];
+    [s7][qst]overlay=x=440:y=760:enable='gte(t,${outroStart.toFixed(2)})*lt(t,${voiceDuration.toFixed(2)})*(1-mod(floor(t*4.8),2))'[s8];
+    [s8][idle1]overlay=x=440:y=760:enable='gte(t,${voiceDuration.toFixed(2)})'[v_raw];
     [v_raw]subtitles='${safeAssPath}'[vfinal]
   `.replace(/\s+/g, ' ').trim();
 
-  const ffmpegCmd = `ffmpeg -y ${inputs} -filter_complex "${filterGraph}" -map "[vfinal]" -map 7:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -ar 44100 -ac 2 -t ${reelDuration.toFixed(2)} "${finalMp4Path}" 2>/dev/null`;
+  const ffmpegCmd = `ffmpeg -y ${inputs} -filter_complex "${filterGraph}" -map "[vfinal]" -map 11:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -ar 44100 -ac 2 -t ${reelDuration.toFixed(2)} "${finalMp4Path}" 2>/dev/null`;
 
   console.log(`[FFmpeg Compositor] Rendering clean Archie video with subtitles...`);
   try {

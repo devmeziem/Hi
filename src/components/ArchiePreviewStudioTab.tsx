@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ArchieStageCanvasEditor } from './ArchieStageCanvasEditor';
 import {
   GraduationCap,
   Play,
@@ -20,7 +21,8 @@ import {
   Music,
   UserCheck,
   Search,
-  Monitor
+  Monitor,
+  Palette
 } from 'lucide-react';
 import {
   CLASSROOM_ENVIRONMENTS,
@@ -54,7 +56,7 @@ export const ArchiePreviewStudioTab: React.FC<ArchiePreviewStudioTabProps> = ({
   onToast
 }) => {
   // Navigation Sub-Tabs
-  const [activeSubTab, setActiveSubTab] = useState<'creator-tools' | 'problem-remedy' | 'compositor' | 'character' | 'environments'>('creator-tools');
+  const [activeSubTab, setActiveSubTab] = useState<'creator-tools' | 'stage-editor' | 'problem-remedy' | 'compositor' | 'character' | 'environments'>('stage-editor');
 
   // ==========================================
   // 1. Content Creator 5-Tool Countdown State
@@ -401,11 +403,12 @@ HASHTAGS: ${creatorScript.hashtags.join(' ')}`;
         {/* Sub-Tab Navigation Bar (Clean segmented controls) */}
         <div className="flex items-center gap-1.5 pt-4 mt-4 border-t border-[#202735] overflow-x-auto max-w-full">
           {[
-            { id: 'creator-tools', label: '1. Content Creator 5-Tool Reel', icon: Zap },
-            { id: 'problem-remedy', label: '2. Problem -> Plain English -> Free Remedy', icon: HelpCircle },
-            { id: 'compositor', label: '3. Studio Staging & Desk Occlusion', icon: Sliders },
-            { id: 'character', label: '4. Archie Poses & Sprites', icon: UserCheck },
-            { id: 'environments', label: '5. Creator Studios & Labs', icon: Monitor }
+            { id: 'stage-editor', label: 'Vector Stage Editor (Shapes, Zoom & Color)', icon: Palette },
+            { id: 'creator-tools', label: 'Content Creator 5-Tool Reel', icon: Zap },
+            { id: 'problem-remedy', label: 'Problem -> Plain English -> Free Remedy', icon: HelpCircle },
+            { id: 'compositor', label: 'Studio Staging & Desk Occlusion', icon: Sliders },
+            { id: 'character', label: 'Archie Poses & Sprites', icon: UserCheck },
+            { id: 'environments', label: 'Creator Studios & Labs', icon: Monitor }
           ].map(tab => {
             const Icon = tab.icon;
             const isActive = activeSubTab === tab.id;
@@ -426,6 +429,13 @@ HASHTAGS: ${creatorScript.hashtags.join(' ')}`;
           })}
         </div>
       </div>
+
+      {/* ========================================================= */}
+      {/* SUBTAB 0: CLIENT-SIDE VECTOR SVG STAGE & SHAPE EDITOR     */}
+      {/* ========================================================= */}
+      {activeSubTab === 'stage-editor' && (
+        <ArchieStageCanvasEditor onToast={onToast} />
+      )}
 
       {/* ========================================================= */}
       {/* SUBTAB 1: CONTENT CREATOR 5-TOOL COUNTDOWN REEL (FLAGSHIP) */}

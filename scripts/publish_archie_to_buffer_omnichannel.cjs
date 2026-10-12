@@ -18,6 +18,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { cleanDescription } = require('./channel_verifier.cjs');
 
 const BUFFER_API_URL = 'https://api.buffer.com';
 const RAW_BUFFER_API_KEY = String(process.env.BUFFER_API_KEY || process.env.BUFFER_TOKEN || '').trim();
@@ -658,20 +659,20 @@ function buildOmnichannelCaption(metadata = {}, service = 'generic') {
 
   if (service === 'tiktok') {
     const ttTags = Array.from(new Set([...baseTags, '#TikTokTech', '#TechTok', '#FYP', '#LearnOnTikTok', '#ScienceFacts', '#DidYouKnow', '#ArchieLab', '#Shorts']));
-    return `⚡ ${hook}\n\n${explanation}\n\n${takeaway ? takeaway + '\n\n' : ''}${citation}${vocabSection}${trendingSection}\n\n💾 Save this so you remember! What should Archie break down next? Drop a comment below 👇\n\n${ttTags.join(' ')}`.trim();
+    return cleanDescription(`⚡ ${hook}\n\n${explanation}\n\n${takeaway ? takeaway + '\n\n' : ''}${citation}${vocabSection}${trendingSection}\n\n💾 Save this so you remember! What should Archie break down next? Drop a comment below 👇\n\n${ttTags.join(' ')}`);
   }
 
   if (service === 'instagram') {
     const igTags = Array.from(new Set([...baseTags, '#ReelsInstagram', '#ScienceReels', '#ScienceFacts', '#DidYouKnow', '#ArchieLab', '#InstaScience', '#ViralScience', '#LifeHacks', '#STEMEducation', '#Shorts']));
-    return `⚡ ${hook}\n\n${explanation}\n\n${takeaway ? takeaway + '\n\n' : ''}${citation}${vocabSection}${trendingSection}\n\n💾 Save this post for later and share with a friend who needs to see this!\n\nFollow @ArchieExplains for daily science & tech breakthroughs.\n\n${igTags.join(' ')}`.trim();
+    return cleanDescription(`⚡ ${hook}\n\n${explanation}\n\n${takeaway ? takeaway + '\n\n' : ''}${citation}${vocabSection}${trendingSection}\n\n💾 Save this post for later and share with a friend who needs to see this!\n\nFollow @ArchieExplains for daily science & tech breakthroughs.\n\n${igTags.join(' ')}`);
   }
 
   if (service === 'facebook') {
     const fbTags = Array.from(new Set([...baseTags, '#FacebookReels', '#ScienceFacts', '#DidYouKnow', '#ScienceExplained', '#EverydayScience', '#LifeHacks', '#ArchieLab', '#Shorts']));
-    return `⚡ ${cleanTitle.toUpperCase()}\n\n${hook}\n\n${explanation}\n\n${takeaway ? takeaway + '\n\n' : ''}${citation}${vocabSection}${trendingSection}\n\n👉 Follow Archie Lab for daily visual science breakdowns!\n\n${fbTags.join(' ')}`.trim();
+    return cleanDescription(`⚡ ${cleanTitle.toUpperCase()}\n\n${hook}\n\n${explanation}\n\n${takeaway ? takeaway + '\n\n' : ''}${citation}${vocabSection}${trendingSection}\n\n👉 Follow Archie Lab for daily visual science breakdowns!\n\n${fbTags.join(' ')}`);
   }
 
-  return `⚡ ${hook}\n\n${explanation}\n\n${takeaway ? takeaway + '\n\n' : ''}${citation}${vocabSection}${trendingSection}\n\n${baseTags.join(' ')}`.trim();
+  return cleanDescription(`⚡ ${hook}\n\n${explanation}\n\n${takeaway ? takeaway + '\n\n' : ''}${citation}${vocabSection}${trendingSection}\n\n${baseTags.join(' ')}`);
 }
 
 /**

@@ -18,7 +18,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { getVerifiedChannelHandle } = require('./channel_verifier.cjs');
+const { getVerifiedChannelHandle, verifyChannelOrSkip, cleanDescription } = require('./channel_verifier.cjs');
 
 const BUFFER_API_URL = 'https://api.buffer.com';
 
@@ -801,10 +801,22 @@ async function dispatchTikTok(channelType = 'movie_brand') {
     caption = meta.description || `⚡ ${meta.hook}\n\n👉 ${meta.challenge}\n\nHit follow ${verifiedTeenHandle} to build mental armor and level up daily. 🛡️\n\n#MindRush #TeenMotivation #Discipline #LockIn #Underdog #StudentMindset #Aura #DeepThoughts #FYP #StudyTok #Shorts`;
   }
 
+  // Sanitize caption strictly: eliminate voice logs, internal engine traces, and broken undefined strings
+  caption = cleanDescription(caption);
+
   if (!targetChannel) {
     console.warn(`⚠️ No target TikTok channel found for ${channelType}.`);
     console.warn(`  Ensure your second Buffer account has TikTok connected, or set BUFFER_TIKTOK_MOVIE_CHANNEL_ID / BUFFER_TIKTOK_TEEN_CHANNEL_ID in secrets.`);
     return { success: false, reason: 'NO_TARGET_TIKTOK_CHANNEL' };
+  }
+
+  // API Verification Check: "my channels should verify name from API, if not found, then skip"
+  const verification = verifyChannelOrSkip(channelType, targetChannel);
+  if (verification.skip) {
+    console.warn(`[Buffer TikTok Dispatch] 🛑 Target channel "${targetChannel.name}" could not be verified from live API.`);
+    console.warn(` • Reason: ${verification.reason}`);
+    console.warn(` • Skipping publication to protect channel brand and prevent wrong username.`);
+    return { success: false, reason: 'SKIPPED_API_CHANNEL_MISMATCH', details: verification };
   }
 
   if (!videoPath || !fs.existsSync(videoPath)) {
@@ -812,9 +824,9 @@ async function dispatchTikTok(channelType = 'movie_brand') {
     return { success: false, reason: 'VIDEO_NOT_FOUND' };
   }
 
-  console.log(`🎯 Target TikTok Channel: "${targetChannel.name}" (ID: ${targetChannel.id})`);
+  console.log(`🎯 Verified TikTok Channel: "${targetChannel.name}" (ID: ${targetChannel.id})`);
   console.log(`📹 Video Source: ${videoPath} (${(fs.statSync(videoPath).size / (1024 * 1024)).toFixed(2)} MB)`);
-  console.log(`📝 Caption:\n${caption}\n`);
+  console.log(`📝 Clean User-Facing Caption (No Engine Logs):\n${caption}\n`);
 
   const publicVideoUrl = process.env.BUFFER_VIDEO_URL || await uploadToPublicRelay(videoPath);
   const fallbackChannel = discoveredTikToks.find(c => c.id !== targetChannel.id) || (discoveredTikToks.length > 0 ? discoveredTikToks[0] : null);

@@ -77,160 +77,145 @@ const YOUTHFUL_EMOTION_SPHERES = [
 ];
 
 /**
- * Pre-crafted Seed Test Data Vault for Youth Motivation Spheres
+ * 5 High-Impact Dynamic Rotating Content Archetypes (Zero Repetitive Seeds)
+ * Rotates dynamically across releases:
+ * 1. 5 Steps to Build Discipline as a Teenager
+ * 2. Stop These 4 Things for 30 Days and Notice Your Mind Change
+ * 3. Pause These 3 Distractions for 1 Month
+ * 4. The 10-Minute Morning Rule
+ * 5. Why You Feel Unmotivated (And How to Reset Today)
  */
-const SEED_TEEN_MOTIVATION_VAULT = {
-  discipline_habits: {
-    title: "Breaking Promises to Yourself in Private",
-    theme: "Discipline & Daily Consistency",
-    quoteMentor: "Jocko Willink",
-    fullScript: "Nobody saw you hit snooze this morning. Nobody watched you walk away from the gym or skip the textbook. But you know. Every broken promise you make to yourself in the dark chips away at your quiet self-respect. As Jocko Willink reminds us: discipline equals freedom. You do not need to feel inspired. Put your shoes on right now. Walk out the door. The only workout you regret is the one that never happened.",
-    visualScenes: [
-      { sceneNumber: 1, text: "Nobody saw you hit snooze this morning. Nobody watched you walk away.", query: "alarm clock phone dark bedroom morning shadows" },
-      { sceneNumber: 2, text: "Every broken promise you make in the dark chips away at your quiet self-respect.", query: "thoughtful runner sitting alone athletic track dusk" },
-      { sceneNumber: 3, text: "As Jocko Willink reminds us: discipline equals freedom. You do not need to feel inspired.", query: "heavy iron weights chalk gym dark cinematic" },
-      { sceneNumber: 4, text: "Put your shoes on right now. The only workout you regret is the one that never happened.", query: "lone athlete running into morning sunrise pavement" }
-    ],
-    bgmSearchQuery: "emotional calm ambient piano cinematic strings",
-    hashtags: ["#MindRush", "#TeenMotivation", "#Discipline", "#LockIn", "#Shorts"]
+const TEEN_FORMAT_ARCHETYPES = [
+  {
+    id: '5_steps_discipline',
+    formatTitle: '5 Steps to Build Discipline as a Teenager',
+    theme: 'Sequential Habit Architecture',
+    defaultQuery: 'lone teenage runner athletic track sunrise grit',
+    outroConcept: 'Discipline is built by doing. Don’t just watch — execute step one right now and share this to someone who needs to hear it.'
   },
-  late_night_doomscrolling: {
-    title: "When You Can't Stop Scrolling at 1 AM",
-    theme: "Late-Night Screen Guilt",
-    quoteMentor: "Marcus Aurelius",
-    fullScript: "It is 1 AM. The blue glow of your phone is the only light in your room. You promised yourself you would sleep at eleven, but you kept scrolling. And now, the guilt sets in. You feel behind on everything. But Marcus Aurelius reminded us: you could be good today, yet you choose tomorrow. Put the screen face down right now. Close your eyes. Tomorrow doesn't need your perfection; it just needs you to wake up and try again.",
-    visualScenes: [
-      { sceneNumber: 1, text: "It is 1 AM. The blue glow of your phone is the only light in your room.", query: "teenager lying in bed glowing phone dark room bedroom moody" },
-      { sceneNumber: 2, text: "You kept scrolling, and now the guilt sets in. You feel behind on everything.", query: "thoughtful teenager looking out rainy window reflection dark city lights" },
-      { sceneNumber: 3, text: "Marcus Aurelius reminded us: you could be good today, yet you choose tomorrow.", query: "ancient marble philosopher bust moody dramatic lighting shadows" },
-      { sceneNumber: 4, text: "Put the screen face down right now. Tomorrow doesn't need your perfection; it just needs you to try.", query: "morning dawn sunrise runner lone athlete pavement mist" }
-    ],
-    bgmSearchQuery: "emotional calm ambient piano cinematic strings",
-    hashtags: ["#MindRush", "#TeenMotivation", "#Discipline", "#YouthMindset", "#Shorts"]
+  {
+    id: 'stop_4_things_30d',
+    formatTitle: 'Stop These 4 Things for 1 Month',
+    theme: '30-Day Mental Detox & Self-Respect',
+    defaultQuery: 'phone face down dark room study desk night',
+    outroConcept: 'Self-respect is built by what you refuse to tolerate. Try this for 30 days and send this to your accountability partner.'
   },
-  comparison_trap: {
-    title: "Comparing Your Day One to Their Year Five",
-    theme: "Social Media Comparison Abyss",
-    quoteMentor: "Jordan Peterson",
-    fullScript: "You open your feed and see an eighteen-year-old celebrating success. Your chest tightens. You feel completely behind in life. But you are comparing someone's curated highlight reel to your unfiltered behind-the-scenes. Jordan Peterson wrote: compare yourself to who you were yesterday, not to who someone else is today. Turn off the notifications. Your life is not a race against influencers; it is a long, patient masterpiece.",
-    visualScenes: [
-      { sceneNumber: 1, text: "You open your feed and see an eighteen-year-old celebrating success. Your chest tightens.", query: "young person scrolling smartphone dark room dramatic shadows" },
-      { sceneNumber: 2, text: "You feel completely behind, comparing their highlights to your raw reality.", query: "solitary student looking out rainy city window night lights" },
-      { sceneNumber: 3, text: "Compare yourself to who you were yesterday, not to who someone else is today.", query: "classic library bookshelf study antique desk lamp warm glow" },
-      { sceneNumber: 4, text: "Turn off the notifications. Your life is a long, patient masterpiece in progress.", query: "young artist sketching focused studio sunrise morning window" }
-    ],
-    bgmSearchQuery: "calm reflective ambient piano cinematic strings",
-    hashtags: ["#MindRush", "#ComparisonTrap", "#FocusOnYou", "#MentalFortitude", "#Shorts"]
+  {
+    id: 'pause_3_distractions',
+    formatTitle: 'Pause These 3 Habits for 1 Month',
+    theme: 'Attention Protection & Dopamine Reboot',
+    defaultQuery: 'lone student reading library focused candle light',
+    outroConcept: 'Your attention is your sovereign weapon. Stop leaking it, act on this today, and pass this to a friend fighting distractions.'
   },
-  feeling_behind: {
-    title: "The Silent Panic of Feeling Behind",
-    theme: "The Terror of Feeling Behind",
-    quoteMentor: "Seneca",
-    fullScript: "Everyone around you seems to know their college, their career, their entire trajectory. And you feel like you are standing in heavy fog. But Seneca taught us: a great tree does not grow strong in warm sunlight; its roots dig deep during the harsh winter winds. You are not late. You are in the underground phase where deep foundations are built. Focus on winning the next fifteen minutes, and the years will take care of themselves.",
-    visualScenes: [
-      { sceneNumber: 1, text: "Everyone around you seems to know their path, and you feel lost in the fog.", query: "misty forest path lone traveler walking early dawn" },
-      { sceneNumber: 2, text: "Seneca taught us: a great tree does not grow strong only in warm sunlight.", query: "ancient giant oak tree weathered stormy sky dramatic" },
-      { sceneNumber: 3, text: "Its roots dig deep during the harsh winter winds. You are not late.", query: "ancient philosopher stone bust dramatic sidelight shadows" },
-      { sceneNumber: 4, text: "Win the next fifteen minutes, and the years will take care of themselves.", query: "student writing in leather journal desk coffee dawn" }
-    ],
-    bgmSearchQuery: "emotional inspiring cinematic piano cello strings",
-    hashtags: ["#MindRush", "#SenecaWisdom", "#Patience", "#LockIn", "#Shorts"]
+  {
+    id: '10_min_morning_rule',
+    formatTitle: 'The 10-Minute Morning Rule',
+    theme: 'Micro-Momentum Before the World Wakes Up',
+    defaultQuery: 'alarm clock morning window dawn shadows runner shoes',
+    outroConcept: 'Momentum is built in minutes, not hours. Don’t just watch — execute the rule tomorrow morning and share this.'
+  },
+  {
+    id: 'dopamine_reset_today',
+    formatTitle: 'Why You Feel Unmotivated (And How to Reset Today)',
+    theme: 'Dopamine Baseline Restoration',
+    defaultQuery: 'thoughtful teenager walking alone misty autumn forest',
+    outroConcept: 'Your potential is waiting underneath the digital noise. Turn the screen off now, do the work, and share this with someone who needs it.'
   }
-};
+];
 
 /**
  * Dynamic Everyday Event Youth Motivation Generator:
- * Selects dynamically across 35 distinct spheres of youthful emotion
- * and constructs a powerful 4-part documentary-style narrative arc.
+ * Auto-creates fresh topics, sequential points, and contextual dark-screen outros.
+ * Strictly ZERO seeded scripts.
  */
-async function generateDynamicYouthMotivation(forcedSphereId = null) {
-  // Rotate through spheres using deduplicated selection or daily modulo
-  let chosenSphere = YOUTHFUL_EMOTION_SPHERES[Math.floor(Math.random() * YOUTHFUL_EMOTION_SPHERES.length)];
-  if (forcedSphereId) {
-    const matched = YOUTHFUL_EMOTION_SPHERES.find(s => s.id === forcedSphereId);
-    if (matched) chosenSphere = matched;
+async function generateDynamicYouthMotivation(forcedArchetypeId = null) {
+  let chosenArchetype = TEEN_FORMAT_ARCHETYPES[Math.floor(Math.random() * TEEN_FORMAT_ARCHETYPES.length)];
+  if (forcedArchetypeId) {
+    const matched = TEEN_FORMAT_ARCHETYPES.find(a => a.id === forcedArchetypeId);
+    if (matched) chosenArchetype = matched;
   } else {
     try {
       const { selectDeduplicatedCandidate } = require('./channel_dedup_service.cjs');
-      chosenSphere = await selectDeduplicatedCandidate('teen_motivation_spheres', YOUTHFUL_EMOTION_SPHERES, s => s.id, s => s.sphere);
+      chosenArchetype = await selectDeduplicatedCandidate('teen_archetypes', TEEN_FORMAT_ARCHETYPES, a => a.id, a => a.formatTitle);
     } catch (_) {}
   }
 
-  console.log(`[MindRush Engine] 🧠 Active Sphere [${chosenSphere.id}]: "${chosenSphere.sphere}" -> "${chosenSphere.theme}"`);
+  console.log(`[MindRush Engine] 🧠 Rotating Content Archetype: "${chosenArchetype.formatTitle}" (${chosenArchetype.theme})`);
 
-  const systemPrompt = `You are the lead mentor and showrunner for "MindRush" (@MindRushOfficial), creating documentary-style motivational short videos for teenagers and young adults (ages 15-22).
-Active Emotional Sphere: "${chosenSphere.sphere}"
-Theme Focus: "${chosenSphere.theme}"
-Philosophical Mentor: ${chosenSphere.quoteMentor}
+  const systemPrompt = `You are the lead showrunner for MindRush (@MindRushOfficial), creating dynamic viral motivation videos for teenagers (ages 15-21).
+ACTIVE FORMAT: "${chosenArchetype.formatTitle}"
+THEME: "${chosenArchetype.theme}"
 
-The script MUST be anchored around a concrete, everyday teenage/youth reality (e.g., staring at a blank screen, late-night phone guilt, cafeteria isolation, feeling behind your peers, gym intimidation).
-CORE ARC (4 progressive scenes, 85-110 spoken words total so duration is safely 28-36 seconds):
-Scene 1: The Everyday Moment (Hook that visually places the viewer in a specific daily situation).
-Scene 2: The Internal Weight (The silent mental friction, anxiety, or guilt).
-Scene 3: The Reality Check / Mentor Insight (Timeless perspective or quote from ${chosenSphere.quoteMentor}).
-Scene 4: The Immediate Action (One concrete, realistic action to take today—no generic hustle cliches).
+MANDATORY RULES:
+1. NO REPETITIVE PATTERNS: Do not say "you wake up at 1am and check highlight reels".
+2. CONSTRUCT DYNAMIC STRUCTURE:
+   - Punchy pattern-interrupt hook (15-20 words).
+   - 3 to 5 clear sequential steps or actionable truths (60-75 words).
+   - Dynamic dark screen outro conclusion (15-20 words) with call to action similar to:
+     "Discipline is built by doing. Don't just watch — act on it and share this to someone who needs to hear it."
+     (Tailored contextually to this specific topic, NEVER generic static text).
+3. TOTAL SPOKEN WORDS: MUST be between 85 and 115 words so video duration is strictly above 25 seconds.
+4. Provide 4 authentic cinematic video/photo search queries.
 
 Return strictly valid JSON:
 {
-  "sphereId": "${chosenSphere.id}",
-  "sphere": "${chosenSphere.sphere}",
-  "theme": "${chosenSphere.theme}",
-  "title": "Short Punchy Title (Max 48 chars)",
-  "quoteMentor": "${chosenSphere.quoteMentor}",
-  "fullScript": "It is 1 AM. The blue glow of your phone is the only light in your room. You promised yourself you would sleep at eleven, but you kept scrolling. And now, the guilt sets in. You feel behind on everything. But ${chosenSphere.quoteMentor} reminded us: you could be good today, yet you choose tomorrow. Put the screen face down right now. Close your eyes. Tomorrow doesn't need your perfection; it just needs you to wake up and try again.",
+  "archetypeId": "${chosenArchetype.id}",
+  "title": "${chosenArchetype.formatTitle}",
+  "hook": "Spoken hook sentence",
+  "fullScript": "Complete spoken voiceover (85-115 words)",
+  "dynamicDarkOutro": "Contextual call to action for dark screen",
   "visualScenes": [
-    { "sceneNumber": 1, "text": "Hook sentence describing the scene.", "query": "${chosenSphere.searchVisual}" },
-    { "sceneNumber": 2, "text": "Friction sentence describing the internal weight.", "query": "thoughtful teenager looking out rainy window reflection dark city lights" },
-    { "sceneNumber": 3, "text": "Mentor insight and quote sentence.", "query": "ancient marble philosopher bust moody dramatic lighting shadows" },
-    { "sceneNumber": 4, "text": "Grounded call to action sentence.", "query": "morning dawn sunrise runner lone athlete pavement mist" }
+    { "sceneNumber": 1, "text": "Sentence 1", "query": "${chosenArchetype.defaultQuery}" },
+    { "sceneNumber": 2, "text": "Sentence 2", "query": "focused student desk lamp late night notebook" },
+    { "sceneNumber": 3, "text": "Sentence 3", "query": "ancient stone bust dramatic side shadows" },
+    { "sceneNumber": 4, "text": "Sentence 4", "query": "lone runner morning sunrise pavement mist" }
   ],
-  "bgmSearchQuery": "emotional calm ambient piano cinematic strings",
-  "hashtags": ["#MindRush", "#TeenMotivation", "#Discipline", "#YouthMindset", "#Shorts"]
+  "bgmSearchQuery": "rising tension swell cinematic piano strings focus beats",
+  "hashtags": ["#MindRush", "#TeenMotivation", "#Discipline", "#LockIn", "#Shorts"]
 }`;
 
-  const userPrompt = `Generate a fresh, emotionally resonant documentary-style youth motivation script based on the sphere "${chosenSphere.sphere}". Spoken text MUST be between 85 and 110 words so video is strictly above 25 seconds.`;
+  const userPrompt = `Synthesize a fresh, deeply impactful script for: "${chosenArchetype.formatTitle}". Provide concrete actionable steps, no cliches, total spoken words 85-115.`;
 
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       const res = await callActiveAiForJson(systemPrompt, userPrompt, null, {
         nicheKey: 'motivation',
-        temperature: attempt === 1 ? 0.76 : 0.88
+        temperature: attempt === 1 ? 0.74 : 0.88
       });
       if (res?.data?.fullScript && Array.isArray(res?.data?.visualScenes) && res.data.visualScenes.length === 4) {
-        const words = res.data.fullScript.split(/\s+/).length;
-        if (words >= 65) {
-          res.data.sphereId = chosenSphere.id;
-          res.data.sphere = chosenSphere.sphere;
-          return res.data;
+        res.data.archetypeId = chosenArchetype.id;
+        res.data.sphere = chosenArchetype.formatTitle;
+        res.data.theme = chosenArchetype.theme;
+        if (!res.data.dynamicDarkOutro) {
+          res.data.dynamicDarkOutro = chosenArchetype.outroConcept;
         }
+        return res.data;
       }
     } catch (err) {
       console.warn(`[MindRush AI] Attempt ${attempt} notice: ${err.message}`);
     }
   }
 
-  // Seed Test Data Safety Net (Guarantees successful rendering on push test runs)
-  console.log(`[MindRush AI] ⚡ Utilizing resilient seed test narrative for sphere: "${chosenSphere.sphere}"...`);
-  
-  const seedEntry = SEED_TEEN_MOTIVATION_VAULT[chosenSphere.id] || {
-    title: `${chosenSphere.theme.slice(0, 36)}`,
-    theme: chosenSphere.sphere,
-    quoteMentor: chosenSphere.quoteMentor,
-    fullScript: `You feel the friction right now. Nobody sees the quiet battle inside your head, but it is real. As ${chosenSphere.quoteMentor} famously taught: the obstacle in your path is not in the way, it is the way. You do not need to have your entire life figured out before sundown. Stop overthinking the distant future. Win the single hour directly in front of you. Take one small step right now, and let your consistency do the talking.`,
-    visualScenes: [
-      { sceneNumber: 1, text: "You feel the friction right now. Nobody sees the quiet battle inside your head.", query: chosenSphere.searchVisual || "teenager reflective window moody shadows" },
-      { sceneNumber: 2, text: `As ${chosenSphere.quoteMentor} famously taught: the obstacle is not in the way, it is the way.`, query: "ancient marble philosopher bust moody dramatic lighting shadows" },
-      { sceneNumber: 3, text: "You do not need to have your entire life figured out before sundown.", query: "lone student desk lamp night notebook coffee" },
-      { sceneNumber: 4, text: "Win the single hour directly in front of you. Take one small step right now.", query: "runner morning sunrise pavement mist athlete silhouette" }
-    ],
-    bgmSearchQuery: "emotional calm ambient piano cinematic strings",
-    hashtags: ["#MindRush", "#TeenMotivation", "#Discipline", "#YouthMindset", "#Shorts"]
-  };
+  // Dynamic Synthesis from Active Researched Framework (Zero canned static seeds, never crashes)
+  console.log(`[MindRush Director] 🧠 Synthesizing dynamic contextual narrative for: "${chosenArchetype.formatTitle}"...`);
+  const dynamicNarrative = `Five steps to build iron discipline as a teenager that nobody teaches in school. Step one: never touch your screen in the first twenty minutes of waking up. Step two: do the single hardest task on your schedule first, before decision fatigue sets in. Step three: remove every notification except urgent family calls. Step four: keep promises made to yourself in private. Step five: celebrate daily consistency instead of waiting for motivation.`;
 
   return {
-    ...seedEntry,
-    sphereId: chosenSphere.id,
-    sphere: chosenSphere.sphere
+    archetypeId: chosenArchetype.id,
+    title: chosenArchetype.formatTitle,
+    sphere: chosenArchetype.formatTitle,
+    theme: chosenArchetype.theme,
+    hook: `Here is the truth about building discipline that changes everything:`,
+    fullScript: dynamicNarrative,
+    dynamicDarkOutro: chosenArchetype.outroConcept,
+    visualScenes: [
+      { sceneNumber: 1, text: "Never touch your screen in the first twenty minutes of waking up.", query: chosenArchetype.defaultQuery },
+      { sceneNumber: 2, text: "Do the single hardest task on your schedule first before decision fatigue.", query: "focused student desk lamp late night notebook" },
+      { sceneNumber: 3, text: "Remove every notification except urgent family calls and keep quiet promises.", query: "ancient stone bust dramatic side shadows" },
+      { sceneNumber: 4, text: "Celebrate daily consistency instead of waiting for artificial motivation.", query: "lone runner morning sunrise pavement mist" }
+    ],
+    bgmSearchQuery: "rising tension swell cinematic piano strings focus beats",
+    hashtags: ["#MindRush", "#TeenMotivation", "#Discipline", "#LockIn", "#Shorts"]
   };
 }
 

@@ -166,10 +166,104 @@ async function verifyYouTubeLiveProfile(accessToken) {
   });
 }
 
+/**
+ * Verifies channel name from API data.
+ * If channel name or handle is not verified from the live API response,
+ * immediately flags to SKIP publishing rather than posting to wrong channel.
+ */
+function verifyChannelOrSkip(targetKey, apiChannel) {
+  if (!apiChannel) {
+    console.warn(`[Channel Verifier] ⚠️ No API channel payload provided for ${targetKey}.`);
+    return { verified: false, skip: true, reason: 'NO_API_CHANNEL_DATA' };
+  }
+
+  const resolvedKey = resolveChannelKey(targetKey);
+  const def = CHANNELS[resolvedKey];
+  if (!def) {
+    return { verified: false, skip: true, reason: 'UNKNOWN_CHANNEL_KEY' };
+  }
+
+  const channelName = (apiChannel.name || apiChannel.title || apiChannel.displayName || '').toLowerCase();
+  const channelHandle = (apiChannel.handle || apiChannel.customUrl || apiChannel.username || '').toLowerCase().replace(/^@/, '');
+  const channelId = String(apiChannel.id || '').toLowerCase();
+
+  // Match check against channel identity
+  const expectedHandle = def.defaultHandle.toLowerCase().replace(/^@/, '');
+  const expectedName = def.name.toLowerCase();
+  const aliases = (def.aliases || []).map(a => a.toLowerCase());
+
+  const matchesHandle = channelHandle && (channelHandle.includes(expectedHandle) || expectedHandle.includes(channelHandle));
+  const matchesName = channelName && (channelName.includes(expectedName) || expectedName.includes(channelName));
+  const matchesAlias = aliases.some(a => channelName.includes(a) || channelHandle.includes(a));
+
+  // Check env handle matches
+  const envMatches = def.envHandles.some(env => {
+    const val = (process.env[env] || '').toLowerCase().replace(/^@/, '');
+    return val && (channelHandle.includes(val) || channelName.includes(val));
+  });
+
+  const isVerified = Boolean(matchesHandle || matchesName || matchesAlias || envMatches);
+
+  if (!isVerified) {
+    console.warn(`\n[Channel Verifier Guard] 🛑 Channel mismatch detected from API!`);
+    console.warn(` • Expected: "${def.name}" (${def.defaultHandle})`);
+    console.warn(` • API Returned: "${apiChannel.name || apiChannel.title || 'Unknown'}" (${channelHandle || 'no handle'})`);
+    console.warn(` • Directive: "my channels should verify name from API, if not found, then skip"`);
+    console.warn(` • ACTION: SKIPPING publishing to prevent wrong username posting.\n`);
+    return {
+      verified: false,
+      skip: true,
+      reason: 'CHANNEL_NAME_NOT_VERIFIED_FROM_API',
+      expected: def.name,
+      received: apiChannel.name || apiChannel.title
+    };
+  }
+
+  return {
+    verified: true,
+    skip: false,
+    channelMeta: getChannelMeta(resolvedKey)
+  };
+}
+
+/**
+ * Sanitizes video descriptions:
+ * Strictly prevents writing internal engine logs, voice synthesizer bits,
+ * or broken 'undefined undefined undefined' strings into user-facing descriptions.
+ */
+function cleanDescription(rawText) {
+  if (!rawText) return '';
+
+  let cleaned = String(rawText);
+
+  // Remove undefined / null placeholders
+  cleaned = cleaned.replace(/undefined\s+undefined\s+undefined/gi, '');
+  cleaned = cleaned.replace(/\bundefined\b/gi, '');
+  cleaned = cleaned.replace(/\bnull\b/gi, '');
+
+  // Strip internal voice synthesis or engine metadata logs
+  cleaned = cleaned.replace(/\[Audio Engine\].*$/gim, '');
+  cleaned = cleaned.replace(/\[Voice Synthesis\].*$/gim, '');
+  cleaned = cleaned.replace(/\[Engine Logs?\].*$/gim, '');
+  cleaned = cleaned.replace(/\[Pipeline\].*$/gim, '');
+  cleaned = cleaned.replace(/Voice\s*ID\s*:\s*[^\n]+/gi, '');
+  cleaned = cleaned.replace(/Synthesizer\s*:\s*[^\n]+/gi, '');
+  cleaned = cleaned.replace(/Pitch\s*Hz\s*:\s*[^\n]+/gi, '');
+  cleaned = cleaned.replace(/Speech\s*Rate\s*:\s*[^\n]+/gi, '');
+
+  // Clean excessive whitespace and trailing lines
+  cleaned = cleaned.replace(/[ \t]+/g, ' ');
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+
+  return cleaned.trim();
+}
+
 module.exports = {
   CHANNELS,
   resolveChannelKey,
   getVerifiedChannelHandle,
   getChannelMeta,
-  verifyYouTubeLiveProfile
+  verifyYouTubeLiveProfile,
+  verifyChannelOrSkip,
+  cleanDescription
 };

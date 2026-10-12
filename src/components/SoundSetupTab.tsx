@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChannelAudioStudio } from './ChannelAudioStudio';
+import { VoiceAndModelSettingsHub } from './VoiceAndModelSettingsHub';
 import { 
   Music, 
   Headphones, 
@@ -461,6 +462,9 @@ export const SoundSetupTab: React.FC = () => {
           Save Audio Preferences
         </button>
       </div>
+
+      {/* Voice Pitch, Rate, Volume, Music Ducking & Model Matrix across all 5 workflows */}
+      <VoiceAndModelSettingsHub />
 
       {/* Channel Audio Vault & Smart Cutter */}
       <ChannelAudioStudio />

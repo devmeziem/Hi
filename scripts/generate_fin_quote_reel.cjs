@@ -37,6 +37,56 @@ const TOTAL_FRAMES = Math.round(TARGET_DURATION * FPS);
  * with Full Names, Institutional Credentials, and Verified Citations.
  */
 const FINANCE_TITANS_QUOTES = [
+  // Beginner Wealth & Earning Principles (For People Who Want to Get Successful)
+  {
+    quote: "Three things to stop as a beginner in earning: Stop buying courses before selling a real skill, stop spending your first profit on luxuries, and stop telling people your goals before making your first dollar.",
+    author: "Financial Blueprint",
+    credentials: "Foundational Micro-Enterprise & Cashflow Principles",
+    reference: "The Cold Rules of Early Cashflow & Capital Survival",
+    wikiSearch: "Personal_finance",
+    theme: "beginner_earning_traps"
+  },
+  {
+    quote: "When you have under $1,000, do not speculate in crypto or high-risk stocks. The highest return on capital is investing in a high-income skill that lets you generate cash on demand.",
+    author: "Cashflow Architecture",
+    credentials: "Early Stage Leverage & Capital Preservation",
+    reference: "Skill Acquisition vs Capital Speculation",
+    wikiSearch: "Human_capital",
+    theme: "early_stage_leverage"
+  },
+  {
+    quote: "Your first $1,000 takes 100x longer than your next $10,000. It is not because the math is hard, but because you are fighting undisciplined habits and impatience.",
+    author: "Wealth Compound Law",
+    credentials: "Behavioral Economics & Early Wealth Momentum",
+    reference: "The Psychological Plateau of First Capital",
+    wikiSearch: "Compound_interest",
+    theme: "momentum_building"
+  },
+  {
+    quote: "Passive income is a fantasy for beginners. Passive income is the reward you earn after years of relentless active execution. Master active sales first.",
+    author: "Sovereign Capital",
+    credentials: "Direct Cashflow & Active Agency Operations",
+    reference: "Active Income Foundations Before Passive Allocation",
+    wikiSearch: "Passive_income",
+    theme: "active_execution"
+  },
+  {
+    quote: "The fastest way to earn as a beginner is not building an app or inventing a business; it is finding five people with an existing painful problem and solving it for them this week.",
+    author: "Practical Enterprise",
+    credentials: "Problem-Solving Economics & Zero-Capital Launch",
+    reference: "Customer Problem Discovery & Frictionless Revenue",
+    wikiSearch: "Entrepreneurship",
+    theme: "problem_solving"
+  },
+  {
+    quote: "Never upgrade your lifestyle on your first winning month. Your first $5,000 is your moat against emergencies, not permission to impress strangers.",
+    author: "Capital Defense",
+    credentials: "Emergency Buffer & Lifestyle Creep Immunity",
+    reference: "The 6-Month Liquidity Moat Architecture",
+    wikiSearch: "Emergency_fund",
+    theme: "lifestyle_creep_defense"
+  },
+
   // Warren Buffett
   {
     quote: "Rule No. 1: Never lose money. Rule No. 2: Never forget rule No. 1.",
@@ -827,18 +877,18 @@ function buildFinDeepBeat3Svg(scholar, width = 1080, height = 1920) {
 }
 
 /**
- * Authentic High-Status Frosted Glass Luxury Card for Financial Blueprint (@bones_ceo)
- * Restores the signature aesthetic that drove high retention:
- * - Sleek translucent floating glass card with cyan & gold glowing edge highlights
- * - Official "FINANCIAL BLUEPRINT • WEALTH TITAN" institutional badge with glowing dot
- * - High-contrast modern typography with subtle drop shadow
- * - Gold accent divider rule
- * - Full scholar credentials & source citation
+ * Sleek High-Impact Typographic Layout for Financial Blueprint (@bones_ceo)
+ * Replaces the awkward bulky box with a cinematic, high-retention composition:
+ * - Seamless deep vignette fade guaranteeing 100% legibility on mobile
+ * - Stylized Georgia serif quotation mark in warm gold
+ * - High-contrast crisp typography with text glow
+ * - Warm gold accent divider rule
+ * - Clean unboxed author credentials and verified source citation
  * - Official channel watermark (@bones_ceo)
  */
 function buildFrostedGlassCardSvg(scholar, width = 1080, height = 1920) {
   const quoteLen = scholar.quote.length;
-  const maxChars = quoteLen > 110 ? 27 : (quoteLen > 65 ? 24 : 21);
+  const maxChars = quoteLen > 110 ? 28 : (quoteLen > 65 ? 25 : 22);
   const quoteWords = scholar.quote.split(/\s+/);
   const lines = [];
   let currentLine = '';
@@ -853,8 +903,8 @@ function buildFrostedGlassCardSvg(scholar, width = 1080, height = 1920) {
   if (currentLine) lines.push(currentLine.trim());
 
   const numLines = lines.length;
-  let fontSize = 48;
-  let lineHeight = 68;
+  let fontSize = 46;
+  let lineHeight = 66;
 
   if (numLines <= 2) {
     fontSize = 54;
@@ -874,90 +924,56 @@ function buildFrostedGlassCardSvg(scholar, width = 1080, height = 1920) {
     `<tspan x="540" dy="${idx === 0 ? 0 : lineHeight}">${escapeXml(line)}</tspan>`
   ).join('\n        ');
 
-  const cardHeight = Math.max(760, 480 + (numLines * lineHeight));
-  const cardY = 1760 - cardHeight;
-  const badgeY = cardY + 50;
-  const quoteStartY = badgeY + 110;
-  const quoteBottomY = quoteStartY + ((numLines - 1) * lineHeight);
-  const dividerY = quoteBottomY + 38;
-  const authorY = dividerY + 50;
-  const credY = authorY + 34;
-  const refY = credY + 30;
-  const watermarkY = cardY + cardHeight - 34;
+  const quoteBlockHeight = (numLines - 1) * lineHeight;
+  const quoteStartY = Math.max(880, 1080 - Math.round(quoteBlockHeight / 2) - 40);
+  const quoteBottomY = quoteStartY + quoteBlockHeight;
+  const dividerY = quoteBottomY + 36;
+  const authorY = dividerY + 44;
+  const credY = authorY + 32;
+  const soundTagY = credY + 36;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
     <defs>
-      <filter id="glassDropShadow" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="20" stdDeviation="30" flood-color="#000000" flood-opacity="0.95" />
-        <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="#0284c7" flood-opacity="0.30" />
-      </filter>
       <filter id="finTextGlow" x="-30%" y="-30%" width="160%" height="160%">
-        <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#000000" flood-opacity="1.0" />
+        <feDropShadow dx="0" dy="4" stdDeviation="10" flood-color="#000000" flood-opacity="1.0" />
+        <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.9" />
       </filter>
-      <linearGradient id="finCardBg" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#090f1f" stop-opacity="0.94" />
-        <stop offset="50%" stop-color="#0f172a" stop-opacity="0.95" />
-        <stop offset="100%" stop-color="#020617" stop-opacity="0.98" />
-      </linearGradient>
-      <linearGradient id="finCardBorder" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.9" />
-        <stop offset="45%" stop-color="#f59e0b" stop-opacity="0.6" />
-        <stop offset="80%" stop-color="#38bdf8" stop-opacity="0.4" />
-        <stop offset="100%" stop-color="#ffffff" stop-opacity="0.2" />
-      </linearGradient>
       <linearGradient id="bottomShadowVignette" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stop-color="#000000" stop-opacity="0" />
-        <stop offset="40%" stop-color="#020617" stop-opacity="0.6" />
-        <stop offset="80%" stop-color="#000000" stop-opacity="0.95" />
+        <stop offset="25%" stop-color="#020617" stop-opacity="0.45" />
+        <stop offset="55%" stop-color="#020617" stop-opacity="0.88" />
+        <stop offset="85%" stop-color="#01040f" stop-opacity="0.96" />
         <stop offset="100%" stop-color="#000000" stop-opacity="0.99" />
       </linearGradient>
     </defs>
 
-    <!-- Background Vignette ensuring card separation from background photo -->
-    <rect x="0" y="700" width="1080" height="1220" fill="url(#bottomShadowVignette)" />
+    <!-- Deep Vignette Background Guaranteeing Contrast Without Clunky Box -->
+    <rect x="0" y="650" width="1080" height="1270" fill="url(#bottomShadowVignette)" />
 
-    <!-- 1. Floating Frosted Glass Luxury Card Container -->
-    <rect x="60" y="${cardY}" width="960" height="${cardHeight}" rx="36" fill="url(#finCardBg)" stroke="url(#finCardBorder)" stroke-width="2.5" filter="url(#glassDropShadow)" />
+    <!-- Stylized Modern Warm Gold Quotation Mark -->
+    <text x="540" y="${quoteStartY - 45}" font-family="Georgia, serif" font-size="80" font-weight="900" fill="#f59e0b" fill-opacity="0.9" text-anchor="middle" filter="url(#finTextGlow)">“</text>
 
-    <!-- 2. Institutional Badge -->
-    <g transform="translate(540, ${badgeY})">
-      <rect x="-190" y="-18" width="380" height="38" rx="19" fill="#0369a1" fill-opacity="0.28" stroke="#38bdf8" stroke-width="1.6" />
-      <circle cx="-160" cy="1" r="5" fill="#38bdf8" />
-      <text x="5" y="6" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="900" fill="#38bdf8" letter-spacing="3.5" text-anchor="middle">
-        FINANCIAL BLUEPRINT
-      </text>
-    </g>
-
-    <!-- Stylized Modern Gold Quotation Mark -->
-    <text x="540" y="${quoteStartY - 40}" font-family="Georgia, serif" font-size="76" font-weight="900" fill="#f59e0b" fill-opacity="0.9" text-anchor="middle" filter="url(#finTextGlow)">“</text>
-
-    <!-- High-Contrast Quote Text -->
+    <!-- High-Contrast Quote Text (Clean Georgia Serif Bold) -->
     <text x="540" y="${quoteStartY}" font-family="Georgia, serif" font-size="${fontSize}" font-weight="900" fill="#ffffff" text-anchor="middle" filter="url(#finTextGlow)">
         ${quoteTspans}
     </text>
 
-    <!-- Accent Divider Bar in Warm Gold / Cyan -->
-    <line x1="410" y1="${dividerY}" x2="670" y2="${dividerY}" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.9" />
+    <!-- Warm Gold Accent Rule -->
+    <line x1="430" y1="${dividerY}" x2="650" y2="${dividerY}" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.9" />
 
-    <!-- Titan Author Attribution with Verified Badge -->
-    <text x="540" y="${authorY}" font-family="system-ui, -apple-system, sans-serif" font-size="30" font-weight="900" fill="#f8fafc" letter-spacing="1.5" text-anchor="middle" filter="url(#finTextGlow)">
-      — ${escapeXml(scholar.author)} <tspan fill="#38bdf8" font-size="24">✓</tspan>
+    <!-- Author Attribution (Unboxed, Sleek) -->
+    <text x="540" y="${authorY}" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="800" fill="#f8fafc" letter-spacing="1.2" text-anchor="middle" filter="url(#finTextGlow)">
+      — ${escapeXml(scholar.author)} <tspan fill="#38bdf8" font-size="22">✓</tspan>
     </text>
 
-    <!-- Institutional Credentials -->
-    <text x="540" y="${credY}" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#cbd5e1" letter-spacing="0.8" text-anchor="middle">
+    <!-- Institutional / Principle Credentials -->
+    <text x="540" y="${credY}" font-family="system-ui, -apple-system, sans-serif" font-size="17" font-weight="600" fill="#cbd5e1" letter-spacing="0.8" text-anchor="middle" filter="url(#finTextGlow)">
       ${escapeXml(scholar.credentials)}
     </text>
 
-    <!-- Source Reference Citation -->
-    ${scholar.reference ? `
-    <text x="540" y="${refY}" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="500" fill="#94a3b8" letter-spacing="0.6" text-anchor="middle">
-      ${escapeXml(scholar.reference)}
-    </text>` : ''}
-
-    <!-- Channel Watermark & Signature -->
-    <text x="540" y="${watermarkY}" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#64748b" letter-spacing="3" text-anchor="middle">
-      @BONES_CEO • THE WEALTH FORMULA
+    <!-- Verified Audio Reference & Channel Watermark -->
+    <text x="540" y="${soundTagY}" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#94a3b8" letter-spacing="1.5" text-anchor="middle">
+      🎵 SOVEREIGN CAPITAL · FINANCIAL BLUEPRINT • @BONES_CEO
     </text>
   </svg>`;
 }

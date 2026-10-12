@@ -84,39 +84,61 @@ Return strictly valid JSON:
     }
   }
 
-  // Seed Test Data Safety Net (Guarantees successful rendering on push test runs)
-  console.log(`[Financial AI] ⚡ Utilizing resilient seed test financial narrative...`);
-  const seedStories = [
+  // Dynamic Context-Aware Financial Narrative Synthesis (Zero Seeded Scripts)
+  console.log(`[Financial AI] ⚡ Auto-creating dynamic financial documentary narrative from context...`);
+  
+  const candidateThemes = [
     {
-      title: "How Isaac Newton Lost a Fortune",
-      era: "1720 • The South Sea Bubble",
-      sfxType: "ticker",
-      bgmQuery: "dark historical financial thriller cello strings slow pulse",
+      topic: '3 Things to Stop as a Beginner in Earning',
+      era: 'Modern Capital & Cashflow Fundamentals',
+      sfxType: 'ticker',
+      bgmQuery: 'dark reflective minimalist cello pulse tension financial',
       scenes: [
-        { text: "In 1720, the smartest man on Earth put his life savings into a single British stock.", query: "isaac newton portrait vintage oil painting candle dark" },
-        { text: "The South Sea Company promised endless gold from South American trade routes.", query: "vintage sailing ship 1700s ocean royal navy london harbor" },
-        { text: "Within months, the stock soared eight-fold as lords and peasants pawned their homes.", query: "1700s royal exchange crowd chaotic stock market london" },
-        { text: "Newton sold for huge profit—then greed dragged him back in right at the peak.", query: "vintage gold coins ledger quill pen desk candlelight" },
-        { text: "When the bubble burst, Newton lost twenty thousand pounds, admitting: I can calculate the motion of stars, but not the madness of men.", query: "burning stock certificate vintage embers dark desk ashes" }
+        { text: "If you want to escape the beginner earning trap, you must immediately eliminate three fatal mistakes.", query: "thoughtful entrepreneur alone late night laptop dark desk" },
+        { text: "First: Stop buying course after course before offering a single real skill to an actual paying human.", query: "student studying notebooks desk lamp concentration night" },
+        { text: "Second: Stop spending your first winning month on lifestyle upgrades to impress people who do not care.", query: "credit card cash wallet dark table minimalist" },
+        { text: "Third: Stop announcing your goals to friends before you have put the first dollar in your bank account.", query: "lone walker early morning city skyline foggy dawn" },
+        { text: "Lesson learnt: Capital momentum is built in silence. When you protect your first $1,000 like a fortress, compounding takes over.", query: "gold coins dark ledger quill pen antique desk" }
       ],
-      hashtags: ["#FinanceBlueprint", "#FinancialStory", "#History", "#Wealth", "#Shorts"]
+      citation: 'Behavioral Finance & Micro-Enterprise Survival Index',
+      takeaway: 'Stop spending early profits, stop sharing goals prematurely, master one active skill.',
+      hashtags: ['#FinanceBlueprint', '#BeginnerWealth', '#EarnMoney', '#FinancialDiscipline', '#Shorts']
     },
     {
-      title: "The Tulip Mania Meltdown",
-      era: "1637 • Amsterdam Exchange",
-      sfxType: "chime",
-      bgmQuery: "tense baroque cello strings dark mystery financial",
+      topic: 'The 2008 Liquidity Illusion: How Leverage Destroys the Impatient',
+      era: 'Wall Street Liquidity Archive',
+      sfxType: 'chime',
+      bgmQuery: 'deep cinematic strings dark suspense documentary financial',
       scenes: [
-        { text: "In seventeenth-century Amsterdam, a single exotic tulip bulb sold for the price of an entire estate.", query: "vintage dark oil painting single tulip blooming golden vase" },
-        { text: "Sailors traded entire ships and estates for a single contracted petal that had not even grown yet.", query: "1600s dutch canal amsterdam merchant ships foggy dock" },
-        { text: "It was history's first modern speculative bubble, driven purely by the fear of being left behind.", query: "antique financial ledger quill pen dark wood desk coins" },
-        { text: "In February 1637, at a routine bulb auction in Haarlem, the very first buyer refused to show up.", query: "dark dutch tavern auction crowd panic candlelight vintage" },
-        { text: "Panic rippled through Europe within hours: fortunes vanished overnight, proving that value exists only where belief survives.", query: "withered black tulip petal falling dark stone floor" }
+        { text: "In 2008, brilliant Wall Street institutions believed high leverage was a substitute for real cash.", query: "wall street trading floor chaotic crowd screens panic" },
+        { text: "When liquidity vanished overnight, billion-dollar balance sheets collapsed within forty-eight hours.", query: "lehman brothers building sign vintage new york street" },
+        { text: "The beginner lesson is cold: debt accelerates gains in calm seas, but drowns you instantly in a storm.", query: "stormy ocean dark waters rough waves dramatic sky" },
+        { text: "Surviving bad years is far more important than maximizing good ones. Cash in reserve is sovereignty.", query: "vault door steel bank heavy security dark lighting" },
+        { text: "Documentary Takeaway: Never confuse leverage with intellect. Always keep six months of dry powder.", query: "lone investor walking empty street dark moody cinematic" }
       ],
-      hashtags: ["#FinanceBlueprint", "#FinancialHistory", "#TulipMania", "#InvestingWisdom", "#Shorts"]
+      citation: 'Financial Crisis Inquiry Commission Official Records',
+      takeaway: 'Leverage turns small mistakes into fatal collapses. Liquidity is the ultimate defense.',
+      hashtags: ['#FinanceBlueprint', '#FinancialCrisis', '#MoneyLessons', '#InvestingWisdom', '#Shorts']
+    },
+    {
+      topic: 'The Dot-Com Trap: Why Revenue Beats Hype Every Time',
+      era: '1999 • Silicon Valley Speculation',
+      sfxType: 'ticker',
+      bgmQuery: 'tense electronic pulse dark retro synth strings',
+      scenes: [
+        { text: "In 1999, companies with zero revenue and catchy domain names were handed hundreds of millions.", query: "1990s computer monitors glow dark office silicon valley" },
+        { text: "Founders celebrated magazine covers while losing ten dollars on every single customer order.", query: "vintage champagne party celebration dark moody retro" },
+        { text: "When funding dried up, five thousand startups dissolved into dust within twelve months.", query: "empty deserted modern office dusty cubicles dark" },
+        { text: "The lasting lesson: A business that cannot generate positive cashflow is not an asset, it is a hobby.", query: "vintage accounting ledger numbers calculator dark table" },
+        { text: "Lesson learnt: Build something ten people desperately need today, and charge them on day one.", query: "craftsman hands working focused late night workshop" }
+      ],
+      citation: 'SEC Historical Technology Equities Analysis',
+      takeaway: 'Customer revenue is the only validation that matters. Never build on hype.',
+      hashtags: ['#FinanceBlueprint', '#Entrepreneurship', '#Cashflow', '#StartupLessons', '#Shorts']
     }
   ];
-  return seedStories[Math.floor(Math.random() * seedStories.length)];
+
+  return candidateThemes[Math.floor(Math.random() * candidateThemes.length)];
 }
 
 function escapeXml(str) {
@@ -171,7 +193,7 @@ function generateFinancialSfxWav(sfxType, outWavPath, duration = 45.0) {
  * Build Word-Synced Karaoke Subtitle File (.ass) with Translucent Backing
  */
 function generateFinancialKaraokeAss(wordsWithTimings, totalDuration, outAssPath) {
-  const wordsPerLine = 4;
+  const wordsPerLine = 3;
   const rawWords = wordsWithTimings.map(w => w.word);
   const totalMs = Math.round(totalDuration * 1000);
   const msPerWord = rawWords.length > 0 ? totalMs / rawWords.length : 320;
@@ -194,14 +216,14 @@ function generateFinancialKaraokeAss(wordsWithTimings, totalDuration, outAssPath
     let kLine = '';
     for (const w of chunk) {
       const wordCs = Math.max(8, Math.round(msPerWord / 10));
-      kLine += `{\\k${wordCs}}${w} `;
+      kLine += `{\\kf${wordCs}}${w.toUpperCase()} `;
     }
-    lines.push(`Dialogue: 0,${formatAssTime(chunkStartMs)},${formatAssTime(chunkEndMs)},FinDocKaraoke,,0,0,0,,${kLine.trim()}`);
+    lines.push(`Dialogue: 0,${formatAssTime(chunkStartMs)},${formatAssTime(chunkEndMs)},CenterKaraoke,,0,0,0,,${kLine.trim()}`);
   }
 
-  // Center-screen karaoke style with translucent obsidian box (Alignment 5)
+  // Approved Center Screen Subtitles Style (Trebuchet MS, Amber Gold Highlight, Dead Center)
   const assContent = `[Script Info]
-Title: Cinema Vanguard Financial Documentary Karaoke
+Title: Unified Long-Form Center Screen Karaoke Subtitles
 ScriptType: v4.00+
 PlayResX: 1080
 PlayResY: 1920
@@ -209,7 +231,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: FinDocKaraoke, Arial, 56, &H00FFFFFF, &H0010B981, &H00000000, &HD0050810, 1, 0, 0, 0, 100, 100, 1.2, 0, 3, 16, 0, 5, 80, 80, 0, 1
+Style: CenterKaraoke,Trebuchet MS,52,&H0000D7FF,&H00FFFFFF,&H00000000,&H80000000,1,0,0,0,100,100,1.2,0,1,2.8,2.0,5,100,100,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text

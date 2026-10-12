@@ -297,13 +297,13 @@ Start with what you have in your hands today and compound daily. Access the full
     id: 'tech-ai',
     title: '⚡ Channel 3: Godswill Isaac (Multi-Agent GitHub CI/CD)',
     channelName: 'Godswill Isaac',
-    text: `Hello, welcome to Tech AI Automation! Today we are exploring how serverless GitHub Actions pipelines generate, render, and deploy media completely hands-free.
+    text: `Welcome to the Creator Automation Studio! Today we are exploring how hands-free publishing pipelines generate, produce, and broadcast high-impact video content daily.
 
-By orchestrating Groq ultra-fast LPU inference with Cloudflare Low-Neuron models, we achieve zero-cost storyboard generation with sub-second latency.
+By orchestrating responsive intelligence with pre-cleared audio and dynamic visual styling, we achieve high-retention video production with instant turnaround.
 
-The pipeline triggers automatically on cron schedule, queries Firestore state to prevent duplicate topics, synthesizes neural voiceover, composites 9:16 vertical motion graphics via FFmpeg, and pushes live to YouTube Data API v3 with pinned affiliate funnels.
+The workflow schedules automatically, verifies fresh topics to prevent duplicate ideas, crafts voice narration, composites 9:16 vertical studio video, and publishes live to YouTube with verified channel branding.
 
-Autonomous infrastructure is the ultimate leverage for solo engineers in 2026. Fork the production multi-agent repo in our description below!`
+Consistent storytelling is the ultimate leverage for digital creators in 2026. Explore our full production studio below!`
   }
 ];
 
@@ -934,23 +934,23 @@ export const DjSoundboardTab: React.FC<DjSoundboardTabProps> = ({ keys }) => {
             </div>
           </div>
 
-          {/* Production FFmpeg Audio Multiplexing Blueprint */}
+          {/* Production Studio Audio Multiplexing Blueprint */}
           <div className="p-5 bg-gradient-to-br from-slate-900 to-indigo-950/40 border border-indigo-500/30 rounded-2xl space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-indigo-400 font-bold text-xs">
                 <Terminal className="w-4 h-4 text-indigo-400" />
-                <span>Production FFmpeg Audio Ducking Command</span>
+                <span>Production Studio Audio Ducking Blueprint</span>
               </div>
               <button
                 onClick={handleCopyFfmpeg}
                 className="text-[10px] font-mono px-2 py-1 bg-indigo-950 text-indigo-300 border border-indigo-800 rounded-lg hover:bg-indigo-900 cursor-pointer flex items-center gap-1"
               >
                 {copiedFfmpeg ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                <span>{copiedFfmpeg ? 'Copied Command' : 'Copy CLI'}</span>
+                <span>{copiedFfmpeg ? 'Copied Command' : 'Copy Command'}</span>
               </button>
             </div>
             <p className="text-[11px] text-slate-300 leading-relaxed">
-              This exact FFmpeg filter graph is used inside our GitHub Actions workflow runners to composite synthesized speech with royalty-free backing audio:
+              This exact audio filter graph is used inside our automated studio pipelines to seamlessly blend voice narration with royalty-free backing music:
             </p>
             <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-[11px] font-mono text-emerald-400 overflow-x-auto">
               {ffmpegCommand}
