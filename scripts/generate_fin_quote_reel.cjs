@@ -973,7 +973,13 @@ function buildFrostedGlassCardSvg(scholar, width = 1080, height = 1920) {
 
     <!-- Verified Audio Reference & Channel Watermark -->
     <text x="540" y="${soundTagY}" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#94a3b8" letter-spacing="1.5" text-anchor="middle">
-      🎵 SOVEREIGN CAPITAL · FINANCIAL BLUEPRINT • @BONES_CEO
+      🎵 SOVEREIGN CAPITAL · FINANCIAL BLUEPRINT${(() => {
+        try {
+          const { getChannelMeta } = require('./channel_verifier.cjs');
+          const m = getChannelMeta('ch1');
+          return m.hasHandle ? ` • ${m.handle}` : '';
+        } catch { return ''; }
+      })()}
     </text>
   </svg>`;
 }

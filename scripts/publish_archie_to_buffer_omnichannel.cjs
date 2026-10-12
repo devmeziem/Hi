@@ -663,8 +663,11 @@ function buildOmnichannelCaption(metadata = {}, service = 'generic') {
   }
 
   if (service === 'instagram') {
+    const { getChannelMeta } = require('./channel_verifier.cjs');
+    const ch3Meta = getChannelMeta('ch3');
+    const followTarget = ch3Meta.hasHandle ? ch3Meta.handle : 'our channel';
     const igTags = Array.from(new Set([...baseTags, '#ReelsInstagram', '#ScienceReels', '#ScienceFacts', '#DidYouKnow', '#ArchieLab', '#InstaScience', '#ViralScience', '#LifeHacks', '#STEMEducation', '#Shorts']));
-    return cleanDescription(`⚡ ${hook}\n\n${explanation}\n\n${takeaway ? takeaway + '\n\n' : ''}${citation}${vocabSection}${trendingSection}\n\n💾 Save this post for later and share with a friend who needs to see this!\n\nFollow @ArchieExplains for daily science & tech breakthroughs.\n\n${igTags.join(' ')}`);
+    return cleanDescription(`⚡ ${hook}\n\n${explanation}\n\n${takeaway ? takeaway + '\n\n' : ''}${citation}${vocabSection}${trendingSection}\n\n💾 Save this post for later and share with a friend who needs to see this!\n\nFollow ${followTarget} for daily science & tech breakthroughs.\n\n${igTags.join(' ')}`);
   }
 
   if (service === 'facebook') {

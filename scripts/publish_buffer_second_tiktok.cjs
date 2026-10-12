@@ -707,12 +707,13 @@ async function dispatchTikTok(channelType = 'movie_brand') {
     }
 
     const verifiedDocHandle = getVerifiedChannelHandle('ch4');
+    const docChannelRef = verifiedDocHandle || 'our channel';
     const genreEmoji = meta.genre === 'horror' ? '👁️' : meta.genre === 'crime' ? '🕵️‍♂️' : meta.genre === 'history' ? '🏛️' : '🎬';
     const docTitle = meta.title || meta.episodeTitle || 'Cinema Vanguard Documentary';
     const docEra = meta.era ? ` // ${meta.era}` : '';
     const storyExcerpt = (meta.narration || '').slice(0, 220);
 
-    caption = `${genreEmoji} ${docTitle}${docEra}\n\n${storyExcerpt}...\n\n🍿 Follow ${verifiedDocHandle} for daily archival cinema, true crime retrospectives & deep mysteries!\n\n#CinemaVanguard #Documentary #DarkHistory #TrueCrime #Mystery #ShortFilm #Cinematic #StoryTime #TikTokMovies #Drama #FYP #Shorts`;
+    caption = `${genreEmoji} ${docTitle}${docEra}\n\n${storyExcerpt}...\n\n🍿 Follow ${docChannelRef} for daily archival cinema, true crime retrospectives & deep mysteries!\n\n#CinemaVanguard #Documentary #DarkHistory #TrueCrime #Mystery #ShortFilm #Cinematic #StoryTime #TikTokMovies #Drama #FYP #Shorts`;
 
   } else if (channelType === 'movie_brand') {
     targetChannel = resolveTargetChannel(discoveredTikToks, BUFFER_TIKTOK_MOVIE_CHANNEL_ID, 'movie_brand');
@@ -748,7 +749,8 @@ async function dispatchTikTok(channelType = 'movie_brand') {
     }
 
     const verifiedMovieHandle = getVerifiedChannelHandle('ch4');
-    caption = `🎬 ${meta.seriesTitle || 'Cinema Vanguard'} // Episode: ${meta.episodeTitle || 'The Breach'}\n\n${(meta.narration || '').slice(0, 200)}...\n\n🍿 Follow ${verifiedMovieHandle} for daily episodic cinema and documentary series!\n\n#MovieTrailer #SciFi #CinemaVanguard #Cinematic #ShortFilm #TikTokMovies #Drama #AIGenerated #AI #FYP`;
+    const movieChannelRef = verifiedMovieHandle || 'our channel';
+    caption = `🎬 ${meta.seriesTitle || 'Cinema Vanguard'} // Episode: ${meta.episodeTitle || 'The Breach'}\n\n${(meta.narration || '').slice(0, 200)}...\n\n🍿 Follow ${movieChannelRef} for daily episodic cinema and documentary series!\n\n#MovieTrailer #SciFi #CinemaVanguard #Cinematic #ShortFilm #TikTokMovies #Drama #AIGenerated #AI #FYP`;
 
   } else if (channelType === 'teen_motivation') {
     targetChannel = resolveTargetChannel(discoveredTikToks, BUFFER_TIKTOK_TEEN_CHANNEL_ID, 'teen_motivation');
@@ -798,7 +800,8 @@ async function dispatchTikTok(channelType = 'movie_brand') {
     }
 
     const verifiedTeenHandle = getVerifiedChannelHandle('ch5');
-    caption = meta.description || `⚡ ${meta.hook}\n\n👉 ${meta.challenge}\n\nHit follow ${verifiedTeenHandle} to build mental armor and level up daily. 🛡️\n\n#MindRush #TeenMotivation #Discipline #LockIn #Underdog #StudentMindset #Aura #DeepThoughts #FYP #StudyTok #Shorts`;
+    const teenChannelRef = verifiedTeenHandle || 'our channel';
+    caption = meta.description || `⚡ ${meta.hook}\n\n👉 ${meta.challenge}\n\nHit follow on ${teenChannelRef} to build mental armor and level up daily. 🛡️\n\n#MindRush #TeenMotivation #Discipline #LockIn #Underdog #StudentMindset #Aura #DeepThoughts #FYP #StudyTok #Shorts`;
   }
 
   // Sanitize caption strictly: eliminate voice logs, internal engine traces, and broken undefined strings

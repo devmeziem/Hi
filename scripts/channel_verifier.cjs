@@ -93,13 +93,15 @@ function resolveChannelKey(rawKey = '') {
 
 /**
  * Resolves the verified channel handle for watermarks and video branding.
- * Checks environment overrides first, then configured defaults.
+ * Checks environment overrides first.
+ * Directive: "If channel username not found, skip watermark, just say our channel or this channel"
  */
 function getVerifiedChannelHandle(targetKey) {
   const resolvedKey = resolveChannelKey(targetKey);
   const def = CHANNELS[resolvedKey];
-  if (!def) return '@CinemaVanguard';
+  if (!def) return null;
 
+  // 1. Check environment overrides first
   for (const envVar of def.envHandles) {
     if (process.env[envVar] && process.env[envVar].trim()) {
       let h = process.env[envVar].trim();
@@ -107,25 +109,52 @@ function getVerifiedChannelHandle(targetKey) {
     }
   }
 
-  return def.defaultHandle;
+  // 2. Check if a verified live channel profile was discovered or configured
+  if (process.env.VERIFIED_CHANNEL_HANDLE && process.env.VERIFIED_CHANNEL_HANDLE.trim()) {
+    let h = process.env.VERIFIED_CHANNEL_HANDLE.trim();
+    return h.startsWith('@') ? h : `@${h}`;
+  }
+
+  // If not found in verified API / environment, return null so watermark is skipped
+  // and copy says "our channel" or "this channel" per user directive.
+  return null;
 }
 
 /**
- * Resolves verified channel display metadata for video watermarks and outro cards
+ * Resolves verified channel display metadata for video watermarks and outro cards.
+ * If channel username is not found: skips watermark and sets references to "our channel" or "this channel".
  */
 function getChannelMeta(targetKey) {
   const resolvedKey = resolveChannelKey(targetKey);
   const def = CHANNELS[resolvedKey] || CHANNELS.ch4;
-  const handle = getVerifiedChannelHandle(resolvedKey);
+  const verifiedHandle = getVerifiedChannelHandle(resolvedKey);
+  const hasHandle = Boolean(verifiedHandle && verifiedHandle.trim());
+
+  const handle = hasHandle ? verifiedHandle : '';
+  const cleanHandle = hasHandle ? verifiedHandle.replace(/^@/, '') : '';
+  const channelRef = hasHandle ? verifiedHandle : 'our channel';
+  const thisChannelRef = hasHandle ? verifiedHandle : 'this channel';
+  const ctaMention = hasHandle ? `Follow ${verifiedHandle}` : 'Follow our channel';
+  const ctaFollowThis = hasHandle ? `Follow ${verifiedHandle}` : 'Follow this channel';
+
+  // If username not found, skip watermark entirely per directive
+  const shouldSkipWatermark = !hasHandle;
+  const watermarkText = hasHandle ? `${def.name.toUpperCase()} • ${verifiedHandle}` : '';
 
   return {
     channelKey: resolvedKey,
     canonicalKey: def.key,
     name: def.name,
     role: def.role,
+    hasHandle,
     handle,
-    cleanHandle: handle.replace(/^@/, ''),
-    watermarkText: `${def.name.toUpperCase()} • ${handle}`
+    cleanHandle,
+    channelRef,
+    thisChannelRef,
+    ctaMention,
+    ctaFollowThis,
+    watermarkText,
+    shouldSkipWatermark
   };
 }
 

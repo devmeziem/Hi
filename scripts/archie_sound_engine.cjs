@@ -407,14 +407,19 @@ async function assembleArchieMasterAudio(spokenTextOrWav, outMasterWav, options 
 
   generateChimeSound(chimeWav, 1.0);
 
-  // 3. Mix: Voice prominent (volume 1.3), chime at 0.3s, and ducked real music if present
+  // 3. Mix: Voice prominent, chime at 0.3s, and ducked real music with increased audible volume
   const chimeDelayMs = 300;
+  let bgmVol = 0.25;
+  try {
+    const { getWorkflowVoiceSettings } = require('./workflow_settings_loader.cjs');
+    bgmVol = getWorkflowVoiceSettings('archie').bgmVolume || 0.25;
+  } catch {}
 
   if (realMusicWav && fs.existsSync(realMusicWav)) {
-    console.log(`[Archie Sound Master] 🎶 Mixing real audio backing track ducked cleanly under Archie's voice...`);
+    console.log(`[Archie Sound Master] 🎶 Mixing real audio backing track (Audible volume ${bgmVol}) ducked cleanly under Archie's voice...`);
     const complexFilter = `
       [0:a]volume=1.35,apad=whole_dur=${masterDuration}[voice];
-      [1:a]volume=0.12,atrim=0:${masterDuration}[music];
+      [1:a]volume=${bgmVol.toFixed(2)},atrim=0:${masterDuration}[music];
       [2:a]adelay=${chimeDelayMs}|${chimeDelayMs},volume=0.18,apad=whole_dur=${masterDuration}[chime];
       [voice][music][chime]amix=inputs=3:duration=longest:dropout_transition=1,loudnorm=I=-16:TP=-1.5:LRA=11[out]
     `.replace(/\s+/g, ' ');
@@ -422,19 +427,19 @@ async function assembleArchieMasterAudio(spokenTextOrWav, outMasterWav, options 
     const mixCmd = `ffmpeg -y -i "${voiceWav}" -i "${realMusicWav}" -i "${chimeWav}" -filter_complex "${complexFilter}" -map "[out]" -c:a pcm_s16le -ar 44100 -ac 2 "${outMasterWav}" 2>/dev/null`;
     try {
       execSync(mixCmd);
-      console.log(`[Archie Sound Master] ✅ Audio mix complete! Clean voiceover + real backing track (${masterDuration}s)`);
+      console.log(`[Archie Sound Master] ✅ Audio mix complete! Clean voiceover + real backing track (${masterDuration}s, vol=${bgmVol.toFixed(2)})`);
     } catch {
       if (fs.existsSync(voiceWav)) fs.copyFileSync(voiceWav, outMasterWav);
     }
   } else {
-    // Fill mute time with peaceful, slow varying calm acoustic piano soundtrack (as requested by user)
-    console.log(`[Archie Sound Master] 🎹 Generating slow calm piano soundtrack to fill mute time under Archie's voice...`);
+    // Fill mute time with peaceful, slow varying calm acoustic piano soundtrack
+    console.log(`[Archie Sound Master] 🎹 Generating slow calm piano soundtrack (Audible volume ${bgmVol}) under Archie's voice...`);
     const calmPianoWav = path.join(dir, `calm_piano_${Date.now()}.wav`);
     generateSlowCalmPianoSoundtrack(calmPianoWav, masterDuration);
 
     const complexFilter = `
       [0:a]volume=1.35,apad=whole_dur=${masterDuration}[voice];
-      [1:a]volume=0.11,atrim=0:${masterDuration}[piano];
+      [1:a]volume=${bgmVol.toFixed(2)},atrim=0:${masterDuration}[piano];
       [2:a]adelay=${chimeDelayMs}|${chimeDelayMs},volume=0.15,apad=whole_dur=${masterDuration}[chime];
       [voice][piano][chime]amix=inputs=3:duration=longest:dropout_transition=1,loudnorm=I=-16:TP=-1.5:LRA=11[out]
     `.replace(/\s+/g, ' ');
@@ -442,7 +447,7 @@ async function assembleArchieMasterAudio(spokenTextOrWav, outMasterWav, options 
     const mixCmd = `ffmpeg -y -i "${voiceWav}" -i "${calmPianoWav}" -i "${chimeWav}" -filter_complex "${complexFilter}" -map "[out]" -c:a pcm_s16le -ar 44100 -ac 2 "${outMasterWav}" 2>/dev/null`;
     try {
       execSync(mixCmd);
-      console.log(`[Archie Sound Master] ✅ Audio mix complete! Clean adult voiceover + slow calm piano soundtrack (${masterDuration}s)`);
+      console.log(`[Archie Sound Master] ✅ Audio mix complete! Clean adult voiceover + slow calm piano soundtrack (${masterDuration}s, vol=${bgmVol.toFixed(2)})`);
     } catch {
       if (fs.existsSync(voiceWav)) fs.copyFileSync(voiceWav, outMasterWav);
     }

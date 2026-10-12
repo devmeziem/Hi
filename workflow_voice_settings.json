@@ -1,0 +1,47 @@
+{
+  "archie": {
+    "voiceId": "en-US-ChristopherNeural",
+    "pitchHz": 0,
+    "speechRate": 1.00,
+    "voiceVolume": 1.35,
+    "bgmVolume": 0.25,
+    "bgmStyle": "Upbeat Science Groove & Calm Acoustic",
+    "aiModel": "gemini-2.5-flash"
+  },
+  "stoic": {
+    "voiceId": "en-US-AndrewNeural",
+    "pitchHz": -15,
+    "speechRate": 0.94,
+    "voiceVolume": 1.35,
+    "bgmVolume": 0.25,
+    "bgmStyle": "Calm Emotional Piano & Ambient Strings",
+    "aiModel": "gemini-2.5-flash"
+  },
+  "finance": {
+    "voiceId": "en-US-GuyNeural",
+    "pitchHz": -5,
+    "speechRate": 1.02,
+    "voiceVolume": 1.35,
+    "bgmVolume": 0.26,
+    "bgmStyle": "Sovereign Capital & Deep Suspense Pulse",
+    "aiModel": "gemini-2.5-flash"
+  },
+  "cinema": {
+    "voiceId": "en-US-AndrewMultilingualNeural",
+    "pitchHz": -10,
+    "speechRate": 0.96,
+    "voiceVolume": 1.35,
+    "bgmVolume": 0.26,
+    "bgmStyle": "Dark Cello Ostinato & Historical Tension",
+    "aiModel": "gemini-2.5-flash"
+  },
+  "teen": {
+    "voiceId": "en-US-ChristopherNeural",
+    "pitchHz": 4,
+    "speechRate": 1.08,
+    "voiceVolume": 1.40,
+    "bgmVolume": 0.26,
+    "bgmStyle": "Rising Tension Swell & Cinematic Focus Beats",
+    "aiModel": "gemini-2.5-flash"
+  }
+}

@@ -169,13 +169,24 @@ function buildStoicWatermarkOverlaySvg(channelWatermark = '@TheStoicArchitect', 
  * Synthesize voiceover using Microsoft Edge AndrewNeural (-5% rate, -25Hz pitch)
  */
 async function synthesizeAndrewVoice(text, outputFile) {
-  console.log(`[Andrew Voice Engine] 🎙️ Synthesizing voiceover via en-US-AndrewNeural (Rate: -5%, Pitch: -25Hz)...`);
+  let voiceId = 'en-US-AndrewNeural';
+  let edgeRate = '-6%';
+  let edgePitch = '-15Hz';
+  try {
+    const { getWorkflowVoiceSettings } = require('./workflow_settings_loader.cjs');
+    const s = getWorkflowVoiceSettings('stoic');
+    if (s.voiceId) voiceId = s.voiceId;
+    if (s.edgeRate) edgeRate = s.edgeRate;
+    if (s.edgePitch) edgePitch = s.edgePitch;
+  } catch {}
+
+  console.log(`[Andrew Voice Engine] 🎙️ Synthesizing voiceover via ${voiceId} (Rate: ${edgeRate}, Pitch: ${edgePitch})...`);
   const tts = new EdgeTTS({
-    voice: 'en-US-AndrewNeural',
+    voice: voiceId,
     lang: 'en-US',
     outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
-    rate: '-5%',
-    pitch: '-25Hz',
+    rate: edgeRate,
+    pitch: edgePitch,
     timeout: 60000
   });
 
