@@ -73,6 +73,62 @@ for (const dir of Object.values(SOUND_DIRECTORIES)) {
   }
 }
 
+const ROTATION_STATE_FILE = path.join(process.cwd(), 'sound_assets', '.audio_rotation_state.json');
+
+/**
+ * Get persistent audio rotation state
+ */
+function getRotationState() {
+  try {
+    if (fs.existsSync(ROTATION_STATE_FILE)) {
+      return JSON.parse(fs.readFileSync(ROTATION_STATE_FILE, 'utf8'));
+    }
+  } catch {}
+  return { history: {}, counts: {}, lastOffsets: {} };
+}
+
+/**
+ * Record rotated track selection to prevent repetitive background audio
+ */
+function recordRotationTrack(niche, trackPath, offsetRatio) {
+  try {
+    const state = getRotationState();
+    if (!state.history) state.history = {};
+    if (!state.counts) state.counts = {};
+    if (!state.lastOffsets) state.lastOffsets = {};
+
+    state.history[niche] = path.basename(trackPath);
+    state.counts[niche] = (state.counts[niche] || 0) + 1;
+    if (offsetRatio !== undefined) {
+      state.lastOffsets[niche] = offsetRatio;
+    }
+
+    const dir = path.dirname(ROTATION_STATE_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(ROTATION_STATE_FILE, JSON.stringify(state, null, 2));
+  } catch {}
+}
+
+/**
+ * Stateful Sound Track Rotator: guarantees different sound and slice offset every single run
+ */
+function pickRotatedTrack(candidates, niche) {
+  if (!candidates || candidates.length === 0) return null;
+  if (candidates.length === 1) return candidates[0];
+
+  const state = getRotationState();
+  const lastTrackName = state.history && state.history[niche];
+
+  // Exclude last used track so back-to-back renders never share the same sound
+  const filtered = candidates.filter(c => path.basename(c) !== lastTrackName);
+  const pool = filtered.length > 0 ? filtered : candidates;
+
+  const count = (state.counts && state.counts[niche]) || 0;
+  // Round-robin selection based on channel generation count
+  const selected = pool[count % pool.length];
+  return selected;
+}
+
 /**
  * Download sound from remote URL if provided
  */
@@ -270,22 +326,28 @@ async function resolveRealMusicTrack(options = {}, maybeDuration) {
   const candidates = findAudioCandidates(primaryDir, fallbackDirs);
 
   if (candidates.length > 0) {
-    const chosenTrack = candidates[Math.floor(Math.random() * candidates.length)];
+    const chosenTrack = pickRotatedTrack(candidates, niche);
     const totalTrackDur = getAudioDurationSeconds(chosenTrack);
-    console.log(`[Audio Asset Manager] 🎵 Channel: [${niche}] -> Selected repository track (${candidates.length} available): "${path.basename(chosenTrack)}" (${totalTrackDur.toFixed(1)}s total)`);
+    console.log(`[Audio Asset Manager] 🎵 Channel: [${niche}] -> Selected rotated track (${candidates.length} available): "${path.basename(chosenTrack)}" (${totalTrackDur.toFixed(1)}s total)`);
 
-    // In-between sweet spot selection: if track is longer than requested duration + 3s,
-    // in many cases use an in-between segment (e.g. 25-45% into track where drop/hook occurs)
+    // In-between sweet spot rotation: systematically vary the start slice offset
+    // so repeated songs sound completely different on each video
     let startOffset = 0;
+    const rotState = getRotationState();
+    const channelGenCount = (rotState.counts && rotState.counts[niche]) || 0;
+    const sliceRatios = [0.18, 0.36, 0.52, 0.25, 0.44];
+    const chosenRatio = sliceRatios[channelGenCount % sliceRatios.length];
+
     if (totalTrackDur > duration + 3.0) {
       const maxStart = Math.max(0, totalTrackDur - duration - 0.8);
-      // Pick energetic in-between section
-      const sweetSpot = Math.min(maxStart, Math.max(5.0, totalTrackDur * 0.28 + (Math.random() * 6.0 - 3.0)));
+      const sweetSpot = Math.min(maxStart, Math.max(3.0, totalTrackDur * chosenRatio));
       startOffset = Math.max(0, sweetSpot);
-      console.log(`[Audio Asset Manager] 🎚️ Smart In-Between Selection: Slicing from ${startOffset.toFixed(1)}s to ${(startOffset + duration).toFixed(1)}s`);
+      console.log(`[Audio Asset Manager] 🎚️ Smart In-Between Selection: Slicing from ${startOffset.toFixed(1)}s to ${(startOffset + duration).toFixed(1)}s (Offset ratio: ${(chosenRatio * 100).toFixed(0)}%)`);
     } else {
       console.log(`[Audio Asset Manager] 🎚️ Normalizing loudness & looping to ${duration.toFixed(1)}s...`);
     }
+
+    recordRotationTrack(niche, chosenTrack, chosenRatio);
 
     const dur = duration.toFixed(2);
     const fadeIn = (startOffset > 0 ? 0.35 : Math.min(0.25, duration * 0.05)).toFixed(2);
@@ -367,19 +429,25 @@ function resolveChannelAudio(channelKey, durationSeconds, outputPath) {
   }
 
   if (candidates.length > 0) {
-    const chosenTrack = candidates[Math.floor(Math.random() * candidates.length)];
+    const chosenTrack = pickRotatedTrack(candidates, channelKey);
     const totalTrackDur = getAudioDurationSeconds(chosenTrack);
-    console.log(`[Audio Asset Manager] 🎵 Channel: [${channelKey}] -> Selected real user track (${candidates.length} available): "${path.basename(chosenTrack)}" (${totalTrackDur.toFixed(1)}s total)`);
+    console.log(`[Audio Asset Manager] 🎵 Channel: [${channelKey}] -> Selected rotated track (${candidates.length} available): "${path.basename(chosenTrack)}" (${totalTrackDur.toFixed(1)}s total)`);
 
-    // In-between sweet spot selection: if track is longer than requested duration + 3s,
-    // slice an energetic in-between section (e.g. 20-50% in, where phonk drop is)
+    // In-between sweet spot rotation: vary start slice offset systematically
     let startOffset = 0;
+    const rotState = getRotationState();
+    const channelGenCount = (rotState.counts && rotState.counts[channelKey]) || 0;
+    const sliceRatios = [0.18, 0.36, 0.52, 0.25, 0.44];
+    const chosenRatio = sliceRatios[channelGenCount % sliceRatios.length];
+
     if (totalTrackDur > durationSeconds + 3.0) {
       const maxStart = Math.max(0, totalTrackDur - durationSeconds - 0.8);
-      const sweetSpot = Math.min(maxStart, Math.max(4.0, totalTrackDur * 0.28 + (Math.random() * 8.0 - 4.0)));
+      const sweetSpot = Math.min(maxStart, Math.max(3.0, totalTrackDur * chosenRatio));
       startOffset = Math.max(0, sweetSpot);
-      console.log(`[Audio Asset Manager] 🎚️ Smart In-Between Selection: Slicing from ${startOffset.toFixed(1)}s to ${(startOffset + durationSeconds).toFixed(1)}s`);
+      console.log(`[Audio Asset Manager] 🎚️ Smart In-Between Selection: Slicing from ${startOffset.toFixed(1)}s to ${(startOffset + durationSeconds).toFixed(1)}s (Offset ratio: ${(chosenRatio * 100).toFixed(0)}%)`);
     }
+
+    recordRotationTrack(channelKey, chosenTrack, chosenRatio);
 
     const dur = durationSeconds.toFixed(2);
     const fadeIn = (startOffset > 0 ? 0.35 : Math.min(0.12, durationSeconds * 0.03)).toFixed(2);
@@ -477,9 +545,11 @@ function synthesizeProceduralAudio(channelKey, durationSeconds, outputPath) {
     { root: 185.00, third: 220.00, fifth: 277.18, sub: 46.2, name: 'F# Minor' },
     { root: 130.81, third: 164.81, fifth: 196.00, sub: 32.7, name: 'C Major / Ambient' }
   ];
-  const chosenScale = SCALES[Math.floor(Math.random() * SCALES.length)];
-  const tremoloFreq = (2.8 + Math.random() * 2.5).toFixed(2);
-  const echoDelay = (40 + Math.floor(Math.random() * 50));
+  const rotState = getRotationState();
+  const procCount = (rotState.counts && rotState.counts[channelKey]) || 0;
+  const chosenScale = SCALES[procCount % SCALES.length];
+  const tremoloFreq = (2.6 + ((procCount * 0.7) % 2.5)).toFixed(2);
+  const echoDelay = (40 + ((procCount * 17) % 55));
 
   let filterExpr = '';
   if (channelKey === 'motivation_15s' || channelKey === 'mindrush' || channelKey === 'mindrush_15s' || channelKey === 'teen') {
@@ -550,6 +620,9 @@ module.exports = {
   resolveRealMusicTrack,
   resolveChannelAudio,
   AUDIO_EXTENSIONS,
-  SOUND_DIRECTORIES
+  SOUND_DIRECTORIES,
+  getRotationState,
+  recordRotationTrack,
+  pickRotatedTrack
 };
 

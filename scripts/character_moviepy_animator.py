@@ -362,6 +362,10 @@ def build_puppet_clip(action="talking", duration=5.0, target_height=1120, board1
                     base_img = c_surprised_talk if is_mouth_open else c_surprised
                 elif action == "confused":
                     base_img = c_confused_talk if is_mouth_open else c_confused
+                elif action in ["point_camera", "gesture_point_camera"]:
+                    base_img = c_point_cam_talk if is_mouth_open else c_point_cam
+                elif action in ["open_palms", "gesture_open_palms", "emphasize"]:
+                    base_img = c_open_palms_talk if is_mouth_open else c_open_palms
                 elif action == "questioning_users":
                     base_img = c_question_talk if is_mouth_open else c_question
                 elif action in ["explain_both", "comparing"]:

@@ -14,6 +14,7 @@ const path = require('path');
 const https = require('https');
 const { execSync } = require('child_process');
 const { resolveRealMusicTrack } = require('./audio_asset_manager.cjs');
+const { humanizeTextForSpeech, applyStudioHumanVocalDsp } = require('./emotion_voice_engine.cjs');
 
 const SOUNDS_DIR = path.join(process.cwd(), 'assets', 'sounds');
 if (!fs.existsSync(SOUNDS_DIR)) {
@@ -146,7 +147,7 @@ async function synthesizeEdgeTTS(text, outWavPath) {
       await tts.ttsPromise(text, tempMp3);
 
       if (fs.existsSync(tempMp3) && fs.statSync(tempMp3).size > 1500) {
-        execSync(`ffmpeg -y -i "${tempMp3}" -af "highpass=f=90,equalizer=f=3200:t=q:w=1.2:g=1.5" -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
+        applyStudioHumanVocalDsp(tempMp3, outWavPath, { warmthDb: '+2.4', clarityDb: '+2.8' });
         try { fs.unlinkSync(tempMp3); } catch {}
         if (fs.existsSync(outWavPath) && fs.statSync(outWavPath).size > 3000) {
           return true;
@@ -243,12 +244,9 @@ async function synthesizeArchieVoice(text, outWavPath) {
   const dir = path.dirname(outWavPath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-  const cleanText = String(text || '')
-    .replace(/#\w+/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+  const cleanText = humanizeTextForSpeech(text, 'educator');
 
-  console.log('[Archie Voice Engine] Synthesizing speech narration...');
+  console.log('[Archie Voice Engine] Synthesizing human-articulated speech narration with emotion sync...');
 
   // Tier 1: Edge Neural TTS (Primary Option)
   try {
@@ -312,17 +310,26 @@ async function synthesizeArchieVoice(text, outWavPath) {
  * Creates a peaceful, gentle acoustic piano piece (Cmaj9 -> Am9 -> Fmaj7 -> Em7 -> Dm9 -> Gsus4)
  * with natural hammer decay and warm acoustic filtering to fill mute time without distracting.
  */
+let pianoProgressionCounter = 0;
+
 function generateSlowCalmPianoSoundtrack(outWavPath, duration = 6.0) {
   const dir = path.dirname(outWavPath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-  // Warm acoustic piano chord components (fundamental + 2nd & 3rd harmonics with gentle decay)
-  const chord1 = '(sin(2*PI*130.81*t)*0.16 + sin(2*PI*261.63*t)*0.12 + sin(2*PI*329.63*t)*0.10 + sin(2*PI*587.33*t)*0.08)*exp(-0.7*mod(t,3.8))'; // Cmaj9
-  const chord2 = '(sin(2*PI*110.00*t)*0.16 + sin(2*PI*220.00*t)*0.12 + sin(2*PI*261.63*t)*0.10 + sin(2*PI*493.88*t)*0.08)*exp(-0.7*mod(t,3.8))'; // Am9
-  const chord3 = '(sin(2*PI*87.31*t)*0.16 + sin(2*PI*174.61*t)*0.12 + sin(2*PI*220.00*t)*0.10 + sin(2*PI*329.63*t)*0.08)*exp(-0.7*mod(t,3.8))';  // Fmaj7
-  const chord4 = '(sin(2*PI*82.41*t)*0.16 + sin(2*PI*164.81*t)*0.12 + sin(2*PI*196.00*t)*0.10 + sin(2*PI*293.66*t)*0.08)*exp(-0.7*mod(t,3.8))';  // Em7
-  const chord5 = '(sin(2*PI*146.83*t)*0.16 + sin(2*PI*293.66*t)*0.12 + sin(2*PI*349.23*t)*0.10 + sin(2*PI*523.25*t)*0.08)*exp(-0.7*mod(t,3.8))'; // Dm9
-  const chord6 = '(sin(2*PI*98.00*t)*0.16 + sin(2*PI*196.00*t)*0.12 + sin(2*PI*246.94*t)*0.10 + sin(2*PI*392.00*t)*0.08)*exp(-0.7*mod(t,3.8))';  // Gsus4
+  const progIndex = pianoProgressionCounter++ % 3;
+
+  // Progression 1: Cmaj9 -> Am9 -> Fmaj7 -> Em7 -> Dm9 -> Gsus4 (Classic warm educator)
+  // Progression 2: Dmaj7 -> Bm9 -> Gmaj7 -> F#m7 -> Em9 -> Asus4 (Bright wonder & curiosity)
+  // Progression 3: Fmaj9 -> Dm9 -> Bbmaj7 -> Am7 -> Gm9 -> Csus4 (Reflective contemplative insight)
+  const baseFreqs = [
+    [130.81, 110.00, 87.31, 82.41, 146.83, 98.00],   // Prog 1
+    [146.83, 123.47, 98.00, 92.50, 164.81, 110.00],  // Prog 2
+    [174.61, 146.83, 116.54, 110.00, 196.00, 130.81] // Prog 3
+  ][progIndex];
+
+  const chords = baseFreqs.map(f => 
+    `(sin(2*PI*${f.toFixed(2)}*t)*0.16 + sin(2*PI*${(f * 2).toFixed(2)}*t)*0.12 + sin(2*PI*${(f * 2.5).toFixed(2)}*t)*0.10 + sin(2*PI*${(f * 3).toFixed(2)}*t)*0.08)*exp(-0.7*mod(t,3.8))`
+  );
 
   const part = (duration / 6).toFixed(2);
   const p2 = (part * 2).toFixed(2);
@@ -330,10 +337,10 @@ function generateSlowCalmPianoSoundtrack(outWavPath, duration = 6.0) {
   const p4 = (part * 4).toFixed(2);
   const p5 = (part * 5).toFixed(2);
 
-  const pianoExpr = `if(lt(t,${part}), ${chord1}, if(lt(t,${p2}), ${chord2}, if(lt(t,${p3}), ${chord3}, if(lt(t,${p4}), ${chord4}, if(lt(t,${p5}), ${chord5}, ${chord6})))))`;
+  const pianoExpr = `if(lt(t,${part}), ${chords[0]}, if(lt(t,${p2}), ${chords[1]}, if(lt(t,${p3}), ${chords[2]}, if(lt(t,${p4}), ${chords[3]}, if(lt(t,${p5}), ${chords[4]}, ${chords[5]})))))`;
   
-  // Warm low-pass filter at 1400Hz gives an authentic upright felt-piano timbre
-  const filter = `lowpass=f=1400,afade=t=in:ss=0:d=0.5,afade=t=out:st=${Math.max(0, duration - 0.8).toFixed(2)}:d=0.8`;
+  // Warm low-pass filter gives an authentic upright felt-piano timbre
+  const filter = `lowpass=f=1450,afade=t=in:ss=0:d=0.5,afade=t=out:st=${Math.max(0, duration - 0.8).toFixed(2)}:d=0.8`;
 
   const cmd = `ffmpeg -y -f lavfi -i "aevalsrc='${pianoExpr}':s=44100:d=${duration}" -af "${filter}" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`;
   try {

@@ -102,8 +102,10 @@ export const ArchiePreviewStudioTab: React.FC<ArchiePreviewStudioTabProps> = ({
     calmPiano.setVolume(newVol);
   };
 
+  const [activeEmotion, setActiveEmotion] = useState<'curious' | 'revelation' | 'explaining' | 'warm_cta' | null>(null);
+
   /**
-   * Adult Educator Voice Playback (Measured, confident adult baritone, NOT childish)
+   * Adult Educator Voice Playback with Emotion Sync & Dynamic Human Prosody
    */
   const handleSpeakAdultVoice = (textToSpeak: string) => {
     if (!('speechSynthesis' in window)) {
@@ -115,6 +117,7 @@ export const ArchiePreviewStudioTab: React.FC<ArchiePreviewStudioTabProps> = ({
 
     if (isSpeakingAdultVoice) {
       setIsSpeakingAdultVoice(false);
+      setActiveEmotion(null);
       return;
     }
 
@@ -126,26 +129,69 @@ export const ArchiePreviewStudioTab: React.FC<ArchiePreviewStudioTabProps> = ({
     }
 
     const clean = textToSpeak.replace(/["“”]/g, '').trim();
-    const utterance = new SpeechSynthesisUtterance(clean);
+    const sentences = clean.match(/[^.!?\n]+[.!?\n]+|[^.!?\n]+$/g)?.map(s => s.trim()).filter(Boolean) || [clean];
 
-    // Adult male educator parameters: measured pace (0.94), lower pitch (0.91)
-    utterance.rate = 0.94;
-    utterance.pitch = 0.91;
-
-    // Pick mature adult male voice if available
+    // Pick mature adult male educator voice if available
     const voices = window.speechSynthesis.getVoices();
     const adultMaleVoice = voices.find(v => 
       (v.name.includes('Guy') || v.name.includes('Christopher') || v.name.includes('Brian') || v.name.includes('Daniel') || v.name.includes('Male')) &&
       !v.name.includes('Child') && !v.name.includes('Junior')
     ) || voices.find(v => v.lang.startsWith('en')) || null;
 
-    if (adultMaleVoice) utterance.voice = adultMaleVoice;
+    let index = 0;
+    setIsSpeakingAdultVoice(true);
 
-    utterance.onstart = () => setIsSpeakingAdultVoice(true);
-    utterance.onend = () => setIsSpeakingAdultVoice(false);
-    utterance.onerror = () => setIsSpeakingAdultVoice(false);
+    const speakNextSentence = () => {
+      if (index >= sentences.length) {
+        setIsSpeakingAdultVoice(false);
+        setActiveEmotion(null);
+        return;
+      }
 
-    window.speechSynthesis.speak(utterance);
+      const s = sentences[index];
+      const utterance = new SpeechSynthesisUtterance(s);
+      if (adultMaleVoice) utterance.voice = adultMaleVoice;
+
+      // Emotion detection and vocal inflection modulation:
+      let detectedEmo: 'curious' | 'revelation' | 'explaining' | 'warm_cta' = 'explaining';
+      let r = 0.94;
+      let p = 0.92;
+
+      if (index === 0 && (s.includes('?') || s.toLowerCase().includes('ever') || s.toLowerCase().includes('why') || s.toLowerCase().includes('how'))) {
+        detectedEmo = 'curious';
+        r = 0.98;
+        p = 0.97; // lighter, engaging inquiry pitch
+      } else if (index === sentences.length - 1) {
+        detectedEmo = 'warm_cta';
+        r = 0.91;
+        p = 0.90; // warm, concluding tone
+      } else if (s.includes('!') || s.toLowerCase().includes('notice') || s.toLowerCase().includes('crazy') || s.toLowerCase().includes('free') || s.toLowerCase().includes('secret')) {
+        detectedEmo = 'revelation';
+        r = 0.96;
+        p = 0.95; // energized discovery
+      }
+
+      utterance.rate = r;
+      utterance.pitch = p;
+
+      utterance.onstart = () => {
+        setActiveEmotion(detectedEmo);
+      };
+
+      utterance.onend = () => {
+        index++;
+        speakNextSentence();
+      };
+
+      utterance.onerror = () => {
+        setIsSpeakingAdultVoice(false);
+        setActiveEmotion(null);
+      };
+
+      window.speechSynthesis.speak(utterance);
+    };
+
+    speakNextSentence();
   };
 
   // ==========================================
@@ -383,11 +429,19 @@ HASHTAGS: ${creatorScript.hashtags.join(' ')}`;
                   ? 'bg-emerald-500/20 border-emerald-400/80 text-emerald-300'
                   : 'bg-[#181f2c] border-[#2a3446] text-slate-300 hover:text-white hover:border-slate-600'
               }`}
-              title="Listen to Archie speak in adult educator voice"
+              title="Listen to Archie speak in adult educator voice with emotion sync"
             >
               <Volume2 className={`w-3.5 h-3.5 ${isSpeakingAdultVoice ? 'text-emerald-400 animate-bounce' : 'text-slate-400'}`} />
-              <span>{isSpeakingAdultVoice ? 'Speaking...' : 'Play Adult Voice'}</span>
+              <span>{isSpeakingAdultVoice ? 'Speaking...' : 'Play Human Voice'}</span>
             </button>
+
+            {/* Live Emotion Sync Indicator */}
+            {activeEmotion && (
+              <div className="py-1.5 px-3 bg-amber-500/15 border border-amber-500/40 rounded-xl text-[11px] font-mono text-amber-300 flex items-center gap-1.5 animate-pulse shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                <span className="font-semibold uppercase tracking-wider">{activeEmotion.replace('_', ' ')} SYNC</span>
+              </div>
+            )}
 
             {/* Copy Script */}
             <button

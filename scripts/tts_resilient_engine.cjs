@@ -27,30 +27,28 @@ try {
   } catch (_) {}
 }
 
+const { humanizeTextForSpeech, applyStudioHumanVocalDsp } = require('./emotion_voice_engine.cjs');
+
 /**
- * Clean and normalize text for speech synthesis
+ * Clean and normalize text for speech synthesis with human conversational rhythm
  */
-function cleanTextForSpeech(text) {
-  return String(text || '')
-    .replace(/undefined/gi, '')
-    .replace(/https?:\/\/\S+/gi, '')
-    .replace(/[#@*~_`^]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+function cleanTextForSpeech(text, profile = 'educator') {
+  return humanizeTextForSpeech(text, profile);
 }
 
 /**
- * Resilient TTS with multi-tier fallback
+ * Resilient TTS with multi-tier fallback and human emotion DSP mastering
  */
 async function synthesizeSpeechResilient(text, outputFile, options = {}) {
-  const cleanText = cleanTextForSpeech(text);
+  const profile = options.emotionProfile || 'educator';
+  const cleanText = cleanTextForSpeech(text, profile);
   if (!cleanText) {
     throw new Error('TTS input text is empty after sanitization.');
   }
 
   const voice = options.voice || 'en-US-AndrewNeural';
-  const rate = options.rate || '-5%';
-  const pitch = options.pitch || '-15Hz';
+  const rate = options.rate || '-3%';
+  const pitch = options.pitch || '-10Hz';
   const timeoutMs = options.timeout || 12000;
 
   const tempDir = path.dirname(outputFile);
@@ -64,8 +62,12 @@ async function synthesizeSpeechResilient(text, outputFile, options = {}) {
   if (EdgeTTS) {
     const candidateVoices = [
       voice,
-      voice.includes('Andrew') ? 'en-US-GuyNeural' : 'en-US-AndrewNeural'
+      voice.includes('Andrew') ? 'en-US-AndrewMultilingualNeural' : 'en-US-ChristopherNeural',
+      'en-US-BrianMultilingualNeural',
+      'en-US-GuyNeural'
     ];
+
+    const rawTempAudio = path.join(tempDir, `raw_tts_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.mp3`);
 
     for (let i = 0; i < candidateVoices.length; i++) {
       const v = candidateVoices[i];
@@ -76,17 +78,21 @@ async function synthesizeSpeechResilient(text, outputFile, options = {}) {
           rate: rate,
           pitch: pitch,
           lang: 'en-US',
-          outputFormat: 'audio-24khz-48kbitrate-mono-mp3',
+          outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
           timeout: timeoutMs
         });
 
         const raceTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Edge TTS timed out after 12s')), timeoutMs));
-        await Promise.race([tts.ttsPromise(cleanText, outputFile), raceTimeout]);
+        await Promise.race([tts.ttsPromise(cleanText, rawTempAudio), raceTimeout]);
 
-        if (fs.existsSync(outputFile) && fs.statSync(outputFile).size > 1000) {
+        if (fs.existsSync(rawTempAudio) && fs.statSync(rawTempAudio).size > 1000) {
+          // Apply Human Studio Vocal DSP Chain (Warm tube EQ + presence clarity + broadcast mastering)
+          applyStudioHumanVocalDsp(rawTempAudio, outputFile);
+          try { fs.unlinkSync(rawTempAudio); } catch {}
+
           const dur = getAudioDuration(outputFile);
           if (dur > 0.5) {
-            console.log(`[Resilient TTS] ✓ Edge TTS succeeded with voice "${v}" (${dur.toFixed(2)}s).`);
+            console.log(`[Resilient TTS] ✓ Edge TTS succeeded with voice "${v}" (${dur.toFixed(2)}s, Studio Warmth DSP active).`);
             return { success: true, provider: 'edge-tts', voice: v, duration: dur };
           }
         }
@@ -98,6 +104,7 @@ async function synthesizeSpeechResilient(text, outputFile, options = {}) {
         }
       }
     }
+    try { if (fs.existsSync(rawTempAudio)) fs.unlinkSync(rawTempAudio); } catch {}
   }
 
   // --------------------------------------------------------------------------
@@ -189,8 +196,11 @@ async function synthesizeViaGoogleTtsFallback(text, finalOutputPath, { pitch = '
     pitchShift = ',asetrate=44100*0.93,atempo=1.07';
   }
 
-  const finalCmd = `ffmpeg -y -i "${rawConcat}" -af "volume=1.35,acompressor=threshold=-16dB:ratio=2.5:attack=10:release=120${pitchShift}" -c:a aac -b:a 192k -ar 44100 -ac 2 "${finalOutputPath}" 2>/dev/null`;
-  execSync(finalCmd);
+  applyStudioHumanVocalDsp(rawConcat, finalOutputPath);
+  if (!fs.existsSync(finalOutputPath) || fs.statSync(finalOutputPath).size < 1000) {
+    const finalCmd = `ffmpeg -y -i "${rawConcat}" -af "volume=1.35,acompressor=threshold=-16dB:ratio=2.5:attack=10:release=120${pitchShift}" -c:a aac -b:a 192k -ar 44100 -ac 2 "${finalOutputPath}" 2>/dev/null`;
+    execSync(finalCmd);
+  }
 
   // Cleanup temporary chunk files
   for (const f of chunkFiles) {

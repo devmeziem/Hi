@@ -53,7 +53,7 @@ import { safeJsonStringify } from '../dbAdapter';
 import { dbAdapter } from '../dbAdapter';
 import { DynamicVideoMotionPlayer } from './DynamicVideoMotionPlayer';
 import { VideoSlide } from '../types';
-import { BACKGROUND_MUSIC_TRACKS, TTS_VOICE_OPTIONS, BackgroundMusicTrack, TtsVoiceOption } from '../audioPresets';
+import { BACKGROUND_MUSIC_TRACKS, TTS_VOICE_OPTIONS, EMOTION_SYNC_PROFILES, BackgroundMusicTrack, TtsVoiceOption } from '../audioPresets';
 
 interface AiPlaygroundProps {
   keys: IntegrationKeys;
@@ -85,6 +85,7 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
   const [testPostTopic, setTestPostTopic] = useState<string>('How to Start a High-Demand Side Hustle with Low Capital');
   const [selectedBgMusicId, setSelectedBgMusicId] = useState<string>('mystic_deep');
   const [selectedTtsVoiceId, setSelectedTtsVoiceId] = useState<string>('zeus');
+  const [selectedEmotionProfile, setSelectedEmotionProfile] = useState<string>('curious_educator');
   const [topicSuggestions, setTopicSuggestions] = useState<string[]>([]);
   const [isGeneratingTopics, setIsGeneratingTopics] = useState<boolean>(false);
   
@@ -1316,6 +1317,39 @@ Format your response strictly as a JSON array of 3 strings, with no markdown cod
                         >
                           <div className="font-bold text-[11px] leading-tight text-white">{voice.name}</div>
                           <div className="text-[10px] text-emerald-400/90 leading-tight mt-0.5 font-mono">{voice.tone}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Human Emotion Sync & Cadence Profile Selector */}
+                <div className="p-3.5 bg-slate-950 border border-slate-800/80 rounded-2xl space-y-2 col-span-1 md:col-span-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5 font-mono">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                      Human Emotion Sync &amp; Cadence Pacing:
+                    </span>
+                    <span className="text-[10px] text-amber-400/90 font-mono">
+                      {EMOTION_SYNC_PROFILES.find(p => p.id === selectedEmotionProfile)?.name || 'Curious Educator'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                    {EMOTION_SYNC_PROFILES.map((prof) => {
+                      const isSel = selectedEmotionProfile === prof.id;
+                      return (
+                        <button
+                          key={prof.id}
+                          type="button"
+                          onClick={() => setSelectedEmotionProfile(prof.id)}
+                          className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                            isSel
+                              ? 'bg-amber-950/40 border-amber-500 text-white ring-1 ring-amber-500'
+                              : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                          }`}
+                        >
+                          <div className="font-bold text-[11px] leading-tight text-white">{prof.name}</div>
+                          <div className="text-[10px] text-amber-400/90 leading-tight mt-0.5 font-mono">{prof.pacing}</div>
                         </button>
                       );
                     })}

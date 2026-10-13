@@ -13,6 +13,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync, spawnSync } = require('child_process');
 const https = require('https');
+const { humanizeTextForSpeech, applyStudioHumanVocalDsp } = require('./emotion_voice_engine.cjs');
 
 const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || '';
 const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || '';
@@ -122,21 +123,23 @@ async function synthesizeEdgeTTS(text, outputPathWav, voice = 'en-US-BrianMultil
     const dir = path.dirname(outputPathWav);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
+    const clean = humanizeTextForSpeech(text, 'educator');
     const { EdgeTTS } = require('node-edge-tts');
     const tempMp3 = path.join(dir, `temp_edge_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.mp3`);
     const tts = new EdgeTTS({
       voice: voice,
       lang: 'en-US',
       outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
-      pitch: '-3Hz',
-      rate: '-3%'
+      pitch: '-2Hz',
+      rate: '-2%'
     });
 
-    await tts.ttsPromise(text, tempMp3);
+    await tts.ttsPromise(clean, tempMp3);
 
     if (fs.existsSync(tempMp3) && fs.statSync(tempMp3).size > 800) {
-      // Convert to 24kHz 16-bit Mono WAV for Rhubarb & Blender
-      execSync(`ffmpeg -y -i "${tempMp3}" -ar 24000 -ac 1 "${outputPathWav}" 2>/dev/null`);
+      applyStudioHumanVocalDsp(tempMp3, outputPathWav, { warmthDb: '+2.4', clarityDb: '+2.8' });
+      // Ensure 24kHz 16-bit Mono WAV for Rhubarb lipsync
+      execSync(`ffmpeg -y -i "${outputPathWav}" -ar 24000 -ac 1 "${outputPathWav}.tmp.wav" 2>/dev/null && mv "${outputPathWav}.tmp.wav" "${outputPathWav}"`);
       try { fs.unlinkSync(tempMp3); } catch {}
       if (fs.existsSync(outputPathWav) && fs.statSync(outputPathWav).size > 1000) {
         return outputPathWav;

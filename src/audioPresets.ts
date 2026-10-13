@@ -45,16 +45,66 @@ export interface TtsVoiceOption {
   gender: 'male' | 'female';
   tone: string;
   description: string;
+  emotionStyle?: string;
 }
 
+export interface EmotionSyncProfile {
+  id: string;
+  name: string;
+  description: string;
+  pacing: string;
+  targetChannels: string[];
+}
+
+export const EMOTION_SYNC_PROFILES: EmotionSyncProfile[] = [
+  {
+    id: 'curious_educator',
+    name: '🧠 Curious Educator (Archie Sync)',
+    description: 'Inquisitive question hook, direct camera gestures, discovery reveals, and warm outro questions.',
+    pacing: 'Conversational 1.0x with thought-pauses & gesture cues',
+    targetChannels: ['Archie Explains (Ch 3)']
+  },
+  {
+    id: 'contemplative_wisdom',
+    name: '🏛️ Contemplative Wisdom (Stoic Fortitude)',
+    description: 'Measured baritone, deliberate silence, deep chest resonance, and calm emotional reflection.',
+    pacing: 'Measured 0.94x with dramatic pauses',
+    targetChannels: ['The Stoic Architect (Ch 2)']
+  },
+  {
+    id: 'authoritative_clear',
+    name: '💼 Authoritative Blueprint (Financial)',
+    description: 'Crisp executive cadence, punchy numbers emphasis, and high-retention structured pacing.',
+    pacing: 'Dynamic 1.02x with punchy clarity',
+    targetChannels: ['Fin Blueprint (Ch 1)']
+  },
+  {
+    id: 'dramatic_cinematic',
+    name: '🎬 Dramatic Cinematic (Cinema Vanguard)',
+    description: 'Narrative suspense, historical weight, dynamic vocal range, and immersive storytelling.',
+    pacing: 'Cinematic 0.96x with tension swells',
+    targetChannels: ['Cinema Vanguard (Ch 4)']
+  }
+];
+
 export const TTS_VOICE_OPTIONS: TtsVoiceOption[] = [
+  {
+    id: 'archie_educator',
+    speaker: 'en-US-ChristopherNeural',
+    name: '🎓 Archie (Curious Human Educator)',
+    gender: 'male',
+    tone: 'Lively, Smart & Engaging',
+    description: 'Expressive human educator with gesture-synchronized emotion inflection.',
+    emotionStyle: 'curious_educator'
+  },
   {
     id: 'zeus',
     speaker: 'zeus',
     name: '⚡ Zeus (Deep Authoritative Bass)',
     gender: 'male',
     tone: 'Wise & Commanding',
-    description: 'Deep resonant voice ideal for Marcus Aurelius stoicism, finance blueprints & motivation.'
+    description: 'Deep resonant voice ideal for Marcus Aurelius stoicism, finance blueprints & motivation.',
+    emotionStyle: 'contemplative_wisdom'
   },
   {
     id: 'orpheus',
@@ -62,7 +112,8 @@ export const TTS_VOICE_OPTIONS: TtsVoiceOption[] = [
     name: '🎙️ Orpheus (Smooth Storyteller)',
     gender: 'male',
     tone: 'Engaging & Clear',
-    description: 'Dynamic cadence great for tech tutorials, business breakdowns & side hustles.'
+    description: 'Dynamic cadence great for tech tutorials, business breakdowns & side hustles.',
+    emotionStyle: 'authoritative_clear'
   },
   {
     id: 'athena',
@@ -70,7 +121,8 @@ export const TTS_VOICE_OPTIONS: TtsVoiceOption[] = [
     name: '✨ Athena (Crisp & Intelligent)',
     gender: 'female',
     tone: 'Sophisticated & Articulate',
-    description: 'Sharp, executive delivery for AI news, investment strategies & educational Shorts.'
+    description: 'Sharp, executive delivery for AI news, investment strategies & educational Shorts.',
+    emotionStyle: 'authoritative_clear'
   },
   {
     id: 'hera',
@@ -78,6 +130,7 @@ export const TTS_VOICE_OPTIONS: TtsVoiceOption[] = [
     name: '👑 Hera (Warm & Inspiring)',
     gender: 'female',
     tone: 'Empathetic & Resonant',
-    description: 'Warm, powerful delivery suited for personal development and life lessons.'
+    description: 'Warm, powerful delivery suited for personal development and life lessons.',
+    emotionStyle: 'curious_educator'
   }
 ];

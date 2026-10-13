@@ -20,6 +20,7 @@ const http = require('http');
 const { EdgeTTS } = require('node-edge-tts');
 const { uploadYouTubeShort, formatChannelFollowCta } = require('./youtube_channel_dispatcher.cjs');
 const { synthesizeArchieVoice, assembleArchieMasterAudio } = require('./archie_sound_engine.cjs');
+const { analyzeScriptEmotionTimeline } = require('./emotion_voice_engine.cjs');
 const { buildAllModernCharacterAssets } = require('./build_modern_tech_character.cjs');
 const { 
   discoverAndSelectTopicViaActiveAi, 
@@ -445,7 +446,16 @@ async function generateArchie5sDailyFact() {
   // Cutaway appears between t=3.5s and t=Math.min(reelDuration - 3.5, 18.0)s
   const cutawayStart = 3.5;
   const cutawayEnd = Math.min(reelDuration - 3.0, 18.0);
-  const outroStart = Math.max(cutawayEnd + 1.0, voiceDuration - 4.5);
+  // Dynamic Emotion & Prosody Analysis: Synchronize visual gestures to speech emotion
+  const emotionTimeline = analyzeScriptEmotionTimeline(fullNarration, voiceDuration);
+  console.log(`[Emotion Sync Engine] 🎭 Analyzed ${emotionTimeline.length} emotion beats for Archie's speech:`);
+  emotionTimeline.forEach(b => console.log(`   ⏱️  ${b.startTime}s - ${b.endTime}s: [${b.emotion.toUpperCase()}] -> Gesture: ${b.gesture} (${b.sentence.slice(0, 45)}...)`));
+
+  const hookBeat = emotionTimeline[0] || { endTime: 2.5 };
+  const hookHalf = Math.min(1.5, hookBeat.endTime * 0.45);
+  const camPointEnd = hookBeat.endTime;
+  const outroBeat = emotionTimeline[emotionTimeline.length - 1] || { startTime: voiceDuration - 4.5 };
+  const outroStart = Math.min(voiceDuration - 2.5, Math.max(cutawayEnd + 0.8, outroBeat.startTime));
 
   // Ensure all new in-video gesture assets exist
   const puppetCamera = path.join(characterDir, 'puppet_point_camera.png');
@@ -472,14 +482,14 @@ async function generateArchie5sDailyFact() {
   ].join(' ');
 
   // Filter graph:
-  // User mandate: "add better invideo gestures too and try making background white, and camera movement too"
+  // User mandate: "add better invideo gestures too and try making background white, and camera movement too" + "make voice more human and emotion sync"
   // 1. Camera Movement: Subtle cinematic slow push-in zoompan on background (1.00 -> 1.05) giving lively camera presence
-  // 2. High-impact In-video Gestures:
-  //    - t=0..2.0s: Hook Pointing Up at topic pill ([3],[4])
-  //    - t=2.0..4.5s: In-Video Direct Camera Point gesture ([5],[6]) directly engaging audience
-  //    - t=4.5..midpoint: Two-handed Open Palms emphasis gesture ([7],[8])
-  //    - t=midpoint..outroStart: Expressive comparative gestures ([9],[10])
-  //    - t=outroStart..voiceDuration: Welcoming Outro palms ([11],[12])
+  // 2. High-impact In-video Gestures Synced to Voice Emotions:
+  //    - t=0..hookHalf: Hook Pointing Up at topic pill ([3],[4])
+  //    - t=hookHalf..camPointEnd: In-Video Direct Camera Point gesture ([5],[6]) directly engaging audience during curious hook
+  //    - t=camPointEnd..midPoint: Two-handed Open Palms emphasis gesture ([7],[8]) on core concept revelation
+  //    - t=midPoint..outroStart: Expressive comparative gestures ([9],[10]) during deep explanation
+  //    - t=outroStart..voiceDuration: Welcoming Outro palms ([11],[12]) during call-to-action
   //    - t=voiceDuration..end: Confident idle smile ([13])
   const midPoint = (cutawayStart + cutawayEnd) / 2;
   const totalFrames = Math.round(reelDuration * 30);
@@ -501,13 +511,13 @@ async function generateArchie5sDailyFact() {
     [13:v]scale=-1:1150[idle1];
     [bg_cam][pill]overlay=0:0[s0];
     [s0][specimen]overlay=0:0:enable='between(t,${cutawayStart},${cutawayEnd})'[s1];
-    [s1][pt1]overlay=x=440:y=760:enable='lt(t,1.0)'[s2];
-    [s2][pt_t]overlay=x=440:y=760:enable='gte(t,1.0)*lt(t,2.0)*mod(floor(t*5),2)'[s3];
-    [s3][pt2]overlay=x=440:y=760:enable='gte(t,1.0)*lt(t,2.0)*(1-mod(floor(t*5),2))'[s4];
-    [s4][cam_t]overlay=x=440:y=760:enable='gte(t,2.0)*lt(t,4.5)*mod(floor(t*5.2),2)'[s5];
-    [s5][cam1]overlay=x=440:y=760:enable='gte(t,2.0)*lt(t,4.5)*(1-mod(floor(t*5.2),2))'[s6];
-    [s6][plm_t]overlay=x=440:y=760:enable='gte(t,4.5)*lt(t,${midPoint.toFixed(2)})*mod(floor(t*5.0),2)'[s7];
-    [s7][plm1]overlay=x=440:y=760:enable='gte(t,4.5)*lt(t,${midPoint.toFixed(2)})*(1-mod(floor(t*5.0),2))'[s8];
+    [s1][pt1]overlay=x=440:y=760:enable='lt(t,${(hookHalf * 0.5).toFixed(2)})'[s2];
+    [s2][pt_t]overlay=x=440:y=760:enable='gte(t,${(hookHalf * 0.5).toFixed(2)})*lt(t,${hookHalf.toFixed(2)})*mod(floor(t*5),2)'[s3];
+    [s3][pt2]overlay=x=440:y=760:enable='gte(t,${(hookHalf * 0.5).toFixed(2)})*lt(t,${hookHalf.toFixed(2)})*(1-mod(floor(t*5),2))'[s4];
+    [s4][cam_t]overlay=x=440:y=760:enable='gte(t,${hookHalf.toFixed(2)})*lt(t,${camPointEnd.toFixed(2)})*mod(floor(t*5.2),2)'[s5];
+    [s5][cam1]overlay=x=440:y=760:enable='gte(t,${hookHalf.toFixed(2)})*lt(t,${camPointEnd.toFixed(2)})*(1-mod(floor(t*5.2),2))'[s6];
+    [s6][plm_t]overlay=x=440:y=760:enable='gte(t,${camPointEnd.toFixed(2)})*lt(t,${midPoint.toFixed(2)})*mod(floor(t*5.0),2)'[s7];
+    [s7][plm1]overlay=x=440:y=760:enable='gte(t,${camPointEnd.toFixed(2)})*lt(t,${midPoint.toFixed(2)})*(1-mod(floor(t*5.0),2))'[s8];
     [s8][exp_t]overlay=x=440:y=760:enable='gte(t,${midPoint.toFixed(2)})*lt(t,${outroStart.toFixed(2)})*mod(floor(t*5.2),2)'[s9];
     [s9][exp]overlay=x=440:y=760:enable='gte(t,${midPoint.toFixed(2)})*lt(t,${outroStart.toFixed(2)})*(1-mod(floor(t*5.2),2))'[s10];
     [s10][qst_t]overlay=x=440:y=760:enable='gte(t,${outroStart.toFixed(2)})*lt(t,${voiceDuration.toFixed(2)})*mod(floor(t*4.8),2)'[s11];
