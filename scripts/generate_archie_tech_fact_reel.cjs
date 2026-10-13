@@ -54,68 +54,92 @@ function escapeXml(str) {
  * Generate Modern Creator Studio Background (Warm lighting, acoustic wood slats, ambient studio glow, NO puppet silhouette)
  */
 function buildModernCreatorStudioSvg(width = 1080, height = 1920, topic = '') {
+  // User mandate: "try making background white"
+  // Sleek, ultra-clean modern architectural white creator studio with warm walnut acoustic slats, soft ambient diffusion, and floating minimalist tech shelves
   return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="wallGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#141926" />
-        <stop offset="50%" stop-color="#0f131d" />
-        <stop offset="100%" stop-color="#090c14" />
+      <!-- Modern architectural studio white wall gradient with gentle studio falloff -->
+      <linearGradient id="wallWhiteGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ffffff" />
+        <stop offset="45%" stop-color="#f8fafc" />
+        <stop offset="80%" stop-color="#f1f5f9" />
+        <stop offset="100%" stop-color="#e2e8f0" />
       </linearGradient>
-      <linearGradient id="warmSlatGrad" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0%" stop-color="#2a1f18" />
-        <stop offset="50%" stop-color="#3d2d22" />
-        <stop offset="100%" stop-color="#241a14" />
-      </linearGradient>
-      <linearGradient id="floorGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#181e2b" />
-        <stop offset="100%" stop-color="#0b0e14" />
-      </linearGradient>
-      <radialGradient id="warmKeyLight" cx="35%" cy="30%" r="55%">
-        <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.22" />
-        <stop offset="60%" stop-color="#38bdf8" stop-opacity="0.08" />
-        <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+
+      <!-- Soft studio key light vignette -->
+      <radialGradient id="keyLightSoft" cx="45%" cy="32%" r="65%">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity="1.0" />
+        <stop offset="60%" stop-color="#f8fafc" stop-opacity="0.95" />
+        <stop offset="100%" stop-color="#e2e8f0" stop-opacity="0.85" />
       </radialGradient>
-      <linearGradient id="deskGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#1e293b" />
-        <stop offset="100%" stop-color="#0f172a" />
+
+      <!-- Scandinavian warm blonde oak slat wall on left -->
+      <linearGradient id="oakSlatGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#d4a373" />
+        <stop offset="50%" stop-color="#faedcd" />
+        <stop offset="100%" stop-color="#ccd5ae" />
       </linearGradient>
-      <filter id="studioSoftBlur" x="-10%" y="-10%" width="120%" height="120%">
-        <feGaussianBlur stdDeviation="8" />
+
+      <!-- Modern white polished micro-cement studio floor -->
+      <linearGradient id="floorWhiteGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#f1f5f9" />
+        <stop offset="30%" stop-color="#e2e8f0" />
+        <stop offset="100%" stop-color="#cbd5e1" />
+      </linearGradient>
+
+      <!-- Minimalist modern light birch desk edge -->
+      <linearGradient id="deskBirchGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#e2e8f0" />
+        <stop offset="100%" stop-color="#cbd5e1" />
+      </linearGradient>
+
+      <filter id="studioDropShadow" x="-10%" y="-10%" width="120%" height="120%">
+        <feDropShadow dx="0" dy="6" stdDeviation="12" flood-color="#64748b" flood-opacity="0.15" />
+      </filter>
+
+      <filter id="softGlowWhite" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="16" />
       </filter>
     </defs>
 
-    <!-- Studio Back Wall -->
-    <rect width="${width}" height="${height}" fill="url(#wallGrad)" />
+    <!-- 1. Pure Crisp Architectural White Back Wall -->
+    <rect width="${width}" height="${height}" fill="url(#wallWhiteGrad)" />
+    <rect width="${width}" height="${height}" fill="url(#keyLightSoft)" />
 
-    <!-- Warm Ambient Key Spotlight -->
-    <rect width="${width}" height="${height}" fill="url(#warmKeyLight)" />
-
-    <!-- Modern Acoustic Slat Wall on Left -->
-    <g opacity="0.85">
+    <!-- 2. Clean Scandinavian Light Wood Slat Acoustic Feature Wall on Left -->
+    <g opacity="0.92" filter="url(#studioDropShadow)">
       ${Array.from({ length: 14 }).map((_, i) => `
-        <rect x="${40 + i * 32}" y="0" width="16" height="1350" fill="url(#warmSlatGrad)" rx="3" />
-        <line x1="${40 + i * 32 + 16}" y1="0" x2="${40 + i * 32 + 16}" y2="1350" stroke="#0a0806" stroke-width="1.5" />
+        <rect x="${40 + i * 32}" y="0" width="16" height="1380" fill="url(#oakSlatGrad)" rx="3" />
+        <line x1="${40 + i * 32 + 16}" y1="0" x2="${40 + i * 32 + 16}" y2="1380" stroke="#e2e8f0" stroke-width="1.2" />
       `).join('')}
     </g>
 
-    <!-- Subtle Vertical Ambient LED Strip -->
-    <rect x="520" y="80" width="4" height="1200" fill="#38bdf8" opacity="0.6" filter="url(#studioSoftBlur)" />
-    <rect x="1030" y="80" width="4" height="1200" fill="#f59e0b" opacity="0.5" filter="url(#studioSoftBlur)" />
+    <!-- 3. Minimalist Studio Recessed Vertical LED Strips (Soft Cyan & Amber Warm Accents) -->
+    <rect x="520" y="60" width="3" height="1240" fill="#0284c7" opacity="0.35" filter="url(#softGlowWhite)" />
+    <rect x="1030" y="60" width="3" height="1240" fill="#f59e0b" opacity="0.3" filter="url(#softGlowWhite)" />
 
-    <!-- Minimalist Studio Shelving with Tech Accent Pieces -->
-    <g transform="translate(620, 320)" opacity="0.75">
-      <rect x="0" y="0" width="380" height="14" rx="4" fill="#334155" />
-      <rect x="40" y="-70" width="50" height="70" rx="6" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
-      <circle cx="150" cy="-35" r="32" fill="#0ea5e9" fill-opacity="0.25" stroke="#38bdf8" stroke-width="2" />
-      <rect x="230" y="-85" width="80" height="85" rx="6" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5" stroke-opacity="0.6" />
+    <!-- 4. Floating Minimalist White Studio Shelving with Designer Science Props -->
+    <g transform="translate(620, 320)" filter="url(#studioDropShadow)">
+      <!-- Modern floating shelf plank -->
+      <rect x="0" y="0" width="380" height="12" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.2" />
+      <!-- Minimalist tech reference books -->
+      <rect x="40" y="-68" width="45" height="68" rx="4" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" />
+      <line x1="48" y1="-55" x2="77" y2="-55" stroke="#0284c7" stroke-width="2" stroke-linecap="round" />
+      <!-- Polished glass geodesic sphere / science curio -->
+      <circle cx="150" cy="-35" r="30" fill="#0ea5e9" fill-opacity="0.12" stroke="#38bdf8" stroke-width="2" />
+      <circle cx="144" cy="-42" r="6" fill="#ffffff" opacity="0.8" />
+      <!-- Modern warm brass desk cube -->
+      <rect x="230" y="-80" width="75" height="80" rx="6" fill="#ffffff" stroke="#f59e0b" stroke-width="1.8" stroke-opacity="0.8" />
+      <circle cx="267" cy="-40" r="14" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5" />
     </g>
 
-    <!-- Studio Desk / Foreground Horizon -->
-    <line x1="0" y1="1380" x2="${width}" y2="1380" stroke="#334155" stroke-width="2" opacity="0.8" />
-    <rect x="0" y="1380" width="${width}" height="540" fill="url(#floorGrad)" />
+    <!-- 5. Studio Horizon & Grounded Clean White Studio Floor -->
+    <line x1="0" y1="1380" x2="${width}" y2="1380" stroke="#cbd5e1" stroke-width="2" opacity="0.9" />
+    <rect x="0" y="1380" width="${width}" height="540" fill="url(#floorWhiteGrad)" />
     
-    <!-- Desk Surface Edge -->
-    <rect x="0" y="1380" width="${width}" height="35" fill="url(#deskGrad)" />
+    <!-- Polished Studio Horizon Surface Edge -->
+    <rect x="0" y="1380" width="${width}" height="28" fill="url(#deskBirchGrad)" />
+    <line x1="0" y1="1408" x2="${width}" y2="1408" stroke="#94a3b8" stroke-width="1.2" opacity="0.4" />
   </svg>`;
 }
 
@@ -423,12 +447,22 @@ async function generateArchie5sDailyFact() {
   const cutawayEnd = Math.min(reelDuration - 3.0, 18.0);
   const outroStart = Math.max(cutawayEnd + 1.0, voiceDuration - 4.5);
 
+  // Ensure all new in-video gesture assets exist
+  const puppetCamera = path.join(characterDir, 'puppet_point_camera.png');
+  const puppetCameraTalk = path.join(characterDir, 'puppet_point_camera_talk.png');
+  const puppetPalms = path.join(characterDir, 'puppet_open_palms.png');
+  const puppetPalmsTalk = path.join(characterDir, 'puppet_open_palms_talk.png');
+
   const inputs = [
     `-loop 1 -t ${reelDuration.toFixed(2)} -i "${bgPngPath}"`,
     `-loop 1 -t ${reelDuration.toFixed(2)} -i "${pillPngPath}"`,
     specimenCutawayPng ? `-loop 1 -t ${reelDuration.toFixed(2)} -i "${specimenCutawayPng}"` : `-loop 1 -t ${reelDuration.toFixed(2)} -i "${bgPngPath}"`,
     `-loop 1 -t ${reelDuration.toFixed(2)} -i "${puppetPoint}"`,
     `-loop 1 -t ${reelDuration.toFixed(2)} -i "${puppetPointTalk}"`,
+    `-loop 1 -t ${reelDuration.toFixed(2)} -i "${puppetCamera}"`,
+    `-loop 1 -t ${reelDuration.toFixed(2)} -i "${puppetCameraTalk}"`,
+    `-loop 1 -t ${reelDuration.toFixed(2)} -i "${puppetPalms}"`,
+    `-loop 1 -t ${reelDuration.toFixed(2)} -i "${puppetPalmsTalk}"`,
     `-loop 1 -t ${reelDuration.toFixed(2)} -i "${puppetExplain}"`,
     `-loop 1 -t ${reelDuration.toFixed(2)} -i "${puppetExplainTalk}"`,
     `-loop 1 -t ${reelDuration.toFixed(2)} -i "${puppetQuestion}"`,
@@ -438,37 +472,50 @@ async function generateArchie5sDailyFact() {
   ].join(' ');
 
   // Filter graph:
-  // Base: [0:v] bg + [1:v] pill
-  // Overlaid with cutaway [2:v] during middle
-  // Overlaid with puppet on right side (x=440, y=760) with dynamic gesture rotation:
-  // - Hook (0..2.2s): Pointing up at topic pill
-  // - Core Explanation (2.2s..outroStart): Active two-handed expressive gestures
-  // - Outro Question (outroStart..voiceDuration): Welcoming open hands addressing viewer
-  // - Post-voice tail (voiceDuration..reelDuration): Natural smiling idle posture
+  // User mandate: "add better invideo gestures too and try making background white, and camera movement too"
+  // 1. Camera Movement: Subtle cinematic slow push-in zoompan on background (1.00 -> 1.05) giving lively camera presence
+  // 2. High-impact In-video Gestures:
+  //    - t=0..2.0s: Hook Pointing Up at topic pill ([3],[4])
+  //    - t=2.0..4.5s: In-Video Direct Camera Point gesture ([5],[6]) directly engaging audience
+  //    - t=4.5..midpoint: Two-handed Open Palms emphasis gesture ([7],[8])
+  //    - t=midpoint..outroStart: Expressive comparative gestures ([9],[10])
+  //    - t=outroStart..voiceDuration: Welcoming Outro palms ([11],[12])
+  //    - t=voiceDuration..end: Confident idle smile ([13])
+  const midPoint = (cutawayStart + cutawayEnd) / 2;
+  const totalFrames = Math.round(reelDuration * 30);
+
   const filterGraph = `
-    [0:v]scale=1080:1920[bg];
+    [0:v]scale=1188:2112,zoompan=z='min(1.00+0.000045*on,1.06)':d=${totalFrames}:x='(iw-iw/zoom)*0.5':y='(ih-ih/zoom)*0.35':s=1080x1920:fps=30[bg_cam];
     [1:v]scale=1080:1920[pill];
     [2:v]scale=1080:1920[specimen];
     [3:v]scale=-1:1150,split=2[pt1][pt2];
     [4:v]scale=-1:1150[pt_t];
-    [5:v]scale=-1:1150[exp];
-    [6:v]scale=-1:1150[exp_t];
-    [7:v]scale=-1:1150[qst];
-    [8:v]scale=-1:1150[qst_t];
-    [9:v]scale=-1:1150[idle1];
-    [bg][pill]overlay=0:0[s0];
+    [5:v]scale=-1:1150,split=2[cam1][cam2];
+    [6:v]scale=-1:1150[cam_t];
+    [7:v]scale=-1:1150,split=2[plm1][plm2];
+    [8:v]scale=-1:1150[plm_t];
+    [9:v]scale=-1:1150[exp];
+    [10:v]scale=-1:1150[exp_t];
+    [11:v]scale=-1:1150[qst];
+    [12:v]scale=-1:1150[qst_t];
+    [13:v]scale=-1:1150[idle1];
+    [bg_cam][pill]overlay=0:0[s0];
     [s0][specimen]overlay=0:0:enable='between(t,${cutawayStart},${cutawayEnd})'[s1];
     [s1][pt1]overlay=x=440:y=760:enable='lt(t,1.0)'[s2];
-    [s2][pt_t]overlay=x=440:y=760:enable='gte(t,1.0)*lt(t,2.2)*mod(floor(t*5),2)'[s3];
-    [s3][pt2]overlay=x=440:y=760:enable='gte(t,1.0)*lt(t,2.2)*(1-mod(floor(t*5),2))'[s4];
-    [s4][exp_t]overlay=x=440:y=760:enable='gte(t,2.2)*lt(t,${outroStart.toFixed(2)})*mod(floor(t*5.2),2)'[s5];
-    [s5][exp]overlay=x=440:y=760:enable='gte(t,2.2)*lt(t,${outroStart.toFixed(2)})*(1-mod(floor(t*5.2),2))'[s6];
-    [s6][qst_t]overlay=x=440:y=760:enable='gte(t,${outroStart.toFixed(2)})*lt(t,${voiceDuration.toFixed(2)})*mod(floor(t*4.8),2)'[s7];
-    [s7][qst]overlay=x=440:y=760:enable='gte(t,${outroStart.toFixed(2)})*lt(t,${voiceDuration.toFixed(2)})*(1-mod(floor(t*4.8),2))'[s8];
-    [s8][idle1]overlay=x=440:y=760:enable='gte(t,${voiceDuration.toFixed(2)})'[vfinal]
+    [s2][pt_t]overlay=x=440:y=760:enable='gte(t,1.0)*lt(t,2.0)*mod(floor(t*5),2)'[s3];
+    [s3][pt2]overlay=x=440:y=760:enable='gte(t,1.0)*lt(t,2.0)*(1-mod(floor(t*5),2))'[s4];
+    [s4][cam_t]overlay=x=440:y=760:enable='gte(t,2.0)*lt(t,4.5)*mod(floor(t*5.2),2)'[s5];
+    [s5][cam1]overlay=x=440:y=760:enable='gte(t,2.0)*lt(t,4.5)*(1-mod(floor(t*5.2),2))'[s6];
+    [s6][plm_t]overlay=x=440:y=760:enable='gte(t,4.5)*lt(t,${midPoint.toFixed(2)})*mod(floor(t*5.0),2)'[s7];
+    [s7][plm1]overlay=x=440:y=760:enable='gte(t,4.5)*lt(t,${midPoint.toFixed(2)})*(1-mod(floor(t*5.0),2))'[s8];
+    [s8][exp_t]overlay=x=440:y=760:enable='gte(t,${midPoint.toFixed(2)})*lt(t,${outroStart.toFixed(2)})*mod(floor(t*5.2),2)'[s9];
+    [s9][exp]overlay=x=440:y=760:enable='gte(t,${midPoint.toFixed(2)})*lt(t,${outroStart.toFixed(2)})*(1-mod(floor(t*5.2),2))'[s10];
+    [s10][qst_t]overlay=x=440:y=760:enable='gte(t,${outroStart.toFixed(2)})*lt(t,${voiceDuration.toFixed(2)})*mod(floor(t*4.8),2)'[s11];
+    [s11][qst]overlay=x=440:y=760:enable='gte(t,${outroStart.toFixed(2)})*lt(t,${voiceDuration.toFixed(2)})*(1-mod(floor(t*4.8),2))'[s12];
+    [s12][idle1]overlay=x=440:y=760:enable='gte(t,${voiceDuration.toFixed(2)})'[vfinal]
   `.replace(/\s+/g, ' ').trim();
 
-  const ffmpegCmd = `ffmpeg -y ${inputs} -filter_complex "${filterGraph}" -map "[vfinal]" -map 10:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -ar 44100 -ac 2 -t ${reelDuration.toFixed(2)} "${finalMp4Path}" 2>/dev/null`;
+  const ffmpegCmd = `ffmpeg -y ${inputs} -filter_complex "${filterGraph}" -map "[vfinal]" -map 14:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -ar 44100 -ac 2 -t ${reelDuration.toFixed(2)} "${finalMp4Path}" 2>/dev/null`;
 
   console.log(`[FFmpeg Compositor] Rendering clean Archie video with subtitles...`);
   try {

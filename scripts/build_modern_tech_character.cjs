@@ -859,6 +859,58 @@ function renderModernArms(pose = 'idle') {
     `;
   }
 
+  if (pose === 'point_camera' || pose === 'gesture_point_camera') {
+    return `
+      <!-- Archie pointing directly at viewer / camera in-video emphasis -->
+      <!-- Left Arm resting comfortably -->
+      <path d="M 162 375 C 158 420, 156 460, 160 515 C 168 518, 182 518, 188 515 C 188 460, 186 420, 184 375 Z" fill="${JACKET_MID}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 160 510 C 168 514, 180 514, 188 510 L 188 522 C 180 526, 168 526, 160 522 Z" fill="${JACKET_LIGHT}" stroke="#0f172a" stroke-width="2" />
+      <path d="M 162 522 C 158 560, 156 610, 160 655 L 182 655 C 186 610, 184 560, 184 522 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      ${smartwatch}
+      ${renderHumanHand(164, 655, true, 'relaxed')}
+
+      <!-- Right Arm projecting forward directly toward viewer lens -->
+      <path d="M 315 375 C 330 405, 345 440, 360 475 L 342 485 C 326 450, 312 415, 295 375 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <!-- Forearm projecting forward in perspective foreshortening -->
+      <path d="M 342 475 C 330 495, 310 515, 295 530 L 278 514 C 298 495, 318 475, 328 460 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2.2" />
+      
+      <!-- Right Hand: Pointing finger directly out at camera (foreshortened 3D perspective) -->
+      <circle cx="280" cy="535" r="22" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2.2" />
+      <circle cx="280" cy="535" r="16" fill="${SKIN_SHADOW}" opacity="0.3" />
+      <!-- Knuckles curled around index -->
+      <path d="M 264 544 Q 280 554 296 544" stroke="${SKIN_SHADOW}" stroke-width="2" fill="none" stroke-linecap="round" />
+      <!-- Index finger tip coming directly toward camera with cyan tech lens catchlight -->
+      <circle cx="280" cy="528" r="9" fill="${SKIN_HIGHLIGHT}" stroke="#0f172a" stroke-width="1.8" />
+      <circle cx="280" cy="528" r="3.5" fill="#38bdf8" />
+      <circle cx="280" cy="528" r="8" fill="#38bdf8" opacity="0.35" />
+    `;
+  }
+
+  if (pose === 'open_palms' || pose === 'gesture_open_palms' || pose === 'emphasize_both') {
+    return `
+      <!-- Archie dynamic two-handed presenter gesture emphasizing key insight -->
+      <!-- Left Arm angling outward with open upward palm -->
+      <path d="M 165 375 C 145 405, 125 440, 108 475 L 126 485 C 142 450, 160 415, 182 375 Z" fill="${JACKET_MID}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 112 478 C 96 505, 78 535, 62 560 L 80 570 C 96 545, 114 515, 128 488 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Left Hand Open Presenter Palm (facing viewer with clean articulated fingers) -->
+      <ellipse cx="64" cy="570" rx="16" ry="13" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" transform="rotate(-15 64 570)" />
+      <path d="M 50 562 C 42 554, 34 544, 26 534 C 32 532, 38 538, 44 548 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 58 560 C 54 548, 50 536, 46 524 C 52 524, 56 528, 58 540 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 66 562 C 68 550, 70 538, 72 526 C 77 528, 78 534, 76 544 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 74 566 C 80 558, 86 550, 92 542 C 96 546, 94 552, 86 558 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+
+      <!-- Right Arm angling outward with open upward palm -->
+      <path d="M 315 375 C 335 405, 355 440, 372 475 L 354 485 C 338 450, 320 415, 298 375 Z" fill="${JACKET_DARK}" stroke="#0f172a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M 368 478 C 384 505, 402 535, 418 560 L 400 570 C 384 545, 366 515, 352 488 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" />
+      <!-- Right Hand Open Presenter Palm (facing viewer with clean articulated fingers) -->
+      <ellipse cx="416" cy="570" rx="16" ry="13" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="2" transform="rotate(15 416 570)" />
+      <path d="M 430 562 C 438 554, 446 544, 454 534 C 448 532, 442 538, 436 548 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 422 560 C 426 548, 430 536, 434 524 C 428 524, 424 528, 422 540 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 414 562 C 412 550, 410 538, 408 526 C 403 528, 402 534, 404 544 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+      <path d="M 406 566 C 400 558, 394 550, 388 542 C 384 546, 386 552, 394 558 Z" fill="${SKIN_BASE}" stroke="#0f172a" stroke-width="1.8" />
+    `;
+  }
+
   // Default Relaxed Conversational Stance (Natural relaxed arms and sculpted hands)
   return `
     <!-- Left Arm -->
@@ -1107,7 +1159,11 @@ const ALL_MODERN_POSES = [
   { name: 'puppet_hands_stomach', pose: 'hands_at_stomach', options: { blink: false, talking: false } },
   { name: 'puppet_hands_stomach_talk1', pose: 'hands_at_stomach', options: { blink: false, talking: true } },
   { name: 'puppet_hands_stomach_talk2', pose: 'hands_at_stomach', options: { blink: false, viseme: 'vowel' } },
-  { name: 'puppet_hands_stomach_blink', pose: 'hands_at_stomach', options: { blink: true, talking: false } }
+  { name: 'puppet_hands_stomach_blink', pose: 'hands_at_stomach', options: { blink: true, talking: false } },
+  { name: 'puppet_point_camera', pose: 'point_camera', options: { blink: false, talking: false } },
+  { name: 'puppet_point_camera_talk', pose: 'point_camera', options: { blink: false, talking: true } },
+  { name: 'puppet_open_palms', pose: 'open_palms', options: { blink: false, talking: false } },
+  { name: 'puppet_open_palms_talk', pose: 'open_palms', options: { blink: false, talking: true } }
 ];
 
 /**

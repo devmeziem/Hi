@@ -143,6 +143,12 @@ def build_puppet_clip(action="talking", duration=5.0, target_height=1120, board1
     question_path = get_puppet_asset("puppet_questioning_users")
     question_talk_path = get_puppet_asset("puppet_questioning_users_talk")
 
+    point_cam_path = get_puppet_asset("puppet_point_camera")
+    point_cam_talk_path = get_puppet_asset("puppet_point_camera_talk")
+
+    open_palms_path = get_puppet_asset("puppet_open_palms")
+    open_palms_talk_path = get_puppet_asset("puppet_open_palms_talk")
+
     # Load PIL images to get dimensions
     with Image.open(idle_path) as im:
         orig_w, orig_h = im.size
@@ -170,6 +176,12 @@ def build_puppet_clip(action="talking", duration=5.0, target_height=1120, board1
     elif action == "point_right":
         main_pose_path = point_r_path
         base_x = 180
+    elif action in ["point_camera", "gesture_point_camera"]:
+        main_pose_path = point_cam_path
+        base_x = (1080 - target_width) // 2
+    elif action in ["open_palms", "gesture_open_palms", "emphasize"]:
+        main_pose_path = open_palms_path
+        base_x = (1080 - target_width) // 2
     elif action == "sitting":
         main_pose_path = sit_path
         base_x = (1080 - target_width) // 2
@@ -225,6 +237,12 @@ def build_puppet_clip(action="talking", duration=5.0, target_height=1120, board1
 
     c_point_r = make_clip(point_r_path)
     c_point_r_talk = make_clip(point_r_talk_path if os.path.exists(point_r_talk_path) else point_r_path)
+
+    c_point_cam = make_clip(point_cam_path)
+    c_point_cam_talk = make_clip(point_cam_talk_path if os.path.exists(point_cam_talk_path) else point_cam_path)
+
+    c_open_palms = make_clip(open_palms_path)
+    c_open_palms_talk = make_clip(open_palms_talk_path if os.path.exists(open_palms_talk_path) else open_palms_path)
 
     c_akimbo = make_clip(akimbo_path)
     c_akimbo_talk = make_clip(akimbo_talk_path if os.path.exists(akimbo_talk_path) else akimbo_path)

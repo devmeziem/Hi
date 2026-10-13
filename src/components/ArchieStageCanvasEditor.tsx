@@ -69,7 +69,7 @@ export interface StageBlueprint {
   archieX: number;
   archieY: number;
   archieScale: number; // 0.5 to 1.5
-  archiePose: 'idle' | 'talking' | 'pointing_right' | 'pointing_left' | 'thinking' | 'welcoming' | 'seated_desk';
+  archiePose: 'idle' | 'talking' | 'pointing_right' | 'pointing_left' | 'point_camera' | 'open_palms' | 'thinking' | 'welcoming' | 'seated_desk' | 'akimbo_jaw';
   shapes: StageShape[];
   canvasWidth: number;
   canvasHeight: number;
@@ -90,9 +90,9 @@ export const ArchieStageCanvasEditor: React.FC<ArchieStageCanvasEditorProps> = (
   const [copiedBlueprint, setCopiedBlueprint] = useState<boolean>(false);
   const [copiedSvg, setCopiedSvg] = useState<boolean>(false);
 
-  // Background & Theme state
-  const [bgTheme, setBgTheme] = useState<'pure_dark' | 'clean_white' | 'custom_color'>('pure_dark');
-  const [customBgColor, setCustomBgColor] = useState<string>('#0b0f19');
+  // Background & Theme state (Default to clean architectural white per user directive)
+  const [bgTheme, setBgTheme] = useState<'pure_dark' | 'clean_white' | 'custom_color'>('clean_white');
+  const [customBgColor, setCustomBgColor] = useState<string>('#ffffff');
   const [gradientStyle, setGradientStyle] = useState<'solid' | 'studio_falloff' | 'spotlight' | 'cyber_grid'>('studio_falloff');
 
   // Archie on Stage state
@@ -100,7 +100,7 @@ export const ArchieStageCanvasEditor: React.FC<ArchieStageCanvasEditorProps> = (
   const [archieX, setArchieX] = useState<number>(540);
   const [archieY, setArchieY] = useState<number>(1080);
   const [archieScale, setArchieScale] = useState<number>(1.0);
-  const [archiePose, setArchiePose] = useState<'idle' | 'talking' | 'pointing_right' | 'pointing_left' | 'thinking' | 'welcoming' | 'seated_desk'>('pointing_right');
+  const [archiePose, setArchiePose] = useState<'idle' | 'talking' | 'pointing_right' | 'pointing_left' | 'point_camera' | 'open_palms' | 'thinking' | 'welcoming' | 'seated_desk' | 'akimbo_jaw'>('point_camera');
 
   // Shapes & Stage Elements state
   const [shapes, setShapes] = useState<StageShape[]>([
@@ -750,10 +750,13 @@ export const ArchieStageCanvasEditor: React.FC<ArchieStageCanvasEditorProps> = (
                     onChange={(e) => setArchiePose(e.target.value as any)}
                     className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-sans cursor-pointer"
                   >
+                    <option value="point_camera">Pointing Directly at Camera (Audience Callout)</option>
+                    <option value="open_palms">Open Presenter Palms (Key Insight)</option>
                     <option value="pointing_right">Pointing Up-Right (Topic Focus)</option>
                     <option value="pointing_left">Pointing Left (Specimen HUD)</option>
                     <option value="talking">Active Explaining &amp; Talking</option>
                     <option value="thinking">Thinking / Hand Under Chin</option>
+                    <option value="akimbo_jaw">Akimbo on Hip + Hand on Jaw</option>
                     <option value="welcoming">Welcoming Audience (Hands Open)</option>
                     <option value="seated_desk">Seated at Modern Desk Setup</option>
                     <option value="idle">Natural Conversational Idle</option>
@@ -1239,7 +1242,43 @@ export const ArchieStageCanvasEditor: React.FC<ArchieStageCanvasEditorProps> = (
                   <rect x="-45" y="10" width="90" height="200" rx="16" fill="#f8fafc" />
 
                   {/* Arms & Smartwatch */}
-                  {archiePose === 'pointing_right' ? (
+                  {archiePose === 'point_camera' ? (
+                    <>
+                      {/* Left arm relaxed */}
+                      <rect x="-120" y="20" width="40" height="180" rx="18" fill="#0f172a" />
+                      {/* Right arm reaching out directly at camera */}
+                      <rect x="50" y="30" width="50" height="150" rx="22" fill="#0f172a" />
+                      <circle cx="75" cy="195" r="24" fill="#eab383" stroke="#0f172a" strokeWidth="2.5" />
+                      <circle cx="75" cy="195" r="9" fill="#f8d2b2" stroke="#0f172a" strokeWidth="1.5" />
+                      <circle cx="75" cy="195" r="3.5" fill="#38bdf8" />
+                    </>
+                  ) : archiePose === 'open_palms' ? (
+                    <>
+                      {/* Left arm open presenter palm */}
+                      <g transform="rotate(28, -80, 40)">
+                        <rect x="-116" y="20" width="44" height="175" rx="20" fill="#0f172a" />
+                        <ellipse cx="-93" cy="205" rx="20" ry="16" fill="#eab383" />
+                      </g>
+                      {/* Right arm open presenter palm */}
+                      <g transform="rotate(-28, 80, 40)">
+                        <rect x="72" y="20" width="44" height="175" rx="20" fill="#0f172a" />
+                        <ellipse cx="93" cy="205" rx="20" ry="16" fill="#eab383" />
+                      </g>
+                    </>
+                  ) : archiePose === 'akimbo_jaw' ? (
+                    <>
+                      {/* Left arm on hip (elbow angled out) */}
+                      <g transform="rotate(-40, -90, 40)">
+                        <rect x="-120" y="20" width="42" height="150" rx="18" fill="#0f172a" />
+                        <ellipse cx="-100" cy="170" rx="16" ry="14" fill="#eab383" />
+                      </g>
+                      {/* Right arm cradling jaw */}
+                      <g transform="rotate(-85, 70, 60)">
+                        <rect x="60" y="20" width="44" height="160" rx="20" fill="#0f172a" />
+                        <ellipse cx="82" cy="180" rx="18" ry="18" fill="#eab383" />
+                      </g>
+                    </>
+                  ) : archiePose === 'pointing_right' ? (
                     <>
                       {/* Left arm down */}
                       <rect x="-120" y="20" width="40" height="180" rx="18" fill="#0f172a" />
