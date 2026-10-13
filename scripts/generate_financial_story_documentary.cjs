@@ -242,12 +242,16 @@ ${lines.join('\n')}
   return outAssPath;
 }
 
+const { synthesizeSpeechResilient } = require('./tts_resilient_engine.cjs');
+
 /**
- * Build Glowing Gold Outro Card SVG (Last Scene CTA: "FOLLOW FOR MORE • FINANCIAL STORIES")
+ * Build Dynamic Financial Outro Card SVG with Story-Specific Takeaway
  */
-function buildFinancialOutroSvg(width = 1080, height = 1920) {
+function buildFinancialOutroSvg(storyTitle = '', template = 'chronicle', width = 1080, height = 1920) {
   const channelMeta = getChannelMeta('ch1');
-  const channelWatermark = channelMeta.handle;
+  const titleExcerpt = escapeXml(String(storyTitle || 'Wall Street Saga').slice(0, 36).toUpperCase());
+  const channelFollowText = channelMeta.hasHandle ? `Follow ${channelMeta.handle}` : 'Follow our channel';
+
   return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="outroGrad" x1="0" y1="0" x2="0" y2="1">
@@ -267,30 +271,30 @@ function buildFinancialOutroSvg(width = 1080, height = 1920) {
 
     <!-- Center Card -->
     <g transform="translate(140, 740)">
-      <rect width="800" height="420" rx="28" fill="#090d16" fill-opacity="0.96" stroke="#f59e0b" stroke-width="3" />
+      <rect width="800" height="420" rx="28" fill="#090d16" fill-opacity="0.96" stroke="#f59e0b" stroke-width="2.5" />
 
       <!-- Top Badge -->
-      <g transform="translate(240, -24)">
-        <rect width="320" height="48" rx="24" fill="#f59e0b" />
-        <text x="160" y="30" font-family="DejaVu Sans, sans-serif" font-size="13" font-weight="900" fill="#02040a" text-anchor="middle" letter-spacing="2">
+      <g transform="translate(230, -24)">
+        <rect width="340" height="48" rx="24" fill="#f59e0b" />
+        <text x="170" y="30" font-family="DejaVu Sans, sans-serif" font-size="13" font-weight="900" fill="#02040a" text-anchor="middle" letter-spacing="2">
           FINANCIAL STORY ARCHIVE
         </text>
       </g>
 
       <!-- Glowing CTA Text -->
-      <text x="400" y="140" font-family="DejaVu Sans, sans-serif" font-size="52" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="4">
-        FOLLOW FOR MORE
+      <text x="400" y="130" font-family="DejaVu Sans, sans-serif" font-size="44" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="3">
+        ${channelFollowText.toUpperCase()}
       </text>
 
-      <text x="400" y="215" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="800" fill="#fde68a" text-anchor="middle" letter-spacing="2">
-        EPIC STORIES OF MONEY, POWER &amp; CRASHES
+      <text x="400" y="210" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="800" fill="#fde68a" text-anchor="middle" letter-spacing="1.5">
+        FOR MORE: ${titleExcerpt}
       </text>
 
       <!-- Bottom Channel Stamp -->
-      <g transform="translate(140, 290)">
-        <rect width="520" height="56" rx="28" fill="#020617" stroke="#f59e0b" stroke-width="1.6" />
-        <text x="260" y="35" font-family="DejaVu Sans, sans-serif" font-size="15" font-weight="800" fill="#10b981" text-anchor="middle" letter-spacing="1.5">
-          ${channelMeta.name} • ${channelWatermark.toUpperCase()} • Daily Stories 🏛️
+      <g transform="translate(120, 290)">
+        <rect width="560" height="56" rx="28" fill="#020617" stroke="#f59e0b" stroke-width="1.6" />
+        <text x="280" y="35" font-family="DejaVu Sans, sans-serif" font-size="15" font-weight="800" fill="#10b981" text-anchor="middle" letter-spacing="1.5">
+          ${channelMeta.hasHandle ? `${channelMeta.name} • ${channelMeta.handle}` : 'THIS CHANNEL • DAILY FINANCIAL STORIES'} 🏛️
         </text>
       </g>
     </g>
@@ -298,33 +302,71 @@ function buildFinancialOutroSvg(width = 1080, height = 1920) {
 }
 
 /**
- * Build Single Slide Typography Overlay SVG
+ * Build Single Slide Typography Overlay SVG across 4 Visual Archetypes:
+ * 'chronicle' | 'blueprint' | 'monolith' | 'minimal'
  */
-function buildFinancialSlideSvg(quoteText, eraLabel, sceneNum, totalScenes, width = 1080, height = 1920) {
+function buildFinancialSlideSvg(quoteText, eraLabel, sceneNum, totalScenes, template = 'chronicle', width = 1080, height = 1920) {
   const channelMeta = getChannelMeta('ch1');
-  const channelWatermark = channelMeta.handle;
+
+  // Archetype 1: Minimalist Focus
+  if (template === 'minimal') {
+    return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="scrimTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#020617" stop-opacity="0.88"/><stop offset="100%" stop-color="#020617" stop-opacity="0"/></linearGradient>
+      </defs>
+      <rect x="0" y="0" width="${width}" height="220" fill="url(#scrimTop)" />
+      <g transform="translate(80, 80)">
+        <circle cx="16" cy="16" r="6" fill="#f59e0b" />
+        <text x="36" y="22" font-family="system-ui, sans-serif" font-size="15" font-weight="900" fill="#fde68a" letter-spacing="2">
+          ${escapeXml(eraLabel.toUpperCase())} • SCENE ${sceneNum}/${totalScenes}
+        </text>
+      </g>
+    </svg>`;
+  }
+
+  // Archetype 2: Sovereign Blueprint
+  if (template === 'blueprint') {
+    return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="scrimBtm" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#020617" stop-opacity="0"/><stop offset="100%" stop-color="#020617" stop-opacity="0.92"/></linearGradient>
+      </defs>
+      <rect x="0" y="${height - 380}" width="${width}" height="380" fill="url(#scrimBtm)" />
+      <g transform="translate(80, ${height - 200})">
+        <rect width="920" height="50" rx="8" fill="#020617" fill-opacity="0.9" stroke="#f59e0b" stroke-width="1.8" />
+        <rect x="0" y="0" width="180" height="50" rx="8" fill="#f59e0b" />
+        <text x="90" y="32" font-family="system-ui, sans-serif" font-size="13" font-weight="900" fill="#02040a" text-anchor="middle" letter-spacing="1">LEDGER ARCHIVE</text>
+        <text x="560" y="32" font-family="system-ui, sans-serif" font-size="15" font-weight="800" fill="#fde68a" text-anchor="middle" letter-spacing="1.5">
+          ${escapeXml(eraLabel.toUpperCase())}
+        </text>
+      </g>
+    </svg>`;
+  }
+
+  // Archetype 3: Wall Street Monolith
+  if (template === 'monolith') {
+    const ROMANS = ['I', 'II', 'III', 'IV', 'V', 'VI'];
+    const romanAct = ROMANS[sceneNum - 1] || `${sceneNum}`;
+    return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="${width}" height="70" fill="#000000" />
+      <rect x="0" y="${height - 70}" width="${width}" height="70" fill="#000000" />
+      <g transform="translate(80, 110)">
+        <text x="0" y="0" font-family="Georgia, serif" font-size="18" font-weight="900" fill="#f59e0b" letter-spacing="3">CHAPTER ${romanAct} — CAPITAL RECORD</text>
+        <line x1="0" y1="12" x2="420" y2="12" stroke="#f59e0b" stroke-width="2" />
+      </g>
+    </svg>`;
+  }
+
+  // Archetype 4: Default Chronicle Ledger
   return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="vignetteTop" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#020617" stop-opacity="0.9" />
-        <stop offset="100%" stop-color="#020617" stop-opacity="0.0" />
-      </linearGradient>
-      <linearGradient id="vignetteBottom" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#020617" stop-opacity="0.0" />
-        <stop offset="100%" stop-color="#020617" stop-opacity="0.92" />
-      </linearGradient>
-      <filter id="goldGlow" x="-10%" y="-10%" width="120%" height="120%">
-        <feDropShadow dx="0" dy="6" stdDeviation="12" flood-color="#000000" flood-opacity="0.8" />
-      </filter>
+      <linearGradient id="vignetteTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#020617" stop-opacity="0.9" /><stop offset="100%" stop-color="#020617" stop-opacity="0.0" /></linearGradient>
+      <linearGradient id="vignetteBottom" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#020617" stop-opacity="0.0" /><stop offset="100%" stop-color="#020617" stop-opacity="0.92" /></linearGradient>
     </defs>
-
-    <!-- Top Scrim -->
     <rect x="0" y="0" width="${width}" height="280" fill="url(#vignetteTop)" />
-    <!-- Bottom Scrim -->
     <rect x="0" y="${height - 480}" width="${width}" height="480" fill="url(#vignetteBottom)" />
 
     <!-- Header Era Pill (Top) -->
-    <g transform="translate(80, 100)" filter="url(#goldGlow)">
+    <g transform="translate(80, 100)">
       <rect width="920" height="64" rx="32" fill="#020617" fill-opacity="0.88" stroke="#f59e0b" stroke-width="1.8" />
       <rect x="12" y="12" width="240" height="40" rx="20" fill="#f59e0b" />
       <text x="132" y="37" font-family="system-ui, sans-serif" font-size="13" font-weight="900" fill="#02040a" text-anchor="middle" letter-spacing="2">
@@ -335,15 +377,15 @@ function buildFinancialSlideSvg(quoteText, eraLabel, sceneNum, totalScenes, widt
       </text>
     </g>
 
-    <!-- Bottom Channel Watermark Badge -->
+    ${channelMeta.hasHandle ? `
+    <!-- Bottom Channel Watermark Badge (Only if verified handle exists, otherwise skipped) -->
     <g transform="translate(80, ${height - 180})">
       <rect width="920" height="52" rx="26" fill="#020617" fill-opacity="0.9" stroke="#f59e0b" stroke-width="1.2" />
       <text x="460" y="32" font-family="system-ui, sans-serif" font-size="14" font-weight="800" fill="#fde68a" letter-spacing="2" text-anchor="middle">
-        ${channelMeta.name.toUpperCase()} • ${channelWatermark.toUpperCase()} • FINANCIAL STORY
+        ${channelMeta.name.toUpperCase()} • ${channelMeta.handle} • FINANCIAL STORY
       </text>
-    </g>
+    </g>` : ''}
 
-    <!-- Vintage Film Vignette Edge -->
     <rect x="0" y="0" width="${width}" height="${height}" fill="none" stroke="#020617" stroke-width="16" opacity="0.6" />
   </svg>`;
 }
@@ -360,30 +402,41 @@ async function generateFinancialStoryDocumentary() {
   // 1. Synthesize Dynamic Financial Story via Active AI (strictly zero seed data)
   const chosenStory = await generateDynamicFinancialStory();
 
-  console.log(`[Financial Story Selected]: "${chosenStory.title}" (${chosenStory.era})`);
+  // Dynamic template selection per render: chronicle, blueprint, monolith, or minimal
+  const TEMPLATES = ['chronicle', 'blueprint', 'monolith', 'minimal'];
+  const chosenTemplate = TEMPLATES[Math.floor(Math.random() * TEMPLATES.length)];
+  console.log(`[Financial Story Selected]: "${chosenStory.title}" (${chosenStory.era}) | Visual Template: [${chosenTemplate.toUpperCase()}]`);
 
-  // 2. Synthesize Narration via Andrew Voice (slow, reflective documentary pace)
+  // 2. Synthesize Narration via Resilient Multi-Tier Engine (fixes Microsoft 403 blocks)
   const fullNarration = chosenStory.scenes.map(s => s.text).join(' ');
   const voiceMp3 = path.join(ARTIFACTS_DIR, `fin_voice_${Date.now()}.mp3`);
   const voiceWav = path.join(ARTIFACTS_DIR, `fin_voice_${Date.now()}.wav`);
 
-  console.log(`[Narration Engine] 🎙️ Synthesizing documentary narration with Andrew Voice (-6% rate, -20Hz pitch)...`);
-  let tts = new EdgeTTS({
-    voice: 'en-US-AndrewNeural',
-    lang: 'en-US',
-    outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
-    rate: '-6%',
-    pitch: '-20Hz',
-    timeout: 45000
+  let voiceId = 'en-US-GuyNeural';
+  let edgeRate = '+2%';
+  let edgePitch = '-5Hz';
+  try {
+    const { getWorkflowVoiceSettings } = require('./workflow_settings_loader.cjs');
+    const s = getWorkflowVoiceSettings('finance');
+    if (s.voiceId) voiceId = s.voiceId;
+    if (s.edgeRate) edgeRate = s.edgeRate;
+    if (s.edgePitch) edgePitch = s.edgePitch;
+  } catch {}
+
+  console.log(`[Narration Engine] 🎙️ Synthesizing documentary narration with ${voiceId} (${edgeRate}, ${edgePitch})...`);
+  const ttsRes = await synthesizeSpeechResilient(fullNarration, voiceMp3, {
+    voice: voiceId,
+    rate: edgeRate,
+    pitch: edgePitch,
+    timeout: 25000
   });
-  await tts.ttsPromise(fullNarration, voiceMp3);
 
   execSync(`ffmpeg -y -i "${voiceMp3}" -ar 44100 -ac 2 -c:a pcm_s16le "${voiceWav}" 2>/dev/null`);
   const durProbe = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${voiceWav}"`, { encoding: 'utf8' }).trim();
-  const voiceDuration = parseFloat(durProbe) || 40.0;
+  const voiceDuration = parseFloat(durProbe) || ttsRes.duration || 40.0;
   // Outro adds 3.5s
   const totalDuration = voiceDuration + 3.5;
-  console.log(`[Narration Engine] ✓ Voice synthesized: ${voiceDuration.toFixed(1)}s (Total with Outro: ${totalDuration.toFixed(1)}s)`);
+  console.log(`[Narration Engine] ✓ Voice synthesized via ${ttsRes.provider}: ${voiceDuration.toFixed(1)}s (Total with Outro: ${totalDuration.toFixed(1)}s)`);
 
   // 3. AI OST & Sound Effects for Financial Drama
   console.log(`[Audio Sourcing] 🎵 Resolving financial thriller OST for "${chosenStory.bgmQuery}"...`);
@@ -437,8 +490,8 @@ async function generateFinancialStoryDocumentary() {
       visualPath = visual?.localPath || path.join(process.cwd(), 'src', 'assets', 'images', 'mindrush_studio_bg_1790502544405.jpg');
     }
 
-    // Build SVG Overlay with Title Pill & Vignette
-    const slideSvg = buildFinancialSlideSvg(sc.text, chosenStory.era, i + 1, sceneCount, 1080, 1920);
+    // Build SVG Overlay with Title Pill & Vignette according to dynamic template
+    const slideSvg = buildFinancialSlideSvg(sc.text, chosenStory.era, i + 1, sceneCount, chosenTemplate, 1080, 1920);
     const slideSvgPath = path.join(ARTIFACTS_DIR, `slide_${i}.svg`);
     const slidePngPath = path.join(ARTIFACTS_DIR, `slide_${i}.png`);
     fs.writeFileSync(slideSvgPath, slideSvg);
@@ -460,10 +513,10 @@ async function generateFinancialStoryDocumentary() {
     sceneInputs.push(sceneMp4);
   }
 
-  // 6. Glowing Dark Gold Outro Scene (3.5s CTA: "FOLLOW FOR MORE • FINANCIAL STORIES")
-  console.log(`[Outro Engine] 🌟 Rendering glowing gold financial outro scene...`);
+  // 6. Glowing Dark Gold Outro Scene (3.5s CTA with dynamic story copy)
+  console.log(`[Outro Engine] 🌟 Rendering dynamic financial outro scene...`);
   const outroDuration = 3.5;
-  const outroSvg = buildFinancialOutroSvg(1080, 1920);
+  const outroSvg = buildFinancialOutroSvg(chosenStory.title, chosenTemplate, 1080, 1920);
   const outroSvgPath = path.join(ARTIFACTS_DIR, 'outro.svg');
   const outroPngPath = path.join(ARTIFACTS_DIR, 'outro.png');
   const outroMp4 = path.join(ARTIFACTS_DIR, 'scene_outro.mp4');
@@ -482,13 +535,19 @@ async function generateFinancialStoryDocumentary() {
   const visualConcatMp4 = path.join(ARTIFACTS_DIR, 'doc_visual_concat.mp4');
   execSync(`ffmpeg -y -f concat -safe 0 -i "${concatListTxt}" -c copy "${visualConcatMp4}" 2>/dev/null || ffmpeg -y -f concat -safe 0 -i "${concatListTxt}" -c:v libx264 -preset fast -pix_fmt yuv420p "${visualConcatMp4}" 2>/dev/null`);
 
-  // 8. Audio Mix: Voice (1.35x), Sound FX (0.16x), Ducked AI OST (0.15x)
+  // 8. Audio Mix: Voice (1.35x), Sound FX (0.16x), Ducked AI OST (0.26x per user mandate to increase BGM volume)
+  let bgmVolume = 0.26;
+  try {
+    const { getWorkflowVoiceSettings } = require('./workflow_settings_loader.cjs');
+    bgmVolume = getWorkflowVoiceSettings('finance').bgmVolume || 0.26;
+  } catch {}
+
   let audioInputs = `-i "${visualConcatMp4}" -i "${voiceWav}" -i "${sfxWav}" `;
   let audioFilter = `[1:a]volume=1.35,acompressor=threshold=-18dB:ratio=2.5:attack=10:release=120[voice]; [2:a]volume=0.16,atrim=0:${totalDuration.toFixed(2)}[sfx]; `;
 
   if (bgMusicPath && fs.existsSync(bgMusicPath)) {
     audioInputs += `-i "${bgMusicPath}" `;
-    audioFilter += `[3:a]volume=0.15,afade=t=in:st=0:d=2.0,afade=t=out:st=${(totalDuration - 2.0).toFixed(2)}:d=2.0,atrim=0:${totalDuration.toFixed(2)}[bgm]; [voice][sfx][bgm]amix=inputs=3:duration=first:dropout_transition=2[a_final]`;
+    audioFilter += `[3:a]volume=${bgmVolume.toFixed(2)},afade=t=in:st=0:d=2.0,afade=t=out:st=${(totalDuration - 2.0).toFixed(2)}:d=2.0,atrim=0:${totalDuration.toFixed(2)}[bgm]; [voice][sfx][bgm]amix=inputs=3:duration=first:dropout_transition=2[a_final]`;
   } else {
     audioFilter += `[voice][sfx]amix=inputs=2:duration=first:dropout_transition=2[a_final]`;
   }
@@ -533,7 +592,7 @@ async function generateFinancialStoryDocumentary() {
   const ch1Token = process.env.YOUTUBE_REFRESH_TOKEN_CH1 || process.env.YOUTUBE_REFRESH_TOKEN_FIN || process.env.YOUTUBE_REFRESH_TOKEN || '';
 
   const viralTitle = `${chosenStory.title} (${chosenStory.era.split('•')[0].trim()}) #Shorts`;
-  const viralDesc = `${fullNarration}\n\n🏛️ Era: ${chosenStory.era}\nSource: Archival Financial History & Economics Records\n\nFollow @bones_ceo for daily financial documentaries, money architecture & business breakdowns!\n\n#FinBlueprint #FinancialDocumentary #Finance #Investing #MoneyHistory #Shorts`;
+  const viralDesc = `${fullNarration}\n\n🏛️ Era: ${chosenStory.era}\nSource: Archival Financial History & Economics Records\n\n${getChannelMeta('ch1').ctaMention} for daily financial documentaries, money architecture & business breakdowns!\n\n#FinBlueprint #FinancialDocumentary #Finance #Investing #MoneyHistory #Shorts`;
 
   if (ch1Token && !isDryRun) {
     console.log(`\n[Documentary Dispatcher] 📤 Uploading to YouTube Channel 1 (Fin Blueprint)...`);

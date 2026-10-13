@@ -466,65 +466,6 @@ async function generateStoic5sVideo(durationOverride = null, customChosen = null
     console.warn('[Quote Reel] SVG rasterizer notice:', err.message);
   }
 
-function buildStoicDeepBeat2Svg(scholar, width = 1080, height = 1920) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
-    <defs>
-      <filter id="textGlow" x="-30%" y="-30%" width="160%" height="160%">
-        <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="#000000" flood-opacity="1.0" />
-      </filter>
-      <linearGradient id="cinematicVignette" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#000000" stop-opacity="0" />
-        <stop offset="25%" stop-color="#020617" stop-opacity="0.5" />
-        <stop offset="55%" stop-color="#020617" stop-opacity="0.9" />
-        <stop offset="100%" stop-color="#000000" stop-opacity="0.99" />
-      </linearGradient>
-    </defs>
-    <rect x="0" y="660" width="1080" height="1260" fill="url(#cinematicVignette)" />
-    <text x="540" y="930" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="900" fill="#f59e0b" letter-spacing="5" text-anchor="middle" filter="url(#textGlow)">
-      ⚡ THE PSYCHOLOGICAL ILLUSION
-    </text>
-    <text x="540" y="1030" font-family="Georgia, serif" font-size="44" font-weight="900" fill="#ffffff" text-anchor="middle" filter="url(#textGlow)">
-      <tspan x="540" dy="0">Announcing your ambitions tricks</tspan>
-      <tspan x="540" dy="64">your brain into cheap dopamine.</tspan>
-      <tspan x="540" dy="64">The ego feels accomplishment</tspan>
-      <tspan x="540" dy="64">while reality remains untouched.</tspan>
-    </text>
-    <line x1="430" y1="1310" x2="650" y2="1310" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" />
-    <text x="540" y="1360" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="800" fill="#94a3b8" letter-spacing="2" text-anchor="middle" filter="url(#textGlow)">
-      - THE EGO'S FAVORITE TRAP
-    </text>
-  </svg>`;
-}
-
-function buildStoicDeepBeat3Svg(scholar, width = 1080, height = 1920) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
-    <defs>
-      <filter id="textGlow" x="-30%" y="-30%" width="160%" height="160%">
-        <feDropShadow dx="0" dy="4" stdDeviation="14" flood-color="#000000" flood-opacity="1.0" />
-      </filter>
-      <linearGradient id="cinematicVignette" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#000000" stop-opacity="0" />
-        <stop offset="25%" stop-color="#020617" stop-opacity="0.5" />
-        <stop offset="55%" stop-color="#020617" stop-opacity="0.9" />
-        <stop offset="100%" stop-color="#000000" stop-opacity="0.99" />
-      </linearGradient>
-    </defs>
-    <rect x="0" y="660" width="1080" height="1260" fill="url(#cinematicVignette)" />
-    <text x="540" y="930" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="900" fill="#f59e0b" letter-spacing="5" text-anchor="middle" filter="url(#textGlow)">
-      ⚡ THE HARSH PSYCHOLOGICAL LAW
-    </text>
-    <text x="540" y="1030" font-family="Georgia, serif" font-size="44" font-weight="900" fill="#ffffff" text-anchor="middle" filter="url(#textGlow)">
-      <tspan x="540" dy="0">What you say has zero impact</tspan>
-      <tspan x="540" dy="64">on your future. Only the cold,</tspan>
-      <tspan x="540" dy="64">unrelenting physical actions you take</tspan>
-      <tspan x="540" dy="64">will reshape your reality. Silence.</tspan>
-    </text>
-    <line x1="430" y1="1310" x2="650" y2="1310" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" />
-    <text x="540" y="1360" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="800" fill="#cbd5e1" letter-spacing="2" text-anchor="middle" filter="url(#textGlow)">
-      - THE STOIC ARCHITECT • ACTION IS EVERYTHING
-    </text>
-  </svg>`;
-}
 
   const videoFileName = outputFileNameOverride || (isLongForm ? 'stoic_psychology_30s_latest.mp4' : 'stoic_quote_5s_latest.mp4');
   const finalMp4Path = path.join(OUTPUT_DIR, videoFileName);
@@ -602,17 +543,8 @@ function buildStoicDeepBeat3Svg(scholar, width = 1080, height = 1920) {
     chosen.credentials = narrative.backupQuote.title;
     chosen.psychologicalConcept = narrative.theme;
   } else {
-    // 5-Second Quote Reel: 2-Beat Dynamic Narrative Progression
-    // Beat 1 (0.0s - 1.8s): Provocative psychological teaser hook
-    // Beat 2 (1.8s - 5.0s): Match cut reveal of the profound quote & scholar credentials
-    const hookSvg = buildStoicDeepBeat2Svg(chosen, 1080, 1920);
-    const hookSvgPath = path.join(ARTIFACTS_DIR, 'stoic_hook_beat.svg');
-    const hookPngPath = path.join(ARTIFACTS_DIR, 'stoic_hook_beat.png');
-    fs.writeFileSync(hookSvgPath, hookSvg);
-    try {
-      execSync(`ffmpeg -y -i "${hookSvgPath}" "${hookPngPath}" 2>/dev/null`);
-    } catch (_) {}
-
+    // 5-Second Quote Reel: Authentic dynamic presentation of scholar quote & credentials
+    // User mandate: "delete the quote that's still persistent in stoic 5 seconds reel, there's a mock quote that always attach to every new post, it's talking about feeling like you've achieve something you still have as a goal,that is does dopamine stuff, just delete it, it's making post bad"
     const isPanRight = (chosen.quote.length % 2 === 0);
     const panXFormula = isPanRight
       ? `(iw-iw/zoom)*(0.15+0.70*(on/${totalFrames}))`
@@ -620,27 +552,17 @@ function buildStoicDeepBeat3Svg(scholar, width = 1080, height = 1920) {
 
     const fadeOutStart = Math.max(0.1, Number((effectiveDuration - 0.45).toFixed(2)));
 
-    // Multi-beat dynamic overlay graph:
-    // [bg] continuous cinematic camera pan + push
-    // [ov1] hook beat enabled between 0.0s and 1.8s
-    // [ov2] quote overlay enabled from 1.8s to end with smooth crossfade
-    const hasHook = fs.existsSync(hookPngPath) && fs.statSync(hookPngPath).size > 1000;
-    const filterComplex = hasHook ? [
-      `[0:v]scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276,zoompan=z='1.10+0.0005*on':d=${totalFrames}:x='${panXFormula}':y='(ih-ih/zoom)*0.22':s=1080x1920:fps=${fps},eq=brightness=-0.04:contrast=1.14:saturation=0.90,vignette=PI/4.5,fade=t=in:st=0:d=0.35,fade=t=out:st=${fadeOutStart}:d=0.45[bg]`,
-      `[1:v]scale=1080:1920,fade=t=in:st=0:d=0.3,fade=t=out:st=1.6:d=0.3[ov1]`,
-      `[2:v]scale=1080:1920,fade=t=in:st=1.8:d=0.3,fade=t=out:st=${fadeOutStart}:d=0.45[ov2]`,
-      `[bg][ov1]overlay=0:0:enable='lt(t,1.8)'[v_mid]`,
-      `[v_mid][ov2]overlay=0:0:enable='gte(t,1.8)',format=yuv420p[v]`
-    ].join(';') : [
-      `[0:v]scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276,zoompan=z='1.10+0.00045*on':d=${totalFrames}:x='${panXFormula}':y='(ih-ih/zoom)*0.22':s=1080x1920:fps=${fps},eq=brightness=-0.04:contrast=1.14:saturation=0.90,vignette=PI/4.5,fade=t=in:st=0:d=0.4,fade=t=out:st=${fadeOutStart}:d=0.45[bg]`,
-      `[1:v]scale=1080:1920,fade=t=in:st=0:d=0.4,fade=t=out:st=${fadeOutStart}:d=0.45[ov]`,
+    // Clean single-focus high impact composition:
+    // [bg] continuous cinematic camera pan + gentle push-in
+    // [ov] authentic quote typography overlay perfectly timed
+    const filterComplex = [
+      `[0:v]scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276,zoompan=z='1.10+0.00045*on':d=${totalFrames}:x='${panXFormula}':y='(ih-ih/zoom)*0.22':s=1080x1920:fps=${fps},eq=brightness=-0.04:contrast=1.14:saturation=0.90,vignette=PI/4.5,fade=t=in:st=0:d=0.35,fade=t=out:st=${fadeOutStart}:d=0.45[bg]`,
+      `[1:v]scale=1080:1920,fade=t=in:st=0:d=0.35,fade=t=out:st=${fadeOutStart}:d=0.45[ov]`,
       `[bg][ov]overlay=0:0,format=yuv420p[v]`
     ].join(';');
 
     const audioFilters = `afade=t=in:st=0:d=0.3,afade=t=out:st=${fadeOutStart}:d=0.45`;
-    const ffmpegCmd = hasHook
-      ? `ffmpeg -y -loglevel error -loop 1 -t ${effectiveDuration} -i "${portraitPath}" -loop 1 -t 1.8 -i "${hookPngPath}" -loop 1 -t ${effectiveDuration} -i "${overlayInput}" -stream_loop -1 -i "${wavPath}" -filter_complex "${filterComplex}" -af "${audioFilters}" -map "[v]" -map 3:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${effectiveDuration} "${finalMp4Path}"`
-      : `ffmpeg -y -loglevel error -loop 1 -t ${effectiveDuration} -i "${portraitPath}" -loop 1 -t ${effectiveDuration} -i "${overlayInput}" -stream_loop -1 -i "${wavPath}" -filter_complex "${filterComplex}" -af "${audioFilters}" -map "[v]" -map 2:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${effectiveDuration} "${finalMp4Path}"`;
+    const ffmpegCmd = `ffmpeg -y -loglevel error -loop 1 -t ${effectiveDuration} -i "${portraitPath}" -loop 1 -t ${effectiveDuration} -i "${overlayInput}" -stream_loop -1 -i "${wavPath}" -filter_complex "${filterComplex}" -af "${audioFilters}" -map "[v]" -map 2:a -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -t ${effectiveDuration} "${finalMp4Path}"`;
 
     try {
       execSync(ffmpegCmd, { maxBuffer: 50 * 1024 * 1024, stdio: ['pipe', 'pipe', 'pipe'] });

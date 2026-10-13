@@ -100,32 +100,22 @@ const THEMES = [
 // Dynamic Showdown Trivia Engine — Seeded Catalog Deleted per User Directive
 const CURATED_SHOWDOWN_CATALOG = {};
 
+const { synthesizeSpeechResilient } = require('./tts_resilient_engine.cjs');
+
 /**
- * Resilient TTS Synthesis with Timeout & Automatic Voice Fallback
+ * Resilient TTS Synthesis with Timeout & Automatic Multi-Tier Fallback
  */
 async function synthesizeSpeechWithRetry(text, outFile, maxRetries = 2) {
-  const voices = ["en-US-AndrewNeural", "en-US-AndrewMultilingualNeural", "en-US-GuyNeural"];
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    const voice = voices[attempt % voices.length];
-    try {
-      const t = new EdgeTTS({
-        voice,
-        lang: "en-US",
-        outputFormat: "audio-24khz-48kbitrate-mono-mp3",
-        timeout: 45000
-      });
-      await t.ttsPromise(text, outFile);
-      if (fs.existsSync(outFile) && fs.statSync(outFile).size > 500) {
-        return outFile;
-      }
-    } catch (err) {
-      console.warn(`[TTS Retry Notice] Voice "${voice}" attempt ${attempt + 1} notice: ${err.message}. Retrying...`);
-      if (attempt === maxRetries) {
-        throw new Error(`TTS synthesis failed after ${maxRetries + 1} attempts: ${err.message}`);
-      }
-      await new Promise(r => setTimeout(r, 1200));
-    }
+  const result = await synthesizeSpeechResilient(text, outFile, {
+    voice: 'en-US-AndrewNeural',
+    rate: '-4%',
+    pitch: '-10Hz',
+    timeout: 15000
+  });
+  if (fs.existsSync(outFile) && fs.statSync(outFile).size > 500) {
+    return outFile;
   }
+  throw new Error(`TTS synthesis produced invalid file`);
 }
 
 function escapeXml(str) {

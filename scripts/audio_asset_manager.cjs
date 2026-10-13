@@ -465,63 +465,75 @@ function synthesizeProceduralAudio(channelKey, durationSeconds, outputPath) {
   }
 
   const dur = durationSeconds.toFixed(2);
-  const fadeOutStart = Math.max(0.5, (durationSeconds - 0.3)).toFixed(2);
+  const fadeOutStart = Math.max(0.5, (durationSeconds - 0.5)).toFixed(2);
+
+  // User mandate: "stop using same sound for multiple videos and channels please"
+  // "and add different background music that has effects too"
+  // Generate dynamic randomized chord progressions with spatial delay (aecho), analog tremolo, and harmonic overtone filters
+  const SCALES = [
+    { root: 220.00, third: 261.63, fifth: 329.63, sub: 55.0, name: 'A Minor' },
+    { root: 146.83, third: 174.61, fifth: 220.00, sub: 36.7, name: 'D Minor' },
+    { root: 164.81, third: 196.00, fifth: 246.94, sub: 41.2, name: 'E Minor' },
+    { root: 185.00, third: 220.00, fifth: 277.18, sub: 46.2, name: 'F# Minor' },
+    { root: 130.81, third: 164.81, fifth: 196.00, sub: 32.7, name: 'C Major / Ambient' }
+  ];
+  const chosenScale = SCALES[Math.floor(Math.random() * SCALES.length)];
+  const tremoloFreq = (2.8 + Math.random() * 2.5).toFixed(2);
+  const echoDelay = (40 + Math.floor(Math.random() * 50));
 
   let filterExpr = '';
   if (channelKey === 'motivation_15s' || channelKey === 'mindrush' || channelKey === 'mindrush_15s' || channelKey === 'teen') {
+    // Energetic tension pulse with rising resonance and sub drops
     filterExpr = [
-      `sine=frequency=55:duration=7.0,volume=0.35,afade=t=out:st=6.6:d=0.4[drone1]`,
-      `sine=frequency=110:duration=7.0,volume=0.15,afade=t=out:st=6.6:d=0.4[pad1]`,
-      `anullsrc=r=44100:cl=stereo:d=1.0[silence]`,
-      `sine=frequency=42:duration=7.0,volume=0.45,afade=t=in:ss=0:d=0.08,afade=t=out:st=6.7:d=0.3[slamSub]`,
-      `sine=frequency=880:duration=7.0,volume=0.04[tick]`,
-      `[drone1][pad1]amix=inputs=2[p1]`,
-      `[slamSub][tick]amix=inputs=2[p3]`,
-      `[p1][silence][p3]concat=n=3:v=0:a=1[concatted]`,
-      `[concatted]afade=t=in:ss=0:d=0.2,afade=t=out:st=${fadeOutStart}:d=0.25[out]`
+      `sine=frequency=${chosenScale.sub}:duration=${dur},volume=0.45,lowpass=f=120[sub]`,
+      `sine=frequency=${chosenScale.root}:duration=${dur},volume=0.25,tremolo=f=${tremoloFreq}:d=0.75[pulse]`,
+      `anoisesrc=d=${dur}:c=pink:r=44100:a=0.06,bandpass=f=2400:w=300,volume=0.15,tremolo=f=8.0:d=0.9[hats]`,
+      `[sub][pulse][hats]amix=inputs=3[mix]`,
+      `[mix]aecho=0.8:0.88:${echoDelay}:0.35,afade=t=in:ss=0:d=0.35,afade=t=out:st=${fadeOutStart}:d=0.45[out]`
     ].join(';');
   } else if (channelKey === 'motivation_5s' || channelKey === 'motivation' || channelKey === 'mindrush_5s') {
+    // Punchy short-burst impact with resonant low end
     filterExpr = [
-      `sine=frequency=48:duration=${dur},volume=0.4[sub]`,
-      `sine=frequency=120:duration=${dur},volume=0.2[body]`,
-      `sine=frequency=880:duration=${dur},volume=0.03[tick]`,
-      `[sub][body][tick]amix=inputs=3[mixed]`,
-      `[mixed]afade=t=in:ss=0:d=0.15,afade=t=out:st=${fadeOutStart}:d=0.2[out]`
+      `sine=frequency=${chosenScale.sub}:duration=${dur},volume=0.55,lowpass=f=140[sub]`,
+      `sine=frequency=${chosenScale.third}:duration=${dur},volume=0.25,tremolo=f=4.0:d=0.8[mid]`,
+      `[sub][mid]amix=inputs=2[mix]`,
+      `[mix]aecho=0.7:0.75:50:0.3,afade=t=in:ss=0:d=0.15,afade=t=out:st=${fadeOutStart}:d=0.35[out]`
     ].join(';');
   } else if (channelKey === 'cartoon' || channelKey === 'tech') {
-    // Playful, uplifting science lo-fi chord progression
+    // Playful, uplifting science lo-fi chord progression with gentle acoustic stereo shimmer
     filterExpr = [
-      `sine=frequency=261.63:duration=${dur},volume=0.12[c4]`,
-      `sine=frequency=329.63:duration=${dur},volume=0.10[e4]`,
-      `sine=frequency=392.00:duration=${dur},volume=0.09[g4]`,
-      `sine=frequency=523.25:duration=${dur},volume=0.06[c5]`,
-      `[c4][e4][g4][c5]amix=inputs=4[chord]`,
-      `[chord]afade=t=in:ss=0:d=0.3,afade=t=out:st=${fadeOutStart}:d=0.3[out]`
+      `sine=frequency=${chosenScale.root}:duration=${dur},volume=0.18[c1]`,
+      `sine=frequency=${chosenScale.third}:duration=${dur},volume=0.14[c2]`,
+      `sine=frequency=${chosenScale.fifth}:duration=${dur},volume=0.12[c3]`,
+      `sine=frequency=${(chosenScale.root * 2).toFixed(2)}:duration=${dur},volume=0.08[c4]`,
+      `[c1][c2][c3][c4]amix=inputs=4[chord]`,
+      `[chord]aecho=0.8:0.85:70:0.4,tremolo=f=3.2:d=0.5,afade=t=in:ss=0:d=0.3,afade=t=out:st=${fadeOutStart}:d=0.4[out]`
     ].join(';');
-  } else if (channelKey === 'movie_brand' || channelKey === 'movie') {
-    // Deep cinematic braam / sub drone
+  } else if (channelKey === 'movie_brand' || channelKey === 'movie' || channelKey === 'documentary' || channelKey === 'cinema') {
+    // Deep cinematic cello ostinato & suspense pulse with haunting atmospheric reverb
     filterExpr = [
-      `sine=frequency=36:duration=${dur},volume=0.45[sub]`,
-      `sine=frequency=72:duration=${dur},volume=0.25[bass]`,
-      `sine=frequency=144:duration=${dur},volume=0.12[overtone]`,
-      `[sub][bass][overtone]amix=inputs=3[mixed]`,
-      `[mixed]afade=t=in:ss=0:d=0.3,afade=t=out:st=${fadeOutStart}:d=0.4[out]`
+      `sine=frequency=${chosenScale.sub}:duration=${dur},volume=0.50,lowpass=f=95[sub]`,
+      `sine=frequency=${chosenScale.root}:duration=${dur},volume=0.30,bandpass=f=${chosenScale.root}:w=40,tremolo=f=2.2:d=0.85[cello]`,
+      `sine=frequency=${chosenScale.fifth}:duration=${dur},volume=0.16,highpass=f=200[overtone]`,
+      `[sub][cello][overtone]amix=inputs=3[mix]`,
+      `[mix]aecho=0.85:0.88:85:0.45,afade=t=in:ss=0:d=0.5,afade=t=out:st=${fadeOutStart}:d=0.6[out]`
     ].join(';');
   } else if (channelKey === 'stoic') {
+    // Meditative Interstellar-style ambient chords with deep analog filter
     filterExpr = [
-      `sine=frequency=43:duration=${dur},volume=0.35[abyss]`,
-      `sine=frequency=108:duration=${dur},volume=0.2[minor]`,
-      `sine=frequency=216:duration=${dur},volume=0.1[overtone]`,
-      `[abyss][minor][overtone]amix=inputs=3[mixed]`,
-      `[mixed]afade=t=in:ss=0:d=0.2,afade=t=out:st=${fadeOutStart}:d=0.2[out]`
+      `sine=frequency=${chosenScale.sub}:duration=${dur},volume=0.45,lowpass=f=80[drone]`,
+      `sine=frequency=${chosenScale.root}:duration=${dur},volume=0.25[chord1]`,
+      `sine=frequency=${chosenScale.third}:duration=${dur},volume=0.20[chord2]`,
+      `[drone][chord1][chord2]amix=inputs=3[mix]`,
+      `[mix]aecho=0.85:0.90:90:0.45,tremolo=f=1.8:d=0.6,afade=t=in:ss=0:d=0.6,afade=t=out:st=${fadeOutStart}:d=0.6[out]`
     ].join(';');
   } else {
-    // Finance / General ambient (never empty)
+    // Sovereign Capital / Financial Blueprint: Deep suspense pulse + subtle tick
     filterExpr = [
-      `sine=frequency=52:duration=${dur},volume=0.4[sub]`,
-      `sine=frequency=156:duration=${dur},volume=0.18[mid]`,
-      `[sub][mid]amix=inputs=2[mixed]`,
-      `[mixed]afade=t=in:ss=0:d=0.15,afade=t=out:st=${fadeOutStart}:d=0.2[out]`
+      `sine=frequency=${chosenScale.sub}:duration=${dur},volume=0.45,lowpass=f=100[sub]`,
+      `sine=frequency=${chosenScale.root}:duration=${dur},volume=0.25,tremolo=f=3.0:d=0.7[pulse]`,
+      `[sub][pulse]amix=inputs=2[mix]`,
+      `[mix]aecho=0.75:0.80:55:0.35,afade=t=in:ss=0:d=0.4,afade=t=out:st=${fadeOutStart}:d=0.45[out]`
     ].join(';');
   }
 
@@ -529,7 +541,7 @@ function synthesizeProceduralAudio(channelKey, durationSeconds, outputPath) {
   try {
     execSync(cmd);
   } catch (e) {
-    execSync(`ffmpeg -y -f lavfi -i "sine=frequency=80:duration=${dur}" -c:a pcm_s16le -ar 44100 -ac 2 "${outputPath}" 2>/dev/null`);
+    execSync(`ffmpeg -y -f lavfi -i "sine=frequency=75:duration=${dur}" -c:a pcm_s16le -ar 44100 -ac 2 "${outputPath}" 2>/dev/null`);
   }
   return outputPath;
 }

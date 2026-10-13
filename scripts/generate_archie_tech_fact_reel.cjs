@@ -434,7 +434,6 @@ async function generateArchie5sDailyFact() {
     `-loop 1 -t ${reelDuration.toFixed(2)} -i "${puppetQuestion}"`,
     `-loop 1 -t ${reelDuration.toFixed(2)} -i "${puppetQuestionTalk}"`,
     `-loop 1 -t ${reelDuration.toFixed(2)} -i "${puppetIdle}"`,
-    `-loop 1 -t ${reelDuration.toFixed(2)} -i "${puppetTalk1}"`,
     `-i "${audioWavPath}"`
   ].join(' ');
 
@@ -456,8 +455,7 @@ async function generateArchie5sDailyFact() {
     [6:v]scale=-1:1150[exp_t];
     [7:v]scale=-1:1150[qst];
     [8:v]scale=-1:1150[qst_t];
-    [9:v]scale=-1:1150,split=2[idle1][idle2];
-    [10:v]scale=-1:1150[talk];
+    [9:v]scale=-1:1150[idle1];
     [bg][pill]overlay=0:0[s0];
     [s0][specimen]overlay=0:0:enable='between(t,${cutawayStart},${cutawayEnd})'[s1];
     [s1][pt1]overlay=x=440:y=760:enable='lt(t,1.0)'[s2];
@@ -467,11 +465,10 @@ async function generateArchie5sDailyFact() {
     [s5][exp]overlay=x=440:y=760:enable='gte(t,2.2)*lt(t,${outroStart.toFixed(2)})*(1-mod(floor(t*5.2),2))'[s6];
     [s6][qst_t]overlay=x=440:y=760:enable='gte(t,${outroStart.toFixed(2)})*lt(t,${voiceDuration.toFixed(2)})*mod(floor(t*4.8),2)'[s7];
     [s7][qst]overlay=x=440:y=760:enable='gte(t,${outroStart.toFixed(2)})*lt(t,${voiceDuration.toFixed(2)})*(1-mod(floor(t*4.8),2))'[s8];
-    [s8][idle1]overlay=x=440:y=760:enable='gte(t,${voiceDuration.toFixed(2)})'[v_raw];
-    [v_raw]subtitles='${safeAssPath}'[vfinal]
+    [s8][idle1]overlay=x=440:y=760:enable='gte(t,${voiceDuration.toFixed(2)})'[vfinal]
   `.replace(/\s+/g, ' ').trim();
 
-  const ffmpegCmd = `ffmpeg -y ${inputs} -filter_complex "${filterGraph}" -map "[vfinal]" -map 11:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -ar 44100 -ac 2 -t ${reelDuration.toFixed(2)} "${finalMp4Path}" 2>/dev/null`;
+  const ffmpegCmd = `ffmpeg -y ${inputs} -filter_complex "${filterGraph}" -map "[vfinal]" -map 10:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -ar 44100 -ac 2 -t ${reelDuration.toFixed(2)} "${finalMp4Path}" 2>/dev/null`;
 
   console.log(`[FFmpeg Compositor] Rendering clean Archie video with subtitles...`);
   try {

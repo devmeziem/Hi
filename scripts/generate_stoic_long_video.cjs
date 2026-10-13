@@ -166,7 +166,7 @@ function buildStoicWatermarkOverlaySvg(channelWatermark = '@TheStoicArchitect', 
 }
 
 /**
- * Synthesize voiceover using Microsoft Edge AndrewNeural (-5% rate, -25Hz pitch)
+ * Synthesize voiceover using resilient speech engine (Andrew voice or neural fallback)
  */
 async function synthesizeAndrewVoice(text, outputFile) {
   let voiceId = 'en-US-AndrewNeural';
@@ -181,24 +181,16 @@ async function synthesizeAndrewVoice(text, outputFile) {
   } catch {}
 
   console.log(`[Andrew Voice Engine] 🎙️ Synthesizing voiceover via ${voiceId} (Rate: ${edgeRate}, Pitch: ${edgePitch})...`);
-  const tts = new EdgeTTS({
+  const { synthesizeSpeechResilient, getAudioDuration } = require('./tts_resilient_engine.cjs');
+  const res = await synthesizeSpeechResilient(text, outputFile, {
     voice: voiceId,
-    lang: 'en-US',
-    outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
     rate: edgeRate,
     pitch: edgePitch,
-    timeout: 60000
+    timeout: 20000
   });
 
-  await tts.ttsPromise(text, outputFile);
-  if (!fs.existsSync(outputFile) || fs.statSync(outputFile).size < 1000) {
-    throw new Error('Andrew TTS voice synthesis failed to produce audio.');
-  }
-
-  // Get exact duration via ffprobe
-  const durProbe = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${outputFile}"`, { encoding: 'utf8' }).trim();
-  const duration = parseFloat(durProbe) || 35.0;
-  console.log(`[Andrew Voice Engine] ✓ Synthesized ${duration.toFixed(2)}s spoken voice.`);
+  const duration = res.duration || getAudioDuration(outputFile) || 35.0;
+  console.log(`[Andrew Voice Engine] ✓ Synthesized ${duration.toFixed(2)}s spoken voice via ${res.provider}.`);
   return duration;
 }
 
@@ -406,13 +398,14 @@ async function generateStoicLongVideo(options = {}) {
     }
 
     const streamLabel = `v${sIdx}`;
-    // Ken Burns Zoom + Slide Transition with guaranteed 1:1 SAR and YUV420P format for concat
+    // User mandate: "make the videos all scenes to be black and white"
+    // Apply grayscale (hue=s=0) with rich deep contrast (eq=contrast=1.22:brightness=-0.04) and smooth Ken Burns motion
     if (isVideo) {
-      filterComplex += `[${inputIdx}:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,setdar=9/16,format=yuv420p,trim=duration=${sceneDuration.toFixed(2)},setpts=PTS-STARTPTS[${streamLabel}]; `;
+      filterComplex += `[${inputIdx}:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,setdar=9/16,format=yuv420p,hue=s=0,eq=contrast=1.22:brightness=-0.04,trim=duration=${sceneDuration.toFixed(2)},setpts=PTS-STARTPTS[${streamLabel}]; `;
     } else if (sc.transition === 'slide_right_in') {
-      filterComplex += `[${inputIdx}:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,zoompan=z='min(zoom+0.0012,1.15)':d=${Math.round(sceneDuration * 30)}:s=1080x1920:fps=30,setsar=1,setdar=9/16,format=yuv420p,trim=duration=${sceneDuration.toFixed(2)},setpts=PTS-STARTPTS[${streamLabel}]; `;
+      filterComplex += `[${inputIdx}:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,zoompan=z='min(zoom+0.0012,1.15)':d=${Math.round(sceneDuration * 30)}:s=1080x1920:fps=30,setsar=1,setdar=9/16,format=yuv420p,hue=s=0,eq=contrast=1.22:brightness=-0.04,trim=duration=${sceneDuration.toFixed(2)},setpts=PTS-STARTPTS[${streamLabel}]; `;
     } else {
-      filterComplex += `[${inputIdx}:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,zoompan=z='max(1.15-0.0012*on,1.0)':d=${Math.round(sceneDuration * 30)}:s=1080x1920:fps=30,setsar=1,setdar=9/16,format=yuv420p,trim=duration=${sceneDuration.toFixed(2)},setpts=PTS-STARTPTS[${streamLabel}]; `;
+      filterComplex += `[${inputIdx}:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,zoompan=z='max(1.15-0.0012*on,1.0)':d=${Math.round(sceneDuration * 30)}:s=1080x1920:fps=30,setsar=1,setdar=9/16,format=yuv420p,hue=s=0,eq=contrast=1.22:brightness=-0.04,trim=duration=${sceneDuration.toFixed(2)},setpts=PTS-STARTPTS[${streamLabel}]; `;
     }
     sceneStreams.push(`[${streamLabel}]`);
   }
@@ -421,49 +414,45 @@ async function generateStoicLongVideo(options = {}) {
   filterComplex += `${sceneStreams.join('')}concat=n=${numScenes}:v=1:a=0[v_concat]; `;
 
   // Channel Watermark & Cinematic Scrim Overlay
-  const { getVerifiedChannelHandle } = require('./channel_verifier.cjs');
+  // User mandate: "If channel username not found, skip watermark, just say our channel or this channel"
+  const { getVerifiedChannelHandle, getChannelMeta } = require('./channel_verifier.cjs');
   const channelWatermark = getVerifiedChannelHandle('ch2');
-  const watermarkSvg = buildStoicWatermarkOverlaySvg(channelWatermark, 1080, 1920);
-  const watermarkSvgPath = path.join(ARTIFACTS_DIR, 'stoic_watermark.svg');
-  const watermarkPngPath = path.join(ARTIFACTS_DIR, 'stoic_watermark.png');
-  fs.writeFileSync(watermarkSvgPath, watermarkSvg);
-  try {
-    execSync(`ffmpeg -y -i "${watermarkSvgPath}" "${watermarkPngPath}" 2>/dev/null`);
-  } catch {}
-
-  // Curved Edges Frosted Black Drop Box with Soft Blurred Glow
-  const blurBoxSvg = buildCurvedBlurredBoxSvg(1080, 1920);
-  const blurBoxSvgPath = path.join(ARTIFACTS_DIR, 'stoic_blur_box.svg');
-  const blurBoxPngPath = path.join(ARTIFACTS_DIR, 'stoic_blur_box.png');
-  fs.writeFileSync(blurBoxSvgPath, blurBoxSvg);
-  try {
-    execSync(`ffmpeg -y -i "${blurBoxSvgPath}" "${blurBoxPngPath}" 2>/dev/null`);
-  } catch {}
-
   let nextInputIdx = numScenes + (fs.existsSync(bgMusicPath) ? 2 : 1);
   let vWorking = '[v_concat]';
 
-  if (fs.existsSync(watermarkPngPath)) {
-    inputs += `-loop 1 -t ${finalDuration.toFixed(2)} -i "${watermarkPngPath}" `;
-    filterComplex += `${vWorking}[${nextInputIdx}:v]overlay=0:0[v_wm]; `;
-    vWorking = '[v_wm]';
-    nextInputIdx++;
+  if (channelWatermark) {
+    const watermarkSvg = buildStoicWatermarkOverlaySvg(channelWatermark, 1080, 1920);
+    const watermarkSvgPath = path.join(ARTIFACTS_DIR, 'stoic_watermark.svg');
+    const watermarkPngPath = path.join(ARTIFACTS_DIR, 'stoic_watermark.png');
+    fs.writeFileSync(watermarkSvgPath, watermarkSvg);
+    try {
+      execSync(`ffmpeg -y -i "${watermarkSvgPath}" "${watermarkPngPath}" 2>/dev/null`);
+    } catch {}
+    if (fs.existsSync(watermarkPngPath)) {
+      inputs += `-loop 1 -t ${finalDuration.toFixed(2)} -i "${watermarkPngPath}" `;
+      filterComplex += `${vWorking}[${nextInputIdx}:v]overlay=0:0[v_wm]; `;
+      vWorking = '[v_wm]';
+      nextInputIdx++;
+    }
   }
 
-  if (fs.existsSync(blurBoxPngPath)) {
-    inputs += `-loop 1 -t ${finalDuration.toFixed(2)} -i "${blurBoxPngPath}" `;
-    filterComplex += `${vWorking}[${nextInputIdx}:v]overlay=0:0[v_box]; `;
-    vWorking = '[v_box]';
-    nextInputIdx++;
-  }
+  // User mandate: "while caption should fit the word, not captions box bigger than words please"
+  // The oversized static 880x220 blur box overlay has been removed; captions now tightly hug words directly.
 
   // Add ASS Subtitles with properly escaped path
   const safeAssPath = assSubtitlePath.replace(/\\/g, '/').replace(/:/g, '\\:').replace(/'/g, "'\\\\''");
   filterComplex += `${vWorking}subtitles='${safeAssPath}'[v_subbed]; `;
 
-  // Audio Mix: Andrew voice (high presence, audible & warm) + Background music softly ducked
+  // User mandate: "also increase background music volume a bit"
+  // Audio Mix: Andrew voice (1.45x) + BGM volume bumped to 0.25 (with rich stereo compressor)
+  let bgmVol = 0.25;
+  try {
+    const { getWorkflowVoiceSettings } = require('./workflow_settings_loader.cjs');
+    bgmVol = getWorkflowVoiceSettings('stoic').bgmVolume || 0.25;
+  } catch {}
+
   if (fs.existsSync(bgMusicPath)) {
-    filterComplex += `[1:a]volume=0.10,afade=t=in:st=0:d=1.5,afade=t=out:st=${Math.max(0.1, finalDuration - 1.5).toFixed(2)}:d=1.5,atrim=0:${finalDuration.toFixed(2)},asetpts=PTS-STARTPTS[bgm]; [0:a]volume=1.45,acompressor=threshold=-16dB:ratio=2.5:attack=10:release=120[voice]; [voice][bgm]amix=inputs=2:duration=first:dropout_transition=2[a_final]`;
+    filterComplex += `[1:a]volume=${bgmVol.toFixed(2)},afade=t=in:st=0:d=1.5,afade=t=out:st=${Math.max(0.1, finalDuration - 1.5).toFixed(2)}:d=1.5,atrim=0:${finalDuration.toFixed(2)},asetpts=PTS-STARTPTS[bgm]; [0:a]volume=1.45,acompressor=threshold=-16dB:ratio=2.5:attack=10:release=120[voice]; [voice][bgm]amix=inputs=2:duration=first:dropout_transition=2[a_final]`;
   } else {
     filterComplex += `[0:a]volume=1.45,acompressor=threshold=-16dB:ratio=2.5:attack=10:release=120[a_final]`;
   }
@@ -508,9 +497,11 @@ async function generateStoicLongVideo(options = {}) {
   if (ch2Token && !isDryRun) {
     console.log(`\n[Stoic Dispatcher] 📤 Uploading Stoic Long-Form Short to YouTube Channel 2 (The Stoic Architect)...`);
     try {
-      const { uploadYouTubeShort } = require('./youtube_channel_dispatcher.cjs');
+      const { getChannelMeta } = require('./channel_verifier.cjs');
+      const chMeta = getChannelMeta('ch2');
+      const ctaChannel = chMeta.hasHandle ? `Subscribe to ${chMeta.handle}` : 'Subscribe to our channel';
       const viralTitle = `${philosopher.name}: ${essayData.title.replace(/[?!.]+$/, '')} #Shorts`;
-      const viralDesc = `"${quote}" — ${philosopher.name} (${philosopher.title})\n\n${fullNarration}\n\n🏛️ Stoic Reflection: Reframing everyday exhaustion and overthinking into unshakeable inner peace.\n\nSubscribe to @TheStoicArchitect for daily philosophy & fortitude.\n\n#Stoic #Stoicism #Philosophy #Wisdom #InnerPeace #Mindset #Shorts`;
+      const viralDesc = `"${quote}" — ${philosopher.name} (${philosopher.title})\n\n${fullNarration}\n\n🏛️ Stoic Reflection: Reframing everyday exhaustion and overthinking into unshakeable inner peace.\n\n${ctaChannel} for daily philosophy & fortitude.\n\n#Stoic #Stoicism #Philosophy #Wisdom #InnerPeace #Mindset #Shorts`;
       const uploadRes = await uploadYouTubeShort({
         videoPath: finalMp4Path,
         title: viralTitle,

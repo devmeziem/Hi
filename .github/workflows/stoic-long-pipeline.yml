@@ -6,9 +6,9 @@ on:
       - main
       - master
   schedule:
-    # Twice daily spaced slots: 03:00 UTC and 15:00 UTC
-    # User mandate: Minimum 30s emotional impactful essay with Andrew voice (-5% rate, -25Hz pitch)
-    - cron: '0 3,15 * * *'
+    # Once daily prime-time slot: 15:00 UTC
+    # User mandate: Once daily release for premium long-form emotional essay (>30s)
+    - cron: '0 15 * * *'
   workflow_dispatch:
     inputs:
       philosopher:
