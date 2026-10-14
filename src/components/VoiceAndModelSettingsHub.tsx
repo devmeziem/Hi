@@ -18,7 +18,11 @@ import {
   BookOpen,
   Info,
   Layers,
-  Settings2
+  Settings2,
+  Activity,
+  HeartHandshake,
+  Music,
+  RotateCw
 } from 'lucide-react';
 
 export interface WorkflowVoiceModelConfig {
@@ -493,6 +497,55 @@ export const VoiceAndModelSettingsHub: React.FC<VoiceAndModelSettingsHubProps> =
               className="w-full mt-1 bg-slate-900 border border-slate-800 p-2.5 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500"
               placeholder="Custom direction for this workflow"
             />
+          </div>
+        </div>
+      </div>
+
+      {/* Human Emotion Sync & Background Music Rotation Status Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+        {/* Card 1: Emotion Voice & Human Cadence Synchronizer */}
+        <div className="p-4 bg-gradient-to-r from-indigo-950/40 to-slate-900 border border-indigo-500/30 rounded-2xl space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <HeartHandshake className="w-4 h-4 text-indigo-400" />
+              <h4 className="text-xs font-bold text-white">Human Emotion &amp; Cadence Sync</h4>
+            </div>
+            <span className="px-2 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-700/60 text-[10px] font-mono font-bold">
+              Active Engine
+            </span>
+          </div>
+          <p className="text-[11px] text-slate-300 leading-relaxed">
+            Eliminates robotic voiceovers via sentence-level intent analysis (curious hooks, intense revelations, grounded explanations), conversational micro-pauses, and acoustic chest warmth mastering.
+          </p>
+          <div className="flex items-center gap-2 text-[10px] font-mono text-slate-400 pt-1">
+            <span className="text-emerald-400">✓ Natural Breath Pauses</span>
+            <span>•</span>
+            <span className="text-emerald-400">✓ Dynamic Pitch Modulation</span>
+            <span>•</span>
+            <span className="text-emerald-400">✓ In-Video Gesture Sync</span>
+          </div>
+        </div>
+
+        {/* Card 2: Dynamic Background Sound Rotation */}
+        <div className="p-4 bg-gradient-to-r from-emerald-950/40 to-slate-900 border border-emerald-500/30 rounded-2xl space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <RotateCw className="w-4 h-4 text-emerald-400" />
+              <h4 className="text-xs font-bold text-white">Dynamic Background Sound Rotation</h4>
+            </div>
+            <span className="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-700/60 text-[10px] font-mono font-bold">
+              Auto-Cycling
+            </span>
+          </div>
+          <p className="text-[11px] text-slate-300 leading-relaxed">
+            Background soundtracks automatically cycle across catalog tracks, procedural chord progressions, and non-repeating slice offsets so every video has fresh rhythm and never repeats.
+          </p>
+          <div className="flex items-center gap-2 text-[10px] font-mono text-slate-400 pt-1">
+            <span className="text-indigo-400">✓ Non-Repeating Tracks</span>
+            <span>•</span>
+            <span className="text-indigo-400">✓ Varying Slice Offsets</span>
+            <span>•</span>
+            <span className="text-indigo-400">✓ Adaptive Sound Ducking</span>
           </div>
         </div>
       </div>

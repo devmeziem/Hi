@@ -45,7 +45,8 @@ import {
   HeartHandshake,
   Brain,
   GraduationCap,
-  Compass
+  Compass,
+  Search
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { NicheType, SavedCampaign, FactoryJob, WorkerLog, IntegrationKeys, ChannelMetrics, ProjectConfig } from '../types';
@@ -78,6 +79,7 @@ interface VoxamFactoryAppProps {
 export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onSignOut }) => {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState<boolean>(false);
+  const [drawerSearchQuery, setDrawerSearchQuery] = useState<string>('');
   const [keys, setKeys] = useState<IntegrationKeys>(DEFAULT_KEYS);
   const [savedCampaigns, setSavedCampaigns] = useState<SavedCampaign[]>([]);
   const [selectedCampaignForPlayer, setSelectedCampaignForPlayer] = useState<SavedCampaign | null>(null);
@@ -728,13 +730,11 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
-            onClick={() => {
-              setActiveTab('archie-preview');
-            }}
-            className="px-2 py-1 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/40 text-emerald-300 rounded-lg text-[10px] font-bold flex items-center gap-1 font-mono"
+            onClick={() => setActiveTab('archie-preview')}
+            className="hidden sm:inline-flex px-2 py-1 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/40 text-emerald-300 rounded-lg text-[10px] font-bold items-center gap-1 font-mono transition-colors hover:border-emerald-400"
           >
             <GraduationCap className="w-3 h-3 text-emerald-400" />
             <span>Archie Studio</span>
@@ -742,10 +742,8 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
 
           <button
             type="button"
-            onClick={() => {
-              setActiveTab('archie-lab');
-            }}
-            className="px-2 py-1 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 rounded-lg text-[10px] font-bold flex items-center gap-1 font-mono"
+            onClick={() => setActiveTab('archie-lab')}
+            className="hidden xs:inline-flex px-2 py-1 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 rounded-lg text-[10px] font-bold items-center gap-1 font-mono transition-colors hover:border-emerald-400"
           >
             <Atom className="w-3 h-3 text-emerald-400" />
             <span>Research</span>
@@ -755,9 +753,9 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
             type="button"
             onClick={() => setIsMobileDrawerOpen(!isMobileDrawerOpen)}
             aria-label="Toggle Navigation Drawer"
-            className="p-2 rounded-xl bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 transition-all cursor-pointer"
+            className="p-2 rounded-xl bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 transition-all cursor-pointer flex items-center justify-center"
           >
-            {isMobileDrawerOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {isMobileDrawerOpen ? <X className="w-5 h-5 text-indigo-400" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </header>
@@ -772,284 +770,218 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
           />
 
           {/* Drawer Panel */}
-          <div className="relative w-4/5 max-w-xs bg-slate-900 border-r border-slate-800 flex flex-col justify-between z-10 shadow-2xl h-full overflow-y-auto">
-            <div>
+          <div className="relative w-[86%] max-w-xs bg-slate-900 border-r border-slate-800 flex flex-col justify-between z-10 shadow-2xl h-full overflow-y-auto overflow-x-hidden">
+            <div className="flex flex-col">
               {/* Drawer Header */}
-              <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-extrabold text-base">
+              <div className="p-4 border-b border-slate-800 flex items-center justify-between shrink-0 bg-slate-950/50">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-extrabold text-sm shrink-0 shadow-md shadow-indigo-600/30">
                     V
                   </div>
-                  <div>
-                    <h2 className="font-extrabold text-xs text-white">VOXAM FACTORY</h2>
-                    <span className="text-[10px] font-mono text-indigo-400">Menu & Navigation</span>
+                  <div className="truncate">
+                    <h2 className="font-extrabold text-xs text-white truncate tracking-tight">VOXAM FACTORY</h2>
+                    <span className="text-[10px] font-mono text-indigo-400">Creator Navigation Hub</span>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsMobileDrawerOpen(false)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
+                  aria-label="Close navigation"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
-              {/* Special Quick Access Inside Drawer */}
-              <div className="p-3 border-b border-slate-800 space-y-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('stoic');
-                    setIsMobileDrawerOpen(false);
-                  }}
-                  className="w-full p-2.5 bg-gradient-to-r from-amber-950/80 via-slate-900 to-slate-900 border border-amber-500/50 rounded-xl text-left cursor-pointer transition-all hover:border-amber-400 flex items-center gap-2.5"
-                >
-                  <BookOpen className="w-4 h-4 text-amber-400 shrink-0" />
-                  <div>
-                    <div className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-                      <span>The Stoic Architect (Channel 2)</span>
-                      <span className="text-[9px] px-1 py-0.2 rounded bg-amber-900/80 text-amber-300 font-mono">4 POSTS/DAY</span>
-                    </div>
-                    <div className="text-[10px] text-slate-400">2x 5s Reels + 2x Long Videos (&gt;30s, Andrew Voice)</div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('archie-preview');
-                    setIsMobileDrawerOpen(false);
-                  }}
-                  className="w-full p-2.5 bg-gradient-to-r from-emerald-950/80 via-teal-950/60 to-slate-900 border border-emerald-500/50 rounded-xl text-left cursor-pointer transition-all hover:border-emerald-400 flex items-center gap-2.5"
-                >
-                  <GraduationCap className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <div>
-                    <div className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
-                      <span>Archie Studio &amp; Environments</span>
-                      <span className="text-[9px] px-1 py-0.2 rounded bg-amber-900/80 text-amber-300 font-mono">STUDIO</span>
-                    </div>
-                    <div className="text-[10px] text-slate-400">Grounded Creator Desk, Zero Floating &amp; 18 Backdrops</div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('audience-feedback');
-                    setIsMobileDrawerOpen(false);
-                  }}
-                  className="w-full p-2.5 bg-gradient-to-r from-cyan-950/80 via-indigo-950/60 to-slate-900 border border-cyan-500/50 rounded-xl text-left cursor-pointer transition-all hover:border-cyan-400 flex items-center gap-2.5"
-                >
-                  <Brain className="w-4 h-4 text-cyan-400 shrink-0" />
-                  <div>
-                    <div className="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
-                      <span>Archie 3-in-1 Daily Showdown</span>
-                      <span className="text-[9px] px-1 py-0.2 rounded bg-cyan-900/80 text-cyan-300 font-mono">NEW 2X DAILY</span>
-                    </div>
-                    <div className="text-[10px] text-slate-400">Andrew Voice • 5s Clock Countdown • 3 Questions in 1</div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('finance-engine');
-                    setIsMobileDrawerOpen(false);
-                  }}
-                  className="w-full p-2.5 bg-gradient-to-r from-emerald-950/70 via-slate-900 to-slate-900 border border-emerald-500/40 rounded-xl text-left cursor-pointer transition-all hover:border-emerald-400 flex items-center gap-2.5"
-                >
-                  <DollarSign className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <div>
-                    <div className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
-                      <span>Finance &amp; Wealth Hub</span>
-                      <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-900/80 text-emerald-300 font-mono">POPULAR</span>
-                    </div>
-                    <div className="text-[10px] text-slate-400">Fresh Topics &amp; Unique Visual Experiences</div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('archie-lab');
-                    setIsMobileDrawerOpen(false);
-                  }}
-                  className="w-full p-2.5 bg-gradient-to-r from-emerald-950/60 to-teal-950/60 border border-emerald-500/40 rounded-xl text-left cursor-pointer transition-all hover:border-emerald-400 flex items-center gap-2.5"
-                >
-                  <Atom className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <div>
-                    <div className="text-xs font-bold text-emerald-300">Archie Wonder Lab</div>
-                    <div className="text-[10px] text-slate-400">Everyday Science, Curiosities &amp; High-Definition Media</div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('sound-setup');
-                    setIsMobileDrawerOpen(false);
-                  }}
-                  className="w-full p-2.5 bg-gradient-to-r from-indigo-950/60 to-purple-950/60 border border-indigo-500/40 rounded-xl text-left cursor-pointer transition-all hover:border-indigo-400 flex items-center gap-2.5"
-                >
-                  <Headphones className="w-4 h-4 text-indigo-400 shrink-0" />
-                  <div>
-                    <div className="text-xs font-bold text-indigo-300">Sound & Music Setup</div>
-                    <div className="text-[10px] text-slate-400">Audio Vault, Music Library & Dynamic Ducking</div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('documentary');
-                    setIsMobileDrawerOpen(false);
-                  }}
-                  className="w-full p-2.5 bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-900 border border-emerald-500/40 rounded-xl text-left cursor-pointer transition-all hover:border-emerald-400 flex items-center gap-2.5"
-                >
-                  <DollarSign className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <div>
-                    <div className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
-                      <span>Cinema Vanguard: Financial Stories</span>
-                      <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-900/80 text-emerald-300 font-mono">CHANNEL 4</span>
-                    </div>
-                    <div className="text-[10px] text-slate-400">Wall Street Heists &amp; Bubbles • Daily to YouTube Shorts</div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('documentary');
-                    setIsMobileDrawerOpen(false);
-                  }}
-                  className="w-full p-2.5 bg-gradient-to-r from-amber-950/70 via-slate-900 to-slate-900 border border-amber-500/50 rounded-xl text-left cursor-pointer transition-all hover:border-amber-400 flex items-center gap-2.5"
-                >
-                  <Compass className="w-4 h-4 text-amber-400 shrink-0" />
-                  <div>
-                    <div className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-                      <span>Cinema Vanguard: Documentaries</span>
-                      <span className="text-[9px] px-1 py-0.2 rounded bg-amber-900/80 text-amber-300 font-mono">CHANNEL 4 &amp; TIKTOK</span>
-                    </div>
-                    <div className="text-[10px] text-slate-400">Episodic Mini-Movies, Crime &amp; Archival Mysteries</div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('teen-motivation');
-                    setIsMobileDrawerOpen(false);
-                  }}
-                  className="w-full p-2.5 bg-gradient-to-r from-sky-950/60 to-slate-900 border border-sky-500/40 rounded-xl text-left cursor-pointer transition-all hover:border-sky-400 flex items-center gap-2.5"
-                >
-                  <Flame className="w-4 h-4 text-sky-400 shrink-0" />
-                  <div>
-                    <div className="text-xs font-bold text-sky-300">MindRush: Youth &amp; Teen Motivation</div>
-                    <div className="text-[10px] text-slate-400">Authentic Daily Struggles, Perspective &amp; Fortitude (&gt;25s)</div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('monetization');
-                    setIsMobileDrawerOpen(false);
-                  }}
-                  className="w-full p-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-left cursor-pointer transition-all hover:border-slate-700 flex items-center gap-2.5"
-                >
-                  <Share2 className="w-4 h-4 text-indigo-400 shrink-0" />
-                  <div>
-                    <div className="text-xs font-bold text-indigo-300">Ad Monetization & Multi-Platform</div>
-                    <div className="text-[10px] text-slate-400">Rumble, Dailymotion & Meta</div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('audience-feedback');
-                    setIsMobileDrawerOpen(false);
-                  }}
-                  className="w-full p-2.5 bg-purple-950/40 border border-purple-500/30 rounded-xl text-left cursor-pointer transition-all hover:border-purple-400 flex items-center gap-2.5"
-                >
-                  <HeartHandshake className="w-4 h-4 text-purple-400 shrink-0" />
-                  <div>
-                    <div className="text-xs font-bold text-purple-300">Subscriber Feedback Hub</div>
-                    <div className="text-[10px] text-slate-400">Anti-Cartoon & Emotional Piano Controls</div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('playground');
-                    setIsMobileDrawerOpen(false);
-                  }}
-                  className="w-full p-2.5 bg-emerald-950/40 border border-emerald-500/30 rounded-xl text-left cursor-pointer transition-all hover:border-emerald-400 flex items-center gap-2.5"
-                >
-                  <Atom className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <div>
-                    <div className="text-xs font-bold text-emerald-300">Archie Idea Box</div>
-                    <div className="text-[10px] text-slate-400">Random Science Facts for Students</div>
-                  </div>
-                </button>
+              {/* Quick Channel Stats Overview Strip */}
+              <div className="grid grid-cols-3 gap-1 px-3 py-2.5 bg-slate-950/80 border-b border-slate-800 text-center shrink-0">
+                <div className="p-1 rounded-lg bg-slate-900/60 border border-slate-800/80">
+                  <span className="text-[9px] font-mono text-slate-400 block uppercase">Channels</span>
+                  <span className="text-xs font-bold font-mono text-emerald-400">3 Live</span>
+                </div>
+                <div className="p-1 rounded-lg bg-slate-900/60 border border-slate-800/80">
+                  <span className="text-[9px] font-mono text-slate-400 block uppercase">Vault</span>
+                  <span className="text-xs font-bold font-mono text-indigo-400">{savedCampaigns.length} Videos</span>
+                </div>
+                <div className="p-1 rounded-lg bg-slate-900/60 border border-slate-800/80">
+                  <span className="text-[9px] font-mono text-slate-400 block uppercase">Pace</span>
+                  <span className="text-xs font-bold font-mono text-purple-400">12/Day</span>
+                </div>
               </div>
 
-              {/* Drawer Nav Items */}
-              <nav className="p-3 space-y-1">
-                {navItems.map(tab => {
-                  const Icon = tab.icon;
-                  const isActive = activeTab === tab.id;
-                  return (
+              {/* Search Filter Inside Drawer */}
+              <div className="p-3 border-b border-slate-800 shrink-0">
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+                  <input
+                    type="text"
+                    placeholder="Search studios, tools & channels..."
+                    value={drawerSearchQuery}
+                    onChange={(e) => setDrawerSearchQuery(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-sans"
+                  />
+                  {drawerSearchQuery && (
                     <button
-                      key={tab.id}
-                      onClick={() => {
-                        setActiveTab(tab.id);
-                        setIsMobileDrawerOpen(false);
-                      }}
-                      className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                        isActive
-                          ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-                      }`}
+                      type="button"
+                      onClick={() => setDrawerSearchQuery('')}
+                      className="absolute right-2 top-2 text-slate-400 hover:text-slate-200 p-0.5"
                     >
-                      <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                      <span>{tab.label}</span>
+                      <X className="w-3 h-3" />
                     </button>
-                  );
-                })}
-              </nav>
+                  )}
+                </div>
+              </div>
+
+              {/* Navigation Items (Categorized or Search Filtered) */}
+              <div className="p-3 space-y-4 overflow-y-auto">
+                {(() => {
+                  const groups = [
+                    {
+                      category: 'Channels & Priority Shows',
+                      color: 'text-amber-400',
+                      items: [
+                        { id: 'stoic', label: 'The Stoic Architect (Channel 2)', desc: 'Daily Marcus Aurelius & Fortitude Reels', icon: BookOpen, badge: '4/Day', badgeColor: 'bg-amber-950 text-amber-300 border-amber-800' },
+                        { id: 'archie-preview', label: 'Archie Studio & Environments', desc: 'Creator Desk, Gestures & Visual Stages', icon: GraduationCap, badge: 'Studio', badgeColor: 'bg-emerald-950 text-emerald-300 border-emerald-800' },
+                        { id: 'archie-lab', label: 'Archie Research Lab', desc: 'Everyday Tech Facts & Science Curiosities', icon: Atom, badge: 'Verified', badgeColor: 'bg-teal-950 text-teal-300 border-teal-800' },
+                        { id: 'finance', label: 'Finance Blueprint (Channel 1)', desc: 'Cashflow Leverage & Business Roadmaps', icon: DollarSign, badge: '4/Day', badgeColor: 'bg-emerald-950 text-emerald-300 border-emerald-800' },
+                        { id: 'movie-brand', label: 'Cinema Vanguard (Channel 4)', desc: 'Mini-Movies, Crime & Archival Sagas', icon: Film, badge: 'Stories', badgeColor: 'bg-rose-950 text-rose-300 border-rose-800' },
+                        { id: 'teen-motivation', label: 'MindRush (Channel 5)', desc: 'Perspective, Student Drive & Habits', icon: Flame, badge: 'Youth', badgeColor: 'bg-sky-950 text-sky-300 border-sky-800' },
+                        { id: 'documentary', label: 'Documentary Studio', desc: 'Episodic Wall Street Scandals & Investigations', icon: Compass, badge: 'Series', badgeColor: 'bg-indigo-950 text-indigo-300 border-indigo-800' }
+                      ]
+                    },
+                    {
+                      category: 'Production & Video Queue',
+                      color: 'text-indigo-400',
+                      items: [
+                        { id: 'dashboard', label: 'Overview Dashboard', desc: 'Channel Analytics & Performance Metrics', icon: LayoutDashboard },
+                        { id: 'studio', label: 'Content Creation Studio', desc: 'Autonomous Scripting & 9:16 Video Rendering', icon: Clapperboard },
+                        { id: 'queue', label: 'Production Queue', desc: 'Live Rendering Jobs & Pipeline Status', icon: ListOrdered },
+                        { id: 'vault', label: 'Video Vault & History', desc: 'Completed Rendered Releases & Playback', icon: FolderLock },
+                        { id: 'playground', label: 'Creative Story Lab', desc: 'Rapid Idea Testing & Direct Generation', icon: Sparkles }
+                      ]
+                    },
+                    {
+                      category: 'Sound & Voice Engine',
+                      color: 'text-cyan-400',
+                      items: [
+                        { id: 'sound-setup', label: 'Sound & Audio Studio', desc: 'Music Vault, Ducking & Dynamic Rotation', icon: Headphones, badge: 'Auto-Rotate', badgeColor: 'bg-indigo-950 text-indigo-300 border-indigo-800' },
+                        { id: 'dj', label: 'Voice & Soundboard', desc: 'Studio Pitch, Cadence & Human Vocal Tuning', icon: Headphones },
+                        { id: 'audience-feedback', label: 'Subscriber Feedback & Sentiment', desc: 'Audience Preferences & Audio Controls', icon: HeartHandshake }
+                      ]
+                    },
+                    {
+                      category: 'Growth & Monetization',
+                      color: 'text-emerald-400',
+                      items: [
+                        { id: 'channels', label: 'Channel Manager', desc: 'Audience Metrics & Real-Time Stats', icon: Youtube },
+                        { id: 'pipeline', label: 'Autonomous Publishing Hub', desc: 'Scheduled Daily Video Automation', icon: Workflow },
+                        { id: 'monetization', label: 'Monetization & Syndication', desc: 'Multi-Platform Ad Revenue & Cross-Posting', icon: Share2 },
+                        { id: 'affiliates', label: 'Sponsorships & Affiliates', desc: 'High-Ticket Niche Partner Offers', icon: DollarSign },
+                        { id: 'niches', label: 'Audience Strategy Settings', desc: 'Target Demographics & Retention Frameworks', icon: Sliders },
+                        { id: 'guidelines', label: 'Creator Masterclass', desc: 'Publishing Rules & Virality Playbooks', icon: BookOpen }
+                      ]
+                    },
+                    {
+                      category: 'Workspace & Security',
+                      color: 'text-slate-400',
+                      items: [
+                        { id: 'settings', label: 'Connected Accounts & Keys', desc: 'Cloud Storage, Channel Authorizations & Keys', icon: Settings }
+                      ]
+                    }
+                  ];
+
+                  const query = drawerSearchQuery.trim().toLowerCase();
+
+                  return groups.map((grp) => {
+                    const filteredItems = grp.items.filter(item => {
+                      if (!query) return true;
+                      return item.label.toLowerCase().includes(query) || 
+                             (item.desc && item.desc.toLowerCase().includes(query));
+                    });
+
+                    if (filteredItems.length === 0) return null;
+
+                    return (
+                      <div key={grp.category} className="space-y-1.5">
+                        <div className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 ${grp.color}`}>
+                          {grp.category}
+                        </div>
+                        <div className="space-y-1">
+                          {filteredItems.map(item => {
+                            const Icon = item.icon;
+                            const isActive = activeTab === item.id;
+                            return (
+                              <button
+                                key={item.id}
+                                type="button"
+                                onClick={() => {
+                                  setActiveTab(item.id);
+                                  setIsMobileDrawerOpen(false);
+                                }}
+                                className={`w-full p-2 rounded-xl text-left transition-all cursor-pointer flex items-start gap-2.5 ${
+                                  isActive
+                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+                                    : 'bg-slate-950/60 hover:bg-slate-800/80 border border-slate-800/60 text-slate-300 hover:text-white'
+                                }`}
+                              >
+                                <Icon className={`w-4 h-4 shrink-0 mt-0.5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center justify-between gap-1">
+                                    <span className="text-xs font-bold truncate">{item.label}</span>
+                                    {item.badge && (
+                                      <span className={`text-[9px] px-1.5 py-0.2 rounded-full border font-mono shrink-0 ${isActive ? 'bg-indigo-700 text-white border-indigo-500' : item.badgeColor || 'bg-slate-800 text-slate-400 border-slate-700'}`}>
+                                        {item.badge}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {item.desc && (
+                                    <p className={`text-[10px] truncate ${isActive ? 'text-indigo-100' : 'text-slate-400'}`}>
+                                      {item.desc}
+                                    </p>
+                                  )}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
             </div>
 
             {/* Mobile Drawer Footer */}
-            <div className="p-4 border-t border-slate-800 bg-slate-950/50">
-              <div className="flex items-center justify-between">
-                <div className="truncate pr-2">
+            <div className="p-3.5 border-t border-slate-800 bg-slate-950/80 shrink-0">
+              <div className="flex items-center justify-between gap-2">
+                <div className="truncate min-w-0">
                   <div className="text-[11px] font-bold text-slate-200 truncate">{userEmail}</div>
                   <div className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                    <span>Protected & Locked</span>
+                    <ShieldCheck className="w-3 h-3 text-emerald-400 shrink-0" />
+                    <span className="truncate">Protected & Locked</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <button
+                    type="button"
                     onClick={() => {
                       setIsMobileDrawerOpen(false);
                       onSignOut();
                     }}
                     title="Lock Workspace"
-                    className="p-2 hover:bg-amber-950/40 border border-amber-500/20 rounded-lg text-amber-400 hover:text-amber-300 cursor-pointer flex items-center gap-1 text-[10px] font-bold"
+                    className="p-1.5 sm:p-2 bg-amber-950/40 hover:bg-amber-900/50 border border-amber-500/30 rounded-lg text-amber-400 hover:text-amber-300 cursor-pointer flex items-center gap-1 text-[10px] font-bold"
                   >
                     <Lock className="w-3.5 h-3.5" />
                     <span>Lock</span>
                   </button>
                   <button
+                    type="button"
                     onClick={() => {
                       setIsMobileDrawerOpen(false);
                       onSignOut();
                     }}
                     title="Sign Out"
-                    className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-rose-400 cursor-pointer"
+                    className="p-1.5 sm:p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-rose-400 cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" />
                   </button>
@@ -1270,16 +1202,16 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                   <FolderLock className="w-4 h-4 text-purple-400" />
                 </div>
                 <div className="text-2xl font-black text-white font-mono">{savedCampaigns.length}</div>
-                <div className="text-[10px] text-slate-400 font-mono">Synced to Firestore & Local</div>
+                <div className="text-[10px] text-slate-400 font-mono">Synced to Cloud Storage & Local Vault</div>
               </div>
 
               <div className="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-2">
                 <div className="flex items-center justify-between text-slate-400 text-xs">
-                  <span>Active Cloudinary Preset</span>
+                  <span>Media Cloud Delivery</span>
                   <CloudUpload className="w-4 h-4 text-sky-400" />
                 </div>
                 <div className="text-sm font-bold text-sky-400 font-mono truncate">{keys.cloudinaryUploadPreset || 'phwka7ak'}</div>
-                <div className="text-[10px] text-slate-400 font-mono">Cloud: {keys.cloudinaryCloudName || 'voxawell'}</div>
+                <div className="text-[10px] text-slate-400 font-mono">Storage: {keys.cloudinaryCloudName || 'voxawell'}</div>
               </div>
             </div>
 
@@ -1891,7 +1823,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                     Autonomous Video Production Studio
                   </h2>
                   <p className="text-xs text-slate-400">
-                    High CTR Scripting → 1080x1920 3D Visual Rendering → Cloudinary Unsigned Upload → YouTube Dispatch
+                    Viral Scripting → Vertical 9:16 Visuals → Instant Cloud Storage → YouTube Dispatch
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -2004,7 +1936,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                     <ListOrdered className="w-5 h-5 text-indigo-400" />
                     Autonomous Job Queue & Processing Status
                   </h2>
-                  <p className="text-xs text-slate-400">Live background jobs tracked across Firestore and localStorage</p>
+                  <p className="text-xs text-slate-400">Live background production jobs tracked across Cloud and local storage</p>
                 </div>
                 <button
                   onClick={fetchRealData}
@@ -2067,10 +1999,10 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                 <div>
                   <h2 className="text-base font-bold text-white flex items-center gap-2">
                     <Database className="w-5 h-5 text-emerald-400" />
-                    Database Persistence & Deduplication Audit Log
+                    Storage Persistence & Deduplication Audit Log
                   </h2>
                   <p className="text-xs text-slate-400">
-                    Real-time verification showing all generated campaigns committed to Firestore database and manifest with anti-repeat protections
+                    Real-time verification showing all generated video releases saved with anti-repeat protections
                   </p>
                 </div>
                 <span className="px-3 py-1 bg-emerald-950/80 border border-emerald-800/80 text-emerald-400 text-xs font-mono font-bold rounded-xl flex items-center gap-1.5 self-start sm:self-auto">
@@ -2082,7 +2014,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
               <div className="space-y-2">
                 {savedCampaigns.length === 0 ? (
                   <div className="p-6 bg-slate-950 border border-slate-800/60 rounded-2xl text-center text-xs text-slate-500 font-mono">
-                    No database records found yet. Dispatched jobs will log Firestore write confirmations here.
+                    No saved items yet. New completed videos and dispatches will log confirmation records here.
                   </div>
                 ) : (
                   savedCampaigns.slice(0, 5).map(c => (
@@ -2152,7 +2084,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                       Completed Videos & Campaign Vault ({savedCampaigns.length})
                     </h2>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      Stream rendered 9:16 Shorts with Cloudinary playback, burned-in kinetic typography, and multi-slide scene transitions.
+                      Stream rendered 9:16 Shorts with instant high-speed streaming, dynamic kinetic typography, and multi-slide scene transitions.
                     </p>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
@@ -2161,7 +2093,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                       className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
                     >
                       <RefreshCw className={`w-3.5 h-3.5 ${isLoadingData ? 'animate-spin' : ''}`} />
-                      <span>Sync Firestore & Cloudinary</span>
+                      <span>Sync Cloud Vault &amp; Library</span>
                     </button>
                     <button
                       onClick={handlePurgeOutOfNiche}
@@ -2638,7 +2570,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                   Integration Keys &amp; Presets Configuration
                 </h2>
                 <p className="text-xs text-slate-400 mt-1">
-                  Manage Cloudinary unsigned presets, xAI Grok API key, Groq LPU, Cloudflare Workers AI, and YouTube OAuth credentials.
+                  Manage cloud media storage, creative intelligence keys, voice synthesis, and connected YouTube channels.
                 </p>
               </div>
 
@@ -2646,8 +2578,8 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                 {/* xAI / Grok API Key */}
                 <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-1.5 md:col-span-2">
                   <label className="text-[11px] font-bold text-sky-400 uppercase font-mono flex items-center justify-between">
-                    <span>xAI / Grok API Key (Grok-2 & Grok-Vision)</span>
-                    <span className="text-[9px] text-emerald-400 font-normal">Active & Ready</span>
+                    <span>Creative Intelligence Key (Grok-2 & Vision)</span>
+                    <span className="text-[9px] text-emerald-400 font-normal">Active &amp; Ready</span>
                   </label>
                   <input
                     type="password"
@@ -2660,7 +2592,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
 
                 {/* Gemini API Key */}
                 <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-1.5">
-                  <label className="text-[11px] font-bold text-blue-400 uppercase font-mono">Gemini API Key</label>
+                  <label className="text-[11px] font-bold text-blue-400 uppercase font-mono">Gemini AI Studio Key</label>
                   <input
                     type="password"
                     value={keys.geminiApiKey || ''}
@@ -2673,7 +2605,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                 {/* OpenRouter API Key */}
                 <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <label className="text-[11px] font-bold text-purple-400 uppercase font-mono">OpenRouter API Key</label>
+                    <label className="text-[11px] font-bold text-purple-400 uppercase font-mono">Creative Model Gateway</label>
                     <span className="text-[9px] bg-purple-950 text-purple-300 border border-purple-500/30 px-1.5 py-0.5 rounded font-bold font-mono">
                       Fallback AI for Cartoon
                     </span>
@@ -2692,7 +2624,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
 
                 {/* Hugging Face Token */}
                 <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-1.5">
-                  <label className="text-[11px] font-bold text-yellow-400 uppercase font-mono">HuggingFace Token</label>
+                  <label className="text-[11px] font-bold text-yellow-400 uppercase font-mono">Model Hub Token</label>
                   <input
                     type="password"
                     value={keys.huggingFaceToken || ''}
@@ -2704,7 +2636,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
 
                 {/* Hugging Face Model */}
                 <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-1.5">
-                  <label className="text-[11px] font-bold text-yellow-400 uppercase font-mono">HuggingFace Model</label>
+                  <label className="text-[11px] font-bold text-yellow-400 uppercase font-mono">Custom Model Endpoint</label>
                   <input
                     type="text"
                     value={keys.huggingFaceModel || ''}
@@ -2714,9 +2646,9 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                   />
                 </div>
 
-                {/* Cloudinary Cloud Name */}
+                {/* Media Cloud Account Name */}
                 <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-1.5">
-                  <label className="text-[11px] font-bold text-sky-400 uppercase font-mono">Cloudinary Cloud Name</label>
+                  <label className="text-[11px] font-bold text-sky-400 uppercase font-mono">Media Cloud Account Name</label>
                   <input
                     type="text"
                     value={keys.cloudinaryCloudName || ''}
@@ -2726,9 +2658,9 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                   />
                 </div>
 
-                {/* Cloudinary Unsigned Upload Preset */}
+                {/* Media Upload Preset */}
                 <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-1.5">
-                  <label className="text-[11px] font-bold text-sky-400 uppercase font-mono">Cloudinary Unsigned Preset</label>
+                  <label className="text-[11px] font-bold text-sky-400 uppercase font-mono">Media Upload Preset</label>
                   <input
                     type="text"
                     value={keys.cloudinaryUploadPreset || ''}

@@ -127,8 +127,8 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
     {
       id: 'welcome',
       sender: 'assistant',
-      model: 'xAI Grok & AI Lab',
-      text: "👋 Welcome to the Voxam AI Test Lab! You can test Cloudflare Workers AI TTS (Deepgram Aura-2), chat with Meta Llama 3.3 or xAI Grok, synthesize 1080x1920 visuals with Cloudflare FLUX.1-schnell, and verify your Cloudinary 'voxawell' setup.",
+      model: 'Creative Studio Engine',
+      text: "👋 Welcome to the Creative Studio Lab! Test human vocal styles, generate creative scripts, preview high-definition 9:16 visuals, and verify your cloud media storage.",
       timestamp: new Date().toLocaleTimeString()
     }
   ]);
@@ -157,13 +157,13 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
 
   // Diagnostics State
   const [diagnostics, setDiagnostics] = useState<DiagnosticResult[]>([
-    { service: 'xAI Grok (Active Engine)', status: 'idle', message: 'Grok 4.3 / 4.6 / Grok-2 Failover' },
-    { service: 'Cloudinary Unsigned Preset', status: 'idle', message: "Cloudinary CDN Storage" },
-    { service: 'Groq (OpenAI GPT-OSS / Llama)', status: 'idle', message: 'GPT-OSS 120B / Llama 3.3 70B' },
-    { service: 'Cloudflare Deepgram Aura-2 (Wise Bass)', status: 'idle', message: 'Zeus / Orpheus / Edge Neural Audio Engine' },
-    { service: 'Cloudflare Workers AI (FLUX.1-schnell)', status: 'idle', message: '@cf/black-forest-labs/flux-1-schnell 8K' },
-    { service: 'Cloudflare Workers AI LLM (Llama 3.3)', status: 'idle', message: '@cf/meta/llama-3.3-70b-instruct' },
-    { service: 'Pollinations AI Engine', status: 'idle', message: 'Free Multimodal Image & Text' }
+    { service: 'Creative Intelligence (Active Engine)', status: 'idle', message: 'Script & Hook Synthesis' },
+    { service: 'Cloud Media Storage', status: 'idle', message: "High-Speed Media Hosting & Streaming" },
+    { service: 'Fast Generation Model', status: 'idle', message: 'Instant Script Generation' },
+    { service: 'Studio Neural Voice (Wise Bass)', status: 'idle', message: 'Natural Pitch & Cadence Engine' },
+    { service: 'Ultra Visual Generator', status: 'idle', message: '8K 9:16 Visual Studio' },
+    { service: 'Creative Script Assistant', status: 'idle', message: 'High-Retention Story Engine' },
+    { service: 'Open Media Generator', status: 'idle', message: 'Visual Asset Synthesis' }
   ]);
   const [isTestingAll, setIsTestingAll] = useState<boolean>(false);
   const [pipelineLogs, setPipelineLogs] = useState<Array<{ stage: string; status: 'info' | 'success' | 'warn' | 'error'; message: string; timestamp: string }>>([]);
@@ -350,7 +350,7 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
     try {
       const cloudName = keys.cloudinaryCloudName;
       const uploadPreset = keys.cloudinaryUploadPreset;
-      if (!cloudName || !uploadPreset) throw new Error('Cloudinary Cloud Name & Upload Preset required.');
+      if (!cloudName || !uploadPreset) throw new Error('Cloud storage account & preset profile required.');
 
       // Fetch blob from generated URL
       const response = await fetch(generatedImageUrl);
@@ -358,9 +358,9 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
 
       const hostedUrl = await uploadToCloudinaryUnsigned(blob, cloudName, uploadPreset);
       setCloudinaryUploadResult(hostedUrl);
-      showPlaygroundToast('Asset uploaded to Cloudinary successfully!');
+      showPlaygroundToast('Asset uploaded to cloud media storage successfully!');
     } catch (err: any) {
-      showPlaygroundToast(`Cloudinary upload failed: ${err.message || String(err)}`, true);
+      showPlaygroundToast(`Cloud media upload failed: ${err.message || String(err)}`, true);
     } finally {
       setIsUploadingToCloudinary(false);
     }
@@ -631,9 +631,9 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
 
       const hostedUrl = await uploadToCloudinaryUnsigned(blob, cloudName, uploadPreset);
       setTtsCloudinaryResult(hostedUrl);
-      showPlaygroundToast('Voice asset uploaded to Cloudinary successfully!');
+      showPlaygroundToast('Voice asset uploaded to cloud storage successfully!');
     } catch (err: any) {
-      showPlaygroundToast(`Cloudinary Audio upload failed: ${err.message || String(err)}`, true);
+      showPlaygroundToast(`Audio upload failed: ${err.message || String(err)}`, true);
     } finally {
       setIsUploadingTtsToCloudinary(false);
     }
@@ -642,7 +642,7 @@ export const AiPlayground: React.FC<AiPlaygroundProps> = ({ keys, onSaveKeys }) 
   const handleGenerateTodayIdeas = async () => {
     if (isGeneratingTopics) return;
     setIsGeneratingTopics(true);
-    addLog('Idea Generator', 'info', `Analyzing previous posts in Firestore to avoid duplicates for [${testPostChannel}]...`);
+    addLog('Idea Generator', 'info', `Auditing previous posts in cloud vault to avoid duplicates for [${testPostChannel}]...`);
 
     try {
       // Fetch existing campaigns for this niche to prevent duplicate ideas
