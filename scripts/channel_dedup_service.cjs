@@ -13,6 +13,95 @@
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+const crypto = require('crypto');
+
+const REPO_DEDUP_LOG_PATH = path.join(process.cwd(), 'data', 'topic_dedup_log.json');
+
+/**
+ * Computes a deterministic compact 12-char hex hash from topic/quote text
+ */
+function computeCompactTopicHash(text) {
+  const norm = String(text || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+  return crypto.createHash('sha256').update(norm).digest('hex').slice(0, 12);
+}
+
+/**
+ * Load rolling 30-day deduplication log from repo file, automatically purging entries >30 days old
+ */
+function loadAndPurgeRollingRepoLog(retentionDays = 30) {
+  try {
+    if (!fs.existsSync(REPO_DEDUP_LOG_PATH)) {
+      const initial = {
+        version: 1,
+        retentionDays,
+        lastPurgedAt: new Date().toISOString(),
+        entries: []
+      };
+      const dir = path.dirname(REPO_DEDUP_LOG_PATH);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(REPO_DEDUP_LOG_PATH, JSON.stringify(initial, null, 2), 'utf8');
+      return initial;
+    }
+
+    const data = JSON.parse(fs.readFileSync(REPO_DEDUP_LOG_PATH, 'utf8'));
+    const entries = Array.isArray(data.entries) ? data.entries : [];
+    const now = Date.now();
+    const cutoff = now - (retentionDays * 24 * 60 * 60 * 1000);
+
+    const freshEntries = entries.filter(e => {
+      const t = new Date(e.timestamp || 0).getTime();
+      return !isNaN(t) && t >= cutoff;
+    });
+
+    // If any items were purged or more than 24h since last purge, rewrite file cleanly
+    if (freshEntries.length !== entries.length || !data.lastPurgedAt) {
+      data.entries = freshEntries;
+      data.lastPurgedAt = new Date().toISOString();
+      fs.writeFileSync(REPO_DEDUP_LOG_PATH, JSON.stringify(data, null, 2), 'utf8');
+    }
+
+    return data;
+  } catch (err) {
+    console.warn(`[Anti-Spam Dedup] Warning reading rolling repo log: ${err.message}`);
+    return { version: 1, retentionDays, lastPurgedAt: new Date().toISOString(), entries: [] };
+  }
+}
+
+/**
+ * Append newly posted topic to the rolling 30-day repository log with hash
+ */
+function recordToRollingRepoLog(channelKey, topicText) {
+  try {
+    const log = loadAndPurgeRollingRepoLog(30);
+    const hash = computeCompactTopicHash(topicText);
+    const cleanTopic = String(topicText || '').trim().slice(0, 100);
+
+    // Check if hash already present
+    const exists = log.entries.some(e => e.hash === hash && e.channel === channelKey);
+    if (!exists) {
+      log.entries.push({
+        hash,
+        channel: channelKey,
+        topic: cleanTopic,
+        timestamp: new Date().toISOString()
+      });
+      // Keep most recent 500 entries max to prevent excessive file size
+      if (log.entries.length > 500) {
+        log.entries = log.entries.slice(-500);
+      }
+      const dir = path.dirname(REPO_DEDUP_LOG_PATH);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(REPO_DEDUP_LOG_PATH, JSON.stringify(log, null, 2), 'utf8');
+      console.log(`[Anti-Spam Dedup] 📝 Logged topic hash "${hash}" to repo rolling log (Total active: ${log.entries.length})`);
+    }
+    return true;
+  } catch (err) {
+    console.warn(`[Anti-Spam Dedup] Warning writing to rolling repo log: ${err.message}`);
+    return false;
+  }
+}
 
 function getFirestoreConfig() {
   const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
@@ -58,15 +147,12 @@ function getFirestoreConfig() {
 }
 
 /**
- * Fetch recent quote history from Firestore REST API with cross-channel awareness
+ * Fetch recent quote history from Firestore REST API and repository rolling 30-day log with cross-channel awareness
  */
 async function fetchRemoteHistory(channelKey) {
-  const config = getFirestoreConfig();
-  if (!config) return [];
-
-  const url = `https://firestore.googleapis.com/v1/projects/${config.projectId}/databases/${config.databaseId}/documents/channel_post_history?pageSize=100&key=${config.apiKey}`;
-
-  // Channels to cross-check:
+  // 1. Always load repository committed rolling log first (100% offline & GitHub-Actions resilient)
+  const repoLog = loadAndPurgeRollingRepoLog(30);
+  const repoResults = [];
   const relevantChannels = new Set([channelKey]);
   if (channelKey === 'finance' || channelKey === 'fin') {
     relevantChannels.add('finance');
@@ -89,6 +175,23 @@ async function fetchRemoteHistory(channelKey) {
     ['driftreel', 'driftreel_documentary', 'documentary_movie', 'documentary'].forEach(c => relevantChannels.add(c));
   }
 
+  for (const entry of (repoLog.entries || [])) {
+    if (!entry.channel || relevantChannels.has(entry.channel)) {
+      repoResults.push({
+        quote: entry.topic || '',
+        author: '',
+        channel: entry.channel || channelKey,
+        timestamp: entry.timestamp || '',
+        hash: entry.hash
+      });
+    }
+  }
+
+  const config = getFirestoreConfig();
+  if (!config) return repoResults;
+
+  const url = `https://firestore.googleapis.com/v1/projects/${config.projectId}/databases/${config.databaseId}/documents/channel_post_history?pageSize=100&key=${config.apiKey}`;
+
   return new Promise((resolve) => {
     const req = https.get(url, { timeout: 7000 }, (res) => {
       let data = '';
@@ -98,7 +201,7 @@ async function fetchRemoteHistory(channelKey) {
           if (res.statusCode >= 200 && res.statusCode < 300) {
             const parsed = JSON.parse(data);
             const docs = parsed.documents || [];
-            const results = [];
+            const results = [...repoResults];
             for (const doc of docs) {
               const f = doc.fields || {};
               const ch = f.channel?.stringValue || '';
@@ -113,15 +216,15 @@ async function fetchRemoteHistory(channelKey) {
             }
             resolve(results);
           } else {
-            resolve([]);
+            resolve(repoResults);
           }
         } catch {
-          resolve([]);
+          resolve(repoResults);
         }
       });
     });
-    req.on('error', () => resolve([]));
-    req.on('timeout', () => { req.destroy(); resolve([]); });
+    req.on('error', () => resolve(repoResults));
+    req.on('timeout', () => { req.destroy(); resolve(repoResults); });
   });
 }
 
@@ -291,6 +394,16 @@ async function recordPostedCandidate(channelKey, quote, author, metadata = {}) {
     fs.writeFileSync(rootQuotePath, JSON.stringify(rootList.slice(-200), null, 2));
   } catch (e) {}
 
+  // 1c. Update rolling 30-day repository commit log (with automatic 30-day purge)
+  try {
+    const topicText = quote || metadata.theme || metadata.title || '';
+    if (topicText) {
+      recordToRollingRepoLog(channelKey, topicText);
+    }
+  } catch (e) {
+    console.warn(`[Anti-Spam Engine] Rolling repo log update notice: ${e.message}`);
+  }
+
   // 2. Persist to Firestore database
   const config = getFirestoreConfig();
   if (!config) return false;
@@ -323,7 +436,7 @@ async function recordPostedCandidate(channelKey, quote, author, metadata = {}) {
       res.on('data', d => data += d);
       res.on('end', () => {
         if (res.statusCode >= 200 && res.statusCode < 300) {
-          console.log(`[Anti-Spam Engine] 🔒 Logged quote to Firestore (Doc ID: ${docId}) - Zero git commits made.`);
+          console.log(`[Anti-Spam Engine] 🔒 Logged quote to Firestore (Doc ID: ${docId}) and committed to 30-day rolling log.`);
           resolve(true);
         } else {
           resolve(false);
@@ -340,5 +453,8 @@ async function recordPostedCandidate(channelKey, quote, author, metadata = {}) {
 module.exports = {
   selectDeduplicatedCandidate,
   recordPostedCandidate,
-  calculateJaccardSimilarity
+  calculateJaccardSimilarity,
+  loadRollingRepoHistory: loadAndPurgeRollingRepoLog,
+  recordToRollingRepoLog,
+  computeCompactTopicHash
 };

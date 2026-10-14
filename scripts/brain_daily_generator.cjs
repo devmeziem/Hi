@@ -62,7 +62,7 @@ function isDuplicateTopic(newTopic) {
 const NICHES = [
   {
     id: 'finance_saas',
-    channelName: 'Fin Blueprint (@bones_ceo)',
+    channelName: 'Fin Blueprint',
     displayName: 'Fin Blueprint',
     slots: [
       {
@@ -105,7 +105,7 @@ const NICHES = [
   },
   {
     id: 'motivation_stoicism',
-    channelName: 'The Stoic Architect (@thestoicarchitect-n4b)',
+    channelName: 'The Stoic Architect',
     displayName: 'The Stoic Architect',
     slots: [
       {
@@ -140,7 +140,7 @@ const NICHES = [
   },
   {
     id: 'tech_ai',
-    channelName: 'Godswill Isaac (@bonesceo)',
+    channelName: 'Godswill Isaac',
     displayName: 'Godswill Isaac',
     slots: [
       {

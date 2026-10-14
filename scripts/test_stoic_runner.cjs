@@ -1291,7 +1291,7 @@ async function generateStoicStoryboard(topic, activeGrok, backupEngines) {
   scriptData.title = formatViralShortsTitle(scriptData.title || activeTopic || 'Stoic Rule for Mental Strength', 'stoic', isDeepDive);
 
   if (!scriptData.description) {
-    scriptData.description = `${scriptData.title}\n\nDaily timeless wisdom and stoic mindset strategies with The Stoic Architect (@thestoicarchitect-n4b).\n\n#Stoic #Shorts #viral #trending #MarcusAurelius #Discipline #Mindset #Philosophy #fyp`;
+    scriptData.description = `${scriptData.title}\n\nDaily timeless wisdom and stoic mindset strategies. Follow for more.\n\n#Stoic #Shorts #viral #trending #MarcusAurelius #Discipline #Mindset #Philosophy #fyp`;
   }
 
   console.log(`\n  ${colors.bright}Generated Complete Storyboard Breakdown:${colors.reset}`);
@@ -2151,7 +2151,7 @@ async function handleYouTubePublish(storyboard, renderResult) {
       const metadata = JSON.stringify({
         snippet: {
           title: uploadTitle,
-          description: `${(storyboard.description || uploadTitle).trim()}\n\nDaily timeless wisdom and stoic mindset strategies with The Stoic Architect (@thestoicarchitect-n4b).\n\n#Stoic #Shorts #viral #trending #MarcusAurelius #Discipline #Mindset #Philosophy #fyp`,
+          description: `${(storyboard.description || uploadTitle).trim()}\n\nDaily timeless wisdom and stoic mindset strategies. Follow for more.\n\n#Stoic #Shorts #viral #trending #MarcusAurelius #Discipline #Mindset #Philosophy #fyp`,
           tags: cleanTags,
           categoryId: '27' // Education
         },
@@ -2258,9 +2258,9 @@ async function postYouTubePinnedComment(accessToken, videoId, storyboard, niche 
 
   let commentText = '';
   if (niche === 'stoic') {
-    commentText = `Daily Reflection Question: What is one situation today where choosing calm silence and self-discipline will protect your peace? Drop your answer below 👇\n\nStay focused, stay disciplined. Subscribe to @TheStoicArchitect for daily mental fortitude!`;
+    commentText = `Daily Reflection Question: What is one situation today where choosing calm silence and self-discipline will protect your peace? Drop your answer below 👇\n\nStay focused, stay disciplined. Follow for more daily mental fortitude!`;
   } else {
-    commentText = `Question for you: Which of these practical business models would you test first with minimal capital? Share your thoughts below 👇\n\nSave this blueprint & subscribe to @bones_ceo for daily practical wealth breakdowns!`;
+    commentText = `Question for you: Which of these practical business models would you test first with minimal capital? Share your thoughts below 👇\n\nSave this blueprint & follow for more daily practical wealth breakdowns!`;
   }
 
   logInfo(`[Pinned Comment] Posting engaging top-level comment on YouTube video (${videoId})...`);

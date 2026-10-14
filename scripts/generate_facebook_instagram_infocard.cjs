@@ -457,7 +457,7 @@ ${item.proTip}
 ${item.reference}
 
 💬 Have you ever noticed this in everyday life? Share your thoughts below!
-👉 Follow Archie Lab & @bones_ceo for daily everyday science & technology breakdowns.
+👉 Follow for more daily everyday science & technology breakdowns.
 📌 Save this post so you have it ready to share with friends!
 
 ${algorithmOptimizedHashtags}`;
@@ -485,7 +485,7 @@ ${item.proTip}
 📖 Verified Citation: ${item.reference}
 
 💬 What everyday mystery should Archie explain next? Let us know in the comments!
-👉 Follow @bones_ceo for daily science & tech insights
+👉 Follow for more daily science & tech insights
 📌 Tap save so you can revisit this anytime!
 
 .

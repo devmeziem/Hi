@@ -57,8 +57,8 @@ const CHANNEL_CONFIG = {
   },
   teen_motivation: {
     key: 'teen_motivation',
-    handle: process.env.YOUTUBE_HANDLE_CH5 || process.env.YOUTUBE_HANDLE_TEEN || '@MindRushOfficial',
-    name: 'MindRush Motivation',
+    handle: process.env.YOUTUBE_HANDLE_CH5 || process.env.YOUTUBE_HANDLE_TEEN || '@bonesceo',
+    name: 'BonesCEO Motivation',
     isPrimary: false,
     clientId: process.env.YOUTUBE_CLIENT_ID_CH5 || process.env.YOUTUBE_CLIENT_ID_TEEN || '',
     clientSecret: process.env.YOUTUBE_CLIENT_SECRET_CH5 || process.env.YOUTUBE_CLIENT_SECRET_TEEN || '',
@@ -113,38 +113,40 @@ function sanitizeVideoDescription(rawDesc = '', cta = '', tags = []) {
 }
 
 /**
- * Format dynamic Follow / Subscribe CTA using real synced username (never preset or hardcoded)
+ * Format clean generic Follow / Subscribe CTA (No @username handles per user instruction)
  */
-function formatChannelFollowCta(channelKey, syncedHandle, syncedTitle) {
-  const handle = syncedHandle || (syncedTitle ? `@${syncedTitle.replace(/\s+/g, '')}` : '');
-  const targetLabel = handle ? handle : 'this channel';
+function formatChannelFollowCta(channelKey) {
+  const k = String(channelKey || '').toLowerCase();
 
-  if (channelKey === 'motivation_stoicism' || channelKey === 'ch2' || channelKey === 'stoic') {
-    return `🏛️ Subscribe to ${targetLabel} for daily Stoic wisdom, mental fortitude, and timeless philosophy.`;
-  } else if (channelKey === 'cartoon_factory' || channelKey === 'ch3' || channelKey === 'tech') {
-    return `🎬 Subscribe to ${targetLabel} for fast, animated breakdowns of AI, Future Tech, and Science mysteries!`;
-  } else if (channelKey === 'movie_brand' || channelKey === 'ch4' || channelKey === 'documentary') {
-    return `🏛️ Subscribe to ${targetLabel} for deep archival documentaries, untold historical chronicles, and cinematic retrospectives.`;
+  if (k.includes('stoic') || k === 'ch2') {
+    return `🏛️ Subscribe for daily Stoic wisdom, mental fortitude, and timeless philosophy.`;
+  } else if (k.includes('cartoon') || k.includes('tech') || k === 'ch3' || k.includes('archie')) {
+    return `🎬 Follow for fast, animated breakdowns of AI, Future Tech, and Science mysteries!`;
+  } else if (k.includes('movie') || k.includes('cinema') || k === 'ch4' || k.includes('doc')) {
+    return `🏛️ Follow for deep archival documentaries, untold historical chronicles, and cinematic retrospectives.`;
+  } else if (k.includes('teen') || k.includes('mindrush') || k === 'ch5' || k.includes('bonesceo')) {
+    return `⚡ Follow for daily mental fortitude, habit systems, and unstoppable youth discipline.`;
   } else {
-    return `📈 Subscribe to ${targetLabel} for daily financial quotes, wealth principles, and money mindset.`;
+    return `📈 Follow for daily financial clarity, wealth principles, and money mindset.`;
   }
 }
 
 /**
- * Format dynamic Pinned Comment using real synced username (never preset or hardcoded)
+ * Format clean generic Pinned Comment (No @username handles per user instruction)
  */
-function formatChannelPinnedComment(channelKey, syncedHandle, syncedTitle) {
-  const handle = syncedHandle || (syncedTitle ? `@${syncedTitle.replace(/\s+/g, '')}` : '');
-  const targetLabel = handle ? handle : 'the channel';
+function formatChannelPinnedComment(channelKey) {
+  const k = String(channelKey || '').toLowerCase();
 
-  if (channelKey === 'motivation_stoicism' || channelKey === 'ch2' || channelKey === 'stoic') {
-    return `📌 "No person is free who is not master of himself." How do you apply this Stoic wisdom today? Subscribe to ${targetLabel} for daily fortitude.`;
-  } else if (channelKey === 'cartoon_factory' || channelKey === 'ch3' || channelKey === 'tech') {
-    return `📌 What curious tech, AI, or science question should Archie animate next? Drop your ideas below and subscribe to ${targetLabel}!`;
-  } else if (channelKey === 'movie_brand' || channelKey === 'ch4' || channelKey === 'documentary') {
-    return `📌 What historical era or untold documentary event should we cover next? Leave a comment and subscribe to ${targetLabel}!`;
+  if (k.includes('stoic') || k === 'ch2') {
+    return `📌 "No person is free who is not master of himself." How do you apply this Stoic wisdom today? Follow for daily fortitude.`;
+  } else if (k.includes('cartoon') || k.includes('tech') || k === 'ch3' || k.includes('archie')) {
+    return `📌 What curious tech, AI, or science question should Archie animate next? Drop your ideas below and follow for more!`;
+  } else if (k.includes('movie') || k.includes('cinema') || k === 'ch4' || k.includes('doc')) {
+    return `📌 What historical era or untold documentary event should we cover next? Leave a comment and follow for more!`;
+  } else if (k.includes('teen') || k.includes('mindrush') || k === 'ch5' || k.includes('bonesceo')) {
+    return `📌 Lock in. What is one habit promise you will keep to yourself today? Share your thoughts below and follow for daily motivation!`;
   } else {
-    return `📌 Official Wealth Education & Financial Tools: https://lanecash.name.ng\n\nPreserve your hard-earned capital, master disciplined investing principles, and protect your finances against modern scams.\n\nSubscribe to ${targetLabel} for daily wealth wisdom!`;
+    return `📌 Official Wealth Education & Financial Tools: https://lanecash.name.ng\n\nPreserve your hard-earned capital, master disciplined investing principles, and protect your finances against modern scams.\n\nFollow for daily wealth wisdom!`;
   }
 }
 
@@ -196,7 +198,6 @@ async function getSyncedChannelProfile(accessToken) {
 CHANNEL_CONFIG.tech = CHANNEL_CONFIG.cartoon_factory;
 CHANNEL_CONFIG.tech_channel = CHANNEL_CONFIG.cartoon_factory;
 CHANNEL_CONFIG.channel_tech_03 = CHANNEL_CONFIG.cartoon_factory;
-CHANNEL_CONFIG.bonesceo = CHANNEL_CONFIG.cartoon_factory;
 CHANNEL_CONFIG.cartoon = CHANNEL_CONFIG.cartoon_factory;
 CHANNEL_CONFIG.cartoons = CHANNEL_CONFIG.cartoon_factory;
 CHANNEL_CONFIG.ch3 = CHANNEL_CONFIG.cartoon_factory;
@@ -204,6 +205,10 @@ CHANNEL_CONFIG.ch2 = CHANNEL_CONFIG.motivation_stoicism;
 CHANNEL_CONFIG.stoic = CHANNEL_CONFIG.motivation_stoicism;
 CHANNEL_CONFIG.ch1 = CHANNEL_CONFIG.finance_saas;
 CHANNEL_CONFIG.fin = CHANNEL_CONFIG.finance_saas;
+CHANNEL_CONFIG.bonesceo = CHANNEL_CONFIG.teen_motivation;
+CHANNEL_CONFIG.ch5 = CHANNEL_CONFIG.teen_motivation;
+CHANNEL_CONFIG.teen = CHANNEL_CONFIG.teen_motivation;
+CHANNEL_CONFIG.mindrush = CHANNEL_CONFIG.teen_motivation;
 
 /**
  * Exchange OAuth Refresh Token for a fresh Google API Access Token
@@ -263,7 +268,16 @@ async function getAccessToken(refreshToken, customClientId, customClientSecret) 
  */
 async function uploadToYouTube(accessToken, videoFilePath, title, description, tags, channelKey = 'finance_saas') {
   return new Promise((resolve) => {
-    const cleanTitle = formatViralShortsTitle(title, channelKey === 'motivation_stoicism' ? 'stoic' : 'fin');
+    const ck = String(channelKey || '').toLowerCase();
+    let niche = 'fin';
+    if (ck.includes('stoic') || ck === 'ch2') niche = 'stoic';
+    else if (ck.includes('cartoon') || ck.includes('archie') || ck.includes('tech') || ck === 'ch3') niche = 'tech';
+    else if (ck.includes('movie') || ck.includes('cinema') || ck.includes('doc') || ck === 'ch4') niche = 'documentary';
+    else if (ck.includes('teen') || ck.includes('mindrush') || ck.includes('bonesceo') || ck === 'ch5') niche = 'teen';
+
+    const cleanTitle = (title && /#\w+/.test(title))
+      ? String(title).trim().slice(0, 98)
+      : formatViralShortsTitle(title, niche);
     const cleanDescription = (description || cleanTitle).trim();
     const cleanTags = Array.from(new Set([...(tags || []), 'Shorts', 'viral', 'trending', 'fyp']))
       .map(t => String(t).replace(/^#/, '').replace(/[^a-zA-Z0-9 ]/g, '').trim())

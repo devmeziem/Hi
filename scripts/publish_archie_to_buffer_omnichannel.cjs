@@ -372,8 +372,9 @@ async function resolveTargetChannels(discovered) {
  * Locate the latest Archie video file (fact reel or full cartoon episode)
  */
 function findLatestArchieVideo(preferredPath = null) {
-  if (preferredPath && fs.existsSync(preferredPath)) {
-    return preferredPath;
+  const target = preferredPath || process.env.VIDEO_PATH || process.env.INPUT_VIDEO_PATH;
+  if (target && fs.existsSync(target)) {
+    return target;
   }
 
   const roots = [
@@ -663,16 +664,13 @@ function buildOmnichannelCaption(metadata = {}, service = 'generic') {
   }
 
   if (service === 'instagram') {
-    const { getChannelMeta } = require('./channel_verifier.cjs');
-    const ch3Meta = getChannelMeta('ch3');
-    const followTarget = ch3Meta.hasHandle ? ch3Meta.handle : 'our channel';
     const igTags = Array.from(new Set([...baseTags, '#ReelsInstagram', '#ScienceReels', '#ScienceFacts', '#DidYouKnow', '#ArchieLab', '#InstaScience', '#ViralScience', '#LifeHacks', '#STEMEducation', '#Shorts']));
-    return cleanDescription(`⚡ ${hook}\n\n${explanation}\n\n${takeaway ? takeaway + '\n\n' : ''}${citation}${vocabSection}${trendingSection}\n\n💾 Save this post for later and share with a friend who needs to see this!\n\nFollow ${followTarget} for daily science & tech breakthroughs.\n\n${igTags.join(' ')}`);
+    return cleanDescription(`⚡ ${hook}\n\n${explanation}\n\n${takeaway ? takeaway + '\n\n' : ''}${citation}${vocabSection}${trendingSection}\n\n💾 Save this post for later and share with a friend who needs to see this!\n\nFollow for more daily science & tech breakthroughs.\n\n${igTags.join(' ')}`);
   }
 
   if (service === 'facebook') {
     const fbTags = Array.from(new Set([...baseTags, '#FacebookReels', '#ScienceFacts', '#DidYouKnow', '#ScienceExplained', '#EverydayScience', '#LifeHacks', '#ArchieLab', '#Shorts']));
-    return cleanDescription(`⚡ ${cleanTitle.toUpperCase()}\n\n${hook}\n\n${explanation}\n\n${takeaway ? takeaway + '\n\n' : ''}${citation}${vocabSection}${trendingSection}\n\n👉 Follow Archie Lab for daily visual science breakdowns!\n\n${fbTags.join(' ')}`);
+    return cleanDescription(`⚡ ${cleanTitle.toUpperCase()}\n\n${hook}\n\n${explanation}\n\n${takeaway ? takeaway + '\n\n' : ''}${citation}${vocabSection}${trendingSection}\n\n👉 Follow for more daily visual science breakdowns!\n\n${fbTags.join(' ')}`);
   }
 
   return cleanDescription(`⚡ ${hook}\n\n${explanation}\n\n${takeaway ? takeaway + '\n\n' : ''}${citation}${vocabSection}${trendingSection}\n\n${baseTags.join(' ')}`);

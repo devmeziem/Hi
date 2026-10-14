@@ -81,12 +81,18 @@ function formatViralShortsTitle(rawHeadline, nicheOrCategory = 'fin', isDeepDive
   // 2. Select curated viral & trending hashtags for this niche
   const lower = (nicheOrCategory || '').toLowerCase();
   let tagPool = [];
-  if (lower.includes('fin') || lower.includes('money') || lower.includes('business') || lower.includes('wealth')) {
-    tagPool = ['#Shorts', '#SideHustle', '#CreatorEconomy', '#MakeMoneyOnline', '#PhoneHustle', '#viral', '#trending', '#fyp'];
-  } else if (lower.includes('stoic') || lower.includes('mind') || lower.includes('discipline') || lower.includes('motivation')) {
-    tagPool = ['#Shorts', '#viral', '#trending', '#stoic', '#mindset', '#discipline', '#motivation', '#fyp'];
+  if (lower.includes('cartoon') || lower.includes('archie') || lower.includes('science') || lower.includes('physics')) {
+    tagPool = ['#Shorts', '#ArchieExplains', '#ScienceFacts', '#EverydayTech', '#Physics', '#viral', '#trending', '#fyp'];
   } else if (lower.includes('tech') || lower.includes('ai') || lower.includes('code') || lower.includes('developer')) {
     tagPool = ['#Shorts', '#viral', '#trending', '#ai', '#tech', '#coding', '#developer', '#fyp'];
+  } else if (lower.includes('doc') || lower.includes('movie') || lower.includes('cinema') || lower.includes('history')) {
+    tagPool = ['#Shorts', '#CinemaVanguard', '#Documentary', '#History', '#UntoldHistory', '#viral', '#trending', '#fyp'];
+  } else if (lower.includes('teen') || lower.includes('youth') || lower.includes('apex') || lower.includes('mindrush')) {
+    tagPool = ['#Shorts', '#TeenMotivation', '#LockIn', '#Mindset', '#Discipline', '#viral', '#trending', '#fyp'];
+  } else if (lower.includes('stoic') || lower.includes('mind') || lower.includes('discipline') || lower.includes('philosophy')) {
+    tagPool = ['#Shorts', '#viral', '#trending', '#stoic', '#mindset', '#discipline', '#motivation', '#fyp'];
+  } else if (lower.includes('fin') || lower.includes('money') || lower.includes('business') || lower.includes('wealth') || lower.includes('saas')) {
+    tagPool = ['#Shorts', '#SideHustle', '#CreatorEconomy', '#MakeMoneyOnline', '#PhoneHustle', '#viral', '#trending', '#fyp'];
   } else {
     tagPool = ['#Shorts', '#viral', '#trending', '#fyp', '#explore'];
   }

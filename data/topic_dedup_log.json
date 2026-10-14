@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "retentionDays": 30,
+  "lastPurgedAt": "2026-10-14T12:00:00.000Z",
+  "entries": [
+    {
+      "hash": "7f8b9c1d2e3f",
+      "channel": "fin",
+      "topic": "Zero-Overhead Micro Distribution Model",
+      "timestamp": "2026-10-14T06:00:00.000Z"
+    },
+    {
+      "hash": "3a4b5c6d7e8f",
+      "channel": "stoic",
+      "topic": "The Dignity of Unacknowledged Labor and Calm Silence",
+      "timestamp": "2026-10-14T06:00:00.000Z"
+    },
+    {
+      "hash": "1b2c3d4e5f6a",
+      "channel": "cartoon",
+      "topic": "Why Aerodynamic Winglets Slash Jet Fuel Consumption",
+      "timestamp": "2026-10-14T06:00:00.000Z"
+    },
+    {
+      "hash": "9c8b7a6f5e4d",
+      "channel": "documentary",
+      "topic": "The 1942 Ghost Blimp Vanishing Over the Pacific",
+      "timestamp": "2026-10-14T06:00:00.000Z"
+    },
+    {
+      "hash": "5d4c3b2a1f0e",
+      "channel": "teen_motivation",
+      "topic": "Breaking the 1 AM Doomscrolling Loop and Morning Reset",
+      "timestamp": "2026-10-14T06:00:00.000Z"
+    }
+  ]
+}

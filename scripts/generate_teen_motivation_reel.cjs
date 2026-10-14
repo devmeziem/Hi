@@ -431,6 +431,30 @@ function generateMotivationSfxWav(outWavPath, duration = 35.0) {
 }
 
 /**
+ * Synthesize Warm Ambient Piano & Emotional Pad Soundtrack (Guaranteed BGM)
+ */
+function generateMotivationalSynthSoundtrack(outWavPath, duration = 35.0) {
+  // Emotive progression: Dm9 (146.83) -> Bbmaj7 (116.54) -> Fmaj7 (174.61) -> C9 (130.81)
+  const baseFreqs = [146.83, 116.54, 174.61, 130.81];
+  const chords = baseFreqs.map(f =>
+    `(sin(2*PI*${f.toFixed(2)}*t)*0.16 + sin(2*PI*${(f * 2).toFixed(2)}*t)*0.11 + sin(2*PI*${(f * 2.5).toFixed(2)}*t)*0.09 + sin(2*PI*${(f * 3).toFixed(2)}*t)*0.06)*exp(-0.6*mod(t,4.0))`
+  );
+  const part = (duration / 4).toFixed(2);
+  const p2 = (part * 2).toFixed(2);
+  const p3 = (part * 3).toFixed(2);
+  const padExpr = `if(lt(t,${part}), ${chords[0]}, if(lt(t,${p2}), ${chords[1]}, if(lt(t,${p3}), ${chords[2]}, ${chords[3]})))`;
+  const filter = `lowpass=f=1200,afade=t=in:st=0:d=1.5,afade=t=out:st=${Math.max(0, duration - 2.0).toFixed(2)}:d=2.0`;
+
+  try {
+    execSync(`ffmpeg -y -f lavfi -i "aevalsrc='${padExpr}':s=44100:d=${duration.toFixed(2)}" -af "${filter}" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
+    return outWavPath;
+  } catch {
+    execSync(`ffmpeg -y -f lavfi -i "anoisesrc=d=${duration.toFixed(2)}:c=pink:a=0.012" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
+    return outWavPath;
+  }
+}
+
+/**
  * Main Generator: Build 1 High-Impact Teen Motivation Video (>25s)
  */
 async function generateTeenMotivationReel() {
@@ -538,6 +562,14 @@ async function synthesizeResilientVoice(text, outWavPath, voice = 'en-US-AndrewN
     bgMusicPath = fetchedAudio.localPath;
   }
 
+  // Guaranteed Background Music: Never output silent background audio
+  if (!bgMusicPath || !fs.existsSync(bgMusicPath)) {
+    console.log(`[Audio Sourcing] 🎹 Synthesizing rich ambient pad & piano backing track (${totalDuration.toFixed(1)}s)...`);
+    const synthBgm = path.join(ARTIFACTS_DIR, `teen_bgm_${Date.now()}.wav`);
+    generateMotivationalSynthSoundtrack(synthBgm, totalDuration);
+    if (fs.existsSync(synthBgm)) bgMusicPath = synthBgm;
+  }
+
   const sfxWav = path.join(ARTIFACTS_DIR, `sfx_${Date.now()}.wav`);
   generateMotivationSfxWav(sfxWav, totalDuration);
 
@@ -561,13 +593,14 @@ async function synthesizeResilientVoice(text, outWavPath, voice = 'en-US-AndrewN
     }
     const visualPath = visual?.localPath || path.join(process.cwd(), 'src', 'assets', 'images', 'mindrush_studio_bg_1790502544405.jpg');
 
-    // Compile Single Scene MP4 with Dynamic Ken Burns Camera Drift & Color Grading
+    // Compile Single Scene MP4 with Dynamic Ken Burns Camera Drift, Color Grading, and Smooth Scene Fades
     const sceneMp4 = path.join(ARTIFACTS_DIR, `scene_${i}.mp4`);
     const zoomDirection = i % 2 === 0
       ? `min(zoom+0.0007,1.18)`
       : `max(1.18-0.0007*on,1.0)`;
     const panX = i % 2 === 0 ? `'(iw-iw/zoom)*0.3'` : `'(iw-iw/zoom)*0.7'`;
-    const filter = `[0:v]scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276,zoompan=z='${zoomDirection}':d=${Math.round(secPerSection * 30)}:x=${panX}:y='(ih-ih/zoom)*0.3':s=1080x1920:fps=30,eq=brightness=-0.04:contrast=1.12:saturation=0.92[v]`;
+    const fadeOutSt = Math.max(0, secPerSection - 0.35).toFixed(2);
+    const filter = `[0:v]scale=1280:2276:force_original_aspect_ratio=increase,crop=1280:2276,zoompan=z='${zoomDirection}':d=${Math.round(secPerSection * 30)}:x=${panX}:y='(ih-ih/zoom)*0.3':s=1080x1920:fps=30,eq=brightness=-0.04:contrast=1.12:saturation=0.92,fade=t=in:st=0:d=0.35,fade=t=out:st=${fadeOutSt}:d=0.35[v]`;
     execSync(`ffmpeg -y -loop 1 -t ${secPerSection.toFixed(2)} -i "${visualPath}" -filter_complex "${filter}" -map "[v]" -c:v libx264 -preset fast -pix_fmt yuv420p -r 30 -t ${secPerSection.toFixed(2)} "${sceneMp4}" 2>/dev/null`);
     sceneInputs.push(sceneMp4);
   }
@@ -649,12 +682,12 @@ async function synthesizeResilientVoice(text, outWavPath, voice = 'en-US-AndrewN
     try {
       const { uploadYouTubeShort } = require('./youtube_channel_dispatcher.cjs');
       const viralTitle = `${scriptData.title} • Lock In #Shorts`;
-      const viralDesc = `⚡ Youth & Teen Motivation: ${scriptData.theme}\n\n${spokenText}\n\n🎯 Follow @ApexDiscipline for daily mental fortitude, habit systems & unstoppable discipline.\n\n#TeenMotivation #ApexDiscipline #LockIn #Mindset #SelfImprovement #Focus #Shorts`;
+      const viralDesc = `⚡ Youth & Teen Motivation: ${scriptData.theme}\n\n${spokenText}\n\n🎯 Follow for daily mental fortitude, habit systems & unstoppable youth discipline.\n\n#TeenMotivation #LockIn #Mindset #SelfImprovement #Focus #Shorts`;
       await uploadYouTubeShort({
         videoPath: finalMp4Path,
         title: viralTitle,
         description: viralDesc,
-        tags: ['#TeenMotivation', '#ApexDiscipline', '#LockIn', '#Mindset', '#Focus', '#Shorts'],
+        tags: ['#TeenMotivation', '#LockIn', '#Mindset', '#Focus', '#Discipline', '#Shorts'],
         channelId: 'teen_motivation'
       });
       console.log(`[YouTube Channel 5 Dispatch] ✅ Uploaded video to YouTube Channel 5!`);
