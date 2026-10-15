@@ -378,5 +378,18 @@
     "credentials": "Author of Studies in Pessimism • German Philosopher",
     "theme": "solitude",
     "usedAt": "2026-10-11T16:34:09.384Z"
+  },
+  {
+    "quote": "Anxiety is the dizziness of freedom.",
+    "author": "Søren Kierkegaard",
+    "credentials": "Philosopher & Theologian • Concept of Anxiety",
+    "theme": "freedom",
+    "usedAt": "2026-10-15T11:02:49.584Z"
+  },
+  {
+    "quote": "Anxiety is the dizziness of freedom.",
+    "author": "Søren Kierkegaard",
+    "channel": "stoic",
+    "timestamp": "2026-10-15T11:02:49.584Z"
   }
 ]
