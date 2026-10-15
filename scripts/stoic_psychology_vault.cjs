@@ -658,8 +658,25 @@ function generatePsychologyViralTitle(scholar) {
     hook = `The Psychology of Self-Mastery — ${scholar.author}`;
   }
 
+  // Dynamic Rotating Hook Formulas (ensures titles rotate and never repeat even with the same author)
+  const ROTATING_TITLE_PATTERNS = [
+    (h, a, c) => h,
+    (h, a, c) => `Read This When You Feel Off • ${a}`,
+    (h, a, c) => `The Brutal Rule 99% Learn Too Late • ${a}`,
+    (h, a, c) => `Why Quiet Fortitude Protects Your Peace — ${a}`,
+    (h, a, c) => `The Mindset That Makes You Undeniable • ${a}`,
+    (h, a, c) => `The Dark Art of Detachment — ${a}`,
+    (h, a, c) => `${c} • ${a}`,
+    (h, a, c) => `Stop Wasting Mental Energy — ${a}`
+  ];
+
+  const seed = (Math.floor(Date.now() / (1000 * 60 * 15)) + Math.abs(scholar.quote.length)) % ROTATING_TITLE_PATTERNS.length;
+  const cleanConcept = (scholar.psychologicalConcept || scholar.theme || 'Self Mastery').split('&')[0].split('•')[0].trim();
+  const selectedPatternFn = ROTATING_TITLE_PATTERNS[seed];
+  const dynamicTitleBase = selectedPatternFn(hook, scholar.author, cleanConcept);
+
   // Ensure title stays under 100 characters for YouTube Shorts
-  let title = `${hook} #Shorts`;
+  let title = `${dynamicTitleBase} #Shorts`;
   if (title.length + 12 <= 98) {
     title += ` #psychology`;
   }

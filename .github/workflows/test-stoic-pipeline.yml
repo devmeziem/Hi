@@ -86,13 +86,27 @@ jobs:
             rendered_videos/stoic_quote_5s_latest.mp4
             rendered_videos/stoic_quote_*.mp4
             daily_blueprint_manifest.json
+            test_artifacts/last_workflow_audit.json
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Pipeline Summary
+      - name: Commit Rolling 30-Day Topic Deduplication Log
         if: always()
         run: |
-          echo "==============================================================="
-          echo "STOIC 5-SECOND QUOTE REEL PIPELINE COMPLETED"
-          echo "Streamlined and clean - Zero bloat."
-          echo "==============================================================="
+          if [ -f data/topic_dedup_log.json ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add data/topic_dedup_log.json stoic_quote_history.json || true
+            if ! git diff --staged --quiet; then
+              git commit -m "chore(dedup): rolling 30-day stoic topic log update [skip ci]"
+              git push origin HEAD || true
+              echo "Committed rolling 30-day stoic dedup log to GitHub."
+            else
+              echo "Dedup log unchanged."
+            fi
+          fi
+
+      - name: Plain-English Audit & Execution Summary
+        if: always()
+        run: |
+          node scripts/workflow_audit_reporter.cjs stoic_quote_reel

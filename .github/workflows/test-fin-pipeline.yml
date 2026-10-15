@@ -131,13 +131,26 @@ jobs:
 
       # Note: Fin Blueprint is YouTube-only for now (never send to Buffer API 1 TikTok)
 
-      - name: Pipeline Summary (Zero Git Commits, Low Key Database Logging)
+      - name: Commit Rolling 30-Day Topic Deduplication Log
         if: always()
         run: |
-          echo "==============================================================="
-          echo "FINANCE BLUEPRINT PIPELINE COMPLETED"
-          echo "Zero git commits made to repository - Low-key database logging."
-          echo "==============================================================="
+          if [ -f data/topic_dedup_log.json ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add data/topic_dedup_log.json fin_quote_history.json || true
+            if ! git diff --staged --quiet; then
+              git commit -m "chore(dedup): rolling 30-day fin topic log update [skip ci]"
+              git push origin HEAD || true
+              echo "Committed rolling 30-day fin dedup log to GitHub."
+            else
+              echo "Dedup log unchanged."
+            fi
+          fi
+
+      - name: Plain-English Audit & Execution Summary
+        if: always()
+        run: |
+          node scripts/workflow_audit_reporter.cjs fin_blueprint
 
       - name: Cleanup Local Temporary Media & Blobs
         if: always()

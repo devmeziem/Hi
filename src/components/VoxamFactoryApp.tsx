@@ -70,6 +70,7 @@ import { ArchieResearchLabTab } from './ArchieResearchLabTab';
 import { ArchiePreviewStudioTab } from './ArchiePreviewStudioTab';
 import { StoicStudioTab } from './StoicStudioTab';
 import { DocumentaryStudioTab } from './DocumentaryStudioTab';
+import { TopicDedupTab } from './TopicDedupTab';
 
 interface VoxamFactoryAppProps {
   userEmail: string;
@@ -857,6 +858,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                         { id: 'studio', label: 'Content Creation Studio', desc: 'Autonomous Scripting & 9:16 Video Rendering', icon: Clapperboard },
                         { id: 'queue', label: 'Production Queue', desc: 'Live Rendering Jobs & Pipeline Status', icon: ListOrdered },
                         { id: 'vault', label: 'Video Vault & History', desc: 'Completed Rendered Releases & Playback', icon: FolderLock },
+                        { id: 'topic-dedup', label: 'Topic Deduplication Log', desc: 'Rolling 30-Day Anti-Repeat Registry & Monthly Purge', icon: ShieldCheck, badge: 'Git Synced', badgeColor: 'bg-emerald-950 text-emerald-300 border-emerald-800' },
                         { id: 'playground', label: 'Creative Story Lab', desc: 'Rapid Idea Testing & Direct Generation', icon: Sparkles }
                       ]
                     },
@@ -2359,6 +2361,9 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
 
         {/* TAB: PIPELINE AUTOMATION */}
         {activeTab === 'pipeline' && <PipelineAutomationTab />}
+
+        {/* TAB: TOPIC DEDUPLICATION & ANTI-REPEAT REGISTRY */}
+        {activeTab === 'topic-dedup' && <TopicDedupTab />}
 
         {/* TAB: DJ AUDIO & TTS STUDIO SOUNDBOARD */}
         {activeTab === 'dj' && <DjSoundboardTab keys={keys} />}

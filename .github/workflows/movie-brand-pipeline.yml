@@ -110,6 +110,22 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+      - name: Commit Rolling 30-Day Topic Deduplication Log
+        if: always()
+        run: |
+          if [ -f data/topic_dedup_log.json ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add data/topic_dedup_log.json
+            if ! git diff --staged --quiet; then
+              git commit -m "chore(dedup): rolling 30-day topic log update [skip ci]"
+              git push origin HEAD || true
+              echo "Committed rolling 30-day dedup log to GitHub."
+            else
+              echo "Dedup log unchanged."
+            fi
+          fi
+
       - name: Pipeline Summary
         if: always()
         run: |

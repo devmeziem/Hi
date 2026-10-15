@@ -21,6 +21,7 @@ const { getSyncedChannelProfile, formatChannelFollowCta } = require('./youtube_c
 const { resolveChannelAudio } = require('./audio_asset_manager.cjs');
 const { selectDeduplicatedCandidate, recordPostedCandidate } = require('./channel_dedup_service.cjs');
 const { searchAndFetchImage, searchAndFetchAudio } = require('./universal_media_fetcher.cjs');
+const { generateRotatingSoundtrack } = require('./soft_piano_synthesizer.cjs');
 
 const MANIFEST_PATH = path.join(process.cwd(), 'daily_blueprint_manifest.json');
 const LOCAL_QUOTE_CACHE = path.join(process.cwd(), 'fin_quote_history.json');

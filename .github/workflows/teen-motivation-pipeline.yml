@@ -77,11 +77,10 @@ jobs:
       - name: Verify FFmpeg Installation
         run: ffmpeg -version
 
-      - name: Generate Teen Motivation Reel
+      - name: Generate Teen Motivation Reel (Black & White with Layered Sound Effects)
         env:
           VIDEO_TYPE: ${{ github.event.inputs.video_type || 'auto' }}
           TOPIC: ${{ github.event.inputs.topic || '' }}
-          AUTO_PUBLISH: ${{ github.event.inputs.auto_publish || 'false' }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           SKIP_BUFFER_DISPATCH: 'true'
           MOTIVATION_MUSIC_URL: ${{ github.event.inputs.sound_url }}
@@ -95,49 +94,26 @@ jobs:
           FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
           FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
-          YOUTUBE_CLIENT_ID_CH5: ${{ secrets.YOUTUBE_CLIENT_ID_CH5 || secrets.YOUTUBE_CLIENT_ID_TEEN }}
-          YOUTUBE_CLIENT_SECRET_CH5: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH5 || secrets.YOUTUBE_CLIENT_SECRET_TEEN }}
-          YOUTUBE_REFRESH_TOKEN_CH5: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH5 || secrets.YOUTUBE_REFRESH_TOKEN_TEEN }}
-          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH5 || secrets.YOUTUBE_CLIENT_ID_TEEN }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH5 || secrets.YOUTUBE_CLIENT_SECRET_TEEN }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH5 || secrets.YOUTUBE_REFRESH_TOKEN_TEEN }}
-          YOUTUBE_HANDLE_CH5: ${{ secrets.YOUTUBE_HANDLE_CH5 || secrets.YOUTUBE_HANDLE_TEEN || '@bonesceo' }}
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
-          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY || secrets.BUFFER_API_KEY_2 }}
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 || secrets.BUFFER_API_KEY }}
-          BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31c1dcd8b9c702c467a38' }}
-          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID || secrets.BUFFER_TIKTOK_TEEN_CHANNEL || secrets.BUFFER_TIKTOK_CHANNEL_ID_TEEN || secrets.BUFFER_TIKTOK_MOTIVATION_CHANNEL_ID || '6ab05677ea19ca0bde9c3ffb' }}
+          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID || secrets.BUFFER_TIKTOK_TEEN_CHANNEL || '6ab05677ea19ca0bde9c3ffb' }}
         run: |
-          echo "=== 🔥 Generating Teen Motivation Reel (Type: $VIDEO_TYPE, Topic: $TOPIC) ==="
+          echo "=== 🔥 Generating Teen Motivation Reel in Noir B&W (Type: $VIDEO_TYPE, Topic: $TOPIC) ==="
           node scripts/generate_teen_motivation_reel.cjs
           echo "=== Motivation Reel Assembled Successfully ==="
-
-      - name: Dispatch to bonesceo Instagram Channel (Buffer API)
-        if: success() && (github.event_name == 'schedule' || github.event.inputs.publish_instagram != 'false')
-        env:
-          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY || secrets.BUFFER_API_KEY_2 }}
-          BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31c1dcd8b9c702c467a38' }}
-          VIDEO_PATH: rendered_videos/teen_motivation_latest.mp4
-          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "=== 📸 Publishing Teen Motivation Reel to bonesceo Instagram (6aa31c1dcd8b9c702c467a38) ==="
-          node scripts/publish_archie_to_buffer_omnichannel.cjs || echo "Instagram bonesceo dispatch attempted"
 
       - name: Dispatch to Teen Motivation TikTok Channel (Buffer API 2)
         if: success() && (github.event_name == 'schedule' || github.event.inputs.publish_tiktok != 'false')
         env:
-          BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
-          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID || secrets.BUFFER_TIKTOK_TEEN_CHANNEL || secrets.BUFFER_TIKTOK_CHANNEL_ID_TEEN || secrets.BUFFER_TIKTOK_MOTIVATION_CHANNEL_ID || '6ab05677ea19ca0bde9c3ffb' }}
+          BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 || secrets.BUFFER_API_KEY }}
+          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID || secrets.BUFFER_TIKTOK_TEEN_CHANNEL || '6ab05677ea19ca0bde9c3ffb' }}
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "=== 📱 Publishing Teen Motivation Reel to TikTok via Buffer API 2 ==="
+          echo "=== 📱 Publishing Teen Motivation Reel to TikTok (6ab05677ea19ca0bde9c3ffb) via Buffer API 2 ==="
           node scripts/publish_buffer_second_tiktok.cjs teen_motivation
 
       - name: Archive Motivation Video Artifacts
@@ -149,15 +125,27 @@ jobs:
             rendered_videos/teen_motivation_latest.mp4
             test_artifacts/motivation_reels/*.mp4
             test_artifacts/teen_motivation_manifest.json
+            test_artifacts/last_workflow_audit.json
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Pipeline Summary (Zero Git Commits, Low Key Database Logging)
+      - name: Commit Rolling 30-Day Topic Deduplication Log
         if: always()
         run: |
-          echo "==============================================================="
-          echo "TEEN MOTIVATION REELS PIPELINE COMPLETED"
-          echo "3 Posts Daily: 2x 5s punchline reels + 1x 15s slam debate reel"
-          echo "Zero git commits made to repository - Low-key database logging."
-          echo "Video artifact archived securely in Actions run artifacts."
-          echo "==============================================================="
+          if [ -f data/topic_dedup_log.json ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add data/topic_dedup_log.json
+            if ! git diff --staged --quiet; then
+              git commit -m "chore(dedup): rolling 30-day topic log update [skip ci]"
+              git push origin HEAD || true
+              echo "Committed rolling 30-day dedup log to GitHub."
+            else
+              echo "Dedup log unchanged."
+            fi
+          fi
+
+      - name: Plain-English Audit & Execution Summary
+        if: always()
+        run: |
+          node scripts/workflow_audit_reporter.cjs teen_motivation
