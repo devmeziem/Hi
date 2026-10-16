@@ -78,8 +78,14 @@ jobs:
           echo "Zero git commits made to repository - Low-key database logging."
           echo "==============================================================="
 
+      - name: Plain-English Audit & Execution Summary
+        if: always()
+        run: |
+          node scripts/workflow_audit_reporter.cjs facebook_instagram_infocards
+
       - name: Cleanup Local Temporary Media & Blobs
         if: always()
         run: |
           rm -rf test_artifacts/infocards/*.png test_artifacts/infocard_latest.png
           echo "Cleaned up runner temporary media blobs."
+

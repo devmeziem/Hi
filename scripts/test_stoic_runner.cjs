@@ -370,15 +370,31 @@ async function resolveTopic(activeGrok, backupEngines) {
   recentContentHistory = await fetchRecentHistoryFromFirestore('motivation_stoicism', 30);
   logInfo(`[History & Cooldown] Retrieved ${recentContentHistory.length} historical records.`);
 
-  // Pick the least recently used distinct archetype
-  const diverseSlots = selectDailyDiverseSlots(recentContentHistory, 1);
-  resolvedArchetype = diverseSlots[0] || STOIC_ARCHETYPES[0];
-  logInfo(`[Diversity Engine] Selected Slot Archetype -> Theme: "${resolvedArchetype.theme}" | Angle: "${resolvedArchetype.angle}"`);
+  // Pick rotating archetype using persistent rotation state
+  const rotStateFile = path.join(process.cwd(), 'data', 'stoic_rotation_state.json');
+  let rotIdx = Math.floor(Math.random() * STOIC_ARCHETYPES.length);
+  try {
+    if (fs.existsSync(rotStateFile)) {
+      rotIdx = (JSON.parse(fs.readFileSync(rotStateFile, 'utf8')).currentIndex || 0) % STOIC_ARCHETYPES.length;
+    }
+  } catch {}
+  resolvedArchetype = (diverseSlots && diverseSlots.length > 0)
+    ? diverseSlots[rotIdx % diverseSlots.length]
+    : STOIC_ARCHETYPES[rotIdx % STOIC_ARCHETYPES.length];
+  logInfo(`[Diversity Engine] Selected Slot Archetype (Index #${rotIdx + 1}/${STOIC_ARCHETYPES.length}) -> Theme: "${resolvedArchetype.theme}" | Angle: "${resolvedArchetype.angle}"`);
 
-  // Dynamic randomized archetype title fallback (clean and under 70 characters)
-  const generatedFallback = `${resolvedArchetype.theme} - The Stoic Rule for Mental Strength`;
-  logInfo(`[Topic Discovery] Selected curated archetype title: "${generatedFallback}"`);
-  return generatedFallback;
+  // Dynamic rotating archetype title fallback with 6 viral hook formulas
+  const HOOK_PATTERNS = [
+    t => `${t} - The Brutal Stoic Rule for Mental Strength`,
+    t => `Why ${t} Protects Your Focus When Everything Collapses`,
+    t => `The Daily Rule of ${t} That 99% Learn Too Late`,
+    t => `Master ${t} Before You Waste Another Day`,
+    t => `The Ancient Secret of ${t} for Unshakable Fortitude`,
+    t => `How ${t} Silences Chaos in Your Mind`
+  ];
+  const chosenHook = HOOK_PATTERNS[rotIdx % HOOK_PATTERNS.length](resolvedArchetype.theme);
+  logInfo(`[Topic Discovery] Selected curated rotating archetype title: "${chosenHook}"`);
+  return chosenHook;
 }
 
 // ----------------------------------------------------

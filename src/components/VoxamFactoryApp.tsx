@@ -71,6 +71,7 @@ import { ArchiePreviewStudioTab } from './ArchiePreviewStudioTab';
 import { StoicStudioTab } from './StoicStudioTab';
 import { DocumentaryStudioTab } from './DocumentaryStudioTab';
 import { TopicDedupTab } from './TopicDedupTab';
+import { LaunchReadinessReviewTab } from './LaunchReadinessReviewTab';
 
 interface VoxamFactoryAppProps {
   userEmail: string;
@@ -846,7 +847,7 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                         { id: 'archie-lab', label: 'Archie Research Lab', desc: 'Everyday Tech Facts & Science Curiosities', icon: Atom, badge: 'Verified', badgeColor: 'bg-teal-950 text-teal-300 border-teal-800' },
                         { id: 'finance', label: 'Finance Blueprint (Channel 1)', desc: 'Cashflow Leverage & Business Roadmaps', icon: DollarSign, badge: '4/Day', badgeColor: 'bg-emerald-950 text-emerald-300 border-emerald-800' },
                         { id: 'movie-brand', label: 'Cinema Vanguard (Channel 4)', desc: 'Mini-Movies, Crime & Archival Sagas', icon: Film, badge: 'Stories', badgeColor: 'bg-rose-950 text-rose-300 border-rose-800' },
-                        { id: 'teen-motivation', label: 'MindRush (Channel 5)', desc: 'Perspective, Student Drive & Habits', icon: Flame, badge: 'Youth', badgeColor: 'bg-sky-950 text-sky-300 border-sky-800' },
+                        { id: 'teen-motivation', label: 'Teens Motivation (@bones_ceo)', desc: 'TikTok Exclusive · B&W Discipline Reels & Sound Effects', icon: Flame, badge: 'TikTok', badgeColor: 'bg-zinc-800 text-zinc-200 border-zinc-700' },
                         { id: 'documentary', label: 'Documentary Studio', desc: 'Episodic Wall Street Scandals & Investigations', icon: Compass, badge: 'Series', badgeColor: 'bg-indigo-950 text-indigo-300 border-indigo-800' }
                       ]
                     },
@@ -884,9 +885,10 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
                       ]
                     },
                     {
-                      category: 'Workspace & Security',
+                      category: 'Workspace & Diagnostics',
                       color: 'text-slate-400',
                       items: [
+                        { id: 'health-review', label: 'Launch Readiness & System Check', desc: 'Verified status of credentials, channels & engines', icon: ShieldCheck, badge: 'Verified', badgeColor: 'bg-emerald-950 text-emerald-300 border-emerald-800' },
                         { id: 'settings', label: 'Connected Accounts & Keys', desc: 'Cloud Storage, Channel Authorizations & Keys', icon: Settings }
                       ]
                     }
@@ -2364,6 +2366,9 @@ export const VoxamFactoryApp: React.FC<VoxamFactoryAppProps> = ({ userEmail, onS
 
         {/* TAB: TOPIC DEDUPLICATION & ANTI-REPEAT REGISTRY */}
         {activeTab === 'topic-dedup' && <TopicDedupTab />}
+
+        {/* TAB: LAUNCH READINESS & SYSTEM CHECK */}
+        {activeTab === 'health-review' && <LaunchReadinessReviewTab keys={keys} />}
 
         {/* TAB: DJ AUDIO & TTS STUDIO SOUNDBOARD */}
         {activeTab === 'dj' && <DjSoundboardTab keys={keys} />}

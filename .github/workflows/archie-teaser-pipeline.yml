@@ -88,9 +88,8 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-      - name: Pipeline Summary
+      - name: Plain-English Audit & Execution Summary
         if: always()
         run: |
-          echo "==============================================================="
-          echo "ARCHIE DAILY 3-IN-1 Q&A TEASER COMPLETED"
-          echo "==============================================================="
+          node scripts/workflow_audit_reporter.cjs archie_qa_teaser
+

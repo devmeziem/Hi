@@ -87,9 +87,8 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Pipeline Summary
+      - name: Plain-English Audit & Execution Summary
         if: always()
         run: |
-          echo "==============================================================="
-          echo "STOIC LONG-FORM ESSAY PIPELINE COMPLETED"
-          echo "==============================================================="
+          node scripts/workflow_audit_reporter.cjs stoic_longform
+

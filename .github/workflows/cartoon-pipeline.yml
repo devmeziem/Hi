@@ -252,13 +252,11 @@ jobs:
             fi
           fi
 
-      - name: Pipeline Summary
+      - name: Plain-English Audit & Execution Summary
         if: always()
         run: |
-          echo "==============================================================="
-          echo "CARTOON ANIMATION FACTORY PIPELINE COMPLETED"
-          echo "Rolling topic log committed to repository with automated 30-day purge."
-          echo "==============================================================="
+          node scripts/workflow_audit_reporter.cjs cartoon_factory
+
 
       - name: Cleanup Local Temporary Blobs
         if: always()

@@ -40,9 +40,9 @@ function sanitizeToken(raw) {
 
 const BUFFER_API_KEY = sanitizeToken(RAW_BUFFER_API_KEY_2);
 
-// Target TikTok channel IDs (Dynamically resolved from Buffer or GitHub Secrets / .env with hardcoded fallbacks)
+// Target TikTok channel IDs (Dynamically resolved from Buffer or GitHub Secrets / .env with dedicated fallback)
 const HARDCODED_TEEN_TIKTOK_CHANNEL_ID = '6ab05677ea19ca0bde9c3ffb';
-const HARDCODED_MOVIE_TIKTOK_CHANNEL_ID = '6ab05677ea19ca0bde9c3ffb';
+const HARDCODED_MOVIE_TIKTOK_CHANNEL_ID = '';
 
 const BUFFER_TIKTOK_MOVIE_CHANNEL_ID = String(
   process.env.BUFFER_TIKTOK_MOVIE_CHANNEL_ID ||

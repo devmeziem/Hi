@@ -648,8 +648,24 @@ EXCLUDED PREVIOUS TITLES: [${recentExclusions || 'None'}]`
     } catch {}
   }
 
-  // 5. Curated Archetype Angle with clean title formatting
-  return resolvedArchetype.angle;
+  // 5. Curated Archetype Angle with clean rotating title formatting
+  const FIN_HOOK_PATTERNS = [
+    a => `${a} - The Cold Rule of Early Capital`,
+    a => `Why ${a} Beats 99% of Financial Advice`,
+    a => `The Real Economics of ${a} Explained Simply`,
+    a => `Mastering ${a} Before You Waste Your Savings`,
+    a => `The Blueprint to ${a} That Actually Works`,
+    a => `How to Leverage ${a} to Build Wealth`
+  ];
+  const rotStateFile = path.join(process.cwd(), 'data', 'fin_rotation_state.json');
+  let rotIdx = Math.floor(Math.random() * FIN_HOOK_PATTERNS.length);
+  try {
+    if (fs.existsSync(rotStateFile)) {
+      rotIdx = (JSON.parse(fs.readFileSync(rotStateFile, 'utf8')).currentIndex || 0) % FIN_HOOK_PATTERNS.length;
+    }
+  } catch {}
+  const cleanBase = (resolvedArchetype.theme || resolvedArchetype.angle || 'Micro Enterprise Cashflow').replace(/#\w+/g, '').trim();
+  return FIN_HOOK_PATTERNS[rotIdx](cleanBase);
 }
 
 // ----------------------------------------------------

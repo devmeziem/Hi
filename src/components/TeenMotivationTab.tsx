@@ -224,21 +224,24 @@ export const TeenMotivationTab: React.FC = () => {
       <div id="teen-header-banner" className="p-6 bg-slate-900 border border-slate-800 rounded-3xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
         <div className="space-y-1.5 min-w-0">
           <div className="flex items-center gap-2.5">
-            <div className="p-2.5 bg-amber-600/20 border border-amber-500/40 rounded-2xl text-amber-400 shrink-0">
+            <div className="p-2.5 bg-zinc-800 border border-zinc-700 rounded-2xl text-zinc-100 shrink-0">
               <Flame className="w-6 h-6" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-xl font-black text-white tracking-tight">MindRush: Youth &amp; Teen Real-Life Motivation</h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-950 border border-amber-800 text-amber-300 text-[10px] font-mono font-bold">
-                  Zero Repetitive Scripts • Rotating Formats
+                <h2 className="text-xl font-black text-white tracking-tight">Teens Motivation (@bones_ceo)</h2>
+                <span className="px-2.5 py-0.5 rounded-full bg-zinc-950 border border-zinc-700 text-zinc-200 text-[10px] font-bold">
+                  TikTok Exclusive • Buffer ID: 6ab05677ea19ca0bde9c3ffb
                 </span>
-                <span className="px-2.5 py-0.5 rounded-full bg-slate-950 border border-slate-800 text-slate-300 text-[10px] font-mono font-bold">
-                  Dynamic Dark Screen Outro
+                <span className="px-2.5 py-0.5 rounded-full bg-zinc-950 border border-zinc-700 text-zinc-300 text-[10px] font-bold">
+                  Monochrome Black &amp; White
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full bg-zinc-950 border border-zinc-700 text-zinc-300 text-[10px] font-bold">
+                  Layered Sound Effects
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Rotates across dynamic actionable frameworks: 5 Steps to Discipline, Stop 4 Things for 1 Month, and 10-Minute Morning Rules with kinetic slam transitions.
+              <p className="text-xs text-slate-400 mt-1">
+                Authentic youth realities, mental strength, and actionable habits. Rendered in high-contrast cinematic black and white with sub-bass opening impacts and scene transition whoosh effects.
               </p>
             </div>
           </div>
@@ -247,14 +250,14 @@ export const TeenMotivationTab: React.FC = () => {
         <button
           onClick={handleGenerate}
           disabled={isRendering}
-          className="px-5 py-3 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-black rounded-2xl text-xs transition-all shadow-lg shadow-amber-500/20 flex items-center gap-2 cursor-pointer shrink-0"
+          className="px-5 py-3 bg-white hover:bg-slate-200 disabled:opacity-50 text-black font-black rounded-2xl text-xs transition-all shadow-lg flex items-center gap-2 cursor-pointer shrink-0"
         >
           {isRendering ? (
             <RefreshCw className="w-4 h-4 animate-spin" />
           ) : (
             <Sparkles className="w-4 h-4" />
           )}
-          <span>Synthesize Fresh {activeArchetypeData.label.split(' ')[0]} Reel</span>
+          <span>Create Fresh Black &amp; White Reel</span>
         </button>
       </div>
 

@@ -285,14 +285,31 @@ async function selectDeduplicatedCandidate(channelKey, candidatePool, getQuoteFn
     }
   }
 
+  // Active in-process session protection: guarantees consecutive calls in a batch NEVER repeat
+  if (!global._sessionChosenQuotes) global._sessionChosenQuotes = new Set();
+  if (!global._sessionChosenAuthors) global._sessionChosenAuthors = new Set();
+
   const recentQuotes = combinedHistory.map(h => (typeof h === 'string' ? h : h.quote || h.topic || h.title || '')).filter(Boolean);
-  const recentAuthors = combinedHistory.slice(-25).map(h => (typeof h === 'object' ? h.author || h.scholar || '' : '')).filter(Boolean);
+  const recentAuthors = combinedHistory.slice(-8).map(h => (typeof h === 'object' ? h.author || h.scholar || '' : '')).filter(Boolean);
   const genericAuthors = new Set(['mindrush', 'mindrush discipline', 'mindrush grit', 'mindrush execution', 'mindrush armor', 'me:', 'the reality:', 'the slam:', 'cold fact:', 'reality check:', 'anonymous']);
 
-  // 3. Strict filter: No identical or similar quotes, no recent authors (unless generic)
+  // Load persistent channel rotation state
+  const rotStateFile = path.join(process.cwd(), 'data', `${channelKey}_rotation_state.json`);
+  let rotState = { currentIndex: 0, lastSoundIndex: 0, lastMotionIndex: 0, lastGradeIndex: 0, runCount: 0 };
+  try {
+    if (fs.existsSync(rotStateFile)) {
+      rotState = { ...rotState, ...JSON.parse(fs.readFileSync(rotStateFile, 'utf8')) };
+    }
+  } catch {}
+
+  // 3. Strict filter: No identical or similar quotes, no recent authors, and exclude active session picks
   let filtered = candidatePool.filter(item => {
     const q = getQuoteFn(item);
     const a = getAuthorFn(item);
+
+    // Active session exclusion (critical for batches of 4)
+    if (global._sessionChosenQuotes.has((q || '').trim().toLowerCase())) return false;
+    if (a && !genericAuthors.has(a.toLowerCase()) && global._sessionChosenAuthors.has(a.toLowerCase())) return false;
 
     // Skip recently featured author if not generic
     if (a && !genericAuthors.has(a.toLowerCase()) && recentAuthors.includes(a)) {
@@ -322,11 +339,12 @@ async function selectDeduplicatedCandidate(channelKey, candidatePool, getQuoteFn
     }
   }
 
-  // If pool exhausted due to author saturation, relax author filter but maintain strict quote deduplication
+  // If pool exhausted due to author saturation, relax author filter but maintain strict quote deduplication & session uniqueness
   if (filtered.length === 0) {
     console.log(`[Anti-Spam Engine] Author pool saturated, maintaining strict quote deduplication...`);
     filtered = candidatePool.filter(item => {
       const q = getQuoteFn(item);
+      if (global._sessionChosenQuotes.has((q || '').trim().toLowerCase())) return false;
       for (const prev of recentQuotes) {
         if (calculateJaccardSimilarity(q, prev) > 0.28) {
           return false;
@@ -336,10 +354,12 @@ async function selectDeduplicatedCandidate(channelKey, candidatePool, getQuoteFn
     });
   }
 
-  // If still exhausted, sort candidate pool by oldest in history (least recently used)
+  // If still exhausted, sort candidate pool by oldest in history (least recently used) and exclude session picks
   if (filtered.length === 0) {
     console.log(`[Anti-Spam Engine] Finding least-recently used candidate from pool...`);
-    const scoredPool = candidatePool.map(item => {
+    const availablePool = candidatePool.filter(item => !global._sessionChosenQuotes.has((getQuoteFn(item) || '').trim().toLowerCase()));
+    const poolToScore = availablePool.length > 0 ? availablePool : candidatePool;
+    const scoredPool = poolToScore.map(item => {
       const q = getQuoteFn(item);
       let maxSim = 0;
       for (let i = recentQuotes.length - 1; i >= 0; i--) {
@@ -349,12 +369,44 @@ async function selectDeduplicatedCandidate(channelKey, candidatePool, getQuoteFn
       return { item, maxSim };
     });
     scoredPool.sort((a, b) => a.maxSim - b.maxSim);
-    filtered = scoredPool.slice(0, Math.max(3, Math.floor(candidatePool.length / 2))).map(s => s.item);
+    filtered = scoredPool.slice(0, Math.max(3, Math.floor(poolToScore.length / 2))).map(s => s.item);
   }
 
-  // 4. Uniform cryptographically diverse slot selection
-  const randIdx = Math.floor(Math.random() * filtered.length);
-  const chosen = filtered[randIdx] || filtered[0] || candidatePool[0];
+  // 4. Stateful Round-Robin Rotation: Guarantees progressive sequence across catalog
+  const rotIndex = (rotState.currentIndex || 0) % filtered.length;
+  const chosen = filtered[rotIndex] || filtered[0] || candidatePool[0];
+
+  // Immediately track in active session set so subsequent calls in the same run never pick this candidate
+  const chosenQuoteClean = (getQuoteFn(chosen) || '').trim().toLowerCase();
+  const chosenAuthorClean = (getAuthorFn(chosen) || '').trim().toLowerCase();
+  global._sessionChosenQuotes.add(chosenQuoteClean);
+  if (chosenAuthorClean && !genericAuthors.has(chosenAuthorClean)) {
+    global._sessionChosenAuthors.add(chosenAuthorClean);
+  }
+
+  // Advance and save channel rotation state
+  rotState.currentIndex = (rotState.currentIndex + 1) % Math.max(1, candidatePool.length);
+  rotState.lastSoundIndex = ((rotState.lastSoundIndex || 0) + 1) % 8;
+  rotState.lastMotionIndex = ((rotState.lastMotionIndex || 0) + 1) % 4;
+  rotState.lastGradeIndex = ((rotState.lastGradeIndex || 0) + 1) % 4;
+  rotState.runCount = (rotState.runCount || 0) + 1;
+  rotState.lastQuote = getQuoteFn(chosen);
+  rotState.lastAuthor = getAuthorFn(chosen);
+  rotState.updatedAt = new Date().toISOString();
+
+  try {
+    const dir = path.dirname(rotStateFile);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(rotStateFile, JSON.stringify(rotState, null, 2), 'utf8');
+  } catch {}
+
+  // Attach dynamic rotation metadata directly to candidate object
+  chosen._rotation = {
+    soundIndex: rotState.lastSoundIndex,
+    motionIndex: rotState.lastMotionIndex,
+    gradeIndex: rotState.lastGradeIndex,
+    runCount: rotState.runCount
+  };
 
   return chosen;
 }

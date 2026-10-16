@@ -66,15 +66,15 @@ const CHANNELS = {
   },
   ch5: {
     key: 'teen_motivation',
-    name: 'MindRush',
-    role: 'Teen & Youth Everyday Realities Motivation',
-    defaultHandle: '@MindRushOfficial',
-    aliases: ['motivation', 'apex_discipline', 'youth', 'teen', 'ch5'],
-    envHandles: ['YOUTUBE_HANDLE_CH5', 'YOUTUBE_HANDLE_TEEN', 'YOUTUBE_HANDLE_MOTIVATION'],
-    youtubeClientEnv: 'YOUTUBE_CLIENT_ID_CH5',
-    youtubeSecretEnv: 'YOUTUBE_CLIENT_SECRET_CH5',
-    youtubeRefreshEnv: 'YOUTUBE_REFRESH_TOKEN_CH5',
-    bufferEnv: ['BUFFER_TIKTOK_TEEN_CHANNEL_ID', 'BUFFER_TIKTOK_MOTIVATION_CHANNEL_ID']
+    name: 'Teens Motivation',
+    role: 'Teen & Youth Everyday Realities Motivation (TikTok Exclusive)',
+    defaultHandle: '@bones_ceo',
+    aliases: ['motivation', 'apex_discipline', 'youth', 'teen', 'ch5', 'bonesceo', 'bones_ceo', 'mindrush', 'mindrushofficial'],
+    envHandles: ['TIKTOK_HANDLE_TEEN', 'TIKTOK_HANDLE_BONESCEO', 'BUFFER_TIKTOK_TEEN_CHANNEL_ID'],
+    youtubeClientEnv: null,
+    youtubeSecretEnv: null,
+    youtubeRefreshEnv: null,
+    bufferEnv: ['BUFFER_TIKTOK_TEEN_CHANNEL_ID']
   }
 };
 
@@ -83,11 +83,11 @@ const CHANNELS = {
  */
 function resolveChannelKey(rawKey = '') {
   const norm = String(rawKey || '').toLowerCase().trim().replace(/^@/, '');
-  if (['1', 'ch1', 'fin', 'finance', 'finance_saas', 'bones_ceo', 'bonesceo'].includes(norm)) return 'ch1';
+  if (['1', 'ch1', 'fin', 'finance', 'finance_saas'].includes(norm)) return 'ch1';
   if (['2', 'ch2', 'stoic', 'thestoicarchitect', 'stoicism', 'philosophy'].includes(norm)) return 'ch2';
   if (['3', 'ch3', 'tech', 'archie', 'cartoon', 'cartoon_factory', 'archieexplains'].includes(norm)) return 'ch3';
   if (['4', 'ch4', 'movie', 'movie_brand', 'cinema', 'cinemavanguard', 'documentary', 'driftreel', 'protocol_zero', 'ghost_vault'].includes(norm)) return 'ch4';
-  if (['5', 'ch5', 'teen', 'teen_motivation', 'mindrush', 'mindrushofficial', 'youth', 'apex_discipline'].includes(norm)) return 'ch5';
+  if (['5', 'ch5', 'teen', 'teen_motivation', 'mindrush', 'mindrushofficial', 'youth', 'apex_discipline', 'bonesceo', 'bones_ceo'].includes(norm)) return 'ch5';
   return 'ch4'; // Default to episodic movie / documentary channel
 }
 

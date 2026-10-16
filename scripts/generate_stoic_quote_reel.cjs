@@ -48,26 +48,27 @@ async function resolveScholarPortrait(scholar) {
 
   const safeName = scholar.wikiSearch || scholar.author.replace(/[^a-zA-Z0-9]/g, '_');
   const quoteHash = Math.abs(scholar.quote ? scholar.quote.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0) : 0) % 1000;
-  const portraitPath = path.join(PORTRAITS_DIR, `${safeName}_${quoteHash}.jpg`);
+  const visualVariant = scholar._rotation ? scholar._rotation.gradeIndex : ((Date.now() + quoteHash) % 4);
+  const portraitPath = path.join(PORTRAITS_DIR, `${safeName}_v${visualVariant}_${quoteHash}.jpg`);
   const legacyPortraitPath = path.join(PORTRAITS_DIR, `${safeName}.jpg`);
 
-  console.log(`[Scholar Portrait] Sourcing authentic portrait for: "${scholar.author}"...`);
+  console.log(`[Scholar Portrait] Sourcing authentic portrait for: "${scholar.author}" (Variant #${visualVariant + 1})...`);
 
-  // 1. Primary Strategy: Check quote-specific portrait
+  // 1. Primary Strategy: Check variant-specific portrait
   if (fs.existsSync(portraitPath) && fs.statSync(portraitPath).size > 10000) {
-    console.log(`[Scholar Portrait] Using verified authentic portrait for ${scholar.author}`);
+    console.log(`[Scholar Portrait] Using verified authentic portrait for ${scholar.author} (Variant #${visualVariant + 1})`);
     return portraitPath;
   }
 
   // 1b. Dynamic Fresh Visual Search (Unsplash / Wikimedia / Public Archives)
   try {
     const queryVariations = [
-      `${scholar.author} philosopher marble bust moody lighting`,
-      `${scholar.author} sculpture portrait dramatic classical`,
-      `ancient stoic thinker marble bust dramatic shadows`,
-      `classical marble statue contemplation shadows moody`
+      `${scholar.author} marble bust museum lighting chiaroscuro`,
+      `${scholar.author} classical statue roman sculpture dramatic shadows`,
+      `${scholar.author} historical portrait oil painting fine art contemplation`,
+      `${scholar.author} ancient bust antique profile museum gallery`
     ];
-    const pickedQuery = queryVariations[quoteHash % queryVariations.length];
+    const pickedQuery = queryVariations[visualVariant % queryVariations.length];
     const fetched = await searchAndFetchImage(pickedQuery, { preferredSource: 'wikimedia' });
     if (fetched && fetched.localPath && fs.existsSync(fetched.localPath)) {
       fs.copyFileSync(fetched.localPath, portraitPath);
@@ -298,6 +299,8 @@ async function generateStoic5sVideo(durationOverride = null, customChosen = null
   const isLongForm = effectiveDuration >= 20;
   const fps = 30;
   const totalFrames = Math.round(effectiveDuration * fps);
+  let motionName = 'Hypnotic Push-In';
+  let gradeName = 'Obsidian Noir & Warm Amber';
 
   console.log('\n======================================================');
   console.log(`🏛️  [PSYCHOLOGY & STOIC REEL] GENERATING ${isLongForm ? 'LONG-FORM EMOTIONAL (32s)' : 'SHORT-FORM REEL (5s)'} VIDEO`);
@@ -317,10 +320,11 @@ async function generateStoic5sVideo(durationOverride = null, customChosen = null
   const portraitPath = await resolveScholarPortrait(chosen);
 
   // 3. Resolve Background Audio: Stateful rotating soundtrack (8 diverse soundscapes, no static audio)
+  const soundIndex = chosen._rotation ? chosen._rotation.soundIndex : null;
   const wavPath = path.join(ARTIFACTS_DIR, isLongForm ? `stoic_longform_piano_${effectiveDuration}s.wav` : `scholar_mystery_sound_${Date.now()}_${effectiveDuration}s.wav`);
   let soundtrackInfo = null;
   try {
-    soundtrackInfo = generateRotatingSoundtrack(wavPath, effectiveDuration, 'stoic');
+    soundtrackInfo = generateRotatingSoundtrack(wavPath, effectiveDuration, 'stoic', soundIndex);
   } catch (err) {
     console.warn('[Quote Reel] Rotating soundtrack notice:', err.message);
     resolveChannelAudio(isLongForm ? 'piano' : 'stoic', effectiveDuration, wavPath);
@@ -535,11 +539,13 @@ async function generateStoic5sVideo(durationOverride = null, customChosen = null
   } else {
     // 5-Second Quote Reel: Authentic dynamic presentation of scholar quote & credentials
     // User mandate: "delete the quote that's still persistent in stoic 5 seconds reel, there's a mock quote that always attach to every new post, it's talking about feeling like you've achieve something you still have as a goal,that is does dopamine stuff, just delete it, it's making post bad"
-    // Dynamic Rotating Camera Motion (4 styles: Push-In, Pull-Out, Drift Left, Drift Right)
-    const motionStyle = (Date.now() + Math.abs(chosen.quote.length)) % 4;
+    // Dynamic Rotating Camera Motion (4 distinct styles: Push-In, Pull-Out, Drift Left, Drift Right)
+    const motionStyle = chosen._rotation && chosen._rotation.motionIndex !== undefined
+      ? chosen._rotation.motionIndex
+      : (Date.now() + Math.abs(chosen.quote.length)) % 4;
     let panFormula = '';
     let zoomFormula = '';
-    let motionName = '';
+    motionName = 'Hypnotic Push-In';
 
     if (motionStyle === 0) {
       motionName = 'Hypnotic Push-In';
@@ -560,9 +566,11 @@ async function generateStoic5sVideo(durationOverride = null, customChosen = null
     }
 
     // Dynamic Rotating Color Grading (4 distinct atmospheres)
-    const gradeStyle = (Math.floor(Date.now() / (1000 * 60)) + motionStyle) % 4;
+    const gradeStyle = chosen._rotation && chosen._rotation.gradeIndex !== undefined
+      ? chosen._rotation.gradeIndex
+      : (Math.floor(Date.now() / (1000 * 60)) + motionStyle) % 4;
     let gradeFilter = '';
-    let gradeName = '';
+    gradeName = 'Obsidian Noir & Warm Amber';
     if (gradeStyle === 0) {
       gradeName = 'Obsidian Noir & Warm Amber';
       gradeFilter = `eq=brightness=-0.04:contrast=1.16:saturation=0.88,vignette=PI/4.5`;
