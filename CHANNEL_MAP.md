@@ -1,43 +1,43 @@
 # CHANNEL MAP (Hard Reference — Do Not Mis-route)
 
-This file is the single source of truth for channel identity.
-Scripts and workflows must respect these mappings. Never cross-post.
-
 ## YouTube Channels
 
-| Slot | Internal Name | Handle / Purpose | OAuth Secrets |
-|------|---------------|------------------|---------------|
-| **YouTube 1 / CH2** | The Stoic Architect | Stoic long-form + 5s pure quote reels | `YOUTUBE_CLIENT_ID_CH2`, `YOUTUBE_CLIENT_SECRET_CH2`, `YOUTUBE_REFRESH_TOKEN_CH2` |
-| **YouTube 2 / CH1** | Fin Blueprint | Beginner wealth / cashflow | `YOUTUBE_CLIENT_ID_CH1` ... |
-| **YouTube 3 / CH3** | Archie Explains / bonesceo | Science & tech cartoon + Q&A | `YOUTUBE_CLIENT_ID_CH3` ... |
-| **YouTube 4 / CH4** | Cinema Vanguard | Crime / horror / mystery documentaries | `YOUTUBE_CLIENT_ID_CH4` ... |
-| **YouTube 5 / CH5** | Apex Discipline / MindRush | Teen & youth motivation | `YOUTUBE_CLIENT_ID_CH5` ... |
+| Slot | Internal Name | Purpose | OAuth |
+|------|---------------|---------|-------|
+| **YouTube 1 / CH2** | The Stoic Architect | Stoic long + 5s quotes | `YOUTUBE_*_CH2` |
+| **YouTube 2 / CH1** | Fin Blueprint | 2 quotes + 1 income + 1 doc daily | `YOUTUBE_*_CH1` |
+| **YouTube 3 / CH3** | Archie Explains | Science & tech | `YOUTUBE_*_CH3` |
+| **YouTube 4 / CH4** | Cinema Vanguard | Crime/horror docs | `YOUTUBE_*_CH4` |
+| **YouTube 5 / CH5** | Apex Discipline | Teen motivation | `YOUTUBE_*_CH5` |
 
-## Buffer Accounts
+## Stoic schedule (UTC)
 
-| API | Secret | Allowed Use | Forbidden |
-|-----|--------|-------------|-----------|
-| **Buffer API 1** | `BUFFER_API_KEY` | Facebook + Instagram for Archie content only | **Never touch any TikTok on API 1** |
-| **Buffer API 2** | `BUFFER_API_KEY_2` | TikTok only | — |
+| Time | Content |
+|------|--------|
+| 06:00 / 14:00 / 22:00 | 5s pure quote (BGM only) |
+| 15:00 | Long-form (Andrew -12%/-25Hz + emotional BGM) |
 
-### Buffer API 2 TikTok Channels
+## Fin Blueprint schedule (UTC) — Channel 1
 
-| Channel | Secret / ID | Used By |
-|---------|-------------|--------|
-| Teen Motivation (`@bonesceo` / MindRush) | `BUFFER_TIKTOK_TEEN_CHANNEL_ID` (currently `6ab05677ea19ca0bde9c3ffb`) | `teen-motivation-pipeline` only |
-| Cinema Vanguard / Driftreel | `BUFFER_TIKTOK_DRIFTREEL_CHANNEL_ID` or `BUFFER_TIKTOK_MOVIE_CHANNEL_ID` | `movie-brand-pipeline` only |
+| Time | Type |
+|------|------|
+| 05:00 | 5s finance **quote** |
+| 11:00 | 5s finance **quote** |
+| 15:00 | **Income / practical teaching** short |
+| 20:00 | Financial **story mini-doc** |
 
-## Stoic Daily Quota (YouTube 1 / CH2)
+Rules: 30-day dedup, problem-led SEO titles, BGM on every video, CH1 secrets only.
 
-- **3× 5-second pure quote reels** — no voice, slow background music + panning only
-- **1× long-form** (45–75s+) — AndrewNeural rate -12% / pitch -25Hz + matching BGM
-- One of the daily posts should be zero-AI (public-domain quote + psychology angle) when possible
-- Strong deduplication: never repeat quote / visual / audio within rolling window
+## Buffer
 
-## Safety Rules
+| API | Use |
+|-----|-----|
+| API 1 | Archie FB/IG only — never TikTok |
+| API 2 | Teen TikTok + Cinema TikTok only |
 
-1. Stoic content → only CH2 YouTube secrets + never Buffer TikTok from other pipelines
-2. Teen Motivation → only `BUFFER_TIKTOK_TEEN_CHANNEL_ID` + CH5 YouTube
-3. Cinema Vanguard → only Driftreel/Movie TikTok ID + CH4 YouTube
-4. Archie → Buffer API 1 (FB/IG) + CH3 YouTube. Never use Buffer API 2 for Archie TikTok.
-5. No workflow may fall back to another channel’s secrets.
+## Safety
+
+1. Stoic → CH2 only  
+2. Fin → CH1 only  
+3. Cinema never posts to bonesceo  
+4. No cross-secret fallbacks  
