@@ -1,16 +1,8 @@
 #!/usr/bin/env node
 /**
  * Fin Blueprint daily slot router (Channel 1 / CH1)
- *
- * Daily mix (UTC):
- *   05:00  → 5s finance quote reel
- *   11:00  → 5s finance quote reel
- *   15:00  → small-income / practical teaching short
- *   20:00  → financial story mini-doc
- *
- * Env:
- *   VIDEO_MODE = auto | quote | income | documentary
- *   DRY_RUN = true|false
+ * 05:00 quote | 11:00 quote | 15:00 income | 20:00 doc
+ * Quotes: LIVE Wikiquote only (no hardcoded catalog)
  */
 const { execSync } = require('child_process');
 
@@ -24,10 +16,9 @@ function resolveMode() {
     if (modeInput.includes('quote') || modeInput.includes('5s') || modeInput.includes('3s')) return 'quote';
     return modeInput;
   }
-  // Scheduled auto slots
   if (hour === 20 || hour === 4) return 'documentary';
   if (hour === 15 || hour === 12) return 'income';
-  return 'quote'; // 5, 11, and any other
+  return 'quote';
 }
 
 const mode = resolveMode();
@@ -45,7 +36,7 @@ if (mode === 'documentary') {
 } else if (mode === 'income') {
   run('node scripts/generate_fin_income_short.cjs');
 } else {
-  // 5s quote — highest reach format
+  // LIVE public quotes — never the old FINANCE_TITANS catalog generator
   env.SHORT_DURATION = env.SHORT_DURATION || '5.0';
-  run('node scripts/generate_fin_quote_reel.cjs');
+  run('node scripts/generate_fin_quote_live_reel.cjs');
 }

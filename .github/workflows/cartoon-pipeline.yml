@@ -2,7 +2,6 @@ name: Automated Cartoon Factory (Workflow 3)
 
 on:
   schedule:
-    # 4x daily spaced drops: 08:00 UTC (reel), 13:00 UTC (animated episode/short), 18:00 UTC (reel), 23:00 UTC (reel)
     - cron: '0 8,13,18,23 * * *'
   workflow_dispatch:
     inputs:
@@ -28,11 +27,6 @@ on:
         required: false
         default: false
         type: boolean
-      buffer_token:
-        description: 'Buffer Access Token (Optional)'
-        required: false
-        default: ''
-        type: string
       dry_run:
         description: 'Dry Run Mode'
         required: true
@@ -51,22 +45,39 @@ jobs:
         with:
           node-version: 20
           cache: npm
+
       - name: Install system deps
         run: |
           sudo apt-get update -qq || true
-          sudo apt-get install -y --no-install-recommends ffmpeg espeak-ng libsndfile1 || true
+          sudo apt-get install -y --no-install-recommends ffmpeg libsndfile1 || true
+
       - name: Install Node deps
         run: npm install --legacy-peer-deps --no-audit --no-fund
+
       - name: Pre-compile puppet assets
         run: |
           node scripts/build_exact_puppet_shapes.cjs || true
           node scripts/build_modern_tech_character.cjs || true
+
+      - name: Discover working AI models
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          node scripts/groq_model_finder.cjs || true
+          node scripts/openrouter_model_finder.cjs || true
+          node scripts/cloudflare_model_finder.cjs || true
+
+      - name: Patch Archie simple FFmpeg fallback
+        run: node scripts/patch_archie_ffmpeg_fallback.cjs || true
+
       - name: Generate Archie content
         env:
           VIDEO_MODE: ${{ github.event.inputs.video_mode || 'auto' }}
           TEST_TOPIC: ${{ github.event.inputs.topic }}
           CARTOON_ENGINE: ${{ github.event.inputs.engine || 'moviepy' }}
-          DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run == true || github.event.inputs.dry_run == 'true' }}
+          PAUSE_YOUTUBE: ${{ github.event.inputs.pause_youtube == true }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
@@ -74,42 +85,33 @@ jobs:
           YOUTUBE_CLIENT_ID_CH3: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 }}
           YOUTUBE_CLIENT_SECRET_CH3: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 }}
           YOUTUBE_REFRESH_TOKEN_CH3: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 }}
-          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 || secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 || secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 || secrets.YOUTUBE_REFRESH_TOKEN }}
+          YOUTUBE_HANDLE_CH3: ${{ secrets.YOUTUBE_HANDLE_CH3 }}
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
-          BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
-          BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31c1dcd8b9c702c467a38' }}
-          BUFFER_TIKTOK_CHANNEL_ID: ''
-          PAUSE_YOUTUBE: ${{ github.event.inputs.pause_youtube || 'false' }}
+          BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID }}
+          BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
+          FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
         run: |
-          CURRENT_HOUR=$(date -u +%-H)
-          if [ "$VIDEO_MODE" = "video" ] || { [ "$VIDEO_MODE" = "auto" ] && [ "$CURRENT_HOUR" -eq 13 ]; }; then
-            node scripts/test_cartoon_runner.cjs
-          else
-            node scripts/generate_archie_tech_fact_reel.cjs
-          fi
-      - name: Buffer FB/IG only (never TikTok on API 1)
-        if: success()
-        env:
-          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
-          BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
-          BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31c1dcd8b9c702c467a38' }}
-          BUFFER_TIKTOK_CHANNEL_ID: ''
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
-          DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
-        run: node scripts/publish_archie_to_buffer_omnichannel.cjs || true
+          echo "=== Archie (manual/schedule only — no push) ==="
+          node scripts/generate_archie_tech_fact_reel.cjs
+
       - name: Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: cartoon-episode-output-${{ github.run_id }}
           path: |
-            rendered_videos/*.mp4
-            test_artifacts/archie_5s_reels/*.mp4
-          retention-days: 14
+            rendered_videos/archie_*.mp4
+            test_artifacts/archie_*
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Audit
         if: always()
         run: node scripts/workflow_audit_reporter.cjs cartoon_factory || true
