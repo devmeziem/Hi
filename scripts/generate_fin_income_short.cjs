@@ -1,12 +1,16 @@
 #!/usr/bin/env node
 /**
- * Fin Blueprint — Small Income / Practical Teaching Short (Channel 1)
- * ~25–40s, voice + emotional BGM, problem-led SEO title, strong dedup.
- * Zero-AI capable: uses curated teaching cards (no quota required).
+ * Fin Blueprint — Small Income Teaching Short (Channel 1)
+ * Rules:
+ *  - Edge TTS ONLY (en-US-AndrewNeural). No espeak / robotic fallbacks.
+ *  - Emotional BGM under voice (never silent gaps).
+ *  - Multi-beat on-screen captions (not one stuck word).
+ *  - Ken Burns panning on image.
+ *  - 30-day lesson dedup.
  */
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { execSync, spawnSync } = require('child_process');
 const https = require('https');
 
 const OUT = path.join(process.cwd(), 'rendered_videos');
@@ -18,23 +22,23 @@ const LESSONS = [
   {
     id: 'first_5k_naira',
     title: 'How to make your first ₦5,000 without capital',
-    hook: 'You do not need money to start making money.',
-    points: [
-      'Pick one skill you already use every week — writing, phone repair tips, or local errands.',
-      'Offer it to five people in your area or online group today.',
-      'Price small, deliver fast, ask for one testimonial.'
+    beats: [
+      'You do not need money to start making money.',
+      'Pick one skill you already use every week.',
+      'Offer it to five people today.',
+      'Price small. Deliver fast. Ask for one testimonial.'
     ],
-    cta: 'Comment START if you will try this this week.',
+    cta: 'Comment START if you will try this week.',
     tags: ['#SideHustle', '#MakeMoney', '#Nigeria', '#SmallBusiness', '#Shorts']
   },
   {
     id: 'stop_leak',
-    title: 'The ₦500 leak that blocks your savings',
-    hook: 'Wealth starts when the leaks stop.',
-    points: [
-      'List every small daily spend for three days.',
+    title: 'The small spend that blocks your savings',
+    beats: [
+      'Wealth starts when the leaks stop.',
+      'Track every small daily spend for three days.',
       'Cut only one leak — not everything at once.',
-      'Move that amount to a separate wallet the same day.'
+      'Move that amount to a separate wallet today.'
     ],
     cta: 'What is your biggest small leak? Comment it.',
     tags: ['#SaveMoney', '#MoneyTips', '#Budget', '#Wealth', '#Shorts']
@@ -42,20 +46,20 @@ const LESSONS = [
   {
     id: 'one_client',
     title: 'Get one paying client this week',
-    hook: 'One client beats a perfect plan.',
-    points: [
+    beats: [
+      'One client beats a perfect plan.',
       'Write a one-line offer: what you do and for whom.',
       'Send it to ten people who already trust you.',
       'Follow up once. Then deliver if they say yes.'
     ],
-    cta: 'Comment CLIENT if you are sending the message today.',
+    cta: 'Comment CLIENT if you send the message today.',
     tags: ['#Freelance', '#Clients', '#Income', '#Hustle', '#Shorts']
   },
   {
     id: 'skill_stack',
     title: 'The skill stack that pays faster than certificates',
-    hook: 'Employers and clients buy results, not paper.',
-    points: [
+    beats: [
+      'Clients buy results, not paper.',
       'Combine one technical skill with clear communication.',
       'Show a before-and-after example, even a small one.',
       'Post it where buyers already look.'
@@ -66,14 +70,26 @@ const LESSONS = [
   {
     id: 'risk_small',
     title: 'Take a small risk before a big dream',
-    hook: 'Big goals fail when small tests never start.',
-    points: [
+    beats: [
+      'Big goals fail when small tests never start.',
       'Define a test you can finish in seven days.',
       'Cap the cost so a loss will not hurt you.',
       'Write what you will learn either way.'
     ],
-    cta: 'Comment TEST if you will run a seven-day experiment.',
+    cta: 'Comment TEST if you run a seven-day experiment.',
     tags: ['#Mindset', '#Entrepreneur', '#Risk', '#Money', '#Shorts']
+  },
+  {
+    id: 'daily_offer',
+    title: 'Post one offer every day for seven days',
+    beats: [
+      'Visibility compounds faster than perfection.',
+      'Write the same clear offer in plain language.',
+      'Post it where your buyers already spend time.',
+      'Reply to every serious message the same day.'
+    ],
+    cta: 'Comment DAY1 if you will post your offer today.',
+    tags: ['#Hustle', '#Sales', '#Income', '#Consistency', '#Shorts']
   }
 ];
 
@@ -103,84 +119,119 @@ function pickLesson() {
 function download(url, dest) {
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(dest);
-    https.get(url, (res) => {
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        https.get(res.headers.location, (r2) => { r2.pipe(file); file.on('finish', () => file.close(resolve)); }).on('error', reject);
-        return;
-      }
+    const get = (u) => https.get(u, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) return get(res.headers.location);
+      if (res.statusCode !== 200) return reject(new Error('HTTP ' + res.statusCode));
       res.pipe(file);
       file.on('finish', () => file.close(resolve));
     }).on('error', reject);
+    get(url);
   });
+}
+
+function edgeTts(text, outMp3) {
+  // Edge TTS ONLY — fail hard if unavailable (no robotic espeak)
+  const r = spawnSync('npx', [
+    '--yes', 'edge-tts',
+    '--voice', 'en-US-AndrewNeural',
+    '--rate', '-5%',
+    '--pitch', '-10Hz',
+    '--text', text,
+    '--write-media', outMp3
+  ], { encoding: 'utf8' });
+  if (r.status !== 0 || !fs.existsSync(outMp3) || fs.statSync(outMp3).size < 1000) {
+    throw new Error('Edge TTS failed (required). stderr: ' + (r.stderr || r.stdout || '').slice(0, 400));
+  }
+}
+
+function escapeAss(s) {
+  return String(s).replace(/\\/g, '\\\\').replace(/\n/g, '\\N').replace(/\{/g, '\\{').replace(/\}/g, '\\}');
+}
+
+function buildAss(beats, cta, durationSec) {
+  // Multi-beat captions timed across the video
+  const lines = [...beats, cta];
+  const slot = durationSec / lines.length;
+  let body = '';
+  lines.forEach((line, i) => {
+    const t0 = i * slot;
+    const t1 = Math.min(durationSec, (i + 1) * slot);
+    const fmt = (t) => {
+      const h = Math.floor(t / 3600);
+      const m = Math.floor((t % 3600) / 60);
+      const s = Math.floor(t % 60);
+      const cs = Math.floor((t % 1) * 100);
+      return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
+    };
+    // Center lower-third, bold white with shadow — highlight feel
+    body += `Dialogue: 0,${fmt(t0)},${fmt(t1)},Default,,0,0,0,,{\\an2\\fs46\\b1\\c&H00FFFFFF&\\3c&H000000&\\bord3\\shad2}${escapeAss(line)}\n`;
+  });
+  return `[Script Info]\nScriptType: v4.00+\nPlayResX: 1080\nPlayResY: 1920\n\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: Default,Arial,46,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,3,2,2,60,60,120,1\n\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n${body}`;
 }
 
 async function main() {
   if (!fs.existsSync(OUT)) fs.mkdirSync(OUT, { recursive: true });
   if (!fs.existsSync(ART)) fs.mkdirSync(ART, { recursive: true });
+
   const lesson = pickLesson();
   console.log('[Fin Income]', lesson.title);
 
-  const narration = [lesson.hook, ...lesson.points, lesson.cta].join(' ');
+  const narration = [...lesson.beats, lesson.cta].join(' ');
   const voicePath = path.join(ART, `fin_income_voice_${Date.now()}.mp3`);
-  const bgmPath = path.join(ART, `fin_income_bgm_${Date.now()}.mp3`);
+  const bgmPath = path.join(ART, `fin_income_bgm_${Date.now()}.wav`);
   const imgPath = path.join(ART, `fin_income_bg_${Date.now()}.jpg`);
+  const assPath = path.join(ART, `fin_income_${Date.now()}.ass`);
   const outPath = path.join(OUT, 'fin_income_latest.mp4');
 
-  // Image from public Unsplash (city work / money adjacent, free)
+  // Background image (public)
   const imgs = [
     'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1080&q=80',
     'https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=1080&q=80',
-    'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=1080&q=80'
+    'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=1080&q=80',
+    'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1080&q=80'
   ];
-  try {
-    await download(imgs[Math.floor(Math.random() * imgs.length)], imgPath);
-  } catch (e) {
-    console.warn('image download', e.message);
-    // solid dark fallback via ffmpeg later
-  }
+  await download(imgs[Math.floor(Math.random() * imgs.length)], imgPath);
 
-  // Voice: Edge TTS Andrew slightly authoritative
-  try {
-    execSync(`npx --yes edge-tts --voice en-US-AndrewNeural --rate=-5% --pitch=-10Hz --text ${JSON.stringify(narration)} --write-media "${voicePath}"`, { stdio: 'inherit' });
-  } catch (e) {
-    console.warn('edge-tts failed, trying espeak');
-    execSync(`espeak-ng -v en-us -s 140 -w "${voicePath.replace(/\.mp3$/, '.wav')}" ${JSON.stringify(narration)}`, { stdio: 'inherit' });
-  }
+  // Edge TTS only
+  edgeTts(narration, voicePath);
 
-  // Soft BGM under voice (sine bed) if no external track
+  // Probe voice duration
+  let duration = 28;
   try {
-    execSync(`ffmpeg -y -f lavfi -i "sine=frequency=220:duration=40" -af "volume=0.04" "${bgmPath}" 2>/dev/null`, { stdio: 'pipe' });
+    const probe = execSync(`ffprobe -v error -show_entries format=duration -of csv=p=0 "${voicePath}"`, { encoding: 'utf8' }).trim();
+    duration = Math.max(18, Math.min(45, parseFloat(probe) + 0.8));
   } catch (_) {}
 
-  const hasImg = fs.existsSync(imgPath) && fs.statSync(imgPath).size > 1000;
-  const voice = fs.existsSync(voicePath) ? voicePath : voicePath.replace(/\.mp3$/, '.wav');
-  const titleEsc = lesson.title.replace(/:/g, '\\:').replace(/'/g, "'\\''");
+  // Emotional low BGM (warm pad) — always under voice
+  execSync(
+    `ffmpeg -y -f lavfi -i "sine=frequency=110:duration=${duration}" -f lavfi -i "sine=frequency=165:duration=${duration}" -filter_complex "[0:a][1:a]amix=inputs=2:duration=first,lowpass=f=800,volume=0.07" "${bgmPath}"`,
+    { stdio: 'pipe' }
+  );
 
-  // Simple vertical video: image + ken burns + centered title card feel via drawtext
-  const vf = hasImg
-    ? `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,eq=brightness=-0.05:saturation=0.85,drawtext=text='${titleEsc.slice(0, 42)}':fontcolor=white:fontsize=42:x=(w-text_w)/2:y=h*0.72:shadowcolor=black:shadowx=2:shadowy=2`
-    : `color=c=0x0a0a12:s=1080x1920:d=35,drawtext=text='${titleEsc.slice(0, 42)}':fontcolor=white:fontsize=42:x=(w-text_w)/2:y=(h-text_h)/2`;
+  fs.writeFileSync(assPath, buildAss(lesson.beats, lesson.cta, duration), 'utf8');
 
-  const bgmArg = fs.existsSync(bgmPath) ? `-i "${bgmPath}"` : '';
-  const filter = fs.existsSync(bgmPath)
-    ? `-filter_complex "[1:a]volume=1.0[a0];[2:a]volume=0.18[a1];[a0][a1]amix=inputs=2:duration=first:dropout_transition=2[a]" -map 0:v -map "[a]"`
-    : `-map 0:v -map 1:a`;
+  // Ken Burns zoom/pan + ASS captions + voice + BGM mix
+  // zoompan creates motion; scale/crop keeps 1080x1920
+  const filter = [
+    `[0:v]scale=1200:2133:force_original_aspect_ratio=increase,crop=1200:2133,zoompan=z='min(zoom+0.0015,1.18)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${Math.ceil(duration * 30)}:s=1080x1920:fps=30,eq=brightness=-0.04:saturation=0.9[vbase]`,
+    `[vbase]ass='${assPath.replace(/'/g, "'\\''")}'[vout]`,
+    `[1:a]volume=1.15[a0]`,
+    `[2:a]volume=1.0[a1]`,
+    `[a0][a1]amix=inputs=2:duration=first:dropout_transition=2[aout]`
+  ].join(';');
 
-  const imgInput = hasImg ? `-loop 1 -i "${imgPath}"` : `-f lavfi -i color=c=0x0a0a12:s=1080x1920:d=35`;
-  const cmd = `ffmpeg -y ${imgInput} -i "${voice}" ${bgmArg} -vf "${vf}" ${filter} -c:v libx264 -tune stillimage -c:a aac -b:a 128k -shortest -pix_fmt yuv420p -t 40 "${outPath}"`;
-  console.log(cmd);
+  const cmd = `ffmpeg -y -loop 1 -i "${imgPath}" -i "${voicePath}" -i "${bgmPath}" -filter_complex "${filter}" -map "[vout]" -map "[aout]" -c:v libx264 -preset veryfast -crf 20 -c:a aac -b:a 160k -shortest -pix_fmt yuv420p -t ${duration} "${outPath}"`;
+  console.log('[Fin Income] Rendering with Ken Burns + multi-beat ASS + Edge TTS + BGM...');
   execSync(cmd, { stdio: 'inherit' });
 
   console.log('[Fin Income] Rendered', outPath);
   console.log('[Fin Income] SEO Title:', lesson.title);
-  console.log('[Fin Income] Tags:', lesson.tags.join(' '));
 
-  // Optional YouTube upload via existing dispatcher if present
   if (!isDry) {
     try {
       const { uploadYouTubeShort } = require('./youtube_channel_dispatcher.cjs');
       if (typeof uploadYouTubeShort === 'function') {
-        const desc = `${lesson.hook}\n\n${lesson.points.map((p, i) => `${i + 1}. ${p}`).join('\n')}\n\n${lesson.cta}\n\n${lesson.tags.join(' ')}`;
+        const desc = `${lesson.beats[0]}\n\n${lesson.beats.slice(1).map((p, i) => `${i + 1}. ${p}`).join('\n')}\n\n${lesson.cta}\n\n${lesson.tags.join(' ')}`;
         const res = await uploadYouTubeShort({
           videoPath: outPath,
           title: lesson.title,
@@ -188,10 +239,10 @@ async function main() {
           tags: lesson.tags,
           channelId: 'finance_saas'
         });
-        console.log('[Fin Income] Upload result', res?.id || res);
+        console.log('[Fin Income] Upload', res?.id || res);
       }
     } catch (e) {
-      console.warn('[Fin Income] Upload skipped/notice:', e.message);
+      console.warn('[Fin Income] Upload notice:', e.message);
     }
   } else {
     console.log('[Fin Income] DRY_RUN — no upload');
