@@ -1,13 +1,8 @@
 name: Archie Daily Q&A Teaser & Showdown Pipeline
 
 on:
-  push:
-    branches:
-      - main
-      - master
   schedule:
     # Twice daily drops: 07:00 UTC and 19:00 UTC
-    # User mandate: Everyday updating 3-in-1 Q&A session, Andrew voice human pace, 4 options, 5s countdown with clock sound, debate in comments, deduplicating, no Archie sprite
     - cron: '0 7,19 * * *'
   workflow_dispatch:
     inputs:
@@ -92,4 +87,3 @@ jobs:
         if: always()
         run: |
           node scripts/workflow_audit_reporter.cjs archie_qa_teaser
-
