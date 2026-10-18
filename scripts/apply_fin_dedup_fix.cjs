@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * Patches generate_fin_quote_reel.cjs on the runner so it never falls back to the full catalog.
- * This stops exact-repeat spam (e.g. same Buffett quote every run).
+ * Injects live Wikiquote quote selection into generate_fin_quote_reel.cjs
+ * Replaces selectUniqueFinanceQuote to call fetch_live_finance_quote first.
+ * No full-catalog fallback.
  */
 const fs = require('fs');
 const path = require('path');
@@ -13,8 +14,8 @@ if (!fs.existsSync(target)) {
 }
 
 let t = fs.readFileSync(target, 'utf8');
-if (t.includes('NEVER dump full catalog')) {
-  console.log('[dedup-fix] already patched');
+if (t.includes('fetchLiveFinanceQuote')) {
+  console.log('[dedup-fix] live quote already wired');
   process.exit(0);
 }
 
@@ -25,43 +26,39 @@ if (oldStart < 0 || oldEnd < 0) {
   process.exit(0);
 }
 
-const replacement = `function selectUniqueFinanceQuote() {
-  const history = loadLocalHistory();
-  const recentAuthors = history.slice(-8).map(h => h.author).filter(Boolean);
-  const recentQuotes = new Set(history.map(h => (h.quote || '').trim().toLowerCase()));
-
-  // HARD: never re-post an exact quote already in history
-  const freshQuotes = FINANCE_TITANS_QUOTES.filter(q => {
-    const cleanQ = (q.quote || '').trim().toLowerCase();
-    if (!cleanQ) return false;
-    if (recentQuotes.has(cleanQ)) return false;
-    for (const prev of history.slice(-60)) {
-      if (prev.quote && calculateSimilarity(cleanQ, prev.quote.toLowerCase()) > 0.35) return false;
+const replacement = `async function selectUniqueFinanceQuote() {
+  // LIVE public sources only — no hardcoded pool as primary
+  try {
+    const { fetchLiveFinanceQuote } = require('./fetch_live_finance_quote.cjs');
+    const live = await fetchLiveFinanceQuote();
+    if (live && live.quote) {
+      return {
+        quote: live.quote,
+        author: live.author,
+        credentials: live.credentials || 'Public source',
+        reference: live.reference || 'Wikiquote',
+        wikiSearch: String(live.author || '').replace(/\\s+/g, '_'),
+        theme: 'live_public'
+      };
     }
-    if (recentAuthors.includes(q.author)) return false;
-    return true;
-  });
-
-  let candidatePool = freshQuotes;
-  if (candidatePool.length === 0) {
-    // NEVER dump full catalog (that caused Buffett spam) — least-recently-used only
-    const authorLast = {};
-    history.forEach((h, i) => { if (h.author) authorLast[h.author] = i; });
-    candidatePool = [...FINANCE_TITANS_QUOTES]
-      .sort((a, b) => (authorLast[a.author] ?? -1) - (authorLast[b.author] ?? -1))
-      .filter(q => !recentQuotes.has((q.quote || '').trim().toLowerCase()));
-    if (candidatePool.length === 0) {
-      candidatePool = FINANCE_TITANS_QUOTES.filter(q => !recentQuotes.has((q.quote || '').trim().toLowerCase()));
-    }
-    if (candidatePool.length === 0) candidatePool = FINANCE_TITANS_QUOTES;
+  } catch (e) {
+    console.error('[Fin Quote] Live public fetch failed:', e.message);
+    throw e; // no silent catalog fallback
   }
-
-  const seed = (Math.floor(Date.now() / (1000 * 60 * 30)) + Math.floor(Math.random() * 997)) % candidatePool.length;
-  const chosen = candidatePool[seed];
-  console.log('[Fin Dedup HARD] history=' + history.length + ' fresh=' + freshQuotes.length + ' picked=' + chosen.author);
-  return chosen;
 }\n\n`;
 
+// Also need callers of selectUniqueFinanceQuote to await it
 t = t.slice(0, oldStart) + replacement + t.slice(oldEnd);
+
+// Best-effort: sync call sites → await
+t = t.replace(
+  /const chosen = selectUniqueFinanceQuote\(\);/g,
+  'const chosen = await selectUniqueFinanceQuote();'
+);
+t = t.replace(
+  /let chosen = selectUniqueFinanceQuote\(\);/g,
+  'let chosen = await selectUniqueFinanceQuote();'
+);
+
 fs.writeFileSync(target, t);
-console.log('[dedup-fix] patched selectUniqueFinanceQuote');
+console.log('[dedup-fix] wired live Wikiquote selectUniqueFinanceQuote');

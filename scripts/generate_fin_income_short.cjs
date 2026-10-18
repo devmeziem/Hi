@@ -1,16 +1,13 @@
 #!/usr/bin/env node
 /**
  * Fin Blueprint — Small Income Teaching Short (Channel 1)
- * Rules:
- *  - Edge TTS ONLY (en-US-AndrewNeural). No espeak / robotic fallbacks.
- *  - Emotional BGM under voice (never silent gaps).
- *  - Multi-beat on-screen captions (not one stuck word).
- *  - Ken Burns panning on image.
- *  - 30-day lesson dedup.
+ * - Edge TTS via node-edge-tts / tts_resilient_engine (NO espeak, NO npx edge-tts CLI)
+ * - Multi-beat ASS captions, Ken Burns, BGM under voice
+ * - 30-day lesson dedup
  */
 const fs = require('fs');
 const path = require('path');
-const { execSync, spawnSync } = require('child_process');
+const { execSync } = require('child_process');
 const https = require('https');
 
 const OUT = path.join(process.cwd(), 'rendered_videos');
@@ -21,7 +18,7 @@ const isDry = String(process.env.DRY_RUN || 'false') === 'true';
 const LESSONS = [
   {
     id: 'first_5k_naira',
-    title: 'How to make your first ₦5,000 without capital',
+    title: 'How to make your first $50 without capital',
     beats: [
       'You do not need money to start making money.',
       'Pick one skill you already use every week.',
@@ -29,7 +26,7 @@ const LESSONS = [
       'Price small. Deliver fast. Ask for one testimonial.'
     ],
     cta: 'Comment START if you will try this week.',
-    tags: ['#SideHustle', '#MakeMoney', '#Nigeria', '#SmallBusiness', '#Shorts']
+    tags: ['#SideHustle', '#MakeMoney', '#SmallBusiness', '#Income', '#Shorts']
   },
   {
     id: 'stop_leak',
@@ -119,7 +116,7 @@ function pickLesson() {
 function download(url, dest) {
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(dest);
-    const get = (u) => https.get(u, (res) => {
+    const get = (u) => https.get(u, { headers: { 'User-Agent': 'FinBlueprintBot/1.0' } }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) return get(res.headers.location);
       if (res.statusCode !== 200) return reject(new Error('HTTP ' + res.statusCode));
       res.pipe(file);
@@ -129,27 +126,47 @@ function download(url, dest) {
   });
 }
 
-function edgeTts(text, outMp3) {
-  // Edge TTS ONLY — fail hard if unavailable (no robotic espeak)
-  const r = spawnSync('npx', [
-    '--yes', 'edge-tts',
-    '--voice', 'en-US-AndrewNeural',
-    '--rate', '-5%',
-    '--pitch', '-10Hz',
-    '--text', text,
-    '--write-media', outMp3
-  ], { encoding: 'utf8' });
-  if (r.status !== 0 || !fs.existsSync(outMp3) || fs.statSync(outMp3).size < 1000) {
-    throw new Error('Edge TTS failed (required). stderr: ' + (r.stderr || r.stdout || '').slice(0, 400));
+async function edgeTtsOnly(text, outMp3) {
+  // Prefer project resilient engine (Tier-1 = node-edge-tts)
+  try {
+    const { synthesizeSpeechResilient } = require('./tts_resilient_engine.cjs');
+    await synthesizeSpeechResilient(text, outMp3, {
+      voice: 'en-US-AndrewNeural',
+      rate: '-5%',
+      pitch: '-10Hz',
+      emotionProfile: 'educator',
+      timeout: 20000
+    });
+    if (fs.existsSync(outMp3) && fs.statSync(outMp3).size > 1000) return;
+  } catch (e) {
+    console.warn('[Fin Income] resilient TTS notice:', e.message);
+  }
+  // Direct node-edge-tts
+  let EdgeTTS;
+  try {
+    EdgeTTS = require('node-edge-tts').EdgeTTS || require('node-edge-tts');
+  } catch (_) {
+    throw new Error('node-edge-tts not installed — Edge TTS required');
+  }
+  const tts = new EdgeTTS({
+    voice: 'en-US-AndrewNeural',
+    lang: 'en-US',
+    outputFormat: 'audio-24khz-48kbitrate-mono-mp3',
+    rate: '-5%',
+    pitch: '-10Hz',
+    timeout: 20000
+  });
+  await tts.ttsPromise(text, outMp3);
+  if (!fs.existsSync(outMp3) || fs.statSync(outMp3).size < 1000) {
+    throw new Error('Edge TTS produced empty audio');
   }
 }
 
 function escapeAss(s) {
-  return String(s).replace(/\\/g, '\\\\').replace(/\n/g, '\\N').replace(/\{/g, '\\{').replace(/\}/g, '\\}');
+  return String(s).replace(/\\/g, '\\\\').replace(/\n/g, '\\N');
 }
 
 function buildAss(beats, cta, durationSec) {
-  // Multi-beat captions timed across the video
   const lines = [...beats, cta];
   const slot = durationSec / lines.length;
   let body = '';
@@ -163,7 +180,6 @@ function buildAss(beats, cta, durationSec) {
       const cs = Math.floor((t % 1) * 100);
       return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
     };
-    // Center lower-third, bold white with shadow — highlight feel
     body += `Dialogue: 0,${fmt(t0)},${fmt(t1)},Default,,0,0,0,,{\\an2\\fs46\\b1\\c&H00FFFFFF&\\3c&H000000&\\bord3\\shad2}${escapeAss(line)}\n`;
   });
   return `[Script Info]\nScriptType: v4.00+\nPlayResX: 1080\nPlayResY: 1920\n\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: Default,Arial,46,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,3,2,2,60,60,120,1\n\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n${body}`;
@@ -183,7 +199,6 @@ async function main() {
   const assPath = path.join(ART, `fin_income_${Date.now()}.ass`);
   const outPath = path.join(OUT, 'fin_income_latest.mp4');
 
-  // Background image (public)
   const imgs = [
     'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1080&q=80',
     'https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=1080&q=80',
@@ -192,17 +207,15 @@ async function main() {
   ];
   await download(imgs[Math.floor(Math.random() * imgs.length)], imgPath);
 
-  // Edge TTS only
-  edgeTts(narration, voicePath);
+  await edgeTtsOnly(narration, voicePath);
+  console.log('[Fin Income] Edge TTS OK', fs.statSync(voicePath).size, 'bytes');
 
-  // Probe voice duration
   let duration = 28;
   try {
     const probe = execSync(`ffprobe -v error -show_entries format=duration -of csv=p=0 "${voicePath}"`, { encoding: 'utf8' }).trim();
     duration = Math.max(18, Math.min(45, parseFloat(probe) + 0.8));
   } catch (_) {}
 
-  // Emotional low BGM (warm pad) — always under voice
   execSync(
     `ffmpeg -y -f lavfi -i "sine=frequency=110:duration=${duration}" -f lavfi -i "sine=frequency=165:duration=${duration}" -filter_complex "[0:a][1:a]amix=inputs=2:duration=first,lowpass=f=800,volume=0.07" "${bgmPath}"`,
     { stdio: 'pipe' }
@@ -210,8 +223,6 @@ async function main() {
 
   fs.writeFileSync(assPath, buildAss(lesson.beats, lesson.cta, duration), 'utf8');
 
-  // Ken Burns zoom/pan + ASS captions + voice + BGM mix
-  // zoompan creates motion; scale/crop keeps 1080x1920
   const filter = [
     `[0:v]scale=1200:2133:force_original_aspect_ratio=increase,crop=1200:2133,zoompan=z='min(zoom+0.0015,1.18)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${Math.ceil(duration * 30)}:s=1080x1920:fps=30,eq=brightness=-0.04:saturation=0.9[vbase]`,
     `[vbase]ass='${assPath.replace(/'/g, "'\\''")}'[vout]`,
@@ -221,11 +232,9 @@ async function main() {
   ].join(';');
 
   const cmd = `ffmpeg -y -loop 1 -i "${imgPath}" -i "${voicePath}" -i "${bgmPath}" -filter_complex "${filter}" -map "[vout]" -map "[aout]" -c:v libx264 -preset veryfast -crf 20 -c:a aac -b:a 160k -shortest -pix_fmt yuv420p -t ${duration} "${outPath}"`;
-  console.log('[Fin Income] Rendering with Ken Burns + multi-beat ASS + Edge TTS + BGM...');
+  console.log('[Fin Income] Rendering...');
   execSync(cmd, { stdio: 'inherit' });
-
   console.log('[Fin Income] Rendered', outPath);
-  console.log('[Fin Income] SEO Title:', lesson.title);
 
   if (!isDry) {
     try {
