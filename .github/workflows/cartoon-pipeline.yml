@@ -1,53 +1,40 @@
 name: Automated Cartoon Factory (Workflow 3)
 
 on:
-  push:
-    branches:
-      - main
-      - master
   schedule:
     # 4x daily spaced drops: 08:00 UTC (reel), 13:00 UTC (animated episode/short), 18:00 UTC (reel), 23:00 UTC (reel)
-    # Staggered 1 hour after Fin and 2 hours after Stoic to balance runner execution and audience reach
     - cron: '0 8,13,18,23 * * *'
   workflow_dispatch:
     inputs:
       topic:
-        description: 'Cartoon Topic / Wonder (e.g., "Why Microwaves Heat Soup Not Mugs", "Why Onions Make You Cry")'
+        description: 'Cartoon Topic / Wonder'
         required: false
         default: ''
         type: string
       video_mode:
-        description: 'Video Generation Mode (auto | video | fact_reel | all_daily_5 [4x 5s reels + 1x 25-35s episode])'
+        description: 'Video Generation Mode'
         required: false
         default: 'auto'
         type: choice
-        options:
-          - auto
-          - video
-          - fact_reel
-          - all_daily_5
-          - all_daily_4
+        options: [auto, video, fact_reel, all_daily_5, all_daily_4]
       engine:
-        description: 'Rendering Engine (moviepy for exact puppet character animation, ffmpeg for ultra-fast 2.5D, blender for 3D cutout)'
+        description: 'Rendering Engine'
         required: false
         default: 'moviepy'
         type: choice
-        options:
-          - moviepy
-          - ffmpeg
-          - blender
+        options: [moviepy, ffmpeg, blender]
       pause_youtube:
-        description: 'Pause YouTube Upload (Uncheck to allow YouTube Shorts upload)'
+        description: 'Pause YouTube Upload'
         required: false
         default: false
         type: boolean
       buffer_token:
-        description: 'Buffer Access Token (Optional: paste your token here to test directly)'
+        description: 'Buffer Access Token (Optional)'
         required: false
         default: ''
         type: string
       dry_run:
-        description: 'Dry Run Mode (Uncheck for live publishing)'
+        description: 'Dry Run Mode'
         required: true
         default: false
         type: boolean
@@ -59,155 +46,53 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js Environment
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
-
-      - name: Cache Rhubarb Lip Sync Binary
-        id: cache-rhubarb
-        uses: actions/cache@v4
-        with:
-          path: /usr/local/bin/rhubarb
-          key: rhubarb-lip-sync-1.13.0-${{ runner.os }}
-
-      - name: Cache APT Packages
-        uses: actions/cache@v4
-        with:
-          path: /var/cache/apt/archives
-          key: apt-cache-cartoon-${{ runner.os }}
-          restore-keys: |
-            apt-cache-cartoon-${{ runner.os }}
-
-      - name: Install System Utilities & FFmpeg
-        timeout-minutes: 4
+          cache: npm
+      - name: Install system deps
         run: |
-          echo "=== CHECKING SYSTEM BINARIES ==="
-          # FFmpeg is already pre-installed on GitHub Actions ubuntu-latest runners
-          if command -v ffmpeg &> /dev/null && command -v espeak-ng &> /dev/null; then
-            echo "✓ FFmpeg and espeak-ng already pre-installed on runner. Skipping network download."
-          else
-            echo "Installing missing system utilities with fast connection timeouts..."
-            sudo apt-get update -o Acquire::Retries=2 -o Acquire::http::Timeout="10" -o Acquire::Connect-Timeout="8" || true
-            sudo apt-get install -y --no-install-recommends ffmpeg espeak-ng libsndfile1 || true
-          fi
-
-      - name: Install Node Dependencies
-        timeout-minutes: 4
+          sudo apt-get update -qq || true
+          sudo apt-get install -y --no-install-recommends ffmpeg espeak-ng libsndfile1 || true
+      - name: Install Node deps
         run: npm install --legacy-peer-deps --no-audit --no-fund
-
-      - name: Install Rhubarb Lip Sync 1.13.0
-        if: steps.cache-rhubarb.outputs.cache-hit != 'true'
-        timeout-minutes: 3
+      - name: Pre-compile puppet assets
         run: |
-          echo "Downloading Rhubarb Lip Sync binary..."
-          curl -sL --max-time 30 "https://github.com/DanielSWolf/rhubarb-lip-sync/releases/download/v1.13.0/Rhubarb-Lip-Sync-1.13.0-Linux.zip" -o rhubarb.zip
-          unzip -q rhubarb.zip -d rhubarb_bin
-          RHUBARB_PATH=$(find rhubarb_bin -name rhubarb -type f | head -n 1)
-          if [ -n "$RHUBARB_PATH" ]; then
-            sudo cp "$RHUBARB_PATH" /usr/local/bin/rhubarb
-            sudo chmod +x /usr/local/bin/rhubarb
-            echo "Rhubarb Lip Sync installed successfully to /usr/local/bin/rhubarb."
-          fi
-          rm -rf rhubarb.zip rhubarb_bin
-
-      - name: Verify Environment Binaries
-        run: |
-          echo "=== VERIFYING PIPELINE BINARIES ==="
-          ffmpeg -version | head -n 1
-          rhubarb --version || echo "Rhubarb check finished"
-
-      - name: Pre-Compile Exact Puppet Character Rig Assets
-        run: |
-          echo "=== PRE-COMPILING EXACT PUPPET VECTOR & RASTER ASSETS ==="
-          node scripts/build_exact_puppet_shapes.cjs
-          node scripts/build_modern_tech_character.cjs
-          ls -la cartoon_character_assets/exact_puppet/
-
-      - name: Discover and Cache Working AI Models (Groq & OpenRouter)
-        env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-        run: |
-          echo "=== Discovering Active Groq & OpenRouter Models ==="
-          node scripts/groq_model_finder.cjs || true
-          node scripts/openrouter_model_finder.cjs || true
-
-      - name: Execute Archie Video Production (1 Video Per Trigger to Prevent Spam)
+          node scripts/build_exact_puppet_shapes.cjs || true
+          node scripts/build_modern_tech_character.cjs || true
+      - name: Generate Archie content
         env:
           VIDEO_MODE: ${{ github.event.inputs.video_mode || 'auto' }}
           TEST_TOPIC: ${{ github.event.inputs.topic }}
           CARTOON_ENGINE: ${{ github.event.inputs.engine || 'moviepy' }}
           DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
-          ALLOW_SHARED_YOUTUBE_TOKEN: 'false'
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
-          GROK_API_KEY_2: ${{ secrets.GROK_API_KEY_2 }}
-          XAI_API_KEY: ${{ secrets.XAI_API_KEY || secrets.GROK_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          HUGGINGFACE_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY || secrets.HF_TOKEN }}
-          HF_TOKEN: ${{ secrets.HF_TOKEN || secrets.HUGGINGFACE_API_KEY }}
-          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY || secrets.GEMINI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           YOUTUBE_CLIENT_ID_CH3: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 }}
           YOUTUBE_CLIENT_SECRET_CH3: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 }}
           YOUTUBE_REFRESH_TOKEN_CH3: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 }}
-          YOUTUBE_CLIENT_ID_TECH: ${{ secrets.YOUTUBE_CLIENT_ID_TECH }}
-          YOUTUBE_CLIENT_SECRET_TECH: ${{ secrets.YOUTUBE_CLIENT_SECRET_TECH }}
-          YOUTUBE_REFRESH_TOKEN_TECH: ${{ secrets.YOUTUBE_REFRESH_TOKEN_TECH }}
-          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 || secrets.YOUTUBE_CLIENT_ID_TECH }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 || secrets.YOUTUBE_CLIENT_SECRET_TECH }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 || secrets.YOUTUBE_REFRESH_TOKEN_TECH }}
-          YOUTUBE_HANDLE_CH3: ${{ secrets.YOUTUBE_HANDLE_CH3 || secrets.YOUTUBE_HANDLE_TECH }}
-          PAUSE_YOUTUBE: ${{ github.event.inputs.pause_youtube || 'false' }}
-          BUFFER_API_KEY: ${{ github.event.inputs.buffer_token || secrets.BUFFER_API_KEY }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 }}
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
           BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
           BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31c1dcd8b9c702c467a38' }}
-          BUFFER_TIKTOK_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_CHANNEL_ID || '6a9b6f3f065799be468f596b' }}
+          BUFFER_TIKTOK_CHANNEL_ID: ''
+          PAUSE_YOUTUBE: ${{ github.event.inputs.pause_youtube || 'false' }}
         run: |
           CURRENT_HOUR=$(date -u +%-H)
-          echo "=== Processing Archie Video Dispatch (Event: ${{ github.event_name }}, Mode: $VIDEO_MODE, Hour: $CURRENT_HOUR UTC, Pause YouTube: $PAUSE_YOUTUBE) ==="
-          
-          if [ "${{ github.event_name }}" = "push" ]; then
-            echo "🚀 Push event detected! Initiating immediate Archie Reel generation & omnichannel release..."
-            node scripts/generate_archie_tech_fact_reel.cjs
-          elif [ "$VIDEO_MODE" = "video" ] || [ "$VIDEO_MODE" = "episode" ] || { [ "$VIDEO_MODE" = "auto" ] && [ "$CURRENT_HOUR" -eq 13 ]; }; then
-            echo "▶️ Generating 1 Full Archie Animated Cartoon Video..."
+          if [ "$VIDEO_MODE" = "video" ] || { [ "$VIDEO_MODE" = "auto" ] && [ "$CURRENT_HOUR" -eq 13 ]; }; then
             node scripts/test_cartoon_runner.cjs
-          elif [ "$VIDEO_MODE" = "fact_reel" ] || { [ "$VIDEO_MODE" = "auto" ] && [ "$CURRENT_HOUR" -ne 13 ]; }; then
-            echo "▶️ Generating 1 Archie Everyday Science / Tech Fact Reel..."
-            node scripts/generate_archie_tech_fact_reel.cjs
-          elif [ "$VIDEO_MODE" = "all_daily_5" ] || [ "$VIDEO_MODE" = "all_daily_4" ]; then
-            echo "▶️ Generating Full Daily Suite: 4 Reps of 5s Fact Reels + 1 Deep-Dive Animated Episode (25-35s)..."
-            echo "--- Rep 1/4: 5s Everyday Fact Reel ---"
-            node scripts/generate_archie_tech_fact_reel.cjs || true
-            echo "--- Rep 2/4: 5s Everyday Fact Reel ---"
-            node scripts/generate_archie_tech_fact_reel.cjs || true
-            echo "--- Deep-Dive Episode: 25-35s Full Animated Cartoon Video ---"
-            node scripts/test_cartoon_runner.cjs || true
-            echo "--- Rep 3/4: 5s Everyday Fact Reel ---"
-            node scripts/generate_archie_tech_fact_reel.cjs || true
-            echo "--- Rep 4/4: 5s Everyday Fact Reel ---"
-            node scripts/generate_archie_tech_fact_reel.cjs || true
           else
-            echo "▶️ Defaulting to Archie Everyday Fact Reel..."
             node scripts/generate_archie_tech_fact_reel.cjs
           fi
-
-      - name: Cross-Post to Facebook (Voxam Fact) and Instagram (bones_ceo) via Buffer Omnichannel
+      - name: Buffer FB/IG only (never TikTok on API 1)
         if: success()
         env:
-          PAUSE_YOUTUBE: ${{ github.event.inputs.pause_youtube || 'false' }}
-          BUFFER_API_KEY: ${{ github.event.inputs.buffer_token || secrets.BUFFER_API_KEY }}
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
           BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
           BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31c1dcd8b9c702c467a38' }}
           BUFFER_TIKTOK_CHANNEL_ID: ''
@@ -215,51 +100,16 @@ jobs:
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
           DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
-        run: |
-          echo "=== DISPATCHING ARCHIE VIDEO TO BUFFER (Voxam Fact & bones_ceo) ==="
-          node scripts/list_buffer_channels.cjs || true
-          node scripts/publish_archie_to_buffer_omnichannel.cjs || echo "Buffer omnichannel step completed with notice."
-
-      - name: Upload Production Video & Diagnostics Artifacts
+        run: node scripts/publish_archie_to_buffer_omnichannel.cjs || true
+      - name: Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: cartoon-episode-output-${{ github.run_id }}
           path: |
             rendered_videos/*.mp4
-            public/rendered_videos/*.mp4
             test_artifacts/archie_5s_reels/*.mp4
-            test_artifacts/archie_tech_fact_5s_latest.mp4
-            test_artifacts/cartoon_episode_plan.json
-            test_artifacts/validation_report.json
-            test_artifacts/subtitles.srt
-            test_artifacts/factory_job_record.json
           retention-days: 14
-
-      - name: Commit Rolling 30-Day Topic Deduplication Log
+      - name: Audit
         if: always()
-        run: |
-          if [ -f data/topic_dedup_log.json ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add data/topic_dedup_log.json
-            if ! git diff --staged --quiet; then
-              git commit -m "chore(dedup): rolling 30-day topic log update [skip ci]"
-              git push origin HEAD || true
-              echo "Committed rolling 30-day dedup log to GitHub."
-            else
-              echo "Dedup log unchanged."
-            fi
-          fi
-
-      - name: Plain-English Audit & Execution Summary
-        if: always()
-        run: |
-          node scripts/workflow_audit_reporter.cjs cartoon_factory
-
-
-      - name: Cleanup Local Temporary Blobs
-        if: always()
-        run: |
-          rm -rf test_artifacts/*.wav test_artifacts/*.svg test_artifacts/*.mp3
-          echo "Temporary media blobs cleaned up."
+        run: node scripts/workflow_audit_reporter.cjs cartoon_factory || true
