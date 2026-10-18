@@ -1,26 +1,33 @@
 /**
  * EMERGENCY RESTORE for publish_buffer_second_tiktok.cjs
- * Loads known-good publisher from history and enforces:
- * Cinema Vanguard / driftreel MUST NOT resolve to bonesceo / mindrush / teen.
+ * Writes patched source under scripts/ (NOT test_artifacts) so relative requires resolve.
+ * Cinema must never resolve to bonesceo/teen.
  */
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
 const GOOD_REF = 'a00c9e83c801f94513ff002978558c5ee8c113bf';
-const CACHE = path.join(process.cwd(), 'test_artifacts', '_restored_buffer_pub.cjs');
+const SCRIPTS_DIR = __dirname;
+const CACHE = path.join(SCRIPTS_DIR, '_restored_buffer_pub_src.cjs');
+const PATCHED = path.join(SCRIPTS_DIR, '_patched_buffer_pub_run.cjs');
 
 function ensureRestored() {
-  if (fs.existsSync(CACHE) && fs.statSync(CACHE).size > 20000) return CACHE;
-  if (!fs.existsSync(path.dirname(CACHE))) fs.mkdirSync(path.dirname(CACHE), { recursive: true });
+  if (fs.existsSync(CACHE) && fs.statSync(CACHE).size > 15000) return CACHE;
   try {
-    execSync(`git show ${GOOD_REF}:scripts/publish_buffer_second_tiktok.cjs > "${CACHE}"`, { stdio: 'pipe' });
-    if (fs.existsSync(CACHE) && fs.statSync(CACHE).size > 20000) return CACHE;
+    execSync(`git show ${GOOD_REF}:scripts/publish_buffer_second_tiktok.cjs > "${CACHE}"`, {
+      stdio: 'pipe',
+      cwd: path.join(SCRIPTS_DIR, '..')
+    });
+    if (fs.existsSync(CACHE) && fs.statSync(CACHE).size > 15000) return CACHE;
   } catch (_) {}
   try {
-    execSync(`curl -sL "https://raw.githubusercontent.com/devmeziem/Hi/${GOOD_REF}/scripts/publish_buffer_second_tiktok.cjs" -o "${CACHE}"`, { stdio: 'pipe' });
+    execSync(
+      `curl -sL "https://raw.githubusercontent.com/devmeziem/Hi/${GOOD_REF}/scripts/publish_buffer_second_tiktok.cjs" -o "${CACHE}"`,
+      { stdio: 'pipe' }
+    );
   } catch (_) {}
-  if (!fs.existsSync(CACHE) || fs.statSync(CACHE).size < 20000) {
+  if (!fs.existsSync(CACHE) || fs.statSync(CACHE).size < 15000) {
     throw new Error('Could not restore publish_buffer_second_tiktok.cjs from history.');
   }
   return CACHE;
@@ -61,13 +68,14 @@ function patchSource(src) {
 const restoredPath = ensureRestored();
 let source = fs.readFileSync(restoredPath, 'utf8');
 source = patchSource(source);
-const patchedPath = path.join(process.cwd(), 'test_artifacts', '_patched_buffer_pub.cjs');
-fs.writeFileSync(patchedPath, source, 'utf8');
+fs.writeFileSync(PATCHED, source, 'utf8');
 
-delete require.cache[require.resolve(patchedPath)];
-const mod = require(patchedPath);
+delete require.cache[PATCHED];
+const mod = require(PATCHED);
 module.exports = mod;
 
 if (require.main === module) {
-  require('child_process').spawnSync(process.execPath, [patchedPath, ...process.argv.slice(2)], { stdio: 'inherit' });
+  const { spawnSync } = require('child_process');
+  const r = spawnSync(process.execPath, [PATCHED, ...process.argv.slice(2)], { stdio: 'inherit' });
+  process.exit(r.status || 0);
 }
