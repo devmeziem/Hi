@@ -4,6 +4,11 @@
       "id": "one_client",
       "ts": 1792310112678,
       "title": "Get one paying client this week"
+    },
+    {
+      "id": "risk_small",
+      "ts": 1792311134435,
+      "title": "Take a small risk before a big dream"
     }
   ]
 }
