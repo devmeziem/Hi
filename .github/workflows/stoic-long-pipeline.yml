@@ -1,13 +1,9 @@
 name: Stoic Long-Form Emotional Essay Pipeline
 
 on:
-  push:
-    branches:
-      - main
-      - master
   schedule:
     # Once daily prime-time slot: 15:00 UTC
-    # User mandate: Once daily release for premium long-form emotional essay (>30s)
+    # User mandate: Once daily release for premium long-form emotional essay (45-75s+)
     - cron: '0 15 * * *'
   workflow_dispatch:
     inputs:
@@ -24,7 +20,7 @@ on:
 
 jobs:
   stoic_long_pipeline:
-    name: Generate & Publish Stoic Long Video (>30s)
+    name: Generate & Publish Stoic Long Video (45-75s+)
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -48,7 +44,7 @@ jobs:
       - name: Install Dependencies
         run: npm install --legacy-peer-deps --no-audit --no-fund
 
-      - name: Execute Stoic Long-Form Video Engine (>30s)
+      - name: Execute Stoic Long-Form Video Engine (45-75s+)
         env:
           PHILOSOPHER_ID: ${{ github.event.inputs.philosopher }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
@@ -91,4 +87,3 @@ jobs:
         if: always()
         run: |
           node scripts/workflow_audit_reporter.cjs stoic_longform
-
