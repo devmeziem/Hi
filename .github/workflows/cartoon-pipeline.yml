@@ -19,7 +19,7 @@ on:
       engine:
         description: 'Rendering Engine'
         required: false
-        default: 'moviepy'
+        default: 'ffmpeg'
         type: choice
         options: [moviepy, ffmpeg, blender]
       pause_youtube:
@@ -68,14 +68,11 @@ jobs:
           node scripts/openrouter_model_finder.cjs || true
           node scripts/cloudflare_model_finder.cjs || true
 
-      - name: Patch Archie simple FFmpeg fallback
-        run: node scripts/patch_archie_ffmpeg_fallback.cjs || true
-
-      - name: Generate Archie content
+      - name: Generate Archie (complex then simple fallback)
         env:
           VIDEO_MODE: ${{ github.event.inputs.video_mode || 'auto' }}
           TEST_TOPIC: ${{ github.event.inputs.topic }}
-          CARTOON_ENGINE: ${{ github.event.inputs.engine || 'moviepy' }}
+          CARTOON_ENGINE: ${{ github.event.inputs.engine || 'ffmpeg' }}
           DRY_RUN: ${{ github.event.inputs.dry_run == true || github.event.inputs.dry_run == 'true' }}
           PAUSE_YOUTUBE: ${{ github.event.inputs.pause_youtube == true }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -88,18 +85,22 @@ jobs:
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 || secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 || secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 || secrets.YOUTUBE_REFRESH_TOKEN }}
-          YOUTUBE_HANDLE_CH3: ${{ secrets.YOUTUBE_HANDLE_CH3 }}
-          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
-          BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID }}
-          BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
           FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
         run: |
-          echo "=== Archie (manual/schedule only — no push) ==="
+          set +e
+          echo "=== Try complex Archie fact reel ==="
           node scripts/generate_archie_tech_fact_reel.cjs
+          CODE=$?
+          if [ $CODE -ne 0 ]; then
+            echo "=== Complex failed ($CODE) — running SIMPLE reliable Archie reel ==="
+            node scripts/generate_archie_simple_reel.cjs
+            CODE=$?
+          fi
+          exit $CODE
 
       - name: Artifacts
         if: always()
