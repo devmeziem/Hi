@@ -2,8 +2,6 @@ name: Fin Blueprint Pipeline - Daily Mix (Channel 1)
 
 on:
   schedule:
-    # Daily mix (UTC):
-    # 05:00 quote 5s | 11:00 quote 5s | 15:00 income teaching | 20:00 financial story doc
     - cron: '0 5,11,15,20 * * *'
   workflow_dispatch:
     inputs:
@@ -12,11 +10,7 @@ on:
         required: false
         default: 'auto'
         type: choice
-        options:
-          - auto
-          - quote
-          - income
-          - documentary
+        options: [auto, quote, income, documentary]
       topic:
         description: 'Optional topic override'
         required: false
@@ -44,10 +38,13 @@ jobs:
       - name: Install deps
         run: npm install --legacy-peer-deps --no-audit --no-fund
 
-      - name: Install FFmpeg / espeak
+      - name: Install FFmpeg
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg espeak-ng librsvg2-bin || true
+          sudo apt-get install -y ffmpeg librsvg2-bin || true
+
+      - name: Apply hard Fin quote dedup fix
+        run: node scripts/apply_fin_dedup_fix.cjs
 
       - name: Run Fin daily slot
         env:
@@ -72,9 +69,7 @@ jobs:
           YOUTUBE_HANDLE_CH1: ${{ secrets.YOUTUBE_HANDLE_CH1 || secrets.YOUTUBE_HANDLE_FIN }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
           FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
-        run: |
-          echo "=== Fin Blueprint slot (mode=$VIDEO_MODE) ==="
-          node scripts/run_fin_daily_slot.cjs
+        run: node scripts/run_fin_daily_slot.cjs
 
       - name: Commit dedup logs
         if: always()
@@ -83,7 +78,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/fin_income_dedup.json data/topic_dedup_log.json fin_quote_history.json 2>/dev/null || true
           if ! git diff --staged --quiet; then
-            git commit -m "chore(fin-dedup): rolling 30-day log [skip ci]" || true
+            git commit -m "chore(fin-dedup): rolling history [skip ci]" || true
             git push origin HEAD || true
           fi
 
@@ -95,10 +90,5 @@ jobs:
           path: |
             rendered_videos/fin_*.mp4
             rendered_videos/*fin*.mp4
-            test_artifacts/fin_*
           if-no-files-found: ignore
           retention-days: 7
-
-      - name: Audit
-        if: always()
-        run: node scripts/workflow_audit_reporter.cjs fin_blueprint || true
