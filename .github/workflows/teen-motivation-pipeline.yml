@@ -1,10 +1,6 @@
 name: Apex Discipline - Teen & Youth Motivation Pipeline (Channel 5)
 
 on:
-  push:
-    branches:
-      - main
-      - master
   schedule:
     # 4 Posts Daily:
     # 04:00 UTC (05:00 WAT) -> 32s Emotionally Impactful Long-Form Video (Soft Piano + Dark Blank Quote Ending Screen)
@@ -99,7 +95,7 @@ jobs:
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 || secrets.BUFFER_API_KEY }}
           BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID || secrets.BUFFER_TIKTOK_TEEN_CHANNEL || '6ab05677ea19ca0bde9c3ffb' }}
         run: |
-          echo "=== 🔥 Generating Teen Motivation Reel in Noir B&W (Type: $VIDEO_TYPE, Topic: $TOPIC) ==="
+          echo "=== Generating Teen Motivation Reel in Noir B&W (Type: $VIDEO_TYPE, Topic: $TOPIC) ==="
           node scripts/generate_teen_motivation_reel.cjs
           echo "=== Motivation Reel Assembled Successfully ==="
 
@@ -113,7 +109,7 @@ jobs:
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "=== 📱 Publishing Teen Motivation Reel to TikTok (6ab05677ea19ca0bde9c3ffb) via Buffer API 2 ==="
+          echo "=== Publishing Teen Motivation Reel to TikTok (6ab05677ea19ca0bde9c3ffb) via Buffer API 2 ==="
           node scripts/publish_buffer_second_tiktok.cjs teen_motivation
 
       - name: Archive Motivation Video Artifacts
