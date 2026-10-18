@@ -290,6 +290,18 @@
       "channel": "stoic",
       "topic": "The supreme art of war is to subdue the enemy without fighting.",
       "timestamp": "2026-10-18T10:35:48.767Z"
+    },
+    {
+      "hash": "2b3d4944fad3",
+      "channel": "driftreel",
+      "topic": "The Silent Vanishing of 1974",
+      "timestamp": "2026-10-18T17:07:46.981Z"
+    },
+    {
+      "hash": "2b3d4944fad3",
+      "channel": "documentary_movie",
+      "topic": "The Silent Vanishing of 1974",
+      "timestamp": "2026-10-18T17:07:47.939Z"
     }
   ]
 }
