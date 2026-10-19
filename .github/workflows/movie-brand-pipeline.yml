@@ -16,7 +16,7 @@ on:
         default: true
         type: boolean
       publish_tiktok:
-        description: 'TikTok Buffer API2 (driftreel only — never teen)'
+        description: 'TikTok Buffer API2 (movie channel id only)'
         required: false
         default: true
         type: boolean
@@ -54,30 +54,21 @@ jobs:
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
           BUFFER_API_TOKEN_2: ${{ secrets.BUFFER_API_TOKEN_2 || secrets.BUFFER_API_KEY_2 }}
           BUFFER_TIKTOK_MOVIE_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_MOVIE_CHANNEL_ID }}
+          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
         run: node scripts/generate_documentary_movie_reel.cjs
-      - name: Buffer TikTok (cinema/driftreel only)
+      - name: Buffer TikTok (movie channel id ONLY)
         if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.publish_tiktok == true || github.event.inputs.publish_tiktok == 'true' || github.event_name == 'schedule') }}
         env:
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
           BUFFER_API_TOKEN_2: ${{ secrets.BUFFER_API_TOKEN_2 || secrets.BUFFER_API_KEY_2 }}
           BUFFER_TIKTOK_MOVIE_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_MOVIE_CHANNEL_ID }}
+          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID }}
           PUBLISH_TARGET: cinema
-        run: |
-          if [ ! -f rendered_videos/driftreel_documentary_latest.mp4 ] && [ ! -f rendered_videos/documentary_movie_*.mp4 ]; then
-            echo "No documentary mp4 — skip Buffer"
-            exit 1
-          fi
-          # Prefer latest driftreel copy
-          export VIDEO_PATH="rendered_videos/driftreel_documentary_latest.mp4"
-          if [ ! -f "$VIDEO_PATH" ]; then
-            VIDEO_PATH=$(ls -t rendered_videos/documentary_movie_*.mp4 2>/dev/null | head -1)
-          fi
-          echo "Posting $VIDEO_PATH to Buffer TikTok (cinema)"
-          node scripts/publish_buffer_second_tiktok.cjs || node scripts/publish_buffer_tiktok.cjs || true
+        run: node scripts/publish_cinema_buffer_tiktok.cjs
       - if: always()
         uses: actions/upload-artifact@v4
         with:

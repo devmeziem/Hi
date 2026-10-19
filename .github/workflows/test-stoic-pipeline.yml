@@ -72,13 +72,16 @@ jobs:
             rendered_videos/stoic_quote_5s_latest.mp4
             rendered_videos/stoic_quote_*.mp4
           if-no-files-found: ignore
-      - name: Commit dedup history
+      - name: Commit dedup history (pull --rebase)
         if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/topic_dedup_log.json stoic_quote_history.json 2>/dev/null || true
-          if ! git diff --staged --quiet; then
-            git commit -m "chore(dedup): stoic topic log [skip ci]" || true
-            git push origin HEAD || true
+          if git diff --staged --quiet; then
+            echo "No dedup changes"
+            exit 0
           fi
+          git commit -m "chore(dedup): stoic topic log [skip ci]" || true
+          git pull --rebase origin main || git pull --rebase --autostash origin main || true
+          git push origin HEAD:main || true

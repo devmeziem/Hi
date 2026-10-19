@@ -1,10 +1,7 @@
 #!/usr/bin/env node
 /**
- * Fin live quote — EVERY run must be unique:
- * - Live Wikiquote (new author/quote via history)
- * - New image (portrait attempt + rotating Unsplash, no fixed single stock)
- * - New BGM (audio_asset_manager rotation or varied pad)
- * - Unique algorithm-friendly titles (never same template every post)
+ * Fin live quote — clean Wikiquote only, ASS captions (no drawtext URL bombs),
+ * unique image + BGM every run.
  */
 const fs = require('fs');
 const path = require('path');
@@ -12,7 +9,7 @@ const crypto = require('crypto');
 const { execSync } = require('child_process');
 const https = require('https');
 const { VOLUMES, loadHistory, saveHistory, isDuplicate, normalizeQuote } = require('./content_system_shared.cjs');
-const { FIN_AUTHORS, fetchWikiquoteQuotes } = require('./public_sources.cjs');
+const { FIN_AUTHORS, fetchWikiquoteQuotes, isCleanQuote } = require('./public_sources.cjs');
 
 const OUT = path.join(process.cwd(), 'rendered_videos');
 const ART = path.join(process.cwd(), 'test_artifacts');
@@ -45,8 +42,9 @@ async function pickLiveQuote() {
   for (const page of authors) {
     try {
       console.log('[Fin] Wikiquote', page);
-      const list = await fetchWikiquoteQuotes(page);
-      console.log('[Fin] got', list.length, 'quotes');
+      let list = await fetchWikiquoteQuotes(page);
+      list = list.filter((q) => isCleanQuote(q.quote));
+      console.log('[Fin] clean quotes', list.length);
       for (const q of list.sort(() => Math.random() - 0.5)) {
         if (!isDuplicate(q, history, { authorWindow: 8, overlapMax: 0.32 })) {
           saveHistory(HISTORY, q);
@@ -57,21 +55,7 @@ async function pickLiveQuote() {
       console.warn('[Fin]', page, e.message);
     }
   }
-  for (const page of authors) {
-    try {
-      const list = await fetchWikiquoteQuotes(page);
-      const fresh = list.find((q) => !history.some((h) => normalizeQuote(h.quote) === normalizeQuote(q.quote)));
-      if (fresh) {
-        saveHistory(HISTORY, fresh);
-        return fresh;
-      }
-      if (list[0]) {
-        saveHistory(HISTORY, list[0]);
-        return list[0];
-      }
-    } catch (_) {}
-  }
-  throw new Error('No live Wikiquote finance quote');
+  throw new Error('No clean live Wikiquote finance quote');
 }
 
 async function wikiPortrait(author) {
@@ -99,7 +83,6 @@ async function wikiPortrait(author) {
   }
 }
 
-/** Rotating Unsplash pool — different photo every run */
 const IMAGE_POOL = [
   'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1080&q=80',
   'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=1080&q=80',
@@ -114,7 +97,6 @@ const IMAGE_POOL = [
 ];
 
 async function pickImage(author, dest) {
-  // 1) try Wikipedia portrait (unique per author)
   const port = await wikiPortrait(author);
   if (port && !String(port).endsWith('.svg')) {
     try {
@@ -125,13 +107,14 @@ async function pickImage(author, dest) {
       }
     } catch (_) {}
   }
-  // 2) Unsplash via API if key present
   const key = (process.env.UNSPLASH_ACCESS_KEY || process.env.UNSPLASH_API_KEY || '').trim();
   if (key) {
     try {
-      const q = encodeURIComponent('finance business desk charts abstract');
       const api =
-        'https://api.unsplash.com/photos/random?query=' + q + '&orientation=portrait&client_id=' + key;
+        'https://api.unsplash.com/photos/random?query=' +
+        encodeURIComponent('finance business abstract') +
+        '&orientation=portrait&client_id=' +
+        key;
       const j = await new Promise((resolve, reject) => {
         https
           .get(api, { headers: { 'User-Agent': 'FinBot/1.0' } }, (res) => {
@@ -159,7 +142,6 @@ async function pickImage(author, dest) {
       console.warn('[Fin] Unsplash API', e.message);
     }
   }
-  // 3) rotating pool — index by runId so consecutive runs differ
   const idx = Math.abs(runId + author.length) % IMAGE_POOL.length;
   await download(IMAGE_POOL[idx], dest);
   console.log('[Fin] image: pool #' + idx);
@@ -167,7 +149,6 @@ async function pickImage(author, dest) {
 }
 
 function makeUniqueBgm(outPath) {
-  // Prefer real rotated track
   try {
     const { resolveRealMusicTrack } = require('./audio_asset_manager.cjs');
     const track = resolveRealMusicTrack({ channel: 'fin', durationSec: DUR });
@@ -182,7 +163,6 @@ function makeUniqueBgm(outPath) {
       }
     }
   } catch (_) {}
-  // Varied pad per run (different frequencies)
   const f1 = 90 + (runId % 7) * 8;
   const f2 = 140 + (runId % 5) * 11;
   const f3 = 200 + (runId % 6) * 9;
@@ -193,11 +173,54 @@ function makeUniqueBgm(outPath) {
   console.log('[Fin] BGM: pad', f1, f2, f3);
 }
 
-function escapeDraw(s) {
-  return String(s).replace(/\\/g, '\\\\').replace(/:/g, '\\:').replace(/'/g, '').slice(0, 100);
+function assEscape(s) {
+  return String(s)
+    .replace(/\\/g, '\\\\')
+    .replace(/\{/g, '\\{')
+    .replace(/\}/g, '\\}')
+    .replace(/\n/g, ' ')
+    .slice(0, 180);
 }
 
-/** Algorithm-friendly unique titles — never one template forever */
+function wrapLines(text, maxLen) {
+  const words = String(text).split(/\s+/);
+  const lines = [];
+  let cur = '';
+  for (const w of words) {
+    if ((cur + ' ' + w).trim().length > maxLen) {
+      if (cur) lines.push(cur);
+      cur = w;
+    } else cur = (cur + ' ' + w).trim();
+  }
+  if (cur) lines.push(cur);
+  return lines.slice(0, 4);
+}
+
+function writeAss(quote, author, assPath) {
+  const lines = wrapLines(quote, 36).map(assEscape);
+  const body = lines.map((ln, i) => {
+    const y = 1450 + i * 70;
+    return `Dialogue: 0,0:00:00.00,0:00:05.00,Default,,0,0,0,,{\\an8\\pos(540,${y})}${ln}`;
+  });
+  body.push(
+    `Dialogue: 0,0:00:00.00,0:00:05.00,Default,,0,0,0,,{\\an8\\pos(540,${1450 + lines.length * 70})}{\\fs28\\c&HCCCCCC&}— ${assEscape(author)}`
+  );
+  const ass = `[Script Info]
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1920
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,DejaVu Sans,36,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,3,1,2,40,40,80,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+${body.join('\n')}
+`;
+  fs.writeFileSync(assPath, ass, 'utf8');
+}
+
 function buildTitle(live) {
   const q = live.quote;
   const a = live.author;
@@ -212,7 +235,8 @@ function buildTitle(live) {
     () => `Stop repeating this money mistake`,
     () => `"${short}" — ${a}`
   ];
-  const pick = templates[Math.abs(crypto.createHash('sha1').update(q).digest().readUInt32BE(0)) % templates.length];
+  const pick =
+    templates[Math.abs(crypto.createHash('sha1').update(q).digest().readUInt32BE(0)) % templates.length];
   let title = pick();
   if (title.length > 95) title = title.slice(0, 92) + '…';
   return title;
@@ -223,10 +247,12 @@ async function main() {
   if (!fs.existsSync(ART)) fs.mkdirSync(ART, { recursive: true });
 
   const live = await pickLiveQuote();
+  if (!isCleanQuote(live.quote)) throw new Error('Rejected dirty quote after pick');
   console.log('[Fin]', live.author, '—', live.quote.slice(0, 90));
 
   const imgPath = path.join(ART, `fin_img_${runId}.jpg`);
   const bgmPath = path.join(ART, `fin_bgm_${runId}.wav`);
+  const assPath = path.join(ART, `fin_cap_${runId}.ass`);
   const outPath = path.join(OUT, `fin_quote_live_${runId}.mp4`);
 
   await pickImage(live.author, imgPath);
@@ -235,25 +261,18 @@ async function main() {
   makeUniqueBgm(bgmPath);
   if (!fs.existsSync(bgmPath) || fs.statSync(bgmPath).size < 1000) throw new Error('HOLLOW: no BGM');
 
-  const q1 = escapeDraw(live.quote.slice(0, 55));
-  const q2 = escapeDraw(live.quote.length > 55 ? live.quote.slice(55, 110) : '');
-  const q3 = escapeDraw(live.quote.length > 110 ? live.quote.slice(110, 160) : '');
-  const auth = escapeDraw('— ' + live.author);
-  let draw = `drawtext=text='${q1}':fontcolor=white:fontsize=34:x=(w-text_w)/2:y=h*0.58:shadowcolor=black:shadowx=2:shadowy=2`;
-  if (q2) draw += `,drawtext=text='${q2}':fontcolor=white:fontsize=34:x=(w-text_w)/2:y=h*0.64:shadowcolor=black:shadowx=2:shadowy=2`;
-  if (q3) draw += `,drawtext=text='${q3}':fontcolor=white:fontsize=34:x=(w-text_w)/2:y=h*0.70:shadowcolor=black:shadowx=2:shadowy=2`;
-  draw += `,drawtext=text='${auth}':fontcolor=0xdddddd:fontsize=26:x=(w-text_w)/2:y=h*0.78`;
+  writeAss(live.quote, live.author, assPath);
 
-  const vf = `scale=1200:2133:force_original_aspect_ratio=increase,crop=1200:2133,zoompan=z='min(zoom+0.0015,1.14)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${Math.ceil(DUR * 30)}:s=1080x1920:fps=30,eq=brightness=-0.05:contrast=1.12:saturation=0.85,${draw}`;
+  const vf = `scale=1200:2133:force_original_aspect_ratio=increase,crop=1200:2133,zoompan=z='min(zoom+0.0015,1.14)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${Math.ceil(DUR * 30)}:s=1080x1920:fps=30,eq=brightness=-0.05:contrast=1.12:saturation=0.85,ass='${assPath.replace(/'/g, "'\\''")}'`;
   execSync(
     `ffmpeg -y -loop 1 -i "${imgPath}" -i "${bgmPath}" -vf "${vf}" -map 0:v -map 1:a -c:v libx264 -preset veryfast -crf 20 -c:a aac -b:a 128k -t ${DUR} -pix_fmt yuv420p "${outPath}"`,
     { stdio: 'inherit' }
   );
-  if (fs.statSync(outPath).size < 80000) throw new Error('HOLLOW: tiny output');
+  if (!fs.existsSync(outPath) || fs.statSync(outPath).size < 80000) throw new Error('HOLLOW: tiny output');
 
   const title = buildTitle(live);
   console.log('[Fin] Title:', title);
-  console.log('[Fin] OK', outPath);
+  console.log('[Fin] OK', outPath, (fs.statSync(outPath).size / 1024).toFixed(0) + 'KB');
 
   if (!isDry) {
     try {

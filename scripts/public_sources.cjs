@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Public sources — Wikiquote / Wikipedia */
+/** Public sources — Wikiquote / Wikipedia with strict quote hygiene */
 const https = require('https');
 
 function httpsGet(url, timeoutMs) {
@@ -13,8 +13,12 @@ function httpsGet(url, timeoutMs) {
           return httpsGet(res.headers.location, timeoutMs).then(resolve, reject);
         }
         var data = '';
-        res.on('data', function (c) { data += c; });
-        res.on('end', function () { resolve({ status: res.statusCode, data: data }); });
+        res.on('data', function (c) {
+          data += c;
+        });
+        res.on('end', function () {
+          resolve({ status: res.statusCode, data: data });
+        });
       }
     );
     req.on('error', reject);
@@ -38,6 +42,26 @@ function stripWiki(text) {
     .trim();
 }
 
+/** Reject URLs, citations, book titles, junk Wikiquote lines */
+function isCleanQuote(q) {
+  if (!q || typeof q !== 'string') return false;
+  var t = q.trim();
+  if (t.length < 35 || t.length > 220) return false;
+  if (!/[a-zA-Z]/.test(t)) return false;
+  var low = t.toLowerCase();
+  if (/https?:\/\//i.test(t)) return false;
+  if (/www\./i.test(t)) return false;
+  if (/youtube\.com|youtu\.be|watch\?v=/i.test(t)) return false;
+  if (/^\*?\s*\[/.test(t)) return false;
+  if (/\]\s*\(at\s+\d/i.test(t)) return false;
+  if (/principles for dealing with the changing/i.test(low)) return false;
+  if (/isbn|doi:|pmid/i.test(low)) return false;
+  // Prefer sentences that look like speech, not bare titles
+  var letters = (t.match(/[a-zA-Z]/g) || []).length;
+  if (letters / t.length < 0.55) return false;
+  return true;
+}
+
 function extractQuotesFromWikitext(wikitext) {
   var quotes = [];
   var raw = String(wikitext || '');
@@ -51,19 +75,21 @@ function extractQuotesFromWikitext(wikitext) {
     if (/^==/.test(line)) continue;
     if (/^\[\[File:/i.test(line)) continue;
     if (/^\{\{/.test(line)) continue;
+    if (/https?:\/\//i.test(line)) continue;
     var m = line.match(/^\*\s*["\u201C](.+?)["\u201D]/);
     if (!m) m = line.match(/^\*\s*(.+)$/);
     if (!m) continue;
     var q = stripWiki(m[1]);
     q = q.replace(/\s*[-\u2014\u2013]\s*.{0,40}$/, '').trim();
-    if (q.length >= 40 && q.length <= 280 && /[a-zA-Z]/.test(q)) quotes.push(q);
+    q = q.replace(/\[https?:[^\]]+\]/gi, '').trim();
+    if (isCleanQuote(q)) quotes.push(q);
   }
 
-  var re = /["\u201C]([^"\u201D]{40,280})["\u201D]/g;
+  var re = /["\u201C]([^"\u201D]{35,220})["\u201D]/g;
   var mm;
   while ((mm = re.exec(raw))) {
     var qq = stripWiki(mm[1]);
-    if (qq.length >= 40 && qq.length <= 280) quotes.push(qq);
+    if (isCleanQuote(qq)) quotes.push(qq);
   }
   return Array.from(new Set(quotes));
 }
@@ -82,78 +108,66 @@ var FIN_AUTHORS = [
   'John_D._Rockefeller'
 ];
 
-var STOIC_AUTHORS = ['Marcus_Aurelius', 'Epictetus', 'Seneca_the_Younger', 'Zeno_of_Citium', 'Musonius_Rufus'];
+var STOIC_AUTHORS = [
+  'Marcus_Aurelius',
+  'Epictetus',
+  'Seneca_the_Younger',
+  'Zeno_of_Citium',
+  'Cleanthes',
+  'Musonius_Rufus'
+];
 
-async function fetchWikiquoteQuotes(authorPage) {
+var ARCHIE_TOPIC_SEEDS = [
+  { title: 'Why the sky is blue', wiki: 'Rayleigh_scattering', hook: 'The sky is blue because of how sunlight scatters.' },
+  { title: 'Why ears pop on planes', wiki: 'Eustachian_tube', hook: 'Your ears pop when cabin pressure changes.' },
+  { title: 'Why ice floats', wiki: 'Ice', hook: 'Ice floats because it is less dense than liquid water.' },
+  { title: 'How bees find flowers', wiki: 'Honey_bee', hook: 'Bees use dance, scent, and ultraviolet patterns.' },
+  { title: 'What causes thunder', wiki: 'Thunder', hook: 'Thunder is the sound of rapidly expanding air from lightning.' }
+];
+
+async function fetchWikiquoteQuotes(pageTitle) {
+  var title = String(pageTitle || '').replace(/ /g, '_');
   var url =
     'https://en.wikiquote.org/w/api.php?action=parse&page=' +
-    encodeURIComponent(authorPage) +
+    encodeURIComponent(title) +
     '&prop=wikitext&format=json&formatversion=2';
   var res = await httpsGet(url);
-  if (res.status !== 200) return [];
-  var json;
-  try {
-    json = JSON.parse(res.data);
-  } catch (e) {
-    return [];
-  }
-  var wt = json && json.parse && json.parse.wikitext;
-  if (!wt) return [];
-  return extractQuotesFromWikitext(wt).map(function (quote) {
+  if (res.status !== 200) throw new Error('Wikiquote HTTP ' + res.status);
+  var j = JSON.parse(res.data);
+  if (j.error) throw new Error(j.error.info || 'wikiquote error');
+  var wt = j.parse && j.parse.wikitext;
+  if (!wt) throw new Error('no wikitext');
+  var list = extractQuotesFromWikitext(wt).filter(isCleanQuote);
+  return list.map(function (quote) {
     return {
       quote: quote,
-      author: authorPage.replace(/_/g, ' '),
-      source: 'wikiquote',
-      reference: 'https://en.wikiquote.org/wiki/' + authorPage
+      author: title.replace(/_/g, ' '),
+      reference: 'Wikiquote:' + title
     };
   });
 }
 
 async function fetchWikipediaSummary(title) {
-  var url = 'https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(title);
+  var t = String(title || '').replace(/ /g, '_');
+  var url = 'https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(t);
   var res = await httpsGet(url);
-  if (res.status !== 200) return null;
-  try {
-    var j = JSON.parse(res.data);
-    return {
-      title: j.title,
-      extract: j.extract,
-      thumbnail: (j.thumbnail && j.thumbnail.source) || (j.originalimage && j.originalimage.source) || null,
-      url: j.content_urls && j.content_urls.desktop && j.content_urls.desktop.page
-    };
-  } catch (e) {
-    return null;
-  }
+  if (res.status !== 200) throw new Error('Wikipedia HTTP ' + res.status);
+  var j = JSON.parse(res.data);
+  return {
+    title: j.title,
+    extract: j.extract || '',
+    thumbnail: (j.thumbnail && j.thumbnail.source) || null,
+    url: j.content_urls && j.content_urls.desktop && j.content_urls.desktop.page
+  };
 }
 
-var ARCHIE_TOPIC_SEEDS = [
-  { title: 'Why do ears pop on planes?', wiki: 'Eustachian_tube', visual: 'airplane cabin window sky' },
-  { title: 'Why is the sky blue?', wiki: 'Rayleigh_scattering', visual: 'clear blue sky daytime clouds' },
-  { title: 'Why does ice float?', wiki: 'Ice', visual: 'ice cubes floating in water glass' },
-  { title: 'Why do onions make you cry?', wiki: 'Onion', visual: 'person cutting onion kitchen' },
-  { title: 'Why does metal feel cold?', wiki: 'Thermal_conductivity', visual: 'hand metal railing winter' },
-  { title: 'Why do we see lightning before thunder?', wiki: 'Lightning', visual: 'lightning storm night sky' }
-];
-
-var TEEN_SITUATION_HOOKS = [
-  'You keep unlocking your phone with no reason',
-  'You say you will start tomorrow every night',
-  'Everyone looks ahead while you feel behind',
-  'Your room is chaos and so is your focus',
-  'You study for hours but remember nothing',
-  'You sleep late and hate your morning self',
-  'You wait for motivation that never arrives',
-  'You compare your chapter 2 to someone chapter 20'
-];
-
 module.exports = {
-  httpsGet: httpsGet,
-  stripWiki: stripWiki,
-  extractQuotesFromWikitext: extractQuotesFromWikitext,
-  FIN_AUTHORS: FIN_AUTHORS,
-  STOIC_AUTHORS: STOIC_AUTHORS,
-  fetchWikiquoteQuotes: fetchWikiquoteQuotes,
-  fetchWikipediaSummary: fetchWikipediaSummary,
-  ARCHIE_TOPIC_SEEDS: ARCHIE_TOPIC_SEEDS,
-  TEEN_SITUATION_HOOKS: TEEN_SITUATION_HOOKS
+  FIN_AUTHORS,
+  STOIC_AUTHORS,
+  ARCHIE_TOPIC_SEEDS,
+  fetchWikiquoteQuotes,
+  fetchWikipediaSummary,
+  isCleanQuote,
+  stripWiki,
+  extractQuotesFromWikitext
 };
