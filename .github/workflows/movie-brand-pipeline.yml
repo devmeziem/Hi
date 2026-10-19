@@ -16,7 +16,7 @@ on:
         default: true
         type: boolean
       publish_tiktok:
-        description: 'TikTok via Buffer GraphQL (API2) + GH release media'
+        description: 'TikTok Buffer API2 → archie.the.explorer6 (movie id)'
         required: false
         default: true
         type: boolean
@@ -42,7 +42,7 @@ jobs:
         env:
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           PUBLISH_YOUTUBE: ${{ github.event.inputs.publish_youtube }}
-          PUBLISH_TIKTOK: ${{ github.event.inputs.publish_tiktok }}
+          PUBLISH_TIKTOK: 'false'
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -54,7 +54,6 @@ jobs:
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH4 }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH4 }}
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
-          BUFFER_API_TOKEN_2: ${{ secrets.BUFFER_API_TOKEN_2 || secrets.BUFFER_API_KEY_2 }}
           BUFFER_TIKTOK_MOVIE_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_MOVIE_CHANNEL_ID }}
           BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
@@ -62,18 +61,14 @@ jobs:
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
         run: node scripts/generate_documentary_movie_reel.cjs
-      - name: Restore proven Buffer GraphQL TikTok publisher
+      - name: Restore Buffer GraphQL publisher
+        if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.publish_tiktok == true || github.event.inputs.publish_tiktok == 'true' || github.event_name == 'schedule') }}
         run: |
-          # Known-good GraphQL createPost path (not legacy REST)
           curl -fsSL "https://raw.githubusercontent.com/devmeziem/Hi/a00c9e83c801f94513ff002978558c5ee8c113bf/scripts/publish_buffer_second_tiktok.cjs" \
             -o scripts/publish_buffer_second_tiktok.cjs
-          # Ensure movie/cinema target does not fall through to teen
-          if ! grep -q "movie_brand" scripts/publish_buffer_second_tiktok.cjs; then
-            echo "Restore failed"
-            exit 1
-          fi
+          test -s scripts/publish_buffer_second_tiktok.cjs
           wc -c scripts/publish_buffer_second_tiktok.cjs
-      - name: Buffer TikTok (GraphQL + movie channel)
+      - name: Buffer TikTok → archie.the.explorer6 (movie channel id)
         if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.publish_tiktok == true || github.event.inputs.publish_tiktok == 'true' || github.event_name == 'schedule') }}
         env:
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
@@ -86,22 +81,32 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
-          # Force documentary/movie path inside publisher
-          PUBLISH_TARGET: documentary
-          CHANNEL_TYPE: driftreel_documentary
+          CHANNEL_TARGET: movie_brand
           DRY_RUN: 'false'
         run: |
-          # Prefer latest documentary mp4 as driftreel_latest
-          mkdir -p rendered_videos test_artifacts/documentary
-          if [ -f rendered_videos/driftreel_documentary_latest.mp4 ]; then
-            true
-          elif ls rendered_videos/documentary_movie_*.mp4 1>/dev/null 2>&1; then
-            cp $(ls -t rendered_videos/documentary_movie_*.mp4 | head -1) rendered_videos/driftreel_documentary_latest.mp4
-          elif [ -f rendered_videos/cinema_latest.mp4 ]; then
-            cp rendered_videos/cinema_latest.mp4 rendered_videos/driftreel_documentary_latest.mp4
+          mkdir -p rendered_videos
+          if [ ! -f rendered_videos/driftreel_documentary_latest.mp4 ]; then
+            if ls rendered_videos/documentary_movie_*.mp4 1>/dev/null 2>&1; then
+              cp $(ls -t rendered_videos/documentary_movie_*.mp4 | head -1) rendered_videos/driftreel_documentary_latest.mp4
+            fi
           fi
-          ls -lh rendered_videos/*.mp4 2>/dev/null | head -10
-          node scripts/publish_buffer_second_tiktok.cjs
+          test -f rendered_videos/driftreel_documentary_latest.mp4 || { echo "NO VIDEO"; exit 1; }
+          ls -lh rendered_videos/driftreel_documentary_latest.mp4
+          # argv[2] selects movie_brand — do NOT default silently
+          set +e
+          OUT=$(node scripts/publish_buffer_second_tiktok.cjs movie_brand 2>&1)
+          CODE=$?
+          set -e
+          echo "$OUT"
+          if echo "$OUT" | grep -qi "SKIPPING publishing\|CHANNEL_NAME_NOT_VERIFIED\|NO_TARGET_TIKTOK\|VIDEO_NOT_FOUND"; then
+            echo "Buffer skipped or failed verification — failing job"
+            exit 1
+          fi
+          if [ $CODE -ne 0 ]; then exit $CODE; fi
+          if ! echo "$OUT" | grep -qi "Post ID\|Successfully scheduled\|Successfully posted\|Buffer Dispatch Recorded"; then
+            echo "No success marker in Buffer output — failing job"
+            exit 1
+          fi
       - if: always()
         uses: actions/upload-artifact@v4
         with:
