@@ -48,7 +48,7 @@ jobs:
       - name: Install system deps
         run: |
           sudo apt-get update -qq || true
-          sudo apt-get install -y --no-install-recommends ffmpeg espeak-ng libsndfile1 fonts-dejavu-core || true
+          sudo apt-get install -y --no-install-recommends ffmpeg espeak-ng libsndfile1 fonts-dejavu-core python3-numpy || true
       - name: Install Node deps
         run: npm install --legacy-peer-deps --no-audit --no-fund
       - name: Pre-compile puppet assets (poses for gestures)
@@ -56,6 +56,8 @@ jobs:
           node scripts/build_exact_puppet_shapes.cjs || true
           node scripts/build_modern_tech_character.cjs || true
       - run: node scripts/apply_all_content_system.cjs || true
+      - name: Fix assembler null watermark crash
+        run: node scripts/patch_archie_assembler_null.cjs || true
       - name: Generate Archie (FULL path — lipsync + hands + captions)
         env:
           VIDEO_MODE: ${{ github.event.inputs.video_mode || 'auto' }}
@@ -87,16 +89,13 @@ jobs:
         run: |
           CURRENT_HOUR=$(date -u +%-H)
           MODE="${VIDEO_MODE:-auto}"
-          # Full animated episode uses lipsync + gesture rig
           if [ "$MODE" = "video" ] || { [ "$MODE" = "auto" ] && [ "$CURRENT_HOUR" -eq 13 ]; }; then
             echo "=== FULL cartoon runner (lipsync + gestures) ==="
             node scripts/test_cartoon_runner.cjs
           else
-            echo "=== Archie tech fact reel (animated captions + puppet cycle) ==="
+            echo "=== Archie tech fact reel ==="
             node scripts/generate_archie_tech_fact_reel.cjs
           fi
-          # Hard fail if only simple static was produced without caption track
-          ls -lh rendered_videos/archie_*.mp4 rendered_videos/*cartoon*.mp4 test_artifacts/archie_5s_reels/*.mp4 2>/dev/null | head -20 || true
       - name: Buffer FB/IG only (never TikTok on API 1)
         if: ${{ success() && github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' }}
         env:
