@@ -508,5 +508,18 @@
     "author": "Niccolò Machiavelli",
     "channel": "stoic",
     "timestamp": "2026-10-19T12:31:15.573Z"
+  },
+  {
+    "quote": "I am a cage, in search of a bird.",
+    "author": "Franz Kafka",
+    "credentials": "Author of The Trial & The Metamorphosis",
+    "theme": "introspection",
+    "usedAt": "2026-10-19T19:42:52.989Z"
+  },
+  {
+    "quote": "I am a cage, in search of a bird.",
+    "author": "Franz Kafka",
+    "channel": "stoic",
+    "timestamp": "2026-10-19T19:42:52.990Z"
   }
 ]
