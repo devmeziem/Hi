@@ -2,8 +2,6 @@ name: Stoic 5-Second Quote Reel Pipeline
 
 on:
   schedule:
-    # 3x daily spaced drops for authentic Stoic 5s pure quote reels: 06:00, 14:00, and 22:00 UTC
-    # User mandate: 3 pure quote shorts per day (no voice, slow BGM + panning only)
     - cron: '0 6,14,22 * * *'
   workflow_dispatch:
     inputs:
@@ -13,7 +11,7 @@ on:
         default: false
         type: boolean
       scholar:
-        description: 'Specific Scholar / Philosopher (Optional, leave blank for auto-rotation)'
+        description: 'Specific Scholar / Philosopher (Optional)'
         required: false
         default: ''
         type: string
@@ -25,28 +23,21 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js Environment
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
-
-      - name: Verify or Install FFmpeg
-        run: |
+          cache: npm
+      - run: |
           if ! command -v ffmpeg &> /dev/null; then
             sudo apt-get update && sudo apt-get install -y ffmpeg librsvg2-bin
           fi
-          ffmpeg -version | head -n 1
-
-      - name: Install Dependencies
-        run: npm install --legacy-peer-deps --no-audit --no-fund
-
-      - name: Execute Stoic 5-Second Pure Quote Reel Generator (No Voice)
+      - run: npm install --legacy-peer-deps --no-audit --no-fund
+      - name: Force fresh media variety
+        run: node scripts/force_fresh_stoic_media.cjs || true
+      - name: Execute Stoic 5s Pure Quote (unique quote + image + BGM)
         env:
-          DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run == true || github.event.inputs.dry_run == 'true' }}
           SCHOLAR_FILTER: ${{ github.event.inputs.scholar }}
           SHORT_DURATION: '5.0'
           NO_VOICE: 'true'
@@ -71,39 +62,23 @@ jobs:
           FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
           FIRESTORE_API_KEY: ${{ secrets.FIRESTORE_API_KEY }}
         run: |
-          echo "=== Generating Authentic 5-Second Stoic Pure Quote Reel (No Voice, Slow BGM + Panning) ==="
+          echo "=== Stoic 5s: new quote + new image + new BGM every run ==="
           node scripts/generate_stoic_quote_reel.cjs
-
-      - name: Archive Stoic Daily Short
-        if: always()
+      - if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: stoic-5s-quote-reel-${{ github.run_id }}
+          name: stoic-5s-${{ github.run_id }}
           path: |
             rendered_videos/stoic_quote_5s_latest.mp4
             rendered_videos/stoic_quote_*.mp4
-            daily_blueprint_manifest.json
-            test_artifacts/last_workflow_audit.json
           if-no-files-found: ignore
-          retention-days: 7
-
-      - name: Commit Rolling 30-Day Topic Deduplication Log
+      - name: Commit dedup history
         if: always()
         run: |
-          if [ -f data/topic_dedup_log.json ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add data/topic_dedup_log.json stoic_quote_history.json || true
-            if ! git diff --staged --quiet; then
-              git commit -m "chore(dedup): rolling 30-day stoic topic log update [skip ci]"
-              git push origin HEAD || true
-              echo "Committed rolling 30-day stoic dedup log to GitHub."
-            else
-              echo "Dedup log unchanged."
-            fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/topic_dedup_log.json stoic_quote_history.json 2>/dev/null || true
+          if ! git diff --staged --quiet; then
+            git commit -m "chore(dedup): stoic topic log [skip ci]" || true
+            git push origin HEAD || true
           fi
-
-      - name: Plain-English Audit & Execution Summary
-        if: always()
-        run: |
-          node scripts/workflow_audit_reporter.cjs stoic_quote_reel
