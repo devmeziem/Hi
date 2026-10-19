@@ -1,43 +1,29 @@
-# CHANNEL MAP (Hard Reference — Do Not Mis-route)
+# CHANNEL MAP + CONTENT SYSTEM
 
-## YouTube Channels
+## YouTube
 
-| Slot | Internal Name | Purpose | OAuth |
-|------|---------------|---------|-------|
-| **YouTube 1 / CH2** | The Stoic Architect | Stoic long + 5s quotes | `YOUTUBE_*_CH2` |
-| **YouTube 2 / CH1** | Fin Blueprint | 2 quotes + 1 income + 1 doc daily | `YOUTUBE_*_CH1` |
-| **YouTube 3 / CH3** | Archie Explains | Science & tech | `YOUTUBE_*_CH3` |
-| **YouTube 4 / CH4** | Cinema Vanguard | Crime/horror docs | `YOUTUBE_*_CH4` |
-| **YouTube 5 / CH5** | Apex Discipline | Teen motivation | `YOUTUBE_*_CH5` |
+| Slot | Channel | Engine rules |
+|------|---------|--------------|
+| CH1 Fin | Fin Blueprint | Live Wikiquote quotes only; income teaching; BGM ~0.28 under VO |
+| CH2 Stoic | Stoic Architect | Public Stoic sources; Andrew **-12% / -25Hz**; BGM 0.25 |
+| CH3 Archie | Archie Explains | Wikipedia + everyday science; simple puppet path; BGM 0.28 |
+| CH4 Cinema | Cinema Vanguard | Documented stories; BGM 0.30; Buffer TikTok = driftreel only |
+| CH5 Teen | Apex / bonesceo | Situation hooks NOT listicles; **Motivation Andrew -5% / -15Hz**; BGM 0.32 |
 
-## Stoic schedule (UTC)
+## Shared modules
 
-| Time | Content |
-|------|--------|
-| 06:00 / 14:00 / 22:00 | 5s pure quote (BGM only) |
-| 15:00 | Long-form (Andrew -12%/-25Hz + emotional BGM) |
-
-## Fin Blueprint schedule (UTC) — Channel 1
-
-| Time | Type |
-|------|------|
-| 05:00 | 5s finance **quote** |
-| 11:00 | 5s finance **quote** |
-| 15:00 | **Income / practical teaching** short |
-| 20:00 | Financial **story mini-doc** |
-
-Rules: 30-day dedup, problem-led SEO titles, BGM on every video, CH1 secrets only.
+- `scripts/content_system_shared.cjs` — volumes, voices, dedup
+- `scripts/prompts_library.cjs` — AI prompts per channel
+- `scripts/public_sources.cjs` — Wikiquote / Wikipedia / seeds
+- `scripts/apply_all_content_system.cjs` — raise quiet BGM across scripts
 
 ## Buffer
 
-| API | Use |
-|-----|-----|
-| API 1 | Archie FB/IG only — never TikTok |
-| API 2 | Teen TikTok + Cinema TikTok only |
+- API 1: Archie FB/IG only — never TikTok
+- API 2: Teen TikTok + Cinema TikTok only (never cross-post)
 
-## Safety
+## Dedup
 
-1. Stoic → CH2 only  
-2. Fin → CH1 only  
-3. Cinema never posts to bonesceo  
-4. No cross-secret fallbacks  
+- Exact normalized text + word overlap ≥28% rejected
+- Author window 6 for quotes
+- No full-catalog fallback when live sources empty

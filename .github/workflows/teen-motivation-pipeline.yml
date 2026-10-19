@@ -8,26 +8,26 @@ on:
       video_type:
         description: 'Video Format'
         required: false
-        default: 'auto'
+        default: 'situation'
         type: choice
-        options: ['auto', 'long_form', '5s_reel', '15s_slam']
+        options: ['situation', 'auto', 'long_form', '5s_reel', '15s_slam']
       topic:
         description: 'Topic (optional)'
         required: false
         default: ''
         type: string
       auto_publish:
-        description: 'Publish Live to YouTube'
+        description: 'Publish YouTube'
         required: true
         default: true
         type: boolean
       publish_tiktok:
-        description: 'Publish to TikTok via Buffer API 2'
+        description: 'Publish TikTok Buffer API 2'
         required: false
         default: true
         type: boolean
       dry_run:
-        description: 'Dry Run Mode'
+        description: 'Dry Run'
         required: true
         default: false
         type: boolean
@@ -43,29 +43,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: Install deps
-        run: npm install --legacy-peer-deps --no-audit --no-fund
-
-      - name: Install FFmpeg
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
-
-      - name: Apply Teen quality (Motivation Andrew + louder BGM)
-        run: node scripts/apply_teen_quality_fix.cjs
-
-      - name: Generate Teen Motivation Reel
+      - run: npm install --legacy-peer-deps --no-audit --no-fund
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Apply content system volumes
+        run: node scripts/apply_all_content_system.cjs || true
+      - name: Generate Teen (situation-led, Motivation Andrew)
         env:
-          VIDEO_TYPE: ${{ github.event.inputs.video_type || 'auto' }}
+          VIDEO_TYPE: ${{ github.event.inputs.video_type || 'situation' }}
           TOPIC: ${{ github.event.inputs.topic || '' }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
-          AUTO_PUBLISH: ${{ github.event.inputs.auto_publish }}
-          PUBLISH_TIKTOK: ${{ github.event.inputs.publish_tiktok }}
-          TEEN_VOICE_ID: en-US-AndrewNeural
-          TEEN_PITCH_HZ: '-15'
-          TEEN_SPEECH_RATE: '0.95'
-          TEEN_BGM_VOLUME: '0.32'
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -73,42 +59,26 @@ jobs:
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH5 || secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH5 || secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH5 || secrets.YOUTUBE_REFRESH_TOKEN }}
-          YOUTUBE_CLIENT_ID_CH5: ${{ secrets.YOUTUBE_CLIENT_ID_CH5 }}
-          YOUTUBE_CLIENT_SECRET_CH5: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH5 }}
-          YOUTUBE_REFRESH_TOKEN_CH5: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH5 }}
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
           BUFFER_API_TOKEN_2: ${{ secrets.BUFFER_API_TOKEN_2 || secrets.BUFFER_API_KEY_2 }}
           BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
-          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
-          FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
-        run: node scripts/generate_teen_motivation_reel.cjs
-
-      - name: Publish TikTok via Buffer API 2 (teen channel only)
-        if: success() && (github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true')
-        env:
-          BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
-          BUFFER_API_TOKEN_2: ${{ secrets.BUFFER_API_TOKEN_2 || secrets.BUFFER_API_KEY_2 }}
-          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID }}
-          PUBLISH_TARGET: teen
         run: |
-          if [ -f rendered_videos/teen_motivation_latest.mp4 ]; then
-            node scripts/publish_buffer_second_tiktok.cjs || true
+          # Prefer situation engine (no listicle seeds). Fallback to legacy if missing.
+          if [ -f scripts/generate_teen_situation_reel.cjs ]; then
+            node scripts/generate_teen_situation_reel.cjs
+          else
+            node scripts/apply_teen_quality_fix.cjs || true
+            node scripts/generate_teen_motivation_reel.cjs
           fi
-
       - name: Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: teen-motivation-reel-${{ github.run_id }}
+          name: teen-${{ github.run_id }}
           path: |
             rendered_videos/teen_motivation_latest.mp4
-            test_artifacts/motivation_reels/*.mp4
+            test_artifacts/teen_situation/**
           if-no-files-found: ignore
-          retention-days: 7
-
-      - name: Audit
-        if: always()
-        run: node scripts/workflow_audit_reporter.cjs teen_motivation || true

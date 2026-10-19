@@ -6,17 +6,17 @@ on:
   workflow_dispatch:
     inputs:
       documentary_topic_id:
-        description: 'Topic ID (blank = auto)'
+        description: 'Topic ID'
         required: false
         default: ''
         type: string
       publish_youtube:
-        description: 'Publish to YouTube Ch 4'
+        description: 'YouTube Ch4'
         required: true
         default: true
         type: boolean
       publish_tiktok:
-        description: 'Publish to TikTok driftreel'
+        description: 'TikTok driftreel'
         required: false
         default: true
         type: boolean
@@ -28,7 +28,7 @@ on:
 
 jobs:
   documentary_pipeline:
-    name: Build, Render & Dispatch Cinema Vanguard
+    name: Cinema Vanguard
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -38,26 +38,16 @@ jobs:
         with:
           node-version: 20
           cache: npm
-
-      - name: FFmpeg
-        run: |
-          sudo apt-get update -qq || true
-          sudo apt-get install -y ffmpeg || true
-
-      - name: Install deps
-        run: npm install --legacy-peer-deps --no-audit --no-fund
-
-      - name: Apply Cinema BGM quality
-        run: node scripts/apply_cinema_quality_fix.cjs || true
-
-      - name: Generate Cinema content
+      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg || true
+      - run: npm install --legacy-peer-deps --no-audit --no-fund
+      - run: node scripts/apply_all_content_system.cjs || true
+      - run: node scripts/apply_cinema_quality_fix.cjs || true
+      - name: Generate
         env:
           DOCUMENTARY_EPISODE_ID: ${{ github.event.inputs.documentary_topic_id }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           PUBLISH_YOUTUBE: ${{ github.event.inputs.publish_youtube }}
           PUBLISH_TIKTOK: ${{ github.event.inputs.publish_tiktok }}
-          CINEMA_BGM_VOLUME: '0.30'
-          CINEMA_VOICE_VOLUME: '1.40'
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -65,32 +55,25 @@ jobs:
           YOUTUBE_CLIENT_ID_CH4: ${{ secrets.YOUTUBE_CLIENT_ID_CH4 }}
           YOUTUBE_CLIENT_SECRET_CH4: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH4 }}
           YOUTUBE_REFRESH_TOKEN_CH4: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH4 }}
-          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH4 || secrets.YOUTUBE_CLIENT_ID }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH4 || secrets.YOUTUBE_CLIENT_SECRET }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH4 || secrets.YOUTUBE_REFRESH_TOKEN }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH4 }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH4 }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH4 }}
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
-          BUFFER_TIKTOK_MOVIE_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_MOVIE_CHANNEL_ID }}
-          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
-          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
-          FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
         run: |
           if [ -f scripts/generate_movie_brand_episode.cjs ]; then
             node scripts/generate_movie_brand_episode.cjs || node scripts/generate_documentary_movie_reel.cjs
           else
             node scripts/generate_documentary_movie_reel.cjs
           fi
-
-      - name: Artifacts
-        if: always()
+      - if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cinema-vanguard-${{ github.run_id }}
+          name: cinema-${{ github.run_id }}
           path: |
             rendered_videos/*movie*
             rendered_videos/*cinema*
             rendered_videos/*doc*
-            rendered_videos/*vanguard*
           if-no-files-found: ignore
-          retention-days: 7

@@ -6,89 +6,60 @@ on:
   workflow_dispatch:
     inputs:
       video_mode:
-        description: 'auto | quote | income | documentary'
+        description: 'Mode'
         required: false
         default: 'auto'
         type: choice
         options: [auto, quote, income, documentary]
-      topic:
-        description: 'Optional topic override'
-        required: false
-        default: ''
-        type: string
       dry_run:
-        description: 'Dry Run (no YouTube upload)'
+        description: 'Dry Run'
         required: true
         default: false
         type: boolean
 
 jobs:
-  fin_blueprint_pipeline:
+  fin_slot:
     name: Fin Blueprint daily slot (CH1)
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: Install deps
-        run: npm install --legacy-peer-deps --no-audit --no-fund
-
-      - name: Install FFmpeg
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg librsvg2-bin || true
-
-      - name: Apply hard Fin quote dedup fix
-        run: node scripts/apply_fin_dedup_fix.cjs
-
-      - name: Run Fin daily slot
+      - run: npm install --legacy-peer-deps --no-audit --no-fund
+      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg || true
+      - run: node scripts/apply_all_content_system.cjs || true
+      - name: Run Fin slot
         env:
           VIDEO_MODE: ${{ github.event.inputs.video_mode || 'auto' }}
-          TEST_TOPIC: ${{ github.event.inputs.topic }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
-          SHORT_DURATION: '5.0'
-          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
-          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
-          FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH1 || secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH1 || secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH1 || secrets.YOUTUBE_REFRESH_TOKEN }}
-          YOUTUBE_CLIENT_ID_CH1: ${{ secrets.YOUTUBE_CLIENT_ID_CH1 || secrets.YOUTUBE_CLIENT_ID }}
-          YOUTUBE_CLIENT_SECRET_CH1: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH1 || secrets.YOUTUBE_CLIENT_SECRET }}
-          YOUTUBE_REFRESH_TOKEN_CH1: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH1 || secrets.YOUTUBE_REFRESH_TOKEN }}
-          YOUTUBE_HANDLE_CH1: ${{ secrets.YOUTUBE_HANDLE_CH1 || secrets.YOUTUBE_HANDLE_FIN }}
+          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
-          FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
         run: node scripts/run_fin_daily_slot.cjs
-
-      - name: Commit dedup logs
+      - name: Commit dedup history
         if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/fin_income_dedup.json data/topic_dedup_log.json fin_quote_history.json 2>/dev/null || true
+          git add fin_quote_history.json data/*.json 2>/dev/null || true
           if ! git diff --staged --quiet; then
             git commit -m "chore(fin-dedup): rolling history [skip ci]" || true
             git push origin HEAD || true
           fi
-
-      - name: Artifacts
-        if: always()
+      - if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fin-blueprint-${{ github.run_id }}
-          path: |
-            rendered_videos/fin_*.mp4
-            rendered_videos/*fin*.mp4
+          name: fin-${{ github.run_id }}
+          path: rendered_videos/fin_*.mp4
           if-no-files-found: ignore
-          retention-days: 7

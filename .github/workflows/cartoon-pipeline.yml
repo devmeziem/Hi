@@ -6,36 +6,25 @@ on:
   workflow_dispatch:
     inputs:
       topic:
-        description: 'Cartoon Topic / Wonder'
+        description: 'Topic'
         required: false
         default: ''
         type: string
       video_mode:
-        description: 'Video Generation Mode'
+        description: 'Mode'
         required: false
-        default: 'auto'
+        default: 'fact_reel'
         type: choice
-        options: [auto, video, fact_reel, all_daily_5, all_daily_4]
-      engine:
-        description: 'Rendering Engine'
-        required: false
-        default: 'ffmpeg'
-        type: choice
-        options: [moviepy, ffmpeg, blender]
-      pause_youtube:
-        description: 'Pause YouTube Upload'
-        required: false
-        default: false
-        type: boolean
+        options: [auto, video, fact_reel]
       dry_run:
-        description: 'Dry Run Mode'
+        description: 'Dry Run'
         required: true
         default: false
         type: boolean
 
 jobs:
   cartoon_factory_pipeline:
-    name: Build & Validate Cartoon Episode
+    name: Build Archie Episode
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -45,74 +34,42 @@ jobs:
         with:
           node-version: 20
           cache: npm
-
-      - name: Install system deps
-        run: |
-          sudo apt-get update -qq || true
-          sudo apt-get install -y --no-install-recommends ffmpeg libsndfile1 || true
-
-      - name: Install Node deps
-        run: npm install --legacy-peer-deps --no-audit --no-fund
-
-      - name: Pre-compile puppet assets
-        run: |
-          node scripts/build_exact_puppet_shapes.cjs || true
-          node scripts/build_modern_tech_character.cjs || true
-
-      - name: Discover working AI models
+      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg libsndfile1 || true
+      - run: npm install --legacy-peer-deps --no-audit --no-fund
+      - run: node scripts/build_exact_puppet_shapes.cjs || true
+      - run: node scripts/apply_all_content_system.cjs || true
+      - name: Archie (simple reliable path first)
         env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-        run: |
-          node scripts/groq_model_finder.cjs || true
-          node scripts/openrouter_model_finder.cjs || true
-          node scripts/cloudflare_model_finder.cjs || true
-
-      - name: Generate Archie (complex then simple fallback)
-        env:
-          VIDEO_MODE: ${{ github.event.inputs.video_mode || 'auto' }}
-          TEST_TOPIC: ${{ github.event.inputs.topic }}
-          CARTOON_ENGINE: ${{ github.event.inputs.engine || 'ffmpeg' }}
           DRY_RUN: ${{ github.event.inputs.dry_run == true || github.event.inputs.dry_run == 'true' }}
-          PAUSE_YOUTUBE: ${{ github.event.inputs.pause_youtube == true }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          TEST_TOPIC: ${{ github.event.inputs.topic }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           YOUTUBE_CLIENT_ID_CH3: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 }}
           YOUTUBE_CLIENT_SECRET_CH3: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 }}
           YOUTUBE_REFRESH_TOKEN_CH3: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 }}
-          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 || secrets.YOUTUBE_CLIENT_ID }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 || secrets.YOUTUBE_CLIENT_SECRET }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 || secrets.YOUTUBE_REFRESH_TOKEN }}
-          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
-          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
-          FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
         run: |
           set +e
-          echo "=== Try complex Archie fact reel ==="
-          node scripts/generate_archie_tech_fact_reel.cjs
+          node scripts/generate_archie_simple_reel.cjs
           CODE=$?
           if [ $CODE -ne 0 ]; then
-            echo "=== Complex failed ($CODE) — running SIMPLE reliable Archie reel ==="
-            node scripts/generate_archie_simple_reel.cjs
+            echo "Simple failed — try complex"
+            node scripts/generate_archie_tech_fact_reel.cjs
             CODE=$?
           fi
           exit $CODE
-
-      - name: Artifacts
-        if: always()
+      - if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cartoon-episode-output-${{ github.run_id }}
+          name: archie-${{ github.run_id }}
           path: |
             rendered_videos/archie_*.mp4
-            test_artifacts/archie_*
+            test_artifacts/archie_simple/**
           if-no-files-found: ignore
-          retention-days: 7
-
-      - name: Audit
-        if: always()
-        run: node scripts/workflow_audit_reporter.cjs cartoon_factory || true
