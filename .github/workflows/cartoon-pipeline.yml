@@ -6,19 +6,36 @@ on:
   workflow_dispatch:
     inputs:
       topic:
-        description: 'Topic'
+        description: 'Cartoon Topic / Wonder'
         required: false
         default: ''
         type: string
+      video_mode:
+        description: 'Video Generation Mode'
+        required: false
+        default: 'auto'
+        type: choice
+        options: [auto, video, fact_reel, all_daily_5, all_daily_4]
+      engine:
+        description: 'Rendering Engine'
+        required: false
+        default: 'moviepy'
+        type: choice
+        options: [moviepy, ffmpeg, blender]
+      pause_youtube:
+        description: 'Pause YouTube Upload'
+        required: false
+        default: false
+        type: boolean
       dry_run:
-        description: 'Dry Run'
+        description: 'Dry Run Mode'
         required: true
         default: false
         type: boolean
 
 jobs:
   cartoon_factory_pipeline:
-    name: Build Archie Episode (simple only)
+    name: Build Archie (full lipsync + gestures)
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -28,33 +45,78 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg libsndfile1 || true
-      - run: npm install --legacy-peer-deps --no-audit --no-fund
-      - run: node scripts/build_exact_puppet_shapes.cjs || true
+      - name: Install system deps
+        run: |
+          sudo apt-get update -qq || true
+          sudo apt-get install -y --no-install-recommends ffmpeg espeak-ng libsndfile1 fonts-dejavu-core || true
+      - name: Install Node deps
+        run: npm install --legacy-peer-deps --no-audit --no-fund
+      - name: Pre-compile puppet assets (poses for gestures)
+        run: |
+          node scripts/build_exact_puppet_shapes.cjs || true
+          node scripts/build_modern_tech_character.cjs || true
       - run: node scripts/apply_all_content_system.cjs || true
-      - name: Archie simple path ONLY (no multi-scene fallback)
+      - name: Generate Archie (FULL path — lipsync + hands + captions)
         env:
-          DRY_RUN: ${{ github.event.inputs.dry_run == true || github.event.inputs.dry_run == 'true' }}
+          VIDEO_MODE: ${{ github.event.inputs.video_mode || 'auto' }}
           TEST_TOPIC: ${{ github.event.inputs.topic }}
+          CARTOON_ENGINE: ${{ github.event.inputs.engine || 'moviepy' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run == true || github.event.inputs.dry_run == 'true' }}
+          ENABLE_LIPSYNC: 'true'
+          ENABLE_GESTURES: 'true'
+          ENABLE_CAPTIONS: 'true'
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           YOUTUBE_CLIENT_ID_CH3: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 }}
           YOUTUBE_CLIENT_SECRET_CH3: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 }}
           YOUTUBE_REFRESH_TOKEN_CH3: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 }}
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 }}
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
+          BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31c1dcd8b9c702c467a38' }}
+          BUFFER_TIKTOK_CHANNEL_ID: ''
+          PAUSE_YOUTUBE: ${{ github.event.inputs.pause_youtube || 'false' }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
-        run: node scripts/generate_archie_simple_reel.cjs
-      - if: always()
+        run: |
+          CURRENT_HOUR=$(date -u +%-H)
+          MODE="${VIDEO_MODE:-auto}"
+          # Full animated episode uses lipsync + gesture rig
+          if [ "$MODE" = "video" ] || { [ "$MODE" = "auto" ] && [ "$CURRENT_HOUR" -eq 13 ]; }; then
+            echo "=== FULL cartoon runner (lipsync + gestures) ==="
+            node scripts/test_cartoon_runner.cjs
+          else
+            echo "=== Archie tech fact reel (animated captions + puppet cycle) ==="
+            node scripts/generate_archie_tech_fact_reel.cjs
+          fi
+          # Hard fail if only simple static was produced without caption track
+          ls -lh rendered_videos/archie_*.mp4 rendered_videos/*cartoon*.mp4 test_artifacts/archie_5s_reels/*.mp4 2>/dev/null | head -20 || true
+      - name: Buffer FB/IG only (never TikTok on API 1)
+        if: ${{ success() && github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' }}
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
+          BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31c1dcd8b9c702c467a38' }}
+          BUFFER_TIKTOK_CHANNEL_ID: ''
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
+          DRY_RUN: 'false'
+        run: node scripts/publish_archie_to_buffer_omnichannel.cjs || true
+      - name: Artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: archie-${{ github.run_id }}
+          name: cartoon-episode-output-${{ github.run_id }}
           path: |
-            rendered_videos/archie_*.mp4
+            rendered_videos/*.mp4
+            test_artifacts/archie_5s_reels/*.mp4
             test_artifacts/archie_simple/**
+          retention-days: 14
           if-no-files-found: ignore

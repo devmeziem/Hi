@@ -42,23 +42,41 @@ function stripWiki(text) {
     .trim();
 }
 
-/** Reject URLs, citations, book titles, junk Wikiquote lines */
+/** Reject URLs, citations, book titles, interview metadata, junk Wikiquote lines */
 function isCleanQuote(q) {
   if (!q || typeof q !== 'string') return false;
   var t = q.trim();
   if (t.length < 35 || t.length > 220) return false;
   if (!/[a-zA-Z]/.test(t)) return false;
   var low = t.toLowerCase();
+
+  // URLs / media
   if (/https?:\/\//i.test(t)) return false;
   if (/www\./i.test(t)) return false;
   if (/youtube\.com|youtu\.be|watch\?v=/i.test(t)) return false;
+
+  // Citation / bibliography junk (this was the last Fin nonsense post)
+  if (/^\*?\s*interview\b/i.test(t)) return false;
+  if (/\binterview with\b/i.test(low)) return false;
+  if (/\bquoted in\b/i.test(low)) return false;
+  if (/\bas quoted\b/i.test(low)) return false;
+  if (/\bin an interview\b/i.test(low)) return false;
+  if (/\bsaid to\b.*\bin\b/i.test(low) && /\(\d{4}\)/.test(t)) return false;
   if (/^\*?\s*\[/.test(t)) return false;
   if (/\]\s*\(at\s+\d/i.test(t)) return false;
-  if (/principles for dealing with the changing/i.test(low)) return false;
   if (/isbn|doi:|pmid/i.test(low)) return false;
-  // Prefer sentences that look like speech, not bare titles
+  if (/god's gold|principles for dealing with the changing/i.test(low)) return false;
+  if (/^\*\s/.test(t)) return false; // bare wiki bullet residue
+  if (/^[-–—*]\s/.test(t)) return false;
+
+  // Prefer spoken sentence-like quotes
   var letters = (t.match(/[a-zA-Z]/g) || []).length;
   if (letters / t.length < 0.55) return false;
+  // Must contain a verb-ish / sentence signal (space + lowercase common words)
+  if (!/\b(the|a|to|of|is|are|was|be|you|i|we|it|that|and|in|for|on)\b/i.test(t)) return false;
+  // Reject pure titles: few spaces
+  if ((t.match(/\s+/g) || []).length < 4) return false;
+
   return true;
 }
 
@@ -76,12 +94,14 @@ function extractQuotesFromWikitext(wikitext) {
     if (/^\[\[File:/i.test(line)) continue;
     if (/^\{\{/.test(line)) continue;
     if (/https?:\/\//i.test(line)) continue;
+    if (/\binterview with\b/i.test(line) && !/["\u201C]/.test(line)) continue;
     var m = line.match(/^\*\s*["\u201C](.+?)["\u201D]/);
     if (!m) m = line.match(/^\*\s*(.+)$/);
     if (!m) continue;
     var q = stripWiki(m[1]);
     q = q.replace(/\s*[-\u2014\u2013]\s*.{0,40}$/, '').trim();
     q = q.replace(/\[https?:[^\]]+\]/gi, '').trim();
+    q = q.replace(/^\*+\s*/, '').trim();
     if (isCleanQuote(q)) quotes.push(q);
   }
 
@@ -125,6 +145,14 @@ var ARCHIE_TOPIC_SEEDS = [
   { title: 'What causes thunder', wiki: 'Thunder', hook: 'Thunder is the sound of rapidly expanding air from lightning.' }
 ];
 
+var TEEN_SITUATION_HOOKS = [
+  'You keep unlocking your phone with no reason',
+  'You say you will start tomorrow every night',
+  'You study after scrolling for an hour',
+  'You quit the hard task the moment it feels boring',
+  'You check grades more than you practice'
+];
+
 async function fetchWikiquoteQuotes(pageTitle) {
   var title = String(pageTitle || '').replace(/ /g, '_');
   var url =
@@ -165,6 +193,7 @@ module.exports = {
   FIN_AUTHORS,
   STOIC_AUTHORS,
   ARCHIE_TOPIC_SEEDS,
+  TEEN_SITUATION_HOOKS,
   fetchWikiquoteQuotes,
   fetchWikipediaSummary,
   isCleanQuote,
