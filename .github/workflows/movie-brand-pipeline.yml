@@ -1,4 +1,4 @@
-name: Cinema Vanguard - Documentary (YouTube Ch 4)
+name: Cinema Vanguard - Documentary (YouTube Ch 4 + Driftreel TikTok)
 
 on:
   schedule:
@@ -16,14 +16,14 @@ on:
         default: true
         type: boolean
       publish_tiktok:
-        description: 'TikTok Buffer API2 (driftreel only)'
+        description: 'TikTok Buffer API2 (driftreel only — never teen)'
         required: false
         default: true
         type: boolean
 
 jobs:
   documentary_pipeline:
-    name: Cinema documentary (not paused movie season)
+    name: Cinema documentary + Buffer TikTok
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -36,7 +36,7 @@ jobs:
       - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg || true
       - run: npm install --legacy-peer-deps --no-audit --no-fund
       - run: node scripts/apply_all_content_system.cjs || true
-      - name: Documentary engine only (skip paused movie season)
+      - name: Generate documentary
         env:
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           PUBLISH_YOUTUBE: ${{ github.event.inputs.publish_youtube }}
@@ -58,9 +58,26 @@ jobs:
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
+        run: node scripts/generate_documentary_movie_reel.cjs
+      - name: Buffer TikTok (cinema/driftreel only)
+        if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.publish_tiktok == true || github.event.inputs.publish_tiktok == 'true' || github.event_name == 'schedule') }}
+        env:
+          BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
+          BUFFER_API_TOKEN_2: ${{ secrets.BUFFER_API_TOKEN_2 || secrets.BUFFER_API_KEY_2 }}
+          BUFFER_TIKTOK_MOVIE_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_MOVIE_CHANNEL_ID }}
+          PUBLISH_TARGET: cinema
         run: |
-          # NEVER the paused Season-1 movie episode generator
-          node scripts/generate_documentary_movie_reel.cjs
+          if [ ! -f rendered_videos/driftreel_documentary_latest.mp4 ] && [ ! -f rendered_videos/documentary_movie_*.mp4 ]; then
+            echo "No documentary mp4 — skip Buffer"
+            exit 1
+          fi
+          # Prefer latest driftreel copy
+          export VIDEO_PATH="rendered_videos/driftreel_documentary_latest.mp4"
+          if [ ! -f "$VIDEO_PATH" ]; then
+            VIDEO_PATH=$(ls -t rendered_videos/documentary_movie_*.mp4 2>/dev/null | head -1)
+          fi
+          echo "Posting $VIDEO_PATH to Buffer TikTok (cinema)"
+          node scripts/publish_buffer_second_tiktok.cjs || node scripts/publish_buffer_tiktok.cjs || true
       - if: always()
         uses: actions/upload-artifact@v4
         with:

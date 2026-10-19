@@ -10,12 +10,6 @@ on:
         required: false
         default: ''
         type: string
-      video_mode:
-        description: 'Mode'
-        required: false
-        default: 'fact_reel'
-        type: choice
-        options: [auto, video, fact_reel]
       dry_run:
         description: 'Dry Run'
         required: true
@@ -24,7 +18,7 @@ on:
 
 jobs:
   cartoon_factory_pipeline:
-    name: Build Archie Episode
+    name: Build Archie Episode (simple only)
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -38,7 +32,7 @@ jobs:
       - run: npm install --legacy-peer-deps --no-audit --no-fund
       - run: node scripts/build_exact_puppet_shapes.cjs || true
       - run: node scripts/apply_all_content_system.cjs || true
-      - name: Archie (simple reliable path first)
+      - name: Archie simple path ONLY (no multi-scene fallback)
         env:
           DRY_RUN: ${{ github.event.inputs.dry_run == true || github.event.inputs.dry_run == 'true' }}
           TEST_TOPIC: ${{ github.event.inputs.topic }}
@@ -55,16 +49,7 @@ jobs:
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
-        run: |
-          set +e
-          node scripts/generate_archie_simple_reel.cjs
-          CODE=$?
-          if [ $CODE -ne 0 ]; then
-            echo "Simple failed — try complex"
-            node scripts/generate_archie_tech_fact_reel.cjs
-            CODE=$?
-          fi
-          exit $CODE
+        run: node scripts/generate_archie_simple_reel.cjs
       - if: always()
         uses: actions/upload-artifact@v4
         with:
