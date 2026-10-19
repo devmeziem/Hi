@@ -1,8 +1,5 @@
 #!/usr/bin/env node
-/**
- * Fin live quote — clean Wikiquote only, ASS captions (no drawtext URL bombs),
- * unique image + BGM every run.
- */
+/** Fin live quote — clean Wikiquote, CENTER bold ASS, unique image+BGM */
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -179,7 +176,7 @@ function assEscape(s) {
     .replace(/\{/g, '\\{')
     .replace(/\}/g, '\\}')
     .replace(/\n/g, ' ')
-    .slice(0, 180);
+    .slice(0, 160);
 }
 
 function wrapLines(text, maxLen) {
@@ -193,26 +190,29 @@ function wrapLines(text, maxLen) {
     } else cur = (cur + ' ' + w).trim();
   }
   if (cur) lines.push(cur);
-  return lines.slice(0, 4);
+  return lines.slice(0, 5);
 }
 
+/** Center-screen bold ASS — Alignment 5, opaque box, no overflow */
 function writeAss(quote, author, assPath) {
-  const lines = wrapLines(quote, 36).map(assEscape);
+  const lines = wrapLines(quote, 28).map(assEscape);
+  const startY = 860;
   const body = lines.map((ln, i) => {
-    const y = 1450 + i * 70;
-    return `Dialogue: 0,0:00:00.00,0:00:05.00,Default,,0,0,0,,{\\an8\\pos(540,${y})}${ln}`;
+    const y = startY + i * 72;
+    return `Dialogue: 0,0:00:00.00,0:00:05.00,Quote,,0,0,0,,{\\an5\\pos(540,${y})\\b1\\fs40}${ln}`;
   });
   body.push(
-    `Dialogue: 0,0:00:00.00,0:00:05.00,Default,,0,0,0,,{\\an8\\pos(540,${1450 + lines.length * 70})}{\\fs28\\c&HCCCCCC&}— ${assEscape(author)}`
+    `Dialogue: 0,0:00:00.00,0:00:05.00,Quote,,0,0,0,,{\\an5\\pos(540,${startY + lines.length * 72})\\b1\\fs28\\c&HCCCCCC&}— ${assEscape(author)}`
   );
   const ass = `[Script Info]
 ScriptType: v4.00+
 PlayResX: 1080
 PlayResY: 1920
+ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,DejaVu Sans,36,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,3,1,2,40,40,80,1
+Style: Quote,DejaVu Sans,40,&H00FFFFFF,&H000000FF,&H00000000,&HA0000000,-1,0,0,0,100,100,0,0,3,4,0,5,70,70,40,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -263,7 +263,12 @@ async function main() {
 
   writeAss(live.quote, live.author, assPath);
 
-  const vf = `scale=1200:2133:force_original_aspect_ratio=increase,crop=1200:2133,zoompan=z='min(zoom+0.0015,1.14)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${Math.ceil(DUR * 30)}:s=1080x1920:fps=30,eq=brightness=-0.05:contrast=1.12:saturation=0.85,ass='${assPath.replace(/'/g, "'\\''")}'`;
+  // Copy ASS next to cwd-relative safe path without special chars issues
+  const assSafe = path.join(ART, 'fin_caption.ass');
+  fs.copyFileSync(assPath, assSafe);
+  const assForFilter = assSafe.replace(/\\/g, '/').replace(/:/g, '\\:');
+
+  const vf = `scale=1200:2133:force_original_aspect_ratio=increase,crop=1200:2133,zoompan=z='min(zoom+0.0015,1.14)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${Math.ceil(DUR * 30)}:s=1080x1920:fps=30,eq=brightness=-0.05:contrast=1.12:saturation=0.85,ass=${assForFilter}`;
   execSync(
     `ffmpeg -y -loop 1 -i "${imgPath}" -i "${bgmPath}" -vf "${vf}" -map 0:v -map 1:a -c:v libx264 -preset veryfast -crf 20 -c:a aac -b:a 128k -t ${DUR} -pix_fmt yuv420p "${outPath}"`,
     { stdio: 'inherit' }

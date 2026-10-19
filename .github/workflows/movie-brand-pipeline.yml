@@ -16,7 +16,7 @@ on:
         default: true
         type: boolean
       publish_tiktok:
-        description: 'TikTok Buffer API2 (movie channel id only)'
+        description: 'TikTok Buffer API2 (movie channel id + GH release URL)'
         required: false
         default: true
         type: boolean
@@ -33,9 +33,11 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg || true
+      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core || true
       - run: npm install --legacy-peer-deps --no-audit --no-fund
       - run: node scripts/apply_all_content_system.cjs || true
+      - name: Force center bold captions (no overflow)
+        run: node scripts/apply_center_captions.cjs || true
       - name: Generate documentary
         env:
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
@@ -60,13 +62,40 @@ jobs:
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
         run: node scripts/generate_documentary_movie_reel.cjs
-      - name: Buffer TikTok (movie channel id ONLY)
+      - name: GitHub Release (public video URL for Buffer)
+        if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          VID=""
+          if [ -f rendered_videos/driftreel_documentary_latest.mp4 ]; then
+            VID=rendered_videos/driftreel_documentary_latest.mp4
+          else
+            VID=$(ls -t rendered_videos/documentary_movie_*.mp4 2>/dev/null | head -1 || true)
+          fi
+          if [ -z "$VID" ] || [ ! -f "$VID" ]; then
+            echo "No video for release"
+            exit 1
+          fi
+          # Stable filename for release asset URL
+          cp "$VID" rendered_videos/cinema_latest.mp4
+          TAG="cinema-${{ github.run_id }}"
+          gh release delete "$TAG" -y 2>/dev/null || true
+          gh release create "$TAG" rendered_videos/cinema_latest.mp4 \
+            --title "Cinema documentary $TAG" \
+            --notes "Auto release for Buffer TikTok. Channel: movie only." \
+            --latest=false
+          echo "CINEMA_VIDEO_PUBLIC_URL=https://github.com/${{ github.repository }}/releases/download/${TAG}/cinema_latest.mp4" >> "$GITHUB_ENV"
+          echo "Release URL: https://github.com/${{ github.repository }}/releases/download/${TAG}/cinema_latest.mp4"
+      - name: Buffer TikTok (movie channel id + release URL)
         if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.publish_tiktok == true || github.event.inputs.publish_tiktok == 'true' || github.event_name == 'schedule') }}
         env:
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
           BUFFER_API_TOKEN_2: ${{ secrets.BUFFER_API_TOKEN_2 || secrets.BUFFER_API_KEY_2 }}
           BUFFER_TIKTOK_MOVIE_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_MOVIE_CHANNEL_ID }}
           BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID }}
+          CINEMA_VIDEO_PUBLIC_URL: ${{ env.CINEMA_VIDEO_PUBLIC_URL }}
           PUBLISH_TARGET: cinema
         run: node scripts/publish_cinema_buffer_tiktok.cjs
       - if: always()
