@@ -2,127 +2,95 @@ name: Cinema Vanguard - Crime, Horror, Mystery & Episodic Cinema (YouTube Ch 4 &
 
 on:
   schedule:
-    # Daily spaced archival and episodic cinema drops at 14:00 UTC
     - cron: '0 14 * * *'
   workflow_dispatch:
     inputs:
       documentary_topic_id:
-        description: 'Specific Crime/Horror/Mystery Topic ID for Driftreel (or blank for auto-rotation)'
+        description: 'Topic ID (blank = auto)'
         required: false
         default: ''
         type: string
       publish_youtube:
-        description: 'Publish Live to YouTube Shorts (Channel 4)'
+        description: 'Publish to YouTube Ch 4'
         required: true
         default: true
         type: boolean
       publish_tiktok:
-        description: 'Publish Crime/Horror Reel Live to TikTok Buffer (driftreel)'
+        description: 'Publish to TikTok driftreel'
         required: false
         default: true
         type: boolean
       dry_run:
-        description: 'Dry Run Mode (Render video locally without uploading)'
+        description: 'Dry Run'
         required: true
         default: false
         type: boolean
 
 jobs:
   documentary_pipeline:
-    name: Build, Render & Dispatch Cinema Vanguard & Driftreel Documentaries
+    name: Build, Render & Dispatch Cinema Vanguard
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js Environment
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: npm
 
-      - name: Verify or Install FFmpeg
+      - name: FFmpeg
         run: |
-          if ! command -v ffmpeg &> /dev/null; then
-            sudo apt-get update && sudo apt-get install -y ffmpeg
-          fi
-          ffmpeg -version | head -n 1
+          sudo apt-get update -qq || true
+          sudo apt-get install -y ffmpeg || true
 
-      - name: Install Dependencies
+      - name: Install deps
         run: npm install --legacy-peer-deps --no-audit --no-fund
 
-      - name: Execute Crime, Horror & Archival Documentary Engine (YouTube Ch 4 & TikTok Driftreel)
-        if: github.event_name == 'schedule' || github.event.inputs.publish_youtube != 'false' || github.event.inputs.publish_tiktok != 'false'
+      - name: Apply Cinema BGM quality
+        run: node scripts/apply_cinema_quality_fix.cjs || true
+
+      - name: Generate Cinema content
         env:
           DOCUMENTARY_EPISODE_ID: ${{ github.event.inputs.documentary_topic_id }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          PUBLISH_YOUTUBE: ${{ github.event.inputs.publish_youtube }}
+          PUBLISH_TIKTOK: ${{ github.event.inputs.publish_tiktok }}
+          CINEMA_BGM_VOLUME: '0.30'
+          CINEMA_VOICE_VOLUME: '1.40'
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          YOUTUBE_CLIENT_ID_CH4: ${{ secrets.YOUTUBE_CLIENT_ID_CH4 }}
+          YOUTUBE_CLIENT_SECRET_CH4: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH4 }}
+          YOUTUBE_REFRESH_TOKEN_CH4: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH4 }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH4 || secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH4 || secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH4 || secrets.YOUTUBE_REFRESH_TOKEN }}
+          BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
+          BUFFER_TIKTOK_MOVIE_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_MOVIE_CHANNEL_ID }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
-          FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH4 || secrets.YOUTUBE_CLIENT_ID_MOVIE }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH4 || secrets.YOUTUBE_CLIENT_SECRET_MOVIE }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH4 || secrets.YOUTUBE_REFRESH_TOKEN_MOVIE }}
-          YOUTUBE_CLIENT_ID_CH4: ${{ secrets.YOUTUBE_CLIENT_ID_CH4 || secrets.YOUTUBE_CLIENT_ID_MOVIE }}
-          YOUTUBE_CLIENT_SECRET_CH4: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH4 || secrets.YOUTUBE_CLIENT_SECRET_MOVIE }}
-          YOUTUBE_REFRESH_TOKEN_CH4: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH4 || secrets.YOUTUBE_REFRESH_TOKEN_MOVIE }}
-          YOUTUBE_HANDLE_CH4: ${{ secrets.YOUTUBE_HANDLE_CH4 || secrets.YOUTUBE_HANDLE_MOVIE }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
           FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
         run: |
-          echo "=== Generating Archival Crime, Horror & Mystery Reel for Driftreel & YouTube Ch 4 ==="
-          node scripts/generate_documentary_movie_reel.cjs
+          if [ -f scripts/generate_movie_brand_episode.cjs ]; then
+            node scripts/generate_movie_brand_episode.cjs || node scripts/generate_documentary_movie_reel.cjs
+          else
+            node scripts/generate_documentary_movie_reel.cjs
+          fi
 
-      - name: Dispatch Archival Documentary Reel to Driftreel TikTok (Buffer API 2)
-        if: success() && (github.event_name == 'schedule' || github.event.inputs.publish_tiktok != 'false')
-        env:
-          BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
-          BUFFER_TIKTOK_DRIFTREEL_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_DRIFTREEL_CHANNEL_ID || secrets.BUFFER_TIKTOK_MOVIE_CHANNEL_ID || secrets.BUFFER_TIKTOK_DRIFTREEL || '' }}
-          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "=== Publishing Documentary Reel to TikTok Driftreel via Buffer API 2 ==="
-          node scripts/publish_buffer_second_tiktok.cjs driftreel || true
-
-      - name: Archive Documentary Video Artifacts
+      - name: Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cinema-vanguard-driftreel-artifacts-${{ github.run_id }}
+          name: cinema-vanguard-${{ github.run_id }}
           path: |
-            rendered_videos/driftreel_documentary_*.mp4
-            rendered_videos/documentary_*.mp4
-            test_artifacts/documentary/
+            rendered_videos/*movie*
+            rendered_videos/*cinema*
+            rendered_videos/*doc*
+            rendered_videos/*vanguard*
           if-no-files-found: ignore
-          retention-days: 14
-
-      - name: Commit Rolling 30-Day Topic Deduplication Log
-        if: always()
-        run: |
-          if [ -f data/topic_dedup_log.json ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add data/topic_dedup_log.json
-            if ! git diff --staged --quiet; then
-              git commit -m "chore(dedup): rolling 30-day topic log update [skip ci]"
-              git push origin HEAD || true
-              echo "Committed rolling 30-day dedup log to GitHub."
-            else
-              echo "Dedup log unchanged."
-            fi
-          fi
-
-      - name: Plain-English Audit & Execution Summary
-        if: always()
-        run: |
-          node scripts/workflow_audit_reporter.cjs movie_brand
+          retention-days: 7

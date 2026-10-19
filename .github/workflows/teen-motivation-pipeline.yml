@@ -2,49 +2,35 @@ name: Apex Discipline - Teen & Youth Motivation Pipeline (Channel 5)
 
 on:
   schedule:
-    # 4 Posts Daily:
-    # 04:00 UTC (05:00 WAT) -> 32s Emotionally Impactful Long-Form Video (Soft Piano + Dark Blank Quote Ending Screen)
-    # 08:00 UTC (09:00 WAT) -> 5s straight-to-point reel
-    # 14:00 UTC (15:00 WAT) -> 15s public opinion vs reality slam reel
-    # 20:00 UTC (21:00 WAT) -> 5s straight-to-point reel
     - cron: '0 4,8,14,20 * * *'
   workflow_dispatch:
     inputs:
       video_type:
-        description: 'Video Format (auto = slot-based 4/day, long_form = 32s emotional narrative with soft piano, 5s_reel = 5s punchline, 15s_slam = 15s debate slam)'
+        description: 'Video Format'
         required: false
         default: 'auto'
         type: choice
-        options:
-          - 'auto'
-          - 'long_form'
-          - '5s_reel'
-          - '15s_slam'
+        options: ['auto', 'long_form', '5s_reel', '15s_slam']
       topic:
-        description: 'Topic or Theme (Optional - auto picks high-impact teen wisdom & psychology)'
+        description: 'Topic (optional)'
         required: false
         default: ''
         type: string
       auto_publish:
-        description: 'Publish Live to YouTube (Default TRUE for automated daily publishing)'
+        description: 'Publish Live to YouTube'
         required: true
         default: true
         type: boolean
       publish_tiktok:
-        description: 'Publish Live to TikTok via Buffer API 2 (Default TRUE)'
+        description: 'Publish to TikTok via Buffer API 2'
         required: false
         default: true
         type: boolean
       dry_run:
-        description: 'Dry Run Mode (Do not upload or post to CDN)'
+        description: 'Dry Run Mode'
         required: true
         default: false
         type: boolean
-      sound_url:
-        description: 'Custom Background Audio URL (Optional)'
-        required: false
-        default: ''
-        type: string
 
 jobs:
   teen_motivation_pipeline:
@@ -52,67 +38,67 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js Environment
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Install Dependencies
+      - name: Install deps
         run: npm install --legacy-peer-deps --no-audit --no-fund
 
-      - name: Install FFmpeg Media Engine & Audio Tools
+      - name: Install FFmpeg
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg espeak-ng
+          sudo apt-get install -y ffmpeg
 
-      - name: Verify FFmpeg Installation
-        run: ffmpeg -version
+      - name: Apply Teen quality (Motivation Andrew + louder BGM)
+        run: node scripts/apply_teen_quality_fix.cjs
 
-      - name: Generate Teen Motivation Reel (Black & White with Layered Sound Effects)
+      - name: Generate Teen Motivation Reel
         env:
           VIDEO_TYPE: ${{ github.event.inputs.video_type || 'auto' }}
           TOPIC: ${{ github.event.inputs.topic || '' }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
-          SKIP_BUFFER_DISPATCH: 'true'
-          MOTIVATION_MUSIC_URL: ${{ github.event.inputs.sound_url }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AUTO_PUBLISH: ${{ github.event.inputs.auto_publish }}
+          PUBLISH_TIKTOK: ${{ github.event.inputs.publish_tiktok }}
+          TEEN_VOICE_ID: en-US-AndrewNeural
+          TEEN_PITCH_HZ: '-15'
+          TEEN_SPEECH_RATE: '0.95'
+          TEEN_BGM_VOLUME: '0.32'
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH5 || secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH5 || secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH5 || secrets.YOUTUBE_REFRESH_TOKEN }}
+          YOUTUBE_CLIENT_ID_CH5: ${{ secrets.YOUTUBE_CLIENT_ID_CH5 }}
+          YOUTUBE_CLIENT_SECRET_CH5: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH5 }}
+          YOUTUBE_REFRESH_TOKEN_CH5: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH5 }}
+          BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
+          BUFFER_API_TOKEN_2: ${{ secrets.BUFFER_API_TOKEN_2 || secrets.BUFFER_API_KEY_2 }}
+          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
-          FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
-          FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
-          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
-          BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 || secrets.BUFFER_API_KEY }}
-          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID || secrets.BUFFER_TIKTOK_TEEN_CHANNEL || '6ab05677ea19ca0bde9c3ffb' }}
-        run: |
-          echo "=== Generating Teen Motivation Reel in Noir B&W (Type: $VIDEO_TYPE, Topic: $TOPIC) ==="
-          node scripts/generate_teen_motivation_reel.cjs
-          echo "=== Motivation Reel Assembled Successfully ==="
+          FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
+        run: node scripts/generate_teen_motivation_reel.cjs
 
-      - name: Dispatch to Teen Motivation TikTok Channel (Buffer API 2)
-        if: success() && (github.event_name == 'schedule' || github.event.inputs.publish_tiktok != 'false')
+      - name: Publish TikTok via Buffer API 2 (teen channel only)
+        if: success() && (github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true')
         env:
-          BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 || secrets.BUFFER_API_KEY }}
-          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID || secrets.BUFFER_TIKTOK_TEEN_CHANNEL || '6ab05677ea19ca0bde9c3ffb' }}
-          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
+          BUFFER_API_TOKEN_2: ${{ secrets.BUFFER_API_TOKEN_2 || secrets.BUFFER_API_KEY_2 }}
+          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID }}
+          PUBLISH_TARGET: teen
         run: |
-          echo "=== Publishing Teen Motivation Reel to TikTok (6ab05677ea19ca0bde9c3ffb) via Buffer API 2 ==="
-          node scripts/publish_buffer_second_tiktok.cjs teen_motivation
+          if [ -f rendered_videos/teen_motivation_latest.mp4 ]; then
+            node scripts/publish_buffer_second_tiktok.cjs || true
+          fi
 
-      - name: Archive Motivation Video Artifacts
+      - name: Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -120,28 +106,9 @@ jobs:
           path: |
             rendered_videos/teen_motivation_latest.mp4
             test_artifacts/motivation_reels/*.mp4
-            test_artifacts/teen_motivation_manifest.json
-            test_artifacts/last_workflow_audit.json
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Commit Rolling 30-Day Topic Deduplication Log
+      - name: Audit
         if: always()
-        run: |
-          if [ -f data/topic_dedup_log.json ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add data/topic_dedup_log.json
-            if ! git diff --staged --quiet; then
-              git commit -m "chore(dedup): rolling 30-day topic log update [skip ci]"
-              git push origin HEAD || true
-              echo "Committed rolling 30-day dedup log to GitHub."
-            else
-              echo "Dedup log unchanged."
-            fi
-          fi
-
-      - name: Plain-English Audit & Execution Summary
-        if: always()
-        run: |
-          node scripts/workflow_audit_reporter.cjs teen_motivation
+        run: node scripts/workflow_audit_reporter.cjs teen_motivation || true
