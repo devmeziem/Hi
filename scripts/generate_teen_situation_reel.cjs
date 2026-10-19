@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Teen situation reel — Motivation Andrew + BGM. Buffer publish is workflow-owned. */
+/** Teen situation reel — Motivation Andrew + BGM + Cinema-style center karaoke captions */
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
@@ -44,37 +44,53 @@ function pickScript() {
     'Today you do one uncomfortable task first. No scrolling until it is done. ' +
     'Discipline is not a feeling. It is a decision you repeat.';
   const cta = 'Save this and do the hard thing in the next ten minutes.';
-  return {
-    title: hook.slice(0, 70),
-    hook,
-    body,
-    cta
-  };
+  return { title: hook.slice(0, 70), hook, body, cta };
 }
 
-function buildAss(parts, duration) {
+/** Same style as Cinema CenterKaraoke: center, bold, word-chunked, opaque box */
+function buildCinemaStyleAss(fullText, duration) {
+  const words = String(fullText)
+    .replace(/\n/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean);
+  const wordsPerLine = 4;
+  const totalMs = Math.round(duration * 1000);
+  const msPerWord = words.length > 0 ? totalMs / words.length : 320;
+
+  const formatAssTime = (ms) => {
+    const totalSec = Math.floor(ms / 1000);
+    const cs = Math.floor((ms % 1000) / 10);
+    const sec = totalSec % 60;
+    const min = Math.floor((totalSec % 3600) / 60);
+    const hr = Math.floor(totalSec / 3600);
+    return `${hr}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
+  };
+
   const lines = [];
-  const slice = duration / Math.max(parts.length, 1);
-  parts.forEach((text, i) => {
-    const start = i * slice;
-    const end = Math.min(duration, (i + 1) * slice);
-    const fmt = (t) => {
-      const cs = Math.floor((t % 1) * 100);
-      const s = Math.floor(t) % 60;
-      const m = Math.floor(t / 60);
-      return `0:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
-    };
-    const safe = String(text).replace(/\n/g, ' ').slice(0, 90);
-    lines.push(`Dialogue: 0,${fmt(start)},${fmt(end)},Default,,0,0,0,,{\\an5\\pos(540,960)\\b1}${safe}`);
-  });
+  for (let i = 0; i < words.length; i += wordsPerLine) {
+    const chunk = words.slice(i, i + wordsPerLine);
+    const chunkStartMs = Math.round(i * msPerWord);
+    const chunkEndMs = Math.min(totalMs, Math.round((i + chunk.length) * msPerWord + 140));
+    let kLine = '';
+    for (const w of chunk) {
+      const wordCs = Math.max(8, Math.round(msPerWord / 10));
+      kLine += `{\kf${wordCs}}${String(w).toUpperCase()} `;
+    }
+    lines.push(
+      `Dialogue: 0,${formatAssTime(chunkStartMs)},${formatAssTime(chunkEndMs)},CenterKaraoke,,0,0,0,,${kLine.trim()}`
+    );
+  }
+
   return `[Script Info]
+Title: Teen Motivation Cinema-Style Karaoke
 ScriptType: v4.00+
 PlayResX: 1080
 PlayResY: 1920
+ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,DejaVu Sans,42,&H00FFFFFF,&H000000FF,&H00000000,&HA0000000,-1,0,0,0,100,100,0,0,3,4,0,5,60,60,40,1
+Style: CenterKaraoke,DejaVu Sans,48,&H00FFFFFF,&H0000D7FF,&H00000000,&HA0000000,-1,0,0,0,100,100,0,0,3,4,0,5,70,70,60,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -114,10 +130,11 @@ async function main() {
   makeBgm(bgmPath, duration, BGM);
   console.log('[Teen] BGM', fs.statSync(bgmPath).size);
 
-  const parts = [script.hook, script.body.slice(0, 100), script.body.slice(100, 200), script.body.slice(200) || script.cta, script.cta];
-  fs.writeFileSync(assPath, buildAss(parts.filter(Boolean), duration));
+  fs.writeFileSync(assPath, buildCinemaStyleAss(spoken, duration));
+  console.log('[Teen] captions: cinema CenterKaraoke style');
 
-  const filter = `[0:v]scale=1200:2133:force_original_aspect_ratio=increase,crop=1200:2133,zoompan=z='min(zoom+0.0012,1.12)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${Math.ceil(duration * 30)}:s=1080x1920:fps=30,hue=s=0,eq=contrast=1.15[v0];[v0]ass='${assPath.replace(/'/g, "'\\''")}'[vout];[1:a]volume=1.5[a0];[2:a]volume=1.0[a1];[a0][a1]amix=inputs=2:duration=first:dropout_transition=2[aout]`;
+  const assEsc = assPath.replace(/\\/g, '/').replace(/:/g, '\\:').replace(/'/g, "'\\''");
+  const filter = `[0:v]scale=1200:2133:force_original_aspect_ratio=increase,crop=1200:2133,zoompan=z='min(zoom+0.0012,1.12)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${Math.ceil(duration * 30)}:s=1080x1920:fps=30,hue=s=0,eq=contrast=1.15[v0];[v0]ass='${assEsc}'[vout];[1:a]volume=1.5[a0];[2:a]volume=1.0[a1];[a0][a1]amix=inputs=2:duration=first:dropout_transition=2[aout]`;
   execSync(
     `ffmpeg -y -loop 1 -i "${imgPath}" -i "${voicePath}" -i "${bgmPath}" -filter_complex "${filter}" -map "[vout]" -map "[aout]" -c:v libx264 -preset veryfast -crf 20 -c:a aac -b:a 160k -t ${duration} -pix_fmt yuv420p "${outPath}"`,
     { stdio: 'inherit' }
@@ -126,7 +143,6 @@ async function main() {
   if (sz < 250000) throw new Error('HOLLOW FAIL: output small');
   console.log('[Teen] OK', outPath, (sz / 1024).toFixed(0) + 'KB');
 
-  // Publish is owned by workflow (CHANNEL_TARGET=teen_motivation + argv)
   if (!skipBuffer && !isDry) {
     try {
       execSync('node scripts/publish_buffer_second_tiktok.cjs teen_motivation', {
