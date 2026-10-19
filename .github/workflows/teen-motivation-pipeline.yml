@@ -22,7 +22,7 @@ on:
         default: true
         type: boolean
       publish_tiktok:
-        description: 'Publish TikTok Buffer API 2'
+        description: 'Publish TikTok Buffer API 2 (bonesceo only)'
         required: false
         default: true
         type: boolean
@@ -43,15 +43,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
       - run: npm install --legacy-peer-deps --no-audit --no-fund
-      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core || true
       - name: Apply content system volumes
         run: node scripts/apply_all_content_system.cjs || true
-      - name: Generate Teen (situation-led, Motivation Andrew)
+      - name: Generate Teen (no internal Buffer — publish step below)
         env:
           VIDEO_TYPE: ${{ github.event.inputs.video_type || 'situation' }}
           TOPIC: ${{ github.event.inputs.topic || '' }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          DRY_RUN: 'true'
+          SKIP_BUFFER: 'true'
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -59,22 +61,63 @@ jobs:
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH5 || secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH5 || secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH5 || secrets.YOUTUBE_REFRESH_TOKEN }}
-          BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
-          BUFFER_API_TOKEN_2: ${{ secrets.BUFFER_API_TOKEN_2 || secrets.BUFFER_API_KEY_2 }}
-          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
         run: |
-          # Prefer situation engine (no listicle seeds). Fallback to legacy if missing.
           if [ -f scripts/generate_teen_situation_reel.cjs ]; then
             node scripts/generate_teen_situation_reel.cjs
           else
-            node scripts/apply_teen_quality_fix.cjs || true
             node scripts/generate_teen_motivation_reel.cjs
           fi
-      - name: Artifacts
-        if: always()
+          test -f rendered_videos/teen_motivation_latest.mp4
+          ls -lh rendered_videos/teen_motivation_latest.mp4
+      - name: YouTube (optional)
+        if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.auto_publish == true || github.event.inputs.auto_publish == 'true' || github.event_name == 'schedule') }}
+        env:
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH5 || secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH5 || secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH5 || secrets.YOUTUBE_REFRESH_TOKEN }}
+        run: |
+          node -e "
+            const { uploadYouTubeShort } = require('./scripts/youtube_channel_dispatcher.cjs');
+            uploadYouTubeShort({
+              videoPath: 'rendered_videos/teen_motivation_latest.mp4',
+              title: 'Discipline check — do this today',
+              description: 'Teen motivation. #Discipline #TeenMotivation #Shorts',
+              tags: ['Discipline','TeenMotivation','Shorts'],
+              channelId: 'teen_motivation'
+            }).then(() => console.log('YT ok')).catch(e => console.warn('YT', e.message));
+          "
+      - name: Restore Buffer GraphQL publisher
+        if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.publish_tiktok == true || github.event.inputs.publish_tiktok == 'true' || github.event_name == 'schedule') }}
+        run: |
+          curl -fsSL "https://raw.githubusercontent.com/devmeziem/Hi/a00c9e83c801f94513ff002978558c5ee8c113bf/scripts/publish_buffer_second_tiktok.cjs" \
+            -o scripts/publish_buffer_second_tiktok.cjs
+          # hard-lock default away from movie if someone runs with no args
+          sed -i "s/process.env.CHANNEL_TARGET || 'movie_brand'/process.env.CHANNEL_TARGET || 'teen_motivation'/" scripts/publish_buffer_second_tiktok.cjs || true
+          wc -c scripts/publish_buffer_second_tiktok.cjs
+      - name: Buffer TikTok bonesceo ONLY
+        if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.publish_tiktok == true || github.event.inputs.publish_tiktok == 'true' || github.event_name == 'schedule') }}
+        env:
+          BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
+          BUFFER_API_TOKEN_2: ${{ secrets.BUFFER_API_TOKEN_2 || secrets.BUFFER_API_KEY_2 }}
+          # Correct teen TikTok from live Buffer discovery (bonesceo)
+          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID || '6ab05677ea19ca0bde9c3ffb' }}
+          BUFFER_TIKTOK_MOVIE_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_MOVIE_CHANNEL_ID }}
+          CHANNEL_TARGET: teen_motivation
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
+          DRY_RUN: 'false'
+        run: |
+          test -f rendered_videos/teen_motivation_latest.mp4 || { echo "missing teen mp4"; exit 1; }
+          echo "Using TEEN channel id: $BUFFER_TIKTOK_TEEN_CHANNEL_ID"
+          # argv[2] is what the known-good script reads (NOT PUBLISH_TARGET)
+          node scripts/publish_buffer_second_tiktok.cjs teen_motivation
+      - if: always()
         uses: actions/upload-artifact@v4
         with:
           name: teen-${{ github.run_id }}

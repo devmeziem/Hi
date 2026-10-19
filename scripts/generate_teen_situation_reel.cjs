@@ -1,128 +1,115 @@
 #!/usr/bin/env node
-/** Teen — ONE path: situation script + one image + Edge TTS + ONE BGM + captions */
+/** Teen situation reel — Motivation Andrew + BGM. Buffer publish is workflow-owned. */
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const https = require('https');
-const { VOLUMES, VOICES, loadHistory, saveHistory, isDuplicate } = require('./content_system_shared.cjs');
+const { VOLUMES, VOICES } = require('./content_system_shared.cjs');
 const { TEEN_SITUATION_HOOKS } = require('./public_sources.cjs');
 const { makeBgm } = require('./mix_bgm.cjs');
 
 const OUT = path.join(process.cwd(), 'rendered_videos');
 const ART = path.join(process.cwd(), 'test_artifacts', 'teen_situation');
-const HIST = path.join(process.cwd(), 'data', 'teen_topic_history.json');
 const isDry = String(process.env.DRY_RUN || 'false') === 'true';
-const V = VOICES.motivation;
-const BGM = VOLUMES.teen.bgm;
+const skipBuffer = String(process.env.SKIP_BUFFER || 'false') === 'true' || isDry;
+const VOICE = VOICES.motivation || { id: 'en-US-AndrewNeural', rate: '-5%', pitch: '-15Hz' };
+const BGM = (VOLUMES.teen && VOLUMES.teen.bgm) || 0.32;
 
 function download(url, dest) {
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(dest);
     const get = (u, n = 0) => {
-      if (n > 4) return reject(new Error('redirects'));
-      https.get(u, { headers: { 'User-Agent': 'TeenBot/1.0' } }, (res) => {
-        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) return get(res.headers.location, n + 1);
-        if (res.statusCode !== 200) return reject(new Error('HTTP ' + res.statusCode));
-        res.pipe(file);
-        file.on('finish', () => file.close(resolve));
-      }).on('error', reject);
+      if (n > 5) return reject(new Error('redirects'));
+      https
+        .get(u, { headers: { 'User-Agent': 'TeenBot/1.0' } }, (res) => {
+          if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) return get(res.headers.location, n + 1);
+          if (res.statusCode !== 200) return reject(new Error('HTTP ' + res.statusCode));
+          res.pipe(file);
+          file.on('finish', () => file.close(resolve));
+        })
+        .on('error', reject);
     };
     get(url);
   });
 }
 
-async function buildScript() {
-  const history = loadHistory(HIST);
-  const hooks = [...TEEN_SITUATION_HOOKS].sort(() => Math.random() - 0.5);
-  const situation = hooks.find((h) => !isDuplicate({ title: h }, history, { overlapMax: 0.45 })) || hooks[0];
-
-  // Full spoken script (not 14s fluff)
-  const script = {
-    title: situation,
-    hook: situation + '.',
-    body:
-      'That is not a personality trait. It is a loop. Your brain picks the easiest dopamine path and calls it rest. Break the loop with one non-negotiable: when you notice the urge, stand up, put the phone face down in another room, and do the smallest hard task for ten minutes. No playlist. No perfect plan. Just ten minutes. Identity is built by reps, not by the version of you that negotiates every night.',
-    cta: 'Comment LOCK IN if you will do the ten minutes today.',
-    image:
-      'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1080&q=80'
+function pickScript() {
+  const hooks = TEEN_SITUATION_HOOKS || [
+    'You keep unlocking your phone with no reason',
+    'You say you will start tomorrow every night'
+  ];
+  const hook = hooks[Math.floor(Math.random() * hooks.length)];
+  const body =
+    'That habit is training your brain to run from hard things. ' +
+    'Today you do one uncomfortable task first. No scrolling until it is done. ' +
+    'Discipline is not a feeling. It is a decision you repeat.';
+  const cta = 'Save this and do the hard thing in the next ten minutes.';
+  return {
+    title: hook.slice(0, 70),
+    hook,
+    body,
+    cta
   };
-
-  try {
-    const { callActiveAiForJson } = require('./topic_discovery_engine.cjs');
-    const { TEEN_SCRIPT } = require('./prompts_library.cjs');
-    if (typeof callActiveAiForJson === 'function') {
-      const ai = await callActiveAiForJson(TEEN_SCRIPT + `\nSituation seed: ${situation}`);
-      if (ai?.hook && ai?.body && String(ai.body).length > 80) {
-        script.title = ai.title || situation;
-        script.hook = ai.hook;
-        script.body = ai.body;
-        script.cta = ai.cta || script.cta;
-      }
-    }
-  } catch (e) {
-    console.warn('[Teen] AI optional skip', e.message);
-  }
-
-  saveHistory(HIST, { title: script.title, text: script.hook });
-  return script;
 }
 
-async function edgeVoice(text, outFile) {
-  const { synthesizeSpeechResilient } = require('./tts_resilient_engine.cjs');
-  await synthesizeSpeechResilient(text, outFile, {
-    voice: V.id,
-    rate: V.rate,
-    pitch: V.pitch,
-    emotionProfile: 'educator',
-    timeout: 30000
+function buildAss(parts, duration) {
+  const lines = [];
+  const slice = duration / Math.max(parts.length, 1);
+  parts.forEach((text, i) => {
+    const start = i * slice;
+    const end = Math.min(duration, (i + 1) * slice);
+    const fmt = (t) => {
+      const cs = Math.floor((t % 1) * 100);
+      const s = Math.floor(t) % 60;
+      const m = Math.floor(t / 60);
+      return `0:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
+    };
+    const safe = String(text).replace(/\n/g, ' ').slice(0, 90);
+    lines.push(`Dialogue: 0,${fmt(start)},${fmt(end)},Default,,0,0,0,,{\\an5\\pos(540,960)\\b1}${safe}`);
   });
-}
+  return `[Script Info]
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1920
 
-function buildAss(lines, duration) {
-  const slot = duration / lines.length;
-  const fmt = (t) => {
-    const h = Math.floor(t / 3600);
-    const m = Math.floor((t % 3600) / 60);
-    const s = Math.floor(t % 60);
-    const cs = Math.floor((t % 1) * 100);
-    return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
-  };
-  let body = '';
-  lines.forEach((line, i) => {
-    body += `Dialogue: 0,${fmt(i * slot)},${fmt(Math.min(duration, (i + 1) * slot))},Default,,0,0,0,,{\\an2\\fs42\\b1\\c&H00FFFFFF&\\3c&H000000&\\bord3}${String(line).slice(0, 110)}\n`;
-  });
-  return `[Script Info]\nScriptType: v4.00+\nPlayResX: 1080\nPlayResY: 1920\n\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: Default,Arial,42,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,3,2,2,50,50,110,1\n\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n${body}`;
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,DejaVu Sans,42,&H00FFFFFF,&H000000FF,&H00000000,&HA0000000,-1,0,0,0,100,100,0,0,3,4,0,5,60,60,40,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+${lines.join('\n')}
+`;
 }
 
 async function main() {
-  for (const d of [OUT, ART, path.dirname(HIST)]) if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
-  const script = await buildScript();
-  console.log('[Teen]', script.title);
+  if (!fs.existsSync(OUT)) fs.mkdirSync(OUT, { recursive: true });
+  if (!fs.existsSync(ART)) fs.mkdirSync(ART, { recursive: true });
 
-  const narration = [script.hook, script.body, script.cta].join(' ');
-  if (narration.length < 120) throw new Error('HOLLOW FAIL: script too thin');
+  const script = pickScript();
+  console.log('[Teen]', script.hook);
 
-  const voicePath = path.join(ART, `v_${Date.now()}.mp3`);
-  const bgmPath = path.join(ART, `b_${Date.now()}.wav`);
-  const imgPath = path.join(ART, `i_${Date.now()}.jpg`);
-  const assPath = path.join(ART, `c_${Date.now()}.ass`);
+  const imgPath = path.join(ART, 'bg.jpg');
+  const voicePath = path.join(ART, 'voice.mp3');
+  const bgmPath = path.join(ART, 'bgm.wav');
+  const assPath = path.join(ART, 'cap.ass');
   const outPath = path.join(OUT, 'teen_motivation_latest.mp4');
 
   const imgs = [
-    'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1080&q=80',
-    'https://images.unsplash.com/photo-1513258496099-48168024aec0?w=1080&q=80',
-    'https://images.unsplash.com/photo-1502904550040-7534597429ae?w=1080&q=80',
-    'https://images.unsplash.com/photo-1461896836934-ffe607ba6851?w=1080&q=80'
+    'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=1080&q=80',
+    'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=1080&q=80',
+    'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1080&q=80'
   ];
-  await download(imgs[Math.floor(Math.random() * imgs.length)], imgPath);
-  if (!fs.existsSync(imgPath) || fs.statSync(imgPath).size < 8000) throw new Error('HOLLOW FAIL: no image');
+  await download(imgs[Date.now() % imgs.length], imgPath);
 
-  await edgeVoice(narration, voicePath);
-  let duration = 30;
-  try {
-    duration = Math.max(22, Math.min(50, parseFloat(execSync(`ffprobe -v error -show_entries format=duration -of csv=p=0 "${voicePath}"`, { encoding: 'utf8' }).trim()) + 0.6));
-  } catch (_) {}
-  if (duration < 18) throw new Error('HOLLOW FAIL: voice too short ' + duration);
+  const { synthesizeSpeechResilient } = require('./tts_resilient_engine.cjs');
+  const spoken = `${script.hook}. ${script.body} ${script.cta}`;
+  await synthesizeSpeechResilient(spoken, voicePath, {
+    voice: VOICE.id,
+    rate: VOICE.rate,
+    pitch: VOICE.pitch
+  });
+  const duration = Math.max(18, Math.min(45, 2 + spoken.split(/\s+/).length * 0.38));
 
   makeBgm(bgmPath, duration, BGM);
   console.log('[Teen] BGM', fs.statSync(bgmPath).size);
@@ -139,25 +126,24 @@ async function main() {
   if (sz < 250000) throw new Error('HOLLOW FAIL: output small');
   console.log('[Teen] OK', outPath, (sz / 1024).toFixed(0) + 'KB');
 
-  if (!isDry) {
+  // Publish is owned by workflow (CHANNEL_TARGET=teen_motivation + argv)
+  if (!skipBuffer && !isDry) {
     try {
-      const { uploadYouTubeShort } = require('./youtube_channel_dispatcher.cjs');
-      await uploadYouTubeShort({
-        videoPath: outPath,
-        title: script.title.slice(0, 90),
-        description: `${script.hook}\n\n${script.body}\n\n${script.cta}\n\n#Discipline #TeenMotivation #Shorts`,
-        tags: ['#Discipline', '#TeenMotivation', '#Shorts'],
-        channelId: 'teen_motivation'
+      execSync('node scripts/publish_buffer_second_tiktok.cjs teen_motivation', {
+        stdio: 'inherit',
+        env: {
+          ...process.env,
+          CHANNEL_TARGET: 'teen_motivation',
+          BUFFER_TIKTOK_TEEN_CHANNEL_ID:
+            process.env.BUFFER_TIKTOK_TEEN_CHANNEL_ID || '6ab05677ea19ca0bde9c3ffb'
+        }
       });
-    } catch (e) {
-      console.warn('[Teen] YT', e.message);
-    }
-    try {
-      execSync('node scripts/publish_buffer_second_tiktok.cjs', { stdio: 'inherit', env: { ...process.env, PUBLISH_TARGET: 'teen' } });
     } catch (e) {
       console.warn('[Teen] Buffer', e.message);
     }
-  } else console.log('[Teen] DRY_RUN');
+  } else {
+    console.log('[Teen] publish deferred to workflow / dry');
+  }
 }
 
 main().catch((e) => {
