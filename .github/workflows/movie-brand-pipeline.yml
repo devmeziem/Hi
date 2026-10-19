@@ -1,34 +1,29 @@
-name: Cinema Vanguard - Crime, Horror, Mystery & Episodic Cinema (YouTube Ch 4 & Driftreel TikTok)
+name: Cinema Vanguard - Documentary (YouTube Ch 4)
 
 on:
   schedule:
     - cron: '0 14 * * *'
   workflow_dispatch:
     inputs:
-      documentary_topic_id:
-        description: 'Topic ID'
-        required: false
-        default: ''
-        type: string
+      dry_run:
+        description: 'Dry Run'
+        required: true
+        default: false
+        type: boolean
       publish_youtube:
         description: 'YouTube Ch4'
         required: true
         default: true
         type: boolean
       publish_tiktok:
-        description: 'TikTok driftreel'
+        description: 'TikTok Buffer API2 (driftreel only)'
         required: false
         default: true
-        type: boolean
-      dry_run:
-        description: 'Dry Run'
-        required: true
-        default: false
         type: boolean
 
 jobs:
   documentary_pipeline:
-    name: Cinema Vanguard
+    name: Cinema documentary (not paused movie season)
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -41,10 +36,8 @@ jobs:
       - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg || true
       - run: npm install --legacy-peer-deps --no-audit --no-fund
       - run: node scripts/apply_all_content_system.cjs || true
-      - run: node scripts/apply_cinema_quality_fix.cjs || true
-      - name: Generate
+      - name: Documentary engine only (skip paused movie season)
         env:
-          DOCUMENTARY_EPISODE_ID: ${{ github.event.inputs.documentary_topic_id }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           PUBLISH_YOUTUBE: ${{ github.event.inputs.publish_youtube }}
           PUBLISH_TIKTOK: ${{ github.event.inputs.publish_tiktok }}
@@ -59,21 +52,19 @@ jobs:
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH4 }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH4 }}
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
+          BUFFER_API_TOKEN_2: ${{ secrets.BUFFER_API_TOKEN_2 || secrets.BUFFER_API_KEY_2 }}
+          BUFFER_TIKTOK_MOVIE_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_MOVIE_CHANNEL_ID }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
         run: |
-          if [ -f scripts/generate_movie_brand_episode.cjs ]; then
-            node scripts/generate_movie_brand_episode.cjs || node scripts/generate_documentary_movie_reel.cjs
-          else
-            node scripts/generate_documentary_movie_reel.cjs
-          fi
+          # NEVER the paused Season-1 movie episode generator
+          node scripts/generate_documentary_movie_reel.cjs
       - if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cinema-${{ github.run_id }}
+          name: cinema-doc-${{ github.run_id }}
           path: |
-            rendered_videos/*movie*
-            rendered_videos/*cinema*
-            rendered_videos/*doc*
+            rendered_videos/*
           if-no-files-found: ignore

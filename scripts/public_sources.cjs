@@ -1,10 +1,8 @@
 #!/usr/bin/env node
-/**
- * Public content sources — Wikiquote, Wikipedia, simple HTTPS helpers.
- */
+/** Public sources — Wikiquote / Wikipedia with robust quote extraction */
 const https = require('https');
 
-function httpsGet(url, timeoutMs = 12000) {
+function httpsGet(url, timeoutMs = 15000) {
   return new Promise((resolve, reject) => {
     const req = https.get(
       url,
@@ -28,23 +26,46 @@ function httpsGet(url, timeoutMs = 12000) {
 
 function stripWiki(text) {
   return String(text)
+    .replace(/\[\[File:[^\]]+\]\]/gi, '')
     .replace(/\{\{[^}]+\}\}/g, '')
     .replace(/\[\[([^|\]]+)\|([^\]]+)\]\]/g, '$2')
     .replace(/\[\[([^\]]+)\]\]/g, '$1')
     .replace(/'''?/g, '')
     .replace(/<[^>]+>/g, '')
+    .replace(/&quot;/g, '"')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
 function extractQuotesFromWikitext(wikitext) {
   const quotes = [];
-  for (const line of String(wikitext).split('\n')) {
-    const m = line.match(/^[\*\#]?\s*["“](.+?)["”]/);
-    if (m) {
-      const q = stripWiki(m[1]);
-      if (q.length >= 35 && q.length <= 280) quotes.push(q);
-    }
+  const raw = String(wikitext || '');
+  // Prefer section after == Quotes ==
+  let section = raw;
+  const qi = raw.search(/==\s*Quotes\s*==/i);
+  if (qi >= 0) section = raw.slice(qi);
+  const end = section.search(/\n==\s*[^=]/s*==/);
+  // keep quotes section mostly
+  const lines = section.split('\n');
+  for (const line of lines) {
+    if (/^==/.test(line)) continue;
+    if (/^\[\[File:/i.test(line)) continue;
+    if (/^\{\{/.test(line)) continue;
+    // * "quote" or * quote
+    let m = line.match(/^\*\s*["“](.+?)["”]/);
+    if (!m) m = line.match(/^\*\s*(.+)$/);
+    if (!m) continue;
+    let q = stripWiki(m[1]);
+    // drop attribution tails
+    q = q.replace(/\s*[-—–]\s*.{0,40}$/, '').trim();
+    if (q.length >= 40 && q.length <= 280 && /[a-zA-Z]/.test(q)) quotes.push(q);
+  }
+  // Also "quoted" phrases anywhere
+  const re = /["“]([^"”]{40,280})["”]/g;
+  let mm;
+  while ((mm = re.exec(raw))) {
+    const q = stripWiki(mm[1]);
+    if (q.length >= 40 && q.length <= 280) quotes.push(q);
   }
   return [...new Set(quotes)];
 }
@@ -58,16 +79,13 @@ const FIN_AUTHORS = [
   'Ray_Dalio',
   'Naval_Ravikant',
   'Morgan_Housel',
-  'Thomas_Sowell'
+  'Thomas_Sowell',
+  'Robert_Kiyosaki',
+  'Andrew_Carnegie',
+  'John_D._Rockefeller'
 ];
 
-const STOIC_AUTHORS = [
-  'Marcus_Aurelius',
-  'Epictetus',
-  'Seneca_the_Younger',
-  'Zeno_of_Citium',
-  'Musonius_Rufus'
-];
+const STOIC_AUTHORS = ['Marcus_Aurelius', 'Epictetus', 'Seneca_the_Younger', 'Zeno_of_Citium', 'Musonius_Rufus'];
 
 async function fetchWikiquoteQuotes(authorPage) {
   const url = `https://en.wikiquote.org/w/api.php?action=parse&page=${encodeURIComponent(authorPage)}&prop=wikitext&format=json&formatversion=2`;
@@ -106,18 +124,15 @@ async function fetchWikipediaSummary(title) {
   }
 }
 
-/** Everyday science seeds for Archie when AI is down */
 const ARCHIE_TOPIC_SEEDS = [
-  { title: 'Why do ears pop on planes?', wiki: 'Eustachian_tube', visual: 'airplane cabin passenger ears' },
-  { title: 'Why is the sky blue?', wiki: 'Rayleigh_scattering', visual: 'clear blue sky daytime' },
+  { title: 'Why do ears pop on planes?', wiki: 'Eustachian_tube', visual: 'airplane cabin window sky' },
+  { title: 'Why is the sky blue?', wiki: 'Rayleigh_scattering', visual: 'clear blue sky daytime clouds' },
   { title: 'Why does ice float?', wiki: 'Ice', visual: 'ice cubes floating in water glass' },
-  { title: 'Why do onions make you cry?', wiki: 'Onion', visual: 'cutting onion kitchen' },
-  { title: 'Why is fire hot?', wiki: 'Combustion', visual: 'campfire flames close' },
-  { title: 'Why do we yawn?', wiki: 'Yawn', visual: 'person yawning tired' },
-  { title: 'Why does metal feel cold?', wiki: 'Thermal_conductivity', visual: 'hand touching metal railing' }
+  { title: 'Why do onions make you cry?', wiki: 'Onion', visual: 'person cutting onion kitchen' },
+  { title: 'Why does metal feel cold?', wiki: 'Thermal_conductivity', visual: 'hand metal railing winter' },
+  { title: 'Why do we see lightning before thunder?', wiki: 'Lightning', visual: 'lightning storm night sky' }
 ];
 
-/** Teen situation hooks — not listicle seeds */
 const TEEN_SITUATION_HOOKS = [
   'You keep unlocking your phone with no reason',
   'You say you will start tomorrow every night',
