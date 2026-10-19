@@ -36,8 +36,10 @@ jobs:
       - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core || true
       - run: npm install --legacy-peer-deps --no-audit --no-fund
       - run: node scripts/apply_all_content_system.cjs || true
-      - name: Force center bold captions (no overflow)
+      - name: Force center bold captions (keep style)
         run: node scripts/apply_center_captions.cjs || true
+      - name: Cinema BGM louder + remove watermarks (keep karaoke)
+        run: node scripts/patch_cinema_audio_watermark.cjs
       - name: Generate documentary
         env:
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
@@ -67,8 +69,7 @@ jobs:
           curl -fsSL "https://raw.githubusercontent.com/devmeziem/Hi/a00c9e83c801f94513ff002978558c5ee8c113bf/scripts/publish_buffer_second_tiktok.cjs" \
             -o scripts/publish_buffer_second_tiktok.cjs
           test -s scripts/publish_buffer_second_tiktok.cjs
-          wc -c scripts/publish_buffer_second_tiktok.cjs
-      - name: Buffer TikTok → archie.the.explorer6 (movie channel id)
+      - name: Buffer TikTok → archie.the.explorer6
         if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.publish_tiktok == true || github.event.inputs.publish_tiktok == 'true' || github.event_name == 'schedule') }}
         env:
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
@@ -92,25 +93,23 @@ jobs:
           fi
           test -f rendered_videos/driftreel_documentary_latest.mp4 || { echo "NO VIDEO"; exit 1; }
           ls -lh rendered_videos/driftreel_documentary_latest.mp4
-          # argv[2] selects movie_brand — do NOT default silently
           set +e
           OUT=$(node scripts/publish_buffer_second_tiktok.cjs movie_brand 2>&1)
           CODE=$?
           set -e
           echo "$OUT"
           if echo "$OUT" | grep -qi "SKIPPING publishing\|CHANNEL_NAME_NOT_VERIFIED\|NO_TARGET_TIKTOK\|VIDEO_NOT_FOUND"; then
-            echo "Buffer skipped or failed verification — failing job"
+            echo "Buffer skipped — fail"
             exit 1
           fi
           if [ $CODE -ne 0 ]; then exit $CODE; fi
           if ! echo "$OUT" | grep -qi "Post ID\|Successfully scheduled\|Successfully posted\|Buffer Dispatch Recorded"; then
-            echo "No success marker in Buffer output — failing job"
+            echo "No Buffer success marker — fail"
             exit 1
           fi
       - if: always()
         uses: actions/upload-artifact@v4
         with:
           name: cinema-doc-${{ github.run_id }}
-          path: |
-            rendered_videos/*
+          path: rendered_videos/*
           if-no-files-found: ignore
