@@ -15,17 +15,56 @@ const GENRES = ['history', 'horror', 'crime', 'untold_events'];
 const HIST_PATH = path.join(process.cwd(), 'data', 'cinema_topic_history.json');
 
 const ARCHIVE_SEEDS = [
-  // search seeds only — not scripts; used to discover public articles
-  'unsolved historical mystery site:en.wikipedia.org',
-  'unsolved crime cold case historical',
-  'forgotten disaster history documentary',
-  'haunted historical site legend',
-  'lost treasure history mystery',
-  'unexplained historical event',
-  'maritime mystery ship disappearance',
-  'museum theft unsolved',
-  'ancient discovery controversy',
-  'vanished expedition polar arctic'
+  'Dyatlov Pass incident',
+  'Mary Celeste',
+  'Roanoke Colony',
+  'Flannan Isles Lighthouse',
+  'Ourang Medan',
+  'SS Waratah',
+  'Carroll A. Deering',
+  'S.S. Baychimo',
+  'Tamam Shud case',
+  'Isdal Woman',
+  'Somerton Man',
+  'Amber Room',
+  'Oak Island money pit',
+  'Beale ciphers',
+  'Voynich manuscript',
+  'Antikythera mechanism',
+  'Pharaoh Tutankhamun curse legend',
+  'Philadelphia Experiment legend',
+  'Max Headroom broadcast signal intrusion',
+  'Hinterkaifeck murders',
+  'Villisca axe murders',
+  'Zodiac Killer unsolved letters',
+  'DB Cooper hijacking',
+  'Black Dahlia investigation',
+  'Gardner Museum theft',
+  'Goya theft from National Gallery',
+  'Great Train Robbery aftermath',
+  'USS Cyclops disappearance',
+  'Flight 19 Bermuda Triangle',
+  'Kinross incident',
+  'Mantell UFO incident',
+  'Kecksburg incident',
+  'Hessdalen lights',
+  'Taos Hum',
+  'Bloop ocean sound',
+  'Wow signal',
+  'Piri Reis map',
+  'Piri Reis 1513',
+  'Yonaguni Monument',
+  'Gobekli Tepe discovery',
+  'Nazca Lines theories',
+  'Lost City of Z Percy Fawcett',
+  'Colonel Fawcett expedition',
+  'Shackleton Endurance discovery',
+  'Terra Nova expedition Scott',
+  'Franklin expedition Arctic',
+  'Andrée polar balloon expedition',
+  'Hindenburg disaster investigation',
+  'Titanic wireless warnings',
+  'Lusitania controversy'
 ];
 
 function loadHist() {
@@ -45,7 +84,7 @@ function saveHist(entry) {
   fs.writeFileSync(HIST_PATH, JSON.stringify(h.slice(-200), null, 2));
 }
 
-function httpGet(url, timeoutMs = 12000) {
+function httpGet(url, timeoutMs = 14000) {
   return new Promise((resolve) => {
     try {
       const lib = url.startsWith('http://') ? http : https;
@@ -53,7 +92,7 @@ function httpGet(url, timeoutMs = 12000) {
         url,
         {
           headers: {
-            'User-Agent': 'CinemaVanguardBot/2.0 (educational documentary; github.com/devmeziem)',
+            'User-Agent': 'CinemaVanguardBot/2.1 (educational documentary; github.com/devmeziem)',
             Accept: 'application/json,text/html,*/*'
           },
           timeout: timeoutMs
@@ -85,30 +124,46 @@ function stripHtml(s) {
     .trim();
 }
 
-/** Wikipedia search → pick page not in history */
-async function wikiSearch(q, history) {
+function isBadWikiTitle(title) {
+  const t = String(title || '').toLowerCase();
+  if (!t) return true;
+  // Skip list/index/disambiguation pages — thin extracts
+  if (/^list of\b/.test(t)) return true;
+  if (/\bindex of\b/.test(t)) return true;
+  if (/\(disambiguation\)/.test(t)) return true;
+  if (/^category:/.test(t)) return true;
+  if (/^timeline of\b/.test(t)) return true;
+  if (/^outline of\b/.test(t)) return true;
+  if (/^bibliography of\b/.test(t)) return true;
+  if (/^glossary of\b/.test(t)) return true;
+  return false;
+}
+
+/** Wikipedia search → ranked candidates not in history */
+async function wikiSearchMany(q, history, limit = 10) {
   const url =
     'https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=' +
     encodeURIComponent(q) +
-    '&srlimit=8&format=json&utf8=1';
+    '&srlimit=' +
+    limit +
+    '&format=json&utf8=1';
   const raw = await httpGet(url);
+  const out = [];
   try {
     const j = JSON.parse(raw);
     const hits = j?.query?.search || [];
     const past = new Set(
-      (history || []).map((h) => String(h.title || h.topic || '').toLowerCase())
+      (history || []).map((h) => String(h.title || h.topic || h.sourceTitle || '').toLowerCase())
     );
     for (const h of hits) {
       const title = h.title;
-      if (!title) continue;
-      if ([...past].some((p) => p && (title.toLowerCase().includes(p) || p.includes(title.toLowerCase())))) {
-        continue;
-      }
-      return { title, snippet: stripHtml(h.snippet), pageid: h.pageid };
+      if (!title || isBadWikiTitle(title)) continue;
+      const low = title.toLowerCase();
+      if ([...past].some((p) => p && (low.includes(p) || p.includes(low)))) continue;
+      out.push({ title, snippet: stripHtml(h.snippet), pageid: h.pageid });
     }
-    if (hits[0]) return { title: hits[0].title, snippet: stripHtml(hits[0].snippet), pageid: hits[0].pageid };
   } catch (_) {}
-  return null;
+  return out;
 }
 
 async function wikiExtract(title) {
@@ -122,9 +177,12 @@ async function wikiExtract(title) {
     const pages = j?.query?.pages || {};
     const page = Object.values(pages)[0];
     if (!page || page.missing) return null;
+    // Redirect / thin list pages still sometimes slip through
+    if (isBadWikiTitle(page.title)) return null;
+    const extract = String(page.extract || '').trim();
     return {
       title: page.title,
-      extract: String(page.extract || '').slice(0, 4500),
+      extract: extract.slice(0, 5000),
       url: page.fullurl || `https://en.wikipedia.org/wiki/${encodeURIComponent(page.title)}`,
       thumb: page.thumbnail?.source || null
     };
@@ -134,7 +192,6 @@ async function wikiExtract(title) {
 }
 
 async function wikiImageQueries(title) {
-  // Related file titles / categories via Wikipedia images
   const url =
     'https://en.wikipedia.org/w/api.php?action=query&titles=' +
     encodeURIComponent(title) +
@@ -152,7 +209,7 @@ async function wikiImageQueries(title) {
         .replace(/\.(jpg|jpeg|png|gif|svg|webp)$/i, '')
         .replace(/[_-]+/g, ' ')
         .trim();
-      if (name.length > 8 && !/logo|icon|map_of|flag of|commons-logo/i.test(name)) {
+      if (name.length > 8 && !/logo|icon|map of|flag of|commons-logo/i.test(name)) {
         queries.push(name.slice(0, 80));
       }
     }
@@ -163,7 +220,7 @@ async function wikiImageQueries(title) {
 async function enrichWithSearch(topicTitle) {
   const notes = [];
   try {
-    const ddg = (await queryDuckDuckGo(topicTitle + ' history mystery', 5)) || [];
+    const ddg = (await queryDuckDuckGo(topicTitle + ' history mystery documentary', 5)) || [];
     for (const r of ddg) {
       notes.push({
         source: 'duckduckgo',
@@ -178,7 +235,6 @@ async function enrichWithSearch(topicTitle) {
       notes.push({ source: 'google_news', title: r.title, snippet: r.snippet || '' });
     }
   } catch (_) {}
-  // DDG HTML fallback
   if (!notes.length) {
     const html = await httpGet(
       'https://html.duckduckgo.com/html/?q=' + encodeURIComponent(topicTitle + ' documentary facts')
@@ -194,13 +250,12 @@ async function enrichWithSearch(topicTitle) {
 
 function pickGenre(text) {
   const t = String(text || '').toLowerCase();
-  if (/murder|theft|robbery|heist|trial|suspect|fbi|police|crime/.test(t)) return 'crime';
+  if (/murder|theft|robbery|heist|trial|suspect|fbi|police|crime|hijack/.test(t)) return 'crime';
   if (/haunt|ghost|curse|paranormal|horror|eerie/.test(t)) return 'horror';
-  if (/unsolved|vanished|disappear|mystery|unknown|untold/.test(t)) return 'untold_events';
+  if (/unsolved|vanished|disappear|mystery|unknown|untold|incident/.test(t)) return 'untold_events';
   return 'history';
 }
 
-/** Soften death language for platform safety */
 function softenLegalLanguage(text) {
   let s = String(text || '');
   s = s.replace(/\b(was |were |is |are )?(killed|murdered|slain|executed)\b/gi, (m, pre) => {
@@ -216,7 +271,6 @@ function softenLegalLanguage(text) {
     return m;
   });
   s = s.replace(/\bassassinat(ed|ion)\b/gi, 'allegedly targeted');
-  // Ensure "allegedly" near accusation verbs if missing
   if (/\b(stole|poisoned|shot|strangled)\b/i.test(s) && !/allegedly/i.test(s)) {
     s = s.replace(/\b(stole|poisoned|shot|strangled)\b/i, 'allegedly $1');
   }
@@ -227,29 +281,58 @@ const DISCLAIMER =
   'Disclaimer: This short is an educational dramatization based on publicly available historical records and reporting. Events involving harm are described with caution (including “allegedly” and non-graphic wording). Not legal advice. Sources may be incomplete; verify primary archives before drawing conclusions. #EducationalContent';
 
 /**
- * Build full episode package for generate_documentary_movie_reel.cjs
- * Returns same shape: title, genre, era, sfxType, bgmQuery, scenes[{text,query}], hashtags, description
+ * Pick a Wikipedia article with enough extract (skip lists).
  */
+async function findRichArticle(history) {
+  // Shuffle seeds so each run explores different topics
+  const seeds = [...ARCHIVE_SEEDS].sort(() => Math.random() - 0.5);
+  const tried = new Set();
+
+  for (const seed of seeds.slice(0, 12)) {
+    console.log('[Cinema Research] try seed:', seed);
+    // Prefer exact/title-ish search first
+    let candidates = await wikiSearchMany(seed, history, 8);
+    if (!candidates.length) {
+      candidates = await wikiSearchMany(seed + ' unsolved OR mystery OR incident', history, 8);
+    }
+    // Also try the seed as a direct title extract
+    if (!candidates.some((c) => c.title.toLowerCase() === seed.toLowerCase())) {
+      candidates.unshift({ title: seed, snippet: seed, pageid: 0 });
+    }
+
+    for (const hit of candidates) {
+      if (tried.has(hit.title)) continue;
+      tried.add(hit.title);
+      if (isBadWikiTitle(hit.title)) continue;
+
+      console.log('[Cinema Research] candidate:', hit.title);
+      const article = await wikiExtract(hit.title);
+      if (!article) continue;
+      if (isBadWikiTitle(article.title)) continue;
+      if (!article.extract || article.extract.length < 400) {
+        console.log('[Cinema Research] thin extract, skip:', article.title, article.extract?.length || 0);
+        continue;
+      }
+      // Prefer narrative pages over pure lists that slipped through
+      if (/^this is a list of\b/i.test(article.extract.slice(0, 80))) continue;
+
+      return { article, seed, hit };
+    }
+  }
+  return null;
+}
+
 async function researchAndBuildEpisode() {
   const history = loadHist();
-  const seed = ARCHIVE_SEEDS[Math.floor(Math.random() * ARCHIVE_SEEDS.length)];
-  console.log('[Cinema Research] archive seed search:', seed);
+  const found = await findRichArticle(history);
+  if (!found) throw new Error('Cinema research: no rich Wikipedia article found after retries');
 
-  let wikiHit = await wikiSearch(seed, history);
-  if (!wikiHit) {
-    wikiHit = await wikiSearch('unsolved historical mystery', history);
-  }
-  if (!wikiHit) throw new Error('Cinema research: no Wikipedia candidate found');
+  const { article, seed, hit } = found;
+  console.log('[Cinema Research] locked:', article.title, 'chars=', article.extract.length);
 
-  console.log('[Cinema Research] candidate:', wikiHit.title);
-  const article = await wikiExtract(wikiHit.title);
-  if (!article || !article.extract || article.extract.length < 200) {
-    throw new Error('Cinema research: Wikipedia extract too thin for ' + wikiHit.title);
-  }
-
-  const extra = await enrichWithSearch(wikiHit.title);
-  const imgQueries = await wikiImageQueries(wikiHit.title);
-  const genre = pickGenre(article.extract + ' ' + wikiHit.snippet);
+  const extra = await enrichWithSearch(article.title);
+  const imgQueries = await wikiImageQueries(article.title);
+  const genre = pickGenre(article.extract + ' ' + (hit.snippet || ''));
 
   const systemPrompt = `You are a documentary showrunner for Cinema Vanguard.
 Return STRICT JSON only.
@@ -284,7 +367,7 @@ JSON:
 Title: ${article.title}
 URL: ${article.url}
 
-${article.extract.slice(0, 3500)}
+${article.extract.slice(0, 3800)}
 
 SECONDARY SNIPPETS:
 ${extra
@@ -328,18 +411,15 @@ Build the documentary package now.`;
   }
   if (!data) throw new Error('Cinema research: AI package failed — no seed fallback');
 
-  // Clamp genre
   if (!GENRES.includes(String(data.genre || '').toLowerCase())) data.genre = genre;
   data.genre = String(data.genre).toLowerCase();
   if (data.genre === 'story') data.genre = 'untold_events';
 
-  // Soften language on all scene text
   data.scenes = data.scenes.map((s) => ({
     text: softenLegalLanguage(s.text),
     query: String(s.query || article.title).slice(0, 100)
   }));
 
-  // Prefer Wikimedia-style queries when AI query is too abstract
   for (let i = 0; i < data.scenes.length; i++) {
     if (imgQueries[i] && data.scenes[i].query.split(' ').length < 3) {
       data.scenes[i].query = imgQueries[i];
