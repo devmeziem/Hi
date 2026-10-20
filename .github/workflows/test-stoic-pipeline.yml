@@ -33,8 +33,10 @@ jobs:
             sudo apt-get update && sudo apt-get install -y ffmpeg librsvg2-bin
           fi
       - run: npm install --legacy-peer-deps --no-audit --no-fund
-      - name: Force fresh media variety
-        run: node scripts/force_fresh_stoic_media.cjs || true
+      - name: Force fresh media variety + unique BGM wiring
+        run: |
+          node scripts/force_fresh_stoic_media.cjs || true
+          node scripts/apply_unique_bgm_all.cjs || true
       - name: Execute Stoic 5s Pure Quote (unique quote + image + BGM)
         env:
           DRY_RUN: ${{ github.event.inputs.dry_run == true || github.event.inputs.dry_run == 'true' }}
@@ -62,7 +64,7 @@ jobs:
           FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
           FIRESTORE_API_KEY: ${{ secrets.FIRESTORE_API_KEY }}
         run: |
-          echo "=== Stoic 5s: new quote + new image + new BGM every run ==="
+          echo "=== Stoic 5s: new quote + new image + UNIQUE live BGM every run ==="
           node scripts/generate_stoic_quote_reel.cjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -77,7 +79,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/topic_dedup_log.json stoic_quote_history.json 2>/dev/null || true
+          git add data/topic_dedup_log.json stoic_quote_history.json data/bgm_use_history.json 2>/dev/null || true
           if git diff --staged --quiet; then
             echo "No dedup changes"
             exit 0
