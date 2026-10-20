@@ -20,6 +20,12 @@
       "ts": 1792536764467,
       "title": "Cheap habit: separate airtime and data from savings",
       "type": "skill"
+    },
+    {
+      "id": "skill_one_line_offer",
+      "ts": 1792537603983,
+      "title": "Free skill: write a one-line offer students can sell",
+      "type": "skill"
     }
   ]
 }
