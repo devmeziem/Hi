@@ -59,6 +59,8 @@ jobs:
       - run: node scripts/apply_unique_bgm_all.cjs || true
       - name: Fix assembler null watermark crash
         run: node scripts/patch_archie_assembler_null.cjs || true
+      - name: Sequential gesture FFmpeg fix
+        run: node scripts/apply_archie_gestures_fix.cjs || true
       - name: Soft-disable bad YouTube pinned comments
         run: node scripts/apply_archie_youtube_comment_fix.cjs || true
       - name: Generate Archie explainer (science+tech, short B-roll, bold captions)
@@ -98,6 +100,17 @@ jobs:
           test -f rendered_videos/archie_latest.mp4
           ls -lh rendered_videos/archie*.mp4
           test -f rendered_videos/archie_latest_meta.json && cat rendered_videos/archie_latest_meta.json | head -40 || true
+      - name: Commit Archie topic history
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/archie_topic_history.json 2>/dev/null || true
+          if ! git diff --staged --quiet; then
+            git commit -m "chore(dedup): archie topic history [skip ci]" || true
+            git pull --rebase --autostash origin main || true
+            git push origin HEAD:main || true
+          fi
       - name: YouTube Channel 3 (Archie) — restored
         if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && github.event.inputs.pause_youtube != true && github.event.inputs.pause_youtube != 'true' }}
         env:
