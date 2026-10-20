@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Archie LIVE — heavy multi-pass composite ONLY (no simple single-puppet path).
- * Research → real example → AI script → unique BGM → VO → B-roll + gestures + lipsync.
+ * Archie LIVE HEAVY — teaching-first science shorts
+ * Clear hook + one fact the viewer learns + lipsync for full VO + longer B-roll + centered captions
  */
 const fs = require('fs');
 const path = require('path');
@@ -50,7 +50,7 @@ function httpGet(url, timeoutMs = 12000) {
   return new Promise((resolve) => {
     try {
       const lib = url.startsWith('http://') ? http : https;
-      const req = lib.get(url, { headers: { 'User-Agent': 'ArchieBot/3.1' }, timeout: timeoutMs }, (res) => {
+      const req = lib.get(url, { headers: { 'User-Agent': 'ArchieBot/4.0' }, timeout: timeoutMs }, (res) => {
         if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) return resolve(httpGet(res.headers.location, timeoutMs));
         let d = '';
         res.on('data', (c) => (d += c));
@@ -83,7 +83,7 @@ async function wikiExtract(title) {
   }
 }
 async function findRealLifeExample(topicTitle) {
-  const q = `${topicTitle} real life example OR real-world application OR case study`;
+  const q = `${topicTitle} real life example OR real-world application OR everyday why`;
   let hits = [];
   try {
     hits = (await queryDuckDuckGo(q, 6)) || [];
@@ -105,7 +105,7 @@ async function enrichTopic(topicTitle) {
   const wiki = await wikiExtract(topicTitle);
   if (wiki) notes.push({ source: 'wikipedia', title: wiki.title, text: wiki.extract });
   try {
-    const ddg = (await queryDuckDuckGo(topicTitle + ' explained science facts', 5)) || [];
+    const ddg = (await queryDuckDuckGo(topicTitle + ' explained simple science', 5)) || [];
     for (const r of ddg) notes.push({ source: 'duckduckgo', title: r.title, text: r.snippet || r.body || '' });
   } catch (_) {}
   return { wiki, notes };
@@ -122,54 +122,104 @@ async function pickTopic(hist) {
     }
   }
   const seeds = [
-    'bioluminescence animals',
-    'piezoelectric effect',
-    'superhydrophobic surfaces',
-    'ferrofluid magnetic',
-    'optical fiber total internal reflection',
-    'graphene conductivity'
+    'why ice is slippery',
+    'why onions make you cry',
+    'how microwave ovens heat food',
+    'why the sky is blue',
+    'how soap cleans grease',
+    'why batteries die'
   ];
   for (const s of seeds.sort(() => Math.random() - 0.5)) {
     if (!isDup(s, hist)) return { title: s, category: 'Science' };
   }
   throw new Error('Archie: no unique topic');
 }
+
 async function buildScript(topic, example, enrich) {
-  const system = `You are Archie, friendly animated science explainer.
+  const system = `You are Archie, an animated science teacher for teens.
 Return STRICT JSON only.
-spokenScript 90-140 words. Start Did-you-know or curiosity question using the real-life example. End short CTA.
-title max 70 chars. description 2-4 sentences + hashtags.
-visualKeywords 3-5 phrases. bgmQuery 3-6 words. studio "black" or "white".
-JSON:{"title":"...","description":"...","spokenScript":"...","visualKeywords":["..."],"bgmQuery":"...","studio":"white","hashtags":["#Archie","#Science","#Shorts"]}`;
-  const user = `TOPIC: ${topic.title}\nEXAMPLE: ${example.title}: ${example.snippet}\nRESEARCH:\n${enrich.notes
+Goals: the viewer must LEARN one clear fact they can repeat to a friend.
+Structure spokenScript (100-140 words):
+1) HOOK (1 sentence): surprising question or "Did you know…" using the real-life example.
+2) TEACH (2-4 sentences): simple cause→effect explanation a 14-year-old gets.
+3) TAKEAWAY (1 sentence): the one fact to remember.
+4) Soft CTA (half sentence): save/share if useful — do NOT pad.
+Also set learningObjective: one short phrase of what is learned.
+JSON keys: title, description, spokenScript, learningObjective, visualKeywords (3-5), bgmQuery, studio ("black"|"white"), hashtags.`;
+  const user = `TOPIC: ${topic.title}
+REAL EXAMPLE (use in hook): ${example.title}: ${example.snippet}
+RESEARCH:
+${enrich.notes
     .slice(0, 6)
-    .map((n, i) => `${i + 1}. [${n.source}] ${n.title}: ${String(n.text).slice(0, 280)}`)
+    .map((n, i) => `${i + 1}. [${n.source}] ${n.title}: ${String(n.text).slice(0, 300)}`)
     .join('\n')}`;
   for (let a = 1; a <= 3; a++) {
     try {
-      const res = await callActiveAiForJson(system, user, null, { nicheKey: 'cartoon', temperature: 0.6 + a * 0.05 });
+      const res = await callActiveAiForJson(system, user, null, { nicheKey: 'cartoon', temperature: 0.55 + a * 0.05 });
       const d = res?.data || res;
-      if (d?.spokenScript && d?.title) return d;
+      if (d?.spokenScript && d?.title) {
+        if (!d.learningObjective) d.learningObjective = `How ${topic.title} works in real life`;
+        return d;
+      }
     } catch (e) {
       console.warn('[Archie AI]', e.message);
     }
   }
+  const teach = String(enrich.wiki?.extract || example.snippet).slice(0, 320);
   return {
-    title: `Did you know? ${String(topic.title).slice(0, 50)}`,
-    description: `${example.snippet.slice(0, 180)}\n\n#Archie #Science #DidYouKnow #Shorts`,
-    spokenScript: `Did you know this about ${topic.title}? ${example.snippet.slice(0, 120)} ${String(enrich.wiki?.extract || '').slice(0, 280)} That is why this matters in everyday life. Save this if you learned something new.`,
-    visualKeywords: [topic.title, example.title, 'science laboratory'].slice(0, 3),
-    bgmQuery: 'curious science ambient documentary',
+    title: `Why ${String(topic.title).slice(0, 48)}?`,
+    learningObjective: `Understand ${topic.title} with a real-life example`,
+    description: `Learn: ${String(topic.title)}. Real example included.\n\n#Archie #ScienceFacts #DidYouKnow #LearnOnTikTok #Shorts`,
+    spokenScript: `Did you know this about ${topic.title}? Here's a real example: ${example.snippet.slice(0, 100)}. ${teach} So the takeaway is simple: ${topic.title} shows up in everyday life once you know what to look for. Save this if you learned something new.`,
+    visualKeywords: [topic.title, 'science experiment close up', example.title].slice(0, 3),
+    bgmQuery: 'curious soft documentary underscore',
     studio: Math.random() > 0.5 ? 'black' : 'white',
-    hashtags: ['#Archie', '#Science', '#DidYouKnow', '#Shorts']
+    hashtags: ['#Archie', '#ScienceFacts', '#DidYouKnow', '#LearnOnTikTok', '#Shorts']
   };
 }
+
 function studioSvg(mode, w = 1080, h = 1920) {
   if (mode === 'black') {
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0a0a0f"/><stop offset="100%" stop-color="#111827"/></linearGradient></defs><rect width="${w}" height="${h}" fill="url(#g)"/><rect x="80" y="160" width="920" height="4" fill="#22d3ee" opacity="0.35"/></svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0a0a0f"/><stop offset="100%" stop-color="#111827"/></linearGradient></defs><rect width="${w}" height="${h}" fill="url(#g)"/></svg>`;
   }
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f8fafc"/><stop offset="100%" stop-color="#e2e8f0"/></linearGradient></defs><rect width="${w}" height="${h}" fill="url(#g)"/><rect x="80" y="160" width="920" height="4" fill="#0ea5e9" opacity="0.4"/></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f8fafc"/><stop offset="100%" stop-color="#e2e8f0"/></linearGradient></defs><rect width="${w}" height="${h}" fill="url(#g)"/></svg>`;
 }
+
+function buildAssCaptions(text, durationSec) {
+  const words = String(text).replace(/\n/g, ' ').split(/\s+/).filter(Boolean);
+  const totalMs = Math.max(1000, Math.round(durationSec * 1000));
+  const msPer = words.length ? totalMs / words.length : 300;
+  const fmt = (ms) => {
+    const cs = Math.floor((ms % 1000) / 10);
+    const s = Math.floor(ms / 1000) % 60;
+    const m = Math.floor(ms / 60000) % 60;
+    const h = Math.floor(ms / 3600000);
+    return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
+  };
+  const lines = [];
+  const chunk = 4;
+  for (let i = 0; i < words.length; i += chunk) {
+    const slice = words.slice(i, i + chunk);
+    const t0 = Math.round(i * msPer);
+    const t1 = Math.round(Math.min(totalMs, (i + slice.length) * msPer));
+    lines.push(`Dialogue: 0,${fmt(t0)},${fmt(t1)},Default,,0,0,0,,${slice.join(' ')}`);
+  }
+  return `[Script Info]
+Title: Archie Captions
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1920
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial Black,64,&H00FFFFFF,&H000000FF,&H00000000,&H96000000,-1,0,0,0,100,100,0,0,1,4,2,5,60,60,120,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+${lines.join('\n')}
+`;
+}
+
 async function ttsToWav(text, outWav) {
   const voice = process.env.ARCHIE_VOICE || 'en-US-AndrewNeural';
   const tts = new EdgeTTS({
@@ -202,22 +252,15 @@ function runFfmpeg(cmd, label) {
   } catch (e) {
     let err = e.message;
     try {
-      err = fs.readFileSync(log, 'utf8').slice(-800);
+      err = fs.readFileSync(log, 'utf8').slice(-900);
     } catch (_) {}
     throw new Error(`${label}: ${err}`);
   }
 }
 
-/**
- * HEAVY multi-pass only:
- * 1) studio base with Ken Burns
- * 2) mid B-roll with pan under timeline
- * 3) gesture + lipsync puppet layers
- * 4) mux mixed VO+BGM
- */
 async function renderArchieHeavy({ script, voiceWav, brollPath, bgmPath }) {
   const voiceDur = durOf(voiceWav);
-  const total = voiceDur + 1.2;
+  const total = voiceDur + 0.8;
   const fps = 30;
   const frames = Math.ceil(total * fps);
   const studioMode = script.studio === 'black' ? 'black' : 'white';
@@ -233,64 +276,76 @@ async function renderArchieHeavy({ script, voiceWav, brollPath, bgmPath }) {
   const open = puppet('puppet_open_palms.png') || idle;
   if (!idle) throw new Error('No puppet assets');
 
-  // Mix VO + unique BGM (BGM required)
   const mixed = path.join(ARTIFACTS, `mix_${Date.now()}.wav`);
-  if (bgmPath && fs.existsSync(bgmPath)) {
-    runFfmpeg(
-      `ffmpeg -y -i "${voiceWav}" -stream_loop -1 -i "${bgmPath}" -filter_complex "[0:a]volume=1.5[v];[1:a]volume=1.0,atrim=0:${total.toFixed(2)},afade=t=in:d=0.5,afade=t=out:st=${Math.max(0.5, total - 1).toFixed(2)}:d=0.8[b];[v][b]amix=inputs=2:duration=first:dropout_transition=2[a]" -map "[a]" -t ${total.toFixed(2)} "${mixed}"`,
-      'mix_audio'
-    );
-  } else {
-    throw new Error('Archie requires unique BGM path');
-  }
+  if (!bgmPath || !fs.existsSync(bgmPath)) throw new Error('Archie requires unique BGM');
+  runFfmpeg(
+    `ffmpeg -y -i "${voiceWav}" -stream_loop -1 -i "${bgmPath}" -filter_complex "[0:a]volume=1.55[v];[1:a]volume=1.0,atrim=0:${total.toFixed(2)},afade=t=in:d=0.4,afade=t=out:st=${Math.max(0.4, total - 0.9).toFixed(2)}:d=0.7[b];[v][b]amix=inputs=2:duration=first:dropout_transition=2[a]" -map "[a]" -t ${total.toFixed(2)} "${mixed}"`,
+    'mix_audio'
+  );
 
-  const midStart = Math.min(Math.max(3, voiceDur * 0.25), 8);
-  const midEnd = Math.min(Math.max(midStart + 4, voiceDur * 0.7), voiceDur - 0.8);
-  const hookEnd = Math.min(3.5, voiceDur * 0.18);
-  const talkEnd = midStart;
+  // Longer B-roll window (~70% of VO), not a short 5s flash
+  const brollStart = Math.max(1.5, voiceDur * 0.12);
+  const brollEnd = Math.min(voiceDur - 0.5, voiceDur * 0.88);
+  const g1 = Math.max(2.0, voiceDur * 0.22); // hook → point
+  const g2 = Math.max(g1 + 2, voiceDur * 0.55); // teach → talk lipsync
+  // g2→voiceDur: open palms + lipsync; after voice: idle
 
-  // PASS 1 — studio base
   const baseMp4 = path.join(ARTIFACTS, 'pass_base.mp4');
   runFfmpeg(
-    `ffmpeg -y -loop 1 -t ${total.toFixed(2)} -i "${bgPng}" -f lavfi -i anullsrc=r=44100:cl=stereo -filter_complex "[0:v]scale=1080:1920,zoompan=z='min(1.0+0.00004*on,1.06)':d=${frames}:x='(iw-iw/zoom)/2':y='(ih-ih/zoom)*0.35':s=1080x1920:fps=${fps},format=yuv420p[v]" -map "[v]" -map 1:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -shortest -t ${total.toFixed(2)} "${baseMp4}"`,
+    `ffmpeg -y -loop 1 -t ${total.toFixed(2)} -i "${bgPng}" -f lavfi -i anullsrc=r=44100:cl=stereo -filter_complex "[0:v]scale=1080:1920,zoompan=z='min(1.0+0.000035*on,1.05)':d=${frames}:x='(iw-iw/zoom)/2':y='(ih-ih/zoom)*0.35':s=1080x1920:fps=${fps},format=yuv420p[v]" -map "[v]" -map 1:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -shortest -t ${total.toFixed(2)} "${baseMp4}"`,
     'pass_base'
   );
 
-  // PASS 2 — mid B-roll (optional)
   let sceneMp4 = baseMp4;
   if (brollPath && fs.existsSync(brollPath)) {
     const withBroll = path.join(ARTIFACTS, 'pass_broll.mp4');
     const isVid = /\.(mp4|mov|webm)$/i.test(brollPath);
-    const bIn = isVid ? `-i "${brollPath}"` : `-loop 1 -t ${total.toFixed(2)} -i "${brollPath}"`;
+    const bIn = isVid ? `-stream_loop -1 -i "${brollPath}"` : `-loop 1 -t ${total.toFixed(2)} -i "${brollPath}"`;
     runFfmpeg(
-      `ffmpeg -y -i "${baseMp4}" ${bIn} -filter_complex "[1:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(1.08+0.00006*on,1.18)':d=${frames}:x='(iw-iw/zoom)*0.5':y='(ih-ih/zoom)*0.4':s=1080x1920:fps=${fps},format=yuv420p,fade=t=in:st=${midStart.toFixed(2)}:d=0.4,fade=t=out:st=${(midEnd - 0.4).toFixed(2)}:d=0.4[br];[0:v][br]overlay=0:0:enable='between(t,${midStart.toFixed(2)},${midEnd.toFixed(2)})'[v]" -map "[v]" -map 0:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a copy -t ${total.toFixed(2)} "${withBroll}"`,
+      `ffmpeg -y -i "${baseMp4}" ${bIn} -filter_complex "[1:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(1.06+0.00005*on,1.16)':d=${frames}:x='(iw-iw/zoom)*0.5':y='(ih-ih/zoom)*0.35':s=1080x1920:fps=${fps},format=yuv420p[br];[0:v][br]overlay=0:0:enable='between(t,${brollStart.toFixed(2)},${brollEnd.toFixed(2)})'[v]" -map "[v]" -map 0:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a copy -t ${total.toFixed(2)} "${withBroll}"`,
       'pass_broll'
     );
     sceneMp4 = withBroll;
   }
 
-  // PASS 3 — heavy gestures + lipsync (multiple puppet layers)
+  // Lipsync for FULL speaking window: alternate talk / talk2 while VO plays;
+  // gesture changes by phase (point early, open late) but mouth keeps moving
   const gestMp4 = path.join(ARTIFACTS, 'pass_gestures.mp4');
-  const gestCmd = `ffmpeg -y -i "${sceneMp4}" -loop 1 -t ${total.toFixed(2)} -i "${point}" -loop 1 -t ${total.toFixed(2)} -i "${talk}" -loop 1 -t ${total.toFixed(2)} -i "${talk2}" -loop 1 -t ${total.toFixed(2)} -i "${open}" -loop 1 -t ${total.toFixed(2)} -i "${idle}" -filter_complex "[1:v]scale=-1:1120,format=rgba[point];[2:v]scale=-1:1120,format=rgba[talk];[3:v]scale=-1:1120,format=rgba[talk2];[4:v]scale=-1:1120,format=rgba[open];[5:v]scale=-1:1120,format=rgba[idle];[0:v][point]overlay=x=(W-w)/2:y=H-h-50:enable='lt(t,${hookEnd.toFixed(2)})'[s1];[s1][talk]overlay=x=(W-w)/2:y=H-h-50:enable='gte(t,${hookEnd.toFixed(2)})*lt(t,${talkEnd.toFixed(2)})*eq(mod(floor(t*6),2),0)'[s2];[s2][talk2]overlay=x=(W-w)/2:y=H-h-50:enable='gte(t,${hookEnd.toFixed(2)})*lt(t,${talkEnd.toFixed(2)})*eq(mod(floor(t*6),2),1)'[s3];[s3][open]overlay=x=(W-w)/2:y=H-h-50:enable='gte(t,${midEnd.toFixed(2)})*lt(t,${voiceDur.toFixed(2)})'[s4];[s4][idle]overlay=x=(W-w)/2:y=H-h-50:enable='gte(t,${voiceDur.toFixed(2)})'[v]" -map "[v]" -map 0:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a copy -t ${total.toFixed(2)} "${gestMp4}"`;
+  const gestCmd = `ffmpeg -y -i "${sceneMp4}" -loop 1 -t ${total.toFixed(2)} -i "${point}" -loop 1 -t ${total.toFixed(2)} -i "${talk}" -loop 1 -t ${total.toFixed(2)} -i "${talk2}" -loop 1 -t ${total.toFixed(2)} -i "${open}" -loop 1 -t ${total.toFixed(2)} -i "${idle}" -filter_complex "[1:v]scale=-1:1100,format=rgba[point];[2:v]scale=-1:1100,format=rgba[talk];[3:v]scale=-1:1100,format=rgba[talk2];[4:v]scale=-1:1100,format=rgba[open];[5:v]scale=-1:1100,format=rgba[idle];[0:v][point]overlay=x=(W-w)/2:y=H-h-40:enable='lt(t,${g1.toFixed(2)})*eq(mod(floor(t*5),2),0)'[a];[a][talk]overlay=x=(W-w)/2:y=H-h-40:enable='lt(t,${g1.toFixed(2)})*eq(mod(floor(t*5),2),1)'[b];[b][talk]overlay=x=(W-w)/2:y=H-h-40:enable='gte(t,${g1.toFixed(2)})*lt(t,${g2.toFixed(2)})*eq(mod(floor(t*6),2),0)'[c];[c][talk2]overlay=x=(W-w)/2:y=H-h-40:enable='gte(t,${g1.toFixed(2)})*lt(t,${g2.toFixed(2)})*eq(mod(floor(t*6),2),1)'[d];[d][open]overlay=x=(W-w)/2:y=H-h-40:enable='gte(t,${g2.toFixed(2)})*lt(t,${voiceDur.toFixed(2)})*eq(mod(floor(t*5),2),0)'[e];[e][talk]overlay=x=(W-w)/2:y=H-h-40:enable='gte(t,${g2.toFixed(2)})*lt(t,${voiceDur.toFixed(2)})*eq(mod(floor(t*5),2),1)'[f];[f][idle]overlay=x=(W-w)/2:y=H-h-40:enable='gte(t,${voiceDur.toFixed(2)})'[v]" -map "[v]" -map 0:a -c:v libx264 -preset fast -pix_fmt yuv420p -c:a copy -t ${total.toFixed(2)} "${gestMp4}"`;
   runFfmpeg(gestCmd, 'pass_gestures');
 
-  // PASS 4 — replace audio with VO+BGM mix
+  // Captions burn-in (centered, bold)
+  const assPath = path.join(ARTIFACTS, 'archie_caps.ass');
+  fs.writeFileSync(assPath, buildAssCaptions(script.spokenScript, voiceDur));
+  const assEsc = assPath.replace(/\\/g, '/').replace(/:/g, '\\:');
+  const capMp4 = path.join(ARTIFACTS, 'pass_caps.mp4');
+  runFfmpeg(
+    `ffmpeg -y -i "${gestMp4}" -vf "ass='${assEsc}'" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a copy -t ${total.toFixed(2)} "${capMp4}"`,
+    'pass_captions'
+  );
+
   const out = path.join(RENDERED, `archie_live_${Date.now()}.mp4`);
   const latest = path.join(RENDERED, 'archie_latest.mp4');
   runFfmpeg(
-    `ffmpeg -y -i "${gestMp4}" -i "${mixed}" -map 0:v -map 1:a -c:v copy -c:a aac -b:a 192k -shortest -t ${total.toFixed(2)} "${out}"`,
+    `ffmpeg -y -i "${capMp4}" -i "${mixed}" -map 0:v -map 1:a -c:v copy -c:a aac -b:a 192k -shortest -t ${total.toFixed(2)} "${out}"`,
     'pass_mux'
   );
 
   if (!fs.existsSync(out) || fs.statSync(out).size < 20000) throw new Error('Archie heavy render empty');
   fs.copyFileSync(out, latest);
   fs.copyFileSync(out, path.join(RENDERED, 'archie_tech_fact_latest.mp4'));
-  console.log('[Archie HEAVY] OK', (fs.statSync(out).size / 1024 / 1024).toFixed(2), 'MB — gestures+lipsync+broll+unique BGM');
+  console.log(
+    '[Archie HEAVY] OK',
+    (fs.statSync(out).size / 1024 / 1024).toFixed(2),
+    'MB | learn:',
+    script.learningObjective || 'n/a',
+    `| broll ${brollStart.toFixed(1)}-${brollEnd.toFixed(1)}s | lipsync full VO`
+  );
   return { out, latest, total };
 }
 
 async function main() {
-  console.log('\n=== ARCHIE LIVE HEAVY (research → unique BGM → multi-pass gestures) ===\n');
+  console.log('\n=== ARCHIE TEACHING REEL (hook → fact → takeaway + lipsync + captions) ===\n');
   const hist = loadHist();
   let topic = null;
   let example = null;
@@ -300,7 +355,7 @@ async function main() {
     console.log('[Archie] topic:', topic.title);
     const examples = await findRealLifeExample(topic.title);
     if (!examples.length) {
-      console.warn('[Archie] no real-life example — skip');
+      console.warn('[Archie] no example — skip');
       continue;
     }
     example = examples[0];
@@ -315,6 +370,7 @@ async function main() {
 
   const script = await buildScript(topic, example, enrich);
   console.log('[Archie] title:', script.title);
+  console.log('[Archie] learn:', script.learningObjective);
 
   let broll = null;
   for (const kw of script.visualKeywords || []) {
@@ -337,7 +393,6 @@ async function main() {
   const voiceWav = path.join(ARTIFACTS, `voice_${Date.now()}.wav`);
   await ttsToWav(script.spokenScript, voiceWav);
   const voiceDur = durOf(voiceWav);
-
   const bgm = await fetchUniqueBgm('archie', voiceDur + 2, script.bgmQuery || null);
   if (!bgm?.localPath) throw new Error('Archie unique BGM failed');
 
@@ -351,6 +406,7 @@ async function main() {
   const meta = {
     title: script.title,
     description: script.description,
+    learningObjective: script.learningObjective,
     spokenScript: script.spokenScript,
     hashtags: script.hashtags,
     topic: topic.title,
@@ -359,13 +415,13 @@ async function main() {
     videoPath: rendered.latest,
     duration: rendered.total,
     studio: script.studio,
-    composite: 'heavy-multipass',
+    composite: 'heavy-lipsync-captions-long-broll',
     generatedAt: new Date().toISOString()
   };
   fs.writeFileSync(path.join(RENDERED, 'archie_latest_meta.json'), JSON.stringify(meta, null, 2));
-  saveHist({ title: topic.title, postTitle: script.title, example: example.title, bgm: bgm.query });
+  saveHist({ title: topic.title, postTitle: script.title, learn: script.learningObjective, bgm: bgm.query });
   try {
-    await saveChosenTopicToDatabase(topic, 'cartoon', 'ArchieLiveHeavy');
+    await saveChosenTopicToDatabase(topic, 'cartoon', 'ArchieTeach');
   } catch (_) {}
   console.log('[Archie] ready for Buffer FB/IG');
   return meta;
@@ -373,7 +429,7 @@ async function main() {
 
 if (require.main === module) {
   main().catch((e) => {
-    console.error('❌ Archie heavy failed:', e.message);
+    console.error('❌ Archie failed:', e.message);
     process.exit(1);
   });
 }
