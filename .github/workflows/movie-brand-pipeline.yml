@@ -1,4 +1,4 @@
-name: Cinema Vanguard - Documentary (YouTube Ch 4 + Driftreel TikTok)
+name: Driftreel Documentary (YouTube Ch 4 + Driftreel TikTok)
 
 on:
   schedule:
@@ -19,14 +19,14 @@ on:
         default: true
         type: boolean
       publish_tiktok:
-        description: 'TikTok Buffer API2 → archie.the.explorer6 (movie id)'
+        description: 'TikTok Buffer API2 → Driftreel movie channel'
         required: false
         default: true
         type: boolean
 
 jobs:
   documentary_pipeline:
-    name: Cinema documentary + Buffer TikTok
+    name: Driftreel documentary + Buffer TikTok
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -43,6 +43,8 @@ jobs:
         run: node scripts/apply_center_captions.cjs || true
       - name: Wire live archive research (no seed vault)
         run: node scripts/apply_cinema_live_research.cjs
+      - name: Driftreel branding + strip scene counters + ominous SFX
+        run: node scripts/apply_cinema_driftreel_fix.cjs || true
       - name: Generate documentary
         env:
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
@@ -74,7 +76,7 @@ jobs:
             -o scripts/publish_buffer_second_tiktok.cjs
           test -s scripts/publish_buffer_second_tiktok.cjs
           node scripts/apply_buffer_ai_flag.cjs || true
-      - name: Buffer TikTok → archie.the.explorer6
+      - name: Buffer TikTok → Driftreel
         if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.publish_tiktok == true || github.event.inputs.publish_tiktok == 'true' || github.event_name == 'schedule') }}
         env:
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
@@ -115,6 +117,6 @@ jobs:
       - if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cinema-doc-${{ github.run_id }}
+          name: driftreel-doc-${{ github.run_id }}
           path: rendered_videos/*
           if-no-files-found: ignore
