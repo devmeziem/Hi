@@ -1,69 +1,72 @@
 #!/usr/bin/env node
 /**
- * Replaces generateDynamicDocumentaryStory() in documentary generator
- * with live archive research (no seed vault).
+ * Replaces generateDynamicDocumentaryStory() with live archive research.
+ * Does NOT touch other strings (previous viralDesc rewrite caused SyntaxError).
  */
 const fs = require('fs');
 const path = require('path');
 
 const p = path.join(process.cwd(), 'scripts', 'generate_documentary_movie_reel.cjs');
 if (!fs.existsSync(p)) {
-  console.error('missing generator');
+  console.error('[apply-cinema-research] missing generator');
   process.exit(0);
 }
 
 let t = fs.readFileSync(p, 'utf8');
+
+// Already wired?
+if (
+  t.includes("require('./cinema_archive_research.cjs')") &&
+  t.includes('researchAndBuildEpisode') &&
+  !t.includes('dynamicDocVault')
+) {
+  console.log('[apply-cinema-research] already live — skip');
+  process.exit(0);
+}
 
 const NEW_FN = `async function generateDynamicDocumentaryStory() {
   // LIVE open-source research only — Wikipedia + DDG + News + AI script. NO seed vault.
   const { researchAndBuildEpisode } = require('./cinema_archive_research.cjs');
   const episode = await researchAndBuildEpisode();
   if (!episode || !Array.isArray(episode.scenes) || episode.scenes.length < 5) {
-    throw new Error('Cinema: live research returned insufficient scenes (need 5–10)');
+    throw new Error('Cinema: live research returned insufficient scenes (need 5-10)');
   }
-  // Cap at 10 scenes for runtime
   if (episode.scenes.length > 10) episode.scenes = episode.scenes.slice(0, 10);
   return episode;
 }`;
 
 const start = t.indexOf('async function generateDynamicDocumentaryStory()');
 if (start < 0) {
-  console.log('[apply-cinema-research] function not found');
-  process.exit(0);
+  console.error('[apply-cinema-research] story function not found');
+  process.exit(1);
 }
 
-// Find next function after story fn (escapeXml or generateDocumentaryVideo)
-let end = t.indexOf('\nfunction escapeXml', start);
-if (end < 0) end = t.indexOf('\nasync function generateDocumentaryVideo', start);
+// End at next top-level function after the story fn
+const markers = ['\nfunction escapeXml', '\nasync function generateDocumentaryVideo', '\nfunction buildAss'];
+let end = -1;
+for (const m of markers) {
+  const i = t.indexOf(m, start + 10);
+  if (i > start && (end < 0 || i < end)) end = i;
+}
 if (end < 0) {
   console.error('[apply-cinema-research] cannot find end of story function');
   process.exit(1);
 }
 
-t = t.slice(0, start) + NEW_FN + '\n\n' + t.slice(end);
+t = t.slice(0, start) + NEW_FN + '\n' + t.slice(end);
 
-// Soften YT description to append disclaimer if not present
-if (t.includes('const viralDesc =') && !t.includes('Disclaimer: This short is an educational')) {
-  t = t.replace(
-    /const viralDesc = `([^`]+)`/,
-    (m, body) => {
-      if (body.includes('Disclaimer')) return m;
-      return (
-        'const viralDesc = `' +
-        body +
-        '\n\nDisclaimer: Educational dramatization from public records. Harmful events may be described with “allegedly” / non-graphic wording. Verify primary sources.`'
-      );
-    }
-  );
-}
-
-// Prefer episode.description when present for YouTube
-if (t.includes('const viralDesc =') && t.includes('chosenEpisode.title')) {
-  t = t.replace(
-    /const viralDesc = `[^`]+`;/,
-    `const viralDesc = (chosenEpisode.description || (fullNarration + '\n\n🏛️ Era: ' + chosenEpisode.era + '\nGenre: ' + String(chosenEpisode.genre||'').toUpperCase())) + '\n\n#CinemaVanguard #Documentary #Shorts';`
-  );
-}
+// Safe volume bumps only (no multiline template surgery)
+t = t.split('let bgmVolume = 0.25').join('let bgmVolume = 0.42');
+t = t.split('bgmVolume || 0.25').join('bgmVolume || 0.42');
 
 fs.writeFileSync(p, t);
-console.log('[apply-cinema-research] generateDynamicDocumentaryStory → live archive research');
+
+// Verify parse
+try {
+  require('vm').runInNewContext('false'); // noop
+  new Function(t); // syntax check
+  console.log('[apply-cinema-research] OK — live research wired, syntax valid');
+} catch (e) {
+  console.error('[apply-cinema-research] SYNTAX FAIL after patch:', e.message);
+  process.exit(1);
+}
