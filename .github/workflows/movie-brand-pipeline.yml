@@ -38,8 +38,10 @@ jobs:
       - run: node scripts/apply_all_content_system.cjs || true
       - name: Force center bold captions (keep style)
         run: node scripts/apply_center_captions.cjs || true
-      - name: Cinema BGM louder + remove watermarks (keep karaoke)
-        run: node scripts/patch_cinema_audio_watermark.cjs
+      - name: Cinema BGM + live research (no seed vault)
+        run: |
+          node scripts/patch_cinema_audio_watermark.cjs || true
+          node scripts/apply_cinema_live_research.cjs
       - name: Generate documentary
         env:
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
@@ -61,6 +63,7 @@ jobs:
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
         run: node scripts/generate_documentary_movie_reel.cjs
       - name: Restore Buffer GraphQL publisher
