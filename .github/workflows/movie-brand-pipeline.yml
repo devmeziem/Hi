@@ -67,12 +67,13 @@ jobs:
           FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
         run: node scripts/generate_documentary_movie_reel.cjs
-      - name: Restore Buffer GraphQL publisher
+      - name: Restore Buffer GraphQL publisher + AI flags
         if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.publish_tiktok == true || github.event.inputs.publish_tiktok == 'true' || github.event_name == 'schedule') }}
         run: |
           curl -fsSL "https://raw.githubusercontent.com/devmeziem/Hi/a00c9e83c801f94513ff002978558c5ee8c113bf/scripts/publish_buffer_second_tiktok.cjs" \
             -o scripts/publish_buffer_second_tiktok.cjs
           test -s scripts/publish_buffer_second_tiktok.cjs
+          node scripts/apply_buffer_ai_flag.cjs || true
       - name: Buffer TikTok → archie.the.explorer6
         if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.publish_tiktok == true || github.event.inputs.publish_tiktok == 'true' || github.event_name == 'schedule') }}
         env:
