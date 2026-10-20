@@ -2,7 +2,6 @@ name: Cinema Vanguard - Documentary (YouTube Ch 4 + Driftreel TikTok)
 
 on:
   schedule:
-    # 4× daily (UTC): ~05:00, 11:00, 17:00, 23:00 WAT
     - cron: '0 4 * * *'
     - cron: '0 10 * * *'
     - cron: '0 16 * * *'
@@ -42,10 +41,8 @@ jobs:
       - run: node scripts/apply_all_content_system.cjs || true
       - name: Force center bold captions (keep style)
         run: node scripts/apply_center_captions.cjs || true
-      - name: Cinema BGM + live research (no seed vault)
-        run: |
-          node scripts/patch_cinema_audio_watermark.cjs || true
-          node scripts/apply_cinema_live_research.cjs
+      - name: Wire live archive research (no seed vault)
+        run: node scripts/apply_cinema_live_research.cjs
       - name: Generate documentary
         env:
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
