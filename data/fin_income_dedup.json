@@ -14,6 +14,12 @@
       "id": "skill_stack",
       "ts": 1792510672234,
       "title": "The skill stack that pays faster than certificates"
+    },
+    {
+      "id": "skill_airtime_budget",
+      "ts": 1792536764467,
+      "title": "Cheap habit: separate airtime and data from savings",
+      "type": "skill"
     }
   ]
 }
