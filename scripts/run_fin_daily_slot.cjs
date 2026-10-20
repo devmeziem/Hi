@@ -1,8 +1,14 @@
 #!/usr/bin/env node
 /**
- * Fin Blueprint daily slot router (Channel 1 / CH1)
- * 05:00 quote | 11:00 quote | 15:00 income | 20:00 doc
- * Quotes: LIVE Wikiquote only (no hardcoded catalog)
+ * Fin Blueprint daily slot (CH1)
+ * Education-first: skill/trap + Nigeria earning ideas
+ * Quotes throttled (rare). Documentary weekly-ish via schedule hour only.
+ *
+ * auto schedule (UTC):
+ *   05 → skill
+ *   11 → skill/trap
+ *   15 → nigeria earning idea
+ *   20 → story/doc (or skill if doc fails)
  */
 const { execSync } = require('child_process');
 
@@ -11,14 +17,17 @@ const hour = parseInt(process.env.FORCE_HOUR || new Date().getUTCHours(), 10);
 
 function resolveMode() {
   if (modeInput && modeInput !== 'auto') {
-    if (modeInput.includes('doc')) return 'documentary';
-    if (modeInput.includes('income') || modeInput.includes('hustle') || modeInput.includes('teach')) return 'income';
-    if (modeInput.includes('quote') || modeInput.includes('5s') || modeInput.includes('3s')) return 'quote';
+    if (modeInput.includes('doc') || modeInput.includes('story')) return 'documentary';
+    if (modeInput.includes('income') || modeInput.includes('hustle') || modeInput.includes('earn')) return 'income';
+    if (modeInput.includes('trap') || modeInput.includes('skill') || modeInput.includes('teach')) return 'skill';
+    if (modeInput.includes('quote')) return 'quote'; // manual only
     return modeInput;
   }
+  // No auto-quote — education first
   if (hour === 20 || hour === 4) return 'documentary';
   if (hour === 15 || hour === 12) return 'income';
-  return 'quote';
+  if (hour === 11 || hour === 17) return 'trap';
+  return 'skill';
 }
 
 const mode = resolveMode();
@@ -32,11 +41,18 @@ function run(cmd) {
 }
 
 if (mode === 'documentary') {
-  run('node scripts/generate_financial_story_documentary.cjs');
-} else if (mode === 'income') {
-  run('node scripts/generate_fin_income_short.cjs');
-} else {
-  // LIVE public quotes — never the old FINANCE_TITANS catalog generator
+  try {
+    run('node scripts/generate_financial_story_documentary.cjs');
+  } catch (e) {
+    console.warn('[Fin] doc failed → skill fallback', e.message);
+    env.FIN_SLOT_MODE = 'skill';
+    run('node scripts/generate_fin_income_short.cjs');
+  }
+} else if (mode === 'quote') {
+  // Rare manual path only
   env.SHORT_DURATION = env.SHORT_DURATION || '5.0';
   run('node scripts/generate_fin_quote_live_reel.cjs');
+} else {
+  // skill | trap | income all use the education short generator
+  run('node scripts/generate_fin_income_short.cjs');
 }
