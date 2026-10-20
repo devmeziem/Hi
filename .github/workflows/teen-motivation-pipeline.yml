@@ -46,32 +46,34 @@ jobs:
           cache: npm
       - run: npm install --legacy-peer-deps --no-audit --no-fund
       - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core || true
-      - name: Apply content system volumes
-        run: node scripts/apply_all_content_system.cjs || true
-      - name: Generate Teen (no internal Buffer — publish step below)
+      - name: Apply content system + teen history API patch
+        run: |
+          node scripts/apply_all_content_system.cjs || true
+          node scripts/patch_teen_history_api.cjs || true
+      - name: Generate Teen (live discovery → AI → media → stitch)
         env:
           VIDEO_TYPE: ${{ github.event.inputs.video_type || 'situation' }}
           TOPIC: ${{ github.event.inputs.topic || '' }}
-          DRY_RUN: 'true'
+          DRY_RUN: ${{ github.event.inputs.dry_run == true || github.event.inputs.dry_run == 'true' }}
           SKIP_BUFFER: 'true'
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY || secrets.GROK_API_KEY }}
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH5 || secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH5 || secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH5 || secrets.YOUTUBE_REFRESH_TOKEN }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
         run: |
-          if [ -f scripts/generate_teen_situation_reel.cjs ]; then
-            node scripts/generate_teen_situation_reel.cjs
-          else
-            node scripts/generate_teen_motivation_reel.cjs
-          fi
+          node scripts/generate_teen_situation_reel.cjs
           test -f rendered_videos/teen_motivation_latest.mp4
           ls -lh rendered_videos/teen_motivation_latest.mp4
+          test -f rendered_videos/teen_motivation_meta.json && cat rendered_videos/teen_motivation_meta.json | head -40 || true
       - name: YouTube (optional)
         if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.auto_publish == true || github.event.inputs.auto_publish == 'true' || github.event_name == 'schedule') }}
         env:
@@ -79,30 +81,35 @@ jobs:
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH5 || secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH5 || secrets.YOUTUBE_REFRESH_TOKEN }}
         run: |
+          if [ -f rendered_videos/teen_motivation_meta.json ]; then
+            TITLE=$(node -e "console.log(JSON.parse(require('fs').readFileSync('rendered_videos/teen_motivation_meta.json','utf8')).title||'Teen Motivation')")
+            DESC=$(node -e "console.log(JSON.parse(require('fs').readFileSync('rendered_videos/teen_motivation_meta.json','utf8')).description||'')")
+            export TEEN_POST_TITLE="$TITLE"
+            export TEEN_POST_DESCRIPTION="$DESC"
+          fi
           node -e "
-            const { uploadYouTubeShort } = require('./scripts/youtube_channel_dispatcher.cjs');
+            const fs=require('fs');
+            const meta=JSON.parse(fs.readFileSync('rendered_videos/teen_motivation_meta.json','utf8'));
+            const {uploadYouTubeShort}=require('./scripts/youtube_channel_dispatcher.cjs');
             uploadYouTubeShort({
-              videoPath: 'rendered_videos/teen_motivation_latest.mp4',
-              title: 'Discipline check — do this today',
-              description: 'Teen motivation. #Discipline #TeenMotivation #Shorts',
-              tags: ['Discipline','TeenMotivation','Shorts'],
-              channelId: 'teen_motivation'
-            }).then(() => console.log('YT ok')).catch(e => console.warn('YT', e.message));
+              videoPath:'rendered_videos/teen_motivation_latest.mp4',
+              title:String(meta.title||'Teen Motivation').slice(0,95),
+              description:String(meta.description||''),
+              tags:(meta.hashtags||[]).map(h=>String(h).replace(/^#/,'')),
+              channelId:'teen_motivation'
+            }).then(()=>console.log('YT ok')).catch(e=>{console.warn(e.message); process.exit(0);});
           "
       - name: Restore Buffer GraphQL publisher
         if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.publish_tiktok == true || github.event.inputs.publish_tiktok == 'true' || github.event_name == 'schedule') }}
         run: |
           curl -fsSL "https://raw.githubusercontent.com/devmeziem/Hi/a00c9e83c801f94513ff002978558c5ee8c113bf/scripts/publish_buffer_second_tiktok.cjs" \
-            -o scripts/publish_buffer_second_tiktok.cjs
-          # hard-lock default away from movie if someone runs with no args
-          sed -i "s/process.env.CHANNEL_TARGET || 'movie_brand'/process.env.CHANNEL_TARGET || 'teen_motivation'/" scripts/publish_buffer_second_tiktok.cjs || true
-          wc -c scripts/publish_buffer_second_tiktok.cjs
+            -o scripts/publish_buffer_second_tiktok.cjs || true
+          test -s scripts/publish_buffer_second_tiktok.cjs
       - name: Buffer TikTok bonesceo ONLY
         if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.publish_tiktok == true || github.event.inputs.publish_tiktok == 'true' || github.event_name == 'schedule') }}
         env:
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
           BUFFER_API_TOKEN_2: ${{ secrets.BUFFER_API_TOKEN_2 || secrets.BUFFER_API_KEY_2 }}
-          # Correct teen TikTok from live Buffer discovery (bonesceo)
           BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID || '6ab05677ea19ca0bde9c3ffb' }}
           BUFFER_TIKTOK_MOVIE_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_MOVIE_CHANNEL_ID }}
           CHANNEL_TARGET: teen_motivation
@@ -113,15 +120,29 @@ jobs:
           CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
           DRY_RUN: 'false'
         run: |
-          test -f rendered_videos/teen_motivation_latest.mp4 || { echo "missing teen mp4"; exit 1; }
-          echo "Using TEEN channel id: $BUFFER_TIKTOK_TEEN_CHANNEL_ID"
-          # argv[2] is what the known-good script reads (NOT PUBLISH_TARGET)
-          node scripts/publish_buffer_second_tiktok.cjs teen_motivation
+          test -f rendered_videos/teen_motivation_latest.mp4
+          if [ -f rendered_videos/teen_motivation_meta.json ]; then
+            export TEEN_POST_TITLE=$(node -e "console.log(JSON.parse(require('fs').readFileSync('rendered_videos/teen_motivation_meta.json','utf8')).title||'')")
+            export TEEN_POST_DESCRIPTION=$(node -e "console.log(JSON.parse(require('fs').readFileSync('rendered_videos/teen_motivation_meta.json','utf8')).description||'')")
+          fi
+          set +e
+          OUT=$(node scripts/publish_buffer_second_tiktok.cjs teen_motivation 2>&1)
+          CODE=$?
+          set -e
+          echo "$OUT"
+          if echo "$OUT" | grep -qi "SKIPPING publishing\|CHANNEL_NAME_NOT_VERIFIED"; then
+            echo "Buffer skipped — fail"; exit 1
+          fi
+          if [ $CODE -ne 0 ]; then exit $CODE; fi
+          if ! echo "$OUT" | grep -qi "Post ID\|Successfully scheduled\|Successfully posted\|Buffer Dispatch Recorded"; then
+            echo "No Buffer success marker — fail"; exit 1
+          fi
       - if: always()
         uses: actions/upload-artifact@v4
         with:
           name: teen-${{ github.run_id }}
           path: |
             rendered_videos/teen_motivation_latest.mp4
+            rendered_videos/teen_motivation_meta.json
             test_artifacts/teen_situation/**
           if-no-files-found: ignore
