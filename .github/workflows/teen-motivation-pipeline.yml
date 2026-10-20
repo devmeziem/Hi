@@ -99,12 +99,13 @@ jobs:
               channelId:'teen_motivation'
             }).then(()=>console.log('YT ok')).catch(e=>{console.warn(e.message); process.exit(0);});
           "
-      - name: Restore Buffer GraphQL publisher
+      - name: Restore Buffer GraphQL publisher + AI flags
         if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.publish_tiktok == true || github.event.inputs.publish_tiktok == 'true' || github.event_name == 'schedule') }}
         run: |
           curl -fsSL "https://raw.githubusercontent.com/devmeziem/Hi/a00c9e83c801f94513ff002978558c5ee8c113bf/scripts/publish_buffer_second_tiktok.cjs" \
             -o scripts/publish_buffer_second_tiktok.cjs || true
           test -s scripts/publish_buffer_second_tiktok.cjs
+          node scripts/apply_buffer_ai_flag.cjs || true
       - name: Buffer TikTok bonesceo ONLY
         if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.publish_tiktok == true || github.event.inputs.publish_tiktok == 'true' || github.event_name == 'schedule') }}
         env:
