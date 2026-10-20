@@ -1,78 +1,58 @@
-name: Archie Daily Q&A Teaser & Showdown Pipeline
+name: Archie Daily Q&A Teaser & Showdown Pipeline (PAUSED)
 
+# PAUSED: low algo performance / boring format. Manual only until explainer format is healthy.
 on:
-  schedule:
-    # Twice daily drops: 07:00 UTC and 19:00 UTC
-    - cron: '0 7,19 * * *'
   workflow_dispatch:
     inputs:
       test_topic:
-        description: 'Custom Question Topic (Optional: e.g. Content Creation, Tech, Science, Finance)'
+        description: 'Custom Question Topic (Optional)'
         required: false
         default: ''
         type: string
       dry_run:
-        description: 'Dry Run Mode (Uncheck for live upload)'
+        description: 'Dry Run Mode'
         required: false
-        default: false
+        default: true
         type: boolean
 
 jobs:
   archie_qa_teaser_pipeline:
-    name: Build & Validate Archie Q&A Teaser
+    name: Build & Validate Archie Q&A Teaser (manual only)
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js Environment
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
-
-      - name: Verify or Install FFmpeg
-        run: |
+          cache: npm
+      - run: |
           if ! command -v ffmpeg &> /dev/null; then
             sudo apt-get update && sudo apt-get install -y ffmpeg librsvg2-bin
           fi
-          ffmpeg -version | head -n 1
-
-      - name: Install Node Dependencies
-        run: npm install --legacy-peer-deps --no-audit --no-fund
-
-      - name: Execute Archie Daily 3-in-1 Intellectual Q&A Teaser
+      - run: npm install --legacy-peer-deps --no-audit --no-fund
+      - name: Execute Archie Q&A (manual)
         env:
           TEST_TOPIC: ${{ github.event.inputs.test_topic }}
           DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          XAI_API_KEY: ${{ secrets.XAI_API_KEY || secrets.GROK_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
-          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 || secrets.YOUTUBE_CLIENT_ID_TECH }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 || secrets.YOUTUBE_CLIENT_SECRET_TECH }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 || secrets.YOUTUBE_REFRESH_TOKEN_TECH }}
           YOUTUBE_CLIENT_ID_CH3: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 || secrets.YOUTUBE_CLIENT_ID_TECH }}
           YOUTUBE_CLIENT_SECRET_CH3: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 || secrets.YOUTUBE_CLIENT_SECRET_TECH }}
           YOUTUBE_REFRESH_TOKEN_CH3: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 || secrets.YOUTUBE_REFRESH_TOKEN_TECH }}
-          YOUTUBE_HANDLE_CH3: ${{ secrets.YOUTUBE_HANDLE_CH3 || secrets.YOUTUBE_HANDLE_TECH }}
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
           BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
           BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31c1dcd8b9c702c467a38' }}
         run: |
-          echo "=== Generating Archie Daily 3-in-1 Intellectual Q&A Teaser Video ==="
+          echo "=== Q&A pipeline is PAUSED by default (manual only) ==="
           node scripts/generate_archie_qa_teaser.cjs
-
-      - name: Upload Production Video & Diagnostics Artifacts
-        if: always()
+      - if: always()
         uses: actions/upload-artifact@v4
         with:
           name: archie-qa-teaser-output-${{ github.run_id }}
@@ -81,9 +61,4 @@ jobs:
             rendered_videos/archie_qa_teaser_*.mp4
             test_artifacts/archie_qa/*
           if-no-files-found: ignore
-          retention-days: 14
-
-      - name: Plain-English Audit & Execution Summary
-        if: always()
-        run: |
-          node scripts/workflow_audit_reporter.cjs archie_qa_teaser
+          retention-days: 7

@@ -35,7 +35,7 @@ on:
 
 jobs:
   cartoon_factory_pipeline:
-    name: Build Archie (HEAVY multipass + unique BGM + FB/IG)
+    name: Build Archie (explainer + YT CH3 + FB/IG)
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -59,7 +59,9 @@ jobs:
       - run: node scripts/apply_unique_bgm_all.cjs || true
       - name: Fix assembler null watermark crash
         run: node scripts/patch_archie_assembler_null.cjs || true
-      - name: Generate Archie HEAVY (research + unique BGM + multipass gestures)
+      - name: Soft-disable bad YouTube pinned comments
+        run: node scripts/apply_archie_youtube_comment_fix.cjs || true
+      - name: Generate Archie explainer (science+tech, short B-roll, bold captions)
         env:
           VIDEO_MODE: ${{ github.event.inputs.video_mode || 'auto' }}
           TEST_TOPIC: ${{ github.event.inputs.topic }}
@@ -68,32 +70,59 @@ jobs:
           ENABLE_LIPSYNC: 'true'
           ENABLE_GESTURES: 'true'
           ENABLE_CAPTIONS: 'true'
+          BROLL_MAX_SEC: '4.5'
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          YOUTUBE_CLIENT_ID_CH3: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 }}
-          YOUTUBE_CLIENT_SECRET_CH3: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 }}
-          YOUTUBE_REFRESH_TOKEN_CH3: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 }}
-          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 }}
+          YOUTUBE_CLIENT_ID_CH3: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 || secrets.YOUTUBE_CLIENT_ID_TECH }}
+          YOUTUBE_CLIENT_SECRET_CH3: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 || secrets.YOUTUBE_CLIENT_SECRET_TECH }}
+          YOUTUBE_REFRESH_TOKEN_CH3: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 || secrets.YOUTUBE_REFRESH_TOKEN_TECH }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 || secrets.YOUTUBE_CLIENT_ID_TECH }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 || secrets.YOUTUBE_CLIENT_SECRET_TECH }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 || secrets.YOUTUBE_REFRESH_TOKEN_TECH }}
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
           BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
           BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31c1dcd8b9c702c467a38' }}
           BUFFER_TIKTOK_CHANNEL_ID: ''
           PAUSE_YOUTUBE: ${{ github.event.inputs.pause_youtube || 'false' }}
+          SKIP_YOUTUBE_PINNED_COMMENT: 'true'
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
         run: |
-          echo "=== Archie HEAVY multipass (no simple composite) ==="
+          echo "=== Archie science+tech explainer ==="
           node scripts/generate_archie_live_reel.cjs
           test -f rendered_videos/archie_latest.mp4
           ls -lh rendered_videos/archie*.mp4
-          test -f rendered_videos/archie_latest_meta.json && cat rendered_videos/archie_latest_meta.json | head -30 || true
+          test -f rendered_videos/archie_latest_meta.json && cat rendered_videos/archie_latest_meta.json | head -40 || true
+      - name: YouTube Channel 3 (Archie) — restored
+        if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && github.event.inputs.pause_youtube != true && github.event.inputs.pause_youtube != 'true' }}
+        env:
+          YOUTUBE_CLIENT_ID_CH3: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 || secrets.YOUTUBE_CLIENT_ID_TECH }}
+          YOUTUBE_CLIENT_SECRET_CH3: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 || secrets.YOUTUBE_CLIENT_SECRET_TECH }}
+          YOUTUBE_REFRESH_TOKEN_CH3: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 || secrets.YOUTUBE_REFRESH_TOKEN_TECH }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 || secrets.YOUTUBE_CLIENT_ID_TECH }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 || secrets.YOUTUBE_CLIENT_SECRET_TECH }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 || secrets.YOUTUBE_REFRESH_TOKEN_TECH }}
+          SKIP_YOUTUBE_PINNED_COMMENT: 'true'
+        run: |
+          node scripts/apply_archie_youtube_comment_fix.cjs || true
+          node -e "
+            const fs=require('fs');
+            const meta=JSON.parse(fs.readFileSync('rendered_videos/archie_latest_meta.json','utf8'));
+            const {uploadYouTubeShort}=require('./scripts/youtube_channel_dispatcher.cjs');
+            const tags=(meta.hashtags||[]).map(h=>String(h).replace(/^#/,''));
+            uploadYouTubeShort({
+              videoPath:'rendered_videos/archie_latest.mp4',
+              title:String(meta.title||'Archie Explains').slice(0,95),
+              description:String(meta.description||''),
+              tags,
+              channelId:'cartoon_factory'
+            }).then(r=>console.log('YT Archie', r)).catch(e=>{console.warn('YT soft-fail', e.message); process.exit(0);});
+          "
       - name: Buffer API1 → Facebook + Instagram (never TikTok)
         if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' }}
         env:
