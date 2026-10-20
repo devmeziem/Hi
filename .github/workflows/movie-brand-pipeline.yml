@@ -2,7 +2,11 @@ name: Cinema Vanguard - Documentary (YouTube Ch 4 + Driftreel TikTok)
 
 on:
   schedule:
-    - cron: '0 14 * * *'
+    # 4× daily (UTC): ~05:00, 11:00, 17:00, 23:00 WAT
+    - cron: '0 4 * * *'
+    - cron: '0 10 * * *'
+    - cron: '0 16 * * *'
+    - cron: '0 22 * * *'
   workflow_dispatch:
     inputs:
       dry_run:
