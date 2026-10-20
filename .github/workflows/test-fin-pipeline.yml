@@ -6,11 +6,11 @@ on:
   workflow_dispatch:
     inputs:
       video_mode:
-        description: 'Mode'
+        description: 'Mode (education-first)'
         required: false
-        default: 'auto'
+        default: 'skill'
         type: choice
-        options: [auto, quote, income, documentary]
+        options: [auto, skill, trap, income, documentary, quote]
       dry_run:
         description: 'Dry Run'
         required: true
@@ -19,7 +19,7 @@ on:
 
 jobs:
   fin_slot:
-    name: Fin Blueprint daily slot (CH1)
+    name: Fin education slot (CH1)
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -31,7 +31,7 @@ jobs:
       - run: npm install --legacy-peer-deps --no-audit --no-fund
       - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg || true
       - run: node scripts/apply_all_content_system.cjs || true
-      - name: Run Fin slot
+      - name: Run Fin education slot
         env:
           VIDEO_MODE: ${{ github.event.inputs.video_mode || 'auto' }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
@@ -55,11 +55,14 @@ jobs:
           git add fin_quote_history.json data/*.json 2>/dev/null || true
           if ! git diff --staged --quiet; then
             git commit -m "chore(fin-dedup): rolling history [skip ci]" || true
+            git pull --rebase --autostash origin main || true
             git push origin HEAD || true
           fi
       - if: always()
         uses: actions/upload-artifact@v4
         with:
           name: fin-${{ github.run_id }}
-          path: rendered_videos/fin_*.mp4
+          path: |
+            rendered_videos/fin_*.mp4
+            rendered_videos/fin_education_meta.json
           if-no-files-found: ignore
