@@ -46,10 +46,12 @@ jobs:
           cache: npm
       - run: npm install --legacy-peer-deps --no-audit --no-fund
       - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core || true
-      - name: Apply content system + teen history API patch
+      - name: Apply content system + teen history + end dedupe
         run: |
           node scripts/apply_all_content_system.cjs || true
           node scripts/patch_teen_history_api.cjs || true
+          node scripts/apply_teen_end_dedupe.cjs || true
+          node scripts/apply_unique_bgm_all.cjs || true
       - name: Generate Teen (live discovery → AI → media → stitch)
         env:
           VIDEO_TYPE: ${{ github.event.inputs.video_type || 'situation' }}
