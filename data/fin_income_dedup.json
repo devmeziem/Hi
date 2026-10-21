@@ -49,6 +49,11 @@
       "id": "plan_first_10k",
       "at": "2026-10-21T15:43:35.480Z",
       "type": "plan"
+    },
+    {
+      "id": "concept_interest",
+      "at": "2026-10-21T15:50:57.561Z",
+      "type": "concept"
     }
   ]
 }
