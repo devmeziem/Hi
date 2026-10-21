@@ -44,6 +44,11 @@
       "ts": 1792594762291,
       "title": "Free skill: understand investing words before you put money",
       "type": "skill"
+    },
+    {
+      "id": "plan_first_10k",
+      "at": "2026-10-21T15:43:35.480Z",
+      "type": "plan"
     }
   ]
 }
