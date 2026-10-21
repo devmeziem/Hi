@@ -60,11 +60,13 @@ jobs:
       - run: node scripts/apply_unique_bgm_all.cjs || true
       - name: Fix assembler null watermark crash
         run: node scripts/patch_archie_assembler_null.cjs || true
-      - name: Sequential gesture FFmpeg fix
+      - name: Sequential gesture + fast lipsync
         run: node scripts/apply_archie_gestures_fix.cjs || true
+      - name: Lower captions + multi B-roll cuts
+        run: node scripts/apply_archie_retention_fix.cjs || true
       - name: Soft-disable bad YouTube pinned comments
         run: node scripts/apply_archie_youtube_comment_fix.cjs || true
-      - name: Generate Archie explainer (science+tech, short B-roll, bold captions)
+      - name: Generate Archie explainer
         env:
           VIDEO_MODE: ${{ github.event.inputs.video_mode || 'auto' }}
           TEST_TOPIC: ${{ github.event.inputs.topic }}
@@ -73,7 +75,9 @@ jobs:
           ENABLE_LIPSYNC: 'true'
           ENABLE_GESTURES: 'true'
           ENABLE_CAPTIONS: 'true'
-          BROLL_MAX_SEC: '4.5'
+          BROLL_CLIP_SEC: '2.8'
+          BROLL_GAP_SEC: '7'
+          BROLL_MAX_SEC: '2.8'
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
