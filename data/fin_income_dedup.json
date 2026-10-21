@@ -26,6 +26,12 @@
       "ts": 1792537603983,
       "title": "Free skill: write a one-line offer students can sell",
       "type": "skill"
+    },
+    {
+      "id": "skill_price_time",
+      "ts": 1792576539428,
+      "title": "Free skill: price your time before you undercharge",
+      "type": "skill"
     }
   ]
 }
