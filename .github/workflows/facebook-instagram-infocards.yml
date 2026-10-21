@@ -2,49 +2,66 @@ name: Facebook & Instagram Knowledge Cards (Workflow 4)
 
 on:
   schedule:
-    # 1x Daily In-Depth Visual Knowledge Release (15:00 UTC / 16:00 WAT)
-    - cron: '0 15 * * *'
+    # 2x daily — morning branded bias, evening photo bias (UTC)
+    - cron: '0 8 * * *'
+    - cron: '0 16 * * *'
   workflow_dispatch:
     inputs:
+      card_style:
+        description: 'Style (auto rotates by time)'
+        required: false
+        default: 'auto'
+        type: choice
+        options: [auto, branded, photo]
       dry_run:
-        description: 'Dry Run Mode (Uncheck for live publishing)'
+        description: 'Dry Run Mode'
         required: false
         default: false
         type: boolean
 
 jobs:
   publish_infocards:
-    name: Generate & Publish Visual Knowledge InfoCards
+    name: Archie static FB/IG (zero AI)
     runs-on: ubuntu-latest
     permissions:
       contents: write
     timeout-minutes: 15
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: Setup Node.js Runtime
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
-
-      - name: Install System Dependencies
+          cache: npm
+      - name: Install system deps
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends ffmpeg curl librsvg2-bin
+          sudo apt-get install -y --no-install-recommends ffmpeg curl librsvg2-bin fonts-dejavu-core
+      - run: npm ci || npm install --legacy-peer-deps --no-audit --no-fund
 
-      - name: Install Project Dependencies
-        run: npm ci || npm install
-
-      - name: Generate In-Depth Science/Tech InfoCard & Captions
+      - name: Generate static post (branded OR photo+overlay, mixed science/tech)
+        env:
+          CARD_STYLE: ${{ github.event.inputs.card_style == 'branded' && 'branded' || github.event.inputs.card_style == 'photo' && 'photo' || '' }}
         run: |
-          node scripts/generate_facebook_instagram_infocard.cjs
+          node scripts/generate_archie_static_post.cjs
+          test -f test_artifacts/infocard_latest.png
+          test -f test_artifacts/infocard_manifest.json
+          cat test_artifacts/infocard_manifest.json | head -40
 
-      - name: Dispatch to Facebook (Voxam Fact) & Instagram (bones_ceo)
+      - name: Commit static dedup history
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/archie_static_history.json infocard_history.json 2>/dev/null || true
+          if ! git diff --staged --quiet; then
+            git commit -m "chore(dedup): archie static FB/IG history [skip ci]" || true
+            git pull --rebase --autostash origin main || true
+            git push origin HEAD || true
+          fi
+
+      - name: Publish to Facebook + Instagram (Buffer API 1)
+        if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' }}
         env:
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
           BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
@@ -52,34 +69,15 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
-          DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
-        run: |
-          node scripts/publish_infocards_to_facebook_instagram.cjs
+          DRY_RUN: 'false'
+        run: node scripts/publish_infocards_to_facebook_instagram.cjs
 
-      - name: Upload Graphic Artifacts
-        if: always()
+      - if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: facebook-instagram-infocards-${{ github.run_id }}
+          name: archie-static-${{ github.run_id }}
           path: |
-            test_artifacts/infocards/*
             test_artifacts/infocard_latest.png
-            test_artifacts/infocard_latest.json
-
-      - name: Pipeline Summary (Zero Git Commits, Low Key Database Logging)
-        if: always()
-        run: |
-          echo "==============================================================="
-          echo "INFOCARDS PIPELINE COMPLETED"
-          echo "Zero git commits made to repository - Low-key database logging."
-          echo "==============================================================="
-
-      - name: Plain-English Audit & Execution Summary
-        if: always()
-        run: |
-          node scripts/workflow_audit_reporter.cjs facebook_instagram_infocards
-
-      - name: Cleanup Local Temporary Media & Blobs
-        if: always()
-        run: |
-          rm -rf test_artifacts/infocards/*.png test_artifacts/infocard_latest.png
+            test_artifacts/infocard_manifest.json
+            test_artifacts/infocards/**
+          if-no-files-found: ignore
