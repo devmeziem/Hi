@@ -31,6 +31,7 @@ jobs:
       - run: npm install --legacy-peer-deps --no-audit --no-fund
       - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg || true
       - run: node scripts/apply_all_content_system.cjs || true
+      - run: node scripts/ensure_youtube_dispatcher.cjs || true
       - name: Run Fin education slot
         env:
           VIDEO_MODE: ${{ github.event.inputs.video_mode || 'auto' }}
