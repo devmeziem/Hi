@@ -30,5 +30,13 @@
     "learn": "Explain QR code data storage using binary modules",
     "bgm": "synth-pad",
     "at": "2026-10-21T11:19:24.093Z"
+  },
+  {
+    "title": "why dark mode saves battery on OLED",
+    "postTitle": "Dark Mode: Battery Hack or Myopic Myth?",
+    "lane": "tech",
+    "learn": "Explain how OLED pixel physics enable battery savings",
+    "bgm": "synth-pad",
+    "at": "2026-10-21T13:22:39.747Z"
   }
 ]
