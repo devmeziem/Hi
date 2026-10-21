@@ -38,6 +38,12 @@
       "ts": 1792576830615,
       "title": "Free money skill: track spending for 3 days",
       "type": "skill"
+    },
+    {
+      "id": "skill_invest_basics_only",
+      "ts": 1792594762291,
+      "title": "Free skill: understand investing words before you put money",
+      "type": "skill"
     }
   ]
 }
