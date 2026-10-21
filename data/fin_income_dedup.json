@@ -54,6 +54,11 @@
       "id": "concept_interest",
       "at": "2026-10-21T15:50:57.561Z",
       "type": "concept"
+    },
+    {
+      "id": "earn_campus_skill",
+      "at": "2026-10-21T15:55:20.309Z",
+      "type": "income"
     }
   ]
 }
