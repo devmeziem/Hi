@@ -44,7 +44,9 @@ jobs:
       - name: Wire live archive research (no seed vault)
         run: node scripts/apply_cinema_live_research.cjs
       - name: Driftreel branding + strip scene counters + ominous SFX
-        run: node scripts/apply_cinema_driftreel_fix.cjs || true
+        run: |
+          node scripts/apply_cinema_driftreel_fix.cjs || true
+          node scripts/apply_cinema_watermark_strip.cjs || true
       - name: Generate documentary
         env:
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
