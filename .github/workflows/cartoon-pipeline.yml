@@ -60,7 +60,7 @@ jobs:
       - run: node scripts/apply_unique_bgm_all.cjs || true
       - name: Fix assembler null watermark crash
         run: node scripts/patch_archie_assembler_null.cjs || true
-      - name: Sequential gesture + fast lipsync
+      - name: Single-pass gestures + lipsync
         run: node scripts/apply_archie_gestures_fix.cjs || true
       - name: Lower captions + multi B-roll cuts
         run: node scripts/apply_archie_retention_fix.cjs || true
@@ -75,9 +75,9 @@ jobs:
           ENABLE_LIPSYNC: 'true'
           ENABLE_GESTURES: 'true'
           ENABLE_CAPTIONS: 'true'
-          BROLL_CLIP_SEC: '2.8'
+          BROLL_CLIP_SEC: '2.6'
           BROLL_GAP_SEC: '7'
-          BROLL_MAX_SEC: '2.8'
+          BROLL_MAX_SEC: '2.6'
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
@@ -159,6 +159,7 @@ jobs:
           DRY_RUN: 'false'
         run: |
           test -f rendered_videos/archie_latest.mp4
+          node scripts/apply_buffer_archie_title.cjs || true
           node scripts/publish_archie_to_buffer_omnichannel.cjs
       - name: Artifacts
         if: always()
