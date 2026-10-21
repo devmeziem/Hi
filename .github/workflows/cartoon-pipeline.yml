@@ -56,6 +56,7 @@ jobs:
           node scripts/build_exact_puppet_shapes.cjs || true
           node scripts/build_modern_tech_character.cjs || true
       - run: node scripts/apply_all_content_system.cjs || true
+      - run: node scripts/ensure_youtube_dispatcher.cjs || true
       - run: node scripts/apply_unique_bgm_all.cjs || true
       - name: Fix assembler null watermark crash
         run: node scripts/patch_archie_assembler_null.cjs || true
@@ -111,7 +112,8 @@ jobs:
             git pull --rebase --autostash origin main || true
             git push origin HEAD:main || true
           fi
-      - name: YouTube Channel 3 (Archie) — restored
+      - name: YouTube Channel 3 (Archie)
+        continue-on-error: true
         if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && github.event.inputs.pause_youtube != true && github.event.inputs.pause_youtube != 'true' }}
         env:
           YOUTUBE_CLIENT_ID_CH3: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 || secrets.YOUTUBE_CLIENT_ID_TECH }}
@@ -122,19 +124,23 @@ jobs:
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 || secrets.YOUTUBE_REFRESH_TOKEN_TECH }}
           SKIP_YOUTUBE_PINNED_COMMENT: 'true'
         run: |
+          node scripts/ensure_youtube_dispatcher.cjs || true
           node scripts/apply_archie_youtube_comment_fix.cjs || true
           node -e "
-            const fs=require('fs');
-            const meta=JSON.parse(fs.readFileSync('rendered_videos/archie_latest_meta.json','utf8'));
-            const {uploadYouTubeShort}=require('./scripts/youtube_channel_dispatcher.cjs');
-            const tags=(meta.hashtags||[]).map(h=>String(h).replace(/^#/,''));
-            uploadYouTubeShort({
-              videoPath:'rendered_videos/archie_latest.mp4',
-              title:String(meta.title||'Archie Explains').slice(0,95),
-              description:String(meta.description||''),
-              tags,
-              channelId:'cartoon_factory'
-            }).then(r=>console.log('YT Archie', r)).catch(e=>{console.warn('YT soft-fail', e.message); process.exit(0);});
+            try {
+              const fs=require('fs');
+              const meta=JSON.parse(fs.readFileSync('rendered_videos/archie_latest_meta.json','utf8'));
+              const mod=require('./scripts/youtube_channel_dispatcher.cjs');
+              const upload=mod.uploadYouTubeShort;
+              if (typeof upload !== 'function') { console.warn('YT missing uploadYouTubeShort'); process.exit(0); }
+              upload({
+                videoPath:'rendered_videos/archie_latest.mp4',
+                title:String(meta.title||'Archie Explains').slice(0,95),
+                description:String(meta.description||''),
+                tags:(meta.hashtags||[]).map(h=>String(h).replace(/^#/,'')),
+                channelId:'cartoon_factory'
+              }).then(r=>console.log('YT Archie', r)).catch(e=>{console.warn('YT soft-fail', e.message);});
+            } catch (e) { console.warn('YT soft-fail', e.message); }
           "
       - name: Buffer API1 → Facebook + Instagram (never TikTok)
         if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' }}
