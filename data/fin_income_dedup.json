@@ -59,6 +59,11 @@
       "id": "earn_campus_skill",
       "at": "2026-10-21T15:55:20.309Z",
       "type": "income"
+    },
+    {
+      "id": "plan_5_moves_student",
+      "at": "2026-10-21T23:10:46.726Z",
+      "type": "plan"
     }
   ]
 }
