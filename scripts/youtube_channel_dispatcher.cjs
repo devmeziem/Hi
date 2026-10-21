@@ -5,7 +5,6 @@
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
-const http = require('http');
 
 const CHANNEL_CONFIG = {
   finance_saas: {
@@ -52,7 +51,10 @@ function sanitizeVideoDescription(rawDesc = '', cta = '', tags = []) {
   let d = String(rawDesc || '').trim();
   if (cta && !d.includes(cta)) d = d + '\n\n' + cta;
   if (Array.isArray(tags) && tags.length && !d.includes('#')) {
-    d +=\n      '\n\n' +\n      tags.map((t) => (String(t).startsWith('#') ? String(t) : '#' + String(t).replace(/\\s+/g, ''))).join(' ');
+    const hs = tags
+      .map((t) => (String(t).startsWith('#') ? String(t) : '#' + String(t).replace(/\s+/g, '')))
+      .join(' ');
+    d = d + '\n\n' + hs;
   }
   return d.slice(0, 4900);
 }
@@ -150,6 +152,34 @@ async function getAccessToken(refreshToken, customClientId, customClientSecret) 
   }
 }
 
+async function putVideo(uploadUrl, videoFilePath, token) {
+  const buf = fs.readFileSync(videoFilePath);
+  const putRes = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'video/*',
+      'Content-Length': String(buf.length)
+    },
+    body: buf
+  });
+  const raw = await putRes.text();
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    console.warn('[yt] put non-json', putRes.status, raw.slice(0, 200));
+    return null;
+  }
+  if (!putRes.ok) {
+    console.warn('[yt] put fail', putRes.status, raw.slice(0, 300));
+    return null;
+  }
+  const id = data.id || null;
+  console.log('[yt] uploaded', id);
+  return id;
+}
+
 async function uploadToYouTube(accessToken, videoFilePath, title, description, tags, channelKey = 'finance_saas') {
   try {
     if (!videoFilePath || !fs.existsSync(videoFilePath)) {
@@ -177,7 +207,6 @@ async function uploadToYouTube(accessToken, videoFilePath, title, description, t
       }
     };
 
-    // Resumable upload init
     const initRes = await fetch(
       'https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status',
       {
@@ -193,7 +222,6 @@ async function uploadToYouTube(accessToken, videoFilePath, title, description, t
     );
     if (!initRes.ok) {
       const t = await initRes.text();
-      // Retry without containsSyntheticMedia if API rejects unknown field
       if (t.includes('containsSyntheticMedia') || initRes.status === 400) {
         delete meta.status.containsSyntheticMedia;
         const init2 = await fetch(
@@ -230,34 +258,6 @@ async function uploadToYouTube(accessToken, videoFilePath, title, description, t
     console.warn('[yt] upload soft-fail:', e.message);
     return null;
   }
-}
-
-async function putVideo(uploadUrl, videoFilePath, token) {
-  const buf = fs.readFileSync(videoFilePath);
-  const putRes = await fetch(uploadUrl, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'video/*',
-      'Content-Length': String(buf.length)
-    },
-    body: buf
-  });
-  const raw = await putRes.text();
-  let data;
-  try {
-    data = JSON.parse(raw);
-  } catch {
-    console.warn('[yt] put non-json', putRes.status, raw.slice(0, 200));
-    return null;
-  }
-  if (!putRes.ok) {
-    console.warn('[yt] put fail', putRes.status, raw.slice(0, 300));
-    return null;
-  }
-  const id = data.id || null;
-  console.log('[yt] uploaded', id);
-  return id;
 }
 
 async function postPinnedComment() {
