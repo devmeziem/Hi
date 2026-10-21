@@ -32,6 +32,12 @@
       "ts": 1792576539428,
       "title": "Free skill: price your time before you undercharge",
       "type": "skill"
+    },
+    {
+      "id": "skill_track_3days",
+      "ts": 1792576830615,
+      "title": "Free money skill: track spending for 3 days",
+      "type": "skill"
     }
   ]
 }
