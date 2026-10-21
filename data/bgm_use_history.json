@@ -16,5 +16,14 @@
     "start": 145.9,
     "out": "stoic_1792520700553.wav",
     "at": "2026-10-20T18:25:00.928Z"
+  },
+  {
+    "channel": "stoic",
+    "query": "rain soft room tone ambient",
+    "name": "audio_rain_soft_room_tone_ambie_1792542397852.mp3",
+    "hash": "a66577bb556c7724d409fffc73e6293ddde6168f",
+    "start": 41.2,
+    "out": "stoic_1792542416912.wav",
+    "at": "2026-10-21T00:26:57.298Z"
   }
 ]
