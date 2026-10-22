@@ -1,8 +1,14 @@
 #!/usr/bin/env node
 /**
- * Archie static FB/IG — quiz / quote / news
- * Visual: real photo background (Unsplash/Picsum) + short on-image text (bottom third)
- * Optional AI only for choosing SHORT screen text (not required)
+ * Archie static FB/IG — LIVE public facts (not a fixed topic bank)
+ *
+ * Flow:
+ * 1) Discover topic from Wikimedia random, Wikipedia, Google News RSS, DuckDuckGo
+ *    (science / tech / archaeology / biology / space)
+ * 2) AI shapes: short on-image question OR one-line hook + full caption text
+ * 3) Image: Wikimedia Commons search → Unsplash/Pexels fallback
+ * 4) Bottom-third text on image; full teaching in post caption
+ * 5) Dedup via data/archie_static_history.json
  */
 const fs = require('fs');
 const path = require('path');
@@ -18,72 +24,15 @@ const MANIFEST = path.join(ART, 'infocard_manifest.json');
 fs.mkdirSync(OUT_DIR, { recursive: true });
 fs.mkdirSync(path.dirname(HIST), { recursive: true });
 
-const BANK = [
-  {
-    id: 'quiz_schrodinger',
-    format: 'quiz',
-    title: 'Wave equation for electrons',
-    question: 'Which scientist developed the wave equation for electrons?',
-    options: ['Schrödinger', 'Dalton', 'Rutherford', 'Bohr'],
-    answer: 'A',
-    answerText: 'A — Schrödinger. His equation describes electron waves.',
-    screenText: 'Who wrote the electron wave equation?',
-    photo: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1080&q=80',
-    tags: ['#ScienceQuiz', '#Physics', '#ArchieExplains']
-  },
-  {
-    id: 'quiz_event_horizon',
-    format: 'quiz',
-    title: 'Black hole event horizon',
-    question: 'What happens past a black hole event horizon?',
-    options: [
-      'Escape needs faster-than-light speed',
-      'It becomes a star',
-      'It exits as light',
-      'Time freezes for everyone else'
-    ],
-    answer: 'A',
-    answerText: 'A — nothing escapes to the outside universe without FTL.',
-    screenText: 'Cross an event horizon — then what?',
-    photo: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=1080&q=80',
-    tags: ['#SpaceScience', '#BlackHoles', '#ArchieExplains']
-  },
-  {
-    id: 'news_ssd',
-    format: 'news',
-    title: 'Why SSDs feel instant',
-    claim: 'No spinning disk. No moving head. That is the speed.',
-    hook: 'Upgrading storage often feels like a new computer.',
-    fact: 'Hard drives seek mechanically. SSDs read flash with no moving parts.',
-    takeaway: 'Architecture beats raw capacity marketing.',
-    screenText: 'Why SSDs feel instant',
-    photo: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1080&q=80',
-    tags: ['#TechExplained', '#Computers', '#ArchieExplains']
-  },
-  {
-    id: 'quote_bohr',
-    format: 'quote',
-    title: 'Niels Bohr',
-    quote: 'No phenomenon is a phenomenon until it is an observed phenomenon.',
-    who: 'Niels Bohr',
-    captionExtra: 'Observation sits at the center of quantum conversation.',
-    screenText: 'Observed — or not a phenomenon?',
-    photo: 'https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=1080&q=80',
-    tags: ['#ScienceQuotes', '#Physics', '#ArchieExplains']
-  },
-  {
-    id: 'news_wifi',
-    format: 'news',
-    title: 'Why walls kill Wi-Fi',
-    claim: 'Wi-Fi is radio. Dense walls eat the signal.',
-    hook: 'Your router is not broken — materials absorb radio.',
-    fact: 'Concrete, metal, and water weaken indoor Wi-Fi fast.',
-    takeaway: 'Place the router open and central when you can.',
-    screenText: 'Why walls kill Wi-Fi',
-    photo: 'https://images.unsplash.com/photo-1544197150-b99a580b7e1c?w=1080&q=80',
-    tags: ['#WiFi', '#TechExplained', '#ArchieExplains']
-  }
-];
+let callActiveAiForJson, queryDuckDuckGo, queryGoogleNewsRss;
+try {
+  const tde = require('./topic_discovery_engine.cjs');
+  callActiveAiForJson = tde.callActiveAiForJson;
+  queryDuckDuckGo = tde.queryDuckDuckGo;
+  queryGoogleNewsRss = tde.queryGoogleNewsRss;
+} catch (e) {
+  console.warn('[archie-static] topic engine:', e.message);
+}
 
 function loadHist() {
   try {
@@ -93,97 +42,360 @@ function loadHist() {
   }
 }
 function saveHist(h) {
-  h.used = (h.used || []).slice(-80);
   fs.writeFileSync(HIST, JSON.stringify(h, null, 2));
 }
-function pick() {
-  const h = loadHist();
-  const recent = new Set((h.used || []).map((x) => x.id));
-  let pool = BANK.filter((x) => !recent.has(x.id));
-  if (!pool.length) pool = BANK.slice();
-  const item = pool[Math.floor(Math.random() * pool.length)];
-  h.used.push({ id: item.id, at: new Date().toISOString() });
-  saveHist(h);
-  return item;
-}
 
-function httpGet(url) {
-  return new Promise((resolve) => {
+function httpGet(url, timeoutMs = 12000) {
+  return new Promise((resolve, reject) => {
     try {
       const lib = url.startsWith('http://') ? http : https;
-      const req = lib.get(url, { headers: { 'User-Agent': 'ArchieStatic/3.0' }, timeout: 15000 }, (res) => {
-        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-          return resolve(httpGet(res.headers.location));
+      const req = lib.get(
+        url,
+        {
+          headers: {
+            'User-Agent': 'ArchieExplorerBot/1.0 (education; github.com/devmeziem)',
+            Accept: 'application/json,text/html,*/*'
+          },
+          timeout: timeoutMs
+        },
+        (res) => {
+          if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+            return resolve(httpGet(res.headers.location, timeoutMs));
+          }
+          const chunks = [];
+          res.on('data', (c) => chunks.push(c));
+          res.on('end', () => {
+            const buf = Buffer.concat(chunks);
+            if (res.statusCode >= 400) return reject(new Error('HTTP ' + res.statusCode));
+            resolve(buf);
+          });
         }
-        const chunks = [];
-        res.on('data', (c) => chunks.push(c));
-        res.on('end', () => resolve(Buffer.concat(chunks)));
-      });
-      req.on('error', () => resolve(null));
+      );
+      req.on('error', reject);
       req.on('timeout', () => {
         req.destroy();
-        resolve(null);
+        reject(new Error('timeout'));
       });
-    } catch {
-      resolve(null);
+    } catch (e) {
+      reject(e);
     }
   });
 }
 
-function caption(item) {
-  const tags = (item.tags || []).join(' ');
-  if (item.format === 'quiz') {
-    return [item.question, '', ...item.options.map((o, i) => `${String.fromCharCode(65 + i)}) ${o}`), '', `Answer: ${item.answerText}`, '', '— Archie', '', tags].join('\n');
+async function httpGetText(url) {
+  const b = await httpGet(url);
+  return b.toString('utf8');
+}
+
+async function discoverLiveCandidates() {
+  const buckets = [
+    { niche: 'tech', q: 'breakthrough technology OR semiconductor OR AI research' },
+    { niche: 'biology', q: 'biology discovery OR genetics OR neuroscience fact' },
+    { niche: 'archaeology', q: 'archaeology discovery OR ancient civilization find' },
+    { niche: 'space', q: 'astronomy OR NASA OR space telescope discovery' },
+    { niche: 'physics', q: 'physics phenomenon OR quantum OR particle science' },
+    { niche: 'earth', q: 'geology OR climate science OR ocean discovery' }
+  ];
+  const pick = buckets[Math.floor(Math.random() * buckets.length)];
+  const candidates = [];
+
+  // Wikipedia random related search
+  try {
+    const wikiSearch =
+      'https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=' +
+      encodeURIComponent(pick.q) +
+      '&srlimit=6&format=json&origin=*';
+    const raw = await httpGetText(wikiSearch);
+    const j = JSON.parse(raw);
+    for (const s of (j.query && j.query.search) || []) {
+      candidates.push({
+        source: 'wikipedia',
+        niche: pick.niche,
+        title: s.title,
+        snippet: String(s.snippet || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
+        page: s.title
+      });
+    }
+  } catch (e) {
+    console.warn('[archie-static] wiki search:', e.message);
   }
-  if (item.format === 'quote') {
-    return [`“${item.quote}”`, `— ${item.who}`, '', item.captionExtra || '', '', '— Archie', '', tags].join('\n');
+
+  // Wikimedia Commons featured / search for visual topics
+  try {
+    const commons =
+      'https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=' +
+      encodeURIComponent(pick.niche + ' science photograph') +
+      '&gsrlimit=5&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=1280&format=json';
+    const raw = await httpGetText(commons);
+    const j = JSON.parse(raw);
+    const pages = (j.query && j.query.pages) || {};
+    for (const id of Object.keys(pages)) {
+      const p = pages[id];
+      const info = (p.imageinfo && p.imageinfo[0]) || {};
+      const meta = info.extmetadata || {};
+      const desc = (meta.ImageDescription && meta.ImageDescription.value) || p.title || '';
+      const clean = String(desc).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 280);
+      if (info.thumburl || info.url) {
+        candidates.push({
+          source: 'wikimedia_commons',
+          niche: pick.niche,
+          title: (p.title || '').replace(/^File:/, '').slice(0, 120),
+          snippet: clean,
+          imageUrl: info.thumburl || info.url
+        });
+      }
+    }
+  } catch (e) {
+    console.warn('[archie-static] commons:', e.message);
   }
-  return [item.hook, '', item.fact, '', 'Takeaway: ' + item.takeaway, '', '— Archie', '', tags].join('\n');
+
+  // News RSS
+  if (queryGoogleNewsRss) {
+    try {
+      const news = (await queryGoogleNewsRss(pick.q, 6)) || [];
+      for (const n of news) {
+        candidates.push({
+          source: 'google_news',
+          niche: pick.niche,
+          title: String(n.title || '').slice(0, 140),
+          snippet: String(n.snippet || n.title || '').slice(0, 280)
+        });
+      }
+    } catch (e) {
+      console.warn('[archie-static] news:', e.message);
+    }
+  }
+
+  if (queryDuckDuckGo) {
+    try {
+      const ddg = (await queryDuckDuckGo(pick.q + ' explained', 5)) || [];
+      for (const r of ddg) {
+        candidates.push({
+          source: 'duckduckgo',
+          niche: pick.niche,
+          title: String(r.title || '').slice(0, 140),
+          snippet: String(r.snippet || r.body || '').slice(0, 280)
+        });
+      }
+    } catch (e) {
+      console.warn('[archie-static] ddg:', e.message);
+    }
+  }
+
+  console.log('[archie-static] niche=', pick.niche, 'candidates=', candidates.length);
+  return { niche: pick.niche, candidates };
+}
+
+async function fetchWikiLead(title) {
+  try {
+    const url =
+      'https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(title.replace(/ /g, '_'));
+    const raw = await httpGetText(url);
+    const j = JSON.parse(raw);
+    return {
+      title: j.title || title,
+      extract: String(j.extract || '').slice(0, 600),
+      thumb: j.thumbnail && j.thumbnail.source
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function buildWithAi(niche, candidates, history) {
+  const used = (history.used || []).slice(-40).map((x) => x.id || x.title).filter(Boolean);
+  const systemPrompt = `You create engaging science/tech Instagram+Facebook educational cards for Archie the Explorer (teen-friendly, accurate).
+Return STRICT JSON only.
+
+Rules:
+- Use the live candidate facts — do not invent hard numbers or false claims.
+- Format rotates: quiz | fact | news_hook | did_you_know
+- screenText: max 10 words, question or short hook for BOTTOM of image (no paragraph)
+- caption: 4-8 short lines for the post body (full teaching + optional answer)
+- If quiz: include options A-D and answer letter + one-line explanation in caption
+- Tags: 5-8 hashtags including #ArchieExplains
+- imageQuery: 3-6 word stock/Commons search for a real photo matching the topic
+- topicId: short slug unique for dedup
+
+JSON:
+{
+  "format": "quiz|fact|news_hook|did_you_know",
+  "topicId": "slug",
+  "title": "...",
+  "screenText": "short question or hook",
+  "caption": "multiline caption",
+  "imageQuery": "search words",
+  "tags": ["#..."],
+  "niche": "${niche}"
+}`;
+
+  const userPrompt = `Niche: ${niche}
+
+Live candidates:
+${candidates
+  .slice(0, 12)
+  .map((c, i) => `${i + 1}. [${c.source}] ${c.title} — ${c.snippet}`)
+  .join('\n')}
+
+Avoid repeating these topicIds/titles: ${used.join(' | ') || 'none'}
+
+Build one card now.`;
+
+  if (!callActiveAiForJson) throw new Error('AI unavailable');
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const res = await callActiveAiForJson(systemPrompt, userPrompt, null, {
+        nicheKey: 'cartoon',
+        temperature: 0.65 + attempt * 0.05
+      });
+      const data = res?.data || res;
+      if (data && data.screenText && data.caption && data.topicId) return data;
+    } catch (e) {
+      console.warn('[archie-static] AI attempt', attempt, e.message);
+    }
+  }
+  throw new Error('AI package failed');
+}
+
+/** Fallback without AI: use Wikipedia lead */
+async function buildWithoutAi(candidates, history) {
+  const used = new Set((history.used || []).map((x) => x.id || x.title));
+  for (const c of candidates) {
+    if (used.has(c.title) || used.has(c.page)) continue;
+    let extract = c.snippet;
+    let thumb = c.imageUrl;
+    if (c.source === 'wikipedia' && c.page) {
+      const lead = await fetchWikiLead(c.page);
+      if (lead) {
+        extract = lead.extract || extract;
+        thumb = lead.thumb || thumb;
+        c.title = lead.title || c.title;
+      }
+    }
+    if (!extract || extract.length < 40) continue;
+    const screenText = (c.title || 'Did you know?').slice(0, 48);
+    const caption = [
+      c.title,
+      '',
+      extract.slice(0, 420),
+      '',
+      '— Archie the Explorer',
+      '',
+      '#ArchieExplains #Science #Tech #DidYouKnow #LearnOnInstagram'
+    ].join('\n');
+    return {
+      format: 'fact',
+      topicId: String(c.title || 'fact')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .slice(0, 48),
+      title: c.title,
+      screenText,
+      caption,
+      imageQuery: c.title,
+      imageUrl: thumb,
+      tags: ['#ArchieExplains', '#Science', '#DidYouKnow'],
+      niche: c.niche || 'science'
+    };
+  }
+  throw new Error('No usable public candidate');
+}
+
+async function fetchImageBuffer(card) {
+  // Prefer URL from commons/wiki if present
+  if (card.imageUrl) {
+    try {
+      return await httpGet(card.imageUrl);
+    } catch (_) {}
+  }
+  const q = encodeURIComponent(card.imageQuery || card.title || 'science');
+  // Unsplash source (no key required for source endpoint)
+  try {
+    return await httpGet('https://source.unsplash.com/1080x1350/?' + q);
+  } catch (_) {}
+  try {
+    return await httpGet('https://picsum.photos/1080/1350');
+  } catch (_) {}
+  throw new Error('No image');
+}
+
+function renderCard(imgPath, screenText, outPng) {
+  const safe = String(screenText || '')
+    .replace(/[:\\]/g, ' ')
+    .replace(/'/g, "'")
+    .slice(0, 70);
+  // Bottom third, bold white text, dark bar for readability — not a text wall
+  const vf = [
+    'scale=1080:1350:force_original_aspect_ratio=increase',
+    'crop=1080:1350',
+    "drawbox=x=0:y=ih*0.72:w=iw:h=ih*0.28:color=black@0.55:t=fill",
+    `drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='${safe.replace(/'/g, "\\'")}':fontsize=42:fontcolor=white:borderw=2:bordercolor=black@0.6:x=(w-text_w)/2:y=h*0.82-text_h/2`
+  ].join(',');
+  execSync(
+    `ffmpeg -y -i "${imgPath}" -vf "${vf}" -frames:v 1 "${outPng}"`,
+    { stdio: 'pipe' }
+  );
 }
 
 async function main() {
-  const item = pick();
-  console.log('[static]', item.format, item.title);
-  const photoPath = path.join(OUT_DIR, `bg_${item.id}.jpg`);
-  let buf = await httpGet(item.photo);
-  if (!buf || buf.length < 5000) {
-    buf = await httpGet('https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1080&q=80');
-  }
-  if (buf && buf.length > 5000) fs.writeFileSync(photoPath, buf);
-  else {
-    execSync(`ffmpeg -y -f lavfi -i color=c=0x0f172a:s=1080x1350:d=1 -frames:v 1 "${photoPath}"`, {
-      stdio: 'pipe'
-    });
+  console.log('\n=== ARCHIE STATIC LIVE (Wikimedia/News + AI) ===\n');
+  const history = loadHist();
+  const { niche, candidates } = await discoverLiveCandidates();
+  if (!candidates.length) throw new Error('Zero live candidates');
+
+  let card;
+  try {
+    card = await buildWithAi(niche, candidates, history);
+  } catch (e) {
+    console.warn('[archie-static] AI fallback:', e.message);
+    card = await buildWithoutAi(candidates, history);
   }
 
-  const screen = (item.screenText || item.title).slice(0, 42).replace(/:/g, '\\:').replace(/'/g, "'\\''");
-  const png = path.join(OUT_DIR, `${item.id}.png`);
-  const vf = [
-    'scale=1080:1350:force_original_aspect_ratio=increase,crop=1080:1350',
-    'drawbox=x=0:y=1080:w=1080:h=270:color=black@0.55:t=fill',
-    "drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='ARCHIE':fontsize=24:fontcolor=0x67e8f9:x=48:y=1110",
-    `drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='${screen}':fontsize=36:fontcolor=white:x=48:y=1170`
-  ].join(',');
-  execSync(`ffmpeg -y -i "${photoPath}" -vf "${vf}" -frames:v 1 "${png}"`, { stdio: 'pipe' });
-  fs.copyFileSync(png, LATEST_PNG);
+  // Attach commons image if candidate matched title loosely
+  for (const c of candidates) {
+    if (c.imageUrl && (!card.imageUrl) && String(c.title).toLowerCase().includes(String(card.title || '').slice(0, 12).toLowerCase())) {
+      card.imageUrl = c.imageUrl;
+      break;
+    }
+  }
+  if (!card.imageUrl) {
+    const withImg = candidates.find((c) => c.imageUrl);
+    if (withImg) card.imageUrl = withImg.imageUrl;
+  }
 
-  const cap = caption(item);
-  const title = item.title;
+  const buf = await fetchImageBuffer(card);
+  const rawImg = path.join(OUT_DIR, `raw_${Date.now()}.jpg`);
+  fs.writeFileSync(rawImg, buf);
+
+  const outPng = path.join(OUT_DIR, `card_${Date.now()}.png`);
+  renderCard(rawImg, card.screenText, outPng);
+  fs.copyFileSync(outPng, LATEST_PNG);
+
   const manifest = {
-    id: item.id,
-    title,
-    format: item.format,
-    pngPath: LATEST_PNG,
-    fbCaption: `${title}\n\n${cap}`,
-    igCaption: `${title}\n\n${cap}`,
-    tags: item.tags,
-    generatedAt: new Date().toISOString()
+    format: card.format,
+    topicId: card.topicId,
+    title: card.title,
+    screenText: card.screenText,
+    caption: card.caption,
+    tags: card.tags,
+    niche: card.niche || niche,
+    imagePath: LATEST_PNG,
+    createdAt: new Date().toISOString(),
+    source: 'live_wikimedia_news_ai'
   };
   fs.writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2));
-  console.log('[static] OK photo+bottom text', title);
+
+  history.used = history.used || [];
+  history.used.push({ id: card.topicId, title: card.title, at: Date.now(), niche: manifest.niche });
+  if (history.used.length > 200) history.used = history.used.slice(-200);
+  saveHist(history);
+
+  console.log('[archie-static] OK', manifest.title);
+  console.log('[archie-static] screen:', manifest.screenText);
+  console.log('[archie-static] caption sample:', String(manifest.caption).slice(0, 160));
 }
 
 main().catch((e) => {
-  console.error(e);
+  console.error('[archie-static] FAIL', e.message);
   process.exit(1);
 });
