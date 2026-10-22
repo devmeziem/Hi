@@ -13,6 +13,12 @@
     {
       "id": "quiz_event_horizon",
       "at": "2026-10-21T19:56:01.692Z"
+    },
+    {
+      "id": "groq_ai_inference_speed",
+      "title": "Why Groq is making AI faster",
+      "at": 1792668656665,
+      "niche": "tech"
     }
   ]
 }
