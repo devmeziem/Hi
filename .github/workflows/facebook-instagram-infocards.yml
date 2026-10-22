@@ -2,7 +2,6 @@ name: Facebook & Instagram Knowledge Cards (Workflow 4)
 
 on:
   schedule:
-    # 2x daily — morning branded bias, evening photo bias (UTC)
     - cron: '0 8 * * *'
     - cron: '0 16 * * *'
   workflow_dispatch:
@@ -21,7 +20,7 @@ on:
 
 jobs:
   publish_infocards:
-    name: Archie static FB/IG (zero AI)
+    name: Archie static FB/IG (live facts + AI)
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -39,21 +38,28 @@ jobs:
           sudo apt-get install -y --no-install-recommends ffmpeg curl librsvg2-bin fonts-dejavu-core
       - run: npm ci || npm install --legacy-peer-deps --no-audit --no-fund
 
-      - name: Generate static post (branded OR photo+overlay, mixed science/tech)
+      - name: Generate live static post (Wikimedia / news / AI)
         env:
           CARD_STYLE: ${{ github.event.inputs.card_style == 'branded' && 'branded' || github.event.inputs.card_style == 'photo' && 'photo' || '' }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY || secrets.GROK_API_KEY }}
+          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
         run: |
           node scripts/generate_archie_static_post.cjs
           test -f test_artifacts/infocard_latest.png
           test -f test_artifacts/infocard_manifest.json
-          cat test_artifacts/infocard_manifest.json | head -40
+          cat test_artifacts/infocard_manifest.json | head -50
 
       - name: Commit static dedup history
         if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/archie_static_history.json infocard_history.json 2>/dev/null || true
+          git add data/archie_static_history.json 2>/dev/null || true
           if ! git diff --staged --quiet; then
             git commit -m "chore(dedup): archie static FB/IG history [skip ci]" || true
             git pull --rebase --autostash origin main || true
