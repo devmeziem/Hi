@@ -69,6 +69,11 @@
       "id": "plan_first_buffer",
       "at": "2026-10-22T10:01:05.971Z",
       "type": "plan"
+    },
+    {
+      "id": "concept_what_is_budget",
+      "at": "2026-10-22T11:06:09.369Z",
+      "type": "concept"
     }
   ]
 }
