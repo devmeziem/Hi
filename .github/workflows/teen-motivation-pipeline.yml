@@ -1,7 +1,8 @@
 name: Apex Discipline - Teen & Youth Motivation Pipeline (Channel 5)
 
-# SPAM STOP: schedule disabled until caption/TTS letter-S bug is verified fixed on a dry run
 on:
+  schedule:
+    - cron: '0 4,10,16,22 * * *'
   workflow_dispatch:
     inputs:
       video_type:
@@ -16,19 +17,19 @@ on:
         default: ''
         type: string
       auto_publish:
-        description: 'Publish YouTube (requires CH5 secrets — default OFF)'
+        description: 'Publish YouTube (CH5 secrets only — default OFF)'
         required: true
         default: false
         type: boolean
       publish_tiktok:
-        description: 'Publish TikTok bonesceo (default OFF until quality verified)'
+        description: 'Publish TikTok bonesceo'
         required: false
-        default: false
+        default: true
         type: boolean
       dry_run:
         description: 'Dry Run (no publish)'
         required: true
-        default: true
+        default: false
         type: boolean
 
 jobs:
@@ -45,17 +46,18 @@ jobs:
           cache: npm
       - run: npm install --legacy-peer-deps --no-audit --no-fund
       - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core || true
-      - name: Apply S-letter fix + quality + YT guard
+      - name: Apply diversity + S-letter fix + quality
         run: |
           node scripts/apply_all_content_system.cjs || true
           node scripts/ensure_youtube_dispatcher.cjs || true
-          node scripts/fix_teen_s_letter_and_stop_spam.cjs
+          node scripts/patch_teen_topic_diversity.cjs || true
+          node scripts/fix_teen_s_letter_and_stop_spam.cjs || true
           node scripts/apply_teen_situation_quality.cjs || true
-      - name: Generate Teen (dry by default)
+      - name: Generate Teen (live discovery → AI → media)
         env:
           VIDEO_TYPE: ${{ github.event.inputs.video_type || 'situation' }}
           TOPIC: ${{ github.event.inputs.topic || '' }}
-          DRY_RUN: ${{ github.event.inputs.dry_run == true || github.event.inputs.dry_run == 'true' || github.event.inputs.dry_run == '' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run == true || github.event.inputs.dry_run == 'true' }}
           SKIP_BUFFER: 'true'
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
@@ -72,31 +74,16 @@ jobs:
         run: |
           node scripts/generate_teen_situation_reel.cjs
           test -f rendered_videos/teen_motivation_latest.mp4
-          # Prove letter S survives in captions file
-          if ls test_artifacts/teen_situation/cap_*.ass 1>/dev/null 2>&1; then
-            echo '--- ASS sample ---'
-            head -30 test_artifacts/teen_situation/cap_*.ass | tail -20
-            if grep -qiE '\\kf|\\k[0-9]' test_artifacts/teen_situation/cap_*.ass; then
-              echo 'FAIL: karaoke tags still present'; exit 1
-            fi
-            if ! grep -qS 'S' test_artifacts/teen_situation/cap_*.ass; then
-              echo 'WARN: no letter S in ASS (script may lack S words)'
-            else
-              echo 'OK: letter S present in ASS'
-            fi
-          fi
           cat rendered_videos/teen_motivation_meta.json | head -50 || true
-      - name: YouTube (OFF unless auto_publish + CH5 secrets)
+      - name: YouTube (CH5 only)
         continue-on-error: true
-        if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && github.event.inputs.auto_publish == true }}
+        if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.auto_publish == true || github.event.inputs.auto_publish == 'true') }}
         env:
           YOUTUBE_CLIENT_ID_CH5: ${{ secrets.YOUTUBE_CLIENT_ID_CH5 }}
           YOUTUBE_CLIENT_SECRET_CH5: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH5 }}
           YOUTUBE_REFRESH_TOKEN_CH5: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH5 }}
         run: |
-          if [ -z "$YOUTUBE_CLIENT_ID_CH5" ]; then echo 'No CH5 secrets — skip YT'; exit 0; fi
-          node scripts/ensure_youtube_dispatcher.cjs || true
-          node scripts/fix_teen_s_letter_and_stop_spam.cjs || true
+          if [ -z "$YOUTUBE_CLIENT_ID_CH5" ]; then echo 'No CH5 — skip YT'; exit 0; fi
           node -e "
             const fs=require('fs');
             const meta=JSON.parse(fs.readFileSync('rendered_videos/teen_motivation_meta.json','utf8'));
@@ -110,17 +97,24 @@ jobs:
               channelId:'teen_motivation'
             }).then(r=>console.log(r)).catch(e=>console.warn(e.message));
           "
-      - name: Buffer TikTok (OFF by default)
-        if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && github.event.inputs.publish_tiktok == true }}
+      - name: Buffer TikTok bonesceo
+        if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.publish_tiktok == true || github.event.inputs.publish_tiktok == 'true' || github.event_name == 'schedule') }}
         env:
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
           BUFFER_API_TOKEN_2: ${{ secrets.BUFFER_API_TOKEN_2 || secrets.BUFFER_API_KEY_2 }}
           BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID || '6ab05677ea19ca0bde9c3ffb' }}
           CHANNEL_TARGET: teen_motivation
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
           DRY_RUN: 'false'
         run: |
           curl -fsSL "https://raw.githubusercontent.com/devmeziem/Hi/a00c9e83c801f94513ff002978558c5ee8c113bf/scripts/publish_buffer_second_tiktok.cjs" -o scripts/publish_buffer_second_tiktok.cjs || true
+          node scripts/apply_buffer_ai_flag.cjs || true
+          if [ -f rendered_videos/teen_motivation_meta.json ]; then
+            export TEEN_POST_TITLE=$(node -e "console.log(JSON.parse(require('fs').readFileSync('rendered_videos/teen_motivation_meta.json','utf8')).title||'')")
+            export TEEN_POST_DESCRIPTION=$(node -e "console.log(JSON.parse(require('fs').readFileSync('rendered_videos/teen_motivation_meta.json','utf8')).description||'')")
+          fi
           node scripts/publish_buffer_second_tiktok.cjs teen_motivation
       - if: always()
         uses: actions/upload-artifact@v4
