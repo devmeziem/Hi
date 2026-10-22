@@ -17,9 +17,9 @@ on:
         default: ''
         type: string
       auto_publish:
-        description: 'Publish YouTube'
+        description: 'Publish YouTube (ONLY if YOUTUBE_*_CH5 secrets exist — off by default)'
         required: true
-        default: true
+        default: false
         type: boolean
       publish_tiktok:
         description: 'Publish TikTok Buffer API 2 (bonesceo only)'
@@ -65,9 +65,13 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY || secrets.GROK_API_KEY }}
-          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH5 || secrets.YOUTUBE_CLIENT_ID }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH5 || secrets.YOUTUBE_CLIENT_SECRET }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH5 || secrets.YOUTUBE_REFRESH_TOKEN }}
+          # NO fallback to other channel OAuth — only CH5/TEEN
+          YOUTUBE_CLIENT_ID_CH5: ${{ secrets.YOUTUBE_CLIENT_ID_CH5 }}
+          YOUTUBE_CLIENT_SECRET_CH5: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH5 }}
+          YOUTUBE_REFRESH_TOKEN_CH5: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH5 }}
+          YOUTUBE_CLIENT_ID_TEEN: ${{ secrets.YOUTUBE_CLIENT_ID_TEEN }}
+          YOUTUBE_CLIENT_SECRET_TEEN: ${{ secrets.YOUTUBE_CLIENT_SECRET_TEEN }}
+          YOUTUBE_REFRESH_TOKEN_TEEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_TEEN }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
@@ -78,15 +82,24 @@ jobs:
           test -f rendered_videos/teen_motivation_latest.mp4
           ls -lh rendered_videos/teen_motivation_latest.mp4
           test -f rendered_videos/teen_motivation_meta.json && cat rendered_videos/teen_motivation_meta.json | head -40 || true
-      - name: YouTube (optional)
+      - name: YouTube (CH5 only — skip if secrets missing)
         continue-on-error: true
-        if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.auto_publish == true || github.event.inputs.auto_publish == 'true' || github.event_name == 'schedule') }}
+        if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.auto_publish == true || github.event.inputs.auto_publish == 'true') }}
         env:
-          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH5 || secrets.YOUTUBE_CLIENT_ID }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH5 || secrets.YOUTUBE_CLIENT_SECRET }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH5 || secrets.YOUTUBE_REFRESH_TOKEN }}
+          YOUTUBE_CLIENT_ID_CH5: ${{ secrets.YOUTUBE_CLIENT_ID_CH5 }}
+          YOUTUBE_CLIENT_SECRET_CH5: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH5 }}
+          YOUTUBE_REFRESH_TOKEN_CH5: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH5 }}
+          YOUTUBE_CLIENT_ID_TEEN: ${{ secrets.YOUTUBE_CLIENT_ID_TEEN }}
+          YOUTUBE_CLIENT_SECRET_TEEN: ${{ secrets.YOUTUBE_CLIENT_SECRET_TEEN }}
+          YOUTUBE_REFRESH_TOKEN_TEEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_TEEN }}
         run: |
+          # Refuse if no dedicated Teen YouTube OAuth
+          if [ -z "$YOUTUBE_CLIENT_ID_CH5" ] && [ -z "$YOUTUBE_CLIENT_ID_TEEN" ]; then
+            echo "No YOUTUBE_*_CH5 / YOUTUBE_*_TEEN secrets — skipping YouTube (will not post to another channel)"
+            exit 0
+          fi
           node scripts/ensure_youtube_dispatcher.cjs || true
+          node scripts/apply_teen_situation_quality.cjs || true
           node -e "
             try {
               const fs=require('fs');
