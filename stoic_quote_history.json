@@ -612,5 +612,18 @@
     "author": "Arthur Schopenhauer",
     "channel": "stoic",
     "timestamp": "2026-10-21T18:30:10.412Z"
+  },
+  {
+    "quote": "Never was anything great achieved without danger. But never confuse courage with recklessness.",
+    "author": "Niccolò Machiavelli",
+    "credentials": "Author of The Prince • Diplomat & Political Philosopher",
+    "theme": "courage",
+    "usedAt": "2026-10-22T00:30:10.779Z"
+  },
+  {
+    "quote": "Never was anything great achieved without danger. But never confuse courage with recklessness.",
+    "author": "Niccolò Machiavelli",
+    "channel": "stoic",
+    "timestamp": "2026-10-22T00:30:10.779Z"
   }
 ]
