@@ -1,11 +1,5 @@
 [
   {
-    "quote": "Discipline is choosing between what you want right now and what you want most.",
-    "author": "STOIC PROTOCOL",
-    "theme": "discipline",
-    "timestamp": "2026-09-05T09:23:06.850Z"
-  },
-  {
     "quote": "He who fears death will never do anything worthy of a man who is alive. Endure the present with absolute cold resolve.",
     "author": "SENECA",
     "theme": "discipline",
@@ -677,5 +671,18 @@
     "author": "Dr. Carl Jung",
     "channel": "stoic",
     "timestamp": "2026-10-23T11:13:05.015Z"
+  },
+  {
+    "quote": "Master your emotions. If you cannot control your emotions, you cannot control your power, your money, or your life.",
+    "author": "Robert Greene",
+    "credentials": "Author of The 48 Laws of Power & Laws of Human Nature",
+    "theme": "discipline",
+    "usedAt": "2026-10-23T18:10:43.731Z"
+  },
+  {
+    "quote": "Master your emotions. If you cannot control your emotions, you cannot control your power, your money, or your life.",
+    "author": "Robert Greene",
+    "channel": "stoic",
+    "timestamp": "2026-10-23T18:10:43.731Z"
   }
 ]
