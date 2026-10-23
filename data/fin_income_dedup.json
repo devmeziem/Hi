@@ -84,6 +84,11 @@
       "id": "concept_what_is_crypto",
       "at": "2026-10-22T23:12:06.098Z",
       "type": "concept"
+    },
+    {
+      "id": "trap_pay_to_work",
+      "at": "2026-10-23T09:55:33.902Z",
+      "type": "trap"
     }
   ]
 }
