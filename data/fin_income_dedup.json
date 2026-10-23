@@ -94,6 +94,11 @@
       "id": "trap_guaranteed_returns",
       "at": "2026-10-23T16:15:45.353Z",
       "type": "trap"
+    },
+    {
+      "id": "concept_inflation",
+      "at": "2026-10-23T23:02:43.132Z",
+      "type": "concept"
     }
   ]
 }
