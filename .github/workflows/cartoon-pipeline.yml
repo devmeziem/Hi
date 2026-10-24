@@ -58,6 +58,8 @@ jobs:
       - run: node scripts/apply_all_content_system.cjs || true
       - run: node scripts/ensure_youtube_dispatcher.cjs || true
       - run: node scripts/apply_unique_bgm_all.cjs || true
+      - name: Fix Archie + Fin TTS (resilient engine)
+        run: node scripts/fix_fin_archie_tts.cjs
       - name: Fix assembler null watermark crash
         run: node scripts/patch_archie_assembler_null.cjs || true
       - name: Single-pass gestures + lipsync
