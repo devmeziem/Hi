@@ -1,11 +1,5 @@
 [
   {
-    "quote": "Today is victory over yourself of yesterday; tomorrow is your victory over lesser men.",
-    "author": "MIYAMOTO MUSASHI",
-    "theme": "mastery",
-    "timestamp": "2026-09-06T19:23:24.054Z"
-  },
-  {
     "quote": "In the middle of difficulty lies opportunity.",
     "author": "Dr. Albert Einstein, Ph.D.",
     "credentials": "Theoretical Physicist • Nobel Laureate in Physics",
@@ -705,5 +699,18 @@
     "author": "Niccolò Machiavelli",
     "channel": "stoic",
     "timestamp": "2026-10-24T11:07:11.122Z"
+  },
+  {
+    "quote": "To go wrong in one's own way is better than to go right in someone else's.",
+    "author": "Fyodor Dostoevsky",
+    "credentials": "Author of Crime and Punishment • Russian Philosopher",
+    "theme": "sovereignty",
+    "usedAt": "2026-10-24T17:16:13.749Z"
+  },
+  {
+    "quote": "To go wrong in one's own way is better than to go right in someone else's.",
+    "author": "Fyodor Dostoevsky",
+    "channel": "stoic",
+    "timestamp": "2026-10-24T17:16:13.750Z"
   }
 ]
