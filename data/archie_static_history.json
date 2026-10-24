@@ -43,6 +43,12 @@
       "title": "Euclid's Surprise Comet",
       "at": 1792784901361,
       "niche": "space"
+    },
+    {
+      "id": "deep_sea_new_life",
+      "title": "New Branch of Life in the Deep Sea",
+      "at": 1792844984873,
+      "niche": "earth"
     }
   ]
 }
