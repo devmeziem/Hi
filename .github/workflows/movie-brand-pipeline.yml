@@ -43,10 +43,11 @@ jobs:
         run: node scripts/apply_center_captions.cjs || true
       - name: Wire live archive research (no seed vault)
         run: node scripts/apply_cinema_live_research.cjs
-      - name: Driftreel branding + strip scene counters + ominous SFX
+      - name: Driftreel clean (no WM / no follow CTA / no scene boxes) + quality
         run: |
           node scripts/apply_cinema_driftreel_fix.cjs || true
           node scripts/apply_cinema_watermark_strip.cjs || true
+          node scripts/fix_channel_audio_visual_quality.cjs || true
       - name: Generate documentary
         env:
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
