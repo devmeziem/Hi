@@ -1,0 +1,72 @@
+name: Kaggle Clip Poll + Stitch
+
+on:
+  workflow_dispatch:
+    inputs:
+      kernel_slug:
+        description: 'Kaggle kernel slug (username/hi-ai-clip-worker). Leave blank to use KAGGLE_USERNAME secret.'
+        required: false
+        default: ''
+      wait_minutes:
+        description: 'Max minutes to poll for COMPLETE'
+        required: false
+        default: '45'
+
+jobs:
+  poll:
+    name: Poll Kaggle output + download clips
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -q kaggle
+      - name: Credentials
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+        run: |
+          test -n "$KAGGLE_USERNAME" && test -n "$KAGGLE_KEY"
+          mkdir -p ~/.kaggle
+          printf '%s\n' "{\"username\":\"$KAGGLE_USERNAME\",\"key\":\"$KAGGLE_KEY\"}" > ~/.kaggle/kaggle.json
+          chmod 600 ~/.kaggle/kaggle.json
+          SLUG="${{ github.event.inputs.kernel_slug }}"
+          if [ -z "$SLUG" ]; then SLUG="$KAGGLE_USERNAME/hi-ai-clip-worker"; fi
+          echo "KERNEL_SLUG=$SLUG" >> $GITHUB_ENV
+      - name: Poll until complete
+        env:
+          WAIT_MIN: ${{ github.event.inputs.wait_minutes || '45' }}
+        run: |
+          echo "Polling $KERNEL_SLUG ..."
+          END=$((SECONDS + WAIT_MIN * 60))
+          while [ $SECONDS -lt $END ]; do
+            # status line varies by CLI version
+            OUT=$(kaggle kernels status "$KERNEL_SLUG" 2>&1 || true)
+            echo "$OUT"
+            if echo "$OUT" | grep -qiE 'complete|completed|success'; then
+              echo "COMPLETE"
+              break
+            fi
+            if echo "$OUT" | grep -qiE 'error|failed'; then
+              echo "Kernel reported error"
+              exit 1
+            fi
+            sleep 45
+          done
+      - name: Download output
+        run: |
+          mkdir -p kaggle_out
+          kaggle kernels output "$KERNEL_SLUG" -p kaggle_out || true
+          ls -laR kaggle_out || true
+      - name: Placeholder note (stitch later)
+        run: |
+          echo "Clips land in kaggle_out/. Next: FFmpeg stitch + Edge TTS in a follow-up step."
+          find kaggle_out -type f | head -50
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kaggle-clips-${{ github.run_id }}
+          path: kaggle_out/**
+          if-no-files-found: warn
