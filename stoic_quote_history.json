@@ -1,11 +1,5 @@
 [
   {
-    "quote": "He who fears death will never do anything worthy of a man who is alive. Endure the present with absolute cold resolve.",
-    "author": "SENECA",
-    "theme": "discipline",
-    "timestamp": "2026-09-05T09:23:30.868Z"
-  },
-  {
     "quote": "The lion does not turn his head when a small dog barks. Protect your focus with sovereign calm.",
     "author": "TACTICAL STOICISM",
     "theme": "defense",
@@ -684,5 +678,18 @@
     "author": "Robert Greene",
     "channel": "stoic",
     "timestamp": "2026-10-23T18:10:43.731Z"
+  },
+  {
+    "quote": "Most people do not really want freedom, because freedom involves responsibility, and most people are frightened of responsibility.",
+    "author": "Sigmund Freud",
+    "credentials": "Founder of Psychoanalysis • Neurologist",
+    "theme": "psychology",
+    "usedAt": "2026-10-24T00:22:53.376Z"
+  },
+  {
+    "quote": "Most people do not really want freedom, because freedom involves responsibility, and most people are frightened of responsibility.",
+    "author": "Sigmund Freud",
+    "channel": "stoic",
+    "timestamp": "2026-10-24T00:22:53.377Z"
   }
 ]
