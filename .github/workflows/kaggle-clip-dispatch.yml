@@ -1,0 +1,91 @@
+name: Kaggle Clip Dispatch (GPU worker)
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: 'Channel tag for job'
+        required: false
+        default: 'teen'
+        type: choice
+        options: [teen, stoic, driftreel, archie, fin, test]
+      num_clips:
+        description: 'Number of 5s clips'
+        required: false
+        default: '2'
+      dry_notebook_only:
+        description: 'Only validate local job.json (skip Kaggle if no secrets)'
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  dispatch:
+    name: Write job + push Kaggle kernel
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build job.json
+        run: |
+          mkdir -p kaggle/ai_clip_worker
+          python3 << 'PY'
+          import json, time, os
+          job = {
+            "job_id": f"gh-{os.environ.get('GITHUB_RUN_ID','local')}-{int(time.time())}",
+            "channel": os.environ.get('CHANNEL', 'test'),
+            "clip_seconds": 5,
+            "num_clips": int(os.environ.get('NUM_CLIPS', '2')),
+            "prompts": [
+              "cinematic vertical portrait soft light, no text, photoreal",
+              "calm ambient environment vertical 9:16, no text",
+              "slow atmospheric texture vertical, no logos"
+            ],
+            "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+          }
+          path = "kaggle/ai_clip_worker/job.json"
+          open(path, "w").write(json.dumps(job, indent=2))
+          print("Wrote", path, job["job_id"])
+          PY
+        env:
+          CHANNEL: ${{ github.event.inputs.channel || 'test' }}
+          NUM_CLIPS: ${{ github.event.inputs.num_clips || '2' }}
+      - name: Install Kaggle CLI
+        if: ${{ github.event.inputs.dry_notebook_only != true && github.event.inputs.dry_notebook_only != 'true' }}
+        run: pip install -q kaggle
+      - name: Configure Kaggle credentials
+        if: ${{ github.event.inputs.dry_notebook_only != true && github.event.inputs.dry_notebook_only != 'true' }}
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+        run: |
+          if [ -z "$KAGGLE_USERNAME" ] || [ -z "$KAGGLE_KEY" ]; then
+            echo "Missing KAGGLE_USERNAME or KAGGLE_KEY secrets — add them in repo Settings → Secrets"
+            exit 1
+          fi
+          mkdir -p ~/.kaggle
+          printf '%s\n' "{\"username\":\"$KAGGLE_USERNAME\",\"key\":\"$KAGGLE_KEY\"}" > ~/.kaggle/kaggle.json
+          chmod 600 ~/.kaggle/kaggle.json
+          # Fix metadata id if still placeholder
+          META=kaggle/ai_clip_worker/kernel-metadata.json
+          if grep -q YOUR_KAGGLE_USERNAME "$META"; then
+            sed -i "s/YOUR_KAGGLE_USERNAME/$KAGGLE_USERNAME/g" "$META"
+            echo "Patched kernel id to $KAGGLE_USERNAME/hi-ai-clip-worker"
+          fi
+          cat "$META"
+      - name: Push kernel (starts GPU run)
+        if: ${{ github.event.inputs.dry_notebook_only != true && github.event.inputs.dry_notebook_only != 'true' }}
+        run: |
+          # Ensure job.json sits next to notebook for push folder
+          cp -f kaggle/ai_clip_worker/job.json kaggle/ai_clip_worker/job.json
+          kaggle kernels push -p kaggle/ai_clip_worker
+          echo "Kernel push submitted. Poll status with workflow kaggle-clip-poll-stitch.yml"
+      - name: Upload job artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kaggle-job-${{ github.run_id }}
+          path: kaggle/ai_clip_worker/job.json
