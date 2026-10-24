@@ -1,11 +1,5 @@
 [
   {
-    "quote": "The lion does not turn his head when a small dog barks. Protect your focus with sovereign calm.",
-    "author": "TACTICAL STOICISM",
-    "theme": "defense",
-    "timestamp": "2026-09-06T19:20:17.067Z"
-  },
-  {
     "quote": "The individual has always had to struggle to keep from being overwhelmed by the tribe. Live sovereignly.",
     "author": "FRIEDRICH NIETZSCHE",
     "theme": "confidence",
@@ -691,5 +685,18 @@
     "author": "Sigmund Freud",
     "channel": "stoic",
     "timestamp": "2026-10-24T00:22:53.377Z"
+  },
+  {
+    "quote": "Reject your sense of injury and the injury itself disappears.",
+    "author": "Marcus Aurelius",
+    "credentials": "Roman Emperor & Stoic Philosopher • Meditations",
+    "theme": "defense",
+    "usedAt": "2026-10-24T10:31:36.986Z"
+  },
+  {
+    "quote": "Reject your sense of injury and the injury itself disappears.",
+    "author": "Marcus Aurelius",
+    "channel": "stoic",
+    "timestamp": "2026-10-24T10:31:36.987Z"
   }
 ]
