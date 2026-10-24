@@ -1,11 +1,5 @@
 [
   {
-    "quote": "The individual has always had to struggle to keep from being overwhelmed by the tribe. Live sovereignly.",
-    "author": "FRIEDRICH NIETZSCHE",
-    "theme": "confidence",
-    "timestamp": "2026-09-06T19:20:26.874Z"
-  },
-  {
     "quote": "Today is victory over yourself of yesterday; tomorrow is your victory over lesser men.",
     "author": "MIYAMOTO MUSASHI",
     "theme": "mastery",
@@ -698,5 +692,18 @@
     "author": "Marcus Aurelius",
     "channel": "stoic",
     "timestamp": "2026-10-24T10:31:36.987Z"
+  },
+  {
+    "quote": "Men are so simple of mind, and so dominated by their immediate need, that a deceitful person will always find plenty who are ready to be deceived.",
+    "author": "Niccolò Machiavelli",
+    "credentials": "Author of The Prince • Diplomat & Political Philosopher",
+    "theme": "psychology",
+    "usedAt": "2026-10-24T11:07:11.121Z"
+  },
+  {
+    "quote": "Men are so simple of mind, and so dominated by their immediate need, that a deceitful person will always find plenty who are ready to be deceived.",
+    "author": "Niccolò Machiavelli",
+    "channel": "stoic",
+    "timestamp": "2026-10-24T11:07:11.122Z"
   }
 ]

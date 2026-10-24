@@ -99,5 +99,14 @@
     "name": "stoic_synth_1792837892175.wav",
     "hash": "8a79d44ecfade3ea00712b496cfe6ed7540f07be",
     "at": "2026-10-24T10:31:32.234Z"
+  },
+  {
+    "channel": "stoic",
+    "query": "ambient soft piano instrumental no drums",
+    "name": "audio_ambient_soft_piano_instru_1792840005184.mp3",
+    "hash": "2a76dbb3048f21065ce40f8a76709471dd050be5",
+    "start": 21.5,
+    "out": "stoic_1792840024398.wav",
+    "at": "2026-10-24T11:07:04.743Z"
   }
 ]
