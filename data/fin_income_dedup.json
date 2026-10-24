@@ -119,6 +119,11 @@
       "id": "skill_track_3days",
       "at": "2026-10-24T18:02:42.444Z",
       "type": "skill"
+    },
+    {
+      "id": "concept_inflation",
+      "at": "2026-10-24T22:24:45.256Z",
+      "type": "concept"
     }
   ]
 }
