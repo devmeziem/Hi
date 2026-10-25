@@ -44,8 +44,12 @@ jobs:
         with:
           node-version: 20
           cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
       - run: npm install --legacy-peer-deps --no-audit --no-fund
       - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core || true
+      - run: pip install -q edge-tts
       - name: Apply diversity + quality (male voice, no-beat BGM, captions)
         run: |
           node scripts/apply_all_content_system.cjs || true
@@ -55,6 +59,7 @@ jobs:
           node scripts/apply_teen_situation_quality.cjs || true
           node scripts/apply_unique_bgm_all.cjs || true
           node scripts/fix_channel_audio_visual_quality.cjs || true
+          node scripts/fix_tts_male_no_google_default.cjs || true
       - name: Generate Teen (live discovery → AI → media)
         env:
           VIDEO_TYPE: ${{ github.event.inputs.video_type || 'situation' }}
