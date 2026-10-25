@@ -129,6 +129,11 @@
       "id": "plan_first_buffer",
       "at": "2026-10-25T09:43:41.822Z",
       "type": "plan"
+    },
+    {
+      "id": "plan_5_moves_student",
+      "at": "2026-10-25T14:55:54.556Z",
+      "type": "plan"
     }
   ]
 }
