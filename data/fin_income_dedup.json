@@ -139,6 +139,11 @@
       "id": "skill_one_line_offer",
       "at": "2026-10-25T16:48:16.374Z",
       "type": "skill"
+    },
+    {
+      "id": "plan_first_buffer",
+      "at": "2026-10-25T18:20:52.633Z",
+      "type": "plan"
     }
   ]
 }
