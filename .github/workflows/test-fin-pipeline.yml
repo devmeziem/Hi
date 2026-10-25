@@ -28,16 +28,24 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
       - run: npm install --legacy-peer-deps --no-audit --no-fund
       - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg || true
+      - run: pip install -q edge-tts
       - run: node scripts/apply_all_content_system.cjs || true
       - run: node scripts/ensure_youtube_dispatcher.cjs || true
-      - name: Fix Fin TTS (npx edge-tts broken on Actions)
-        run: node scripts/fix_fin_archie_tts.cjs
+      - name: Fix Fin TTS + male voice path + complete lessons
+        run: |
+          node scripts/fix_fin_archie_tts.cjs || true
+          node scripts/fix_tts_male_no_google_default.cjs || true
+          node scripts/fix_fin_complete_lessons.cjs || true
       - name: Run Fin education slot
         env:
           VIDEO_MODE: ${{ github.event.inputs.video_mode || 'auto' }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          FIN_VOICE: en-US-AndrewNeural
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
