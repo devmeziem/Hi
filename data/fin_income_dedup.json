@@ -144,6 +144,11 @@
       "id": "plan_first_buffer",
       "at": "2026-10-25T18:20:52.633Z",
       "type": "plan"
+    },
+    {
+      "id": "concept_inflation",
+      "at": "2026-10-25T22:26:43.359Z",
+      "type": "concept"
     }
   ]
 }
