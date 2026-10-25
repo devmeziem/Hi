@@ -1,12 +1,5 @@
 [
   {
-    "quote": "In the middle of difficulty lies opportunity.",
-    "author": "Dr. Albert Einstein, Ph.D.",
-    "credentials": "Theoretical Physicist • Nobel Laureate in Physics",
-    "theme": "wisdom",
-    "usedAt": "2026-09-06T20:06:21.677Z"
-  },
-  {
     "quote": "Difficulties strengthen the mind, as labor does the body.",
     "author": "Seneca the Younger",
     "credentials": "Roman Statesman, Dramatist & Stoic Moralist",
@@ -712,5 +705,18 @@
     "author": "Fyodor Dostoevsky",
     "channel": "stoic",
     "timestamp": "2026-10-24T17:16:13.750Z"
+  },
+  {
+    "quote": "Never outshine the master. All superiority is odious, but superiority over a master is fatal.",
+    "author": "Robert Greene",
+    "credentials": "Author of The 48 Laws of Power & Laws of Human Nature",
+    "theme": "strategy",
+    "usedAt": "2026-10-25T00:05:27.317Z"
+  },
+  {
+    "quote": "Never outshine the master. All superiority is odious, but superiority over a master is fatal.",
+    "author": "Robert Greene",
+    "channel": "stoic",
+    "timestamp": "2026-10-25T00:05:27.318Z"
   }
 ]
