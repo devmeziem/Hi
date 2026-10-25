@@ -1,12 +1,5 @@
 [
   {
-    "quote": "Difficulties strengthen the mind, as labor does the body.",
-    "author": "Seneca the Younger",
-    "credentials": "Roman Statesman, Dramatist & Stoic Moralist",
-    "theme": "fortitude",
-    "usedAt": "2026-09-06T22:52:20.615Z"
-  },
-  {
     "quote": "Throughout history, cities have been destroyed because people placed comfort above discipline.",
     "author": "Ibn Khaldun",
     "credentials": "Historian, Sociologist & Philosopher • Author of the Muqaddimah",
@@ -718,5 +711,18 @@
     "author": "Robert Greene",
     "channel": "stoic",
     "timestamp": "2026-10-25T00:05:27.318Z"
+  },
+  {
+    "quote": "Always say less than necessary. When you are trying to impress people, the more you say, the more common you appear.",
+    "author": "Robert Greene",
+    "credentials": "Author of The 48 Laws of Power & Laws of Human Nature",
+    "theme": "power",
+    "usedAt": "2026-10-25T10:58:00.731Z"
+  },
+  {
+    "quote": "Always say less than necessary. When you are trying to impress people, the more you say, the more common you appear.",
+    "author": "Robert Greene",
+    "channel": "stoic",
+    "timestamp": "2026-10-25T10:58:00.732Z"
   }
 ]
