@@ -36,23 +36,35 @@ jobs:
         with:
           node-version: 20
           cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
       - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core || true
       - run: npm install --legacy-peer-deps --no-audit --no-fund
+      - run: pip install -q edge-tts || true
       - run: node scripts/apply_all_content_system.cjs || true
       - name: Force center bold captions (keep style)
         run: node scripts/apply_center_captions.cjs || true
       - name: Wire live archive research (no seed vault)
-        run: node scripts/apply_cinema_live_research.cjs
-      - name: Driftreel clean (no WM / no follow CTA / no scene boxes) + quality
+        run: node scripts/apply_cinema_live_research.cjs || true
+      - name: Driftreel story + old-TV + no WM + audible BGM + no Google TTS
         run: |
           node scripts/apply_cinema_driftreel_fix.cjs || true
           node scripts/apply_cinema_watermark_strip.cjs || true
           node scripts/fix_channel_audio_visual_quality.cjs || true
+          node scripts/fix_tts_male_no_google_default.cjs || true
+          node scripts/fix_batch_user_quality_oct25.cjs || true
+        env:
+          DRIFTREEL_STORY_MODE: 'true'
+          DRIFTREEL_ANGLE: 'untold_history_or_crime_story'
+          DRIFTREEL_LOOK: 'film_grain_bw_archival'
       - name: Generate documentary
         env:
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           PUBLISH_YOUTUBE: ${{ github.event.inputs.publish_youtube }}
           PUBLISH_TIKTOK: 'false'
+          DRIFTREEL_STORY_MODE: 'true'
+          DRIFTREEL_ANGLE: 'untold_history_or_crime_story'
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
