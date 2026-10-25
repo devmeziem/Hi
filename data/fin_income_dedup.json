@@ -124,6 +124,11 @@
       "id": "concept_inflation",
       "at": "2026-10-24T22:24:45.256Z",
       "type": "concept"
+    },
+    {
+      "id": "plan_first_buffer",
+      "at": "2026-10-25T09:43:41.822Z",
+      "type": "plan"
     }
   ]
 }
