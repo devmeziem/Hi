@@ -154,6 +154,11 @@
       "id": "trap_pay_to_work",
       "at": "2026-10-26T11:36:49.294Z",
       "type": "trap"
+    },
+    {
+      "id": "skill_track_3days",
+      "at": "2026-10-26T13:01:34.559Z",
+      "type": "skill"
     }
   ]
 }
