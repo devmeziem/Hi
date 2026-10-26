@@ -37,13 +37,13 @@ jobs:
           fi
       - run: npm install --legacy-peer-deps --no-audit --no-fund
       - run: pip install -q edge-tts || true
-      - name: Force fresh media + unique BGM + kenburns + no Google TTS
+      - name: Force fresh media + repair shell + soft piano BGM
         run: |
           node scripts/force_fresh_stoic_media.cjs || true
           node scripts/apply_unique_bgm_all.cjs || true
           node scripts/fix_channel_audio_visual_quality.cjs || true
           node scripts/fix_tts_male_no_google_default.cjs || true
-          node scripts/fix_batch_user_quality_oct25.cjs || true
+          node scripts/fix_stoic_shell_quote.cjs || true
       - name: Execute Stoic 5s Pure Quote (unique quote + image + BGM)
         env:
           DRY_RUN: ${{ github.event.inputs.dry_run == true || github.event.inputs.dry_run == 'true' }}
@@ -71,7 +71,7 @@ jobs:
           FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
           FIRESTORE_API_KEY: ${{ secrets.FIRESTORE_API_KEY }}
         run: |
-          echo "=== Stoic 5s: new quote + kenburns image + audible instrumental BGM ==="
+          echo "=== Stoic 5s: new quote + image + soft piano BGM ==="
           node scripts/generate_stoic_quote_reel.cjs
       - if: always()
         uses: actions/upload-artifact@v4
