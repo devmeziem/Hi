@@ -1,12 +1,5 @@
 [
   {
-    "quote": "Throughout history, cities have been destroyed because people placed comfort above discipline.",
-    "author": "Ibn Khaldun",
-    "credentials": "Historian, Sociologist & Philosopher • Author of the Muqaddimah",
-    "theme": "discipline",
-    "usedAt": "2026-09-07T19:45:58.973Z"
-  },
-  {
     "quote": "He who has a why to live can bear almost any how.",
     "author": "Prof. Friedrich Nietzsche",
     "credentials": "Chair of Classical Philology • University of Basel",
@@ -724,5 +717,18 @@
     "author": "Robert Greene",
     "channel": "stoic",
     "timestamp": "2026-10-25T10:58:00.732Z"
+  },
+  {
+    "quote": "The first method for estimating the intelligence of a ruler is to look at the men he has around him.",
+    "author": "Niccolò Machiavelli",
+    "credentials": "Author of The Prince • Diplomat & Political Philosopher",
+    "theme": "strategy",
+    "usedAt": "2026-10-26T13:02:10.775Z"
+  },
+  {
+    "quote": "The first method for estimating the intelligence of a ruler is to look at the men he has around him.",
+    "author": "Niccolò Machiavelli",
+    "channel": "stoic",
+    "timestamp": "2026-10-26T13:02:10.776Z"
   }
 ]
