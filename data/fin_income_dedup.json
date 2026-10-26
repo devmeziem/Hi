@@ -164,6 +164,11 @@
       "id": "trap_pay_to_work",
       "at": "2026-10-26T17:17:42.850Z",
       "type": "trap"
+    },
+    {
+      "id": "plan_5_moves_student",
+      "at": "2026-10-26T23:44:36.004Z",
+      "type": "plan"
     }
   ]
 }
