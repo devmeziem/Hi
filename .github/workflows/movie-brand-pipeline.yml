@@ -39,7 +39,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core || true
+      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-liberation || true
       - run: npm install --legacy-peer-deps --no-audit --no-fund
       - run: pip install -q edge-tts || true
       - run: node scripts/apply_all_content_system.cjs || true
@@ -47,6 +47,8 @@ jobs:
         run: node scripts/apply_center_captions.cjs || true
       - name: Wire live archive research (no seed vault)
         run: node scripts/apply_cinema_live_research.cjs || true
+      - name: Center karaoke + kill vault + Wikipedia story path
+        run: node scripts/apply_center_karaoke_bw_bgm.cjs || true
       - name: Driftreel story + old-TV + no WM + audible BGM + no Google TTS
         run: |
           node scripts/apply_cinema_driftreel_fix.cjs || true
