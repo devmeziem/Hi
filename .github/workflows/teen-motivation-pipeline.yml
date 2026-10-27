@@ -48,7 +48,7 @@ jobs:
         with:
           python-version: '3.11'
       - run: npm install --legacy-peer-deps --no-audit --no-fund
-      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core || true
+      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-liberation || true
       - run: pip install -q edge-tts
       - name: Apply diversity + bold voice + B&W 1080 + piano BGM
         run: |
@@ -62,6 +62,7 @@ jobs:
           node scripts/fix_tts_male_no_google_default.cjs || true
           node scripts/fix_batch_user_quality_oct25.cjs || true
           node scripts/fix_teen_bold_bw_1080.cjs || true
+          node scripts/apply_center_karaoke_bw_bgm.cjs || true
       - name: Generate Teen (live discovery → AI → media)
         env:
           VIDEO_TYPE: ${{ github.event.inputs.video_type || 'situation' }}
