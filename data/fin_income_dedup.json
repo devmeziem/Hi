@@ -169,6 +169,11 @@
       "id": "plan_5_moves_student",
       "at": "2026-10-26T23:44:36.004Z",
       "type": "plan"
+    },
+    {
+      "id": "concept_interest",
+      "at": "2026-10-27T10:22:25.129Z",
+      "type": "concept"
     }
   ]
 }
