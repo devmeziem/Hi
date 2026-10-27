@@ -1,118 +1,95 @@
 /**
  * Universal Verified Media & Stock Asset Fetcher
- * Automated fetching & filtering for Video, Image, and Audio:
- * - Pexels (Videos & Photos) [PEXELS_API_KEY]
- * - Unsplash (High-Res Photos) [UNSPLASH_ACCESS_KEY]
- * - Pixabay (Videos & Images) [PIXABAY_API_KEY]
- * - Wikimedia Commons (Historical Portraits, Specimens, Speeches) [Zero-Key Free]
- * - Openverse (700M+ CC Images & Audio) [Zero-Key Free]
- * - Freesound (Ambient Music & Sound FX) [FREESOUND_API_KEY]
- * - Internet Archive (Public Domain Video & Audio) [Zero-Key Free]
+ * Fallback (2026-10-27): multi-query variants, ban beauty/lipstick tags,
+ * soft piano audio bias, niche-safe atmospheric visual fallbacks.
  */
 
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const http = require('http');
-const { execSync } = require('child_process');
 
 const CACHE_DIR = path.join(process.cwd(), 'test_artifacts', 'media_cache');
-if (!fs.existsSync(CACHE_DIR)) {
-  fs.mkdirSync(CACHE_DIR, { recursive: true });
-}
+if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true });
 
-// Media deduplication tracking (guarantees scenes never reuse the exact same photo/video)
 const SEEN_MEDIA_URLS = new Set();
-
-// API Credentials from GitHub Actions / Environment
 const PEXELS_API_KEY = (process.env.PEXELS_API_KEY || '').trim();
 const UNSPLASH_ACCESS_KEY = (process.env.UNSPLASH_ACCESS_KEY || process.env.UNSPLASH_API_KEY || '').trim();
 const PIXABAY_API_KEY = (process.env.PIXABAY_API_KEY || '').trim();
 const FREESOUND_API_KEY = (process.env.FREESOUND_API_KEY || '').trim();
 
-/**
- * Robust HTTP GET helper with redirect following and timeout
- */
+const BAD_TAG_RE = /lipstick|makeup|cosmetic|nail polish|beauty salon|fashion model runway|lipstick closeup/i;
+
 function fetchJson(url, headers = {}, timeoutMs = 8000) {
   return new Promise((resolve) => {
-    const isHttps = url.startsWith('https://');
-    const client = isHttps ? https : http;
-    const reqHeaders = {
-      'User-Agent': 'VoxamFactory/3.0 (Automated Educational Media Dispatcher; contact@voxam.ai)',
-      'Accept': 'application/json, text/plain, */*',
-      ...headers
-    };
-
-    const req = client.get(url, { headers: reqHeaders, timeout: timeoutMs }, (res) => {
-      // Follow 301/302 redirects
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        let redirectUrl = res.headers.location;
-        if (!redirectUrl.startsWith('http')) {
-          const u = new URL(url);
-          redirectUrl = `${u.origin}${redirectUrl}`;
-        }
-        return resolve(fetchJson(redirectUrl, headers, timeoutMs));
-      }
-
-      let data = '';
-      res.on('data', chunk => { data += chunk; });
-      res.on('end', () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          try {
-            resolve(JSON.parse(data));
-          } catch {
-            resolve(null);
+    const client = url.startsWith('https://') ? https : http;
+    const req = client.get(
+      url,
+      {
+        headers: {
+          'User-Agent': 'VoxamFactory/3.1 (Educational Media; github.com/devmeziem)',
+          Accept: 'application/json, text/plain, */*',
+          ...headers
+        },
+        timeout: timeoutMs
+      },
+      (res) => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          let redirectUrl = res.headers.location;
+          if (!redirectUrl.startsWith('http')) {
+            const u = new URL(url);
+            redirectUrl = `${u.origin}${redirectUrl}`;
           }
-        } else {
-          resolve(null);
+          return resolve(fetchJson(redirectUrl, headers, timeoutMs));
         }
-      });
-    });
-
+        let data = '';
+        res.on('data', (c) => (data += c));
+        res.on('end', () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            try {
+              resolve(JSON.parse(data));
+            } catch {
+              resolve(null);
+            }
+          } else resolve(null);
+        });
+      }
+    );
     req.on('error', () => resolve(null));
-    req.on('timeout', () => { req.destroy(); resolve(null); });
+    req.on('timeout', () => {
+      req.destroy();
+      resolve(null);
+    });
   });
 }
 
-/**
- * Download a remote binary file (image/video/audio) to disk
- */
 function downloadFile(url, destPath, timeoutMs = 25000) {
   return new Promise((resolve, reject) => {
-    const isHttps = url.startsWith('https://');
-    const client = isHttps ? https : http;
+    const client = url.startsWith('https://') ? https : http;
     const file = fs.createWriteStream(destPath);
-
-    const req = client.get(url, {
-      headers: {
-        'User-Agent': 'VoxamFactory/3.0 (Media Downloader; contact@voxam.ai)'
-      },
-      timeout: timeoutMs
-    }, (res) => {
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        file.close();
-        if (fs.existsSync(destPath)) fs.unlinkSync(destPath);
-        return resolve(downloadFile(res.headers.location, destPath, timeoutMs));
-      }
-
-      if (res.statusCode !== 200) {
-        file.close();
-        if (fs.existsSync(destPath)) fs.unlinkSync(destPath);
-        return reject(new Error(`HTTP ${res.statusCode} downloading ${url}`));
-      }
-
-      res.pipe(file);
-      file.on('finish', () => {
-        file.close(() => {
-          if (fs.existsSync(destPath) && fs.statSync(destPath).size > 1000) {
-            resolve(destPath);
-          } else {
-            reject(new Error(`Downloaded file empty from ${url}`));
-          }
+    const req = client.get(
+      url,
+      { headers: { 'User-Agent': 'VoxamFactory/3.1' }, timeout: timeoutMs },
+      (res) => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          file.close();
+          if (fs.existsSync(destPath)) fs.unlinkSync(destPath);
+          return resolve(downloadFile(res.headers.location, destPath, timeoutMs));
+        }
+        if (res.statusCode !== 200) {
+          file.close();
+          if (fs.existsSync(destPath)) fs.unlinkSync(destPath);
+          return reject(new Error('HTTP ' + res.statusCode));
+        }
+        res.pipe(file);
+        file.on('finish', () => {
+          file.close(() => {
+            if (fs.existsSync(destPath) && fs.statSync(destPath).size > 1000) resolve(destPath);
+            else reject(new Error('empty download'));
+          });
         });
-      });
-    });
-
+      }
+    );
     req.on('error', (err) => {
       file.close();
       if (fs.existsSync(destPath)) fs.unlinkSync(destPath);
@@ -122,286 +99,344 @@ function downloadFile(url, destPath, timeoutMs = 25000) {
       req.destroy();
       file.close();
       if (fs.existsSync(destPath)) fs.unlinkSync(destPath);
-      reject(new Error(`Timeout downloading ${url}`));
+      reject(new Error('timeout'));
     });
   });
 }
 
-// ============================================================================
-// 1. IMAGE SEARCH & FETCH (Pexels, Unsplash, Pixabay, Wikimedia, Openverse)
-// User Mandate: Search one preferred source first; fall back to others if needed.
-// Deduplicate across scenes so no single video repeats identical media.
-// ============================================================================
+function buildQueryVariants(query, kind) {
+  const q = String(query || '').replace(/[#@]/g, ' ').replace(/\s+/g, ' ').trim();
+  const words = q.split(' ').filter((w) => w.length > 2);
+  const variants = [];
+  if (q) variants.push(q);
+  if (words.length >= 4) variants.push(words.slice(0, 4).join(' '));
+  if (words.length >= 3) variants.push(words.slice(0, 3).join(' '));
+  if (words.length >= 2) variants.push(words.slice(0, 2).join(' '));
+  const core = words.filter(
+    (w) => !/^(the|and|with|from|scene|stock|vertical|portrait|cinematic|beautiful)$/i.test(w)
+  );
+  if (core.length >= 2) variants.push(core.slice(0, 3).join(' '));
+
+  if (kind === 'video' || kind === 'image') {
+    variants.push(
+      'foggy ocean waves dark',
+      'empty street night rain',
+      'old library books archival',
+      'dramatic sky clouds slow',
+      'silhouette person walking alone',
+      'candle flame dark room',
+      'typewriter desk study',
+      'city lights bokeh night'
+    );
+  }
+  if (kind === 'audio') {
+    variants.push(
+      'soft piano ambient instrumental',
+      'calm piano solo no drums',
+      'gentle piano atmospheric',
+      'minimal piano pad ambient'
+    );
+  }
+
+  const seen = new Set();
+  const out = [];
+  for (const v of variants) {
+    const k = v.toLowerCase();
+    if (!seen.has(k) && k.length > 2) {
+      seen.add(k);
+      out.push(v);
+    }
+  }
+  return out.slice(0, 8);
+}
+
+function textLooksBad(metaText) {
+  return BAD_TAG_RE.test(String(metaText || ''));
+}
 
 async function searchAndFetchImage(query, options = {}) {
-  const cleanQuery = String(query || 'stoic philosophy wisdom').trim();
-  const safeFilename = `img_${cleanQuery.slice(0, 30).replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.jpg`;
-  const destPath = path.join(CACHE_DIR, safeFilename);
-
-  // Preferred source ordering
+  const variants = buildQueryVariants(query || 'archival photograph historical', 'image');
   const preferred = (options.preferredSource || 'auto').toLowerCase();
   const sourceKeys = ['pexels', 'unsplash', 'pixabay', 'wikimedia', 'openverse'];
-  const orderedSources = preferred !== 'auto' && sourceKeys.includes(preferred)
-    ? [preferred, ...sourceKeys.filter(s => s !== preferred)]
-    : sourceKeys;
+  const orderedSources =
+    preferred !== 'auto' && sourceKeys.includes(preferred)
+      ? [preferred, ...sourceKeys.filter((s) => s !== preferred)]
+      : sourceKeys;
 
-  console.log(`[Media Fetcher] 🖼️ Sourcing vertical image for: "${cleanQuery}" (Primary: ${orderedSources[0]})...`);
+  for (const cleanQuery of variants) {
+    const destPath = path.join(
+      CACHE_DIR,
+      `img_${cleanQuery.slice(0, 28).replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.jpg`
+    );
+    console.log(`[Media Fetcher] image try: "${cleanQuery}"`);
 
-  for (const src of orderedSources) {
-    // 1. Pexels
-    if (src === 'pexels' && PEXELS_API_KEY) {
-      try {
-        const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(cleanQuery)}&orientation=portrait&per_page=5`;
-        const data = await fetchJson(url, { 'Authorization': PEXELS_API_KEY }, 6000);
-        const photos = data?.photos || [];
-        for (const photo of photos) {
-          const imgUrl = photo?.src?.portrait || photo?.src?.large2x || photo?.src?.large;
-          if (imgUrl && !SEEN_MEDIA_URLS.has(imgUrl)) {
-            SEEN_MEDIA_URLS.add(imgUrl);
-            await downloadFile(imgUrl, destPath);
-            console.log(`[Media Fetcher] ✓ Sourced portrait from Pexels: "${photo.alt || cleanQuery}"`);
-            return { localPath: destPath, source: 'Pexels', credit: photo.photographer || 'Pexels', mediaUrl: imgUrl };
+    for (const src of orderedSources) {
+      if (src === 'pexels' && PEXELS_API_KEY) {
+        try {
+          const data = await fetchJson(
+            `https://api.pexels.com/v1/search?query=${encodeURIComponent(cleanQuery)}&orientation=portrait&per_page=8`,
+            { Authorization: PEXELS_API_KEY },
+            6000
+          );
+          for (const photo of data?.photos || []) {
+            if (textLooksBad(photo.alt || '')) continue;
+            const imgUrl = photo?.src?.portrait || photo?.src?.large2x || photo?.src?.large;
+            if (imgUrl && !SEEN_MEDIA_URLS.has(imgUrl)) {
+              SEEN_MEDIA_URLS.add(imgUrl);
+              await downloadFile(imgUrl, destPath);
+              console.log(`[Media Fetcher] OK Pexels image queryUsed=${cleanQuery}`);
+              return { localPath: destPath, source: 'Pexels', credit: photo.photographer || 'Pexels', mediaUrl: imgUrl, queryUsed: cleanQuery };
+            }
           }
+        } catch (e) {
+          console.warn('[Media Notice] Pexels image', e.message);
         }
-      } catch (e) {
-        console.warn(`[Media Notice] Pexels image search: ${e.message}`);
       }
-    }
-
-    // 2. Unsplash
-    if (src === 'unsplash' && UNSPLASH_ACCESS_KEY) {
-      try {
-        const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(cleanQuery)}&orientation=portrait&per_page=5`;
-        const data = await fetchJson(url, { 'Authorization': `Client-ID ${UNSPLASH_ACCESS_KEY}` }, 6000);
-        const results = data?.results || [];
-        for (const photo of results) {
-          const imgUrl = photo?.urls?.regular || photo?.urls?.full;
-          if (imgUrl && !SEEN_MEDIA_URLS.has(imgUrl)) {
-            SEEN_MEDIA_URLS.add(imgUrl);
-            await downloadFile(imgUrl, destPath);
-            console.log(`[Media Fetcher] ✓ Sourced photo from Unsplash: "${photo.description || cleanQuery}"`);
-            return { localPath: destPath, source: 'Unsplash', credit: photo.user?.name || 'Unsplash', mediaUrl: imgUrl };
+      if (src === 'unsplash' && UNSPLASH_ACCESS_KEY) {
+        try {
+          const data = await fetchJson(
+            `https://api.unsplash.com/search/photos?query=${encodeURIComponent(cleanQuery)}&orientation=portrait&per_page=8`,
+            { Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}` },
+            6000
+          );
+          for (const photo of data?.results || []) {
+            if (textLooksBad(`${photo.description || ''} ${photo.alt_description || ''}`)) continue;
+            const imgUrl = photo?.urls?.regular || photo?.urls?.full;
+            if (imgUrl && !SEEN_MEDIA_URLS.has(imgUrl)) {
+              SEEN_MEDIA_URLS.add(imgUrl);
+              await downloadFile(imgUrl, destPath);
+              console.log(`[Media Fetcher] OK Unsplash queryUsed=${cleanQuery}`);
+              return { localPath: destPath, source: 'Unsplash', credit: photo.user?.name || 'Unsplash', mediaUrl: imgUrl, queryUsed: cleanQuery };
+            }
           }
+        } catch (e) {
+          console.warn('[Media Notice] Unsplash', e.message);
         }
-      } catch (e) {
-        console.warn(`[Media Notice] Unsplash image search: ${e.message}`);
       }
-    }
-
-    // 3. Pixabay
-    if (src === 'pixabay' && PIXABAY_API_KEY) {
-      try {
-        const url = `https://pixabay.com/api/?key=${encodeURIComponent(PIXABAY_API_KEY)}&q=${encodeURIComponent(cleanQuery)}&orientation=vertical&image_type=photo&per_page=5`;
-        const data = await fetchJson(url, {}, 6000);
-        const hits = data?.hits || [];
-        for (const hit of hits) {
-          const imgUrl = hit?.largeImageURL || hit?.webformatURL;
-          if (imgUrl && !SEEN_MEDIA_URLS.has(imgUrl)) {
-            SEEN_MEDIA_URLS.add(imgUrl);
-            await downloadFile(imgUrl, destPath);
-            console.log(`[Media Fetcher] ✓ Sourced photo from Pixabay: "${hit.tags || cleanQuery}"`);
-            return { localPath: destPath, source: 'Pixabay', credit: hit.user || 'Pixabay', mediaUrl: imgUrl };
+      if (src === 'pixabay' && PIXABAY_API_KEY) {
+        try {
+          const data = await fetchJson(
+            `https://pixabay.com/api/?key=${encodeURIComponent(PIXABAY_API_KEY)}&q=${encodeURIComponent(cleanQuery)}&orientation=vertical&image_type=photo&per_page=8`,
+            {},
+            6000
+          );
+          for (const hit of data?.hits || []) {
+            if (textLooksBad(hit.tags || '')) continue;
+            const imgUrl = hit?.largeImageURL || hit?.webformatURL;
+            if (imgUrl && !SEEN_MEDIA_URLS.has(imgUrl)) {
+              SEEN_MEDIA_URLS.add(imgUrl);
+              await downloadFile(imgUrl, destPath);
+              console.log(`[Media Fetcher] OK Pixabay image queryUsed=${cleanQuery}`);
+              return { localPath: destPath, source: 'Pixabay', credit: hit.user || 'Pixabay', mediaUrl: imgUrl, queryUsed: cleanQuery };
+            }
           }
+        } catch (e) {
+          console.warn('[Media Notice] Pixabay image', e.message);
         }
-      } catch (e) {
-        console.warn(`[Media Notice] Pixabay image search: ${e.message}`);
       }
-    }
-
-    // 4. Wikimedia Commons (Zero-Key Authentic High-Res Museum & Real-World Historical Portraits)
-    if (src === 'wikimedia') {
-      try {
-        const wikiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(cleanQuery + ' portrait')}&gsrlimit=5&prop=imageinfo&iiprop=url|size|mime&pithumbsize=1080&format=json`;
-        const data = await fetchJson(wikiUrl, {}, 6000);
-        const pages = data?.query?.pages || {};
-        for (const pid of Object.keys(pages)) {
-          const info = pages[pid]?.imageinfo?.[0];
-          const thumb = pages[pid]?.thumbnail?.source;
-          const imgUrl = thumb || info?.url;
-          if (imgUrl && !imgUrl.endsWith('.svg') && !SEEN_MEDIA_URLS.has(imgUrl)) {
-            SEEN_MEDIA_URLS.add(imgUrl);
-            await downloadFile(imgUrl, destPath);
-            console.log(`[Media Fetcher] ✓ Sourced authentic archive image from Wikimedia Commons`);
-            return { localPath: destPath, source: 'Wikimedia Commons', credit: 'Public Domain / Wikimedia', mediaUrl: imgUrl };
+      if (src === 'wikimedia') {
+        try {
+          const data = await fetchJson(
+            `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(cleanQuery)}&gsrlimit=6&prop=imageinfo&iiprop=url|size|mime&format=json`,
+            {},
+            6000
+          );
+          const pages = data?.query?.pages || {};
+          for (const pid of Object.keys(pages)) {
+            const imgUrl = pages[pid]?.imageinfo?.[0]?.url;
+            if (imgUrl && !imgUrl.endsWith('.svg') && !SEEN_MEDIA_URLS.has(imgUrl)) {
+              SEEN_MEDIA_URLS.add(imgUrl);
+              await downloadFile(imgUrl, destPath);
+              console.log('[Media Fetcher] OK Wikimedia');
+              return { localPath: destPath, source: 'Wikimedia Commons', credit: 'Wikimedia', mediaUrl: imgUrl, queryUsed: cleanQuery };
+            }
           }
+        } catch (e) {
+          console.warn('[Media Notice] Wikimedia', e.message);
         }
-      } catch (e) {
-        console.warn(`[Media Notice] Wikimedia image search: ${e.message}`);
       }
-    }
-
-    // 5. Openverse API (700M+ CC Images)
-    if (src === 'openverse') {
-      try {
-        const openverseUrl = `https://api.openverse.org/v1/images/?q=${encodeURIComponent(cleanQuery)}&aspect_ratio=tall&page_size=5`;
-        const data = await fetchJson(openverseUrl, {}, 6000);
-        const results = data?.results || [];
-        for (const result of results) {
-          if (result && result.url && !SEEN_MEDIA_URLS.has(result.url)) {
-            SEEN_MEDIA_URLS.add(result.url);
-            await downloadFile(result.url, destPath);
-            console.log(`[Media Fetcher] ✓ Sourced tall photo from Openverse: "${result.title}"`);
-            return { localPath: destPath, source: 'Openverse', credit: result.creator || 'Openverse', mediaUrl: result.url };
+      if (src === 'openverse') {
+        try {
+          const data = await fetchJson(
+            `https://api.openverse.org/v1/images/?q=${encodeURIComponent(cleanQuery)}&aspect_ratio=tall&page_size=6`,
+            {},
+            6000
+          );
+          for (const result of data?.results || []) {
+            if (textLooksBad(result.title || '')) continue;
+            if (result?.url && !SEEN_MEDIA_URLS.has(result.url)) {
+              SEEN_MEDIA_URLS.add(result.url);
+              await downloadFile(result.url, destPath);
+              console.log(`[Media Fetcher] OK Openverse image queryUsed=${cleanQuery}`);
+              return { localPath: destPath, source: 'Openverse', credit: result.creator || 'Openverse', mediaUrl: result.url, queryUsed: cleanQuery };
+            }
           }
+        } catch (e) {
+          console.warn('[Media Notice] Openverse image', e.message);
         }
-      } catch (e) {
-        console.warn(`[Media Notice] Openverse image search: ${e.message}`);
       }
     }
   }
-
+  console.warn('[Media Fetcher] FAIL image all variants:', query);
   return null;
 }
 
-// ============================================================================
-// 2. VIDEO SEARCH & FETCH (Pexels Video, Pixabay Video, Archive.org)
-// ============================================================================
-
 async function searchAndFetchVideo(query, options = {}) {
-  const cleanQuery = String(query || 'stoic statue marble dramatic lighting').trim();
-  const safeFilename = `vid_${cleanQuery.slice(0, 30).replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.mp4`;
-  const destPath = path.join(CACHE_DIR, safeFilename);
-
+  const variants = buildQueryVariants(query || 'foggy ocean waves dark', 'video');
   const preferred = (options.preferredSource || 'auto').toLowerCase();
   const sourceKeys = ['pexels', 'pixabay', 'archive'];
-  const orderedSources = preferred !== 'auto' && sourceKeys.includes(preferred)
-    ? [preferred, ...sourceKeys.filter(s => s !== preferred)]
-    : sourceKeys;
+  const orderedSources =
+    preferred !== 'auto' && sourceKeys.includes(preferred)
+      ? [preferred, ...sourceKeys.filter((s) => s !== preferred)]
+      : sourceKeys;
 
-  console.log(`[Media Fetcher] 🎥 Sourcing vertical video clip for: "${cleanQuery}" (Primary: ${orderedSources[0]})...`);
+  for (const cleanQuery of variants) {
+    const destPath = path.join(
+      CACHE_DIR,
+      `vid_${cleanQuery.slice(0, 28).replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.mp4`
+    );
+    console.log(`[Media Fetcher] video try: "${cleanQuery}"`);
 
-  for (const src of orderedSources) {
-    // 1. Pexels Video API (Portrait 9:16)
-    if (src === 'pexels' && PEXELS_API_KEY) {
-      try {
-        const url = `https://api.pexels.com/videos/search?query=${encodeURIComponent(cleanQuery)}&orientation=portrait&per_page=5`;
-        const data = await fetchJson(url, { 'Authorization': PEXELS_API_KEY }, 6000);
-        const videos = data?.videos || [];
-        for (const video of videos) {
-          if (video && Array.isArray(video.video_files)) {
-            const targetFile = video.video_files.find(f => f.quality === 'hd' && f.width < f.height)
-              || video.video_files.find(f => f.width < f.height)
-              || video.video_files[0];
+    for (const src of orderedSources) {
+      if (src === 'pexels' && PEXELS_API_KEY) {
+        try {
+          const data = await fetchJson(
+            `https://api.pexels.com/videos/search?query=${encodeURIComponent(cleanQuery)}&orientation=portrait&per_page=8`,
+            { Authorization: PEXELS_API_KEY },
+            6000
+          );
+          for (const video of data?.videos || []) {
+            if (!Array.isArray(video.video_files)) continue;
+            const targetFile =
+              video.video_files.find((f) => f.quality === 'hd' && f.width < f.height) ||
+              video.video_files.find((f) => f.width < f.height) ||
+              video.video_files[0];
             if (targetFile?.link && !SEEN_MEDIA_URLS.has(targetFile.link)) {
               SEEN_MEDIA_URLS.add(targetFile.link);
               await downloadFile(targetFile.link, destPath, 35000);
-              console.log(`[Media Fetcher] ✓ Sourced vertical video from Pexels (${video.duration}s)`);
-              return { localPath: destPath, source: 'Pexels Video', duration: video.duration, mediaUrl: targetFile.link };
+              console.log(`[Media Fetcher] OK Pexels video queryUsed=${cleanQuery}`);
+              return { localPath: destPath, source: 'Pexels Video', duration: video.duration, mediaUrl: targetFile.link, queryUsed: cleanQuery };
             }
           }
+        } catch (e) {
+          console.warn('[Media Notice] Pexels video', e.message);
         }
-      } catch (e) {
-        console.warn(`[Media Notice] Pexels video search: ${e.message}`);
       }
-    }
-
-    // 2. Pixabay Video API (Vertical orientation)
-    if (src === 'pixabay' && PIXABAY_API_KEY) {
-      try {
-        const url = `https://pixabay.com/api/videos/?key=${encodeURIComponent(PIXABAY_API_KEY)}&q=${encodeURIComponent(cleanQuery)}&orientation=vertical&per_page=5`;
-        const data = await fetchJson(url, {}, 6000);
-        const hits = data?.hits || [];
-        for (const hit of hits) {
-          if (hit?.videos) {
-            const vidUrl = hit.videos.medium?.url || hit.videos.large?.url || hit.videos.small?.url;
+      if (src === 'pixabay' && PIXABAY_API_KEY) {
+        try {
+          const data = await fetchJson(
+            `https://pixabay.com/api/videos/?key=${encodeURIComponent(PIXABAY_API_KEY)}&q=${encodeURIComponent(cleanQuery)}&orientation=vertical&per_page=8`,
+            {},
+            6000
+          );
+          for (const hit of data?.hits || []) {
+            if (textLooksBad(hit.tags || '')) continue;
+            const vidUrl = hit?.videos?.medium?.url || hit?.videos?.large?.url || hit?.videos?.small?.url;
             if (vidUrl && !SEEN_MEDIA_URLS.has(vidUrl)) {
               SEEN_MEDIA_URLS.add(vidUrl);
               await downloadFile(vidUrl, destPath, 35000);
-              console.log(`[Media Fetcher] ✓ Sourced vertical video from Pixabay (${hit.duration}s)`);
-              return { localPath: destPath, source: 'Pixabay Video', duration: hit.duration, mediaUrl: vidUrl };
+              console.log(`[Media Fetcher] OK Pixabay video queryUsed=${cleanQuery}`);
+              return { localPath: destPath, source: 'Pixabay Video', duration: hit.duration, mediaUrl: vidUrl, queryUsed: cleanQuery };
             }
           }
+        } catch (e) {
+          console.warn('[Media Notice] Pixabay video', e.message);
         }
-      } catch (e) {
-        console.warn(`[Media Notice] Pixabay video search: ${e.message}`);
       }
-    }
-
-    // 3. Internet Archive (Zero-Key Public Domain Historical & Dramatic Footage)
-    if (src === 'archive') {
-      try {
-        const archiveUrl = `https://archive.org/advancedsearch.php?q=${encodeURIComponent(cleanQuery)}+AND+mediatype:movies&fl[]=identifier,title,duration&rows=5&output=json`;
-        const data = await fetchJson(archiveUrl, {}, 6000);
-        const docs = data?.response?.docs || [];
-        for (const doc of docs) {
-          if (doc?.identifier) {
-            const metaUrl = `https://archive.org/metadata/${doc.identifier}`;
-            const meta = await fetchJson(metaUrl, {}, 6000);
-            const mp4File = meta?.files?.find(f => f.name && f.name.endsWith('.mp4'));
-            if (mp4File) {
-              const directUrl = `https://archive.org/download/${doc.identifier}/${encodeURIComponent(mp4File.name)}`;
-              if (!SEEN_MEDIA_URLS.has(directUrl)) {
-                SEEN_MEDIA_URLS.add(directUrl);
-                await downloadFile(directUrl, destPath, 45000);
-                console.log(`[Media Fetcher] ✓ Sourced archival footage from Internet Archive: "${doc.title}"`);
-                return { localPath: destPath, source: 'Internet Archive', duration: 15, mediaUrl: directUrl };
-              }
-            }
+      if (src === 'archive') {
+        try {
+          const data = await fetchJson(
+            `https://archive.org/advancedsearch.php?q=${encodeURIComponent(cleanQuery)}+AND+mediatype:movies&fl[]=identifier,title&rows=5&output=json`,
+            {},
+            6000
+          );
+          for (const doc of data?.response?.docs || []) {
+            if (!doc?.identifier) continue;
+            const meta = await fetchJson(`https://archive.org/metadata/${doc.identifier}`, {}, 6000);
+            const mp4File = meta?.files?.find((f) => f.name && f.name.endsWith('.mp4'));
+            if (!mp4File) continue;
+            const directUrl = `https://archive.org/download/${doc.identifier}/${encodeURIComponent(mp4File.name)}`;
+            if (SEEN_MEDIA_URLS.has(directUrl)) continue;
+            SEEN_MEDIA_URLS.add(directUrl);
+            await downloadFile(directUrl, destPath, 45000);
+            console.log(`[Media Fetcher] OK Archive ${doc.title}`);
+            return { localPath: destPath, source: 'Internet Archive', duration: 15, mediaUrl: directUrl, queryUsed: cleanQuery };
           }
+        } catch (e) {
+          console.warn('[Media Notice] Archive', e.message);
         }
-      } catch (e) {
-        console.warn(`[Media Notice] Internet Archive search: ${e.message}`);
       }
     }
   }
-
+  console.warn('[Media Fetcher] FAIL video all variants:', query);
   return null;
 }
 
-// ============================================================================
-// 3. AUDIO SEARCH & FETCH (Freesound, Openverse, Local Music Bank, Procedural)
-// ============================================================================
-
 async function searchAndFetchAudio(query, targetDuration = 45, channelType = 'stoic') {
-  const cleanQuery = String(query || 'calm piano emotional ambient').trim();
-  const safeFilename = `audio_${cleanQuery.slice(0, 25).replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.mp3`;
-  const destPath = path.join(CACHE_DIR, safeFilename);
+  const forcedSoft = 'soft piano ambient instrumental no drums';
+  const variants = buildQueryVariants(
+    /piano|ambient|instrumental|calm|soft/i.test(String(query || '')) ? query : `${query || ''} ${forcedSoft}`,
+    'audio'
+  );
+  if (!variants.includes(forcedSoft)) variants.unshift(forcedSoft);
 
-  console.log(`[Media Fetcher] 🎵 Sourcing background audio track for: "${cleanQuery}" (${targetDuration}s)...`);
+  for (const cleanQuery of variants) {
+    const destPath = path.join(
+      CACHE_DIR,
+      `audio_${cleanQuery.slice(0, 24).replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.mp3`
+    );
+    console.log(`[Media Fetcher] audio try: "${cleanQuery}"`);
 
-  // Path 1: Freesound API
-  if (FREESOUND_API_KEY) {
+    if (FREESOUND_API_KEY) {
+      try {
+        const data = await fetchJson(
+          `https://freesound.org/apiv2/search/text/?query=${encodeURIComponent(cleanQuery)}&filter=duration:[8.0+TO+180.0]&fields=id,name,previews,duration,tags&token=${FREESOUND_API_KEY}`,
+          {},
+          6000
+        );
+        for (const sound of data?.results || []) {
+          const tags = (sound.tags || []).join(' ');
+          if (/drum|beat|trap|edm|techno|vocal/i.test(tags + ' ' + (sound.name || ''))) continue;
+          const previewUrl = sound?.previews?.['preview-hq-mp3'] || sound?.previews?.['preview-lq-mp3'];
+          if (!previewUrl) continue;
+          await downloadFile(previewUrl, destPath, 25000);
+          console.log(`[Media Fetcher] OK Freesound ${sound.name}`);
+          return { localPath: destPath, source: 'Freesound', duration: sound.duration, queryUsed: cleanQuery };
+        }
+      } catch (e) {
+        console.warn('[Media Notice] Freesound', e.message);
+      }
+    }
+
     try {
-      const url = `https://freesound.org/apiv2/search/text/?query=${encodeURIComponent(cleanQuery)}&filter=duration:[10.0+TO+180.0]&fields=id,name,previews,duration&token=${FREESOUND_API_KEY}`;
-      const data = await fetchJson(url, {}, 6000);
-      const sound = data?.results?.[0];
-      const previewUrl = sound?.previews?.['preview-hq-mp3'] || sound?.previews?.['preview-lq-mp3'];
-      if (previewUrl) {
-        await downloadFile(previewUrl, destPath, 25000);
-        console.log(`[Media Fetcher] ✓ Sourced track from Freesound: "${sound.name}" (${sound.duration}s)`);
-        return { localPath: destPath, source: 'Freesound', duration: sound.duration };
+      const data = await fetchJson(
+        `https://api.openverse.org/v1/audio/?q=${encodeURIComponent(cleanQuery)}&page_size=5`,
+        {},
+        6000
+      );
+      for (const audioHit of data?.results || []) {
+        if (/drum|beat|trap|edm|vocal/i.test(audioHit.title || '')) continue;
+        if (!audioHit?.url) continue;
+        await downloadFile(audioHit.url, destPath, 25000);
+        console.log(`[Media Fetcher] OK Openverse audio ${audioHit.title}`);
+        return { localPath: destPath, source: 'Openverse Audio', duration: 40, queryUsed: cleanQuery };
       }
     } catch (e) {
-      console.warn(`[Media Notice] Freesound search: ${e.message}`);
+      console.warn('[Media Notice] Openverse audio', e.message);
     }
   }
 
-  // Path 2: Openverse Audio API
-  try {
-    const openverseUrl = `https://api.openverse.org/v1/audio/?q=${encodeURIComponent(cleanQuery)}&page_size=3`;
-    const data = await fetchJson(openverseUrl, {}, 6000);
-    const audioHit = data?.results?.[0];
-    if (audioHit?.url) {
-      await downloadFile(audioHit.url, destPath, 25000);
-      console.log(`[Media Fetcher] ✓ Sourced track from Openverse: "${audioHit.title}"`);
-      return { localPath: destPath, source: 'Openverse Audio', duration: 40 };
-    }
-  } catch (e) {
-    console.warn(`[Media Notice] Openverse audio search: ${e.message}`);
-  }
-
-  // Path 3: Local Repository Sound Assets
   const soundFolder = path.join(process.cwd(), 'sound_assets', channelType);
   if (fs.existsSync(soundFolder)) {
-    const files = fs.readdirSync(soundFolder).filter(f => /\.(mp3|wav|ogg|m4a)$/i.test(f));
-    if (files.length > 0) {
+    const files = fs.readdirSync(soundFolder).filter((f) => /\.(mp3|wav|ogg|m4a)$/i.test(f));
+    if (files.length) {
       const chosen = files[Math.floor(Math.random() * files.length)];
-      const localTrackPath = path.join(soundFolder, chosen);
-      console.log(`[Media Fetcher] ✓ Using local repository audio track: ${chosen}`);
-      return { localPath: localTrackPath, source: 'Local Repository Sound Asset', duration: targetDuration };
+      console.log(`[Media Fetcher] OK local audio ${chosen}`);
+      return { localPath: path.join(soundFolder, chosen), source: 'Local', duration: targetDuration, queryUsed: 'local' };
     }
   }
 
+  console.warn('[Media Fetcher] FAIL audio:', query);
   return null;
 }
 
@@ -410,5 +445,6 @@ module.exports = {
   searchAndFetchVideo,
   searchAndFetchAudio,
   downloadFile,
+  buildQueryVariants,
   CACHE_DIR
 };
