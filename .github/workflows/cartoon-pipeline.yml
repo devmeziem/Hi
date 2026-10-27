@@ -1,5 +1,6 @@
 name: Automated Cartoon Factory (Workflow 3)
 
+# Buffer API1 (Facebook + Instagram) removed — YouTube Channel 3 only.
 on:
   schedule:
     - cron: '0 8,13,18,23 * * *'
@@ -35,7 +36,7 @@ on:
 
 jobs:
   cartoon_factory_pipeline:
-    name: Build Archie (explainer + YT CH3 + FB/IG)
+    name: Build Archie (explainer + YT CH3 only)
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -80,6 +81,7 @@ jobs:
           BROLL_CLIP_SEC: '2.6'
           BROLL_GAP_SEC: '7'
           BROLL_MAX_SEC: '2.6'
+          SKIP_BUFFER_FB_IG: 'true'
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
@@ -90,10 +92,6 @@ jobs:
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 || secrets.YOUTUBE_CLIENT_ID_TECH }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 || secrets.YOUTUBE_CLIENT_SECRET_TECH }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 || secrets.YOUTUBE_REFRESH_TOKEN_TECH }}
-          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
-          BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
-          BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31c1dcd8b9c702c467a38' }}
-          BUFFER_TIKTOK_CHANNEL_ID: ''
           PAUSE_YOUTUBE: ${{ github.event.inputs.pause_youtube || 'false' }}
           SKIP_YOUTUBE_PINNED_COMMENT: 'true'
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
@@ -102,7 +100,7 @@ jobs:
           FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
         run: |
-          echo "=== Archie science+tech explainer ==="
+          echo "=== Archie science+tech explainer (YouTube only, no FB/IG) ==="
           node scripts/generate_archie_live_reel.cjs
           test -f rendered_videos/archie_latest.mp4
           ls -lh rendered_videos/archie*.mp4
@@ -148,21 +146,6 @@ jobs:
               }).then(r=>console.log('YT Archie', r)).catch(e=>{console.warn('YT soft-fail', e.message);});
             } catch (e) { console.warn('YT soft-fail', e.message); }
           "
-      - name: Buffer API1 → Facebook + Instagram (never TikTok)
-        if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' }}
-        env:
-          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
-          BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
-          BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31c1dcd8b9c702c467a38' }}
-          BUFFER_TIKTOK_CHANNEL_ID: ''
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
-          DRY_RUN: 'false'
-        run: |
-          test -f rendered_videos/archie_latest.mp4
-          node scripts/apply_buffer_archie_title.cjs || true
-          node scripts/publish_archie_to_buffer_omnichannel.cjs
       - name: Artifacts
         if: always()
         uses: actions/upload-artifact@v4
