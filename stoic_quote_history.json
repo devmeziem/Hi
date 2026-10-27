@@ -1,12 +1,5 @@
 [
   {
-    "quote": "There is nothing outside of yourself that can ever enable you to get better. Everything is within.",
-    "author": "Miyamoto Musashi",
-    "credentials": "Master Swordsman & Philosopher • The Book of Five Rings",
-    "theme": "confidence",
-    "usedAt": "2026-09-09T07:12:44.758Z"
-  },
-  {
     "quote": "The whole problem with the world is that fools and fanatics are always so certain of themselves, and wiser people so full of doubts.",
     "author": "Dr. Bertrand Russell, Ph.D.",
     "credentials": "Logician, Philosopher & Nobel Laureate • Trinity College Cambridge",
@@ -748,5 +741,18 @@
     "author": "Sun Tzu",
     "channel": "stoic",
     "timestamp": "2026-10-27T11:48:14.887Z"
+  },
+  {
+    "quote": "Hatred is gained as much by good works as by evil. Never expect everyone to applaud your integrity.",
+    "author": "Niccolò Machiavelli",
+    "credentials": "Author of The Prince • Diplomat & Political Philosopher",
+    "theme": "fortitude",
+    "usedAt": "2026-10-27T19:17:33.546Z"
+  },
+  {
+    "quote": "Hatred is gained as much by good works as by evil. Never expect everyone to applaud your integrity.",
+    "author": "Niccolò Machiavelli",
+    "channel": "stoic",
+    "timestamp": "2026-10-27T19:17:33.546Z"
   }
 ]
