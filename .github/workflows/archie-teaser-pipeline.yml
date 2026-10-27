@@ -1,6 +1,6 @@
 name: Archie Daily Q&A Teaser & Showdown Pipeline (PAUSED)
 
-# PAUSED: low algo performance / boring format. Manual only until explainer format is healthy.
+# PAUSED. No Buffer API1 FB/IG.
 on:
   workflow_dispatch:
     inputs:
@@ -36,6 +36,7 @@ jobs:
         env:
           TEST_TOPIC: ${{ github.event.inputs.test_topic }}
           DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
+          SKIP_BUFFER_FB_IG: 'true'
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
@@ -46,11 +47,8 @@ jobs:
           YOUTUBE_CLIENT_ID_CH3: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 || secrets.YOUTUBE_CLIENT_ID_TECH }}
           YOUTUBE_CLIENT_SECRET_CH3: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 || secrets.YOUTUBE_CLIENT_SECRET_TECH }}
           YOUTUBE_REFRESH_TOKEN_CH3: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 || secrets.YOUTUBE_REFRESH_TOKEN_TECH }}
-          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
-          BUFFER_FACEBOOK_CHANNEL_ID: ${{ secrets.BUFFER_FACEBOOK_CHANNEL_ID || '6aa31cd2cd8b9c702c468b52' }}
-          BUFFER_INSTAGRAM_CHANNEL_ID: ${{ secrets.BUFFER_INSTAGRAM_CHANNEL_ID || '6aa31c1dcd8b9c702c467a38' }}
         run: |
-          echo "=== Q&A pipeline is PAUSED by default (manual only) ==="
+          echo "=== Q&A pipeline is PAUSED (manual only, no FB/IG) ==="
           node scripts/generate_archie_qa_teaser.cjs
       - if: always()
         uses: actions/upload-artifact@v4
