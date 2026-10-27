@@ -1,12 +1,5 @@
 [
   {
-    "quote": "He will win who knows when to fight and when not to fight.",
-    "author": "Sun Tzu",
-    "credentials": "General, Strategist & Philosopher • Author of The Art of War",
-    "theme": "strategy",
-    "usedAt": "2026-09-08T08:13:00.052Z"
-  },
-  {
     "quote": "In any given moment we have two options: to step forward into growth or to step back into safety.",
     "author": "Dr. Abraham Maslow, Ph.D.",
     "credentials": "Pioneer of Humanistic Psychology • Columbia University",
@@ -736,5 +729,18 @@
     "author": "Niccolò Machiavelli",
     "channel": "stoic",
     "timestamp": "2026-10-26T19:48:20.409Z"
+  },
+  {
+    "quote": "He who has a why to live can bear almost any how.",
+    "author": "Prof. Friedrich Nietzsche",
+    "credentials": "Chair of Classical Philology • University of Basel",
+    "theme": "fortitude",
+    "usedAt": "2026-10-27T01:17:04.921Z"
+  },
+  {
+    "quote": "He who has a why to live can bear almost any how.",
+    "author": "Prof. Friedrich Nietzsche",
+    "channel": "stoic",
+    "timestamp": "2026-10-27T01:17:04.921Z"
   }
 ]
