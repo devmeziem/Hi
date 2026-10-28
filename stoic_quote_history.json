@@ -1,12 +1,5 @@
 [
   {
-    "quote": "I am not what happened to me, I am what I choose to become.",
-    "author": "Dr. Carl Jung, M.D.",
-    "credentials": "Founder of Analytical Psychology • Psychiatrist",
-    "theme": "confidence",
-    "usedAt": "2026-09-09T19:11:26.997Z"
-  },
-  {
     "quote": "When we are no longer able to change a situation, we are challenged to change ourselves.",
     "author": "Dr. Viktor Frankl, M.D., Ph.D.",
     "credentials": "Neurologist & Psychiatrist • University of Vienna",
@@ -766,5 +759,18 @@
     "author": "Niccolò Machiavelli",
     "channel": "stoic",
     "timestamp": "2026-10-28T12:21:36.831Z"
+  },
+  {
+    "quote": "The soul becomes dyed with the color of its thoughts.",
+    "author": "Marcus Aurelius",
+    "credentials": "Roman Emperor & Stoic Philosopher • Meditations",
+    "theme": "discipline",
+    "usedAt": "2026-10-28T19:24:42.569Z"
+  },
+  {
+    "quote": "The soul becomes dyed with the color of its thoughts.",
+    "author": "Marcus Aurelius",
+    "channel": "stoic",
+    "timestamp": "2026-10-28T19:24:42.569Z"
   }
 ]
