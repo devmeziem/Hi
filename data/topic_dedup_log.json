@@ -464,6 +464,12 @@
       "channel": "stoic",
       "topic": "The soul becomes dyed with the color of its thoughts.",
       "timestamp": "2026-10-28T19:24:42.570Z"
+    },
+    {
+      "hash": "3da6e02254a0",
+      "channel": "financial_story_doc",
+      "topic": "The Man Who Broke the Bank of England",
+      "timestamp": "2026-10-28T20:14:32.644Z"
     }
   ]
 }
