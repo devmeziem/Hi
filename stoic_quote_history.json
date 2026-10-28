@@ -1,12 +1,5 @@
 [
   {
-    "quote": "The soul becomes dyed with the color of its thoughts.",
-    "author": "Marcus Aurelius",
-    "credentials": "Roman Emperor & Stoic Philosopher • Author of Meditations",
-    "theme": "discipline",
-    "usedAt": "2026-09-09T15:06:46.690Z"
-  },
-  {
     "quote": "I am not what happened to me, I am what I choose to become.",
     "author": "Dr. Carl Jung, M.D.",
     "credentials": "Founder of Analytical Psychology • Psychiatrist",
@@ -760,5 +753,18 @@
     "author": "Niccolò Machiavelli",
     "channel": "stoic",
     "timestamp": "2026-10-28T01:04:20.592Z"
+  },
+  {
+    "quote": "Hatred is gained as much by good works as by evil. Never expect everyone to applaud your integrity.",
+    "author": "Niccolò Machiavelli",
+    "credentials": "Author of The Prince • Diplomat & Political Philosopher",
+    "theme": "fortitude",
+    "usedAt": "2026-10-28T12:21:36.830Z"
+  },
+  {
+    "quote": "Hatred is gained as much by good works as by evil. Never expect everyone to applaud your integrity.",
+    "author": "Niccolò Machiavelli",
+    "channel": "stoic",
+    "timestamp": "2026-10-28T12:21:36.831Z"
   }
 ]
