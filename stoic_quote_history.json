@@ -1,12 +1,5 @@
 [
   {
-    "quote": "The whole problem with the world is that fools and fanatics are always so certain of themselves, and wiser people so full of doubts.",
-    "author": "Dr. Bertrand Russell, Ph.D.",
-    "credentials": "Logician, Philosopher & Nobel Laureate • Trinity College Cambridge",
-    "theme": "wisdom",
-    "usedAt": "2026-09-09T11:01:32.770Z"
-  },
-  {
     "quote": "The soul becomes dyed with the color of its thoughts.",
     "author": "Marcus Aurelius",
     "credentials": "Roman Emperor & Stoic Philosopher • Author of Meditations",
@@ -754,5 +747,18 @@
     "author": "Niccolò Machiavelli",
     "channel": "stoic",
     "timestamp": "2026-10-27T19:17:33.546Z"
+  },
+  {
+    "quote": "Hatred is gained as much by good works as by evil. Never expect everyone to applaud your integrity.",
+    "author": "Niccolò Machiavelli",
+    "credentials": "Author of The Prince • Diplomat & Political Philosopher",
+    "theme": "fortitude",
+    "usedAt": "2026-10-28T01:04:20.592Z"
+  },
+  {
+    "quote": "Hatred is gained as much by good works as by evil. Never expect everyone to applaud your integrity.",
+    "author": "Niccolò Machiavelli",
+    "channel": "stoic",
+    "timestamp": "2026-10-28T01:04:20.592Z"
   }
 ]
