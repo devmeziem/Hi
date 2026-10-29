@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /** Repair unterminated quote / broken ffmpeg shell from prior batch patches.
- * Skips entirely when anti-spam rotation helpers are already on generate_stoic_quote_reel.
+ * Skips when anti-spam rotation helpers are already on generate_stoic_quote_reel.
  */
 const fs = require('fs');
 const path = require('path');
