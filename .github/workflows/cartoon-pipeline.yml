@@ -1,1 +1,151 @@
-PLACEHOLDER
+name: Automated Cartoon Factory (Workflow 3)
+
+# Buffer API1 (Facebook + Instagram) removed — YouTube Channel 3 only.
+on:
+  schedule:
+    - cron: '0 8,13,18,23 * * *'
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: 'Cartoon Topic / Wonder'
+        required: false
+        default: ''
+        type: string
+      video_mode:
+        description: 'Video Generation Mode'
+        required: false
+        default: 'auto'
+        type: choice
+        options: [auto, video, fact_reel, all_daily_5, all_daily_4]
+      engine:
+        description: 'Rendering Engine'
+        required: false
+        default: 'moviepy'
+        type: choice
+        options: [moviepy, ffmpeg, blender]
+      pause_youtube:
+        description: 'Pause YouTube Upload'
+        required: false
+        default: false
+        type: boolean
+      dry_run:
+        description: 'Dry Run Mode'
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  cartoon_factory_pipeline:
+    name: Build Archie (explainer + YT CH3 only)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install system deps
+        run: |
+          sudo apt-get update -qq || true
+          sudo apt-get install -y --no-install-recommends ffmpeg espeak-ng libsndfile1 fonts-dejavu-core python3-numpy || true
+      - name: Install Node deps
+        run: npm install --legacy-peer-deps --no-audit --no-fund
+      - name: Pre-compile puppet assets (poses for gestures)
+        run: |
+          node scripts/build_exact_puppet_shapes.cjs || true
+          node scripts/build_modern_tech_character.cjs || true
+      - run: node scripts/apply_all_content_system.cjs || true
+      - run: node scripts/ensure_youtube_dispatcher.cjs || true
+      - run: node scripts/apply_unique_bgm_all.cjs || true
+      - name: Fix Archie + Fin TTS (resilient engine)
+        run: node scripts/fix_fin_archie_tts.cjs
+      - name: Fix assembler null watermark crash
+        run: node scripts/patch_archie_assembler_null.cjs || true
+      - name: Single-pass gestures + lipsync
+        run: node scripts/apply_archie_gestures_fix.cjs || true
+      - run: node scripts/apply_archie_soft_gestures.cjs || true
+      - name: Lower captions + multi B-roll cuts
+        run: node scripts/apply_archie_retention_fix.cjs || true
+      - name: Soft-disable bad YouTube pinned comments
+        run: node scripts/apply_archie_youtube_comment_fix.cjs || true
+      - name: Generate Archie explainer
+        env:
+          TOPIC: ${{ github.event.inputs.topic }}
+          DRY_RUN: ${{ github.event.inputs.dry_run == true || github.event.inputs.dry_run == 'true' }}
+          PAUSE_YOUTUBE: ${{ github.event.inputs.pause_youtube == true || github.event.inputs.pause_youtube == 'true' }}
+          SKIP_BUFFER_FB_IG: 'true'
+          BROLL_MAX_SEC: '2.6'
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          YOUTUBE_CLIENT_ID_CH3: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 || secrets.YOUTUBE_CLIENT_ID_TECH }}
+          YOUTUBE_CLIENT_SECRET_CH3: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 || secrets.YOUTUBE_CLIENT_SECRET_TECH }}
+          YOUTUBE_REFRESH_TOKEN_CH3: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 || secrets.YOUTUBE_REFRESH_TOKEN_TECH }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 || secrets.YOUTUBE_CLIENT_ID_TECH }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 || secrets.YOUTUBE_CLIENT_SECRET_TECH }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 || secrets.YOUTUBE_REFRESH_TOKEN_TECH }}
+          SKIP_YOUTUBE_PINNED_COMMENT: 'true'
+          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
+          FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
+        run: |
+          echo "=== Archie science+tech explainer (YouTube only, no FB/IG) ==="
+          node scripts/generate_archie_live_reel.cjs
+      - name: Commit Archie topic history
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/archie_topic_history.json 2>/dev/null || true
+          if ! git diff --staged --quiet; then
+            git commit -m "chore(dedup): archie topic history [skip ci]" || true
+            git pull --rebase --autostash origin main || true
+            git push origin HEAD:main || true
+          fi
+      - name: YouTube Channel 3 (Archie)
+        continue-on-error: true
+        if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && github.event.inputs.pause_youtube != true && github.event.inputs.pause_youtube != 'true' }}
+        env:
+          YOUTUBE_CLIENT_ID_CH3: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 || secrets.YOUTUBE_CLIENT_ID_TECH }}
+          YOUTUBE_CLIENT_SECRET_CH3: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 || secrets.YOUTUBE_CLIENT_SECRET_TECH }}
+          YOUTUBE_REFRESH_TOKEN_CH3: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 || secrets.YOUTUBE_REFRESH_TOKEN_TECH }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH3 || secrets.YOUTUBE_CLIENT_ID_TECH }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH3 || secrets.YOUTUBE_CLIENT_SECRET_TECH }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH3 || secrets.YOUTUBE_REFRESH_TOKEN_TECH }}
+          SKIP_YOUTUBE_PINNED_COMMENT: 'true'
+        run: |
+          node scripts/ensure_youtube_dispatcher.cjs || true
+          node scripts/apply_archie_youtube_comment_fix.cjs || true
+          node -e "
+            try {
+              const fs=require('fs');
+              const meta=JSON.parse(fs.readFileSync('rendered_videos/archie_latest_meta.json','utf8'));
+              const mod=require('./scripts/youtube_channel_dispatcher.cjs');
+              const upload=mod.uploadYouTubeShort;
+              if (typeof upload !== 'function') { console.warn('YT missing uploadYouTubeShort'); process.exit(0); }
+              upload({
+                videoPath:'rendered_videos/archie_latest.mp4',
+                title:String(meta.title||'Archie Explains').slice(0,95),
+                description:String(meta.description||''),
+                tags:(meta.hashtags||[]).map(h=>String(h).replace(/^#/,'')),
+                channelId:'cartoon_factory'
+              }).then(r=>console.log('YT Archie', r)).catch(e=>{console.warn('YT soft-fail', e.message);});
+            } catch (e) { console.warn('YT soft-fail', e.message); }
+          "
+      - name: Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cartoon-episode-output-${{ github.run_id }}
+          path: |
+            rendered_videos/*.mp4
+            rendered_videos/archie_latest_meta.json
+            test_artifacts/archie_live/**
+            test_artifacts/unique_bgm/**
+          retention-days: 14
+          if-no-files-found: ignore
