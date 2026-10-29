@@ -482,6 +482,12 @@
       "channel": "stoic",
       "topic": "The man who has a conscience suffers whilst acknowledging his sin. That is his punishment.",
       "timestamp": "2026-10-29T19:27:53.542Z"
+    },
+    {
+      "hash": "197dc38f80ba",
+      "channel": "financial_story_doc",
+      "topic": "The Barings Bank Meltdown",
+      "timestamp": "2026-10-29T20:12:41.387Z"
     }
   ]
 }
