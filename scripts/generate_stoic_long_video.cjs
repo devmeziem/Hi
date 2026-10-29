@@ -1,6 +1,6 @@
 /**
  * EMERGENCY RESTORE WRAPPER for generate_stoic_long_video.cjs
- * Writes patched source into scripts/ so relative requires (./stoic_philosophers_vault.cjs etc.) work.
+ * Writes patched source into scripts/ so relative requires work.
  */
 const fs = require('fs');
 const path = require('path');
@@ -68,9 +68,15 @@ function patchSource(src) {
 const restoredPath = ensureRestored();
 let source = fs.readFileSync(restoredPath, 'utf8');
 source = patchSource(source);
+// INJECT_YT_UPLOAD_RUNTIME — restored source calls uploadYouTubeShort without import
+if (source.includes('uploadYouTubeShort') && !source.includes("require('./youtube_channel_dispatcher")) {
+  source = source.replace(
+    /const uploadRes = await uploadYouTubeShort\(/,
+    "const { uploadYouTubeShort } = require('./youtube_channel_dispatcher.cjs');\n      const uploadRes = await uploadYouTubeShort("
+  );
+}
 fs.writeFileSync(PATCHED, source, 'utf8');
 
-// Clear cache and load from scripts/ so ./relative requires work
 delete require.cache[PATCHED];
 const mod = require(PATCHED);
 module.exports = mod;
@@ -80,7 +86,6 @@ if (require.main === module) {
   if (typeof run === 'function') {
     Promise.resolve(run()).catch((e) => { console.error(e); process.exit(1); });
   } else {
-    // File may be a script that runs on load — already executed via require if it had side effects
     console.log('[Stoic Restore] Exports:', Object.keys(mod).join(', ') || '(script ran on require)');
   }
 }
