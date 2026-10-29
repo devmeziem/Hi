@@ -1,12 +1,5 @@
 [
   {
-    "quote": "When we are no longer able to change a situation, we are challenged to change ourselves.",
-    "author": "Dr. Viktor Frankl, M.D., Ph.D.",
-    "credentials": "Neurologist & Psychiatrist • University of Vienna",
-    "theme": "defense",
-    "usedAt": "2026-09-10T05:45:10.202Z"
-  },
-  {
     "quote": "The man who moves a mountain begins by carrying away small stones.",
     "author": "Confucius",
     "credentials": "Grand Philosopher & Educator of Ancient China",
@@ -772,5 +765,18 @@
     "author": "Marcus Aurelius",
     "channel": "stoic",
     "timestamp": "2026-10-28T19:24:42.569Z"
+  },
+  {
+    "quote": "Hatred is gained as much by good works as by evil. Never expect everyone to applaud your integrity.",
+    "author": "Niccolò Machiavelli",
+    "credentials": "Author of The Prince • Diplomat & Political Philosopher",
+    "theme": "fortitude",
+    "usedAt": "2026-10-29T01:39:35.678Z"
+  },
+  {
+    "quote": "Hatred is gained as much by good works as by evil. Never expect everyone to applaud your integrity.",
+    "author": "Niccolò Machiavelli",
+    "channel": "stoic",
+    "timestamp": "2026-10-29T01:39:35.678Z"
   }
 ]
