@@ -189,6 +189,11 @@
       "id": "trap_guaranteed_returns",
       "at": "2026-10-28T11:13:39.678Z",
       "type": "trap"
+    },
+    {
+      "id": "trap_guaranteed_returns",
+      "at": "2026-10-29T11:26:15.810Z",
+      "type": "trap"
     }
   ]
 }
