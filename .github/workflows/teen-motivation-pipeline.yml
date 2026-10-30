@@ -50,7 +50,7 @@ jobs:
       - run: npm install --legacy-peer-deps --no-audit --no-fund
       - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-liberation || true
       - run: pip install -q edge-tts
-      - name: Apply diversity + style rotation + B&W + piano BGM
+      - name: Apply diversity + style rotation + force scene FX + BGM
         run: |
           node scripts/apply_all_content_system.cjs || true
           node scripts/ensure_youtube_dispatcher.cjs || true
@@ -64,6 +64,7 @@ jobs:
           node scripts/fix_teen_bold_bw_1080.cjs || true
           node scripts/apply_center_karaoke_bw_bgm.cjs || true
           node scripts/apply_style_rotation_all.cjs || true
+          node scripts/apply_force_visual_fx_rotation.cjs || true
       - name: Generate Teen (live discovery → AI → media)
         env:
           VIDEO_TYPE: ${{ github.event.inputs.video_type || 'situation' }}
