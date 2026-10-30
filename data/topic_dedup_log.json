@@ -488,6 +488,12 @@
       "channel": "financial_story_doc",
       "topic": "The Barings Bank Meltdown",
       "timestamp": "2026-10-29T20:12:41.387Z"
+    },
+    {
+      "hash": "44dbde84e901",
+      "channel": "stoic",
+      "topic": "Between stimulus and response there is a space. In that space is our power to choose our response.",
+      "timestamp": "2026-10-30T01:41:36.347Z"
     }
   ]
 }
