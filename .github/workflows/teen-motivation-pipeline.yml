@@ -2,14 +2,14 @@ name: Apex Discipline - Teen & Youth Motivation Pipeline (Channel 5)
 
 on:
   schedule:
-    # Situation reels
+    # Situation reels (longer VO)
     - cron: '0 4,16 * * *'
-    # Boost 5s quote loops (FYP style)
-    - cron: '0 10,22 * * *'
+    # Mind Rush 5s boost quote loops (FYP style) — 4x daily
+    - cron: '0 8,12,18,22 * * *'
   workflow_dispatch:
     inputs:
       video_type:
-        description: 'Video Format — 5s_reel = boost quote loop'
+        description: 'Video Format — 5s_reel = Mind Rush boost quote loop'
         required: false
         default: 'situation'
         type: choice
@@ -92,16 +92,21 @@ jobs:
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
         run: |
-          # Schedule at 10:00 and 22:00 UTC → boost 5s; otherwise situation (or manual VIDEO_TYPE)
+          # Schedule boost hours: 08,12,18,22 UTC → 5s Mind Rush; else situation
           HOUR=$(date -u +%H)
           VT="${VIDEO_TYPE}"
           if [ -z "$VT" ]; then
-            if [ "$HOUR" = "10" ] || [ "$HOUR" = "22" ]; then VT=5s_reel; else VT=situation; fi
+            case "$HOUR" in
+              08|12|18|22) VT=5s_reel ;;
+              *) VT=situation ;;
+            esac
           fi
           echo "VIDEO_TYPE=$VT HOUR=$HOUR"
           if [ "$VT" = "5s_reel" ] || [ "$VT" = "boost" ]; then
             echo "=== Teen BOOST 5s loop (Mind Rush watermark) ==="
             node scripts/generate_teen_boost_5s_reel.cjs
+            test -f rendered_videos/teen_boost_5s_latest.mp4
+            cp -f rendered_videos/teen_boost_5s_latest.mp4 rendered_videos/teen_motivation_latest.mp4
           else
             echo "=== Teen situation / long form ==="
             node scripts/generate_teen_situation_reel.cjs
@@ -156,6 +161,7 @@ jobs:
           name: teen-${{ github.run_id }}
           path: |
             rendered_videos/teen_motivation_latest.mp4
+            rendered_videos/teen_boost_5s_latest.mp4
             rendered_videos/teen_motivation_meta.json
             test_artifacts/teen_situation/**
             test_artifacts/teen_boost_5s/**
