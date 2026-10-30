@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * Teen BOOST 5s loop — TikTok-style quote card
- * - Short norm-aligned motivational line (fetched or AI-written)
- * - Mood still image (Pexels/Unsplash/Pixabay) matching the line
- * - Frosted semi-transparent text card OR clean white type
- * - Near-transparent "Mind Rush" watermark
- * - Soft piano BGM, 5.0s, seamless loop-friendly
- * - No VO (music + text only) — max watch retention for FYP boosts
+ * Teen BOOST 5s loop — TikTok-style quote card (Mind Rush)
+ * Matches viral formats: frosted glass card OR clean white type on mood stills.
+ * - Line: public/safe seed OR AI-invented (teen norms)
+ * - Image: mood-matched stock still
+ * - Near-transparent "MIND RUSH" watermark
+ * - Soft piano BGM, ~5s, loop-friendly fades
+ * - No VO (text + music) for FYP boost retention
  */
 const fs = require('fs');
 const path = require('path');
@@ -15,17 +15,14 @@ const https = require('https');
 const http = require('http');
 
 const { searchAndFetchImage, searchAndFetchAudio } = require('./universal_media_fetcher.cjs');
-const { callActiveAiForJson, queryDuckDuckGo } = require('./topic_discovery_engine.cjs');
+const { callActiveAiForJson } = require('./topic_discovery_engine.cjs');
 const { loadHistory, saveHistory, isDuplicate } = require('./content_system_shared.cjs');
 
 let selectStylePack;
 try {
   ({ selectStylePack } = require('./style_rotation_engine.cjs'));
 } catch (_) {
-  selectStylePack = () => ({
-    sfxQuery: 'soft piano ambient instrumental no drums',
-    summary: 'fallback'
-  });
+  selectStylePack = () => ({ sfxQuery: 'soft piano ambient instrumental no drums', summary: 'fallback' });
 }
 
 const OUT = path.join(process.cwd(), 'rendered_videos');
@@ -64,25 +61,6 @@ function wrapLines(text, maxChars = 28) {
   return lines.slice(0, 5);
 }
 
-function httpGet(url, timeoutMs = 10000) {
-  return new Promise((resolve, reject) => {
-    const lib = url.startsWith('https') ? https : http;
-    const req = lib.get(url, { timeout: timeoutMs }, (res) => {
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        return httpGet(res.headers.location, timeoutMs).then(resolve, reject);
-      }
-      let data = '';
-      res.on('data', (c) => (data += c));
-      res.on('end', () => resolve(data));
-    });
-    req.on('error', reject);
-    req.on('timeout', () => {
-      req.destroy();
-      reject(new Error('timeout'));
-    });
-  });
-}
-
 /** Public / safe boost lines — teen norms, no toxicity */
 const SEED_SAFE = [
   "Confidence isn't needing everyone to believe in you. It's continuing when they don't.",
@@ -99,11 +77,23 @@ const SEED_SAFE = [
   "Small consistent steps beat one dramatic restart.",
   "Your future self is watching what you do with today.",
   "Silence is a boundary, not a weakness.",
-  "Keep the promise you made to yourself when no one was clapping."
+  "Keep the promise you made to yourself when no one was clapping.",
+  "Not everyone will understand your glow-up. Keep going anyway.",
+  "Peace is not emptiness. Peace is choosing what no longer drains you.",
+  "You don't need a perfect plan. You need the next honest step.",
+  "Soft heart. Strong boundaries. That combination wins.",
+  "The version of you that is tired is still allowed to try again tomorrow."
 ];
 
+const MOOD_QUERIES = {
+  calm: ['sunlight through forest trees soft haze', 'peaceful morning window light plants', 'misty green woods golden hour'],
+  power: ['city skyline at dusk from high window', 'lone runner empty road sunrise', 'mountain ridge storm clearing light'],
+  peace: ['quiet bedroom city lights night window', 'ocean horizon soft sunset', 'empty cafe morning light calm'],
+  focus: ['study desk notebook soft lamp', 'library aisle soft light books', 'rain on window night bokeh'],
+  courage: ['open road fog headlights', 'cliff edge ocean wind', 'stairs upward soft light silhouette']
+};
+
 async function inventOrFetchLine(history) {
-  // Try AI for a fresh line
   try {
     const recent = (history || []).slice(-12).map((h) => h.text).filter(Boolean);
     const data = await callActiveAiForJson({
@@ -118,91 +108,40 @@ Return: { "text": "...", "mood": "calm|power|peace|focus|courage", "imageQuery":
       return {
         text: String(data.text).trim().replace(/^["']|["']$/g, ''),
         mood: data.mood || 'calm',
-        imageQuery: data.imageQuery || 'peaceful nature soft light'
+        imageQuery: data.imageQuery || null,
+        source: 'ai'
       };
     }
   } catch (e) {
     console.warn('[Boost] AI line:', e.message);
   }
-
-  // Public-ish seed rotation minus history
-  const used = new Set((history || []).map((h) => String(h.text || '').toLowerCase().slice(0, 40)));
-  const pool = SEED_SAFE.filter((s) => !used.has(s.toLowerCase().slice(0, 40)));
-  const text = (pool.length ? pool : SEED_SAFE)[Math.floor(Math.random() * (pool.length || SEED_SAFE.length))];
-  const mood =
-    /peace|alone|quiet|silence/i.test(text)
-      ? 'peace'
-      : /discipline|steps|promise|future/i.test(text)
-        ? 'focus'
-        : /confidence|strong|power|flex/i.test(text)
-          ? 'power'
-          : 'calm';
-  const imageQuery =
-    mood === 'peace'
-      ? 'moody bedroom window city night soft light'
-      : mood === 'focus'
-        ? 'student desk morning light minimal'
-        : mood === 'power'
-          ? 'sunlight through trees forest mist golden'
-          : 'foggy forest soft sunlight calm nature';
-  return { text, mood, imageQuery };
+  // Seed pool with dedup
+  const used = new Set((history || []).map((h) => String(h.text || '').toLowerCase().slice(0, 60)));
+  const pool = SEED_SAFE.filter((s) => !used.has(s.toLowerCase().slice(0, 60)));
+  const pick = (pool.length ? pool : SEED_SAFE)[Math.floor(Math.random() * (pool.length || SEED_SAFE.length))];
+  const moodKeys = Object.keys(MOOD_QUERIES);
+  const mood = moodKeys[Math.floor(Math.random() * moodKeys.length)];
+  return { text: pick, mood, imageQuery: null, source: 'seed' };
 }
 
-const MOOD_QUERIES = {
-  peace: [
-    'moody bedroom window city night',
-    'alone looking out window rain',
-    'quiet room soft lamp evening',
-    'city lights from high window night'
-  ],
-  power: [
-    'sun rays through forest trees',
-    'golden hour mountain silhouette',
-    'dramatic sky after storm light',
-    'sunrise over hills soft fog'
-  ],
-  calm: [
-    'green forest sunlight mist',
-    'peaceful lake morning reflection',
-    'soft flowers bokeh nature',
-    'open road calm sunrise'
-  ],
-  focus: [
-    'notebook pen desk natural light',
-    'library aisle soft focus',
-    'coffee desk morning productivity',
-    'minimal workspace plant window'
-  ],
-  courage: [
-    'person walking path forest alone',
-    'bridge fog morning silhouette',
-    'ocean horizon storm clearing',
-    'trail mountain soft light'
-  ]
-};
-
 async function fetchMoodImage(line) {
-  const queries = [
-    line.imageQuery,
-    ...(MOOD_QUERIES[line.mood] || MOOD_QUERIES.calm),
-    'soft nature bokeh calm'
-  ].filter(Boolean);
+  const mood = line.mood || 'calm';
+  const queries = [];
+  if (line.imageQuery) queries.push(line.imageQuery);
+  const moodQs = MOOD_QUERIES[mood] || MOOD_QUERIES.calm;
+  queries.push(...moodQs);
+  queries.push('soft nature sunlight bokeh', 'moody room window city night');
+
   for (const q of queries) {
     try {
-      const img = await searchAndFetchImage(q, { preferredSource: 'unsplash' });
+      const img = await searchAndFetchImage(q, {});
       const p = img && (img.localPath || img.path);
       if (p && fs.existsSync(p) && fs.statSync(p).size > 8000) {
         console.log('[Boost] image', q, path.basename(p));
         return p;
       }
     } catch (_) {}
-    try {
-      const img = await searchAndFetchImage(q, {});
-      const p = img && (img.localPath || img.path);
-      if (p && fs.existsSync(p) && fs.statSync(p).size > 8000) return p;
-    } catch (_) {}
   }
-  // last resort: solid gradient via SVG
   const svg = path.join(ART, 'fallback_bg.svg');
   fs.writeFileSync(
     svg,
@@ -221,7 +160,6 @@ async function fetchSoftBgm() {
     const p = a && (a.localPath || a.path);
     if (p && fs.existsSync(p) && fs.statSync(p).size > 4000) return p;
   } catch (_) {}
-  // generate soft pad with ffmpeg sine (very quiet)
   const wav = path.join(ART, 'soft_pad.wav');
   execSync(
     `ffmpeg -y -f lavfi -i "sine=frequency=220:duration=${DURATION + 1}" -f lavfi -i "sine=frequency=330:duration=${DURATION + 1}" -filter_complex "[0][1]amix=inputs=2,volume=0.08,afade=t=in:d=0.5,afade=t=out:st=${DURATION - 0.6}:d=0.5" -t ${DURATION + 0.2} "${wav}" 2>/dev/null`,
@@ -230,32 +168,37 @@ async function fetchSoftBgm() {
   return wav;
 }
 
-/** Build SVG overlay: frosted card + text + Mind Rush watermark */
+/**
+ * Layouts matching viral TikTok quote cards:
+ * - frost: semi-transparent rounded card (like maywords)
+ * - clean: white type + soft shadow on dark mood still (like Ridwan Noir)
+ */
 function buildOverlaySvg(text, layout = 'frost') {
   const lines = wrapLines(text, 30);
-  const lineH = 58;
-  const blockH = lines.length * lineH + 48;
-  const blockY = 1920 / 2 - blockH / 2;
-  const textSvg = lines
+  const lineH = 56;
+  const blockH = lines.length * lineH + 56;
+  const blockY = Math.round(1920 / 2 - blockH / 2);
+
+  const textDark = lines
     .map((ln, i) => {
-      const y = blockY + 40 + i * lineH;
-      return `<text x="540" y="${y}" text-anchor="middle" font-family="Georgia, Times New Roman, serif" font-size="42" fill="#111111" opacity="0.92">${escapeXml(ln)}</text>`;
+      const y = blockY + 44 + i * lineH;
+      return `<text x="540" y="${y}" text-anchor="middle" font-family="Georgia, Times New Roman, serif" font-size="40" fill="#0f172a" opacity="0.92">${escapeXml(ln)}</text>`;
     })
     .join('\n');
 
-  // Clean white text variant (dark scenes)
   const textLight = lines
     .map((ln, i) => {
-      const y = 720 + i * lineH;
-      return `<text x="540" y="${y}" text-anchor="middle" font-family="Georgia, Times New Roman, serif" font-size="40" fill="#F8FAFC" opacity="0.95" style="filter: drop-shadow(0px 2px 6px rgba(0,0,0,0.55))">${escapeXml(ln)}</text>`;
+      const y = 700 + i * lineH;
+      return `<text x="540" y="${y}" text-anchor="middle" font-family="Georgia, Times New Roman, serif" font-size="40" fill="#F8FAFC" opacity="0.96">${escapeXml(ln)}</text>`;
     })
     .join('\n');
 
+  // Frosted glass card — almost transparent white, soft radius
   const frost = `
-  <rect x="70" y="${blockY}" width="940" height="${blockH}" rx="28" ry="28" fill="#ffffff" fill-opacity="0.42"/>
-  <rect x="70" y="${blockY}" width="940" height="${blockH}" rx="28" ry="28" fill="none" stroke="#ffffff" stroke-opacity="0.25" stroke-width="1.5"/>
-  ${textSvg}
-  <text x="540" y="${blockY + blockH - 14}" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#334155" opacity="0.55">@mindrush</text>
+  <rect x="72" y="${blockY}" width="936" height="${blockH}" rx="32" ry="32" fill="#ffffff" fill-opacity="0.38"/>
+  <rect x="72" y="${blockY}" width="936" height="${blockH}" rx="32" ry="32" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="1.2"/>
+  ${textDark}
+  <text x="540" y="${blockY + blockH - 16}" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#334155" opacity="0.45">@mindrush</text>
 `;
 
   const clean = `
@@ -264,10 +207,10 @@ function buildOverlaySvg(text, layout = 'frost') {
 
   const body = layout === 'clean' ? clean : frost;
 
-  // Near-transparent channel watermark (Mind Rush)
+  // Near-transparent channel watermark (Mind Rush) — bottom center
   const watermark = `
-  <text x="540" y="1780" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="36" fill="#ffffff" opacity="0.18" letter-spacing="4">${escapeXml(CHANNEL_MARK.toUpperCase())}</text>
-  <text x="540" y="1820" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#ffffff" opacity="0.12">mindrush</text>
+  <text x="540" y="1768" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="34" fill="#ffffff" opacity="0.16" letter-spacing="6">${escapeXml(CHANNEL_MARK.toUpperCase())}</text>
+  <text x="540" y="1808" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" fill="#ffffff" opacity="0.11">mindrush</text>
 `;
 
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -279,57 +222,61 @@ function buildOverlaySvg(text, layout = 'frost') {
 
 function renderBoost(imagePath, overlayPng, bgmPath, outMp4, styleSeed) {
   const frames = Math.ceil(DURATION * 30);
-  // Slow Ken Burns for loop-friendly motion
   const zoom =
     styleSeed % 2 === 0
-      ? `zoompan=z='min(1.12,1.0+0.00035*on)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${frames}:s=1080x1920:fps=30`
-      : `zoompan=z='if(eq(on,1),1.1,max(1.0,1.1-0.0003*on))':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${frames}:s=1080x1920:fps=30`;
+      ? `zoompan=z='min(1.10,1.0+0.00028*on)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${frames}:s=1080x1920:fps=30`
+      : `zoompan=z='if(eq(on,1),1.09,max(1.0,1.09-0.00025*on))':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${frames}:s=1080x1920:fps=30`;
 
   const vf = [
     'scale=1280:2276:force_original_aspect_ratio=increase',
     'crop=1280:2276',
     zoom,
-    'eq=contrast=1.08:saturation=0.95',
-    'fade=t=in:st=0:d=0.25',
-    `fade=t=out:st=${(DURATION - 0.3).toFixed(2)}:d=0.3`
+    'eq=contrast=1.06:saturation=0.96',
+    'fade=t=in:st=0:d=0.2',
+    `fade=t=out:st=${(DURATION - 0.25).toFixed(2)}:d=0.25`
   ].join(',');
 
   const filter = `[0:v]${vf}[bg];[1:v]scale=1080:1920,format=rgba[ov];[bg][ov]overlay=0:0:format=auto[v]`;
-  const af = `[2:a]volume=0.45,afade=t=in:d=0.3,afade=t=out:st=${(DURATION - 0.4).toFixed(2)}:d=0.35,atrim=0:${DURATION.toFixed(2)}[a]`;
+  const af = `[2:a]volume=0.42,afade=t=in:d=0.25,afade=t=out:st=${(DURATION - 0.35).toFixed(2)}:d=0.3,atrim=0:${DURATION.toFixed(2)}[a]`;
 
   execSync(
-    `ffmpeg -y -loop 1 -t ${DURATION.toFixed(2)} -i "${imagePath}" -loop 1 -t ${DURATION.toFixed(2)} -i "${overlayPng}" -stream_loop -1 -i "${bgmPath}" -filter_complex "${filter};${af}" -map "[v]" -map "[a]" -c:v libx264 -preset veryfast -crf 18 -pix_fmt yuv420p -c:a aac -b:a 160k -t ${DURATION.toFixed(2)} "${outMp4}"`,
+    `ffmpeg -y -loop 1 -t ${DURATION.toFixed(2)} -i "${imagePath}" -loop 1 -t ${DURATION.toFixed(2)} -i "${overlayPng}" -stream_loop -1 -i "${bgmPath}" -filter_complex "${filter};${af}" -map "[v]" -map "[a]" -c:v libx264 -preset veryfast -crf 18 -pix_fmt yuv420p -c:a aac -b:a 160k -shortest -t ${DURATION.toFixed(2)} "${outMp4}"`,
     { stdio: 'pipe' }
   );
 }
 
 async function main() {
   ensureDirs();
-  console.log('\n=== TEEN BOOST 5s LOOP ===');
-  console.log('quote card + mood image + Mind Rush watermark + soft BGM\n');
+  console.log('\n=== TEEN BOOST 5s (Mind Rush) ===');
 
   const history = loadHistory(HIST);
   const line = await inventOrFetchLine(history);
-  console.log('[Boost] line:', line.text);
-  console.log('[Boost] mood:', line.mood);
-
-  if (isDuplicate({ title: line.text, hook: line.text }, history, { overlapMax: 0.5 })) {
-    console.warn('[Boost] near-duplicate — still rendering once');
+  if (isDuplicate({ title: line.text, text: line.text }, history, { overlapMax: 0.55 })) {
+    console.warn('[Boost] near-duplicate line — still rendering with new image');
   }
+  console.log('[Boost] line:', line.text);
+  console.log('[Boost] mood:', line.mood, 'source:', line.source);
 
   const imagePath = await fetchMoodImage(line);
   const bgmPath = await fetchSoftBgm();
 
-  // Alternate frost card vs clean text for variety
-  const layout = /peace|alone|night|solitude/i.test(line.text + line.mood) ? 'clean' : 'frost';
-  const svgPath = path.join(ART, 'overlay.svg');
+  // Layout: frost for calm/peace, clean for power/courage/focus-ish dark
+  const layout =
+    process.env.BOOST_LAYOUT ||
+    (['power', 'courage', 'focus'].includes(line.mood) ? 'clean' : 'frost');
+  const svg = buildOverlaySvg(line.text, layout);
+  const overlaySvg = path.join(ART, 'overlay.svg');
   const overlayPng = path.join(ART, 'overlay.png');
-  fs.writeFileSync(svgPath, buildOverlaySvg(line.text, layout));
-  execSync(`ffmpeg -y -i "${svgPath}" "${overlayPng}" 2>/dev/null`);
+  fs.writeFileSync(overlaySvg, svg);
+  execSync(`ffmpeg -y -i "${overlaySvg}" "${overlayPng}" 2>/dev/null`);
 
-  const outMp4 = path.join(OUT, 'teen_motivation_latest.mp4');
+  const outMp4 = path.join(OUT, 'teen_boost_5s_latest.mp4');
+  const latest = path.join(OUT, 'teen_motivation_latest.mp4');
   const seed = Math.abs(line.text.split('').reduce((a, c) => a + c.charCodeAt(0), 0));
   renderBoost(imagePath, overlayPng, bgmPath, outMp4, seed);
+  try {
+    fs.copyFileSync(outMp4, latest);
+  } catch (_) {}
 
   const sz = fs.statSync(outMp4).size;
   if (sz < 80000) throw new Error('Boost output too small ' + sz);
@@ -341,7 +288,7 @@ async function main() {
     '',
     'A quiet reminder for your day.',
     '',
-    `#MindRush #TeenMotivation #Motivation #Shorts #FYP #Discipline #Peace #Mindset`,
+    '#MindRush #TeenMotivation #Motivation #Shorts #FYP #Discipline #Peace #Mindset',
     '',
     'Not medical or therapy advice — just a nudge toward your next small action.'
   ].join('\n');
@@ -360,7 +307,6 @@ async function main() {
   };
   fs.writeFileSync(path.join(OUT, 'teen_motivation_meta.json'), JSON.stringify(meta, null, 2));
   fs.writeFileSync(path.join(ART, 'latest_meta.json'), JSON.stringify(meta, null, 2));
-
   saveHistory(HIST, { title: line.text, text: line.text, mood: line.mood });
 
   if (!isDry && process.env.YOUTUBE_REFRESH_TOKEN) {
