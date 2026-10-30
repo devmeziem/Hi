@@ -2,9 +2,7 @@ name: Apex Discipline - Teen & Youth Motivation Pipeline (Channel 5)
 
 on:
   schedule:
-    # Situation reels (longer VO)
     - cron: '0 4,16 * * *'
-    # Mind Rush 5s boost quote loops (FYP style) — 4x daily
     - cron: '0 8,12,18,22 * * *'
   workflow_dispatch:
     inputs:
@@ -53,8 +51,9 @@ jobs:
       - run: npm install --legacy-peer-deps --no-audit --no-fund
       - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-liberation || true
       - run: pip install -q edge-tts
-      - name: Apply diversity + style rotation + force scene FX + BGM
+      - name: Apply diversity + style rotation + shebang repair
         run: |
+          node scripts/fix_shebang_headers.cjs || true
           node scripts/apply_all_content_system.cjs || true
           node scripts/ensure_youtube_dispatcher.cjs || true
           node scripts/patch_teen_topic_diversity.cjs || true
@@ -68,6 +67,9 @@ jobs:
           node scripts/apply_center_karaoke_bw_bgm.cjs || true
           node scripts/apply_style_rotation_all.cjs || true
           node scripts/apply_force_visual_fx_rotation.cjs || true
+          node scripts/fix_shebang_headers.cjs || true
+          node --check scripts/generate_teen_situation_reel.cjs || true
+          node --check scripts/generate_teen_boost_5s_reel.cjs || true
       - name: Generate Teen
         env:
           VIDEO_TYPE: ${{ github.event.inputs.video_type || '' }}
@@ -92,7 +94,6 @@ jobs:
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
         run: |
-          # Schedule boost hours: 08,12,18,22 UTC → 5s Mind Rush; else situation
           HOUR=$(date -u +%H)
           VT="${VIDEO_TYPE}"
           if [ -z "$VT" ]; then
@@ -149,11 +150,13 @@ jobs:
         run: |
           curl -fsSL "https://raw.githubusercontent.com/devmeziem/Hi/a00c9e83c801f94513ff002978558c5ee8c113bf/scripts/publish_buffer_second_tiktok.cjs" -o scripts/publish_buffer_second_tiktok.cjs || true
           node scripts/apply_buffer_ai_flag.cjs || true
+          node scripts/fix_shebang_headers.cjs || true
           if [ -f rendered_videos/teen_motivation_meta.json ]; then
             export TEEN_POST_TITLE=$(node -e "console.log(JSON.parse(require('fs').readFileSync('rendered_videos/teen_motivation_meta.json','utf8')).title||'')")
             export TEEN_POST_DESCRIPTION=$(node -e "console.log(JSON.parse(require('fs').readFileSync('rendered_videos/teen_motivation_meta.json','utf8')).description||'')")
           fi
           node scripts/patch_buffer_teen_caption.cjs || true
+          node scripts/fix_shebang_headers.cjs || true
           node scripts/publish_buffer_second_tiktok.cjs teen_motivation
       - if: always()
         uses: actions/upload-artifact@v4
