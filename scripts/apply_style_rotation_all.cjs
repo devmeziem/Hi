@@ -1,10 +1,23 @@
 #!/usr/bin/env node
 /**
  * Wire style_rotation_engine + force visual FX into Teen, Stoic, Driftreel, Archie.
+ * Shebang-safe: never prepend above #!
  */
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+
+function injectRequireAfterShebang(source, requireLine) {
+  if (!source || source.includes("style_rotation_engine")) return source;
+  const lines = source.split('\n');
+  if (lines[0] && lines[0].startsWith('#!')) {
+    let i = 1;
+    if (lines[i] === '') i++;
+    lines.splice(i, 0, requireLine);
+    return lines.join('\n');
+  }
+  return requireLine + '\n' + source;
+}
 
 function patch(rel, fn) {
   const p = path.join(process.cwd(), rel);
@@ -23,19 +36,13 @@ function patch(rel, fn) {
 const REQUIRE_LINE =
   "const { selectStylePack, buildRotatingAss, SFX_QUERIES, VISUAL_FX } = require('./style_rotation_engine.cjs');";
 
-// ---- Teen ----
+// Repair shebangs first
+try {
+  execSync('node scripts/fix_shebang_headers.cjs', { stdio: 'inherit' });
+} catch (_) {}
+
 patch('scripts/generate_teen_situation_reel.cjs', (t) => {
-  if (!t.includes('style_rotation_engine')) {
-    t = REQUIRE_LINE + '\n' + t;
-  } else if (!t.includes('VISUAL_FX')) {
-    t = t.replace(
-      /const \{([^}]+)\} = require\('\.\/style_rotation_engine\.cjs'\);/,
-      (m, inner) =>
-        inner.includes('VISUAL_FX')
-          ? m
-          : `const {${inner.trim()}, VISUAL_FX} = require('./style_rotation_engine.cjs');`
-    );
-  }
+  t = injectRequireAfterShebang(t, REQUIRE_LINE);
   if (!t.includes('STYLE_ROTATION_PACK') && t.includes("console.log('[Teen] title:'")) {
     t = t.replace(
       "console.log('[Teen] title:', pack.title);",
@@ -64,11 +71,8 @@ patch('scripts/generate_teen_situation_reel.cjs', (t) => {
   return t;
 });
 
-// ---- Stoic ----
 patch('scripts/generate_stoic_quote_reel.cjs', (t) => {
-  if (!t.includes('style_rotation_engine')) {
-    t = REQUIRE_LINE + '\n' + t;
-  }
+  t = injectRequireAfterShebang(t, REQUIRE_LINE);
   if (!t.includes('[Stoic] style:') && t.includes('[Quote Reel]')) {
     t = t.replace(
       /console\.log\(`\[Quote Reel\] Scholar:[^`]*`\);/,
@@ -81,11 +85,8 @@ patch('scripts/generate_stoic_quote_reel.cjs', (t) => {
   return t;
 });
 
-// ---- Driftreel ----
 patch('scripts/generate_documentary_movie_reel.cjs', (t) => {
-  if (!t.includes('style_rotation_engine')) {
-    t = REQUIRE_LINE + '\n' + t;
-  }
+  t = injectRequireAfterShebang(t, REQUIRE_LINE);
   if (!t.includes('[Driftreel] style:') && t.includes('generateDynamicDocumentaryStory')) {
     t = t.replace(
       /const story = await generateDynamicDocumentaryStory\(\);/,
@@ -98,8 +99,8 @@ patch('scripts/generate_documentary_movie_reel.cjs', (t) => {
   return t;
 });
 
-// ---- Archie v2 path ----
 patch('scripts/generate_archie_live_reel.cjs', (t) => {
+  t = injectRequireAfterShebang(t, REQUIRE_LINE);
   if (!t.includes('archie_v2_compositor') && t.includes('async function renderArchieHeavy')) {
     t = t.replace(
       /async function renderArchieHeavy\([\s\S]*?\n\}\n/,
@@ -130,17 +131,17 @@ patch('scripts/generate_archie_live_reel.cjs', (t) => {
 `
     );
   }
-  if (!t.includes('style_rotation_engine')) {
-    t = REQUIRE_LINE + '\n' + t;
-  }
   return t;
 });
 
-// Always run visual FX force pass
 try {
   execSync('node scripts/apply_force_visual_fx_rotation.cjs', { stdio: 'inherit' });
 } catch (e) {
   console.warn('[style-rot] visual fx pass:', e.message);
 }
+
+try {
+  execSync('node scripts/fix_shebang_headers.cjs', { stdio: 'inherit' });
+} catch (_) {}
 
 console.log('[style-rot] done');
