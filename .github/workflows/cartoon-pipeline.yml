@@ -66,6 +66,7 @@ jobs:
       - name: Single-pass gestures + lipsync
         run: node scripts/apply_archie_gestures_fix.cjs || true
       - run: node scripts/apply_archie_soft_gestures.cjs || true
+      - run: node scripts/apply_style_rotation_all.cjs || true
       - name: Lower captions + multi B-roll cuts
         run: node scripts/apply_archie_retention_fix.cjs || true
       - name: Soft-disable bad YouTube pinned comments
@@ -94,7 +95,7 @@ jobs:
           FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
         run: |
-          echo "=== Archie science+tech explainer (YouTube only, no FB/IG) ==="
+          echo "=== Archie v2 + style rotation (YouTube only) ==="
           node scripts/generate_archie_live_reel.cjs
       - name: Commit Archie topic history
         if: always()
@@ -146,6 +147,7 @@ jobs:
             rendered_videos/*.mp4
             rendered_videos/archie_latest_meta.json
             test_artifacts/archie_live/**
+            test_artifacts/archie_v2/**
             test_artifacts/unique_bgm/**
           retention-days: 14
           if-no-files-found: ignore
