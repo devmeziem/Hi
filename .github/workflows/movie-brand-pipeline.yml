@@ -49,9 +49,11 @@ jobs:
         run: node scripts/apply_cinema_live_research.cjs || true
       - name: Center karaoke + kill vault + Wikipedia story path
         run: node scripts/apply_center_karaoke_bw_bgm.cjs || true
-      - name: Driftreel story + old-TV + no WM + audible BGM + no Google TTS
+      - name: Driftreel story + style rotation + old-TV + no WM + BGM
         run: |
           node scripts/apply_cinema_driftreel_fix.cjs || true
+          node scripts/apply_style_rotation_all.cjs || true
+          node scripts/apply_driftreel_deep_rotation.cjs || true
           node scripts/apply_cinema_watermark_strip.cjs || true
           node scripts/fix_channel_audio_visual_quality.cjs || true
           node scripts/fix_tts_male_no_google_default.cjs || true
