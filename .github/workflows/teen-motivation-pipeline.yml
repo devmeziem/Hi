@@ -2,11 +2,14 @@ name: Apex Discipline - Teen & Youth Motivation Pipeline (Channel 5)
 
 on:
   schedule:
-    - cron: '0 4,10,16,22 * * *'
+    # Situation reels
+    - cron: '0 4,16 * * *'
+    # Boost 5s quote loops (FYP style)
+    - cron: '0 10,22 * * *'
   workflow_dispatch:
     inputs:
       video_type:
-        description: 'Video Format'
+        description: 'Video Format — 5s_reel = boost quote loop'
         required: false
         default: 'situation'
         type: choice
@@ -65,12 +68,14 @@ jobs:
           node scripts/apply_center_karaoke_bw_bgm.cjs || true
           node scripts/apply_style_rotation_all.cjs || true
           node scripts/apply_force_visual_fx_rotation.cjs || true
-      - name: Generate Teen (live discovery → AI → media)
+      - name: Generate Teen
         env:
-          VIDEO_TYPE: ${{ github.event.inputs.video_type || 'situation' }}
+          VIDEO_TYPE: ${{ github.event.inputs.video_type || '' }}
           TOPIC: ${{ github.event.inputs.topic || '' }}
           DRY_RUN: ${{ github.event.inputs.dry_run == true || github.event.inputs.dry_run == 'true' }}
           SKIP_BUFFER: 'true'
+          BOOST_DURATION: '5.0'
+          TEEN_WATERMARK: 'Mind Rush'
           TEEN_VOICE: en-US-ChristopherNeural
           TEEN_RATE: '-8%'
           TEEN_PITCH: '-15Hz'
@@ -87,9 +92,22 @@ jobs:
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
         run: |
-          node scripts/generate_teen_situation_reel.cjs
+          # Schedule at 10:00 and 22:00 UTC → boost 5s; otherwise situation (or manual VIDEO_TYPE)
+          HOUR=$(date -u +%H)
+          VT="${VIDEO_TYPE}"
+          if [ -z "$VT" ]; then
+            if [ "$HOUR" = "10" ] || [ "$HOUR" = "22" ]; then VT=5s_reel; else VT=situation; fi
+          fi
+          echo "VIDEO_TYPE=$VT HOUR=$HOUR"
+          if [ "$VT" = "5s_reel" ] || [ "$VT" = "boost" ]; then
+            echo "=== Teen BOOST 5s loop (Mind Rush watermark) ==="
+            node scripts/generate_teen_boost_5s_reel.cjs
+          else
+            echo "=== Teen situation / long form ==="
+            node scripts/generate_teen_situation_reel.cjs
+          fi
           test -f rendered_videos/teen_motivation_latest.mp4
-          cat rendered_videos/teen_motivation_meta.json | head -50 || true
+          cat rendered_videos/teen_motivation_meta.json | head -40 || true
       - name: YouTube (CH5 only)
         continue-on-error: true
         if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.auto_publish == true || github.event.inputs.auto_publish == 'true') }}
@@ -140,4 +158,5 @@ jobs:
             rendered_videos/teen_motivation_latest.mp4
             rendered_videos/teen_motivation_meta.json
             test_artifacts/teen_situation/**
+            test_artifacts/teen_boost_5s/**
           if-no-files-found: ignore
