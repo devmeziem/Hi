@@ -199,6 +199,11 @@
       "id": "trap_pay_to_work",
       "at": "2026-10-30T11:18:23.798Z",
       "type": "trap"
+    },
+    {
+      "id": "concept_inflation",
+      "at": "2026-10-30T19:54:36.271Z",
+      "type": "concept"
     }
   ]
 }
