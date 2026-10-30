@@ -42,6 +42,8 @@ jobs:
           node scripts/force_fresh_stoic_media.cjs || true
           node scripts/apply_stoic_anti_spam_rotation.cjs || true
           node scripts/apply_style_rotation_all.cjs || true
+          node scripts/apply_stoic_visual_pack.cjs || true
+          node scripts/apply_force_visual_fx_rotation.cjs || true
           node scripts/apply_unique_bgm_all.cjs || true
           node scripts/fix_channel_audio_visual_quality.cjs || true
           node scripts/fix_tts_male_no_google_default.cjs || true
