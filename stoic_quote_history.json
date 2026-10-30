@@ -1,12 +1,5 @@
 [
   {
-    "quote": "He who conquers others is strong; he who conquers himself is mighty.",
-    "author": "Lao Tzu",
-    "credentials": "Ancient Sage & Philosopher • Author of the Tao Te Ching",
-    "theme": "mastery",
-    "usedAt": "2026-09-11T10:56:54.922Z"
-  },
-  {
     "quote": "We suffer more often in imagination than in reality.",
     "author": "Seneca the Younger",
     "credentials": "Roman Statesman, Dramatist & Stoic Moralist",
@@ -802,5 +795,18 @@
     "author": "Marcus Aurelius",
     "channel": "stoic",
     "timestamp": "2026-10-30T12:22:38.833Z"
+  },
+  {
+    "quote": "Do not leave your reputation to chance; it is your life’s artwork, craft it with ruthless discipline.",
+    "author": "Robert Greene",
+    "credentials": "Author of The 48 Laws of Power & Laws of Human Nature",
+    "theme": "mastery",
+    "usedAt": "2026-10-30T19:02:43.534Z"
+  },
+  {
+    "quote": "Do not leave your reputation to chance; it is your life’s artwork, craft it with ruthless discipline.",
+    "author": "Robert Greene",
+    "channel": "stoic",
+    "timestamp": "2026-10-30T19:02:43.534Z"
   }
 ]
