@@ -1,0 +1,49 @@
+name: Manual Burst Rerun (Teen + Driftreel + Archie)
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'triggers/burst-rerun.flag'
+
+jobs:
+  teen:
+    name: Teen Mind Rush 5s
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dispatch Teen 5s_reel
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run teen-motivation-pipeline.yml -R devmeziem/Hi \
+            -f video_type=5s_reel -f dry_run=false -f publish_tiktok=true -f auto_publish=false || true
+  driftreel:
+    name: Driftreel doc
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dispatch Driftreel
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run movie-brand-pipeline.yml -R devmeziem/Hi \
+            -f dry_run=false -f publish_youtube=true -f publish_tiktok=true || true
+  archie:
+    name: Archie cartoon
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dispatch Archie
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run cartoon-pipeline.yml -R devmeziem/Hi \
+            -f dry_run=false -f pause_youtube=false || true
