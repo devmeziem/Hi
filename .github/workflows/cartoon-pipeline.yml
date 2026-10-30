@@ -56,6 +56,7 @@ jobs:
         run: |
           node scripts/build_exact_puppet_shapes.cjs || true
           node scripts/build_modern_tech_character.cjs || true
+      - run: node scripts/fix_shebang_headers.cjs || true
       - run: node scripts/apply_all_content_system.cjs || true
       - run: node scripts/ensure_youtube_dispatcher.cjs || true
       - run: node scripts/apply_unique_bgm_all.cjs || true
@@ -71,6 +72,10 @@ jobs:
         run: node scripts/apply_archie_retention_fix.cjs || true
       - name: Soft-disable bad YouTube pinned comments
         run: node scripts/apply_archie_youtube_comment_fix.cjs || true
+      - name: Repair shebangs after patches
+        run: |
+          node scripts/fix_shebang_headers.cjs || true
+          node --check scripts/generate_archie_live_reel.cjs
       - name: Generate Archie explainer
         env:
           TOPIC: ${{ github.event.inputs.topic }}
