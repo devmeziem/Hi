@@ -194,6 +194,11 @@
       "id": "trap_guaranteed_returns",
       "at": "2026-10-29T11:26:15.810Z",
       "type": "trap"
+    },
+    {
+      "id": "trap_pay_to_work",
+      "at": "2026-10-30T11:18:23.798Z",
+      "type": "trap"
     }
   ]
 }
