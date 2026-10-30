@@ -1,12 +1,5 @@
 [
   {
-    "quote": "No man is free who is not master of himself.",
-    "author": "Epictetus",
-    "credentials": "Stoic Philosopher • Founder of the Nicopolis School",
-    "theme": "mastery",
-    "usedAt": "2026-09-11T05:44:19.103Z"
-  },
-  {
     "quote": "He who conquers others is strong; he who conquers himself is mighty.",
     "author": "Lao Tzu",
     "credentials": "Ancient Sage & Philosopher • Author of the Tao Te Ching",
@@ -796,5 +789,18 @@
     "author": "Dr. Viktor Frankl",
     "channel": "stoic",
     "timestamp": "2026-10-30T01:41:36.346Z"
+  },
+  {
+    "quote": "You have power over your mind, not outside events. Realize this, and you will find strength.",
+    "author": "Marcus Aurelius",
+    "credentials": "Roman Emperor & Stoic Philosopher • Meditations",
+    "theme": "sovereignty",
+    "usedAt": "2026-10-30T12:22:38.832Z"
+  },
+  {
+    "quote": "You have power over your mind, not outside events. Realize this, and you will find strength.",
+    "author": "Marcus Aurelius",
+    "channel": "stoic",
+    "timestamp": "2026-10-30T12:22:38.833Z"
   }
 ]
