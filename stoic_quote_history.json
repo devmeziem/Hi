@@ -1,12 +1,5 @@
 [
   {
-    "quote": "We suffer more often in imagination than in reality.",
-    "author": "Seneca the Younger",
-    "credentials": "Roman Statesman, Dramatist & Stoic Moralist",
-    "theme": "defense",
-    "usedAt": "2026-09-11T14:57:51.184Z"
-  },
-  {
     "quote": "You have power over your mind, not outside events. Realize this, and you will find strength.",
     "author": "Marcus Aurelius",
     "credentials": "Roman Emperor & Stoic Philosopher • Author of Meditations",
@@ -808,5 +801,18 @@
     "author": "Robert Greene",
     "channel": "stoic",
     "timestamp": "2026-10-30T19:02:43.534Z"
+  },
+  {
+    "quote": "No man is free who is not master of himself.",
+    "author": "Epictetus",
+    "credentials": "Stoic Philosopher • Founder of the Nicopolis School",
+    "theme": "mastery",
+    "usedAt": "2026-10-31T01:27:44.484Z"
+  },
+  {
+    "quote": "No man is free who is not master of himself.",
+    "author": "Epictetus",
+    "channel": "stoic",
+    "timestamp": "2026-10-31T01:27:44.485Z"
   }
 ]
