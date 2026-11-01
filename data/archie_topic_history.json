@@ -70,5 +70,13 @@
     "learn": "Explain dielectric heating via molecular vibration",
     "bgm": "synth-pad",
     "at": "2026-11-01T01:47:44.398Z"
+  },
+  {
+    "title": "how Bluetooth pairs devices",
+    "postTitle": "The Secret Dance of Bluetooth Pairing",
+    "lane": "tech",
+    "learn": "Explain Bluetooth pairing via frequency hopping and secure handshake codes.",
+    "bgm": "synth-pad",
+    "at": "2026-11-01T14:42:10.155Z"
   }
 ]
