@@ -224,6 +224,11 @@
       "id": "plan_first_buffer",
       "at": "2026-10-31T23:18:33.835Z",
       "type": "plan"
+    },
+    {
+      "id": "trap_guaranteed_returns",
+      "at": "2026-11-01T11:47:37.507Z",
+      "type": "trap"
     }
   ]
 }
