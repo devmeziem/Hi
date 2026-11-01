@@ -229,6 +229,11 @@
       "id": "trap_guaranteed_returns",
       "at": "2026-11-01T11:47:37.507Z",
       "type": "trap"
+    },
+    {
+      "id": "concept_what_is_crypto",
+      "at": "2026-11-01T19:30:07.919Z",
+      "type": "concept"
     }
   ]
 }
