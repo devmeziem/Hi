@@ -234,6 +234,11 @@
       "id": "concept_what_is_crypto",
       "at": "2026-11-01T19:30:07.919Z",
       "type": "concept"
+    },
+    {
+      "id": "skill_track_3days",
+      "at": "2026-11-01T23:30:03.343Z",
+      "type": "skill"
     }
   ]
 }
