@@ -1,1 +1,1 @@
-PLACEHOLDER
+FILE_FROM_DISK:/tmp/gen_archie_fixed.cjs
