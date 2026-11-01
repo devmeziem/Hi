@@ -44,7 +44,10 @@ function durOf(file) {
 }
 
 function findPuppet() {
+  // Real asset locations in this repo (committed PNGs)
   const roots = [
+    path.join(process.cwd(), 'cartoon_character_assets', 'exact_puppet'),
+    path.join(process.cwd(), 'cartoon_character_assets', 'comparison_puppet'),
     path.join(process.cwd(), 'assets', 'puppet'),
     path.join(process.cwd(), 'test_artifacts', 'puppet'),
     path.join(process.cwd(), 'src', 'assets', 'puppet'),
@@ -52,8 +55,18 @@ function findPuppet() {
   ];
   const want = {
     idle: ['puppet_idle.png', 'puppet_talking.png', 'archie_idle.png'],
-    talk: ['puppet_talking.png', 'puppet_explain_both_talk.png', 'puppet_idle.png'],
-    point: ['puppet_point_camera.png', 'puppet_point_up_right.png', 'puppet_open_palms.png']
+    talk: [
+      'puppet_talking.png',
+      'puppet_explain_both_talk.png',
+      'puppet_open_palms_talk.png',
+      'puppet_idle.png'
+    ],
+    point: [
+      'puppet_point_camera.png',
+      'puppet_point_up_right.png',
+      'puppet_open_palms.png',
+      'puppet_point_right.png'
+    ]
   };
   const found = { idle: null, talk: null, point: null };
   for (const root of roots) {
@@ -73,9 +86,14 @@ function findPuppet() {
   if (!found.idle) {
     for (const root of roots) {
       if (!fs.existsSync(root)) continue;
-      const png = fs.readdirSync(root).find((f) => /\.png$/i.test(f));
-      if (png) {
-        found.idle = path.join(root, png);
+      let files = [];
+      try {
+        files = fs.readdirSync(root).filter((f) => /\.png$/i.test(f));
+      } catch (_) {
+        continue;
+      }
+      if (files.length) {
+        found.idle = path.join(root, files[0]);
         found.talk = found.talk || found.idle;
         found.point = found.point || found.idle;
         break;
@@ -84,6 +102,14 @@ function findPuppet() {
   }
   found.talk = found.talk || found.idle;
   found.point = found.point || found.idle;
+  if (found.idle) {
+    console.log('[Archie v2] puppets', {
+      idle: path.basename(found.idle),
+      talk: path.basename(found.talk),
+      point: path.basename(found.point),
+      dir: path.dirname(found.idle)
+    });
+  }
   return found;
 }
 
@@ -114,69 +140,50 @@ function studioPng(mode, outPng) {
 
 /**
  * Compose Archie v2
- * @param {object} opts
- * @param {string} opts.voiceWav
- * @param {string} opts.scriptText - full spoken text for captions
- * @param {string} [opts.brollPath]
- * @param {string} [opts.bgmPath]
- * @param {string} [opts.seed]
- * @param {string} [opts.studio] black|white
- * @param {string} [opts.outPath]
  */
 async function composeArchieV2(opts = {}) {
   ensureDirs();
-  const seed = opts.seed || opts.scriptText || String(Date.now());
-  const pack = selectStylePack('archie', seed);
-  console.log('[Archie v2] style:', pack.summary);
-
   const voiceWav = opts.voiceWav;
   if (!voiceWav || !fs.existsSync(voiceWav)) throw new Error('Archie v2 needs voiceWav');
-  const voiceDur = durOf(voiceWav);
-  const total = voiceDur + 0.5;
 
   const puppets = findPuppet();
   if (!puppets.idle) throw new Error('Archie v2: no puppet assets found');
 
-  const studio = path.join(ART, 'studio.png');
-  studioPng(opts.studio === 'black' ? 'black' : 'white', studio);
+  const voiceDur = durOf(voiceWav);
+  const total = voiceDur + 0.55;
+  const pack = selectStylePack('archie', opts.seed || opts.scriptText || Date.now());
+  console.log('[Archie v2] style:', pack.summary);
 
-  // Mix audio: voice + optional soft BGM
-  const mixed = path.join(ART, `mix_${Date.now()}.wav`);
-  if (opts.bgmPath && fs.existsSync(opts.bgmPath)) {
-    try {
-      run(
-        `ffmpeg -y -i "${voiceWav}" -stream_loop -1 -i "${opts.bgmPath}" -filter_complex "[0:a]volume=1.5[v];[1:a]volume=0.42,atrim=0:${total.toFixed(2)},afade=t=in:d=0.3,afade=t=out:st=${Math.max(0.2, total - 0.7).toFixed(2)}:d=0.5[b];[v][b]amix=inputs=2:duration=first:dropout_transition=2[a]" -map "[a]" -t ${total.toFixed(2)} "${mixed}"`,
-        'mix'
-      );
-    } catch {
-      run(`ffmpeg -y -i "${voiceWav}" -t ${total.toFixed(2)} "${mixed}"`, 'mix_voice_only');
-    }
+  const studioMode = opts.studio === 'white' ? 'white' : 'black';
+  const studio = path.join(ART, 'studio.png');
+  studioPng(studioMode, studio);
+
+  // Mix VO + BGM
+  const mixed = path.join(ART, 'mixed.wav');
+  const bgm = opts.bgmPath && fs.existsSync(opts.bgmPath) ? opts.bgmPath : null;
+  if (bgm) {
+    run(
+      `ffmpeg -y -i "${voiceWav}" -stream_loop -1 -i "${bgm}" -filter_complex "[0:a]volume=1.5[v];[1:a]volume=0.42,atrim=0:${total.toFixed(2)},afade=t=in:d=0.3,afade=t=out:st=${Math.max(0.2, total - 0.7).toFixed(2)}:d=0.55[b];[v][b]amix=inputs=2:duration=first:dropout_transition=2[a]" -map "[a]" -t ${total.toFixed(2)} "${mixed}"`,
+      'mix'
+    );
   } else {
-    run(`ffmpeg -y -i "${voiceWav}" -t ${total.toFixed(2)} "${mixed}"`, 'mix_voice_only');
+    run(`ffmpeg -y -i "${voiceWav}" -t ${total.toFixed(2)} "${mixed}"`, 'mix_vo');
   }
 
-  // Timeline: 0–18% point, 18%–VO talk (flip), after VO idle
-  const tPoint = Math.max(1.2, voiceDur * 0.18);
+  // Base studio plate with light Ken Burns
+  const frames = Math.ceil(total * 30);
   const base = path.join(ART, 'base.mp4');
-  const vfStudio = pack.visualFx.vf.includes('zoompan')
-    ? pack.visualFx.vf
-    : `scale=1080:1920,zoompan=z='min(1.06,1.0+0.00025*on)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920:fps=30`;
-
-  // Base studio motion plate
   run(
-    `ffmpeg -y -loop 1 -t ${total.toFixed(2)} -i "${studio}" -f lavfi -i anullsrc=r=44100:cl=stereo -vf "${vfStudio}" -c:v libx264 -pix_fmt yuv420p -c:a aac -shortest -t ${total.toFixed(2)} "${base}"`,
+    `ffmpeg -y -loop 1 -t ${total.toFixed(2)} -i "${studio}" -vf "scale=1200:2133:force_original_aspect_ratio=increase,crop=1200:2133,zoompan=z='min(1.08,1+0.0002*on)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${frames}:s=1080x1920:fps=30" -c:v libx264 -pix_fmt yuv420p -t ${total.toFixed(2)} "${base}"`,
     'base'
   );
 
-  // Single-overlay character: alternate talk/idle with enable expressions (only 2 inputs besides base)
+  // Character overlays: point → talk/idle lipsync alternate → idle
+  const tPoint = Math.max(1.4, voiceDur * 0.16);
   const char = path.join(ART, 'char.mp4');
   try {
-    const talk = puppets.talk;
-    const idle = puppets.idle;
-    const point = puppets.point;
-    // 3 inputs max: base + point + talk/idle pair simplified to talk+idle
     run(
-      `ffmpeg -y -i "${base}" -loop 1 -t ${total.toFixed(2)} -i "${point}" -loop 1 -t ${total.toFixed(2)} -i "${talk}" -loop 1 -t ${total.toFixed(2)} -i "${idle}" -filter_complex "[1:v]scale=-1:1000,format=rgba[p];[2:v]scale=-1:1000,format=rgba[t];[3:v]scale=-1:1000,format=rgba[i];[0:v][p]overlay=x=(W-w)/2:y=H-h-60:enable='lt(t,${tPoint.toFixed(2)})'[a];[a][t]overlay=x=(W-w)/2:y=H-h-60:enable='gte(t,${tPoint.toFixed(2)})*lt(t,${voiceDur.toFixed(2)})*eq(mod(floor(t*5),2),0)'[b];[b][i]overlay=x=(W-w)/2:y=H-h-60:enable='gte(t,${tPoint.toFixed(2)})*lt(t,${voiceDur.toFixed(2)})*eq(mod(floor(t*5),2),1)'[c];[c][i]overlay=x=(W-w)/2:y=H-h-60:enable='gte(t,${voiceDur.toFixed(2)})'[v]" -map "[v]" -map 0:a? -c:v libx264 -pix_fmt yuv420p -c:a aac -shortest -t ${total.toFixed(2)} "${char}"`,
+      `ffmpeg -y -i "${base}" -loop 1 -t ${total.toFixed(2)} -i "${puppets.point}" -loop 1 -t ${total.toFixed(2)} -i "${puppets.talk}" -loop 1 -t ${total.toFixed(2)} -i "${puppets.idle}" -filter_complex "[1:v]scale=-1:1000,format=rgba[p];[2:v]scale=-1:1000,format=rgba[t];[3:v]scale=-1:1000,format=rgba[i];[0:v][p]overlay=x=(W-w)/2:y=H-h-60:enable='lt(t,${tPoint.toFixed(2)})'[a];[a][t]overlay=x=(W-w)/2:y=H-h-60:enable='gte(t,${tPoint.toFixed(2)})*lt(t,${voiceDur.toFixed(2)})*eq(mod(floor(t*5),2),0)'[b];[b][i]overlay=x=(W-w)/2:y=H-h-60:enable='gte(t,${tPoint.toFixed(2)})*lt(t,${voiceDur.toFixed(2)})*eq(mod(floor(t*5),2),1)'[c];[c][i]overlay=x=(W-w)/2:y=H-h-60:enable='gte(t,${voiceDur.toFixed(2)})'[v]" -map "[v]" -map 0:a? -c:v libx264 -pix_fmt yuv420p -c:a aac -shortest -t ${total.toFixed(2)} "${char}"`,
       'char'
     );
   } catch (e) {
@@ -204,11 +211,11 @@ async function composeArchieV2(opts = {}) {
   // Captions via rotating ASS
   const assPath = path.join(ART, 'captions.ass');
   fs.writeFileSync(assPath, buildRotatingAss(opts.scriptText || '', voiceDur, pack));
-  const assEsc = assPath.replace(/\:/g, '\\:').replace(/'/g, "'\\''");
   const capped = path.join(ART, 'capped.mp4');
   try {
+    const assForVf = assPath.replace(/\\/g, '/').replace(/:/g, '\\:');
     run(
-      `ffmpeg -y -i "${withBroll}" -vf "ass='${assPath.replace(/\\/g, '/')}'" -c:v libx264 -pix_fmt yuv420p -c:a copy -t ${total.toFixed(2)} "${capped}"`,
+      `ffmpeg -y -i "${withBroll}" -vf "ass='${assForVf}'" -c:v libx264 -pix_fmt yuv420p -c:a copy -t ${total.toFixed(2)} "${capped}"`,
       'ass'
     );
   } catch {

@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /**
- * Wire style_rotation_engine + force visual FX into Teen, Stoic, Driftreel, Archie.
- * Shebang-safe: never prepend above #!
+ * Wire style_rotation_engine into Teen, Stoic, Driftreel, Archie.
+ * Shebang-safe injects. Archie: try v2 first, never delete native heavy render.
  */
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
 function injectRequireAfterShebang(source, requireLine) {
-  if (!source || source.includes("style_rotation_engine")) return source;
+  if (!source || source.includes('style_rotation_engine')) return source;
   const lines = source.split('\n');
   if (lines[0] && lines[0].startsWith('#!')) {
     let i = 1;
@@ -36,7 +36,6 @@ function patch(rel, fn) {
 const REQUIRE_LINE =
   "const { selectStylePack, buildRotatingAss, SFX_QUERIES, VISUAL_FX } = require('./style_rotation_engine.cjs');";
 
-// Repair shebangs first
 try {
   execSync('node scripts/fix_shebang_headers.cjs', { stdio: 'inherit' });
 } catch (_) {}
@@ -73,15 +72,6 @@ patch('scripts/generate_teen_situation_reel.cjs', (t) => {
 
 patch('scripts/generate_stoic_quote_reel.cjs', (t) => {
   t = injectRequireAfterShebang(t, REQUIRE_LINE);
-  if (!t.includes('[Stoic] style:') && t.includes('[Quote Reel]')) {
-    t = t.replace(
-      /console\.log\(`\[Quote Reel\] Scholar:[^`]*`\);/,
-      `const STYLE_ROTATION_PACK = selectStylePack('stoic', (typeof chosen !== 'undefined' && (chosen.quote || chosen.text)) || Date.now());
-  console.log('[Stoic] style:', STYLE_ROTATION_PACK.summary);
-  console.log('[Quote Reel] Scholar');
-`
-    );
-  }
   return t;
 });
 
@@ -99,36 +89,45 @@ patch('scripts/generate_documentary_movie_reel.cjs', (t) => {
   return t;
 });
 
+// Archie: wrap call site to prefer v2, fall back to native heavy — do NOT replace renderArchieHeavy body
 patch('scripts/generate_archie_live_reel.cjs', (t) => {
   t = injectRequireAfterShebang(t, REQUIRE_LINE);
-  if (!t.includes('archie_v2_compositor') && t.includes('async function renderArchieHeavy')) {
+  // Widen puppet search roots in-source
+  if (t.includes("cartoon_character_assets', 'exact_puppet'") && !t.includes('comparison_puppet')) {
     t = t.replace(
-      /async function renderArchieHeavy\([\s\S]*?\n\}\n/,
-      `async function renderArchieHeavy(args) {
+      "const PUPPET = path.join(process.cwd(), 'cartoon_character_assets', 'exact_puppet');",
+      `const PUPPET_DIRS = [
+  path.join(process.cwd(), 'cartoon_character_assets', 'exact_puppet'),
+  path.join(process.cwd(), 'cartoon_character_assets', 'comparison_puppet')
+];
+const PUPPET = PUPPET_DIRS.find((d) => fs.existsSync(d)) || PUPPET_DIRS[0];`
+    );
+  }
+  if (!t.includes('ARCHIE_V2_WRAPPER') && t.includes('await renderArchieHeavy(')) {
+    t = t.replace(
+      /const rendered = await renderArchieHeavy\(\{([\s\S]*?)\}\);/,
+      `// ARCHIE_V2_WRAPPER
+  let rendered;
   try {
     const { composeArchieV2 } = require('./archie_v2_compositor.cjs');
     const text =
-      (args.script && (args.script.voiceover || args.script.script || args.script.narration)) ||
-      args.scriptText ||
+      (script && (script.voiceover || script.spokenScript || script.script || script.narration)) ||
       '';
-    const seed = (args.script && args.script.title) || text || Date.now();
-    const r = await composeArchieV2({
-      voiceWav: args.voiceWav,
+    const v2 = await composeArchieV2({
+      voiceWav,
       scriptText: typeof text === 'string' ? text : JSON.stringify(text),
-      brollPath: args.brollPath,
-      bgmPath: args.bgmPath,
-      seed,
-      studio: (args.script && args.script.studio) || 'black',
+      brollPath: typeof brollPath !== 'undefined' ? brollPath : undefined,
+      bgmPath: typeof bgmPath !== 'undefined' ? bgmPath : undefined,
+      seed: (script && script.title) || text || Date.now(),
+      studio: (script && script.studio) || 'black',
       outPath: path.join(process.cwd(), 'rendered_videos', 'archie_latest.mp4')
     });
-    return r.outPath;
+    rendered = { out: v2.outPath, latest: v2.outPath, total: v2.duration };
+    console.log('[Archie] used v2 compositor');
   } catch (e) {
-    console.warn('[Archie] v2 failed:', e.message);
-    throw e;
-  }
-}
-
-`
+    console.warn('[Archie] v2 failed, falling back to heavy:', e.message);
+    rendered = await renderArchieHeavy({$1});
+  }`
     );
   }
   return t;
