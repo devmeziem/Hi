@@ -244,6 +244,11 @@
       "id": "concept_inflation",
       "at": "2026-11-02T13:21:04.758Z",
       "type": "concept"
+    },
+    {
+      "id": "concept_interest",
+      "at": "2026-11-02T23:04:59.455Z",
+      "type": "concept"
     }
   ]
 }
