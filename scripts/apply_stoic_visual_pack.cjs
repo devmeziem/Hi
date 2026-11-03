@@ -1,39 +1,61 @@
 #!/usr/bin/env node
-/** Rotate Stoic grade + ken burns from style_rotation_engine */
+/** Rotate Stoic visual grade + zoom; shebang-safe; no TDZ on STYLE_ROTATION_PACK. */
 const fs = require('fs');
 const path = require('path');
+
 const p = path.join(process.cwd(), 'scripts', 'generate_stoic_quote_reel.cjs');
-if (!fs.existsSync(p)) process.exit(0);
+if (!fs.existsSync(p)) {
+  console.warn('[stoic-viz] missing generator');
+  process.exit(0);
+}
+
 let t = fs.readFileSync(p, 'utf8');
 const before = t;
 
+// Ensure style_rotation_engine is required after shebang
 if (!t.includes("style_rotation_engine")) {
-  t =
-    "const { selectStylePack, VISUAL_FX } = require('./style_rotation_engine.cjs');\n" + t;
-}
-
-if (!t.includes('[Stoic] style:')) {
-  // after effectiveDuration / chosen is available near render
-  if (t.includes('const fps = 30') || t.includes('const totalFrames')) {
-    t = t.replace(
-      /const fps = 30;/,
-      `const STYLE_ROTATION_PACK = (typeof STYLE_ROTATION_PACK !== 'undefined' && STYLE_ROTATION_PACK)
-      ? STYLE_ROTATION_PACK
-      : selectStylePack('stoic', (typeof chosen !== 'undefined' && (chosen.quote || chosen.text)) || Date.now());
-    console.log('[Stoic] style:', STYLE_ROTATION_PACK.summary);
-    const fps = 30;`
-    );
+  const req =
+    "const { selectStylePack, buildRotatingAss, VISUAL_FX } = require('./style_rotation_engine.cjs');\n";
+  const lines = t.split('\n');
+  if (lines[0] && lines[0].startsWith('#!')) {
+    let i = 1;
+    if (lines[i] === '') i++;
+    lines.splice(i, 0, req.trim());
+    t = lines.join('\n');
+  } else {
+    t = req + t;
   }
 }
 
+// Early STYLE_ROTATION_PACK init at start of generateStoic5sVideo (prevents TDZ)
+if (t.includes('async function generateStoic5sVideo') && !t.includes('Style pack must be declared before any use')) {
+  t = t.replace(
+    'async function generateStoic5sVideo(durationOverride = null, customChosen = null, outputFileNameOverride = null) {',
+    `async function generateStoic5sVideo(durationOverride = null, customChosen = null, outputFileNameOverride = null) {
+  // Style pack must be declared before any use (avoid TDZ from apply patches)
+  let STYLE_ROTATION_PACK = { seed: Date.now(), summary: 'default', visualFx: { id: 'default' } };
+  try {
+    STYLE_ROTATION_PACK = selectStylePack(
+      'stoic',
+      String((customChosen && (customChosen.quote || customChosen.text)) || Date.now())
+    );
+  } catch (_) {}
+  console.log('[Stoic] style:', STYLE_ROTATION_PACK.summary);`
+  );
+}
+
+// Remove any TDZ self-reference patterns if present
+t = t.replace(
+  /const STYLE_ROTATION_PACK = \(typeof STYLE_ROTATION_PACK !== 'undefined' && STYLE_ROTATION_PACK\)\s*\?\s*STYLE_ROTATION_PACK\s*:\s*selectStylePack\([^;]+\);/g,
+  `let STYLE_ROTATION_PACK = selectStylePack('stoic', Date.now());`
+);
+
 // Rotate gradeFilter block
-if (t.includes("gradeFilter = `hue=s=0") && !t.includes('STYLE_GRADE_FROM_PACK')) {
+if (t.includes('gradeFilter = `hue=s=0') && !t.includes('STYLE_GRADE_FROM_PACK')) {
   t = t.replace(
     /gradeFilter = `hue=s=0,eq=contrast=1\.32:brightness=-0\.03,vignette=PI\/4\.5`;/,
     `// STYLE_GRADE_FROM_PACK
-      const _sp = (typeof STYLE_ROTATION_PACK !== 'undefined' && STYLE_ROTATION_PACK)
-        ? STYLE_ROTATION_PACK
-        : selectStylePack('stoic', Date.now());
+      const _sp = STYLE_ROTATION_PACK || selectStylePack('stoic', Date.now());
       const grades = [
         'hue=s=0,eq=contrast=1.32:brightness=-0.03,vignette=PI/4.5',
         'hue=s=0,eq=contrast=1.18:brightness=-0.02,vignette=PI/5',
@@ -52,7 +74,7 @@ if (t.includes("gradeFilter = `hue=s=0") && !t.includes('STYLE_GRADE_FROM_PACK')
 }
 
 // Rotate zoom formulas when fixed strings exist
-if (t.includes("zoomFormula") && !t.includes('STYLE_ZOOM_FROM_PACK')) {
+if (t.includes('zoomFormula') && !t.includes('STYLE_ZOOM_FROM_PACK')) {
   t = t.replace(
     /let zoomFormula = [^;]+;/,
     `// STYLE_ZOOM_FROM_PACK
@@ -68,7 +90,7 @@ if (t.includes("zoomFormula") && !t.includes('STYLE_ZOOM_FROM_PACK')) {
       "1.04+0.0002*on",
       "1.07+0.00016*on"
     ];
-    const _zpack = (typeof STYLE_ROTATION_PACK !== 'undefined' && STYLE_ROTATION_PACK) ? STYLE_ROTATION_PACK : { seed: Date.now() };
+    const _zpack = STYLE_ROTATION_PACK || { seed: Date.now() };
     let zoomFormula = zooms[Math.abs(String(_zpack.seed||'').split('').reduce((a,c)=>a+c.charCodeAt(0),0)) % zooms.length];`
   );
 }

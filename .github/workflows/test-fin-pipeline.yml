@@ -1,8 +1,8 @@
-name: Fin Blueprint Pipeline - Daily Mix (Channel 1)
+name: Fin Blueprint Pipeline - Daily Mix (Channel 1) [PAUSED]
 
+# PAUSED — schedule disabled while channel is redesigned.
+# Manual runs still available via workflow_dispatch.
 on:
-  schedule:
-    - cron: '0 5,11,15,20 * * *'
   workflow_dispatch:
     inputs:
       video_mode:
@@ -14,17 +14,25 @@ on:
       dry_run:
         description: 'Dry Run'
         required: true
-        default: false
+        default: true
         type: boolean
 
 jobs:
   fin_slot:
-    name: Fin education slot (CH1)
+    name: Fin education slot (CH1) [PAUSED]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
+      - name: Paused notice
+        run: |
+          echo "Fin channel is PAUSED for redesign."
+          echo "No scheduled posts. Manual dispatch only (dry_run default true)."
+          if [ "${{ github.event.inputs.dry_run }}" != "false" ] && [ "${{ github.event.inputs.dry_run }}" != "false" ]; then
+            echo "dry_run is on — exiting without render. Set dry_run=false to force a test."
+            exit 0
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -44,7 +52,7 @@ jobs:
       - name: Run Fin education slot
         env:
           VIDEO_MODE: ${{ github.event.inputs.video_mode || 'auto' }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'true' }}
           FIN_VOICE: en-US-AndrewNeural
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
@@ -58,17 +66,6 @@ jobs:
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
         run: node scripts/run_fin_daily_slot.cjs
-      - name: Commit dedup history
-        if: always()
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add fin_quote_history.json data/*.json 2>/dev/null || true
-          if ! git diff --staged --quiet; then
-            git commit -m "chore(fin-dedup): rolling history [skip ci]" || true
-            git pull --rebase --autostash origin main || true
-            git push origin HEAD || true
-          fi
       - if: always()
         uses: actions/upload-artifact@v4
         with:
