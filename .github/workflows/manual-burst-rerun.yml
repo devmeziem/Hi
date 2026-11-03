@@ -1,4 +1,4 @@
-name: Manual Burst Rerun (Teen + Driftreel + Archie)
+name: Manual Burst Rerun (Teen + Driftreel + Archie + Stoic)
 
 on:
   workflow_dispatch:
@@ -6,47 +6,32 @@ on:
     paths:
       - 'triggers/burst-rerun.flag'
       - 'triggers/archie-rerun.flag'
+      - 'triggers/stoic-fix.flag'
 
 jobs:
+  stoic:
+    if: contains(github.event.head_commit.message, 'Stoic') || contains(github.event.head_commit.message, 'stoic') || github.event_name == 'workflow_dispatch'
+    name: Stoic 5s
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dispatch Stoic
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run test-stoic-pipeline.yml -R devmeziem/Hi -f dry_run=false || true
   archie:
+    if: contains(github.event.head_commit.message, 'Archie') || contains(github.event.head_commit.message, 'archie') || github.event_name == 'workflow_dispatch'
     name: Archie cartoon
     runs-on: ubuntu-latest
     permissions:
       actions: write
-      contents: read
     steps:
       - uses: actions/checkout@v4
-      - name: Dispatch Archie on latest main
+      - name: Dispatch Archie
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh workflow run cartoon-pipeline.yml -R devmeziem/Hi \
-            -f dry_run=false -f pause_youtube=false || true
-  teen:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, 'burst')
-    name: Teen Mind Rush 5s
-    runs-on: ubuntu-latest
-    permissions:
-      actions: write
-    steps:
-      - uses: actions/checkout@v4
-      - name: Dispatch Teen
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh workflow run teen-motivation-pipeline.yml -R devmeziem/Hi \
-            -f video_type=5s_reel -f dry_run=false -f publish_tiktok=true -f auto_publish=false || true
-  driftreel:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, 'burst')
-    name: Driftreel doc
-    runs-on: ubuntu-latest
-    permissions:
-      actions: write
-    steps:
-      - uses: actions/checkout@v4
-      - name: Dispatch Driftreel
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh workflow run movie-brand-pipeline.yml -R devmeziem/Hi \
-            -f dry_run=false -f publish_youtube=true -f publish_tiktok=true || true
+          gh workflow run cartoon-pipeline.yml -R devmeziem/Hi -f dry_run=false -f pause_youtube=false || true
