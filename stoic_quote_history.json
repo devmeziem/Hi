@@ -1,12 +1,5 @@
 [
   {
-    "quote": "Sometimes it is the people no one can imagine anything of who do the things that no one can imagine.",
-    "author": "Dr. Alan Turing, Ph.D., OBE",
-    "credentials": "Mathematician, Logician & Cryptanalyst • Cambridge & Princeton",
-    "theme": "confidence",
-    "usedAt": "2026-09-12T23:48:16.670Z"
-  },
-  {
     "quote": "A wise man gets more use from his enemies than a fool from his friends.",
     "author": "Prof. Baltasar Gracián",
     "credentials": "Philosopher & Rector • Author of The Art of Worldly Wisdom",
@@ -838,5 +831,18 @@
     "author": "Sigmund Freud",
     "channel": "stoic",
     "timestamp": "2026-11-04T01:59:21.640Z"
+  },
+  {
+    "quote": "When you gaze long into an abyss, the abyss also gazes into you.",
+    "author": "Prof. Friedrich Nietzsche",
+    "credentials": "Chair of Classical Philology • University of Basel",
+    "theme": "psychology",
+    "usedAt": "2026-11-04T13:57:23.270Z"
+  },
+  {
+    "quote": "When you gaze long into an abyss, the abyss also gazes into you.",
+    "author": "Prof. Friedrich Nietzsche",
+    "channel": "stoic",
+    "timestamp": "2026-11-04T13:57:23.270Z"
   }
 ]
