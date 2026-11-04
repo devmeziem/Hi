@@ -1,12 +1,5 @@
 [
   {
-    "quote": "When you change the way you look at things, the things you look at change.",
-    "author": "Dr. Max Planck, Ph.D.",
-    "credentials": "Nobel Laureate in Physics • Originator of Quantum Theory",
-    "theme": "mindset",
-    "usedAt": "2026-09-12T18:59:27.027Z"
-  },
-  {
     "quote": "Sometimes it is the people no one can imagine anything of who do the things that no one can imagine.",
     "author": "Dr. Alan Turing, Ph.D., OBE",
     "credentials": "Mathematician, Logician & Cryptanalyst • Cambridge & Princeton",
@@ -832,5 +825,18 @@
     "author": "Franz Kafka",
     "channel": "stoic",
     "timestamp": "2026-11-03T23:59:57.568Z"
+  },
+  {
+    "quote": "Unexpressed emotions will never die. They are buried alive and will come forth later in uglier ways.",
+    "author": "Sigmund Freud",
+    "credentials": "Founder of Psychoanalysis • Neurologist",
+    "theme": "subconscious",
+    "usedAt": "2026-11-04T01:59:21.639Z"
+  },
+  {
+    "quote": "Unexpressed emotions will never die. They are buried alive and will come forth later in uglier ways.",
+    "author": "Sigmund Freud",
+    "channel": "stoic",
+    "timestamp": "2026-11-04T01:59:21.640Z"
   }
 ]
