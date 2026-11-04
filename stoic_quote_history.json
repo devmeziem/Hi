@@ -1,12 +1,5 @@
 [
   {
-    "quote": "A wise man gets more use from his enemies than a fool from his friends.",
-    "author": "Prof. Baltasar Gracián",
-    "credentials": "Philosopher & Rector • Author of The Art of Worldly Wisdom",
-    "theme": "defense",
-    "usedAt": "2026-09-13T19:13:25.876Z"
-  },
-  {
     "quote": "The optimist thinks this is the best of all possible worlds. The pessimist fears it is true.",
     "author": "Dr. J. Robert Oppenheimer, Ph.D.",
     "credentials": "Theoretical Physicist • Director, Institute for Advanced Study Princeton",
@@ -844,5 +837,18 @@
     "author": "Prof. Friedrich Nietzsche",
     "channel": "stoic",
     "timestamp": "2026-11-04T13:57:23.270Z"
+  },
+  {
+    "quote": "All of humanity's problems stem from man's inability to sit quietly in a room alone.",
+    "author": "Blaise Pascal",
+    "credentials": "Mathematician, Physicist & Philosopher • Pensées",
+    "theme": "solitude",
+    "usedAt": "2026-11-04T20:43:38.509Z"
+  },
+  {
+    "quote": "All of humanity's problems stem from man's inability to sit quietly in a room alone.",
+    "author": "Blaise Pascal",
+    "channel": "stoic",
+    "timestamp": "2026-11-04T20:43:38.510Z"
   }
 ]
