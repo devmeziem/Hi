@@ -51,7 +51,7 @@ jobs:
       - run: npm install --legacy-peer-deps --no-audit --no-fund
       - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-liberation || true
       - run: pip install -q edge-tts
-      - name: Apply diversity + style rotation + shebang repair
+      - name: Apply diversity + style rotation + soft AI fallback
         run: |
           node scripts/fix_shebang_headers.cjs || true
           node scripts/apply_all_content_system.cjs || true
@@ -67,6 +67,7 @@ jobs:
           node scripts/apply_center_karaoke_bw_bgm.cjs || true
           node scripts/apply_style_rotation_all.cjs || true
           node scripts/apply_force_visual_fx_rotation.cjs || true
+          node scripts/apply_teen_soft_ai_fallback.cjs || true
           node scripts/fix_shebang_headers.cjs || true
           node --check scripts/generate_teen_situation_reel.cjs || true
           node --check scripts/generate_teen_boost_5s_reel.cjs || true
