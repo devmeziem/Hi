@@ -1,12 +1,5 @@
 [
   {
-    "quote": "The optimist thinks this is the best of all possible worlds. The pessimist fears it is true.",
-    "author": "Dr. J. Robert Oppenheimer, Ph.D.",
-    "credentials": "Theoretical Physicist • Director, Institute for Advanced Study Princeton",
-    "theme": "wisdom",
-    "usedAt": "2026-09-13T23:54:53.730Z"
-  },
-  {
     "quote": "Reserve your right to think, for even to think wrongly is better than not to think at all.",
     "author": "Hypatia of Alexandria",
     "credentials": "Mathematician, Astronomer & Neoplatonist Philosopher",
@@ -850,5 +843,18 @@
     "author": "Blaise Pascal",
     "channel": "stoic",
     "timestamp": "2026-11-04T20:43:38.510Z"
+  },
+  {
+    "quote": "What a man is contributes much more to his happiness than what he has, or how he is regarded by others.",
+    "author": "Arthur Schopenhauer",
+    "credentials": "Author of Studies in Pessimism • German Philosopher",
+    "theme": "sovereignty",
+    "usedAt": "2026-11-05T02:03:03.883Z"
+  },
+  {
+    "quote": "What a man is contributes much more to his happiness than what he has, or how he is regarded by others.",
+    "author": "Arthur Schopenhauer",
+    "channel": "stoic",
+    "timestamp": "2026-11-05T02:03:03.884Z"
   }
 ]
