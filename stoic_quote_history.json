@@ -1,12 +1,5 @@
 [
   {
-    "quote": "Reserve your right to think, for even to think wrongly is better than not to think at all.",
-    "author": "Hypatia of Alexandria",
-    "credentials": "Mathematician, Astronomer & Neoplatonist Philosopher",
-    "theme": "truth",
-    "usedAt": "2026-09-14T13:42:17.007Z"
-  },
-  {
     "quote": "Between stimulus and response there is a space. In that space is our power to choose our response.",
     "author": "Dr. Viktor Frankl, M.D., Ph.D.",
     "credentials": "Neurologist & Psychiatrist • University of Vienna",
@@ -856,5 +849,18 @@
     "author": "Arthur Schopenhauer",
     "channel": "stoic",
     "timestamp": "2026-11-05T02:03:03.884Z"
+  },
+  {
+    "quote": "A man can be himself only so long as he is alone; if he does not love solitude, he will not love freedom.",
+    "author": "Arthur Schopenhauer",
+    "credentials": "Author of Studies in Pessimism • German Philosopher",
+    "theme": "solitude",
+    "usedAt": "2026-11-05T14:15:13.708Z"
+  },
+  {
+    "quote": "A man can be himself only so long as he is alone; if he does not love solitude, he will not love freedom.",
+    "author": "Arthur Schopenhauer",
+    "channel": "stoic",
+    "timestamp": "2026-11-05T14:15:13.709Z"
   }
 ]
