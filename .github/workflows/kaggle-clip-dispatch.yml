@@ -63,9 +63,11 @@ jobs:
           print("WROTE_JOB", path)
           print(json.dumps(job, indent=2))
           PY
-      - name: Install Kaggle CLI
+      - name: Install Kaggle CLI + deps
         if: ${{ github.event.inputs.dry_notebook_only != true && github.event.inputs.dry_notebook_only != 'true' }}
-        run: pip install -q kaggle
+        run: |
+          pip install -q 'kaggle>=1.6.0' six protobuf urllib3 certifi python-dateutil requests tqdm
+          python -c "import kaggle, six; print('kaggle+six OK')"
       - name: Credentials + metadata
         if: ${{ github.event.inputs.dry_notebook_only != true && github.event.inputs.dry_notebook_only != 'true' }}
         env:
@@ -122,7 +124,6 @@ jobs:
           kaggle kernels status "$SLUG" 2>&1 || true
           echo "=== kernels list (filter) ==="
           kaggle kernels list -m -s hi-ai-clip-worker 2>&1 | head -20 || true
-          # 409 often means kernel already running or version conflict — treat as soft success if status is running/complete
           if [ $CODE -ne 0 ]; then
             if echo "$OUT" | grep -qi '409\|Conflict'; then
               echo "NOTE: 409 Conflict — kernel may already be active. Check status above."
