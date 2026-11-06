@@ -1,12 +1,5 @@
 [
   {
-    "quote": "Between stimulus and response there is a space. In that space is our power to choose our response.",
-    "author": "Dr. Viktor Frankl, M.D., Ph.D.",
-    "credentials": "Neurologist & Psychiatrist • University of Vienna",
-    "theme": "discipline",
-    "usedAt": "2026-09-14T20:46:24.727Z"
-  },
-  {
     "quote": "Silence is a source of great strength. In stillness, all conflict dissolves.",
     "author": "Lao Tzu",
     "credentials": "Ancient Sage & Philosopher • Author of the Tao Te Ching",
@@ -862,5 +855,18 @@
     "author": "Arthur Schopenhauer",
     "channel": "stoic",
     "timestamp": "2026-11-05T14:15:13.709Z"
+  },
+  {
+    "quote": "It is not titles that honor men, but men that honor titles.",
+    "author": "Niccolò Machiavelli",
+    "credentials": "Author of The Prince • Diplomat & Political Philosopher",
+    "theme": "sovereignty",
+    "usedAt": "2026-11-06T02:03:14.971Z"
+  },
+  {
+    "quote": "It is not titles that honor men, but men that honor titles.",
+    "author": "Niccolò Machiavelli",
+    "channel": "stoic",
+    "timestamp": "2026-11-06T02:03:14.972Z"
   }
 ]
