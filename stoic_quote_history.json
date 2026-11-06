@@ -1,12 +1,5 @@
 [
   {
-    "quote": "Silence is a source of great strength. In stillness, all conflict dissolves.",
-    "author": "Lao Tzu",
-    "credentials": "Ancient Sage & Philosopher • Author of the Tao Te Ching",
-    "theme": "defense",
-    "usedAt": "2026-09-15T00:22:04.905Z"
-  },
-  {
     "quote": "Peace is not an absence of war, it is a virtue, a state of mind, a disposition for benevolence.",
     "author": "Baruch Spinoza",
     "credentials": "Rationalist Philosopher & Ethicist • Amsterdam",
@@ -868,5 +861,18 @@
     "author": "Niccolò Machiavelli",
     "channel": "stoic",
     "timestamp": "2026-11-06T02:03:14.972Z"
+  },
+  {
+    "quote": "Leave people hungry. Even with physical thirst, it is a sign of good taste to leave people with a craving.",
+    "author": "Baltasar Gracián",
+    "credentials": "Author of The Art of Worldly Wisdom • Jesuit Philosopher",
+    "theme": "influence",
+    "usedAt": "2026-11-06T13:55:01.658Z"
+  },
+  {
+    "quote": "Leave people hungry. Even with physical thirst, it is a sign of good taste to leave people with a craving.",
+    "author": "Baltasar Gracián",
+    "channel": "stoic",
+    "timestamp": "2026-11-06T13:55:01.659Z"
   }
 ]
