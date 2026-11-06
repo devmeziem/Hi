@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * Fin listicle shorts (<60s): 3/5/7 ways, behaviors, digital skills.
- * Keyword research → AI (or structured fallback) script → multi-scene media → Edge TTS → YT
+ * Fin listicle shorts (<60s)
  */
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const { researchFinKeyword } = require('./keyword_research_engine.cjs');
+const { edgeTts } = require('./edge_tts_helper.cjs');
 
 const OUT = path.join(process.cwd(), 'rendered_videos');
 const ART = path.join(process.cwd(), 'test_artifacts', 'fin_listicle');
@@ -35,7 +35,6 @@ function saveDedup(d) {
 
 function structuredScript(research) {
   const n = research.count || 5;
-  const items = [];
   const banks = {
     behaviors: [
       'Spending every small win the same day it arrives',
@@ -43,7 +42,7 @@ function structuredScript(research) {
       'Ignoring fees because the number looks small',
       'Chasing hype before learning definitions',
       'Keeping zero buffer for emergencies',
-      'Treating “later” as a savings plan',
+      'Treating later as a savings plan',
       'Mixing friends, urgency, and money decisions'
     ],
     save: [
@@ -70,6 +69,7 @@ function structuredScript(research) {
   if (titleL.includes('save')) pool = banks.save;
   else if (titleL.includes('skill') || titleL.includes('digital')) pool = banks.skills;
   const shuffled = pool.slice().sort(() => Math.random() - 0.5);
+  const items = [];
   for (let i = 0; i < n; i++) items.push(shuffled[i % shuffled.length]);
 
   const spoken =
@@ -79,7 +79,7 @@ function structuredScript(research) {
     `This is education, not financial advice.`;
 
   const scenes = items.slice(0, Math.min(6, items.length)).map((it, i) => ({
-    onScreen: `0${i + 1} · ${it.split(' ').slice(0, 5).join(' ')}`.slice(0, 36),
+    onScreen: `0${i + 1} ${it.split(' ').slice(0, 5).join(' ')}`.slice(0, 36),
     visualQuery: research.mediaHints[i % research.mediaHints.length],
     seconds: 7
   }));
@@ -94,11 +94,7 @@ function structuredScript(research) {
 async function aiExpand(research) {
   const system = `You write under-60-second finance education listicles for students and people under 25 (Nigeria-first, global OK).
 Return STRICT JSON only:
-{
-  "spokenScript": "120-180 words. Numbered list delivery. Natural male narrator. No guaranteed returns. End with one action + education disclaimer.",
-  "scenes": [{"onScreen": "max 7 words", "visualQuery": "3-5 word stock query", "seconds": 6}],
-  "description": "YouTube description 500-900 chars with keyword and disclaimer"
-}
+{\n  "spokenScript": "120-180 words. Numbered list delivery. Natural male narrator. No guaranteed returns. End with one action + education disclaimer.",\n  "scenes": [{"onScreen": "max 7 words", "visualQuery": "3-5 word stock query", "seconds": 6}],\n  "description": "YouTube description 500-900 chars with keyword and disclaimer"\n}
 Rules: 4-7 scenes matching the list. Different visualQuery each scene. Title angle: ${research.title}`;
   const user = `Primary keyword: ${research.primaryKeyword}\nAngle: ${research.angle}\nCount target: ${research.count}`;
   try {
@@ -108,26 +104,14 @@ Rules: 4-7 scenes matching the list. Different visualQuery each scene. Title ang
       console.log('[FinList] AI OK', res.scenes.length);
       return res;
     }
+    if (res && res.data && res.data.spokenScript) {
+      console.log('[FinList] AI OK (wrapped)');
+      return res.data;
+    }
   } catch (e) {
     console.warn('[FinList] AI soft-fail → structured', e.message);
   }
   return structuredScript(research);
-}
-
-function edgeTts(text, outFile) {
-  const voice = process.env.FIN_VOICE || 'en-US-AndrewNeural';
-  const rate = process.env.FIN_RATE || '+0%';
-  const pitch = process.env.FIN_PITCH || '-8Hz';
-  try {
-    execSync(
-      `npx --yes edge-tts --voice ${voice} --rate=${rate} --pitch=${pitch} --text ${JSON.stringify(text)} --write-media ${JSON.stringify(outFile)}`,
-      { stdio: 'pipe', timeout: 120000 }
-    );
-    return fs.existsSync(outFile) && fs.statSync(outFile).size > 1000;
-  } catch (e) {
-    console.warn('[FinList] TTS fail', e.message);
-    return false;
-  }
 }
 
 function probeDuration(file) {
@@ -194,7 +178,9 @@ async function main() {
   console.log('[FinList] keyword', research.primaryKeyword, 'title', research.title, 'src', research.source);
   const ai = await aiExpand(research);
   const voice = path.join(ART, 'voice.mp3');
-  if (!edgeTts(ai.spokenScript, voice)) throw new Error('TTS failed');
+  if (!edgeTts(ai.spokenScript, voice, { voice: process.env.FIN_VOICE || 'en-US-AndrewNeural', pitch: process.env.FIN_PITCH || '-8Hz' })) {
+    throw new Error('TTS failed');
+  }
   const voiceDur = probeDuration(voice) || 40;
   const scenes = (ai.scenes || []).slice(0, 7);
   const per = Math.max(5, Math.min(8, Math.min(55, voiceDur) / Math.max(3, scenes.length)));
