@@ -1,12 +1,5 @@
 [
   {
-    "quote": "Peace is not an absence of war, it is a virtue, a state of mind, a disposition for benevolence.",
-    "author": "Baruch Spinoza",
-    "credentials": "Rationalist Philosopher & Ethicist • Amsterdam",
-    "theme": "defense",
-    "usedAt": "2026-09-15T20:03:06.784Z"
-  },
-  {
     "quote": "What you do makes a difference, and you have to decide what kind of difference you want to make.",
     "author": "Dr. Jane Goodall, Ph.D., DBE",
     "credentials": "Primatologist & Anthropologist • University of Cambridge",
@@ -874,5 +867,18 @@
     "author": "Baltasar Gracián",
     "channel": "stoic",
     "timestamp": "2026-11-06T13:55:01.659Z"
+  },
+  {
+    "quote": "Small-minded people blame others. Average people blame themselves. The wise see all blame as foolishness.",
+    "author": "Epictetus",
+    "credentials": "Stoic Philosopher • Founder of the Nicopolis School",
+    "theme": "wisdom",
+    "usedAt": "2026-11-06T20:18:15.733Z"
+  },
+  {
+    "quote": "Small-minded people blame others. Average people blame themselves. The wise see all blame as foolishness.",
+    "author": "Epictetus",
+    "channel": "stoic",
+    "timestamp": "2026-11-06T20:18:15.734Z"
   }
 ]
