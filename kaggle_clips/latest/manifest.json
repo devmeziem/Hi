@@ -1,0 +1,19 @@
+{
+  "job_id": "gh-42208866462-1793963744",
+  "source": "github_actions_cpu",
+  "clips": [
+    {
+      "index": 0,
+      "path": "clip_00.mp4",
+      "prompt": "cinematic vertical portrait soft light no text",
+      "bytes": 17627
+    },
+    {
+      "index": 1,
+      "path": "clip_01.mp4",
+      "prompt": "calm ambient environment vertical 9 16 no text",
+      "bytes": 18009
+    }
+  ],
+  "status": "complete"
+}

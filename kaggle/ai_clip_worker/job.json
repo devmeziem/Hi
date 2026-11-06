@@ -1,0 +1,12 @@
+{
+  "job_id": "gh-42208866462-1793963744",
+  "channel": "test",
+  "task": "test_roundtrip",
+  "clip_seconds": 5,
+  "num_clips": 2,
+  "prompts": [
+    "cinematic vertical portrait soft light no text",
+    "calm ambient environment vertical 9 16 no text"
+  ],
+  "created_at": "2026-11-06T11:15:44Z"
+}
