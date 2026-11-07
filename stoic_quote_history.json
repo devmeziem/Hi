@@ -1,12 +1,5 @@
 [
   {
-    "quote": "Nothing in life is to be feared, it is only to be understood. Now is the time to understand more, so that we may fear less.",
-    "author": "Dr. Marie Curie, Ph.D.",
-    "credentials": "Physicist & Chemist • Double Nobel Laureate • Sorbonne",
-    "theme": "fortitude",
-    "usedAt": "2026-09-17T00:10:17.408Z"
-  },
-  {
     "quote": "The impediment to action advances action. What stands in the way becomes the way.",
     "author": "Marcus Aurelius",
     "credentials": "Roman Emperor & Stoic Philosopher • Meditations",
@@ -892,5 +885,18 @@
     "author": "Dr. Carl Jung",
     "channel": "stoic",
     "timestamp": "2026-11-07T12:39:57.291Z"
+  },
+  {
+    "quote": "Until you make the unconscious conscious, it will direct your life and you will call it fate.",
+    "author": "Dr. Carl Jung",
+    "credentials": "Founder of Analytical Psychology • Psychiatrist",
+    "theme": "psychology",
+    "usedAt": "2026-11-07T18:30:56.826Z"
+  },
+  {
+    "quote": "Until you make the unconscious conscious, it will direct your life and you will call it fate.",
+    "author": "Dr. Carl Jung",
+    "channel": "stoic",
+    "timestamp": "2026-11-07T18:30:56.855Z"
   }
 ]
