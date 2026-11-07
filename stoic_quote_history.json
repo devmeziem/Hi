@@ -1,12 +1,5 @@
 [
   {
-    "quote": "What you do makes a difference, and you have to decide what kind of difference you want to make.",
-    "author": "Dr. Jane Goodall, Ph.D., DBE",
-    "credentials": "Primatologist & Anthropologist • University of Cambridge",
-    "theme": "purpose",
-    "usedAt": "2026-09-15T23:59:50.177Z"
-  },
-  {
     "quote": "Until you make the unconscious conscious, it will direct your life and you will call it fate.",
     "author": "Dr. Carl Jung, M.D.",
     "credentials": "Founder of Analytical Psychology • Psychiatrist",
@@ -880,5 +873,18 @@
     "author": "Epictetus",
     "channel": "stoic",
     "timestamp": "2026-11-06T20:18:15.734Z"
+  },
+  {
+    "quote": "Pain and suffering are always inevitable for a large intelligence and a deep heart.",
+    "author": "Fyodor Dostoevsky",
+    "credentials": "Author of Crime and Punishment • Russian Philosopher",
+    "theme": "fortitude",
+    "usedAt": "2026-11-07T01:42:55.289Z"
+  },
+  {
+    "quote": "Pain and suffering are always inevitable for a large intelligence and a deep heart.",
+    "author": "Fyodor Dostoevsky",
+    "channel": "stoic",
+    "timestamp": "2026-11-07T01:42:55.290Z"
   }
 ]
