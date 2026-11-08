@@ -1,12 +1,5 @@
 [
   {
-    "quote": "You will earn the respect of all if you begin by earning the respect of yourself.",
-    "author": "Musonius Rufus",
-    "credentials": "The Roman Socrates • Stoic Teacher of Epictetus",
-    "theme": "sovereignty",
-    "usedAt": "2026-09-18T10:35:50.133Z"
-  },
-  {
     "quote": "Luck is what happens when preparation meets opportunity.",
     "author": "Seneca the Younger",
     "credentials": "Roman Stoic Philosopher & Statesman",
@@ -910,5 +903,18 @@
     "author": "Niccolò Machiavelli",
     "channel": "stoic",
     "timestamp": "2026-11-08T12:56:40.075Z"
+  },
+  {
+    "quote": "Never outshine the master. All superiority is odious, but superiority over a master is fatal.",
+    "author": "Robert Greene",
+    "credentials": "Author of The 48 Laws of Power & Laws of Human Nature",
+    "theme": "strategy",
+    "usedAt": "2026-11-08T18:42:46.286Z"
+  },
+  {
+    "quote": "Never outshine the master. All superiority is odious, but superiority over a master is fatal.",
+    "author": "Robert Greene",
+    "channel": "stoic",
+    "timestamp": "2026-11-08T18:42:46.287Z"
   }
 ]
