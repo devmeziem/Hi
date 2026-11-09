@@ -1,0 +1,107 @@
+name: Kaggle Blender Archie 3D (In Plain Motion style)
+
+on:
+  workflow_dispatch:
+    inputs:
+      wait_minutes:
+        description: 'Minutes to wait for kernel'
+        required: false
+        default: '45'
+
+jobs:
+  blender3d:
+    name: Push Blender notebook + download MP4
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: |
+          pip install -q 'kaggle>=1.6.0' six protobuf urllib3 certifi python-dateutil requests tqdm
+          sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends ffmpeg || true
+
+      - name: Credentials + metadata
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+        run: |
+          set -e
+          test -n "$KAGGLE_USERNAME"
+          mkdir -p ~/.kaggle
+          if [ -n "$KAGGLE_API_TOKEN" ]; then
+            echo -n "$KAGGLE_API_TOKEN" > ~/.kaggle/access_token
+            chmod 600 ~/.kaggle/access_token
+          fi
+          if [ -n "$KAGGLE_KEY" ]; then
+            printf '%s\n' "{\"username\":\"$KAGGLE_USERNAME\",\"key\":\"$KAGGLE_KEY\"}" > ~/.kaggle/kaggle.json
+            chmod 600 ~/.kaggle/kaggle.json
+          fi
+          python3 - << 'PY'
+          import json, os
+          p = 'kaggle/blender_archie_3d/kernel-metadata.json'
+          m = json.load(open(p))
+          m['id'] = os.environ['KAGGLE_USERNAME'] + '/archie-blender-3d'
+          m['title'] = 'archie-blender-3d'
+          m['enable_gpu'] = True
+          m['enable_internet'] = True
+          m['is_private'] = True
+          json.dump(m, open(p, 'w'), indent=2)
+          print('KERNEL', m['id'])
+          PY
+          echo "KERNEL_SLUG=$KAGGLE_USERNAME/archie-blender-3d" >> $GITHUB_ENV
+
+      - name: Push kernel (new slug avoids old 409)
+        run: |
+          set +e
+          OUT=$(kaggle kernels push -p kaggle/blender_archie_3d 2>&1)
+          CODE=$?
+          echo "$OUT"
+          echo "push_exit=$CODE"
+          if echo "$OUT" | grep -qi 'Expecting'; then exit 1; fi
+          # 409 on brand-new slug is rare; still continue to poll
+
+      - name: Poll until complete
+        env:
+          WAIT_MIN: ${{ github.event.inputs.wait_minutes || '45' }}
+        run: |
+          set +e
+          END=$((SECONDS + WAIT_MIN * 60))
+          while [ $SECONDS -lt $END ]; do
+            OUT=$(kaggle kernels status "$KERNEL_SLUG" 2>&1 || true)
+            echo "$OUT"
+            case "$OUT" in
+              *COMPLETE*|*complete*|*success*) echo done; break ;;
+              *error*|*ERROR*|*failed*) echo failed; exit 1 ;;
+            esac
+            sleep 40
+          done
+
+      - name: Download + commit
+        run: |
+          set +e
+          mkdir -p kaggle_out/blender3d kaggle_clips/archie_3d
+          kaggle kernels output "$KERNEL_SLUG" -p kaggle_out/blender3d 2>&1 || true
+          find kaggle_out/blender3d -type f | head -50
+          find kaggle_out/blender3d -iname '*.mp4' -exec cp -v {} kaggle_clips/archie_3d/ \;
+          find kaggle_out/blender3d -iname 'manifest.json' -exec cp -v {} kaggle_clips/archie_3d/ \;
+          ls -la kaggle_clips/archie_3d/ || true
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add kaggle_clips/archie_3d kaggle/blender_archie_3d 2>/dev/null || true
+          if ! git diff --staged --quiet; then
+            git commit -m "chore(archie-3d): blender kaggle output ${{ github.run_id }} [skip ci]" || true
+            git pull --rebase --autostash origin main || true
+            git push origin HEAD:main || true
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: archie-blender-3d-${{ github.run_id }}
+          path: |
+            kaggle_clips/archie_3d/**
+            kaggle_out/blender3d/**
+          if-no-files-found: warn
