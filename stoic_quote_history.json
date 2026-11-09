@@ -1,12 +1,5 @@
 [
   {
-    "quote": "Luck is what happens when preparation meets opportunity.",
-    "author": "Seneca the Younger",
-    "credentials": "Roman Stoic Philosopher & Statesman",
-    "theme": "preparation",
-    "usedAt": "2026-09-18T10:43:24.498Z"
-  },
-  {
     "quote": "Fate leads the willing, and drags the unwilling.",
     "author": "Cleanthes of Assos",
     "credentials": "Stoic Boxer & Successor to Zeno • Athens",
@@ -916,5 +909,18 @@
     "author": "Robert Greene",
     "channel": "stoic",
     "timestamp": "2026-11-08T18:42:46.287Z"
+  },
+  {
+    "quote": "The first method for estimating the intelligence of a ruler is to look at the men he has around him.",
+    "author": "Niccolò Machiavelli",
+    "credentials": "Author of The Prince • Diplomat & Political Philosopher",
+    "theme": "strategy",
+    "usedAt": "2026-11-09T01:30:37.710Z"
+  },
+  {
+    "quote": "The first method for estimating the intelligence of a ruler is to look at the men he has around him.",
+    "author": "Niccolò Machiavelli",
+    "channel": "stoic",
+    "timestamp": "2026-11-09T01:30:37.711Z"
   }
 ]
