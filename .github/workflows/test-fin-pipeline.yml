@@ -1,8 +1,7 @@
-name: Fin Blueprint Pipeline - Daily Mix (Channel 1)
+name: Fin Blueprint Pipeline - Daily Mix (Channel 1) [PAUSED]
 
+# PAUSED by request — schedules disabled. Re-enable by restoring cron lines.
 on:
-  schedule:
-    - cron: '0 5,11,15,20 * * *'
   workflow_dispatch:
     inputs:
       video_mode:
@@ -19,76 +18,11 @@ on:
 
 jobs:
   fin_slot:
-    name: Fin listicle education (CH1)
+    name: Fin listicle education (CH1) — PAUSED
     runs-on: ubuntu-latest
+    if: false
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: npm install --legacy-peer-deps --no-audit --no-fund
-      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core || true
-      - name: Install edge-tts CLI
-        run: |
-          pip install -q edge-tts
-          which edge-tts || true
-          edge-tts --list-voices 2>/dev/null | head -3 || python -m edge_tts --list-voices 2>/dev/null | head -3 || true
-      - run: node scripts/apply_all_content_system.cjs || true
-      - run: node scripts/ensure_youtube_dispatcher.cjs || true
-      - name: AI + voice patches
-        run: |
-          node scripts/apply_gemini_models_refresh.cjs || true
-          node scripts/fix_tts_male_no_google_default.cjs || true
-          node scripts/fix_shebang_headers.cjs || true
-          # do NOT run fix_fin_complete_lessons — it injects shebang mid-file
-          node --check scripts/generate_fin_listicle_short.cjs
-          node --check scripts/generate_fin_income_short.cjs
-      - name: Run Fin listicle / education slot
-        env:
-          VIDEO_MODE: ${{ github.event.inputs.video_mode || 'listicle' }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
-          FIN_VOICE: en-US-AndrewNeural
-          FIN_PITCH: '-8Hz'
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || secrets.GOOGLE_GEMINI_API_KEY || secrets.GOOGLE_API_KEY }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || secrets.CF_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN || secrets.CF_AI_TOKEN }}
-          AHREFS_API_KEY: ${{ secrets.AHREFS_API_KEY }}
-          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH1 || secrets.YOUTUBE_CLIENT_ID }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH1 || secrets.YOUTUBE_CLIENT_SECRET }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH1 || secrets.YOUTUBE_REFRESH_TOKEN }}
-          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
-          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
-          FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
-        run: |
-          echo "GEMINI set? $([ -n \"$GEMINI_API_KEY\" ] && echo yes || echo NO)"
-          echo "CF account set? $([ -n \"$CLOUDFLARE_ACCOUNT_ID\" ] && echo yes || echo NO)"
-          echo "CF token set? $([ -n \"$CLOUDFLARE_API_TOKEN\" ] && echo yes || echo NO)"
-          node scripts/run_fin_daily_slot.cjs
-      - name: Commit dedup history
-        if: always()
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/fin_listicle_dedup.json data/fin_income_dedup.json fin_quote_history.json 2>/dev/null || true
-          if ! git diff --staged --quiet; then
-            git commit -m "chore(fin-dedup): rolling history [skip ci]" || true
-            git pull --rebase --autostash origin main || true
-            git push origin HEAD || true
-          fi
-      - if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: fin-${{ github.run_id }}
-          path: |
-            rendered_videos/fin_*.mp4
-            rendered_videos/fin_*meta.json
-          if-no-files-found: ignore
+      - run: echo "Fin channel paused by user request"

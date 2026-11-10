@@ -26,7 +26,7 @@ on:
 
 jobs:
   documentary_pipeline:
-    name: Driftreel documentary + Buffer TikTok
+    name: Driftreel history + folk story
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -39,24 +39,25 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-liberation || true
+      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-liberation fonts-liberation2 || true
       - run: npm install --legacy-peer-deps --no-audit --no-fund
       - run: pip install -q edge-tts || true
       - run: node scripts/fix_shebang_headers.cjs || true
       - run: node scripts/apply_all_content_system.cjs || true
-      - name: Force center bold captions (keep style)
+      - name: Force center bold captions
         run: node scripts/apply_center_captions.cjs || true
-      - name: Wire live archive research (no seed vault)
+      - name: Live archive research path
         run: node scripts/apply_cinema_live_research.cjs || true
-      - name: Center karaoke + kill vault + Wikipedia story path
+      - name: Center karaoke + B&W + BGM helpers
         run: node scripts/apply_center_karaoke_bw_bgm.cjs || true
-      - name: Driftreel story + style rotation + force scene FX + no WM
+      - name: Driftreel history mode + style + no watermark
         run: |
           node scripts/apply_cinema_driftreel_fix.cjs || true
           node scripts/apply_style_rotation_all.cjs || true
           node scripts/apply_force_visual_fx_rotation.cjs || true
           node scripts/apply_driftreel_deep_rotation.cjs || true
           node scripts/apply_cinema_watermark_strip.cjs || true
+          node scripts/apply_driftreel_history_mode.cjs || true
           node scripts/fix_channel_audio_visual_quality.cjs || true
           node scripts/fix_tts_male_no_google_default.cjs || true
           node scripts/fix_batch_user_quality_oct25.cjs || true
@@ -64,15 +65,15 @@ jobs:
           node --check scripts/generate_documentary_movie_reel.cjs
         env:
           DRIFTREEL_STORY_MODE: 'true'
-          DRIFTREEL_ANGLE: 'untold_history_or_crime_story'
-          DRIFTREEL_LOOK: 'film_grain_bw_archival'
+          DRIFTREEL_ANGLE: 'ancient_history_folk_egyptian_greek'
+          DRIFTREEL_LOOK: 'film_grain_archival_bw'
       - name: Generate documentary
         env:
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           PUBLISH_YOUTUBE: ${{ github.event.inputs.publish_youtube }}
           PUBLISH_TIKTOK: 'false'
           DRIFTREEL_STORY_MODE: 'true'
-          DRIFTREEL_ANGLE: 'untold_history_or_crime_story'
+          DRIFTREEL_ANGLE: 'ancient_history_folk_egyptian_greek'
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
