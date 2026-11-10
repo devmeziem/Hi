@@ -1,8 +1,10 @@
 name: Teen Motivation Pipeline
 
+# Keep lighter secondary schedule aligned: max 2 situation-style/day
 on:
   schedule:
-    - cron: '0 7,12,17,22 * * *'
+    - cron: '30 10 * * *'
+    - cron: '30 19 * * *'
   workflow_dispatch:
     inputs:
       dry_run:
@@ -13,7 +15,7 @@ on:
 
 jobs:
   teen:
-    name: Teen situation reel
+    name: Teen PD-cartoon situation reel
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -39,6 +41,7 @@ jobs:
           node scripts/apply_all_content_system.cjs || true
           node scripts/apply_unique_bgm_all.cjs || true
           node scripts/apply_style_rotation_all.cjs || true
+          node scripts/apply_teen_pd_cartoon_lesson.cjs || true
           node scripts/apply_teen_natural_close.cjs || true
           node scripts/apply_social_duration_caps.cjs || true
           node scripts/apply_gemini_models_refresh.cjs || true
@@ -46,7 +49,7 @@ jobs:
       - name: Generate Teen reel
         env:
           DRY_RUN: ${{ github.event.inputs.dry_run == true || github.event.inputs.dry_run == 'true' }}
-          TEEN_MAX_SEC: '45'
+          TEEN_MAX_SEC: '40'
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}

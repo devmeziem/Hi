@@ -1,17 +1,19 @@
 name: Apex Discipline - Teen & Youth Motivation Pipeline (Channel 5)
 
+# Reduced rate: 2 × situation (35-40s PD-cartoon lesson) + 1 × 5s stoic-psych loop per day
 on:
   schedule:
-    - cron: '0 4,16 * * *'
-    - cron: '0 8,12,18,22 * * *'
+    - cron: '0 9 * * *'   # situation morning
+    - cron: '0 15 * * *'  # 5s boost midday
+    - cron: '0 20 * * *'  # situation evening
   workflow_dispatch:
     inputs:
       video_type:
-        description: 'Video Format — 5s_reel = Mind Rush boost quote loop'
+        description: 'Video Format — 5s_reel = stoic-psych loop for teens'
         required: false
         default: 'situation'
         type: choice
-        options: ['situation', 'auto', 'long_form', '5s_reel', '15s_slam']
+        options: ['situation', 'auto', '5s_reel']
       topic:
         description: 'Topic (optional)'
         required: false
@@ -35,7 +37,7 @@ on:
 
 jobs:
   teen_motivation_pipeline:
-    name: Build & Render Teen Motivation Reel
+    name: Build Teen Motivation (PD cartoon lesson / 5s loop)
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -49,9 +51,9 @@ jobs:
         with:
           python-version: '3.11'
       - run: npm install --legacy-peer-deps --no-audit --no-fund
-      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-liberation || true
+      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-liberation fonts-liberation2 || true
       - run: pip install -q edge-tts
-      - name: Apply diversity + style rotation + soft AI fallback
+      - name: Apply diversity + PD cartoon lesson + style
         run: |
           node scripts/fix_shebang_headers.cjs || true
           node scripts/apply_all_content_system.cjs || true
@@ -59,6 +61,8 @@ jobs:
           node scripts/patch_teen_topic_diversity.cjs || true
           node scripts/fix_teen_s_letter_and_stop_spam.cjs || true
           node scripts/apply_teen_situation_quality.cjs || true
+          node scripts/apply_teen_pd_cartoon_lesson.cjs || true
+          node scripts/apply_teen_natural_close.cjs || true
           node scripts/apply_unique_bgm_all.cjs || true
           node scripts/fix_channel_audio_visual_quality.cjs || true
           node scripts/fix_tts_male_no_google_default.cjs || true
@@ -78,6 +82,7 @@ jobs:
           DRY_RUN: ${{ github.event.inputs.dry_run == true || github.event.inputs.dry_run == 'true' }}
           SKIP_BUFFER: 'true'
           BOOST_DURATION: '5.0'
+          TEEN_MAX_SEC: '40'
           TEEN_WATERMARK: 'Mind Rush'
           TEEN_VOICE: en-US-ChristopherNeural
           TEEN_RATE: '-8%'
@@ -99,18 +104,18 @@ jobs:
           VT="${VIDEO_TYPE}"
           if [ -z "$VT" ]; then
             case "$HOUR" in
-              08|12|18|22) VT=5s_reel ;;
+              15) VT=5s_reel ;;
               *) VT=situation ;;
             esac
           fi
           echo "VIDEO_TYPE=$VT HOUR=$HOUR"
           if [ "$VT" = "5s_reel" ] || [ "$VT" = "boost" ]; then
-            echo "=== Teen BOOST 5s loop (Mind Rush watermark) ==="
+            echo "=== Teen BOOST 5s loop (stoic-psych for teens, no VO, high-contrast text) ==="
             node scripts/generate_teen_boost_5s_reel.cjs
             test -f rendered_videos/teen_boost_5s_latest.mp4
             cp -f rendered_videos/teen_boost_5s_latest.mp4 rendered_videos/teen_motivation_latest.mp4
           else
-            echo "=== Teen situation / long form ==="
+            echo "=== Teen PD-cartoon lesson situation 35-40s ==="
             node scripts/generate_teen_situation_reel.cjs
           fi
           test -f rendered_videos/teen_motivation_latest.mp4
