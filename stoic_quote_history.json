@@ -1,12 +1,5 @@
 [
   {
-    "quote": "No price is too high to pay for the privilege of owning yourself.",
-    "author": "Prof. Friedrich Nietzsche",
-    "credentials": "Chair of Classical Philology • University of Basel",
-    "theme": "sovereignty",
-    "usedAt": "2026-09-24T13:21:38.611Z"
-  },
-  {
     "quote": "The surest way to corrupt a youth is to instruct him to hold in higher esteem those who think alike than those who think differently.",
     "author": "Prof. Friedrich Nietzsche",
     "credentials": "Chair of Classical Philology • University of Basel",
@@ -934,5 +927,18 @@
     "author": "Robert Greene",
     "channel": "stoic",
     "timestamp": "2026-11-10T03:59:48.080Z"
+  },
+  {
+    "quote": "A wise prince should establish himself on that which is in his own control and not in that of others.",
+    "author": "Niccolò Machiavelli",
+    "credentials": "Author of The Prince • Diplomat & Political Philosopher",
+    "theme": "power",
+    "usedAt": "2026-11-10T14:31:59.061Z"
+  },
+  {
+    "quote": "A wise prince should establish himself on that which is in his own control and not in that of others.",
+    "author": "Niccolò Machiavelli",
+    "channel": "stoic",
+    "timestamp": "2026-11-10T14:31:59.062Z"
   }
 ]
