@@ -19,7 +19,7 @@ on:
         default: true
         type: boolean
       publish_tiktok:
-        description: 'TikTok Buffer API2 → Driftreel movie channel'
+        description: 'TikTok Buffer API2 → Driftreel (archie.the.explorer6 is correct)'
         required: false
         default: true
         type: boolean
@@ -44,29 +44,34 @@ jobs:
       - run: pip install -q edge-tts || true
       - run: node scripts/fix_shebang_headers.cjs || true
       - run: node scripts/apply_all_content_system.cjs || true
-      - name: Force center bold captions
+      - name: Force center bold captions helpers
         run: node scripts/apply_center_captions.cjs || true
       - name: Live archive research path
         run: node scripts/apply_cinema_live_research.cjs || true
       - name: Center karaoke + B&W + BGM helpers
         run: node scripts/apply_center_karaoke_bw_bgm.cjs || true
-      - name: Driftreel history mode + style + no watermark
+      - name: Driftreel history HARD + style + no watermark
         run: |
           node scripts/apply_cinema_driftreel_fix.cjs || true
           node scripts/apply_style_rotation_all.cjs || true
           node scripts/apply_force_visual_fx_rotation.cjs || true
           node scripts/apply_driftreel_deep_rotation.cjs || true
           node scripts/apply_cinema_watermark_strip.cjs || true
-          node scripts/apply_driftreel_history_mode.cjs || true
           node scripts/fix_channel_audio_visual_quality.cjs || true
           node scripts/fix_tts_male_no_google_default.cjs || true
           node scripts/fix_batch_user_quality_oct25.cjs || true
+          # MUST run last so it wins over earlier patches
+          node scripts/apply_driftreel_history_mode.cjs || true
           node scripts/fix_shebang_headers.cjs || true
           node --check scripts/generate_documentary_movie_reel.cjs
+          # Prove caption style was rewritten
+          grep -n "Arial Black" scripts/generate_documentary_movie_reel.cjs | head -3 || echo "WARN: Arial Black not found"
+          grep -n "&H00000000,1,0,0,0,100,100" scripts/generate_documentary_movie_reel.cjs | head -2 || echo "WARN: transparent BackColour not found"
+          grep -n "Cinema Vanguard" scripts/generate_documentary_movie_reel.cjs | head -3 || echo "OK: no Cinema Vanguard left"
         env:
           DRIFTREEL_STORY_MODE: 'true'
           DRIFTREEL_ANGLE: 'ancient_history_folk_egyptian_greek'
-          DRIFTREEL_LOOK: 'film_grain_archival_bw'
+          DRIFTREEL_LOOK: 'film_grain_archival'
       - name: Generate documentary
         env:
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
@@ -93,15 +98,18 @@ jobs:
           FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
         run: node scripts/generate_documentary_movie_reel.cjs
-      - name: Restore Buffer GraphQL publisher + AI flags
+      - name: Restore Buffer publisher + Driftreel caption + clean metadata
         if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.publish_tiktok == true || github.event.inputs.publish_tiktok == 'true' || github.event_name == 'schedule') }}
         run: |
           curl -fsSL "https://raw.githubusercontent.com/devmeziem/Hi/a00c9e83c801f94513ff002978558c5ee8c113bf/scripts/publish_buffer_second_tiktok.cjs" \
             -o scripts/publish_buffer_second_tiktok.cjs
           test -s scripts/publish_buffer_second_tiktok.cjs
           node scripts/apply_buffer_ai_flag.cjs || true
+          node scripts/apply_buffer_driftreel_caption.cjs || true
           node scripts/fix_shebang_headers.cjs || true
-      - name: Buffer TikTok → Driftreel
+          grep -n "Cinema Vanguard" scripts/publish_buffer_second_tiktok.cjs | head -3 || echo "OK: publisher has no Cinema Vanguard"
+          grep -n "#Driftreel" scripts/publish_buffer_second_tiktok.cjs | head -5 || echo "WARN: #Driftreel missing in publisher"
+      - name: Buffer TikTok → Driftreel (archie.the.explorer6 correct)
         if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.publish_tiktok == true || github.event.inputs.publish_tiktok == 'true' || github.event_name == 'schedule') }}
         env:
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
