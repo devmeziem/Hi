@@ -3,13 +3,6 @@
     "quote": "He is a wise man who does not grieve for the things which he has not, but rejoices for those which he has.",
     "author": "Epictetus",
     "credentials": "Former Slave & Stoic Master",
-    "theme": "action",
-    "usedAt": "2026-09-26T09:24:06.268Z"
-  },
-  {
-    "quote": "He is a wise man who does not grieve for the things which he has not, but rejoices for those which he has.",
-    "author": "Epictetus",
-    "credentials": "Former Slave & Stoic Master",
     "theme": "psychology",
     "usedAt": "2026-09-26T09:25:04.695Z"
   },
@@ -952,5 +945,18 @@
     "author": "Prof. Friedrich Nietzsche",
     "channel": "stoic",
     "timestamp": "2026-11-11T13:46:25.110Z"
+  },
+  {
+    "quote": "If a man knows not to which port he sails, no wind is favorable.",
+    "author": "Seneca the Younger",
+    "credentials": "Roman Statesman, Dramatist & Stoic Moralist",
+    "theme": "strategy",
+    "usedAt": "2026-11-11T21:07:52.255Z"
+  },
+  {
+    "quote": "If a man knows not to which port he sails, no wind is favorable.",
+    "author": "Seneca the Younger",
+    "channel": "stoic",
+    "timestamp": "2026-11-11T21:07:52.256Z"
   }
 ]
