@@ -1,11 +1,11 @@
 name: Apex Discipline - Teen & Youth Motivation Pipeline (Channel 5)
 
-# Reduced rate: 2 × situation (35-40s PD-cartoon lesson) + 1 × 5s stoic-psych loop per day
+# 2 × PD-cartoon lesson (35-40s) + 1 × 5s stoic-psych loop per day
 on:
   schedule:
-    - cron: '0 9 * * *'   # situation morning
-    - cron: '0 15 * * *'  # 5s boost midday
-    - cron: '0 20 * * *'  # situation evening
+    - cron: '0 9 * * *'
+    - cron: '0 15 * * *'
+    - cron: '0 20 * * *'
   workflow_dispatch:
     inputs:
       video_type:
@@ -51,30 +51,14 @@ jobs:
         with:
           python-version: '3.11'
       - run: npm install --legacy-peer-deps --no-audit --no-fund
-      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-liberation fonts-liberation2 || true
+      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-liberation fonts-liberation2 fonts-freefont-ttf || true
       - run: pip install -q edge-tts
-      - name: Apply diversity + PD cartoon lesson + style
+      - name: Verify PD cartoon generator
         run: |
-          node scripts/fix_shebang_headers.cjs || true
-          node scripts/apply_all_content_system.cjs || true
-          node scripts/ensure_youtube_dispatcher.cjs || true
-          node scripts/patch_teen_topic_diversity.cjs || true
-          node scripts/fix_teen_s_letter_and_stop_spam.cjs || true
-          node scripts/apply_teen_situation_quality.cjs || true
-          node scripts/apply_teen_pd_cartoon_lesson.cjs || true
-          node scripts/apply_teen_natural_close.cjs || true
-          node scripts/apply_unique_bgm_all.cjs || true
-          node scripts/fix_channel_audio_visual_quality.cjs || true
-          node scripts/fix_tts_male_no_google_default.cjs || true
-          node scripts/fix_batch_user_quality_oct25.cjs || true
-          node scripts/fix_teen_bold_bw_1080.cjs || true
-          node scripts/apply_center_karaoke_bw_bgm.cjs || true
-          node scripts/apply_style_rotation_all.cjs || true
-          node scripts/apply_force_visual_fx_rotation.cjs || true
-          node scripts/apply_teen_soft_ai_fallback.cjs || true
-          node scripts/fix_shebang_headers.cjs || true
-          node --check scripts/generate_teen_situation_reel.cjs || true
-          node --check scripts/generate_teen_boost_5s_reel.cjs || true
+          node --check scripts/generate_teen_situation_reel.cjs
+          grep -q "PD_CARTOON_LESSON_BANK" scripts/generate_teen_situation_reel.cjs
+          grep -q "Popeye" scripts/generate_teen_situation_reel.cjs
+          echo "Teen PD cartoon lesson generator OK"
       - name: Generate Teen
         env:
           VIDEO_TYPE: ${{ github.event.inputs.video_type || '' }}
@@ -83,10 +67,9 @@ jobs:
           SKIP_BUFFER: 'true'
           BOOST_DURATION: '5.0'
           TEEN_MAX_SEC: '40'
-          TEEN_WATERMARK: 'Mind Rush'
-          TEEN_VOICE: en-US-ChristopherNeural
+          TEEN_VOICE: en-US-AndrewNeural
           TEEN_RATE: '-8%'
-          TEEN_PITCH: '-15Hz'
+          TEEN_PITCH: '-18Hz'
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -102,7 +85,7 @@ jobs:
         run: |
           HOUR=$(date -u +%H)
           VT="${VIDEO_TYPE}"
-          if [ -z "$VT" ]; then
+          if [ -z "$VT" ] || [ "$VT" = "auto" ]; then
             case "$HOUR" in
               15) VT=5s_reel ;;
               *) VT=situation ;;
@@ -110,12 +93,17 @@ jobs:
           fi
           echo "VIDEO_TYPE=$VT HOUR=$HOUR"
           if [ "$VT" = "5s_reel" ] || [ "$VT" = "boost" ]; then
-            echo "=== Teen BOOST 5s loop (stoic-psych for teens, no VO, high-contrast text) ==="
-            node scripts/generate_teen_boost_5s_reel.cjs
-            test -f rendered_videos/teen_boost_5s_latest.mp4
-            cp -f rendered_videos/teen_boost_5s_latest.mp4 rendered_videos/teen_motivation_latest.mp4
+            echo "=== Teen BOOST 5s loop ==="
+            if [ -f scripts/generate_teen_boost_5s_reel.cjs ]; then
+              node scripts/generate_teen_boost_5s_reel.cjs
+              test -f rendered_videos/teen_boost_5s_latest.mp4
+              cp -f rendered_videos/teen_boost_5s_latest.mp4 rendered_videos/teen_motivation_latest.mp4
+            else
+              echo "5s generator missing — falling back to situation"
+              node scripts/generate_teen_situation_reel.cjs
+            fi
           else
-            echo "=== Teen PD-cartoon lesson situation 35-40s ==="
+            echo "=== Teen PD-cartoon lesson 35-40s ==="
             node scripts/generate_teen_situation_reel.cjs
           fi
           test -f rendered_videos/teen_motivation_latest.mp4
