@@ -1,12 +1,5 @@
 [
   {
-    "quote": "The surest way to corrupt a youth is to instruct him to hold in higher esteem those who think alike than those who think differently.",
-    "author": "Prof. Friedrich Nietzsche",
-    "credentials": "Chair of Classical Philology • University of Basel",
-    "theme": "truth",
-    "usedAt": "2026-09-25T09:29:17.573Z"
-  },
-  {
     "quote": "He is a wise man who does not grieve for the things which he has not, but rejoices for those which he has.",
     "author": "Epictetus",
     "credentials": "Former Slave & Stoic Master",
@@ -940,5 +933,18 @@
     "author": "Niccolò Machiavelli",
     "channel": "stoic",
     "timestamp": "2026-11-10T14:31:59.062Z"
+  },
+  {
+    "quote": "No price is too high to pay for the privilege of owning yourself.",
+    "author": "Prof. Friedrich Nietzsche",
+    "credentials": "Chair of Classical Philology • University of Basel",
+    "theme": "sovereignty",
+    "usedAt": "2026-11-11T01:45:29.421Z"
+  },
+  {
+    "quote": "No price is too high to pay for the privilege of owning yourself.",
+    "author": "Prof. Friedrich Nietzsche",
+    "channel": "stoic",
+    "timestamp": "2026-11-11T01:45:29.422Z"
   }
 ]
