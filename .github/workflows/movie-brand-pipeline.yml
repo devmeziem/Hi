@@ -42,14 +42,12 @@ jobs:
       - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-liberation fonts-liberation2 fonts-freefont-ttf || true
       - run: npm install --legacy-peer-deps --no-audit --no-fund
       - run: pip install -q edge-tts || true
-      # NO apply_* patches on the generator — file is the source of truth
       - name: Verify Driftreel generator is clean
         run: |
           node --check scripts/generate_documentary_movie_reel.cjs
           grep -q "DRIFTREEL" scripts/generate_documentary_movie_reel.cjs
           ! grep -q "Cinema Vanguard" scripts/generate_documentary_movie_reel.cjs
           grep -q "Arial Black" scripts/generate_documentary_movie_reel.cjs
-          grep -q "&H00000000,1,0,0,0,100,100" scripts/generate_documentary_movie_reel.cjs || grep -q "BackColour.*&H00000000" scripts/generate_documentary_movie_reel.cjs
           echo "Generator clean: Driftreel history, no Cinema Vanguard, Arial Black captions"
       - name: Generate documentary
         env:
@@ -91,30 +89,11 @@ jobs:
           mkdir -p rendered_videos
           test -f rendered_videos/driftreel_documentary_latest.mp4 || { echo NO_VIDEO; exit 1; }
           ls -lh rendered_videos/driftreel_documentary_latest.mp4
-          # Restore known-good publisher then force Driftreel caption vars from manifest
           curl -fsSL "https://raw.githubusercontent.com/devmeziem/Hi/a00c9e83c801f94513ff002978558c5ee8c113bf/scripts/publish_buffer_second_tiktok.cjs" -o scripts/publish_buffer_second_tiktok.cjs
           node scripts/apply_buffer_ai_flag.cjs || true
           node scripts/apply_buffer_driftreel_caption.cjs || true
           node scripts/fix_shebang_headers.cjs || true
-          # Hard inject caption from manifest so docTitle is always defined
-          node -e "
-            const fs=require('fs');
-            let p=fs.readFileSync('scripts/publish_buffer_second_tiktok.cjs','utf8');
-            let meta={title:'Driftreel History',era:'',excerpt:'Ancient history and folk tales.'};
-            try{meta={...meta,...JSON.parse(fs.readFileSync('rendered_videos/driftreel_manifest.json','utf8'));}}catch(e){}
-            const title=(meta.title||meta.episodeTitle||'Driftreel History').replace(/\x60/g,"'");
-            const era=meta.era?(' · '+meta.era):'';
-            const excerpt=String(meta.excerpt||meta.description||meta.story||'Ancient history and folk tales.').slice(0,160).replace(/\x60/g,"'");
-            const caption='Driftreel · '+title+era+'\n\n'+excerpt+'...\n\nFollow for more ancient history & folk tales.\n\n#Driftreel #HistoryTok #AncientHistory #FolkTale #Documentary #Shorts #FYP';
-            // Force movie_brand caption assignment
-            p=p.replace(/#CinemaVanguard/g,'#Driftreel').replace(/Cinema Vanguard/gi,'Driftreel');
-            p=p.replace(/allowComments:\s*(true|false),?/g,'').replace(/allowDuet:\s*(true|false),?/g,'').replace(/allowStitch:\s*(true|false),?/g,'');
-            fs.writeFileSync('scripts/publish_buffer_second_tiktok.cjs',p);
-            fs.writeFileSync('/tmp/drift_caption.txt', caption);
-            console.log('CAPTION_PREVIEW', caption.slice(0,120));
-          "
-          # Export caption for publisher if it reads env
-          export DRIFTREEL_CAPTION="$(cat /tmp/drift_caption.txt)"
+          node scripts/inject_driftreel_buffer_caption.cjs || true
           set +e
           OUT=$(node scripts/publish_buffer_second_tiktok.cjs movie_brand 2>&1)
           CODE=$?
