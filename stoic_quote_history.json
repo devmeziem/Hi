@@ -3,13 +3,6 @@
     "quote": "He is a wise man who does not grieve for the things which he has not, but rejoices for those which he has.",
     "author": "Epictetus",
     "credentials": "Former Slave & Stoic Master",
-    "theme": "psychology",
-    "usedAt": "2026-09-26T09:22:22.736Z"
-  },
-  {
-    "quote": "He is a wise man who does not grieve for the things which he has not, but rejoices for those which he has.",
-    "author": "Epictetus",
-    "credentials": "Former Slave & Stoic Master",
     "theme": "action",
     "usedAt": "2026-09-26T09:24:06.268Z"
   },
@@ -946,5 +939,18 @@
     "author": "Prof. Friedrich Nietzsche",
     "channel": "stoic",
     "timestamp": "2026-11-11T01:45:29.422Z"
+  },
+  {
+    "quote": "The surest way to corrupt a youth is to instruct him to hold in higher esteem those who think alike than those who think differently.",
+    "author": "Prof. Friedrich Nietzsche",
+    "credentials": "Chair of Classical Philology • University of Basel",
+    "theme": "truth",
+    "usedAt": "2026-11-11T13:46:25.109Z"
+  },
+  {
+    "quote": "The surest way to corrupt a youth is to instruct him to hold in higher esteem those who think alike than those who think differently.",
+    "author": "Prof. Friedrich Nietzsche",
+    "channel": "stoic",
+    "timestamp": "2026-11-11T13:46:25.110Z"
   }
 ]
