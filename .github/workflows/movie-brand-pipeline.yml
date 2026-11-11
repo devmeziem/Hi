@@ -19,7 +19,7 @@ on:
         default: true
         type: boolean
       publish_tiktok:
-        description: 'TikTok Buffer API2 → Driftreel (archie.the.explorer6 is correct)'
+        description: 'TikTok Buffer API2 → Driftreel (archie.the.explorer6)'
         required: false
         default: true
         type: boolean
@@ -39,46 +39,23 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-liberation fonts-liberation2 || true
+      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-liberation fonts-liberation2 fonts-freefont-ttf || true
       - run: npm install --legacy-peer-deps --no-audit --no-fund
       - run: pip install -q edge-tts || true
-      - run: node scripts/fix_shebang_headers.cjs || true
-      - run: node scripts/apply_all_content_system.cjs || true
-      - name: Force center bold captions helpers
-        run: node scripts/apply_center_captions.cjs || true
-      - name: Live archive research path
-        run: node scripts/apply_cinema_live_research.cjs || true
-      - name: Center karaoke + B&W + BGM helpers
-        run: node scripts/apply_center_karaoke_bw_bgm.cjs || true
-      - name: Driftreel history HARD + style + no watermark
+      # NO apply_* patches on the generator — file is the source of truth
+      - name: Verify Driftreel generator is clean
         run: |
-          node scripts/apply_cinema_driftreel_fix.cjs || true
-          node scripts/apply_style_rotation_all.cjs || true
-          node scripts/apply_force_visual_fx_rotation.cjs || true
-          node scripts/apply_driftreel_deep_rotation.cjs || true
-          node scripts/apply_cinema_watermark_strip.cjs || true
-          node scripts/fix_channel_audio_visual_quality.cjs || true
-          node scripts/fix_tts_male_no_google_default.cjs || true
-          node scripts/fix_batch_user_quality_oct25.cjs || true
-          # MUST run last so it wins over earlier patches
-          node scripts/apply_driftreel_history_mode.cjs || true
-          node scripts/fix_shebang_headers.cjs || true
           node --check scripts/generate_documentary_movie_reel.cjs
-          # Prove caption style was rewritten
-          grep -n "Arial Black" scripts/generate_documentary_movie_reel.cjs | head -3 || echo "WARN: Arial Black not found"
-          grep -n "&H00000000,1,0,0,0,100,100" scripts/generate_documentary_movie_reel.cjs | head -2 || echo "WARN: transparent BackColour not found"
-          grep -n "Cinema Vanguard" scripts/generate_documentary_movie_reel.cjs | head -3 || echo "OK: no Cinema Vanguard left"
-        env:
-          DRIFTREEL_STORY_MODE: 'true'
-          DRIFTREEL_ANGLE: 'ancient_history_folk_egyptian_greek'
-          DRIFTREEL_LOOK: 'film_grain_archival'
+          grep -q "DRIFTREEL" scripts/generate_documentary_movie_reel.cjs
+          ! grep -q "Cinema Vanguard" scripts/generate_documentary_movie_reel.cjs
+          grep -q "Arial Black" scripts/generate_documentary_movie_reel.cjs
+          grep -q "&H00000000,1,0,0,0,100,100" scripts/generate_documentary_movie_reel.cjs || grep -q "BackColour.*&H00000000" scripts/generate_documentary_movie_reel.cjs
+          echo "Generator clean: Driftreel history, no Cinema Vanguard, Arial Black captions"
       - name: Generate documentary
         env:
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           PUBLISH_YOUTUBE: ${{ github.event.inputs.publish_youtube }}
           PUBLISH_TIKTOK: 'false'
-          DRIFTREEL_STORY_MODE: 'true'
-          DRIFTREEL_ANGLE: 'ancient_history_folk_egyptian_greek'
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -89,27 +66,13 @@ jobs:
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID_CH4 }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH4 }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH4 }}
-          BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
-          BUFFER_TIKTOK_MOVIE_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_MOVIE_CHANNEL_ID }}
-          BUFFER_TIKTOK_TEEN_CHANNEL_ID: ${{ secrets.BUFFER_TIKTOK_TEEN_CHANNEL_ID }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
         run: node scripts/generate_documentary_movie_reel.cjs
-      - name: Restore Buffer publisher + Driftreel caption + clean metadata
-        if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.publish_tiktok == true || github.event.inputs.publish_tiktok == 'true' || github.event_name == 'schedule') }}
-        run: |
-          curl -fsSL "https://raw.githubusercontent.com/devmeziem/Hi/a00c9e83c801f94513ff002978558c5ee8c113bf/scripts/publish_buffer_second_tiktok.cjs" \
-            -o scripts/publish_buffer_second_tiktok.cjs
-          test -s scripts/publish_buffer_second_tiktok.cjs
-          node scripts/apply_buffer_ai_flag.cjs || true
-          node scripts/apply_buffer_driftreel_caption.cjs || true
-          node scripts/fix_shebang_headers.cjs || true
-          grep -n "Cinema Vanguard" scripts/publish_buffer_second_tiktok.cjs | head -3 || echo "OK: publisher has no Cinema Vanguard"
-          grep -n "#Driftreel" scripts/publish_buffer_second_tiktok.cjs | head -5 || echo "WARN: #Driftreel missing in publisher"
-      - name: Buffer TikTok → Driftreel (archie.the.explorer6 correct)
+      - name: Buffer TikTok → Driftreel
         if: ${{ github.event.inputs.dry_run != true && github.event.inputs.dry_run != 'true' && (github.event.inputs.publish_tiktok == true || github.event.inputs.publish_tiktok == 'true' || github.event_name == 'schedule') }}
         env:
           BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
@@ -126,30 +89,46 @@ jobs:
           DRY_RUN: 'false'
         run: |
           mkdir -p rendered_videos
-          if [ ! -f rendered_videos/driftreel_documentary_latest.mp4 ]; then
-            if ls rendered_videos/documentary_movie_*.mp4 1>/dev/null 2>&1; then
-              cp $(ls -t rendered_videos/documentary_movie_*.mp4 | head -1) rendered_videos/driftreel_documentary_latest.mp4
-            fi
-          fi
-          test -f rendered_videos/driftreel_documentary_latest.mp4 || { echo "NO VIDEO"; exit 1; }
+          test -f rendered_videos/driftreel_documentary_latest.mp4 || { echo NO_VIDEO; exit 1; }
           ls -lh rendered_videos/driftreel_documentary_latest.mp4
+          # Restore known-good publisher then force Driftreel caption vars from manifest
+          curl -fsSL "https://raw.githubusercontent.com/devmeziem/Hi/a00c9e83c801f94513ff002978558c5ee8c113bf/scripts/publish_buffer_second_tiktok.cjs" -o scripts/publish_buffer_second_tiktok.cjs
+          node scripts/apply_buffer_ai_flag.cjs || true
+          node scripts/apply_buffer_driftreel_caption.cjs || true
+          node scripts/fix_shebang_headers.cjs || true
+          # Hard inject caption from manifest so docTitle is always defined
+          node -e "
+            const fs=require('fs');
+            let p=fs.readFileSync('scripts/publish_buffer_second_tiktok.cjs','utf8');
+            let meta={title:'Driftreel History',era:'',excerpt:'Ancient history and folk tales.'};
+            try{meta={...meta,...JSON.parse(fs.readFileSync('rendered_videos/driftreel_manifest.json','utf8'));}}catch(e){}
+            const title=(meta.title||meta.episodeTitle||'Driftreel History').replace(/\x60/g,"'");
+            const era=meta.era?(' · '+meta.era):'';
+            const excerpt=String(meta.excerpt||meta.description||meta.story||'Ancient history and folk tales.').slice(0,160).replace(/\x60/g,"'");
+            const caption='Driftreel · '+title+era+'\n\n'+excerpt+'...\n\nFollow for more ancient history & folk tales.\n\n#Driftreel #HistoryTok #AncientHistory #FolkTale #Documentary #Shorts #FYP';
+            // Force movie_brand caption assignment
+            p=p.replace(/#CinemaVanguard/g,'#Driftreel').replace(/Cinema Vanguard/gi,'Driftreel');
+            p=p.replace(/allowComments:\s*(true|false),?/g,'').replace(/allowDuet:\s*(true|false),?/g,'').replace(/allowStitch:\s*(true|false),?/g,'');
+            fs.writeFileSync('scripts/publish_buffer_second_tiktok.cjs',p);
+            fs.writeFileSync('/tmp/drift_caption.txt', caption);
+            console.log('CAPTION_PREVIEW', caption.slice(0,120));
+          "
+          # Export caption for publisher if it reads env
+          export DRIFTREEL_CAPTION="$(cat /tmp/drift_caption.txt)"
           set +e
           OUT=$(node scripts/publish_buffer_second_tiktok.cjs movie_brand 2>&1)
           CODE=$?
           set -e
           echo "$OUT"
-          if echo "$OUT" | grep -qi "SKIPPING publishing\|CHANNEL_NAME_NOT_VERIFIED\|NO_TARGET_TIKTOK\|VIDEO_NOT_FOUND"; then
-            echo "Buffer skipped — fail"
-            exit 1
-          fi
+          if echo "$OUT" | grep -qi "ReferenceError"; then echo CAPTION_SCOPE_BUG; exit 1; fi
+          if echo "$OUT" | grep -qi "SKIPPING publishing\|CHANNEL_NAME_NOT_VERIFIED\|NO_TARGET_TIKTOK\|VIDEO_NOT_FOUND"; then exit 1; fi
           if [ $CODE -ne 0 ]; then exit $CODE; fi
-          if ! echo "$OUT" | grep -qi "Post ID\|Successfully scheduled\|Successfully posted\|Buffer Dispatch Recorded"; then
-            echo "No Buffer success marker — fail"
-            exit 1
-          fi
+          if ! echo "$OUT" | grep -qi "Post ID\|Successfully scheduled\|Successfully posted\|Buffer Dispatch Recorded"; then exit 1; fi
       - if: always()
         uses: actions/upload-artifact@v4
         with:
           name: driftreel-doc-${{ github.run_id }}
-          path: rendered_videos/*
+          path: |
+            rendered_videos/*
+            test_artifacts/documentary/**
           if-no-files-found: ignore

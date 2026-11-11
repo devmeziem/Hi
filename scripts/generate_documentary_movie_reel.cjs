@@ -1,126 +1,23 @@
 #!/usr/bin/env node
-
 /**
- * Historical, Horror, Crime & Story Documentary Reel Engine (Cinema Vanguard)
- *
- * User Mandates:
- * 1. Multi-Niche Coverage: Horror, Crime, History, and captivating Mystery/Survival Story documentaries.
- * 2. Visuals: Strong on-topic images and mid-video clips (from Pexels, Pixabay, Wikimedia, Unsplash)
- *    with resilient fallback to Cloudinary / curated high-impact assets.
- * 3. Cinematic Motion: Ken Burns dynamic zooming (zoom-in / zoom-out alternating) and smooth panning.
- * 4. Subtitles: Synchronized karaoke subtitles (.ass) with translucent dark drop-box for 100% readability.
- * 5. Audio: Atmospheric narration (EdgeTTS Andrew), genre-tailored AI OST soundtrack,
- *    and movie-type sound effects (eerie tension drone for horror, dark noir cello for crime,
- *    35mm projector flutter for history, dramatic strings for story).
- * 6. Outro Scene: Dark aesthetic with glowing neon/gold accent and CTA caption "FOLLOW FOR MORE".
- * 7. Automation: Scheduled daily release to YouTube Channel 4 (Cinema Vanguard).
+ * DRIFTREEL — Ancient History / Folk Tale Documentary Engine (FULL REPLACE)
+ * - Egyptian, Greek, Roman, African/Asian/European folk tales, verified old history ONLY
+ * - No Cinema Vanguard branding, no seed vault spam, no dark caption boxes, no watermarks
+ * - ASS: Arial Black, pure white, transparent BackColour, center
+ * - Pure black end card with white FOLLOW FOR MORE
+ * - Soft piano BGM (no drums), bass Andrew VO
  */
-
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
-const https = require('https');
-const { EdgeTTS } = require('node-edge-tts');
 const { searchAndFetchImage, searchAndFetchVideo, searchAndFetchAudio } = require('./universal_media_fetcher.cjs');
-const { uploadYouTubeShort } = require('./youtube_channel_dispatcher.cjs');
-const { selectDeduplicatedCandidate, recordPostedCandidate } = require('./channel_dedup_service.cjs');
 const { callActiveAiForJson } = require('./topic_discovery_engine.cjs');
-const { getChannelMeta, getVerifiedChannelHandle } = require('./channel_verifier.cjs');
+const { synthesizeSpeechResilient } = require('./tts_resilient_engine.cjs');
 
 const ARTIFACTS_DIR = path.join(process.cwd(), 'test_artifacts', 'documentary');
 const RENDERED_DIR = path.join(process.cwd(), 'rendered_videos');
 for (const d of [ARTIFACTS_DIR, RENDERED_DIR]) {
   if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
-}
-
-/**
- * Dynamic AI Documentary Engine:
- * Generates fresh, captivating documentary scripts across Horror, Crime, History & Survival.
- * Strictly ZERO seed or mock data. If AI fails, the workflow fails!
- */
-async function generateDynamicDocumentaryStory() {
-  const genres = ['crime', 'horror', 'history', 'story'];
-  const chosenGenre = genres[Math.floor(Math.random() * genres.length)];
-  console.log(`[Documentary AI] 🧠 Formulating dynamic ${chosenGenre.toUpperCase()} documentary narrative...`);
-
-  const systemPrompt = `You are the lead executive showrunner for Cinema Vanguard, an acclaimed cinematic documentary and episodic series.
-Generate a gripping, factual, and deeply atmospheric documentary narrative (48-60 seconds spoken length, around 110-135 words).
-Genre: ${chosenGenre}.
-MANDATORY RULES:
-1. TITLE: Gripping, cinematic title (max 45 chars).
-2. ERA: Concise historical or investigative dateline (e.g., "1974 • Unsolved Oceanic Vanishing").
-3. SFX TYPE: Exactly one of "creak" (horror), "rain" (crime), "wind" (survival/cold), "clock" (ticking heist), "projector" (historical).
-4. BGM QUERY: 4-6 word atmospheric soundtrack query for Openverse (e.g., "dark noir investigative cello piano" or "eerie cold horror drone ambient").
-5. 5 SCENES: Exactly 5 sequential narrative scenes. Each scene has "text" (20-27 spoken words, continuous storytelling arc from hook to chilling climax) and "query" (high-detail stock video/photo query for Pexels/Wikimedia).
-6. HASHTAGS: 5 high-impact tags including #CinemaVanguard and #Documentary.
-
-Return strictly valid JSON:
-{
-  "title": "The Ghost Blimp of San Francisco",
-  "genre": "${chosenGenre}",
-  "era": "1942 • Unsolved Navy Mystery",
-  "sfxType": "creak",
-  "bgmQuery": "dark eerie horror tension atmospheric ambient cello",
-  "scenes": [
-    { "text": "In August 1942, a US Navy blimp drifted silently through coastal fog into a residential street.", "query": "vintage navy blimp floating over houses foggy sky" },
-    { "text": "Residents rushed to the crash, but when the cockpit was forced open, both Navy pilots had vanished.", "query": "blimp cockpit controls empty instruments 1940s" },
-    { "text": "The radio was working, parachutes were in place, and the engine was still humming quietly on idle.", "query": "vintage aircraft radio mic dark cockpit shadows" },
-    { "text": "No distress call was ever sent. What happened miles out at sea remains an eerie unsolved maritime mystery.", "query": "lone ocean coast thick fog waves dark night" },
-    { "text": "The ocean holds thousands of vanished secrets, but this military blimp riddle remains permanently unsolved.", "query": "stormy sea waves misty fog dark horizon" }
-  ],
-  "hashtags": ["#CinemaVanguard", "#Documentary", "#TrueMystery", "#Shorts"]
-}`;
-
-  const userPrompt = `Create an authentic, breathtaking documentary story in the ${chosenGenre} genre. Ensure high tension, factual resonance, and strictly 5 scenes totaling 110-135 words (48-60 seconds duration).`;
-
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      const res = await callActiveAiForJson(systemPrompt, userPrompt, null, {
-        nicheKey: 'documentary',
-        temperature: attempt === 1 ? 0.75 : 0.88
-      });
-      if (res?.data?.title && Array.isArray(res?.data?.scenes) && res.data.scenes.length >= 4) {
-        return res.data;
-      }
-    } catch (err) {
-      console.warn(`[Documentary AI] Attempt ${attempt} notice: ${err.message}`);
-    }
-  }
-
-  // Resilient Topic Discovery Safety Net for Cinema Vanguard
-  const dynamicDocVault = [
-    {
-      title: "The Ghost Blimp of San Francisco",
-      genre: chosenGenre,
-      era: "1942 • Pacific Coast Airbase",
-      sfxType: "creak",
-      bgmQuery: "eerie cold horror drone ambient",
-      scenes: [
-        { text: "On August 16, 1942, US Navy blimp L-8 drifted silently into the California coastline without a sound.", query: "vintage military blimp airship misty coastline 1940s" },
-        { text: "When it crash-landed gently on a Daly City street, rescuers rushed to pry open the gondola door.", query: "deserted vintage suburban street fog black and white" },
-        { text: "The engines were running, the radio worked perfectly, and life rafts remained strapped untouched in place.", query: "vintage radio cockpit dials vacuum tubes dials" },
-        { text: "Both experienced pilots, Lieutenant Cody and Ensign Adams, had vanished completely without a trace.", query: "vast empty ocean horizon deep fog stormy waves" },
-        { text: "Eighty years later, the Navy maintains it as one of the most baffling disappearances in aviation history.", query: "radar screen sweeping dark military control room" }
-      ],
-      hashtags: ["#CinemaVanguard", "#Documentary", "#UnsolvedMysteries", "#Horror", "#Shorts"]
-    },
-    {
-      title: "The Amber Room Vanishing",
-      genre: chosenGenre,
-      era: "1945 • Konigsberg Castle",
-      sfxType: "projector",
-      bgmQuery: "dark classical strings suspense historical mystery",
-      scenes: [
-        { text: "Crafted from six tons of pure fossilized Baltic amber, the Eighth Wonder of the World glowed in gold.", query: "golden amber ornate palace hall baroque lighting" },
-        { text: "Looted during the invasion of 1941, it was packed into twenty-seven massive wooden crates and shipped west.", query: "vintage wooden shipping crates dark warehouse dust" },
-        { text: "In the final days of the war, as Allied artillery bombarded Konigsberg Castle, the crates disappeared.", query: "ruined castle rubble artillery smoke dramatic historic" },
-        { text: "Scores of search teams descended into flooded salt mines and sunken shipwrecks, finding zero trace.", query: "deep underground salt mine tunnel flashlight darkness" },
-        { text: "Valued today at over five hundred million dollars, the legendary golden hall remains hidden in shadow.", query: "single glowing amber gem dark velvet table macro" }
-      ],
-      hashtags: ["#CinemaVanguard", "#Documentary", "#LostTreasures", "#DarkHistory", "#Shorts"]
-    }
-  ];
-  return dynamicDocVault[Math.floor(Math.random() * dynamicDocVault.length)];
 }
 
 function escapeXml(str) {
@@ -132,86 +29,143 @@ function escapeXml(str) {
     .replace(/'/g, '&apos;');
 }
 
-function wrapTextToLines(text, maxChars = 28) {
-  const words = String(text || '').split(/\s+/).filter(Boolean);
-  const lines = [];
-  let cur = '';
-  for (const w of words) {
-    if ((cur + ' ' + w).trim().length <= maxChars) {
-      cur = (cur + ' ' + w).trim();
-    } else {
-      if (cur) lines.push(cur);
-      cur = w;
+async function generateHistoryStory() {
+  const angles = [
+    'Ancient Egypt pharaohs tombs Nile rituals',
+    'Greek mythology or classical Greek history',
+    'Roman empire legends or verified events',
+    'West African or Egyptian folk tale',
+    'Norse or European medieval folk legend',
+    'Japanese or Chinese classical folk tale',
+    'Mesopotamia Sumer Babylon history',
+    'Phoenician or Carthaginian history'
+  ];
+  const angle = angles[Math.floor(Math.random() * angles.length)];
+  console.log('[Driftreel] history angle:', angle);
+
+  const systemPrompt = `You are the showrunner for Driftreel.
+Generate ONE gripping factual OR classic folk narrative for TikTok (95-130 spoken words, ~40-55 seconds).
+ONLY: Ancient Egypt, Greek myths, Roman history, African/Asian/European folk tales, or verified pre-modern history.
+NEVER modern crime, sea mysteries from 1800s+, horror urban legends, or Cinema Vanguard branding.
+
+Rules:
+- title max 42 chars
+- era like "1323 BCE • Valley of the Kings" or "Classical Greece"
+- sfxType: projector|wind|clock
+- bgmQuery: soft piano ambient historical sparse no drums
+- exactly 5 scenes; each text 18-26 words; each query concrete stock search for history visuals
+- hashtags must include #Driftreel #HistoryTok #AncientHistory — never #CinemaVanguard #MovieTrailer #SciFi
+
+Return STRICT JSON only:
+{
+  "title": "...",
+  "genre": "history",
+  "era": "...",
+  "sfxType": "projector",
+  "bgmQuery": "soft piano ambient historical sparse",
+  "scenes": [
+    { "text": "...", "query": "egyptian temple columns desert sunset" }
+  ],
+  "hashtags": ["#Driftreel", "#HistoryTok", "#AncientHistory", "#FolkTale", "#Documentary", "#Shorts", "#FYP"]
+}`;
+
+  const userPrompt = `Create a Driftreel episode about: ${angle}. Fresh story, not a generic sea vanishing.`;
+
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    try {
+      const res = await callActiveAiForJson(systemPrompt, userPrompt, null, {
+        nicheKey: 'documentary',
+        temperature: 0.7 + attempt * 0.05
+      });
+      const data = res?.data || res;
+      if (data?.title && Array.isArray(data.scenes) && data.scenes.length >= 4) {
+        data.genre = 'history';
+        data.hashtags = [
+          '#Driftreel',
+          '#HistoryTok',
+          '#AncientHistory',
+          '#FolkTale',
+          '#Documentary',
+          '#Shorts',
+          '#FYP'
+        ];
+        if (!data.bgmQuery || /drum|beat|trap|phonk/i.test(data.bgmQuery)) {
+          data.bgmQuery = 'soft piano ambient historical sparse no drums';
+        }
+        return data;
+      }
+    } catch (err) {
+      console.warn(`[Driftreel AI] attempt ${attempt}:`, err.message);
     }
   }
-  if (cur) lines.push(cur);
-  return lines;
+  throw new Error('Driftreel history AI failed — no seed fallback');
 }
 
-/**
- * Generate Sound Effect Layer according to movie type
- */
 function generateSoundEffectWav(sfxType, outWavPath, duration = 45.0) {
-  let filter = '';
-  if (sfxType === 'creak') {
-    // Horror nautical creak + low thud
-    filter = `aevalsrc='0.02*sin(2*PI*40*t)+0.015*sin(2*PI*82*t)+0.008*sin(2*PI*12*t)':s=44100:d=${duration.toFixed(2)}[sfx]`;
-  } else if (sfxType === 'rain') {
-    // Crime rain ambience
-    filter = `anoisesrc=d=${duration.toFixed(2)}:c=pink:a=0.025,lowpass=f=2200,highpass=f=250[sfx]`;
-  } else if (sfxType === 'wind') {
-    // Horror / Survival wind drone
-    filter = `anoisesrc=d=${duration.toFixed(2)}:c=brown:a=0.03,lowpass=f=600[sfx]`;
+  let filter;
+  if (sfxType === 'wind') {
+    filter = `anoisesrc=d=${duration.toFixed(2)}:c=brown:a=0.02,lowpass=f=500[sfx]`;
   } else if (sfxType === 'clock') {
-    // Crime investigative ticking
-    filter = `aevalsrc='0.03*sin(2*PI*1000*t)*gte(mod(t*2,1),0.9)':s=44100:d=${duration.toFixed(2)}[sfx]`;
+    filter = `aevalsrc='0.02*sin(2*PI*900*t)*gte(mod(t*2,1),0.92)':s=44100:d=${duration.toFixed(2)}[sfx]`;
   } else {
-    // Projector flutter default
-    filter = `aevalsrc='0.02*sin(2*PI*48*t)+0.015*sin(2*PI*96*t)':s=44100:d=${duration.toFixed(2)}[motor]; anoisesrc=d=${duration.toFixed(2)}:c=pink:a=0.015[hiss]; [motor][hiss]amix=inputs=2[sfx]`;
+    filter = `aevalsrc='0.015*sin(2*PI*48*t)+0.01*sin(2*PI*96*t)':s=44100:d=${duration.toFixed(2)}[motor]; anoisesrc=d=${duration.toFixed(2)}:c=pink:a=0.01[hiss]; [motor][hiss]amix=inputs=2[sfx]`;
   }
-
   try {
-    execSync(`ffmpeg -y -f lavfi -i "${filter}" -map "[sfx]" -c:a pcm_s16le -ar 44100 -ac 2 -t ${duration.toFixed(2)} "${outWavPath}" 2>/dev/null`);
+    execSync(
+      `ffmpeg -y -f lavfi -i "${filter}" -map "[sfx]" -c:a pcm_s16le -ar 44100 -ac 2 -t ${duration.toFixed(2)} "${outWavPath}" 2>/dev/null`,
+      { stdio: 'pipe' }
+    );
   } catch {
-    execSync(`ffmpeg -y -f lavfi -i "anoisesrc=d=${duration.toFixed(2)}:c=pink:a=0.01" -c:a pcm_s16le -ar 44100 -ac 2 -t ${duration.toFixed(2)} "${outWavPath}" 2>/dev/null`);
+    execSync(
+      `ffmpeg -y -f lavfi -i "anoisesrc=d=${duration.toFixed(2)}:c=pink:a=0.008" -c:a pcm_s16le -ar 44100 -ac 2 -t ${duration.toFixed(2)} "${outWavPath}" 2>/dev/null`,
+      { stdio: 'pipe' }
+    );
   }
 }
 
-/**
- * Build Word-Synced Karaoke Subtitle File (.ass) with Translucent Backing
- */
+function generateSoftPianoBed(outWavPath, duration) {
+  const d = duration.toFixed(2);
+  // Soft sparse piano-ish bed via layered sines + noise — no drums
+  const filter = `aevalsrc='0.04*sin(2*PI*110*t)+0.03*sin(2*PI*164.81*t)+0.025*sin(2*PI*220*t)+0.02*sin(2*PI*329.63*t)*gte(mod(t,4),0)*lt(mod(t,4),1.2)':s=44100:d=${d}[p]; anoisesrc=d=${d}:c=pink:a=0.008[n]; [p][n]amix=inputs=2,lowpass=f=900,afade=t=in:st=0:d=1.5,afade=t=out:st=${Math.max(0, duration - 2).toFixed(2)}:d=2[out]`;
+  execSync(
+    `ffmpeg -y -f lavfi -i "${filter}" -map "[out]" -c:a pcm_s16le -ar 44100 -ac 2 -t ${d} "${outWavPath}" 2>/dev/null`,
+    { stdio: 'pipe' }
+  );
+}
+
 function generateDocumentaryKaraokeAss(wordsWithTimings, totalDuration, outAssPath) {
   const wordsPerLine = 3;
-  const rawWords = wordsWithTimings.map(w => w.word);
+  const rawWords = wordsWithTimings.map((w) => w.word);
   const totalMs = Math.round(totalDuration * 1000);
   const msPerWord = rawWords.length > 0 ? totalMs / rawWords.length : 320;
 
-  const lines = [];
   const formatAssTime = (ms) => {
     const totalSec = Math.floor(ms / 1000);
     const cs = Math.floor((ms % 1000) / 10);
     const sec = totalSec % 60;
     const min = Math.floor((totalSec % 3600) / 60);
     const hr = Math.floor(totalSec / 3600);
-    return `${hr}:${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}.${cs.toString().padStart(2, '0')}`;
+    return `${hr}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
   };
 
+  const lines = [];
   for (let i = 0; i < rawWords.length; i += wordsPerLine) {
     const chunk = rawWords.slice(i, i + wordsPerLine);
     const chunkStartMs = Math.round(i * msPerWord);
     const chunkEndMs = Math.min(totalMs, Math.round((i + chunk.length) * msPerWord + 140));
-
     let kLine = '';
     for (const w of chunk) {
       const wordCs = Math.max(8, Math.round(msPerWord / 10));
-      kLine += `{\\kf${wordCs}}${w.toUpperCase()} `;
+      kLine += `{\kf${wordCs}}${String(w).toUpperCase()} `;
     }
-    lines.push(`Dialogue: 0,${formatAssTime(chunkStartMs)},${formatAssTime(chunkEndMs)},CenterKaraoke,,0,0,0,,${kLine.trim()}`);
+    lines.push(
+      `Dialogue: 0,${formatAssTime(chunkStartMs)},${formatAssTime(chunkEndMs)},CenterKaraoke,,0,0,0,,${kLine.trim()}`
+    );
   }
 
-  // Unified Center Screen Subtitle Style (Trebuchet MS, Amber Gold Highlight, Dead Center)
+  // Arial Black, pure white, NO dark box (BackColour fully transparent, BorderStyle 1 = outline only)
   const assContent = `[Script Info]
-Title: Cinema Vanguard Unified Archival Karaoke
+Title: Driftreel History Karaoke
 ScriptType: v4.00+
 PlayResX: 1080
 PlayResY: 1920
@@ -219,474 +173,254 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: CenterKaraoke,Trebuchet MS,52,&H0000D7FF,&H00FFFFFF,&H00000000,&H80000000,1,0,0,0,100,100,1.2,0,1,2.8,2.0,5,100,100,0,1
+Style: CenterKaraoke,Arial Black,58,&H00FFFFFF,&H0000D7FF,&H00000000,&H00000000,1,0,0,0,100,100,0.6,0,1,3.5,0,5,70,70,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 ${lines.join('\n')}
 `;
-
   fs.writeFileSync(outAssPath, assContent, 'utf8');
   return outAssPath;
 }
 
-const { synthesizeSpeechResilient } = require('./tts_resilient_engine.cjs');
-
-/**
- * Build Dynamic Story-Specific Outro Card SVG (No generic canned copy)
- */
-function buildGlowingOutroSvg(genre = 'history', storyTitle = '', template = 'dossier', width = 1080, height = 1920) {
-  const glowTheme = {
-    horror: { border: '#ef4444', text: '#fca5a5', badge: 'HAUNTING INVESTIGATION' },
-    crime: { border: '#38bdf8', text: '#7dd3fc', badge: 'UNSOLVED CASEFILE' },
-    history: { border: '#fbbf24', text: '#fde68a', badge: 'HISTORICAL CHRONICLE' },
-    story: { border: '#a855f7', text: '#d8b4fe', badge: 'DEEP DOSSIER' }
-  }[genre] || { border: '#fbbf24', text: '#fde68a', badge: 'HISTORICAL CHRONICLE' };
-
-  const titleExcerpt = escapeXml(String(storyTitle || 'Unsolved History').slice(0, 36).toUpperCase());
-  const channelFollowText = 'FOLLOW FOR MORE';
-
+function buildBlackOutroSvg(storyTitle = '', width = 1080, height = 1920) {
+  const titleExcerpt = escapeXml(String(storyTitle || 'Ancient Chronicle').slice(0, 40).toUpperCase());
   return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="outroGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#02040a" />
-        <stop offset="50%" stop-color="#060914" />
-        <stop offset="100%" stop-color="#010204" />
-      </linearGradient>
-    </defs>
-
-    <rect width="${width}" height="${height}" fill="url(#outroGrad)" />
-
-    <!-- Ambient Cinematic Archival Framing -->
-    <rect x="0" y="0" width="${width}" height="${height}" fill="none" stroke="#000000" stroke-width="120" opacity="0.95" />
-
-    <!-- Solid Center Archival Card -->
-    <g transform="translate(140, 740)">
-      <rect width="800" height="420" rx="20" fill="#030712" stroke="${glowTheme.border}" stroke-width="2.5" />
-
-      <!-- Top Genre Badge -->
-      <g transform="translate(230, -24)">
-        <rect width="340" height="48" rx="12" fill="${glowTheme.border}" />
-        <text x="170" y="30" font-family="DejaVu Sans, sans-serif" font-size="13" font-weight="900" fill="#02040a" text-anchor="middle" letter-spacing="2">
-          ${glowTheme.badge}
-        </text>
-      </g>
-
-      <!-- Dynamic Hook Callout (Clean Generic CTA - No Handles) -->
-      <text x="400" y="130" font-family="DejaVu Sans, sans-serif" font-size="44" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="3">
-        ${channelFollowText}
-      </text>
-
-      <text x="400" y="210" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="800" fill="${glowTheme.text}" text-anchor="middle" letter-spacing="1.5">
-        FOR MORE: ${titleExcerpt}
-      </text>
-
-      <!-- Bottom Channel Stamp (Clean generic branding) -->
-      <g transform="translate(120, 290)">
-        <rect width="560" height="56" rx="14" fill="#030712" stroke="${glowTheme.border}" stroke-width="2.0" />
-        <text x="280" y="35" font-family="DejaVu Sans, sans-serif" font-size="15" font-weight="900" fill="#f8fafc" text-anchor="middle" letter-spacing="2">
-          CINEMA VANGUARD • HISTORICAL CHRONICLES 🏛️
-        </text>
-      </g>
-    </g>
-  </svg>`;
+  <rect width="${width}" height="${height}" fill="#000000"/>
+  <text x="540" y="880" font-family="Arial Black, DejaVu Sans, sans-serif" font-size="52" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="4">FOLLOW FOR MORE</text>
+  <text x="540" y="960" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" fill="#e5e5e5" text-anchor="middle" letter-spacing="2">${titleExcerpt}</text>
+  <text x="540" y="1040" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="600" fill="#a3a3a3" text-anchor="middle" letter-spacing="3">DRIFTREEL</text>
+</svg>`;
 }
 
-/**
- * Build Dynamic Slide Typography Overlay SVG across 4 Visual Archetypes:
- * Solid, High-Contrast Archival Cards (No Glassmorphism)
- */
-function buildDocumentarySlideSvg(quoteText, eraLabel, sceneNum, totalScenes, genre = 'history', template = 'dossier', width = 1080, height = 1920) {
-  const accentColor = genre === 'horror' ? '#ef4444' : (genre === 'crime' ? '#38bdf8' : '#fbbf24');
-
-  // Archetype 1: Minimal Focus (Clean solid matte banner)
-  if (template === 'minimal') {
-    return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="scrimTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#020617" stop-opacity="0.95"/><stop offset="100%" stop-color="#020617" stop-opacity="0"/></linearGradient>
-      </defs>
-      <rect x="0" y="0" width="${width}" height="220" fill="url(#scrimTop)" />
-      <g transform="translate(80, 80)">
-        <circle cx="16" cy="16" r="6" fill="${accentColor}" />
-        <text x="36" y="22" font-family="system-ui, sans-serif" font-size="15" font-weight="900" fill="#ffffff" letter-spacing="2">
-          ${escapeXml(eraLabel.toUpperCase())} • PART ${sceneNum}/${totalScenes}
-        </text>
-      </g>
-    </svg>`;
-  }
-
-  // Archetype 2: Solid Investigative Lower-Third Broadcaster
-  if (template === 'broadcaster') {
-    return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="scrimBtm" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#020617" stop-opacity="0"/><stop offset="100%" stop-color="#020617" stop-opacity="0.98"/></linearGradient>
-      </defs>
-      <rect x="0" y="${height - 380}" width="${width}" height="380" fill="url(#scrimBtm)" />
-      <g transform="translate(80, ${height - 200})">
-        <rect width="920" height="52" rx="8" fill="#030712" stroke="${accentColor}" stroke-width="2.2" />
-        <rect x="0" y="0" width="160" height="52" rx="8" fill="${accentColor}" />
-        <text x="80" y="33" font-family="system-ui, sans-serif" font-size="13" font-weight="900" fill="#020617" text-anchor="middle" letter-spacing="1">INVESTIGATION</text>
-        <text x="540" y="33" font-family="system-ui, sans-serif" font-size="15" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="1.5">
-          ${escapeXml(eraLabel.toUpperCase())}
-        </text>
-      </g>
-    </svg>`;
-  }
-
-  // Archetype 3: Archival Monolith
-  if (template === 'monolith') {
-    const ROMANS = ['I', 'II', 'III', 'IV', 'V', 'VI'];
-    const romanAct = ROMANS[sceneNum - 1] || `${sceneNum}`;
-    return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-      <rect x="0" y="0" width="${width}" height="70" fill="#000000" />
-      <rect x="0" y="${height - 70}" width="${width}" height="70" fill="#000000" />
-      <g transform="translate(80, 110)">
-        <text x="0" y="0" font-family="Georgia, serif" font-size="18" font-weight="900" fill="${accentColor}" letter-spacing="3">ACT ${romanAct} — ARCHIVAL RECORD</text>
-        <line x1="0" y1="12" x2="380" y2="12" stroke="${accentColor}" stroke-width="2.5" />
-      </g>
-    </svg>`;
-  }
-
-  // Archetype 4: Solid Archival Dossier (No Glassmorphism)
-  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="vignetteTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#020617" stop-opacity="0.95" /><stop offset="100%" stop-color="#020617" stop-opacity="0.0" /></linearGradient>
-      <linearGradient id="vignetteBottom" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#020617" stop-opacity="0.0" /><stop offset="100%" stop-color="#020617" stop-opacity="0.98" /></linearGradient>
-    </defs>
-    <rect x="0" y="0" width="${width}" height="260" fill="url(#vignetteTop)" />
-    <rect x="0" y="${height - 400}" width="${width}" height="400" fill="url(#vignetteBottom)" />
-
-    <!-- Solid Header Era Pill -->
-    <g transform="translate(80, 90)">
-      <rect width="920" height="58" rx="14" fill="#030712" stroke="${accentColor}" stroke-width="2.0" />
-      <rect x="8" y="8" width="200" height="42" rx="10" fill="${accentColor}" />
-      <text x="108" y="34" font-family="system-ui, sans-serif" font-size="12" font-weight="900" fill="#020617" text-anchor="middle" letter-spacing="2">
-        FILE ${sceneNum}/${totalScenes}
-      </text>
-      <text x="890" y="35" font-family="system-ui, sans-serif" font-size="14" font-weight="900" fill="#f8fafc" text-anchor="end" letter-spacing="2">
-        ${escapeXml(eraLabel.toUpperCase())}
-      </text>
-    </g>
-
-    <!-- Solid Archival Record Stamp -->
-    <g transform="translate(80, ${height - 160})">
-      <rect width="920" height="48" rx="12" fill="#030712" stroke="${accentColor}" stroke-width="1.8" />
-      <text x="460" y="30" font-family="system-ui, sans-serif" font-size="13" font-weight="900" fill="#f8fafc" letter-spacing="2" text-anchor="middle">
-        CINEMA VANGUARD • ARCHIVAL INVESTIGATION
-      </text>
-    </g>
-  </svg>`;
-}
-
-/**
- * Synthesize Atmospheric Cinematic Soundtrack (Guaranteed BGM for Horror, Crime, History & Survival)
- */
-function generateCinematicAmbientSoundtrack(outWavPath, duration = 50.0, genre = 'history') {
-  let chordExpr = '';
-  if (genre === 'horror') {
-    // Eerie low drone with dissonance (55Hz A1, 58.27Hz Bb1, 110Hz A2)
-    chordExpr = `(sin(2*PI*55*t)*0.20 + sin(2*PI*58.27*t)*0.16 + sin(2*PI*110*t)*0.10)*exp(-0.15*mod(t,8))`;
-  } else if (genre === 'crime') {
-    // Dark moody noir cello / piano (82.41Hz E2, 98Hz G2, 123.47Hz B2)
-    chordExpr = `(sin(2*PI*82.41*t)*0.18 + sin(2*PI*98.00*t)*0.14 + sin(2*PI*123.47*t)*0.10)*exp(-0.4*mod(t,6))`;
-  } else {
-    // Resonant historical cello / brass drone (110Hz A2, 164.81Hz E3, 220Hz A3)
-    chordExpr = `(sin(2*PI*110*t)*0.18 + sin(2*PI*164.81*t)*0.13 + sin(2*PI*220*t)*0.09)*exp(-0.3*mod(t,7))`;
-  }
-  const filter = `lowpass=f=950,afade=t=in:st=0:d=2.0,afade=t=out:st=${Math.max(0, duration - 2.5).toFixed(2)}:d=2.5`;
-  try {
-    execSync(`ffmpeg -y -f lavfi -i "aevalsrc='${chordExpr}':s=44100:d=${duration.toFixed(2)}" -af "${filter}" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
-    return outWavPath;
-  } catch {
-    execSync(`ffmpeg -y -f lavfi -i "anoisesrc=d=${duration.toFixed(2)}:c=brown:a=0.015" -c:a pcm_s16le -ar 44100 -ac 2 "${outWavPath}" 2>/dev/null`);
-    return outWavPath;
-  }
-}
-
-/**
- * Main Generator: Build 1 Complete Documentary Video (48-60s)
- */
 async function generateDocumentaryVideo() {
   console.log('\n===============================================================');
-  console.log('🏛️ CINEMA VANGUARD: MULTI-GENRE ARCHIVAL DOCUMENTARY ENGINE');
-  console.log('Horror • Crime • History • Story | AI OST | Center Karaoke Subtitles');
+  console.log('DRIFTREEL — Ancient History / Folk Tale Engine');
   console.log('===============================================================\n');
 
-  // 1. Synthesize Dynamic Documentary Narrative via Active AI (strictly zero seed data)
-  const chosenEpisode = await generateDynamicDocumentaryStory();
+  const episode = await generateHistoryStory();
+  console.log(`[Driftreel] "${episode.title}" | ${episode.era}`);
 
-  // Deduplication cross-check against 30-day repo log & Firestore
+  // Dedup soft check
   try {
-    const { fetchRemoteHistory } = require('./channel_dedup_service.cjs');
-    const pastDocs = await fetchRemoteHistory('documentary');
-    const isDup = (pastDocs || []).some(p => {
+    const { fetchRemoteHistory, recordPostedCandidate } = require('./channel_dedup_service.cjs');
+    const past = await fetchRemoteHistory('documentary');
+    const isDup = (past || []).some((p) => {
       const pTitle = (p.quote || p.topic || '').toLowerCase();
-      const cTitle = (chosenEpisode.title || '').toLowerCase();
+      const cTitle = (episode.title || '').toLowerCase();
       return pTitle && cTitle && (pTitle === cTitle || pTitle.includes(cTitle) || cTitle.includes(pTitle));
     });
     if (isDup) {
-      console.warn(`[Documentary Dedup] 🛡️ Episode "${chosenEpisode.title}" was previously logged. Enhancing angle to unique sub-casefile.`);
-      chosenEpisode.title = `${chosenEpisode.title} — Archival Investigation`;
+      episode.title = `${episode.title} — Chronicle`;
+      console.warn('[Driftreel] near-dup title adjusted');
     }
-  } catch {}
+  } catch (_) {}
 
-  // Dynamic template selection per render: dossier, broadcaster, monolith, or minimal
-  const TEMPLATES = ['dossier', 'broadcaster', 'monolith', 'minimal'];
-  const chosenTemplate = TEMPLATES[Math.floor(Math.random() * TEMPLATES.length)];
-  console.log(`[Documentary Selected]: "${chosenEpisode.title}" [${chosenEpisode.genre.toUpperCase()}] (${chosenEpisode.era}) | Visual Template: [${chosenTemplate.toUpperCase()}]`);
-
-  // 2. Synthesize Narration via Resilient Multi-Tier Engine (fixes Microsoft 403 blocks)
-  const fullNarration = chosenEpisode.scenes.map(s => s.text).join(' ');
+  const fullNarration = episode.scenes.map((s) => s.text).join(' ');
   const voiceMp3 = path.join(ARTIFACTS_DIR, `doc_voice_${Date.now()}.mp3`);
-  const voiceWav = path.join(ARTIFACTS_DIR, `doc_voice_${Date.now()}.wav`);
 
-  let voiceId = 'en-US-AndrewNeural';
-  let edgeRate = '-6%';
-  let edgePitch = '-20Hz';
-  try {
-    const { getWorkflowVoiceSettings } = require('./workflow_settings_loader.cjs');
-    const s = getWorkflowVoiceSettings('cinema');
-    if (s.voiceId) voiceId = s.voiceId;
-    if (s.edgeRate) edgeRate = s.edgeRate;
-    if (s.edgePitch) edgePitch = s.edgePitch;
-  } catch {}
-
-  console.log(`[Narration Engine] 🎙️ Synthesizing documentary narration with ${voiceId} (${edgeRate}, ${edgePitch})...`);
-  const ttsRes = await synthesizeSpeechResilient(fullNarration, voiceMp3, {
-    voice: voiceId,
-    rate: edgeRate,
-    pitch: edgePitch,
-    timeout: 25000
+  console.log('[Driftreel] TTS Andrew deep');
+  await synthesizeSpeechResilient(fullNarration, voiceMp3, {
+    voice: 'en-US-AndrewNeural',
+    rate: '-8%',
+    pitch: '-22Hz',
+    emotionProfile: 'narrator'
   });
 
-  execSync(`ffmpeg -y -i "${voiceMp3}" -ar 44100 -ac 2 -c:a pcm_s16le "${voiceWav}" 2>/dev/null`);
-  const durProbe = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${voiceWav}"`, { encoding: 'utf8' }).trim();
-  const voiceDuration = parseFloat(durProbe) || ttsRes.duration || 45.0;
-  // Outro adds 3.5s
-  const totalDuration = voiceDuration + 3.5;
-  console.log(`[Narration Engine] ✓ Voice synthesized via ${ttsRes.provider}: ${voiceDuration.toFixed(1)}s (Total with Outro: ${totalDuration.toFixed(1)}s - 45-60s Target ✓)`);
+  let voiceDuration = 40;
+  try {
+    voiceDuration = parseFloat(
+      execSync(`ffprobe -v error -show_entries format=duration -of csv=p=0 "${voiceMp3}"`, {
+        encoding: 'utf8'
+      }).trim()
+    );
+  } catch (_) {}
+  const totalDuration = Math.max(voiceDuration + 3.5, 42);
 
-  // 3. AI OST & Sound Effects tailored to Movie Type (Guaranteed Audio Bed)
-  console.log(`[Audio Sourcing] 🎵 Resolving cinematic OST for "${chosenEpisode.bgmQuery}"...`);
+  // BGM
   let bgMusicPath = null;
-  const fetchedAudio = await searchAndFetchAudio(chosenEpisode.bgmQuery, { preferredSource: 'openverse', targetDuration: totalDuration });
-  if (fetchedAudio && fetchedAudio.localPath && fs.existsSync(fetchedAudio.localPath)) {
-    bgMusicPath = fetchedAudio.localPath;
+  try {
+    const fetched = await searchAndFetchAudio(episode.bgmQuery || 'soft piano ambient historical', {
+      preferredSource: 'openverse',
+      targetDuration: totalDuration
+    });
+    if (fetched?.localPath && fs.existsSync(fetched.localPath)) bgMusicPath = fetched.localPath;
+  } catch (_) {}
+  if (!bgMusicPath) {
+    bgMusicPath = path.join(ARTIFACTS_DIR, `doc_bgm_${Date.now()}.wav`);
+    generateSoftPianoBed(bgMusicPath, totalDuration);
   }
 
-  // Guaranteed Soundtrack: Never render without background audio
-  if (!bgMusicPath || !fs.existsSync(bgMusicPath)) {
-    console.log(`[Audio Sourcing] 🎹 Synthesizing cinematic atmospheric OST (${totalDuration.toFixed(1)}s, ${chosenEpisode.genre})...`);
-    const synthBgm = path.join(ARTIFACTS_DIR, `doc_bgm_${Date.now()}.wav`);
-    generateCinematicAmbientSoundtrack(synthBgm, totalDuration, chosenEpisode.genre);
-    if (fs.existsSync(synthBgm)) bgMusicPath = synthBgm;
-  }
-
-  // Genre Sound Effect Layer (e.g. creak for horror, rain for crime, projector for history, wind for story)
   const sfxWav = path.join(ARTIFACTS_DIR, `sfx_${Date.now()}.wav`);
-  generateSoundEffectWav(chosenEpisode.sfxType || 'projector', sfxWav, totalDuration);
+  generateSoundEffectWav(episode.sfxType || 'projector', sfxWav, totalDuration);
 
-  // 4. Word-Level ASS Karaoke Subtitles
   const words = fullNarration.split(/\s+/).filter(Boolean);
   const wordsWithTimings = words.map((w, i) => ({
     word: w,
-    start: i * (voiceDuration / words.length),
-    end: (i + 1) * (voiceDuration / words.length)
+    start: (i * voiceDuration) / words.length,
+    end: ((i + 1) * voiceDuration) / words.length
   }));
-  const assSubtitlesPath = path.join(ARTIFACTS_DIR, 'doc_karaoke.ass');
-  generateDocumentaryKaraokeAss(wordsWithTimings, voiceDuration, assSubtitlesPath);
+  const assPath = path.join(ARTIFACTS_DIR, 'doc_karaoke.ass');
+  generateDocumentaryKaraokeAss(wordsWithTimings, voiceDuration, assPath);
 
-  // 5. Visual Media for Each Scene (Images & Mid-Video Clips with Ken Burns Pan/Zoom)
-  const sceneCount = chosenEpisode.scenes.length;
+  const sceneCount = episode.scenes.length;
   const secPerScene = voiceDuration / sceneCount;
-  const sceneInputs = [];
+  const sceneClips = [];
 
   for (let i = 0; i < sceneCount; i++) {
-    const sc = chosenEpisode.scenes[i];
-    console.log(`[Scene ${i + 1}/${sceneCount}] Sourcing visual for: "${sc.query}"...`);
-
+    const sc = episode.scenes[i];
+    console.log(`[Scene ${i + 1}/${sceneCount}] ${sc.query}`);
     let visualPath = null;
-    let isVideoClip = false;
+    let isVideo = false;
 
-    // For middle scene (scene 2 or 3), attempt to fetch real video clip
     if (i === 1 || i === 2) {
-      const vid = await searchAndFetchVideo(sc.query, { minDuration: 3, preferredSource: 'pexels' });
-      if (vid && vid.localPath && fs.existsSync(vid.localPath)) {
-        visualPath = vid.localPath;
-        isVideoClip = true;
-        console.log(`  -> Sourced on-topic mid-video clip: ${path.basename(visualPath)}`);
-      }
+      try {
+        const vid = await searchAndFetchVideo(sc.query, { minDuration: 3, preferredSource: 'pexels' });
+        if (vid?.localPath && fs.existsSync(vid.localPath)) {
+          visualPath = vid.localPath;
+          isVideo = true;
+        }
+      } catch (_) {}
     }
-
     if (!visualPath) {
-      let visual = await searchAndFetchImage(sc.query, { preferredSource: 'wikimedia' });
-      if (!visual || !visual.localPath || !fs.existsSync(visual.localPath)) {
-        visual = await searchAndFetchImage(sc.query, { preferredSource: 'unsplash' });
+      for (const src of ['wikimedia', 'unsplash', 'pexels', 'pixabay']) {
+        try {
+          const img = await searchAndFetchImage(sc.query, { preferredSource: src });
+          if (img?.localPath && fs.existsSync(img.localPath)) {
+            visualPath = img.localPath;
+            break;
+          }
+        } catch (_) {}
       }
-      visualPath = visual?.localPath || path.join(process.cwd(), 'src', 'assets', 'images', 'mindrush_studio_bg_1790502544405.jpg');
+    }
+    if (!visualPath) {
+      // solid dark fallback still
+      visualPath = path.join(ARTIFACTS_DIR, `fallback_${i}.png`);
+      execSync(
+        `ffmpeg -y -f lavfi -i color=c=0x0a0a12:s=1080x1920:d=1 -frames:v 1 "${visualPath}" 2>/dev/null`,
+        { stdio: 'pipe' }
+      );
     }
 
-    // Build SVG Overlay with Title Pill & Vignette according to dynamic template
-    const slideSvg = buildDocumentarySlideSvg(sc.text, chosenEpisode.era, i + 1, sceneCount, chosenEpisode.genre, chosenTemplate, 1080, 1920);
-    const slideSvgPath = path.join(ARTIFACTS_DIR, `slide_${i}.svg`);
-    const slidePngPath = path.join(ARTIFACTS_DIR, `slide_${i}.png`);
-    fs.writeFileSync(slideSvgPath, slideSvg);
-    execSync(`ffmpeg -y -i "${slideSvgPath}" "${slidePngPath}" 2>/dev/null`);
-
-    // Compile Single Scene MP4
     const sceneMp4 = path.join(ARTIFACTS_DIR, `scene_${i}.mp4`);
-    const zoomDirection = i % 2 === 0 ? 'min(zoom+0.0008,1.18)' : 'max(1.18-0.0008*on,1.0)';
-    
-    if (isVideoClip) {
-      // Scale video clip to 1080x1920 vertical & loop if needed
-      const filter = `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[vid];[vid][1:v]overlay=0:0[v]`;
-      execSync(`ffmpeg -y -stream_loop 3 -t ${secPerScene.toFixed(2)} -i "${visualPath}" -loop 1 -t ${secPerScene.toFixed(2)} -i "${slidePngPath}" -filter_complex "${filter}" -map "[v]" -c:v libx264 -preset fast -pix_fmt yuv420p -r 30 -t ${secPerScene.toFixed(2)} "${sceneMp4}" 2>/dev/null`);
+    const dur = secPerScene.toFixed(2);
+    const frames = Math.max(30, Math.ceil(secPerScene * 30));
+    const zoom =
+      i % 2 === 0
+        ? "min(zoom+0.0014,1.12)"
+        : "if(eq(on,1),1.12,max(zoom-0.0012,1.0))";
+
+    if (isVideo) {
+      execSync(
+        `ffmpeg -y -stream_loop 2 -t ${dur} -i "${visualPath}" -an -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,eq=contrast=1.08:saturation=0.85" -c:v libx264 -preset veryfast -crf 20 -pix_fmt yuv420p -r 30 -t ${dur} "${sceneMp4}"`,
+        { stdio: 'pipe' }
+      );
     } else {
-      // Ken Burns Pan-and-Zoom on photography
-      const filter = `[0:v]scale=1200:2133,zoompan=z='${zoomDirection}':d=${Math.round(secPerScene * 30)}:s=1080x1920:fps=30[bg];[bg][1:v]overlay=0:0[v]`;
-      execSync(`ffmpeg -y -loop 1 -t ${secPerScene.toFixed(2)} -i "${visualPath}" -loop 1 -t ${secPerScene.toFixed(2)} -i "${slidePngPath}" -filter_complex "${filter}" -map "[v]" -c:v libx264 -preset fast -pix_fmt yuv420p -r 30 -t ${secPerScene.toFixed(2)} "${sceneMp4}" 2>/dev/null`);
+      execSync(
+        `ffmpeg -y -loop 1 -t ${dur} -i "${visualPath}" -vf "scale=1200:2133:force_original_aspect_ratio=increase,crop=1200:2133,zoompan=z='${zoom}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${frames}:s=1080x1920:fps=30,eq=contrast=1.1:saturation=0.8" -c:v libx264 -preset veryfast -crf 20 -pix_fmt yuv420p -r 30 -t ${dur} "${sceneMp4}"`,
+        { stdio: 'pipe' }
+      );
     }
-    sceneInputs.push(sceneMp4);
+    sceneClips.push(sceneMp4);
   }
 
-  // 6. Glowing Dark Outro Scene (3.5s with dynamic story copy and CTA)
-  console.log(`[Outro Engine] 🌟 Rendering dynamic story outro scene...`);
-  const outroDuration = 3.5;
-  const outroSvg = buildGlowingOutroSvg(chosenEpisode.genre, chosenEpisode.title, chosenTemplate, 1080, 1920);
-  const outroSvgPath = path.join(ARTIFACTS_DIR, 'outro.svg');
-  const outroPngPath = path.join(ARTIFACTS_DIR, 'outro.png');
-  const outroMp4 = path.join(ARTIFACTS_DIR, 'scene_outro.mp4');
-  fs.writeFileSync(outroSvgPath, outroSvg);
-  execSync(`ffmpeg -y -i "${outroSvgPath}" "${outroPngPath}" 2>/dev/null`);
-  execSync(`ffmpeg -y -loop 1 -t ${outroDuration} -i "${outroPngPath}" -c:v libx264 -preset fast -pix_fmt yuv420p -r 30 -t ${outroDuration} "${outroMp4}" 2>/dev/null`);
-  sceneInputs.push(outroMp4);
+  // Outro
+  const outroSvg = path.join(ARTIFACTS_DIR, 'outro.svg');
+  const outroPng = path.join(ARTIFACTS_DIR, 'outro.png');
+  const outroMp4 = path.join(ARTIFACTS_DIR, 'outro.mp4');
+  fs.writeFileSync(outroSvg, buildBlackOutroSvg(episode.title));
+  execSync(`ffmpeg -y -i "${outroSvg}" -frames:v 1 "${outroPng}" 2>/dev/null`, { stdio: 'pipe' });
+  execSync(
+    `ffmpeg -y -loop 1 -t 3.2 -i "${outroPng}" -vf "scale=1080:1920,setsar=1,fps=30" -c:v libx264 -preset veryfast -crf 18 -pix_fmt yuv420p -t 3.2 "${outroMp4}"`,
+    { stdio: 'pipe' }
+  );
+  sceneClips.push(outroMp4);
 
-  // 7. Concatenate Scenes & Apply Karaoke Subtitles
-  const timestamp = Date.now();
-  const finalMp4Path = path.join(RENDERED_DIR, `documentary_movie_${timestamp}.mp4`);
-  const latestMp4Path = path.join(ARTIFACTS_DIR, 'documentary_latest.mp4');
+  // Concat video
+  const listFile = path.join(ARTIFACTS_DIR, 'concat.txt');
+  fs.writeFileSync(listFile, sceneClips.map((p) => `file '${p.replace(/'/g, "'\\''")}'`).join('\n'));
+  const silentVideo = path.join(ARTIFACTS_DIR, 'silent.mp4');
+  execSync(
+    `ffmpeg -y -f concat -safe 0 -i "${listFile}" -c:v libx264 -preset veryfast -crf 20 -pix_fmt yuv420p -r 30 "${silentVideo}"`,
+    { stdio: 'pipe' }
+  );
 
-  const concatListTxt = path.join(ARTIFACTS_DIR, 'doc_scenes.txt');
-  fs.writeFileSync(concatListTxt, sceneInputs.map(p => `file '${p}'`).join('\n'));
-  const visualConcatMp4 = path.join(ARTIFACTS_DIR, 'doc_visual_concat.mp4');
-  execSync(`ffmpeg -y -f concat -safe 0 -i "${concatListTxt}" -c copy "${visualConcatMp4}" 2>/dev/null || ffmpeg -y -f concat -safe 0 -i "${concatListTxt}" -c:v libx264 -preset fast -pix_fmt yuv420p "${visualConcatMp4}" 2>/dev/null`);
+  // Mix VO + BGM + SFX + ASS captions
+  const finalMp4 = path.join(RENDERED_DIR, `documentary_movie_${Date.now()}.mp4`);
+  const driftreelLatest = path.join(RENDERED_DIR, 'driftreel_documentary_latest.mp4');
+  const escapedAss = assPath.replace(/\\/g, '/').replace(/:/g, '\\:').replace(/'/g, "\\'");
 
-  // 8. Audio Mix: Voice (1.35x), Sound FX (0.16x), Ducked AI OST (0.25x per user mandate to increase BGM volume)
-  let bgmVolume = 0.25;
+  const filter = [
+    `[1:a]volume=1.55,afade=t=in:st=0:d=0.3[vo]`,
+    `[2:a]volume=0.28,afade=t=in:st=0:d=1.2,afade=t=out:st=${(totalDuration - 2).toFixed(2)}:d=1.8[bgm]`,
+    `[3:a]volume=0.12[sfx]`,
+    `[vo][bgm][sfx]amix=inputs=3:duration=longest:dropout_transition=2[aout]`,
+    `[0:v]subtitles='${escapedAss}'[vout]`
+  ].join(';');
+
+  execSync(
+    `ffmpeg -y -i "${silentVideo}" -i "${voiceMp3}" -i "${bgMusicPath}" -i "${sfxWav}" -filter_complex "${filter}" -map "[vout]" -map "[aout]" -c:v libx264 -preset veryfast -crf 19 -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -t ${totalDuration.toFixed(2)} "${finalMp4}"`,
+    { stdio: 'pipe' }
+  );
+
+  fs.copyFileSync(finalMp4, driftreelLatest);
+
+  // Manifest for Buffer caption
+  const manifest = {
+    title: episode.title,
+    episodeTitle: episode.title,
+    era: episode.era,
+    genre: 'history',
+    excerpt: fullNarration.slice(0, 180),
+    description: fullNarration.slice(0, 280),
+    story: fullNarration.slice(0, 280),
+    hashtags: episode.hashtags,
+    channel: 'Driftreel'
+  };
+  fs.writeFileSync(path.join(RENDERED_DIR, 'driftreel_manifest.json'), JSON.stringify(manifest, null, 2));
+  fs.writeFileSync(path.join(ARTIFACTS_DIR, 'driftreel_manifest.json'), JSON.stringify(manifest, null, 2));
+
   try {
-    const { getWorkflowVoiceSettings } = require('./workflow_settings_loader.cjs');
-    bgmVolume = getWorkflowVoiceSettings('cinema').bgmVolume || 0.25;
-  } catch {}
+    const { recordPostedCandidate } = require('./channel_dedup_service.cjs');
+    await recordPostedCandidate('driftreel', episode.title, episode.era, {
+      genre: 'history',
+      duration: totalDuration
+    });
+  } catch (_) {}
 
-  let audioInputs = `-i "${visualConcatMp4}" -i "${voiceWav}" -i "${sfxWav}" `;
-  let audioFilter = `[1:a]volume=1.35,acompressor=threshold=-18dB:ratio=2.5:attack=10:release=120[voice]; [2:a]volume=0.16,atrim=0:${totalDuration.toFixed(2)}[sfx]; `;
-
-  if (bgMusicPath && fs.existsSync(bgMusicPath)) {
-    audioInputs += `-i "${bgMusicPath}" `;
-    audioFilter += `[3:a]volume=${bgmVolume.toFixed(2)},afade=t=in:st=0:d=2.0,afade=t=out:st=${(totalDuration - 2.0).toFixed(2)}:d=2.0,atrim=0:${totalDuration.toFixed(2)}[bgm]; [voice][sfx][bgm]amix=inputs=3:duration=first:dropout_transition=2[a_final]`;
-  } else {
-    audioFilter += `[voice][sfx]amix=inputs=2:duration=first:dropout_transition=2[a_final]`;
-  }
-
-  // Combine video with karaoke subtitles filter (properly escaped so subtitles are never dropped)
-  const escapedAss = assSubtitlesPath.replace(/\\/g, '/').replace(/:/g, '\\:').replace(/'/g, "\\'");
-  const finalFilter = `${audioFilter}; [0:v]subtitles='${escapedAss}'[v_sub]`;
-  let finalCmd = `ffmpeg -y ${audioInputs} -filter_complex "${finalFilter}" -map "[v_sub]" -map "[a_final]" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -ar 44100 -ac 2 -t ${totalDuration.toFixed(2)} "${finalMp4Path}" 2>/dev/null`;
-
-  console.log(`[Compositor Engine] 🎬 Assembling master documentary video with karaoke captions...`);
-  try {
-    execSync(finalCmd);
-  } catch (err) {
-    console.warn(`[Subtitles Notice] Retrying direct mapping without subtitles filter...`);
-    const fallbackCmd = `ffmpeg -y ${audioInputs} -filter_complex "${audioFilter}" -map 0:v -map "[a_final]" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -ar 44100 -ac 2 -t ${totalDuration.toFixed(2)} "${finalMp4Path}" 2>/dev/null`;
-    execSync(fallbackCmd);
-  }
-
-  if (fs.existsSync(finalMp4Path) && fs.statSync(finalMp4Path).size > 10000) {
-    fs.copyFileSync(finalMp4Path, latestMp4Path);
-    const driftreelLatestArtifact = path.join(ARTIFACTS_DIR, 'driftreel_documentary_latest.mp4');
-    const driftreelLatestRendered = path.join(RENDERED_DIR, 'driftreel_documentary_latest.mp4');
-    fs.copyFileSync(finalMp4Path, driftreelLatestArtifact);
-    fs.copyFileSync(finalMp4Path, driftreelLatestRendered);
-
-    // Save manifest for Driftreel TikTok Publisher
-    const driftreelManifest = {
-      title: chosenEpisode.title,
-      genre: chosenEpisode.genre,
-      era: chosenEpisode.era,
-      narration: fullNarration,
-      hashtags: chosenEpisode.hashtags,
-      videoPath: finalMp4Path,
-      timestamp
-    };
-    fs.writeFileSync(path.join(ARTIFACTS_DIR, 'driftreel_manifest.json'), JSON.stringify(driftreelManifest, null, 2));
-    fs.writeFileSync(path.join(RENDERED_DIR, 'driftreel_manifest.json'), JSON.stringify(driftreelManifest, null, 2));
-    fs.writeFileSync(path.join(ARTIFACTS_DIR, 'documentary_manifest.json'), JSON.stringify(driftreelManifest, null, 2));
-
-    console.log(`\n🎉 [Documentary Engine] SUCCESS: Rendered Video for TikTok Driftreel (${(fs.statSync(finalMp4Path).size / (1024 * 1024)).toFixed(2)} MB)`);
-    console.log(` • Path: ${finalMp4Path}`);
-    console.log(` • Driftreel Target: ${driftreelLatestRendered}`);
-  }
-
-  // 9. Record to Deduplication Service
-  await recordPostedCandidate('driftreel', chosenEpisode.title, chosenEpisode.era, {
-    genre: chosenEpisode.genre,
-    duration: totalDuration,
-    archiveQuery: chosenEpisode.archiveQuery,
-    timestamp
-  });
-  await recordPostedCandidate('documentary_movie', chosenEpisode.title, chosenEpisode.era, {
-    genre: chosenEpisode.genre,
-    duration: totalDuration,
-    archiveQuery: chosenEpisode.archiveQuery,
-    timestamp
-  });
-
-  console.log(`\n[Driftreel TikTok Engine] 📱 Crime, Horror & Archival Documentary ready for TikTok Buffer dispatch.`);
-
-  // 10. Dispatch to YouTube Shorts (Channel 4: Cinema Vanguard)
+  // YouTube Ch4
   const isDryRun = process.env.DRY_RUN === 'true';
-  const ch4Token = process.env.YOUTUBE_REFRESH_TOKEN_CH4 || process.env.YOUTUBE_REFRESH_TOKEN_MOVIE || '';
-  if (ch4Token && !isDryRun) {
+  const ch4Token = process.env.YOUTUBE_REFRESH_TOKEN_CH4 || process.env.YOUTUBE_REFRESH_TOKEN || '';
+  if (ch4Token && !isDryRun && process.env.PUBLISH_YOUTUBE !== 'false') {
     try {
       const { uploadYouTubeShort } = require('./youtube_channel_dispatcher.cjs');
-      const genreEmoji = chosenEpisode.genre === 'horror' ? '👁️' : chosenEpisode.genre === 'crime' ? '🕵️‍♂️' : '🏛️';
-      const viralTitle = `${genreEmoji} ${chosenEpisode.title} (${chosenEpisode.era.split('•')[0].trim()}) #Shorts`;
-      const viralDesc = `${fullNarration}\n\n🏛️ Era: ${chosenEpisode.era}\nGenre: ${chosenEpisode.genre.toUpperCase()}\n\n🍿 ${getChannelMeta('ch4').ctaMention} for daily archival cinema, true crime & deep mysteries!\n\n#CinemaVanguard #Documentary #DarkHistory #TrueCrime #Mystery #Shorts`;
       await uploadYouTubeShort({
-        videoPath: finalMp4Path,
-        title: viralTitle,
-        description: viralDesc,
-        tags: chosenEpisode.hashtags,
+        videoPath: finalMp4,
+        title: `${episode.title} | ${episode.era.split('•')[0].trim()} #Shorts`.slice(0, 95),
+        description: `${fullNarration}\n\nEra: ${episode.era}\n\nFollow Driftreel for ancient history and folk tales.\n\n#Driftreel #HistoryTok #AncientHistory #FolkTale #Documentary #Shorts #FYP`,
+        tags: episode.hashtags.map((h) => String(h).replace(/^#/, '')),
         channelId: 'movie_brand'
       });
-      console.log(`[YouTube Channel 4 Dispatch] ✅ Uploaded documentary to YouTube Channel 4!`);
-    } catch (ytErr) {
-      console.warn(`[YouTube Channel 4 Notice] ${ytErr.message}`);
+      console.log('[Driftreel] YouTube upload OK');
+    } catch (e) {
+      console.warn('[Driftreel] YouTube:', e.message);
     }
   }
 
-  return {
-    videoPath: finalMp4Path,
-    duration: totalDuration,
-    title: chosenEpisode.title,
-    genre: chosenEpisode.genre
-  };
+  console.log(`[Driftreel] done: "${episode.title}" ${totalDuration.toFixed(1)}s → ${driftreelLatest}`);
+  return { videoPath: finalMp4, duration: totalDuration, title: episode.title, genre: 'history' };
 }
 
 if (require.main === module) {
   generateDocumentaryVideo()
-    .then(r => {
-      console.log(`\n✓ Archival Documentary Pipeline Completed: "${r.title}" (${r.genre}) (${r.duration.toFixed(1)}s)`);
+    .then((r) => {
+      console.log(`\n✓ Driftreel: "${r.title}" (${r.duration.toFixed(1)}s)`);
       process.exit(0);
     })
-    .catch(err => {
-      console.error('\n❌ Error in Documentary pipeline:', err);
+    .catch((err) => {
+      console.error('\n❌ Driftreel failed:', err);
       process.exit(1);
     });
 }
 
-module.exports = {
-  generateDocumentaryVideo,
-  generateDynamicDocumentaryStory
-};
+module.exports = { generateDocumentaryVideo, generateDynamicDocumentaryStory: generateHistoryStory };
