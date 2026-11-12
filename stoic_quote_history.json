@@ -1,12 +1,5 @@
 [
   {
-    "quote": "He is a wise man who does not grieve for the things which he has not, but rejoices for those which he has.",
-    "author": "Epictetus",
-    "credentials": "Former Slave & Stoic Master",
-    "theme": "psychology",
-    "usedAt": "2026-09-26T09:25:04.695Z"
-  },
-  {
     "quote": "Leave people hungry. Even with physical thirst, it is a sign of good taste to leave people with a craving.",
     "author": "Baltasar Gracián",
     "credentials": "Author of The Art of Worldly Wisdom • Jesuit Philosopher",
@@ -958,5 +951,18 @@
     "author": "Seneca the Younger",
     "channel": "stoic",
     "timestamp": "2026-11-11T21:07:52.256Z"
+  },
+  {
+    "quote": "The most terrifying thing is to accept oneself completely.",
+    "author": "Dr. Carl Jung",
+    "credentials": "Founder of Analytical Psychology • Psychiatrist",
+    "theme": "confidence",
+    "usedAt": "2026-11-12T02:45:16.850Z"
+  },
+  {
+    "quote": "The most terrifying thing is to accept oneself completely.",
+    "author": "Dr. Carl Jung",
+    "channel": "stoic",
+    "timestamp": "2026-11-12T02:45:16.850Z"
   }
 ]
