@@ -1,12 +1,5 @@
 [
   {
-    "quote": "Leave people hungry. Even with physical thirst, it is a sign of good taste to leave people with a craving.",
-    "author": "Baltasar Gracián",
-    "credentials": "Author of The Art of Worldly Wisdom • Jesuit Philosopher",
-    "theme": "influence",
-    "usedAt": "2026-09-28T11:14:51.359Z"
-  },
-  {
     "quote": "Difficulties strengthen the mind, as labor does the body. A man is as wretched as he has convinced himself he is.",
     "author": "Seneca",
     "credentials": "Stoic Statesman & Dramatist",
@@ -964,5 +957,18 @@
     "author": "Dr. Carl Jung",
     "channel": "stoic",
     "timestamp": "2026-11-12T02:45:16.850Z"
+  },
+  {
+    "quote": "The soul becomes dyed with the color of its thoughts.",
+    "author": "Marcus Aurelius",
+    "credentials": "Roman Emperor & Stoic Philosopher • Meditations",
+    "theme": "discipline",
+    "usedAt": "2026-11-12T14:50:33.143Z"
+  },
+  {
+    "quote": "The soul becomes dyed with the color of its thoughts.",
+    "author": "Marcus Aurelius",
+    "channel": "stoic",
+    "timestamp": "2026-11-12T14:50:33.143Z"
   }
 ]
