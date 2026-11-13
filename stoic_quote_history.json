@@ -1,12 +1,5 @@
 [
   {
-    "quote": "Difficulties strengthen the mind, as labor does the body. A man is as wretched as he has convinced himself he is.",
-    "author": "Seneca",
-    "credentials": "Stoic Statesman & Dramatist",
-    "theme": "psychology",
-    "usedAt": "2026-09-28T11:16:10.162Z"
-  },
-  {
     "quote": "We suffer more often in imagination than in reality.",
     "author": "Seneca the Younger",
     "credentials": "Roman Statesman, Dramatist & Stoic Moralist",
@@ -970,5 +963,18 @@
     "author": "Marcus Aurelius",
     "channel": "stoic",
     "timestamp": "2026-11-12T14:50:33.143Z"
+  },
+  {
+    "quote": "Don't bend; don't water it down; rather, follow your most intense obsessions mercilessly.",
+    "author": "Franz Kafka",
+    "credentials": "Author of The Trial & The Metamorphosis",
+    "theme": "action",
+    "usedAt": "2026-11-13T02:29:07.760Z"
+  },
+  {
+    "quote": "Don't bend; don't water it down; rather, follow your most intense obsessions mercilessly.",
+    "author": "Franz Kafka",
+    "channel": "stoic",
+    "timestamp": "2026-11-13T02:29:07.761Z"
   }
 ]
