@@ -1,38 +1,8 @@
 {
   "version": 1,
   "retentionDays": 30,
-  "lastPurgedAt": "2026-11-14T13:10:26.930Z",
+  "lastPurgedAt": "2026-11-14T18:59:08.543Z",
   "entries": [
-    {
-      "hash": "658b92749e63",
-      "channel": "finance",
-      "topic": "A fraudster's greatest weapon is not technology; it is artificial urgency and flattery. The moment s",
-      "timestamp": "2026-10-15T16:19:43.671Z"
-    },
-    {
-      "hash": "362bff84ee54",
-      "channel": "cartoon",
-      "topic": "Why Mirrors Fogs Up When You Take a Hot Shower",
-      "timestamp": "2026-10-15T17:36:24.991Z"
-    },
-    {
-      "hash": "36dda9e9bdef",
-      "channel": "driftreel",
-      "topic": "The Silent Vault of Chicago",
-      "timestamp": "2026-10-15T18:02:59.481Z"
-    },
-    {
-      "hash": "36dda9e9bdef",
-      "channel": "documentary_movie",
-      "topic": "The Silent Vault of Chicago",
-      "timestamp": "2026-10-15T18:03:00.515Z"
-    },
-    {
-      "hash": "f98f030f6af5",
-      "channel": "stoic",
-      "topic": "The most terrifying thing is to accept oneself completely.",
-      "timestamp": "2026-10-15T18:06:20.486Z"
-    },
     {
       "hash": "805c02ce36a5",
       "channel": "finance",
