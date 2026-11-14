@@ -1,12 +1,5 @@
 [
   {
-    "quote": "When you wake up, tell yourself: The people I deal with today will be meddling, ungrateful, arrogant, and surly. But none of them can hurt me, for I have recognized the beauty of goodness.",
-    "author": "Marcus Aurelius",
-    "credentials": "Roman Emperor & Stoic Philosopher",
-    "theme": "truth",
-    "usedAt": "2026-09-29T09:59:53.921Z"
-  },
-  {
     "quote": "You have power over your mind, not outside events. Realize this, and you will find strength.",
     "author": "Marcus Aurelius",
     "credentials": "Roman Emperor & Stoic Philosopher • Meditations",
@@ -982,5 +975,18 @@
     "author": "Marcus Aurelius",
     "channel": "stoic",
     "timestamp": "2026-11-13T14:09:51.340Z"
+  },
+  {
+    "quote": "We suffer more often in imagination than in reality.",
+    "author": "Seneca the Younger",
+    "credentials": "Roman Statesman, Dramatist & Stoic Moralist",
+    "theme": "mindset",
+    "usedAt": "2026-11-14T02:01:01.907Z"
+  },
+  {
+    "quote": "We suffer more often in imagination than in reality.",
+    "author": "Seneca the Younger",
+    "channel": "stoic",
+    "timestamp": "2026-11-14T02:01:01.908Z"
   }
 ]
