@@ -1,32 +1,8 @@
 {
   "version": 1,
   "retentionDays": 30,
-  "lastPurgedAt": "2026-11-13T14:09:43.042Z",
+  "lastPurgedAt": "2026-11-14T13:10:26.930Z",
   "entries": [
-    {
-      "hash": "3cf542bc04ba",
-      "channel": "fin",
-      "topic": "Unit Economics for Local Bakeries",
-      "timestamp": "2026-10-15T09:31:04.018Z"
-    },
-    {
-      "hash": "c953706fdbbd",
-      "channel": "cartoon",
-      "topic": "Why Your Straw Looks Broken in Water",
-      "timestamp": "2026-10-15T10:18:13.850Z"
-    },
-    {
-      "hash": "8143e2203161",
-      "channel": "stoic",
-      "topic": "Anxiety is the dizziness of freedom.",
-      "timestamp": "2026-10-15T11:02:49.585Z"
-    },
-    {
-      "hash": "9326babaa1fe",
-      "channel": "cartoon",
-      "topic": "The Invisible Reason Your Phone Screen Looks Dark in Sunlight",
-      "timestamp": "2026-10-15T12:58:29.399Z"
-    },
     {
       "hash": "658b92749e63",
       "channel": "finance",
