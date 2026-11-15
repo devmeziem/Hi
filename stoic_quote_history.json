@@ -1,12 +1,5 @@
 [
   {
-    "quote": "Out of your vulnerabilities will come your strength.",
-    "author": "Sigmund Freud",
-    "credentials": "Founder of Psychoanalysis • Neurologist",
-    "theme": "confidence",
-    "usedAt": "2026-10-10T08:29:10.743Z"
-  },
-  {
     "quote": "A man can be himself only so long as he is alone; if he does not love solitude, he will not love freedom.",
     "author": "Arthur Schopenhauer",
     "credentials": "Author of Studies in Pessimism • German Philosopher",
@@ -1000,5 +993,18 @@
     "author": "Dr. Viktor Frankl",
     "channel": "stoic",
     "timestamp": "2026-11-14T18:59:15.721Z"
+  },
+  {
+    "quote": "Never was anything great achieved without danger. But never confuse courage with recklessness.",
+    "author": "Niccolò Machiavelli",
+    "credentials": "Author of The Prince • Diplomat & Political Philosopher",
+    "theme": "courage",
+    "usedAt": "2026-11-15T01:34:25.224Z"
+  },
+  {
+    "quote": "Never was anything great achieved without danger. But never confuse courage with recklessness.",
+    "author": "Niccolò Machiavelli",
+    "channel": "stoic",
+    "timestamp": "2026-11-15T01:34:25.225Z"
   }
 ]
