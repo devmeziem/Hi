@@ -1,26 +1,8 @@
 {
   "version": 1,
   "retentionDays": 30,
-  "lastPurgedAt": "2026-11-15T01:34:16.090Z",
+  "lastPurgedAt": "2026-11-15T13:39:07.091Z",
   "entries": [
-    {
-      "hash": "0b46744b6b18",
-      "channel": "teen_motivation",
-      "topic": "Why You Feel Unmotivated (And How to Reset Today)",
-      "timestamp": "2026-10-16T08:48:26.874Z"
-    },
-    {
-      "hash": "396a657e8332",
-      "channel": "stoic",
-      "topic": "Pain and suffering are always inevitable for a large intelligence and a deep heart.",
-      "timestamp": "2026-10-16T10:58:17.247Z"
-    },
-    {
-      "hash": "b7f3a8c4c701",
-      "channel": "cartoon",
-      "topic": "The Humming Spoon Effect",
-      "timestamp": "2026-10-16T12:52:58.862Z"
-    },
     {
       "hash": "87e62a038b0e",
       "channel": "finance",
@@ -458,6 +440,12 @@
       "channel": "stoic",
       "topic": "We suffer more often in imagination than in reality.",
       "timestamp": "2026-11-14T02:01:01.909Z"
+    },
+    {
+      "hash": "0b614e3bb999",
+      "channel": "stoic",
+      "topic": "Out of your vulnerabilities will come your strength.",
+      "timestamp": "2026-11-15T13:39:14.332Z"
     }
   ]
 }
