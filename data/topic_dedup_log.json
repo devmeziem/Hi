@@ -1,32 +1,8 @@
 {
   "version": 1,
   "retentionDays": 30,
-  "lastPurgedAt": "2026-11-15T19:38:08.250Z",
+  "lastPurgedAt": "2026-11-16T01:38:43.681Z",
   "entries": [
-    {
-      "hash": "aa25495bcb32",
-      "channel": "finance",
-      "topic": "Three things to stop as a beginner in earning: Stop buying courses before selling a real skill, stop",
-      "timestamp": "2026-10-16T19:49:06.020Z"
-    },
-    {
-      "hash": "fd296942385f",
-      "channel": "cartoon",
-      "topic": "Why Rainbow Colors Appear in Order",
-      "timestamp": "2026-10-16T20:17:16.971Z"
-    },
-    {
-      "hash": "30ce3f281698",
-      "channel": "finance",
-      "topic": "When you have under $1,000, do not speculate in crypto or high-risk stocks. The highest return on ca",
-      "timestamp": "2026-10-17T00:09:40.864Z"
-    },
-    {
-      "hash": "a1407659b86e",
-      "channel": "cartoon",
-      "topic": "Why Wet Roads Look Brighter",
-      "timestamp": "2026-10-17T00:55:14.648Z"
-    },
     {
       "hash": "8a6b906ca5dd",
       "channel": "cartoon",

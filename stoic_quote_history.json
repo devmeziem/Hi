@@ -1,11 +1,5 @@
 [
   {
-    "quote": "Anxiety is the dizziness of freedom.",
-    "author": "Søren Kierkegaard",
-    "channel": "stoic",
-    "timestamp": "2026-10-15T11:02:49.584Z"
-  },
-  {
     "quote": "The most terrifying thing is to accept oneself completely.",
     "author": "Dr. Carl Jung",
     "credentials": "Founder of Analytical Psychology • Psychiatrist",
@@ -1018,5 +1012,18 @@
     "author": "Arthur Schopenhauer",
     "channel": "stoic",
     "timestamp": "2026-11-15T19:38:15.407Z"
+  },
+  {
+    "quote": "Most people do not really want freedom, because freedom involves responsibility, and most people are frightened of responsibility.",
+    "author": "Sigmund Freud",
+    "credentials": "Founder of Psychoanalysis • Neurologist",
+    "theme": "psychology",
+    "usedAt": "2026-11-16T01:38:51.148Z"
+  },
+  {
+    "quote": "Most people do not really want freedom, because freedom involves responsibility, and most people are frightened of responsibility.",
+    "author": "Sigmund Freud",
+    "channel": "stoic",
+    "timestamp": "2026-11-16T01:38:51.149Z"
   }
 ]
