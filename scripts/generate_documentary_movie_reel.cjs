@@ -1,11 +1,9 @@
 #!/usr/bin/env node
 /**
- * DRIFTREEL — Ancient History / Folk Tale Documentary Engine (FULL REPLACE)
- * - Egyptian, Greek, Roman, African/Asian/European folk tales, verified old history ONLY
- * - No Cinema Vanguard branding, no seed vault spam, no dark caption boxes, no watermarks
- * - ASS: Arial Black, pure white, transparent BackColour, center
- * - Pure black end card with white FOLLOW FOR MORE
- * - Soft piano BGM (no drums), bass Andrew VO
+ * DRIFTREEL — LIVE ancient history / folk tales ONLY
+ * - No story seed vault, no fallback episode bank
+ * - Past titles hard-excluded in AI prompt; regenerate on collision
+ * - Visual queries rotated; media source/page rotated so clips do not repeat
  */
 const fs = require('fs');
 const path = require('path');
@@ -16,8 +14,20 @@ const { synthesizeSpeechResilient } = require('./tts_resilient_engine.cjs');
 
 const ARTIFACTS_DIR = path.join(process.cwd(), 'test_artifacts', 'documentary');
 const RENDERED_DIR = path.join(process.cwd(), 'rendered_videos');
-for (const d of [ARTIFACTS_DIR, RENDERED_DIR]) {
+const TITLE_HIST = path.join(process.cwd(), 'data', 'driftreel_title_history.json');
+const VISUAL_HIST = path.join(process.cwd(), 'data', 'driftreel_visual_history.json');
+for (const d of [ARTIFACTS_DIR, RENDERED_DIR, path.dirname(TITLE_HIST)]) {
   if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
+}
+
+function loadJson(p, fb) {
+  try {
+    if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8'));
+  } catch (_) {}
+  return fb;
+}
+function saveJson(p, data) {
+  fs.writeFileSync(p, JSON.stringify(data, null, 2));
 }
 
 function escapeXml(str) {
@@ -29,56 +39,65 @@ function escapeXml(str) {
     .replace(/'/g, '&apos;');
 }
 
-async function generateHistoryStory() {
+async function generateHistoryStory(pastTitles, bannedVisuals) {
   const angles = [
-    'Ancient Egypt pharaohs tombs Nile rituals',
-    'Greek mythology or classical Greek history',
-    'Roman empire legends or verified events',
-    'West African or Egyptian folk tale',
-    'Norse or European medieval folk legend',
-    'Japanese or Chinese classical folk tale',
-    'Mesopotamia Sumer Babylon history',
-    'Phoenician or Carthaginian history'
+    'a specific lesser-known Ancient Egyptian ritual or tomb discovery',
+    'a Greek myth episode that is NOT Icarus or Medusa',
+    'a verified Roman historical incident with a twist',
+    'a West African folk tale with a clear moral',
+    'a Norse or medieval European legend rarely retold',
+    'a Japanese or Chinese classical folk tale not about origami cranes',
+    'Mesopotamia or Babylon history with a concrete artifact',
+    'Phoenician, Carthaginian, or Persian ancient history',
+    'an Inca, Maya, or Aztec historical moment',
+    'an Indian or Southeast Asian classical legend'
   ];
   const angle = angles[Math.floor(Math.random() * angles.length)];
-  console.log('[Driftreel] history angle:', angle);
+  const nonce = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  console.log('[Driftreel] live angle:', angle);
 
   const systemPrompt = `You are the showrunner for Driftreel.
 Generate ONE gripping factual OR classic folk narrative for TikTok (95-130 spoken words, ~40-55 seconds).
-ONLY: Ancient Egypt, Greek myths, Roman history, African/Asian/European folk tales, or verified pre-modern history.
-NEVER modern crime, sea mysteries from 1800s+, horror urban legends, or Cinema Vanguard branding.
+ONLY pre-modern history / classical myth / folk tale.
+NEVER modern crime, 1800s+ sea mysteries, urban legends, Cinema Vanguard.
+
+HARD BAN — do not reuse or paraphrase these past titles:
+${(pastTitles || []).slice(-40).join('\n') || '(none yet)'}
+
+Avoid these overused visual phrases:
+${(bannedVisuals || []).slice(-30).join(' | ') || 'none'}
 
 Rules:
-- title max 42 chars
-- era like "1323 BCE • Valley of the Kings" or "Classical Greece"
+- title max 42 chars, must be NEW
+- era like "1323 BCE • Valley of the Kings"
 - sfxType: projector|wind|clock
 - bgmQuery: soft piano ambient historical sparse no drums
-- exactly 5 scenes; each text 18-26 words; each query concrete stock search for history visuals
-- hashtags must include #Driftreel #HistoryTok #AncientHistory — never #CinemaVanguard #MovieTrailer #SciFi
+- exactly 5 scenes; each text 18-26 words; each query UNIQUE concrete stock search (temples, manuscripts, landscapes, artifacts — not the same ocean ship every time)
+- hashtags: #Driftreel #HistoryTok #AncientHistory #FolkTale #Documentary #Shorts #FYP
 
-Return STRICT JSON only:
-{
-  "title": "...",
-  "genre": "history",
-  "era": "...",
-  "sfxType": "projector",
-  "bgmQuery": "soft piano ambient historical sparse",
-  "scenes": [
-    { "text": "...", "query": "egyptian temple columns desert sunset" }
-  ],
-  "hashtags": ["#Driftreel", "#HistoryTok", "#AncientHistory", "#FolkTale", "#Documentary", "#Shorts", "#FYP"]
-}`;
+Return STRICT JSON only with keys title,genre,era,sfxType,bgmQuery,scenes,hashtags.`;
 
-  const userPrompt = `Create a Driftreel episode about: ${angle}. Fresh story, not a generic sea vanishing.`;
+  const userPrompt = `Episode angle: ${angle}
+Uniqueness nonce: ${nonce}
+Write a story that has NOT been told in the banned title list.`;
 
-  for (let attempt = 1; attempt <= 4; attempt++) {
+  for (let attempt = 1; attempt <= 5; attempt++) {
     try {
       const res = await callActiveAiForJson(systemPrompt, userPrompt, null, {
         nicheKey: 'documentary',
-        temperature: 0.7 + attempt * 0.05
+        temperature: 0.82 + attempt * 0.03
       });
       const data = res?.data || res;
       if (data?.title && Array.isArray(data.scenes) && data.scenes.length >= 4) {
+        const tLow = String(data.title).toLowerCase().trim();
+        const collision = (pastTitles || []).some((pt) => {
+          const p = String(pt).toLowerCase();
+          return p === tLow || (p.length > 10 && (tLow.includes(p.slice(0, 16)) || p.includes(tLow.slice(0, 16))));
+        });
+        if (collision) {
+          console.warn('[Driftreel] title collision — retry', data.title);
+          continue;
+        }
         data.genre = 'history';
         data.hashtags = [
           '#Driftreel',
@@ -92,6 +111,27 @@ Return STRICT JSON only:
         if (!data.bgmQuery || /drum|beat|trap|phonk/i.test(data.bgmQuery)) {
           data.bgmQuery = 'soft piano ambient historical sparse no drums';
         }
+        // Force scene visual diversity
+        const diversifiers = [
+          'ancient stone temple columns desert',
+          'weathered manuscript pages close up',
+          'bronze age artifact museum display',
+          'mountain pass fog historical landscape',
+          'clay tablet cuneiform close up',
+          'ruined amphitheater golden hour',
+          'silk road caravan desert dunes',
+          'candlelit library scrolls shelves',
+          'river delta aerial historical',
+          'carved relief wall hieroglyph'
+        ];
+        data.scenes = data.scenes.slice(0, 5);
+        data.scenes.forEach((s, i) => {
+          const q = String(s.query || s.visualQuery || '').toLowerCase();
+          if (!q || bannedVisuals.some((b) => q.includes(String(b).toLowerCase().slice(0, 20)))) {
+            s.query = diversifiers[(i + attempt + Date.now()) % diversifiers.length];
+          }
+          if (s.visualQuery && !s.query) s.query = s.visualQuery;
+        });
         return data;
       }
     } catch (err) {
@@ -125,7 +165,6 @@ function generateSoundEffectWav(sfxType, outWavPath, duration = 45.0) {
 
 function generateSoftPianoBed(outWavPath, duration) {
   const d = duration.toFixed(2);
-  // Soft sparse piano-ish bed via layered sines + noise — no drums
   const filter = `aevalsrc='0.04*sin(2*PI*110*t)+0.03*sin(2*PI*164.81*t)+0.025*sin(2*PI*220*t)+0.02*sin(2*PI*329.63*t)*gte(mod(t,4),0)*lt(mod(t,4),1.2)':s=44100:d=${d}[p]; anoisesrc=d=${d}:c=pink:a=0.008[n]; [p][n]amix=inputs=2,lowpass=f=900,afade=t=in:st=0:d=1.5,afade=t=out:st=${Math.max(0, duration - 2).toFixed(2)}:d=2[out]`;
   execSync(
     `ffmpeg -y -f lavfi -i "${filter}" -map "[out]" -c:a pcm_s16le -ar 44100 -ac 2 -t ${d} "${outWavPath}" 2>/dev/null`,
@@ -138,7 +177,6 @@ function generateDocumentaryKaraokeAss(wordsWithTimings, totalDuration, outAssPa
   const rawWords = wordsWithTimings.map((w) => w.word);
   const totalMs = Math.round(totalDuration * 1000);
   const msPerWord = rawWords.length > 0 ? totalMs / rawWords.length : 320;
-
   const formatAssTime = (ms) => {
     const totalSec = Math.floor(ms / 1000);
     const cs = Math.floor((ms % 1000) / 10);
@@ -147,7 +185,6 @@ function generateDocumentaryKaraokeAss(wordsWithTimings, totalDuration, outAssPa
     const hr = Math.floor(totalSec / 3600);
     return `${hr}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
   };
-
   const lines = [];
   for (let i = 0; i < rawWords.length; i += wordsPerLine) {
     const chunk = rawWords.slice(i, i + wordsPerLine);
@@ -162,8 +199,6 @@ function generateDocumentaryKaraokeAss(wordsWithTimings, totalDuration, outAssPa
       `Dialogue: 0,${formatAssTime(chunkStartMs)},${formatAssTime(chunkEndMs)},CenterKaraoke,,0,0,0,,${kLine.trim()}`
     );
   }
-
-  // Arial Black, pure white, NO dark box (BackColour fully transparent, BorderStyle 1 = outline only)
   const assContent = `[Script Info]
 Title: Driftreel History Karaoke
 ScriptType: v4.00+
@@ -193,33 +228,64 @@ function buildBlackOutroSvg(storyTitle = '', width = 1080, height = 1920) {
 </svg>`;
 }
 
+async function fetchVisual(query, index, usedPaths) {
+  const sources = ['wikimedia', 'unsplash', 'pexels', 'pixabay'];
+  const rot = (index + Math.floor(Date.now() / 60000)) % sources.length;
+  const ordered = sources.slice(rot).concat(sources.slice(0, rot));
+  const page = 1 + ((index + Date.now()) % 4);
+
+  if (index === 1 || index === 2) {
+    for (const src of ordered) {
+      try {
+        const vid = await searchAndFetchVideo(query, { minDuration: 3, preferredSource: src, page });
+        if (vid?.localPath && fs.existsSync(vid.localPath) && !usedPaths.has(vid.localPath)) {
+          usedPaths.add(vid.localPath);
+          return { path: vid.localPath, isVideo: true };
+        }
+      } catch (_) {}
+    }
+  }
+  for (const src of ordered) {
+    try {
+      const img = await searchAndFetchImage(query, { preferredSource: src, page });
+      if (img?.localPath && fs.existsSync(img.localPath) && !usedPaths.has(img.localPath)) {
+        usedPaths.add(img.localPath);
+        return { path: img.localPath, isVideo: false };
+      }
+    } catch (_) {}
+  }
+  const colors = ['0x0a0a12', '0x12121a', '0x0f1419', '0x1a1520', '0x101018'];
+  const p = path.join(ARTIFACTS_DIR, `fallback_${index}_${Date.now()}.png`);
+  execSync(
+    `ffmpeg -y -f lavfi -i color=c=${colors[index % colors.length]}:s=1080x1920:d=1 -frames:v 1 "${p}" 2>/dev/null`,
+    { stdio: 'pipe' }
+  );
+  usedPaths.add(p);
+  return { path: p, isVideo: false };
+}
+
 async function generateDocumentaryVideo() {
   console.log('\n===============================================================');
-  console.log('DRIFTREEL — Ancient History / Folk Tale Engine');
+  console.log('DRIFTREEL — LIVE history/folk (no seed vault)');
   console.log('===============================================================\n');
 
-  const episode = await generateHistoryStory();
-  console.log(`[Driftreel] "${episode.title}" | ${episode.era}`);
-
-  // Dedup soft check
+  const pastTitles = loadJson(TITLE_HIST, []);
+  // also merge remote dedup if available
   try {
-    const { fetchRemoteHistory, recordPostedCandidate } = require('./channel_dedup_service.cjs');
+    const { fetchRemoteHistory } = require('./channel_dedup_service.cjs');
     const past = await fetchRemoteHistory('documentary');
-    const isDup = (past || []).some((p) => {
-      const pTitle = (p.quote || p.topic || '').toLowerCase();
-      const cTitle = (episode.title || '').toLowerCase();
-      return pTitle && cTitle && (pTitle === cTitle || pTitle.includes(cTitle) || cTitle.includes(pTitle));
-    });
-    if (isDup) {
-      episode.title = `${episode.title} — Chronicle`;
-      console.warn('[Driftreel] near-dup title adjusted');
+    for (const p of past || []) {
+      const t = p.quote || p.topic || p.title;
+      if (t && !pastTitles.includes(t)) pastTitles.push(t);
     }
   } catch (_) {}
 
+  const bannedVisuals = loadJson(VISUAL_HIST, []);
+  const episode = await generateHistoryStory(pastTitles, bannedVisuals);
+  console.log(`[Driftreel] "${episode.title}" | ${episode.era}`);
+
   const fullNarration = episode.scenes.map((s) => s.text).join(' ');
   const voiceMp3 = path.join(ARTIFACTS_DIR, `doc_voice_${Date.now()}.mp3`);
-
-  console.log('[Driftreel] TTS Andrew deep');
   await synthesizeSpeechResilient(fullNarration, voiceMp3, {
     voice: 'en-US-AndrewNeural',
     rate: '-8%',
@@ -237,7 +303,6 @@ async function generateDocumentaryVideo() {
   } catch (_) {}
   const totalDuration = Math.max(voiceDuration + 3.5, 42);
 
-  // BGM
   let bgMusicPath = null;
   try {
     const fetched = await searchAndFetchAudio(episode.bgmQuery || 'soft piano ambient historical', {
@@ -266,43 +331,17 @@ async function generateDocumentaryVideo() {
   const sceneCount = episode.scenes.length;
   const secPerScene = voiceDuration / sceneCount;
   const sceneClips = [];
+  const usedPaths = new Set();
+  const usedQueries = [];
 
   for (let i = 0; i < sceneCount; i++) {
     const sc = episode.scenes[i];
-    console.log(`[Scene ${i + 1}/${sceneCount}] ${sc.query}`);
-    let visualPath = null;
-    let isVideo = false;
+    const q = sc.query || sc.visualQuery || 'ancient ruins documentary';
+    usedQueries.push(q);
+    console.log(`[Scene ${i + 1}/${sceneCount}] ${q}`);
+    const { path: visualPath, isVideo } = await fetchVisual(q, i, usedPaths);
 
-    if (i === 1 || i === 2) {
-      try {
-        const vid = await searchAndFetchVideo(sc.query, { minDuration: 3, preferredSource: 'pexels' });
-        if (vid?.localPath && fs.existsSync(vid.localPath)) {
-          visualPath = vid.localPath;
-          isVideo = true;
-        }
-      } catch (_) {}
-    }
-    if (!visualPath) {
-      for (const src of ['wikimedia', 'unsplash', 'pexels', 'pixabay']) {
-        try {
-          const img = await searchAndFetchImage(sc.query, { preferredSource: src });
-          if (img?.localPath && fs.existsSync(img.localPath)) {
-            visualPath = img.localPath;
-            break;
-          }
-        } catch (_) {}
-      }
-    }
-    if (!visualPath) {
-      // solid dark fallback still
-      visualPath = path.join(ARTIFACTS_DIR, `fallback_${i}.png`);
-      execSync(
-        `ffmpeg -y -f lavfi -i color=c=0x0a0a12:s=1080x1920:d=1 -frames:v 1 "${visualPath}" 2>/dev/null`,
-        { stdio: 'pipe' }
-      );
-    }
-
-    const sceneMp4 = path.join(ARTIFACTS_DIR, `scene_${i}.mp4`);
+    const sceneMp4 = path.join(ARTIFACTS_DIR, `scene_${i}_${Date.now()}.mp4`);
     const dur = secPerScene.toFixed(2);
     const frames = Math.max(30, Math.ceil(secPerScene * 30));
     const zoom =
@@ -324,7 +363,6 @@ async function generateDocumentaryVideo() {
     sceneClips.push(sceneMp4);
   }
 
-  // Outro
   const outroSvg = path.join(ARTIFACTS_DIR, 'outro.svg');
   const outroPng = path.join(ARTIFACTS_DIR, 'outro.png');
   const outroMp4 = path.join(ARTIFACTS_DIR, 'outro.mp4');
@@ -336,7 +374,6 @@ async function generateDocumentaryVideo() {
   );
   sceneClips.push(outroMp4);
 
-  // Concat video
   const listFile = path.join(ARTIFACTS_DIR, 'concat.txt');
   fs.writeFileSync(listFile, sceneClips.map((p) => `file '${p.replace(/'/g, "'\\''")}'`).join('\n'));
   const silentVideo = path.join(ARTIFACTS_DIR, 'silent.mp4');
@@ -345,11 +382,9 @@ async function generateDocumentaryVideo() {
     { stdio: 'pipe' }
   );
 
-  // Mix VO + BGM + SFX + ASS captions
   const finalMp4 = path.join(RENDERED_DIR, `documentary_movie_${Date.now()}.mp4`);
   const driftreelLatest = path.join(RENDERED_DIR, 'driftreel_documentary_latest.mp4');
   const escapedAss = assPath.replace(/\\/g, '/').replace(/:/g, '\\:').replace(/'/g, "\\'");
-
   const filter = [
     `[1:a]volume=1.55,afade=t=in:st=0:d=0.3[vo]`,
     `[2:a]volume=0.28,afade=t=in:st=0:d=1.2,afade=t=out:st=${(totalDuration - 2).toFixed(2)}:d=1.8[bgm]`,
@@ -362,10 +397,8 @@ async function generateDocumentaryVideo() {
     `ffmpeg -y -i "${silentVideo}" -i "${voiceMp3}" -i "${bgMusicPath}" -i "${sfxWav}" -filter_complex "${filter}" -map "[vout]" -map "[aout]" -c:v libx264 -preset veryfast -crf 19 -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -t ${totalDuration.toFixed(2)} "${finalMp4}"`,
     { stdio: 'pipe' }
   );
-
   fs.copyFileSync(finalMp4, driftreelLatest);
 
-  // Manifest for Buffer caption
   const manifest = {
     title: episode.title,
     episodeTitle: episode.title,
@@ -375,10 +408,15 @@ async function generateDocumentaryVideo() {
     description: fullNarration.slice(0, 280),
     story: fullNarration.slice(0, 280),
     hashtags: episode.hashtags,
-    channel: 'Driftreel'
+    channel: 'Driftreel',
+    mode: 'live_no_seed'
   };
   fs.writeFileSync(path.join(RENDERED_DIR, 'driftreel_manifest.json'), JSON.stringify(manifest, null, 2));
   fs.writeFileSync(path.join(ARTIFACTS_DIR, 'driftreel_manifest.json'), JSON.stringify(manifest, null, 2));
+
+  pastTitles.push(episode.title);
+  saveJson(TITLE_HIST, pastTitles.slice(-120));
+  saveJson(VISUAL_HIST, bannedVisuals.concat(usedQueries).slice(-120));
 
   try {
     const { recordPostedCandidate } = require('./channel_dedup_service.cjs');
@@ -388,7 +426,6 @@ async function generateDocumentaryVideo() {
     });
   } catch (_) {}
 
-  // YouTube Ch4
   const isDryRun = process.env.DRY_RUN === 'true';
   const ch4Token = process.env.YOUTUBE_REFRESH_TOKEN_CH4 || process.env.YOUTUBE_REFRESH_TOKEN || '';
   if (ch4Token && !isDryRun && process.env.PUBLISH_YOUTUBE !== 'false') {
@@ -396,18 +433,17 @@ async function generateDocumentaryVideo() {
       const { uploadYouTubeShort } = require('./youtube_channel_dispatcher.cjs');
       await uploadYouTubeShort({
         videoPath: finalMp4,
-        title: `${episode.title} | ${episode.era.split('•')[0].trim()} #Shorts`.slice(0, 95),
+        title: `${episode.title} | ${String(episode.era).split('•')[0].trim()} #Shorts`.slice(0, 95),
         description: `${fullNarration}\n\nEra: ${episode.era}\n\nFollow Driftreel for ancient history and folk tales.\n\n#Driftreel #HistoryTok #AncientHistory #FolkTale #Documentary #Shorts #FYP`,
         tags: episode.hashtags.map((h) => String(h).replace(/^#/, '')),
         channelId: 'movie_brand'
       });
-      console.log('[Driftreel] YouTube upload OK');
     } catch (e) {
       console.warn('[Driftreel] YouTube:', e.message);
     }
   }
 
-  console.log(`[Driftreel] done: "${episode.title}" ${totalDuration.toFixed(1)}s → ${driftreelLatest}`);
+  console.log(`[Driftreel] done: "${episode.title}" ${totalDuration.toFixed(1)}s LIVE`);
   return { videoPath: finalMp4, duration: totalDuration, title: episode.title, genre: 'history' };
 }
 

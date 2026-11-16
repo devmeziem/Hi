@@ -1,133 +1,25 @@
 #!/usr/bin/env node
 /**
- * Teen Motivation — PD CARTOON LESSON engine (FULL REPLACE for lesson mode)
- * 35–40s. Lesson from public-domain cartoon era stories (Popeye, Private Snafu,
- * Fleischer Superman, Felix, Betty Boop, Oswald, ComiColor, Thrifty Pig, Gertie).
- * B-roll search biased to vintage / archival / early animation look.
- * Straight narration. No "take action now" slogans.
+ * Teen Motivation — LIVE ONLY (no lesson bank, no script seeds)
+ * 1) Live search youth problems (DDG / news)
+ * 2) AI writes unique script from that problem (fail if AI fails — no hardcoded script)
+ * 3) Fresh visual queries every scene; ban recently used query strings
+ * 4) Rotate media sources + random page so the same car/street clip cannot dominate
  */
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const https = require('https');
+const http = require('http');
 const { searchAndFetchImage, searchAndFetchVideo, searchAndFetchAudio } = require('./universal_media_fetcher.cjs');
-const { callActiveAiForJson } = require('./topic_discovery_engine.cjs');
+const { callActiveAiForJson, queryDuckDuckGo, queryGoogleNewsRss } = require('./topic_discovery_engine.cjs');
 const { synthesizeSpeechResilient } = require('./tts_resilient_engine.cjs');
 
 const OUT = path.join(process.cwd(), 'rendered_videos');
 const ART = path.join(process.cwd(), 'test_artifacts', 'teen_situation');
 const HIST = path.join(process.cwd(), 'data', 'teen_topic_history.json');
+const VISUAL_HIST = path.join(process.cwd(), 'data', 'teen_visual_history.json');
 const isDry = String(process.env.DRY_RUN || 'false') === 'true';
-
-const PD_CARTOON_LESSON_BANK = [
-  {
-    cartoon: 'Popeye the Sailor',
-    era: '1930s-40s',
-    lesson: 'Strength shows up after preparation — the hard work comes before the moment.',
-    theme: 'preparation',
-    visualQueries: [
-      '1930s sailor dock black and white film',
-      'vintage harbor ropes ships archival',
-      'old spinach farm field grainy',
-      '1930s gym training still'
-    ]
-  },
-  {
-    cartoon: 'Private Snafu',
-    era: '1943-45',
-    lesson: 'One careless slip can cost the whole team — discipline protects the people around you.',
-    theme: 'discipline',
-    visualQueries: [
-      '1940s military training archival footage',
-      'vintage war office desk papers',
-      'old army boots marching film grain',
-      '1940s radio headphones desk'
-    ]
-  },
-  {
-    cartoon: 'Superman Fleischer',
-    era: '1941-43',
-    lesson: 'Power without restraint becomes the problem — real strength is knowing when not to use it.',
-    theme: 'self-control',
-    visualQueries: [
-      '1940s city skyline night vintage',
-      'art deco skyscraper black and white',
-      'old comic book stack table',
-      '1940s newsroom typewriter'
-    ]
-  },
-  {
-    cartoon: 'Felix the Cat',
-    era: '1919-30s',
-    lesson: 'When the plan fails, invent a new one with what you already have.',
-    theme: 'resourcefulness',
-    visualQueries: [
-      '1920s silent film silhouette',
-      'old film projector beam dust',
-      'vintage cartoon still archival',
-      '1920s city street night'
-    ]
-  },
-  {
-    cartoon: 'Betty Boop',
-    era: '1930s',
-    lesson: 'Being underestimated is an advantage if you stay sharp.',
-    theme: 'quiet confidence',
-    visualQueries: [
-      '1930s jazz age city night',
-      'vintage microphone stage spotlight',
-      'old hollywood dressing room mirror',
-      '1930s dance hall lights'
-    ]
-  },
-  {
-    cartoon: 'Oswald the Lucky Rabbit',
-    era: '1927-28',
-    lesson: 'Luck favors the one who keeps moving after the fall.',
-    theme: 'persistence',
-    visualQueries: [
-      '1920s farm countryside silent film',
-      'old dirt road walking archival',
-      'vintage barn morning light',
-      '1920s field grainy footage'
-    ]
-  },
-  {
-    cartoon: 'ComiColor Jack Frost',
-    era: '1930s',
-    lesson: 'Seasons change whether you are ready or not — adapt faster than the weather.',
-    theme: 'adaptability',
-    visualQueries: [
-      '1930s winter forest fairy tale illustration',
-      'vintage snow village',
-      'old frost window pane close up',
-      '1930s woodland path snow'
-    ]
-  },
-  {
-    cartoon: 'The Thrifty Pig',
-    era: '1941',
-    lesson: 'Small daily choices compound into safety or ruin.',
-    theme: 'daily discipline',
-    visualQueries: [
-      '1940s savings poster archival',
-      'vintage piggy bank coins table',
-      'old ledger book handwriting',
-      '1940s kitchen table money jar'
-    ]
-  },
-  {
-    cartoon: 'Gertie the Dinosaur',
-    era: '1914',
-    lesson: 'Even the first version of something new looks awkward — ship it anyway.',
-    theme: 'start imperfect',
-    visualQueries: [
-      '1910s early animation sketch desk',
-      'vintage dinosaur museum fossil',
-      'old drawing desk pencil paper',
-      '1910s silent film still'
-    ]
-  }
-];
 
 function ensureDirs() {
   for (const d of [OUT, ART, path.dirname(HIST)]) {
@@ -135,122 +27,208 @@ function ensureDirs() {
   }
 }
 
-function loadHistory() {
+function loadJson(p, fallback) {
   try {
-    if (fs.existsSync(HIST)) return JSON.parse(fs.readFileSync(HIST, 'utf8'));
+    if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8'));
   } catch (_) {}
-  return [];
+  return fallback;
 }
 
-function saveHistory(arr) {
-  fs.writeFileSync(HIST, JSON.stringify(arr.slice(-80), null, 2));
+function saveJson(p, data) {
+  fs.writeFileSync(p, JSON.stringify(data, null, 2));
 }
 
-function pickLesson(history) {
-  const used = new Set((history || []).map((h) => h.cartoon).filter(Boolean));
-  const pool = PD_CARTOON_LESSON_BANK.filter((l) => !used.has(l.cartoon));
-  const bank = pool.length ? pool : PD_CARTOON_LESSON_BANK;
-  return bank[Math.floor(Math.random() * bank.length)];
+function httpGetText(url, timeoutMs = 10000) {
+  return new Promise((resolve) => {
+    try {
+      const lib = url.startsWith('http://') ? http : https;
+      const req = lib.get(
+        url,
+        {
+          headers: {
+            'User-Agent': 'MindRushBot/3.0 (education)',
+            Accept: 'text/html,application/json,*/*'
+          },
+          timeout: timeoutMs
+        },
+        (res) => {
+          if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+            return resolve(httpGetText(res.headers.location, timeoutMs));
+          }
+          let data = '';
+          res.on('data', (c) => (data += c));
+          res.on('end', () => resolve(data));
+        }
+      );
+      req.on('error', () => resolve(''));
+      req.on('timeout', () => {
+        req.destroy();
+        resolve('');
+      });
+    } catch {
+      resolve('');
+    }
+  });
 }
 
-async function buildScript(lesson) {
-  const systemPrompt = `You write 35-40 second teen motivation narration inspired by a classic public-domain cartoon era.
-Return STRICT JSON only.
+async function discoverYouthProblems(history) {
+  const queries = [
+    'teenagers school stress burnout 2025 2026',
+    'youth social media comparison anxiety students',
+    'high school sleep homework pressure',
+    'teen peer pressure identity friendship',
+    'students procrastination exam fear',
+    'young people first job money stress',
+    'teen self doubt sports academics',
+    'adolescent loneliness friendship drift',
+    'student phone addiction focus',
+    'teenagers family expectations pressure'
+  ];
+  // Prefer a query not recently used
+  const recentQ = new Set((history || []).map((h) => h.searchQuery).filter(Boolean));
+  const pool = queries.filter((q) => !recentQ.has(q));
+  const q = (pool.length ? pool : queries)[Math.floor(Math.random() * (pool.length || queries.length))];
+  console.log('[Teen] live search:', q);
 
-Cartoon: ${lesson.cartoon} (${lesson.era})
-Core lesson: ${lesson.lesson}
-Theme: ${lesson.theme}
+  let ddg = [];
+  try {
+    ddg = (await queryDuckDuckGo(q, 8)) || [];
+  } catch (e) {
+    console.warn('[Teen] DDG:', e.message);
+  }
+  let news = [];
+  try {
+    news = (await queryGoogleNewsRss('teenagers OR youth OR students stress OR anxiety OR pressure', 8)) || [];
+  } catch (e) {
+    console.warn('[Teen] news:', e.message);
+  }
+  if (!ddg.length) {
+    try {
+      const html = await httpGetText('https://html.duckduckgo.com/html/?q=' + encodeURIComponent(q));
+      const blocks = html.match(/class="result__snippet"[^>]*>([\s\S]*?)<\/a>/gi) || [];
+      for (const b of blocks.slice(0, 6)) {
+        const snippet = b.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+        if (snippet.length > 40) ddg.push({ title: snippet.slice(0, 90), snippet });
+      }
+    } catch (_) {}
+  }
+
+  const pack = [];
+  for (const r of ddg) {
+    pack.push({
+      source: 'duckduckgo',
+      title: String(r.title || '').slice(0, 140),
+      snippet: String(r.snippet || r.body || r.title || '').slice(0, 280)
+    });
+  }
+  for (const r of news) {
+    pack.push({
+      source: 'google_news',
+      title: String(r.title || '').slice(0, 140),
+      snippet: String(r.snippet || r.title || '').slice(0, 280)
+    });
+  }
+  console.log('[Teen] discovery hits:', pack.length);
+  return { query: q, results: pack.slice(0, 12) };
+}
+
+async function buildAiPackage(discovery, history, bannedVisuals) {
+  const recentTitles = (history || [])
+    .slice(-25)
+    .map((h) => h.title || h.problem || '')
+    .filter(Boolean);
+  const recentProblems = (history || [])
+    .slice(-25)
+    .map((h) => h.problem || '')
+    .filter(Boolean);
+
+  const systemPrompt = `You write short-form TikTok motivation for teens 14-19.
+Return STRICT JSON only. No markdown.
 
 Rules:
-- 95-120 spoken words total across exactly 5 scenes
-- Straight, firm, teen-relevant (14-19). No cringe. No "take action now". No "stop scrolling".
-- Scene 1 hooks with the cartoon world or era in one line, then lands the human lesson
-- Scenes 2-4 develop the lesson for real teen life (school, friends, work, self-doubt)
-- Scene 5 closes clean without slogan spam
-- Each scene needs visualQuery biased to vintage/archival look matching the lesson visuals
-- title under 70 chars
-- description 2 lines + soft CTA for Mind Rush
-- hashtags include #MindRush #TeenMotivation
+- Ground the script in ONE real problem from the live search results (or a clearly common youth problem if results are thin).
+- NEVER reuse these recent titles: ${recentTitles.join(' | ') || 'none'}
+- NEVER reuse these recent problems: ${recentProblems.join(' | ') || 'none'}
+- 95-120 spoken words across exactly 5 scenes.
+- Firm, respectful, not cringe, not medical advice. No "take action now", no "stop scrolling".
+- Each scene visualQuery must be UNIQUE and CONCRETE (different subjects). Ban these visual phrases if they appear: ${bannedVisuals.slice(-40).join(' | ') || 'none'}
+- Prefer varied real-world teen visuals: classroom, notebook, bus window, sports field, kitchen table, rainy window, library aisle, phone screen glow, empty hallway, sunrise commute — NOT the same vintage car street every time.
+- Optional one-line historical or cultural flavor is fine; do NOT force Popeye/Felix/cartoon framing every episode.
+- bgmQuery: soft instrumental, no drums/lyrics.
+- title under 70 chars, unique.
+- description 2 lines + soft Mind Rush CTA.
+- hashtags include #MindRush #TeenMotivation #FYP #Shorts
 
 JSON:
 {
+  "problem": "one line",
   "title": "...",
   "description": "...",
-  "hashtags": ["#MindRush", "#TeenMotivation", "#Discipline", "#FYP", "#Shorts"],
-  "bgmQuery": "soft piano ambient hopeful no drums",
+  "hashtags": ["#MindRush", "#TeenMotivation", "#FYP", "#Shorts"],
+  "bgmQuery": "soft piano ambient hopeful sparse no drums",
   "scenes": [
-    { "role": "hook", "text": "...", "visualQuery": "..." },
-    { "role": "build", "text": "...", "visualQuery": "..." },
+    { "role": "hook", "text": "...", "visualQuery": "unique stock search" },
+    { "role": "tension", "text": "...", "visualQuery": "..." },
     { "role": "truth", "text": "...", "visualQuery": "..." },
     { "role": "apply", "text": "...", "visualQuery": "..." },
     { "role": "close", "text": "...", "visualQuery": "..." }
   ]
 }`;
 
-  const userPrompt = `Write the package. Prefer these visual seeds: ${lesson.visualQueries.join(' | ')}`;
+  const userPrompt = `Live discovery query: ${discovery.query}
 
-  for (let attempt = 1; attempt <= 3; attempt++) {
+Search results:
+${discovery.results.map((r, i) => `${i + 1}. [${r.source}] ${r.title} — ${r.snippet}`).join('\n') || '(sparse — pick a realistic common teen problem)'}
+
+Nonce for uniqueness: ${Date.now()}-${Math.random().toString(36).slice(2, 8)}
+Build a fresh package now.`;
+
+  for (let attempt = 1; attempt <= 4; attempt++) {
     try {
       const res = await callActiveAiForJson(systemPrompt, userPrompt, null, {
         nicheKey: 'teen_motivation',
-        temperature: 0.72
+        temperature: 0.78 + attempt * 0.04
       });
       const data = res?.data || res;
-      if (data?.scenes?.length >= 5 && data.title) {
+      if (data?.scenes?.length >= 5 && data.title && data.scenes.every((s) => s.text && s.visualQuery)) {
         data.scenes = data.scenes.slice(0, 5);
-        // Force vintage bias on queries
+        // Reject if title collides hard
+        const tLow = String(data.title).toLowerCase();
+        if (recentTitles.some((rt) => rt.toLowerCase() === tLow || (rt.length > 12 && tLow.includes(rt.toLowerCase().slice(0, 18))))) {
+          console.warn('[Teen] AI title collided with history — retry');
+          continue;
+        }
+        // Diversify visual queries if AI reused banned ones
+        const diversifiers = [
+          'classroom empty desks morning light',
+          'teenager notebook handwriting close up',
+          'city bus window rain reflection',
+          'sports field evening practice',
+          'library aisle books soft light',
+          'kitchen table homework lamp',
+          'phone screen glow dark room',
+          'school hallway lockers',
+          'sunrise commute street empty',
+          'park bench backpack afternoon'
+        ];
         data.scenes.forEach((s, i) => {
-          const seed = lesson.visualQueries[i % lesson.visualQueries.length];
-          if (!s.visualQuery || s.visualQuery.length < 8) s.visualQuery = seed;
-          else s.visualQuery = s.visualQuery + ' vintage archival film grain';
+          const v = String(s.visualQuery || '').toLowerCase();
+          const banned = bannedVisuals.some((b) => v.includes(String(b).toLowerCase().slice(0, 24)));
+          const sameAsPrev = data.scenes.slice(0, i).some((p) => String(p.visualQuery).toLowerCase() === v);
+          if (banned || sameAsPrev || v.length < 10) {
+            s.visualQuery = diversifiers[(i + Date.now()) % diversifiers.length] + ' candid documentary';
+          }
         });
-        if (!data.bgmQuery || /drum|beat|phonk/i.test(data.bgmQuery)) {
+        if (!data.bgmQuery || /drum|beat|phonk|trap/i.test(data.bgmQuery)) {
           data.bgmQuery = 'soft piano ambient hopeful sparse no drums';
         }
-        data.cartoon = lesson.cartoon;
-        data.theme = lesson.theme;
         return data;
       }
     } catch (e) {
-      console.warn('[Teen PD] AI attempt', attempt, e.message);
+      console.warn(`[Teen AI] attempt ${attempt}:`, e.message);
     }
   }
-  // Minimal non-seed script from lesson itself if AI fails
-  return {
-    title: `${lesson.theme} — lesson from ${lesson.cartoon}`,
-    description: `A short lesson teens can use today. Inspired by classic public-domain animation history.\n\nFollow Mind Rush.`,
-    hashtags: ['#MindRush', '#TeenMotivation', '#Discipline', '#FYP', '#Shorts'],
-    bgmQuery: 'soft piano ambient hopeful sparse no drums',
-    cartoon: lesson.cartoon,
-    theme: lesson.theme,
-    scenes: [
-      {
-        role: 'hook',
-        text: `In the ${lesson.era}, ${lesson.cartoon} cartoons kept teaching the same quiet truth.`,
-        visualQuery: lesson.visualQueries[0] + ' vintage archival'
-      },
-      {
-        role: 'build',
-        text: lesson.lesson,
-        visualQuery: lesson.visualQueries[1] + ' vintage archival'
-      },
-      {
-        role: 'truth',
-        text: `That idea still hits for school, friends, and pressure that never waits for you to feel ready.`,
-        visualQuery: lesson.visualQueries[2] + ' vintage archival'
-      },
-      {
-        role: 'apply',
-        text: `You do not need a perfect plan. You need one honest move you can finish before the day ends.`,
-        visualQuery: lesson.visualQueries[3 % lesson.visualQueries.length] + ' vintage archival'
-      },
-      {
-        role: 'close',
-        text: `Old cartoons said it simply. Your next choice is the only part of the story you control.`,
-        visualQuery: lesson.visualQueries[0] + ' vintage archival'
-      }
-    ]
-  };
+  throw new Error('Teen AI failed — refusing seeded script fallback');
 }
 
 function buildAss(fullText, duration) {
@@ -281,7 +259,7 @@ function buildAss(fullText, duration) {
     );
   }
   return `[Script Info]
-Title: Teen PD Cartoon Karaoke
+Title: Teen Live Karaoke
 ScriptType: v4.00+
 PlayResX: 1080
 PlayResY: 1920
@@ -297,27 +275,54 @@ ${lines.join('\n')}
 `;
 }
 
-async function resolveVisual(query, index) {
-  try {
-    const vid = await searchAndFetchVideo(query, { minDuration: 3, preferredSource: 'pexels' });
-    const p = vid && (vid.localPath || vid.path);
-    if (p && fs.existsSync(p) && fs.statSync(p).size > 30000) {
-      return { type: 'video', path: p };
+async function resolveVisual(query, index, usedPaths) {
+  const sources = ['pexels', 'pixabay', 'unsplash', 'wikimedia'];
+  // rotate preferred source by scene + time
+  const rot = (index + Math.floor(Date.now() / 60000)) % sources.length;
+  const ordered = sources.slice(rot).concat(sources.slice(0, rot));
+
+  // Try video first on alternate scenes
+  if (index % 2 === 0) {
+    for (const src of ordered) {
+      try {
+        const vid = await searchAndFetchVideo(query, {
+          minDuration: 3,
+          preferredSource: src,
+          page: 1 + ((index + Date.now()) % 3)
+        });
+        const p = vid && (vid.localPath || vid.path);
+        if (p && fs.existsSync(p) && fs.statSync(p).size > 30000 && !usedPaths.has(p)) {
+          usedPaths.add(p);
+          console.log(`[Teen] scene ${index + 1} VIDEO ${src}`, path.basename(p));
+          return { type: 'video', path: p };
+        }
+      } catch (_) {}
     }
-  } catch (_) {}
-  for (const src of ['unsplash', 'pexels', 'pixabay', 'wikimedia']) {
+  }
+
+  for (const src of ordered) {
     try {
-      const img = await searchAndFetchImage(query, { preferredSource: src });
+      const img = await searchAndFetchImage(query, {
+        preferredSource: src,
+        page: 1 + ((index * 2 + Date.now()) % 4)
+      });
       const p = img && (img.localPath || img.path);
-      if (p && fs.existsSync(p) && fs.statSync(p).size > 8000) {
+      if (p && fs.existsSync(p) && fs.statSync(p).size > 8000 && !usedPaths.has(p)) {
+        usedPaths.add(p);
+        console.log(`[Teen] scene ${index + 1} IMAGE ${src}`, path.basename(p));
         return { type: 'image', path: p };
       }
     } catch (_) {}
   }
-  const fallback = path.join(ART, `fb_${index}.png`);
-  execSync(`ffmpeg -y -f lavfi -i color=c=0x111111:s=1080x1920:d=1 -frames:v 1 "${fallback}" 2>/dev/null`, {
-    stdio: 'pipe'
-  });
+
+  // Last resort: different solid colors per scene (never reuse one stock fallback clip)
+  const colors = ['0x0f172a', '0x1e293b', '0x111827', '0x1a1a2e', '0x16213e'];
+  const fallback = path.join(ART, `fb_${index}_${Date.now()}.png`);
+  execSync(
+    `ffmpeg -y -f lavfi -i color=c=${colors[index % colors.length]}:s=1080x1920:d=1 -frames:v 1 "${fallback}" 2>/dev/null`,
+    { stdio: 'pipe' }
+  );
+  usedPaths.add(fallback);
   return { type: 'image', path: fallback };
 }
 
@@ -327,15 +332,22 @@ function renderScene(visual, durationSec, outMp4, sceneIndex) {
     sceneIndex % 2 === 0
       ? "min(zoom+0.0015,1.12)"
       : "if(eq(on,1),1.12,max(zoom-0.0012,1.0))";
-  const bw = 'hue=s=0,eq=contrast=1.15:brightness=0.02';
+  // Rotate look: not always B&W
+  const looks = [
+    'eq=contrast=1.12:saturation=0.9',
+    'hue=s=0,eq=contrast=1.15:brightness=0.02',
+    'eq=contrast=1.08:saturation=1.05:brightness=0.01',
+    'eq=contrast=1.1:saturation=0.75'
+  ];
+  const look = looks[sceneIndex % looks.length];
   if (visual.type === 'video') {
     execSync(
-      `ffmpeg -y -stream_loop 2 -t ${durationSec.toFixed(2)} -i "${visual.path}" -an -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,${bw}" -c:v libx264 -preset veryfast -crf 20 -pix_fmt yuv420p -t ${durationSec.toFixed(2)} "${outMp4}"`,
+      `ffmpeg -y -stream_loop 2 -t ${durationSec.toFixed(2)} -i "${visual.path}" -an -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,${look}" -c:v libx264 -preset veryfast -crf 20 -pix_fmt yuv420p -t ${durationSec.toFixed(2)} "${outMp4}"`,
       { stdio: 'pipe' }
     );
   } else {
     execSync(
-      `ffmpeg -y -loop 1 -t ${durationSec.toFixed(2)} -i "${visual.path}" -vf "scale=1200:2133:force_original_aspect_ratio=increase,crop=1200:2133,zoompan=z='${zoom}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${frames}:s=1080x1920:fps=30,${bw}" -c:v libx264 -preset veryfast -crf 20 -pix_fmt yuv420p -t ${durationSec.toFixed(2)} "${outMp4}"`,
+      `ffmpeg -y -loop 1 -t ${durationSec.toFixed(2)} -i "${visual.path}" -vf "scale=1200:2133:force_original_aspect_ratio=increase,crop=1200:2133,zoompan=z='${zoom}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${frames}:s=1080x1920:fps=30,${look}" -c:v libx264 -preset veryfast -crf 20 -pix_fmt yuv420p -t ${durationSec.toFixed(2)} "${outMp4}"`,
       { stdio: 'pipe' }
     );
   }
@@ -352,12 +364,17 @@ function softPiano(outWav, duration) {
 
 async function main() {
   ensureDirs();
-  console.log('\n=== TEEN PD CARTOON LESSON ===');
-  const history = loadHistory();
-  const lesson = pickLesson(history);
-  console.log('[Teen] cartoon:', lesson.cartoon, '| theme:', lesson.theme);
+  console.log('\n=== TEEN LIVE (no seed bank) ===');
+  const history = loadJson(HIST, []);
+  const visualHist = loadJson(VISUAL_HIST, []);
+  const bannedVisuals = visualHist.slice(-60);
 
-  const pack = await buildScript(lesson);
+  const discovery = await discoverYouthProblems(history);
+  const pack = await buildAiPackage(discovery, history, bannedVisuals);
+
+  console.log('[Teen] problem:', pack.problem);
+  console.log('[Teen] title:', pack.title);
+
   const spoken = pack.scenes.map((s) => s.text).join(' ');
   const voicePath = path.join(ART, `voice_${Date.now()}.mp3`);
   await synthesizeSpeechResilient(spoken, voicePath, {
@@ -375,7 +392,6 @@ async function main() {
       }).trim()
     );
   } catch (_) {}
-  // Cap ~40s
   const totalDuration = Math.min(Math.max(voiceDur + 0.5, 32), 42);
   const sceneCount = 5;
   const secPer = totalDuration / sceneCount;
@@ -393,12 +409,15 @@ async function main() {
   const assPath = path.join(ART, `cap_${Date.now()}.ass`);
   fs.writeFileSync(assPath, buildAss(spoken, totalDuration));
 
+  const usedPaths = new Set();
   const clips = [];
+  const usedQueries = [];
   for (let i = 0; i < sceneCount; i++) {
     const sc = pack.scenes[i];
     console.log(`[Teen] scene ${i + 1}: ${sc.visualQuery}`);
-    const visual = await resolveVisual(sc.visualQuery, i);
-    const out = path.join(ART, `sc_${i}.mp4`);
+    usedQueries.push(sc.visualQuery);
+    const visual = await resolveVisual(sc.visualQuery, i, usedPaths);
+    const out = path.join(ART, `sc_${i}_${Date.now()}.mp4`);
     renderScene(visual, secPer, out, i);
     clips.push(out);
   }
@@ -423,21 +442,25 @@ async function main() {
     title: pack.title,
     description: pack.description,
     hashtags: pack.hashtags,
-    cartoon: lesson.cartoon,
-    theme: lesson.theme,
-    duration: totalDuration
+    problem: pack.problem,
+    searchQuery: discovery.query,
+    duration: totalDuration,
+    mode: 'live_no_seed'
   };
   fs.writeFileSync(path.join(OUT, 'teen_motivation_meta.json'), JSON.stringify(meta, null, 2));
 
   history.push({
     title: pack.title,
-    cartoon: lesson.cartoon,
-    theme: lesson.theme,
+    problem: pack.problem,
+    searchQuery: discovery.query,
     at: new Date().toISOString()
   });
-  saveHistory(history);
+  saveJson(HIST, history.slice(-100));
 
-  console.log(`[Teen] done "${pack.title}" ${totalDuration.toFixed(1)}s cartoon=${lesson.cartoon}`);
+  const nextVis = visualHist.concat(usedQueries).slice(-120);
+  saveJson(VISUAL_HIST, nextVis);
+
+  console.log(`[Teen] done "${pack.title}" ${totalDuration.toFixed(1)}s LIVE`);
   if (isDry) console.log('[Teen] dry run — no publish');
 }
 
