@@ -1,38 +1,8 @@
 {
   "version": 1,
   "retentionDays": 30,
-  "lastPurgedAt": "2026-11-16T01:38:43.681Z",
+  "lastPurgedAt": "2026-11-16T15:10:12.106Z",
   "entries": [
-    {
-      "hash": "8a6b906ca5dd",
-      "channel": "cartoon",
-      "topic": "Why Do Smartphone Cameras Get Blurry in Low Light?",
-      "timestamp": "2026-10-17T02:15:57.921Z"
-    },
-    {
-      "hash": "7bdd8f4b9897",
-      "channel": "finance",
-      "topic": "Passive income is a fantasy for beginners. Passive income is the reward you earn after years of rele",
-      "timestamp": "2026-10-17T08:16:09.379Z"
-    },
-    {
-      "hash": "b7c62a444540",
-      "channel": "stoic",
-      "topic": "Unexpressed emotions will never die. They are buried alive and will come forth later in uglier ways.",
-      "timestamp": "2026-10-17T10:19:26.574Z"
-    },
-    {
-      "hash": "1a80fd802a4b",
-      "channel": "cartoon",
-      "topic": "The Static Shock on Your Car Door",
-      "timestamp": "2026-10-17T11:52:15.036Z"
-    },
-    {
-      "hash": "1c5d78fb21ff",
-      "channel": "finance",
-      "topic": "Never upgrade your lifestyle on your first winning month. Your first $5,000 is your moat against eme",
-      "timestamp": "2026-10-17T14:58:12.876Z"
-    },
     {
       "hash": "2a969c4a07bb",
       "channel": "cartoon",
@@ -398,6 +368,12 @@
       "channel": "stoic",
       "topic": "Out of your vulnerabilities will come your strength.",
       "timestamp": "2026-11-15T13:39:14.332Z"
+    },
+    {
+      "hash": "8143e2203161",
+      "channel": "stoic",
+      "topic": "Anxiety is the dizziness of freedom.",
+      "timestamp": "2026-11-16T15:10:20.711Z"
     }
   ]
 }

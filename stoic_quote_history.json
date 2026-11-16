@@ -2,13 +2,6 @@
   {
     "quote": "The most terrifying thing is to accept oneself completely.",
     "author": "Dr. Carl Jung",
-    "credentials": "Founder of Analytical Psychology • Psychiatrist",
-    "theme": "confidence",
-    "usedAt": "2026-10-15T18:06:20.484Z"
-  },
-  {
-    "quote": "The most terrifying thing is to accept oneself completely.",
-    "author": "Dr. Carl Jung",
     "channel": "stoic",
     "timestamp": "2026-10-15T18:06:20.485Z"
   },
@@ -1025,5 +1018,18 @@
     "author": "Sigmund Freud",
     "channel": "stoic",
     "timestamp": "2026-11-16T01:38:51.149Z"
+  },
+  {
+    "quote": "Anxiety is the dizziness of freedom.",
+    "author": "Søren Kierkegaard",
+    "credentials": "Philosopher & Theologian • Concept of Anxiety",
+    "theme": "freedom",
+    "usedAt": "2026-11-16T15:10:20.558Z"
+  },
+  {
+    "quote": "Anxiety is the dizziness of freedom.",
+    "author": "Søren Kierkegaard",
+    "channel": "stoic",
+    "timestamp": "2026-11-16T15:10:20.706Z"
   }
 ]
