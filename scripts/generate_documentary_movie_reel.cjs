@@ -2,8 +2,9 @@
 /**
  * DRIFTREEL — LIVE ancient history / folk tales ONLY
  * - No story seed vault, no fallback episode bank
- * - Past titles hard-excluded in AI prompt; regenerate on collision
- * - Visual queries rotated; media source/page rotated so clips do not repeat
+ * - Past titles hard-excluded; regenerate on collision
+ * - Narration sanitized before TTS (reject empty scene text)
+ * - Visual queries rotated
  */
 const fs = require('fs');
 const path = require('path');
@@ -39,6 +40,22 @@ function escapeXml(str) {
     .replace(/'/g, '&apos;');
 }
 
+function stripModelNoise(s) {
+  return String(s || '')
+    .replace(/<think>[\s\S]*?<\/think>/gi, ' ')
+    .replace(/```json/gi, ' ')
+    .replace(/```/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function buildNarration(scenes) {
+  const parts = (scenes || [])
+    .map((s) => stripModelNoise(s.text || s.narration || s.line || ''))
+    .filter((t) => t.length > 8);
+  return parts.join(' ').replace(/\s+/g, ' ').trim();
+}
+
 async function generateHistoryStory(pastTitles, bannedVisuals) {
   const angles = [
     'a specific lesser-known Ancient Egyptian ritual or tomb discovery',
@@ -72,14 +89,14 @@ Rules:
 - era like "1323 BCE • Valley of the Kings"
 - sfxType: projector|wind|clock
 - bgmQuery: soft piano ambient historical sparse no drums
-- exactly 5 scenes; each text 18-26 words; each query UNIQUE concrete stock search (temples, manuscripts, landscapes, artifacts — not the same ocean ship every time)
+- exactly 5 scenes; EACH scene MUST have non-empty "text" (18-26 words) and unique "query"
 - hashtags: #Driftreel #HistoryTok #AncientHistory #FolkTale #Documentary #Shorts #FYP
+- Return STRICT JSON only. No markdown. No thinking tags.
 
-Return STRICT JSON only with keys title,genre,era,sfxType,bgmQuery,scenes,hashtags.`;
+JSON shape:
+{"title":"...","genre":"history","era":"...","sfxType":"projector","bgmQuery":"soft piano ambient historical sparse no drums","scenes":[{"text":"...","query":"..."}],"hashtags":["#Driftreel","#HistoryTok","#AncientHistory","#FolkTale","#Documentary","#Shorts","#FYP"]}`;
 
-  const userPrompt = `Episode angle: ${angle}
-Uniqueness nonce: ${nonce}
-Write a story that has NOT been told in the banned title list.`;
+  const userPrompt = `Episode angle: ${angle}\nUniqueness nonce: ${nonce}\nWrite a story that has NOT been told in the banned title list. Every scene text must be real spoken words.`;
 
   for (let attempt = 1; attempt <= 5; attempt++) {
     try {
@@ -88,52 +105,63 @@ Write a story that has NOT been told in the banned title list.`;
         temperature: 0.82 + attempt * 0.03
       });
       const data = res?.data || res;
-      if (data?.title && Array.isArray(data.scenes) && data.scenes.length >= 4) {
-        const tLow = String(data.title).toLowerCase().trim();
-        const collision = (pastTitles || []).some((pt) => {
-          const p = String(pt).toLowerCase();
-          return p === tLow || (p.length > 10 && (tLow.includes(p.slice(0, 16)) || p.includes(tLow.slice(0, 16))));
-        });
-        if (collision) {
-          console.warn('[Driftreel] title collision — retry', data.title);
-          continue;
-        }
-        data.genre = 'history';
-        data.hashtags = [
-          '#Driftreel',
-          '#HistoryTok',
-          '#AncientHistory',
-          '#FolkTale',
-          '#Documentary',
-          '#Shorts',
-          '#FYP'
-        ];
-        if (!data.bgmQuery || /drum|beat|trap|phonk/i.test(data.bgmQuery)) {
-          data.bgmQuery = 'soft piano ambient historical sparse no drums';
-        }
-        // Force scene visual diversity
-        const diversifiers = [
-          'ancient stone temple columns desert',
-          'weathered manuscript pages close up',
-          'bronze age artifact museum display',
-          'mountain pass fog historical landscape',
-          'clay tablet cuneiform close up',
-          'ruined amphitheater golden hour',
-          'silk road caravan desert dunes',
-          'candlelit library scrolls shelves',
-          'river delta aerial historical',
-          'carved relief wall hieroglyph'
-        ];
-        data.scenes = data.scenes.slice(0, 5);
-        data.scenes.forEach((s, i) => {
-          const q = String(s.query || s.visualQuery || '').toLowerCase();
-          if (!q || bannedVisuals.some((b) => q.includes(String(b).toLowerCase().slice(0, 20)))) {
-            s.query = diversifiers[(i + attempt + Date.now()) % diversifiers.length];
-          }
-          if (s.visualQuery && !s.query) s.query = s.visualQuery;
-        });
-        return data;
+      if (!data?.title || !Array.isArray(data.scenes) || data.scenes.length < 4) continue;
+
+      data.scenes = data.scenes.slice(0, 5).map((s) => ({
+        text: stripModelNoise(s.text || s.narration || s.line || ''),
+        query: stripModelNoise(s.query || s.visualQuery || '')
+      }));
+
+      const narration = buildNarration(data.scenes);
+      if (narration.split(/\s+/).length < 40) {
+        console.warn('[Driftreel] narration too short after strip — retry');
+        continue;
       }
+
+      const tLow = String(data.title).toLowerCase().trim();
+      const collision = (pastTitles || []).some((pt) => {
+        const p = String(pt).toLowerCase();
+        return p === tLow || (p.length > 10 && (tLow.includes(p.slice(0, 16)) || p.includes(tLow.slice(0, 16))));
+      });
+      if (collision) {
+        console.warn('[Driftreel] title collision — retry', data.title);
+        continue;
+      }
+
+      data.genre = 'history';
+      data.hashtags = [
+        '#Driftreel',
+        '#HistoryTok',
+        '#AncientHistory',
+        '#FolkTale',
+        '#Documentary',
+        '#Shorts',
+        '#FYP'
+      ];
+      if (!data.bgmQuery || /drum|beat|trap|phonk/i.test(data.bgmQuery)) {
+        data.bgmQuery = 'soft piano ambient historical sparse no drums';
+      }
+
+      const diversifiers = [
+        'ancient stone temple columns desert',
+        'weathered manuscript pages close up',
+        'bronze age artifact museum display',
+        'mountain pass fog historical landscape',
+        'clay tablet cuneiform close up',
+        'ruined amphitheater golden hour',
+        'silk road caravan desert dunes',
+        'candlelit library scrolls shelves',
+        'river delta aerial historical',
+        'carved relief wall hieroglyph'
+      ];
+      data.scenes.forEach((s, i) => {
+        const q = String(s.query || '').toLowerCase();
+        if (!q || (bannedVisuals || []).some((b) => q.includes(String(b).toLowerCase().slice(0, 20)))) {
+          s.query = diversifiers[(i + attempt + Date.now()) % diversifiers.length];
+        }
+      });
+      data._narration = narration;
+      return data;
     } catch (err) {
       console.warn(`[Driftreel AI] attempt ${attempt}:`, err.message);
     }
@@ -270,7 +298,6 @@ async function generateDocumentaryVideo() {
   console.log('===============================================================\n');
 
   const pastTitles = loadJson(TITLE_HIST, []);
-  // also merge remote dedup if available
   try {
     const { fetchRemoteHistory } = require('./channel_dedup_service.cjs');
     const past = await fetchRemoteHistory('documentary');
@@ -284,7 +311,12 @@ async function generateDocumentaryVideo() {
   const episode = await generateHistoryStory(pastTitles, bannedVisuals);
   console.log(`[Driftreel] "${episode.title}" | ${episode.era}`);
 
-  const fullNarration = episode.scenes.map((s) => s.text).join(' ');
+  const fullNarration = episode._narration || buildNarration(episode.scenes);
+  if (!fullNarration || fullNarration.split(/\s+/).length < 30) {
+    throw new Error('Driftreel narration empty after AI — refusing silent video');
+  }
+  console.log('[Driftreel] narration words:', fullNarration.split(/\s+/).length);
+
   const voiceMp3 = path.join(ARTIFACTS_DIR, `doc_voice_${Date.now()}.mp3`);
   await synthesizeSpeechResilient(fullNarration, voiceMp3, {
     voice: 'en-US-AndrewNeural',
@@ -336,7 +368,7 @@ async function generateDocumentaryVideo() {
 
   for (let i = 0; i < sceneCount; i++) {
     const sc = episode.scenes[i];
-    const q = sc.query || sc.visualQuery || 'ancient ruins documentary';
+    const q = sc.query || 'ancient ruins documentary';
     usedQueries.push(q);
     console.log(`[Scene ${i + 1}/${sceneCount}] ${q}`);
     const { path: visualPath, isVideo } = await fetchVisual(q, i, usedPaths);
