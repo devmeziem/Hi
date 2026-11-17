@@ -1,11 +1,5 @@
 [
   {
-    "quote": "The most terrifying thing is to accept oneself completely.",
-    "author": "Dr. Carl Jung",
-    "channel": "stoic",
-    "timestamp": "2026-10-15T18:06:20.485Z"
-  },
-  {
     "quote": "Pain and suffering are always inevitable for a large intelligence and a deep heart.",
     "author": "Fyodor Dostoevsky",
     "credentials": "Author of Crime and Punishment • Russian Philosopher",
@@ -1031,5 +1025,18 @@
     "author": "Søren Kierkegaard",
     "channel": "stoic",
     "timestamp": "2026-11-16T15:10:20.706Z"
+  },
+  {
+    "quote": "Between stimulus and response there is a space. In that space is our power to choose our response.",
+    "author": "Dr. Viktor Frankl",
+    "credentials": "Neurologist & Psychiatrist • Man's Search for Meaning",
+    "theme": "choice",
+    "usedAt": "2026-11-17T04:22:21.815Z"
+  },
+  {
+    "quote": "Between stimulus and response there is a space. In that space is our power to choose our response.",
+    "author": "Dr. Viktor Frankl",
+    "channel": "stoic",
+    "timestamp": "2026-11-17T04:22:21.816Z"
   }
 ]

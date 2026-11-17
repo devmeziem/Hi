@@ -1,68 +1,8 @@
 {
   "version": 1,
   "retentionDays": 30,
-  "lastPurgedAt": "2026-11-16T15:10:12.106Z",
+  "lastPurgedAt": "2026-11-17T04:22:10.218Z",
   "entries": [
-    {
-      "hash": "2a969c4a07bb",
-      "channel": "cartoon",
-      "topic": "Why Wet Skin Chills You Faster",
-      "timestamp": "2026-10-17T16:03:42.393Z"
-    },
-    {
-      "hash": "e9b6b1355234",
-      "channel": "driftreel",
-      "topic": "The Silent Sirens of 1986",
-      "timestamp": "2026-10-17T16:53:38.601Z"
-    },
-    {
-      "hash": "e9b6b1355234",
-      "channel": "documentary_movie",
-      "topic": "The Silent Sirens of 1986",
-      "timestamp": "2026-10-17T16:53:38.896Z"
-    },
-    {
-      "hash": "2f1bbeb77ac7",
-      "channel": "stoic",
-      "topic": "It never ceases to amaze me: we all love ourselves more than other people, but care more about their",
-      "timestamp": "2026-10-17T16:55:05.762Z"
-    },
-    {
-      "hash": "a3ae0628a6a8",
-      "channel": "finance",
-      "topic": "Rule No. 1: Never lose money. Rule No. 2: Never forget rule No. 1.",
-      "timestamp": "2026-10-17T19:01:52.943Z"
-    },
-    {
-      "hash": "6207aa5ee3e7",
-      "channel": "cartoon",
-      "topic": "Why Does Your Phone Freeze When It's Too Cold?",
-      "timestamp": "2026-10-17T19:53:06.460Z"
-    },
-    {
-      "hash": "5399310d1b26",
-      "channel": "teen_motivation",
-      "topic": "Why You Feel Behind in Life",
-      "timestamp": "2026-10-17T22:00:42.970Z"
-    },
-    {
-      "hash": "9524f8d475b9",
-      "channel": "finance",
-      "topic": "A financial scam doesn't begin with a criminal. It begins with high promises, zero risk, and your ow",
-      "timestamp": "2026-10-17T23:45:13.360Z"
-    },
-    {
-      "hash": "cdea121f748d",
-      "channel": "stoic",
-      "topic": "Small-minded people blame others. Average people blame themselves. The wise see all blame as foolish",
-      "timestamp": "2026-10-17T23:51:53.466Z"
-    },
-    {
-      "hash": "1e8496803c4b",
-      "channel": "cartoon",
-      "topic": "Why Rainbow Colors Appear on Wet Asphalt",
-      "timestamp": "2026-10-18T00:31:23.839Z"
-    },
     {
       "hash": "09cb9dfedfc7",
       "channel": "cartoon",
