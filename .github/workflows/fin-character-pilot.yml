@@ -1,0 +1,101 @@
+name: Fin Character Pilot (Athletic_man.fbx)
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (skip Buffer)'
+        required: false
+        default: false
+        type: boolean
+      publish_tiktok:
+        description: 'Publish to fin TikTok via Buffer API 2 if configured'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  fin_character:
+    name: Render Athletic_man + fin education short
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Require FBX
+        run: |
+          if [ ! -f assets/characters/Athletic_man.fbx ]; then
+            echo "Upload the model first:"
+            echo "https://github.com/devmeziem/Hi/upload/main/assets/characters"
+            exit 2
+          fi
+          ls -lh assets/characters/Athletic_man.fbx
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: System deps
+        run: |
+          sudo apt-get update -qq || true
+          sudo apt-get install -y --no-install-recommends ffmpeg fonts-dejavu-core fonts-liberation xz-utils curl || true
+          pip install -q edge-tts
+
+      - name: Install Blender
+        run: |
+          # Official Linux tarball (headless-capable)
+          curl -fsSL -o /tmp/blender.tar.xz \
+            "https://download.blender.org/release/Blender4.2/blender-4.2.3-linux-x64.tar.xz" \
+            || curl -fsSL -o /tmp/blender.tar.xz \
+            "https://download.blender.org/release/Blender4.1/blender-4.1.1-linux-x64.tar.xz"
+          sudo mkdir -p /opt/blender
+          sudo tar -xJf /tmp/blender.tar.xz -C /opt/blender --strip-components=1
+          echo "/opt/blender" >> $GITHUB_PATH
+          /opt/blender/blender --version | head -3
+
+      - run: npm install --legacy-peer-deps --no-audit --no-fund
+
+      - name: Generate pilot video
+        env:
+          DRY_RUN: ${{ github.event.inputs.dry_run == true || github.event.inputs.dry_run == 'true' }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PATH: /opt/blender:/usr/bin:/bin
+        run: |
+          export PATH="/opt/blender:$PATH"
+          node --check scripts/generate_fin_character_pilot.cjs
+          node scripts/generate_fin_character_pilot.cjs
+          test -f rendered_videos/fin_character_latest.mp4
+          ls -lh rendered_videos/fin_character_latest.mp4
+          cat rendered_videos/fin_character_meta.json || true
+
+      - name: Buffer TikTok (optional)
+        if: ${{ github.event.inputs.publish_tiktok == true || github.event.inputs.publish_tiktok == 'true' }}
+        continue-on-error: true
+        env:
+          BUFFER_API_TOKEN_2: ${{ secrets.BUFFER_API_TOKEN_2 || secrets.BUFFER_API_KEY_2 }}
+          BUFFER_API_KEY_2: ${{ secrets.BUFFER_API_KEY_2 }}
+          CHANNEL_TARGET: finance
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Optional publish — wire fin channel id when ready"
+          ls -lh rendered_videos/fin_character_latest.mp4
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fin-character-${{ github.run_id }}
+          path: |
+            rendered_videos/fin_character_latest.mp4
+            rendered_videos/fin_character_meta.json
+            test_artifacts/fin_character/**
+          if-no-files-found: warn
