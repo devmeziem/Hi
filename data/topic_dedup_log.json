@@ -1,32 +1,8 @@
 {
   "version": 1,
   "retentionDays": 30,
-  "lastPurgedAt": "2026-11-17T15:40:16.038Z",
+  "lastPurgedAt": "2026-11-18T03:23:34.024Z",
   "entries": [
-    {
-      "hash": "2b3d4944fad3",
-      "channel": "driftreel",
-      "topic": "The Silent Vanishing of 1974",
-      "timestamp": "2026-10-18T17:07:46.981Z"
-    },
-    {
-      "hash": "2b3d4944fad3",
-      "channel": "documentary_movie",
-      "topic": "The Silent Vanishing of 1974",
-      "timestamp": "2026-10-18T17:07:47.939Z"
-    },
-    {
-      "hash": "d95c4e64f47c",
-      "channel": "stoic",
-      "topic": "It's not what happens to you, but how you react to it that matters.",
-      "timestamp": "2026-10-18T17:09:18.310Z"
-    },
-    {
-      "hash": "73755b05239c",
-      "channel": "stoic",
-      "topic": "Don't bend; don't water it down; rather, follow your most intense obsessions mercilessly.",
-      "timestamp": "2026-10-18T23:59:06.983Z"
-    },
     {
       "hash": "dfe08b048a38",
       "channel": "stoic",
@@ -296,6 +272,12 @@
       "channel": "stoic",
       "topic": "Anxiety is the dizziness of freedom.",
       "timestamp": "2026-11-16T15:10:20.711Z"
+    },
+    {
+      "hash": "b7c62a444540",
+      "channel": "stoic",
+      "topic": "Unexpressed emotions will never die. They are buried alive and will come forth later in uglier ways.",
+      "timestamp": "2026-11-18T03:23:44.521Z"
     }
   ]
 }

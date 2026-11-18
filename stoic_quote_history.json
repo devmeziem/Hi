@@ -1,11 +1,5 @@
 [
   {
-    "quote": "Pain and suffering are always inevitable for a large intelligence and a deep heart.",
-    "author": "Fyodor Dostoevsky",
-    "channel": "stoic",
-    "timestamp": "2026-10-16T10:58:17.246Z"
-  },
-  {
     "quote": "Unexpressed emotions will never die. They are buried alive and will come forth later in uglier ways.",
     "author": "Sigmund Freud",
     "credentials": "Founder of Psychoanalysis • Neurologist",
@@ -1044,5 +1038,18 @@
     "author": "Seneca the Younger",
     "channel": "stoic",
     "timestamp": "2026-11-17T15:40:24.219Z"
+  },
+  {
+    "quote": "Unexpressed emotions will never die. They are buried alive and will come forth later in uglier ways.",
+    "author": "Sigmund Freud",
+    "credentials": "Founder of Psychoanalysis • Neurologist",
+    "theme": "subconscious",
+    "usedAt": "2026-11-18T03:23:44.449Z"
+  },
+  {
+    "quote": "Unexpressed emotions will never die. They are buried alive and will come forth later in uglier ways.",
+    "author": "Sigmund Freud",
+    "channel": "stoic",
+    "timestamp": "2026-11-18T03:23:44.481Z"
   }
 ]
