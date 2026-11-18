@@ -1,14 +1,8 @@
 {
   "version": 1,
   "retentionDays": 30,
-  "lastPurgedAt": "2026-11-18T03:23:34.024Z",
+  "lastPurgedAt": "2026-11-18T15:19:19.436Z",
   "entries": [
-    {
-      "hash": "dfe08b048a38",
-      "channel": "stoic",
-      "topic": "Whosoever desires constant success must change his conduct with the times.",
-      "timestamp": "2026-10-19T12:31:15.574Z"
-    },
     {
       "hash": "e3cb3c4d2ca9",
       "channel": "stoic",
