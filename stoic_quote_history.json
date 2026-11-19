@@ -2,13 +2,6 @@
   {
     "quote": "It never ceases to amaze me: we all love ourselves more than other people, but care more about their opinion than our own.",
     "author": "Marcus Aurelius",
-    "credentials": "Roman Emperor & Stoic Philosopher • Meditations",
-    "theme": "psychology",
-    "usedAt": "2026-10-17T16:55:05.760Z"
-  },
-  {
-    "quote": "It never ceases to amaze me: we all love ourselves more than other people, but care more about their opinion than our own.",
-    "author": "Marcus Aurelius",
     "channel": "stoic",
     "timestamp": "2026-10-17T16:55:05.761Z"
   },
@@ -1064,5 +1057,18 @@
     "author": "Niccolò Machiavelli",
     "channel": "stoic",
     "timestamp": "2026-11-19T02:58:46.489Z"
+  },
+  {
+    "quote": "Leave people hungry. Even with physical thirst, it is a sign of good taste to leave people with a craving.",
+    "author": "Baltasar Gracián",
+    "credentials": "Author of The Art of Worldly Wisdom • Jesuit Philosopher",
+    "theme": "influence",
+    "usedAt": "2026-11-19T15:26:29.441Z"
+  },
+  {
+    "quote": "Leave people hungry. Even with physical thirst, it is a sign of good taste to leave people with a craving.",
+    "author": "Baltasar Gracián",
+    "channel": "stoic",
+    "timestamp": "2026-11-19T15:26:29.442Z"
   }
 ]
