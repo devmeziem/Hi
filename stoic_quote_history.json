@@ -1,11 +1,5 @@
 [
   {
-    "quote": "Unexpressed emotions will never die. They are buried alive and will come forth later in uglier ways.",
-    "author": "Sigmund Freud",
-    "channel": "stoic",
-    "timestamp": "2026-10-17T10:19:26.573Z"
-  },
-  {
     "quote": "It never ceases to amaze me: we all love ourselves more than other people, but care more about their opinion than our own.",
     "author": "Marcus Aurelius",
     "credentials": "Roman Emperor & Stoic Philosopher • Meditations",
@@ -1057,5 +1051,18 @@
     "author": "Blaise Pascal",
     "channel": "stoic",
     "timestamp": "2026-11-18T15:19:27.280Z"
+  },
+  {
+    "quote": "Everyone sees what you appear to be, few experience what you really are.",
+    "author": "Niccolò Machiavelli",
+    "credentials": "Author of The Prince • Diplomat & Political Philosopher",
+    "theme": "psychology",
+    "usedAt": "2026-11-19T02:58:46.489Z"
+  },
+  {
+    "quote": "Everyone sees what you appear to be, few experience what you really are.",
+    "author": "Niccolò Machiavelli",
+    "channel": "stoic",
+    "timestamp": "2026-11-19T02:58:46.489Z"
   }
 ]
