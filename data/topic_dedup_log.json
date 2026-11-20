@@ -1,14 +1,8 @@
 {
   "version": 1,
   "retentionDays": 30,
-  "lastPurgedAt": "2026-11-20T02:53:39.946Z",
+  "lastPurgedAt": "2026-11-20T15:02:49.594Z",
   "entries": [
-    {
-      "hash": "66c4ca85fc4e",
-      "channel": "stoic",
-      "topic": "Thinking is difficult, that’s why most people judge.",
-      "timestamp": "2026-10-21T11:24:01.013Z"
-    },
     {
       "hash": "8eba66766eb7",
       "channel": "stoic",
@@ -236,6 +230,12 @@
       "channel": "stoic",
       "topic": "Unexpressed emotions will never die. They are buried alive and will come forth later in uglier ways.",
       "timestamp": "2026-11-18T03:23:44.521Z"
+    },
+    {
+      "hash": "2f1bbeb77ac7",
+      "channel": "stoic",
+      "topic": "It never ceases to amaze me: we all love ourselves more than other people, but care more about their",
+      "timestamp": "2026-11-20T15:02:59.172Z"
     }
   ]
 }

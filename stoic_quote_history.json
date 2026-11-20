@@ -2,13 +2,6 @@
   {
     "quote": "Small-minded people blame others. Average people blame themselves. The wise see all blame as foolishness.",
     "author": "Epictetus",
-    "credentials": "Stoic Philosopher • Founder of the Nicopolis School",
-    "theme": "wisdom",
-    "usedAt": "2026-10-17T23:51:53.464Z"
-  },
-  {
-    "quote": "Small-minded people blame others. Average people blame themselves. The wise see all blame as foolishness.",
-    "author": "Epictetus",
     "channel": "stoic",
     "timestamp": "2026-10-17T23:51:53.465Z"
   },
@@ -1077,5 +1070,18 @@
     "author": "Epictetus",
     "channel": "stoic",
     "timestamp": "2026-11-20T02:53:47.267Z"
+  },
+  {
+    "quote": "It never ceases to amaze me: we all love ourselves more than other people, but care more about their opinion than our own.",
+    "author": "Marcus Aurelius",
+    "credentials": "Roman Emperor & Stoic Philosopher • Meditations",
+    "theme": "psychology",
+    "usedAt": "2026-11-20T15:02:59.170Z"
+  },
+  {
+    "quote": "It never ceases to amaze me: we all love ourselves more than other people, but care more about their opinion than our own.",
+    "author": "Marcus Aurelius",
+    "channel": "stoic",
+    "timestamp": "2026-11-20T15:02:59.171Z"
   }
 ]
