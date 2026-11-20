@@ -1,11 +1,5 @@
 [
   {
-    "quote": "It never ceases to amaze me: we all love ourselves more than other people, but care more about their opinion than our own.",
-    "author": "Marcus Aurelius",
-    "channel": "stoic",
-    "timestamp": "2026-10-17T16:55:05.761Z"
-  },
-  {
     "quote": "Small-minded people blame others. Average people blame themselves. The wise see all blame as foolishness.",
     "author": "Epictetus",
     "credentials": "Stoic Philosopher • Founder of the Nicopolis School",
@@ -1070,5 +1064,18 @@
     "author": "Baltasar Gracián",
     "channel": "stoic",
     "timestamp": "2026-11-19T15:26:29.442Z"
+  },
+  {
+    "quote": "No man is free who is not master of himself.",
+    "author": "Epictetus",
+    "credentials": "Stoic Philosopher • Founder of the Nicopolis School",
+    "theme": "mastery",
+    "usedAt": "2026-11-20T02:53:47.266Z"
+  },
+  {
+    "quote": "No man is free who is not master of himself.",
+    "author": "Epictetus",
+    "channel": "stoic",
+    "timestamp": "2026-11-20T02:53:47.267Z"
   }
 ]
