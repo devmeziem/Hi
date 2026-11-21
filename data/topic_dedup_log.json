@@ -1,14 +1,8 @@
 {
   "version": 1,
   "retentionDays": 30,
-  "lastPurgedAt": "2026-11-21T03:01:09.917Z",
+  "lastPurgedAt": "2026-11-21T14:24:34.524Z",
   "entries": [
-    {
-      "hash": "6cbf73638f8b",
-      "channel": "stoic",
-      "topic": "If a man knows not to which port he sails, no wind is favorable.",
-      "timestamp": "2026-10-22T11:22:55.805Z"
-    },
     {
       "hash": "41f7cab02af7",
       "channel": "stoic",

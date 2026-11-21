@@ -2,13 +2,6 @@
   {
     "quote": "The supreme art of war is to subdue the enemy without fighting.",
     "author": "Sun Tzu",
-    "credentials": "General, Strategist & Philosopher • The Art of War",
-    "theme": "strategy",
-    "usedAt": "2026-10-18T10:35:48.765Z"
-  },
-  {
-    "quote": "The supreme art of war is to subdue the enemy without fighting.",
-    "author": "Sun Tzu",
     "channel": "stoic",
     "timestamp": "2026-10-18T10:35:48.766Z"
   },
@@ -1090,5 +1083,18 @@
     "author": "Niccolò Machiavelli",
     "channel": "stoic",
     "timestamp": "2026-11-21T03:01:17.273Z"
+  },
+  {
+    "quote": "When you gaze long into an abyss, the abyss also gazes into you.",
+    "author": "Prof. Friedrich Nietzsche",
+    "credentials": "Chair of Classical Philology • University of Basel",
+    "theme": "psychology",
+    "usedAt": "2026-11-21T14:24:42.245Z"
+  },
+  {
+    "quote": "When you gaze long into an abyss, the abyss also gazes into you.",
+    "author": "Prof. Friedrich Nietzsche",
+    "channel": "stoic",
+    "timestamp": "2026-11-21T14:24:42.245Z"
   }
 ]
