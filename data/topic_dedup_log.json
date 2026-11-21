@@ -1,20 +1,8 @@
 {
   "version": 1,
   "retentionDays": 30,
-  "lastPurgedAt": "2026-11-20T15:02:49.594Z",
+  "lastPurgedAt": "2026-11-21T03:01:09.917Z",
   "entries": [
-    {
-      "hash": "8eba66766eb7",
-      "channel": "stoic",
-      "topic": "All truth passes through three stages. First, it is ridiculed. Second, it is violently opposed. Thir",
-      "timestamp": "2026-10-21T18:30:10.417Z"
-    },
-    {
-      "hash": "a192ba5548a4",
-      "channel": "stoic",
-      "topic": "Never was anything great achieved without danger. But never confuse courage with recklessness.",
-      "timestamp": "2026-10-22T00:30:10.799Z"
-    },
     {
       "hash": "6cbf73638f8b",
       "channel": "stoic",
