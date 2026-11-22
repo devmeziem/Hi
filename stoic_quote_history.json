@@ -2,13 +2,6 @@
   {
     "quote": "It's not what happens to you, but how you react to it that matters.",
     "author": "Epictetus",
-    "credentials": "Stoic Philosopher • Founder of the Nicopolis School",
-    "theme": "defense",
-    "usedAt": "2026-10-18T17:09:18.304Z"
-  },
-  {
-    "quote": "It's not what happens to you, but how you react to it that matters.",
-    "author": "Epictetus",
     "channel": "stoic",
     "timestamp": "2026-10-18T17:09:18.308Z"
   },
@@ -1103,5 +1096,18 @@
     "author": "Marcus Aurelius",
     "channel": "stoic",
     "timestamp": "2026-11-22T01:58:01.443Z"
+  },
+  {
+    "quote": "The supreme art of war is to subdue the enemy without fighting.",
+    "author": "Sun Tzu",
+    "credentials": "General, Strategist & Philosopher • The Art of War",
+    "theme": "strategy",
+    "usedAt": "2026-11-22T14:17:54.401Z"
+  },
+  {
+    "quote": "The supreme art of war is to subdue the enemy without fighting.",
+    "author": "Sun Tzu",
+    "channel": "stoic",
+    "timestamp": "2026-11-22T14:17:54.402Z"
   }
 ]

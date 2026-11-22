@@ -1,14 +1,8 @@
 {
   "version": 1,
   "retentionDays": 30,
-  "lastPurgedAt": "2026-11-22T01:57:33.204Z",
+  "lastPurgedAt": "2026-11-22T14:17:15.518Z",
   "entries": [
-    {
-      "hash": "28cf72d4b013",
-      "channel": "stoic",
-      "topic": "Everything that irritates us about others can lead us to an understanding of ourselves.",
-      "timestamp": "2026-10-23T11:13:05.016Z"
-    },
     {
       "hash": "76b39014c6b8",
       "channel": "stoic",
@@ -206,6 +200,12 @@
       "channel": "stoic",
       "topic": "It never ceases to amaze me: we all love ourselves more than other people, but care more about their",
       "timestamp": "2026-11-20T15:02:59.172Z"
+    },
+    {
+      "hash": "7e4eba807598",
+      "channel": "stoic",
+      "topic": "The supreme art of war is to subdue the enemy without fighting.",
+      "timestamp": "2026-11-22T14:17:54.404Z"
     }
   ]
 }
