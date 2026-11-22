@@ -1,20 +1,8 @@
 {
   "version": 1,
   "retentionDays": 30,
-  "lastPurgedAt": "2026-11-21T14:24:34.524Z",
+  "lastPurgedAt": "2026-11-22T01:57:33.204Z",
   "entries": [
-    {
-      "hash": "41f7cab02af7",
-      "channel": "stoic",
-      "topic": "Everyone sees what you appear to be, few experience what you really are.",
-      "timestamp": "2026-10-22T18:24:56.463Z"
-    },
-    {
-      "hash": "2cd6f2b9df2d",
-      "channel": "stoic",
-      "topic": "The lion cannot protect himself from traps, and the fox cannot defend himself from wolves. One must ",
-      "timestamp": "2026-10-23T00:27:47.965Z"
-    },
     {
       "hash": "28cf72d4b013",
       "channel": "stoic",

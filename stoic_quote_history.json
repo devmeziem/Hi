@@ -1,11 +1,5 @@
 [
   {
-    "quote": "The supreme art of war is to subdue the enemy without fighting.",
-    "author": "Sun Tzu",
-    "channel": "stoic",
-    "timestamp": "2026-10-18T10:35:48.766Z"
-  },
-  {
     "quote": "It's not what happens to you, but how you react to it that matters.",
     "author": "Epictetus",
     "credentials": "Stoic Philosopher • Founder of the Nicopolis School",
@@ -1096,5 +1090,18 @@
     "author": "Prof. Friedrich Nietzsche",
     "channel": "stoic",
     "timestamp": "2026-11-21T14:24:42.245Z"
+  },
+  {
+    "quote": "Reject your sense of injury and the injury itself disappears.",
+    "author": "Marcus Aurelius",
+    "credentials": "Roman Emperor & Stoic Philosopher • Meditations",
+    "theme": "defense",
+    "usedAt": "2026-11-22T01:58:01.442Z"
+  },
+  {
+    "quote": "Reject your sense of injury and the injury itself disappears.",
+    "author": "Marcus Aurelius",
+    "channel": "stoic",
+    "timestamp": "2026-11-22T01:58:01.443Z"
   }
 ]
