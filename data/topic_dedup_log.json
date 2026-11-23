@@ -1,20 +1,8 @@
 {
   "version": 1,
   "retentionDays": 30,
-  "lastPurgedAt": "2026-11-22T14:17:15.518Z",
+  "lastPurgedAt": "2026-11-23T02:22:40.255Z",
   "entries": [
-    {
-      "hash": "76b39014c6b8",
-      "channel": "stoic",
-      "topic": "Master your emotions. If you cannot control your emotions, you cannot control your power, your money",
-      "timestamp": "2026-10-23T18:10:43.732Z"
-    },
-    {
-      "hash": "ad2e4197b715",
-      "channel": "stoic",
-      "topic": "Most people do not really want freedom, because freedom involves responsibility, and most people are",
-      "timestamp": "2026-10-24T00:22:53.378Z"
-    },
     {
       "hash": "0f8ff5b5735f",
       "channel": "stoic",
@@ -206,6 +194,12 @@
       "channel": "stoic",
       "topic": "The supreme art of war is to subdue the enemy without fighting.",
       "timestamp": "2026-11-22T14:17:54.404Z"
+    },
+    {
+      "hash": "28cf72d4b013",
+      "channel": "stoic",
+      "topic": "Everything that irritates us about others can lead us to an understanding of ourselves.",
+      "timestamp": "2026-11-23T02:23:33.360Z"
     }
   ]
 }
