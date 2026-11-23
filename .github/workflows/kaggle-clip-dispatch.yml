@@ -8,11 +8,11 @@ on:
         required: false
         default: 'test'
         type: choice
-        options: [test, archie, teen, stoic, driftreel, fin]
+        options: [test, storm, ocean, archie, teen, stoic, driftreel, fin]
       num_clips:
         description: 'Number of 5s clips'
         required: false
-        default: '1'
+        default: '2'
       dry_notebook_only:
         description: 'Only write job.json (skip Kaggle push)'
         required: false
@@ -36,31 +36,47 @@ jobs:
       - name: Build job.json
         env:
           CHANNEL: ${{ github.event.inputs.channel || 'test' }}
-          NUM_CLIPS: ${{ github.event.inputs.num_clips || '1' }}
+          NUM_CLIPS: ${{ github.event.inputs.num_clips || '2' }}
         run: |
           mkdir -p kaggle/ai_clip_worker
           python3 << 'PY'
           import json, time, os
           ch = os.environ.get('CHANNEL', 'test')
-          n = int(os.environ.get('NUM_CLIPS', '1'))
-          prompts = [
-            "cinematic vertical portrait soft light, no text no watermark",
-            "calm ambient environment vertical 9:16, no text",
-            "3D cartoon explorer character Archie friendly face vertical studio no text"
-          ]
-          job = {
-            "job_id": f"gh-{os.environ.get('GITHUB_RUN_ID','local')}-{int(time.time())}",
-            "channel": ch,
-            "task": "test_roundtrip" if ch == 'test' else ("archie_3d_clips" if ch == 'archie' else "generic_clips"),
-            "clip_seconds": 5,
-            "num_clips": n,
-            "prompts": prompts[:max(n, 1)],
-            "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            "echo": True
+          n = max(1, min(4, int(os.environ.get('NUM_CLIPS', '2'))))
+          bank = {
+            'storm': [
+              'cinematic vertical ocean storm lightning dark waves heavy rain no text no watermark',
+              'vertical night tempest lightning flash over black sea rain streaks no text',
+              'dramatic storm clouds vertical 9:16 thunder mood no logos'
+            ],
+            'ocean': [
+              'cinematic vertical deep ocean waves dark teal no text',
+              'vertical calm to rough sea surface aerial mood no watermark'
+            ],
+            'archie': [
+              '3D cartoon explorer character Archie friendly face vertical studio no text'
+            ],
+            'test': [
+              'cinematic vertical portrait soft light, no text no watermark',
+              'calm ambient environment vertical 9:16, no text'
+            ],
           }
-          path = "kaggle/ai_clip_worker/job.json"
-          open(path, "w").write(json.dumps(job, indent=2))
-          print("WROTE_JOB", path)
+          prompts = bank.get(ch) or bank['storm'] if ch in ('fin','teen','stoic','driftreel') else bank.get(ch, bank['storm'])
+          if ch in ('fin', 'teen', 'stoic', 'driftreel'):
+              prompts = bank['storm']
+          job = {
+            'job_id': f"gh-{os.environ.get('GITHUB_RUN_ID','local')}-{int(time.time())}",
+            'channel': ch,
+            'task': 'storm_clips' if ch == 'storm' else ('ocean_clips' if ch == 'ocean' else 'generic_clips'),
+            'clip_seconds': 5,
+            'num_clips': n,
+            'prompts': (prompts * n)[:n],
+            'created_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+            'echo': True
+          }
+          path = 'kaggle/ai_clip_worker/job.json'
+          open(path, 'w').write(json.dumps(job, indent=2))
+          print('WROTE_JOB', path)
           print(json.dumps(job, indent=2))
           PY
       - name: Install Kaggle CLI + deps
@@ -76,23 +92,15 @@ jobs:
           KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
         run: |
           set -e
-          echo "KAGGLE_USERNAME set? $([ -n "$KAGGLE_USERNAME" ] && echo yes || echo NO)"
-          echo "KAGGLE_KEY set? $([ -n "$KAGGLE_KEY" ] && echo yes || echo NO)"
-          echo "KAGGLE_API_TOKEN set? $([ -n "$KAGGLE_API_TOKEN" ] && echo yes || echo NO)"
           test -n "$KAGGLE_USERNAME"
           mkdir -p ~/.kaggle
           if [ -n "$KAGGLE_API_TOKEN" ]; then
             echo -n "$KAGGLE_API_TOKEN" > ~/.kaggle/access_token
             chmod 600 ~/.kaggle/access_token
-            echo "auth=access_token"
           fi
           if [ -n "$KAGGLE_KEY" ]; then
             printf '%s\n' "{\"username\":\"$KAGGLE_USERNAME\",\"key\":\"$KAGGLE_KEY\"}" > ~/.kaggle/kaggle.json
             chmod 600 ~/.kaggle/kaggle.json
-            echo "auth=kaggle.json"
-          fi
-          if [ ! -f ~/.kaggle/access_token ] && [ ! -f ~/.kaggle/kaggle.json ]; then
-            echo "Need KAGGLE_API_TOKEN or KAGGLE_KEY"; exit 1
           fi
           python3 - << PY
           import json, os
@@ -106,7 +114,7 @@ jobs:
           json.dump(m, open(p,"w"), indent=2)
           print("KERNEL_ID", m["id"])
           PY
-      - name: Push kernel (log full response)
+      - name: Push kernel
         if: ${{ github.event.inputs.dry_notebook_only != true && github.event.inputs.dry_notebook_only != 'true' }}
         env:
           KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
@@ -114,30 +122,21 @@ jobs:
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
         run: |
           set +e
-          echo "=== kaggle kernels push ==="
           OUT=$(kaggle kernels push -p kaggle/ai_clip_worker 2>&1)
           CODE=$?
           echo "$OUT"
           echo "push_exit=$CODE"
           SLUG="$KAGGLE_USERNAME/hi-ai-clip-worker"
-          echo "=== kernels status $SLUG ==="
           kaggle kernels status "$SLUG" 2>&1 || true
-          echo "=== kernels list (filter) ==="
-          kaggle kernels list -m -s hi-ai-clip-worker 2>&1 | head -20 || true
           if [ $CODE -ne 0 ]; then
             if echo "$OUT" | grep -qi '409\|Conflict'; then
-              echo "NOTE: 409 Conflict — kernel may already be active. Check status above."
-              echo "KAGGLE_PUSH_RESULT=conflict" >> $GITHUB_ENV
+              echo "NOTE: 409 — kernel may already be running"
             else
-              echo "KAGGLE_PUSH_RESULT=failed" >> $GITHUB_ENV
               exit $CODE
             fi
-          else
-            echo "KAGGLE_PUSH_RESULT=ok" >> $GITHUB_ENV
           fi
-          echo "Next: run workflow Kaggle Clip Poll + Stitch after COMPLETE"
-      - name: Upload job artifact
-        uses: actions/upload-artifact@v4
+          echo "Next: Kaggle Clip Poll + Stitch after COMPLETE"
+      - uses: actions/upload-artifact@v4
         with:
           name: kaggle-job-${{ github.run_id }}
           path: kaggle/ai_clip_worker/job.json

@@ -1,17 +1,16 @@
 name: Apex Discipline - Teen & Youth Motivation Pipeline (Channel 5)
 
-# 2 × live problem reels (35-40s) + 1 × 5s stoic-psych loop per day
+# Max 2 posts/day: 1× live 35-40s + 1× 5s boost loop (was 3 and over-posting)
 on:
   schedule:
-    - cron: '0 9 * * *'
-    - cron: '0 15 * * *'
-    - cron: '0 20 * * *'
+    - cron: '0 10 * * *'   # ~11:00 WAT — long form
+    - cron: '0 18 * * *'   # ~19:00 WAT — 5s boost
   workflow_dispatch:
     inputs:
       video_type:
-        description: 'Video Format — 5s_reel = stoic-psych loop for teens'
+        description: 'situation = long | 5s_reel = boost loop | auto = by hour'
         required: false
-        default: 'situation'
+        default: 'auto'
         type: choice
         options: ['situation', 'auto', '5s_reel']
       topic:
@@ -20,7 +19,7 @@ on:
         default: ''
         type: string
       auto_publish:
-        description: 'Publish YouTube (CH5 secrets only — default OFF)'
+        description: 'Publish YouTube (CH5 — default OFF)'
         required: true
         default: false
         type: boolean
@@ -37,7 +36,7 @@ on:
 
 jobs:
   teen_motivation_pipeline:
-    name: Build Teen Motivation (live problem / 5s loop)
+    name: Build Teen Motivation (long or 5s)
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -53,16 +52,14 @@ jobs:
       - run: npm install --legacy-peer-deps --no-audit --no-fund
       - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-liberation fonts-liberation2 fonts-freefont-ttf || true
       - run: pip install -q edge-tts
-      - name: Verify live Teen generator
+      - name: Verify generators
         run: |
           node --check scripts/generate_teen_situation_reel.cjs
-          # Must be LIVE mode — reject old seed bank if it ever returns
+          node --check scripts/generate_teen_boost_5s_reel.cjs
           if grep -q "PD_CARTOON_LESSON_BANK" scripts/generate_teen_situation_reel.cjs; then
             echo "ERROR: seed bank still present" && exit 1
           fi
-          grep -q "live search" scripts/generate_teen_situation_reel.cjs || grep -q "discoverYouthProblems" scripts/generate_teen_situation_reel.cjs
-          grep -q "refusing seeded script" scripts/generate_teen_situation_reel.cjs
-          echo "Teen LIVE generator OK"
+          echo "Teen generators OK"
       - name: Generate Teen
         env:
           VIDEO_TYPE: ${{ github.event.inputs.video_type || '' }}
@@ -79,9 +76,6 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY || secrets.GROK_API_KEY }}
-          YOUTUBE_CLIENT_ID_CH5: ${{ secrets.YOUTUBE_CLIENT_ID_CH5 }}
-          YOUTUBE_CLIENT_SECRET_CH5: ${{ secrets.YOUTUBE_CLIENT_SECRET_CH5 }}
-          YOUTUBE_REFRESH_TOKEN_CH5: ${{ secrets.YOUTUBE_REFRESH_TOKEN_CH5 }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY || secrets.UNSPLASH_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
@@ -90,24 +84,20 @@ jobs:
           HOUR=$(date -u +%H)
           VT="${VIDEO_TYPE}"
           if [ -z "$VT" ] || [ "$VT" = "auto" ]; then
+            # 18 UTC slot → 5s; morning slot → long
             case "$HOUR" in
-              15) VT=5s_reel ;;
+              17|18|19) VT=5s_reel ;;
               *) VT=situation ;;
             esac
           fi
           echo "VIDEO_TYPE=$VT HOUR=$HOUR"
           if [ "$VT" = "5s_reel" ] || [ "$VT" = "boost" ]; then
             echo "=== Teen BOOST 5s loop ==="
-            if [ -f scripts/generate_teen_boost_5s_reel.cjs ]; then
-              node scripts/generate_teen_boost_5s_reel.cjs
-              test -f rendered_videos/teen_boost_5s_latest.mp4
-              cp -f rendered_videos/teen_boost_5s_latest.mp4 rendered_videos/teen_motivation_latest.mp4
-            else
-              echo "5s generator missing — falling back to live situation"
-              node scripts/generate_teen_situation_reel.cjs
-            fi
+            node scripts/generate_teen_boost_5s_reel.cjs
+            test -f rendered_videos/teen_boost_5s_latest.mp4
+            cp -f rendered_videos/teen_boost_5s_latest.mp4 rendered_videos/teen_motivation_latest.mp4
           else
-            echo "=== Teen LIVE problem reel 35-40s ==="
+            echo "=== Teen LIVE long 35-40s ==="
             node scripts/generate_teen_situation_reel.cjs
           fi
           test -f rendered_videos/teen_motivation_latest.mp4
