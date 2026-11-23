@@ -2,13 +2,6 @@
   {
     "quote": "Don't bend; don't water it down; rather, follow your most intense obsessions mercilessly.",
     "author": "Franz Kafka",
-    "credentials": "Author of The Trial & The Metamorphosis",
-    "theme": "action",
-    "usedAt": "2026-10-18T23:59:06.982Z"
-  },
-  {
-    "quote": "Don't bend; don't water it down; rather, follow your most intense obsessions mercilessly.",
-    "author": "Franz Kafka",
     "channel": "stoic",
     "timestamp": "2026-10-18T23:59:06.982Z"
   },
@@ -1116,5 +1109,18 @@
     "author": "Dr. Carl Jung",
     "channel": "stoic",
     "timestamp": "2026-11-23T02:23:33.359Z"
+  },
+  {
+    "quote": "The first method for estimating the intelligence of a ruler is to look at the men he has around him.",
+    "author": "Niccolò Machiavelli",
+    "credentials": "Author of The Prince • Diplomat & Political Philosopher",
+    "theme": "strategy",
+    "usedAt": "2026-11-23T17:39:49.197Z"
+  },
+  {
+    "quote": "The first method for estimating the intelligence of a ruler is to look at the men he has around him.",
+    "author": "Niccolò Machiavelli",
+    "channel": "stoic",
+    "timestamp": "2026-11-23T17:39:49.198Z"
   }
 ]
