@@ -18,7 +18,7 @@ jobs:
   fin_character:
     name: Render Athletic_man + fin education short
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     permissions:
       contents: read
     steps:
@@ -42,15 +42,19 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: System deps
+      - name: System deps (EGL/Mesa + ffmpeg)
         run: |
           sudo apt-get update -qq || true
-          sudo apt-get install -y --no-install-recommends ffmpeg fonts-dejavu-core fonts-liberation xz-utils curl || true
+          sudo apt-get install -y --no-install-recommends \
+            ffmpeg fonts-dejavu-core fonts-liberation xz-utils curl \
+            libegl1 libgl1 libgl1-mesa-dri libglx-mesa0 libgles2 \
+            libxrender1 libxkbcommon0 libxi6 libxxf86vm1 libsm6 libx11-6 \
+            mesa-utils || true
           pip install -q edge-tts
+          ldconfig -p | grep -i egl | head -5 || true
 
       - name: Install Blender
         run: |
-          # Official Linux tarball (headless-capable)
           curl -fsSL -o /tmp/blender.tar.xz \
             "https://download.blender.org/release/Blender4.2/blender-4.2.3-linux-x64.tar.xz" \
             || curl -fsSL -o /tmp/blender.tar.xz \
@@ -69,6 +73,11 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          FIN_RES_X: '720'
+          FIN_RES_Y: '1280'
+          FIN_SAMPLES: '20'
+          CYCLES_DEVICE: CPU
+          LIBGL_ALWAYS_SOFTWARE: '1'
           PATH: /opt/blender:/usr/bin:/bin
         run: |
           export PATH="/opt/blender:$PATH"
@@ -87,7 +96,7 @@ jobs:
           CHANNEL_TARGET: finance
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Optional publish — wire fin channel id when ready"
+          echo "Optional publish"
           ls -lh rendered_videos/fin_character_latest.mp4
 
       - uses: actions/upload-artifact@v4

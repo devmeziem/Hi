@@ -1,0 +1,42 @@
+name: Cinematic Storm Pack (GH ffmpeg)
+
+on:
+  workflow_dispatch:
+    inputs:
+      num_clips:
+        description: 'Number of clips (2-6)'
+        required: false
+        default: '4'
+      seconds:
+        description: 'Seconds per clip'
+        required: false
+        default: '5'
+
+jobs:
+  storm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg || true
+      - name: Build storm pack + stitch
+        env:
+          STORM_CLIPS: ${{ github.event.inputs.num_clips || '4' }}
+          STORM_SEC: ${{ github.event.inputs.seconds || '5' }}
+        run: |
+          node scripts/generate_cinematic_storm_pack.cjs
+          ls -lh rendered_videos/storm_*
+          test -f rendered_videos/storm_pack_master.mp4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: storm-pack-${{ github.run_id }}
+          path: |
+            rendered_videos/storm_pack_master.mp4
+            rendered_videos/storm_pack_stitched.mp4
+            rendered_videos/storm_clip_*.mp4
+            rendered_videos/storm_pack_meta.json
+            test_artifacts/storm_pack/**
