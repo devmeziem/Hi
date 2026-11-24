@@ -1,14 +1,8 @@
 {
   "version": 1,
   "retentionDays": 30,
-  "lastPurgedAt": "2026-11-23T17:38:40.498Z",
+  "lastPurgedAt": "2026-11-24T05:46:45.138Z",
   "entries": [
-    {
-      "hash": "90a3b2745b2b",
-      "channel": "stoic",
-      "topic": "Never outshine the master. All superiority is odious, but superiority over a master is fatal.",
-      "timestamp": "2026-10-25T00:05:27.319Z"
-    },
     {
       "hash": "8adc1b3d4f2f",
       "channel": "stoic",
@@ -182,6 +176,12 @@
       "channel": "stoic",
       "topic": "Everything that irritates us about others can lead us to an understanding of ourselves.",
       "timestamp": "2026-11-23T02:23:33.360Z"
+    },
+    {
+      "hash": "d95c4e64f47c",
+      "channel": "stoic",
+      "topic": "It's not what happens to you, but how you react to it that matters.",
+      "timestamp": "2026-11-24T05:48:11.626Z"
     }
   ]
 }
