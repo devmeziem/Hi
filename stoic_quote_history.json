@@ -1,11 +1,5 @@
 [
   {
-    "quote": "Whosoever desires constant success must change his conduct with the times.",
-    "author": "Niccolò Machiavelli",
-    "channel": "stoic",
-    "timestamp": "2026-10-19T12:31:15.573Z"
-  },
-  {
     "quote": "I am a cage, in search of a bird.",
     "author": "Franz Kafka",
     "credentials": "Author of The Trial & The Metamorphosis",
@@ -1135,5 +1129,18 @@
     "author": "Niccolò Machiavelli",
     "channel": "stoic",
     "timestamp": "2026-11-24T17:11:27.383Z"
+  },
+  {
+    "quote": "He who has a why to live can bear almost any how.",
+    "author": "Prof. Friedrich Nietzsche",
+    "credentials": "Chair of Classical Philology • University of Basel",
+    "theme": "fortitude",
+    "usedAt": "2026-11-25T04:49:56.928Z"
+  },
+  {
+    "quote": "He who has a why to live can bear almost any how.",
+    "author": "Prof. Friedrich Nietzsche",
+    "channel": "stoic",
+    "timestamp": "2026-11-25T04:49:56.929Z"
   }
 ]
