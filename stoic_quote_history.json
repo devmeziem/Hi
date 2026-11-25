@@ -2,13 +2,6 @@
   {
     "quote": "I am a cage, in search of a bird.",
     "author": "Franz Kafka",
-    "credentials": "Author of The Trial & The Metamorphosis",
-    "theme": "introspection",
-    "usedAt": "2026-10-19T19:42:52.989Z"
-  },
-  {
-    "quote": "I am a cage, in search of a bird.",
-    "author": "Franz Kafka",
     "channel": "stoic",
     "timestamp": "2026-10-19T19:42:52.990Z"
   },
@@ -1142,5 +1135,18 @@
     "author": "Prof. Friedrich Nietzsche",
     "channel": "stoic",
     "timestamp": "2026-11-25T04:49:56.929Z"
+  },
+  {
+    "quote": "The soul becomes dyed with the color of its thoughts.",
+    "author": "Marcus Aurelius",
+    "credentials": "Roman Emperor & Stoic Philosopher • Meditations",
+    "theme": "discipline",
+    "usedAt": "2026-11-25T17:06:42.226Z"
+  },
+  {
+    "quote": "The soul becomes dyed with the color of its thoughts.",
+    "author": "Marcus Aurelius",
+    "channel": "stoic",
+    "timestamp": "2026-11-25T17:06:42.227Z"
   }
 ]

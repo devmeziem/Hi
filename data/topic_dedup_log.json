@@ -1,14 +1,8 @@
 {
   "version": 1,
   "retentionDays": 30,
-  "lastPurgedAt": "2026-11-24T17:10:01.087Z",
+  "lastPurgedAt": "2026-11-25T17:05:18.127Z",
   "entries": [
-    {
-      "hash": "489ea5745a88",
-      "channel": "stoic",
-      "topic": "The first method for estimating the intelligence of a ruler is to look at the men he has around him.",
-      "timestamp": "2026-10-26T13:02:10.777Z"
-    },
     {
       "hash": "f4d343c387fb",
       "channel": "stoic",
