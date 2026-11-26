@@ -2,13 +2,6 @@
   {
     "quote": "Hatred is gained as much by good works as by evil. Never expect everyone to applaud your integrity.",
     "author": "Niccolò Machiavelli",
-    "credentials": "Author of The Prince • Diplomat & Political Philosopher",
-    "theme": "fortitude",
-    "usedAt": "2026-10-20T00:57:33.320Z"
-  },
-  {
-    "quote": "Hatred is gained as much by good works as by evil. Never expect everyone to applaud your integrity.",
-    "author": "Niccolò Machiavelli",
     "channel": "stoic",
     "timestamp": "2026-10-20T00:57:33.321Z"
   },
@@ -1155,5 +1148,18 @@
     "author": "Robert Greene",
     "channel": "stoic",
     "timestamp": "2026-11-26T04:01:52.058Z"
+  },
+  {
+    "quote": "A wise prince should establish himself on that which is in his own control and not in that of others.",
+    "author": "Niccolò Machiavelli",
+    "credentials": "Author of The Prince • Diplomat & Political Philosopher",
+    "theme": "power",
+    "usedAt": "2026-11-26T16:36:38.408Z"
+  },
+  {
+    "quote": "A wise prince should establish himself on that which is in his own control and not in that of others.",
+    "author": "Niccolò Machiavelli",
+    "channel": "stoic",
+    "timestamp": "2026-11-26T16:36:38.408Z"
   }
 ]
