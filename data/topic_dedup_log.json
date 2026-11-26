@@ -1,14 +1,8 @@
 {
   "version": 1,
   "retentionDays": 30,
-  "lastPurgedAt": "2026-11-25T17:05:18.127Z",
+  "lastPurgedAt": "2026-11-26T04:00:28.225Z",
   "entries": [
-    {
-      "hash": "f4d343c387fb",
-      "channel": "stoic",
-      "topic": "He who has a why to live can bear almost any how.",
-      "timestamp": "2026-10-27T01:17:04.922Z"
-    },
     {
       "hash": "a3ea3a56816b",
       "channel": "stoic",
@@ -176,6 +170,12 @@
       "channel": "stoic",
       "topic": "Whosoever desires constant success must change his conduct with the times.",
       "timestamp": "2026-11-24T17:11:27.388Z"
+    },
+    {
+      "hash": "90a3b2745b2b",
+      "channel": "stoic",
+      "topic": "Never outshine the master. All superiority is odious, but superiority over a master is fatal.",
+      "timestamp": "2026-11-26T04:01:52.059Z"
     }
   ]
 }

@@ -1,11 +1,5 @@
 [
   {
-    "quote": "I am a cage, in search of a bird.",
-    "author": "Franz Kafka",
-    "channel": "stoic",
-    "timestamp": "2026-10-19T19:42:52.990Z"
-  },
-  {
     "quote": "Hatred is gained as much by good works as by evil. Never expect everyone to applaud your integrity.",
     "author": "Niccolò Machiavelli",
     "credentials": "Author of The Prince • Diplomat & Political Philosopher",
@@ -1148,5 +1142,18 @@
     "author": "Marcus Aurelius",
     "channel": "stoic",
     "timestamp": "2026-11-25T17:06:42.227Z"
+  },
+  {
+    "quote": "Never outshine the master. All superiority is odious, but superiority over a master is fatal.",
+    "author": "Robert Greene",
+    "credentials": "Author of The 48 Laws of Power & Laws of Human Nature",
+    "theme": "strategy",
+    "usedAt": "2026-11-26T04:01:52.057Z"
+  },
+  {
+    "quote": "Never outshine the master. All superiority is odious, but superiority over a master is fatal.",
+    "author": "Robert Greene",
+    "channel": "stoic",
+    "timestamp": "2026-11-26T04:01:52.058Z"
   }
 ]
