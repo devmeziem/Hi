@@ -1,11 +1,5 @@
 [
   {
-    "quote": "Hatred is gained as much by good works as by evil. Never expect everyone to applaud your integrity.",
-    "author": "Niccolò Machiavelli",
-    "channel": "stoic",
-    "timestamp": "2026-10-20T00:57:33.321Z"
-  },
-  {
     "quote": "Talent hits a target no one else can hit; Genius hits a target no one else can see.",
     "author": "Arthur Schopenhauer",
     "credentials": "Author of Studies in Pessimism • German Philosopher",
@@ -1161,5 +1155,18 @@
     "author": "Niccolò Machiavelli",
     "channel": "stoic",
     "timestamp": "2026-11-26T16:36:38.408Z"
+  },
+  {
+    "quote": "The man who has a conscience suffers whilst acknowledging his sin. That is his punishment.",
+    "author": "Fyodor Dostoevsky",
+    "credentials": "Author of Crime and Punishment • Russian Philosopher",
+    "theme": "conscience",
+    "usedAt": "2026-11-27T03:59:55.134Z"
+  },
+  {
+    "quote": "The man who has a conscience suffers whilst acknowledging his sin. That is his punishment.",
+    "author": "Fyodor Dostoevsky",
+    "channel": "stoic",
+    "timestamp": "2026-11-27T03:59:55.135Z"
   }
 ]
