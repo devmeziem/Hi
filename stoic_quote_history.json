@@ -1,11 +1,5 @@
 [
   {
-    "quote": "Talent hits a target no one else can hit; Genius hits a target no one else can see.",
-    "author": "Arthur Schopenhauer",
-    "channel": "stoic",
-    "timestamp": "2026-10-20T11:06:51.446Z"
-  },
-  {
     "quote": "No man was ever wise by chance.",
     "author": "Seneca the Younger",
     "credentials": "Roman Statesman, Dramatist & Stoic Moralist",
@@ -1174,5 +1168,18 @@
     "author": "Epictetus",
     "channel": "stoic",
     "timestamp": "2026-11-27T16:21:57.311Z"
+  },
+  {
+    "quote": "Talent hits a target no one else can hit; Genius hits a target no one else can see.",
+    "author": "Arthur Schopenhauer",
+    "credentials": "Author of Studies in Pessimism • German Philosopher",
+    "theme": "mastery",
+    "usedAt": "2026-11-28T03:48:29.424Z"
+  },
+  {
+    "quote": "Talent hits a target no one else can hit; Genius hits a target no one else can see.",
+    "author": "Arthur Schopenhauer",
+    "channel": "stoic",
+    "timestamp": "2026-11-28T03:48:29.425Z"
   }
 ]
